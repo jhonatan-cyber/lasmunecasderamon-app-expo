@@ -1,0 +1,110 @@
+import React from 'react';
+import { Image, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { BASE_URL } from '../api/client';
+
+interface PremiumUserProfileProps {
+    user: any;
+    userStatus: number;
+}
+
+export const getStatusColor = (status: number, isDark: boolean = true) => {
+    switch (status) {
+        case 1: return '#10B981'; // Disponible
+        case 2: return '#EF4444'; // Ocupado/a
+        case 3: return '#F59E0B'; // Descanso
+        default: return isDark ? '#9CA3AF' : '#6B7280';
+    }
+};
+
+export const getStatusLabel = (status: number) => {
+    switch (status) {
+        case 1: return 'Disponible';
+        case 2: return 'En Servicio';
+        case 3: return 'En Descanso';
+        default: return 'Desconectado';
+    }
+};
+
+export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps) => {
+    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
+
+    return (
+        <View style={styles.headerUser}>
+            <View style={[styles.avatarContainer, { borderColor: getStatusColor(userStatus, isDark) }]}>
+                {user?.foto ? (
+                    <Image
+                        source={{ uri: user.foto.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user.foto}` }}
+                        style={styles.avatar}
+                    />
+                ) : (
+                    <View style={[styles.avatarPlaceholder, { backgroundColor: cardBg }]}>
+                        <Text style={styles.avatarEmoji}>👤</Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.headerInfo}>
+                <Text style={[styles.username, { color: textPrimary }]}>
+                    {user?.name || user?.nick || user?.username || 'Usuario'}
+                </Text>
+                <View style={styles.statusRow}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, isDark) }]} />
+                    <Text style={[styles.statusText, { color: textSecondary }]}>
+                        {getStatusLabel(userStatus)}
+                    </Text>
+                </View>
+            </View>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    headerUser: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    avatarContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 2,
+    },
+    avatar: {
+        width: '100%',
+        height: '100%',
+    },
+    avatarPlaceholder: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarEmoji: {
+        fontSize: 32,
+    },
+    headerInfo: {
+        flex: 1,
+    },
+    username: {
+        fontSize: 24,
+        fontWeight: '900',
+        letterSpacing: -0.5,
+    },
+    statusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    statusDot: {
+        width: 8, height: 8,
+        borderRadius: 4,
+        marginRight: 6,
+    },
+    statusText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+});
