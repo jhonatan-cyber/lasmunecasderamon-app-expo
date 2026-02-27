@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     KeyboardAvoidingView,
     Modal,
@@ -17,7 +16,9 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { PremiumAlert } from '../../../components/PremiumAlert';
 
 export default function SolicitudesScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
@@ -28,6 +29,7 @@ export default function SolicitudesScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [cajaAbierta, setCajaAbierta] = useState(true); // Default a true hasta verificar
+    const dataRef = useRef<string>('');
 
     // Modal state for Checkout
     const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
@@ -44,20 +46,37 @@ export default function SolicitudesScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    // Toast modal state
-    const [toast, setToast] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' }>({ visible: false, title: '', message: '', type: 'success' });
+    // Alert state
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'info' | 'success' | 'warning' | 'danger';
+        onConfirm?: () => void;
+    }>({ visible: false, title: '', message: '', type: 'info' });
 
+    // Toast
     const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        setToast({ visible: true, title, message, type });
+        Toast.show({
+            type,
+            text1: title,
+            text2: message,
+            visibilityTime: 4000
+        });
     };
 
-    const fetchSolicitudes = useCallback(async () => {
+    const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
             const [resSolicitudes, resOrders, resStats] = await Promise.all([
                 apiClient('/solicitudes-servicios?estado=pendiente').catch(() => ({ success: false, data: [] })),
                 apiClient('/orders').catch(() => ({ success: false, data: [] })),
                 apiClient('/caja/stats').catch(() => null)
             ]);
+
+            const newData = { solicitudes: resSolicitudes.data, orders: resOrders.data, stats: resStats };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
 
             if (resStats && typeof resStats.cajas_abiertas !== 'undefined') {
                 setCajaAbierta(resStats.cajas_abiertas > 0);
@@ -87,9 +106,25 @@ export default function SolicitudesScreen() {
 
             combined.sort((a, b) => b.fecha_orden - a.fecha_orden);
             setSolicitudes(combined);
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching solicitudes:', error);
-            showToast('Error', 'No se pudieron cargar las solicitudes.', 'error');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -102,7 +137,7 @@ export default function SolicitudesScreen() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchSolicitudes();
+        fetchSolicitudes(true);
     };
 
     const handleAprobar = async (id: number, tipo: string, itemInfo?: any) => {
@@ -141,41 +176,37 @@ export default function SolicitudesScreen() {
             return;
         }
 
-        Alert.alert(
-            'Aprobar',
-            `¿Deseas aprobar y procesar esta solicitud de servicio?`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Aprobar',
-                    style: 'default',
-                    onPress: async () => {
-                        try {
-                            const endpoint = tipo === 'solicitud'
-                                ? `/solicitudes-servicios/${id}/aprobar`
-                                : `/orders/${id}`;
+        setAlertConfig({
+            visible: true,
+            title: 'Aprobar',
+            message: `¿Deseas aprobar y procesar esta solicitud de ${tipo === 'solicitud' ? 'servicio' : 'pedido'}?`,
+            type: 'success',
+            onConfirm: async () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                try {
+                    const endpoint = tipo === 'solicitud'
+                        ? `/solicitudes-servicios/${id}/aprobar`
+                        : `/orders/${id}`;
 
-                            const method = tipo === 'solicitud' ? 'PATCH' : 'PUT';
-                            const body = tipo === 'solicitud' ? {} : { estado: 0 };
+                    const method = tipo === 'solicitud' ? 'PATCH' : 'PUT';
+                    const body = tipo === 'solicitud' ? {} : { estado: 0 };
 
-                            const res = await apiClient(endpoint, {
-                                method,
-                                body: JSON.stringify(body)
-                            });
+                    const res = await apiClient(endpoint, {
+                        method,
+                        body: JSON.stringify(body)
+                    });
 
-                            if (res.success) {
-                                showToast('Éxito', `${tipo === 'solicitud' ? 'Servicio' : 'Pedido'} procesado correctamente.`, 'success');
-                                fetchSolicitudes();
-                            } else {
-                                showToast('Error', res.message || 'No se pudo aprobar.', 'error');
-                            }
-                        } catch (err: any) {
-                            showToast('Error', err.message || 'Error del servidor', 'error');
-                        }
+                    if (res.success) {
+                        showToast('Éxito', `${tipo === 'solicitud' ? 'Servicio' : 'Pedido'} procesado correctamente.`, 'success');
+                        fetchSolicitudes();
+                    } else {
+                        showToast('Error', res.message || 'No se pudo aprobar.', 'error');
                     }
+                } catch (err: any) {
+                    showToast('Error', err.message || 'Error del servidor', 'error');
                 }
-            ]
-        );
+            }
+        });
     };
 
     const handleCheckoutSubmit = async () => {
@@ -258,43 +289,39 @@ export default function SolicitudesScreen() {
             return;
         }
 
-        Alert.alert(
-            'Rechazar',
-            `¿Seguro que deseas rechazar este ${tipo === 'solicitud' ? 'servicio' : 'pedido'}?`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Rechazar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const endpoint = tipo === 'solicitud'
-                                ? `/solicitudes-servicios/${id}/rechazar`
-                                : `/orders/${id}`;
+        setAlertConfig({
+            visible: true,
+            title: 'Rechazar',
+            message: `¿Seguro que deseas rechazar este ${tipo === 'solicitud' ? 'servicio' : 'pedido'}?`,
+            type: 'danger',
+            onConfirm: async () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                try {
+                    const endpoint = tipo === 'solicitud'
+                        ? `/solicitudes-servicios/${id}/rechazar`
+                        : `/orders/${id}`;
 
-                            const method = tipo === 'solicitud' ? 'PATCH' : 'PUT';
-                            const body = tipo === 'solicitud'
-                                ? { motivo_rechazo: 'Rechazado desde caja' }
-                                : { estado: 2 };
+                    const method = tipo === 'solicitud' ? 'PATCH' : 'PUT';
+                    const body = tipo === 'solicitud'
+                        ? { motivo_rechazo: 'Rechazado desde caja' }
+                        : { estado: 2 };
 
-                            const res = await apiClient(endpoint, {
-                                method,
-                                body: JSON.stringify(body)
-                            });
+                    const res = await apiClient(endpoint, {
+                        method,
+                        body: JSON.stringify(body)
+                    });
 
-                            if (res.success) {
-                                showToast('Rechazado', `${tipo === 'solicitud' ? 'Servicio' : 'Pedido'} ha sido rechazado.`, 'success')
-                                fetchSolicitudes();
-                            } else {
-                                showToast('Error', res.message || 'No se pudo rechazar.', 'error');
-                            }
-                        } catch (err: any) {
-                            showToast('Error', err.message || 'Error del servidor', 'error');
-                        }
+                    if (res.success) {
+                        showToast('Rechazado', `${tipo === 'solicitud' ? 'Servicio' : 'Pedido'} ha sido rechazado.`, 'success')
+                        fetchSolicitudes();
+                    } else {
+                        showToast('Error', res.message || 'No se pudo rechazar.', 'error');
                     }
+                } catch (err: any) {
+                    showToast('Error', err.message || 'Error del servidor', 'error');
                 }
-            ]
-        );
+            }
+        });
     };
 
     const renderItem = ({ item }: { item: any }) => {
@@ -524,76 +551,17 @@ export default function SolicitudesScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* Custom Premium Toast Modal */}
-            <Modal
-                transparent={true}
-                visible={toast.visible}
-                animationType="fade"
-                onRequestClose={() => setToast(prev => ({ ...prev, visible: false }))}
-            >
-                <View style={[styles.toastOverlay, { paddingTop: insets.top + 20 }]}>
-                    <View style={[
-                        styles.toastContent,
-                        {
-                            backgroundColor: toast.type === 'success'
-                                ? (isDark ? '#064E3B' : '#ECFDF5')
-                                : (isDark ? '#7F1D1D' : '#FEF2F2'),
-                            borderColor: toast.type === 'success'
-                                ? (isDark ? '#059669' : '#10B981')
-                                : (isDark ? '#DC2626' : '#EF4444'),
-                        }
-                    ]}>
-                        <View style={[
-                            styles.toastIconBox,
-                            {
-                                backgroundColor: toast.type === 'success'
-                                    ? (isDark ? '#059669' : '#10B981')
-                                    : (isDark ? '#DC2626' : '#EF4444'),
-                            }
-                        ]}>
-                            <Ionicons
-                                name={toast.type === 'success' ? 'checkmark-circle' : 'alert-circle'}
-                                size={24}
-                                color="#FFFFFF"
-                            />
-                        </View>
-                        <View style={styles.toastTextContainer}>
-                            <Text style={[
-                                styles.toastTitle,
-                                {
-                                    color: toast.type === 'success'
-                                        ? (isDark ? '#A7F3D0' : '#065F46')
-                                        : (isDark ? '#FECACA' : '#991B1B')
-                                }
-                            ]}>
-                                {toast.title}
-                            </Text>
-                            <Text style={[
-                                styles.toastMessage,
-                                {
-                                    color: toast.type === 'success'
-                                        ? (isDark ? '#D1FAE5' : '#047857')
-                                        : (isDark ? '#FEE2E2' : '#B91C1C')
-                                }
-                            ]}>
-                                {toast.message}
-                            </Text>
-                        </View>
-                        <Pressable
-                            onPress={() => setToast(prev => ({ ...prev, visible: false }))}
-                            style={styles.toastCloseBtn}
-                        >
-                            <Ionicons
-                                name="close"
-                                size={20}
-                                color={toast.type === 'success'
-                                    ? (isDark ? '#A7F3D0' : '#065F46')
-                                    : (isDark ? '#FECACA' : '#991B1B')}
-                            />
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={alertConfig.onConfirm}
+                onCancel={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                showCancel
+                confirmText="Confirmar"
+                cancelText="Cancelar"
+            />
         </View>
     );
 }

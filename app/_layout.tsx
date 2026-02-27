@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { NotificationProvider } from '../context/NotificationContext';
+import { TimerProvider } from '../context/TimerContext';
 import { useAuthStore } from '../store/authStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -31,8 +32,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <NotificationProvider>
-        <Slot />
-        <Toast />
+        <TimerProvider>
+          <Slot />
+          <Toast />
+        </TimerProvider>
       </NotificationProvider>
     </SafeAreaProvider>
   );

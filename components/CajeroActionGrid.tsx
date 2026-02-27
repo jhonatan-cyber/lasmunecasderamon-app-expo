@@ -27,11 +27,11 @@ export const CajeroActionGrid = () => {
 
             <View style={[styles.actionGrid, { marginTop: 12 }]}>
                 <GarzonActionCard
-                    title="PEDIDOS"
-                    description="Solicitudes del personal"
-                    icon="notifications"
+                    title="SERVICIOS"
+                    description="Gestión de privados"
+                    icon="bed"
                     color="#EF4444"
-                    onPress={() => router.push('/cajero/solicitudes')}
+                    onPress={() => router.push('/cajero/servicios')}
                 />
                 <GarzonActionCard
                     title="CAJA"
@@ -42,11 +42,18 @@ export const CajeroActionGrid = () => {
                 />
             </View>
 
-            <View style={{ marginTop: 12 }}>
+            <View style={[styles.actionGrid, { marginTop: 12 }]}>
                 <GarzonActionCard
-                    title="ADMINISTRATIVO"
-                    description="Liquidación y Calendario"
-                    icon="stats-chart"
+                    title="PEDIDOS"
+                    description="Solicitudes pendientes"
+                    icon="notifications"
+                    color="#F59E0B"
+                    onPress={() => router.push('/cajero/solicitudes')}
+                />
+                <GarzonActionCard
+                    title="PERSONAL"
+                    description="Liquidación y Asistencia"
+                    icon="people"
                     color="#6366F1"
                     onPress={() => router.push('/cajero/administrativo')}
                 />

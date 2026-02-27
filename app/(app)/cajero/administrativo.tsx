@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -14,6 +14,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { PremiumCalendar } from '../../../components/PremiumCalendar';
 import { PremiumLiquidationCard } from '../../../components/PremiumLiquidationCard';
@@ -38,6 +39,7 @@ export default function AdministrativoScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [recentActivity, setRecentActivity] = useState<Event[]>([]);
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
+    const dataRef = useRef<string>('');
     const [isModalVisible, setIsModalVisible] = useState(false);
 
     const bg = isDark ? '#000000' : '#F3F4F6';
@@ -46,14 +48,36 @@ export default function AdministrativoScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             const eventsRes = await apiClient('/events/user');
+
+            const serialized = JSON.stringify(eventsRes.data || []);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
             if (eventsRes.success) {
                 setRecentActivity(eventsRes.data || []);
             }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching administrative data:', error);
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar el resumen',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -66,7 +90,7 @@ export default function AdministrativoScreen() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     };
 
     const selectedEvents = useMemo(() => {
@@ -106,7 +130,7 @@ export default function AdministrativoScreen() {
                     <PremiumLiquidationCard
                         user={user}
                         events={recentActivity}
-                        title="Mis Ingresos y Comisiones"
+                        title="Mis Ingresos"
                         totalLabel="Total Acumulado"
                     />
                 </View>

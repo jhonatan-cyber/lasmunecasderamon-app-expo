@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -14,6 +14,7 @@ import {
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { CategoryCard } from '../../../components/CategoryCard';
 
@@ -36,6 +37,7 @@ export default function PedidosScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
+    const dataRef = useRef<string>('');
 
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
@@ -43,10 +45,15 @@ export default function PedidosScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
     const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
-    const fetchCategories = useCallback(async () => {
+    const fetchCategories = useCallback(async (isManual = false) => {
         try {
             setError('');
             const data = await apiClient('/categories');
+
+            const serialized = JSON.stringify(data.data || []);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
             if (data.success) {
                 const active = (data.data || [])
                     .filter((c: Category) => c.status === 1)
@@ -55,8 +62,26 @@ export default function PedidosScreen() {
             } else {
                 setError(data.message || 'Error al cargar categorías');
             }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (err: any) {
+            console.error('Error fetching categories:', err);
             setError(err.message || 'Error de conexión');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar el catálogo',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -67,7 +92,7 @@ export default function PedidosScreen() {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchCategories();
+        fetchCategories(true);
     }, [fetchCategories]);
 
     const renderItem = ({ item, index }: { item: Category, index: number }) => (
@@ -107,7 +132,7 @@ export default function PedidosScreen() {
                 <View style={[styles.errorCard, { backgroundColor: isDark ? '#451a1a' : '#FEF2F2' }]}>
                     <Ionicons name="alert-circle" size={24} color="#EF4444" />
                     <Text style={styles.errorText}>{error}</Text>
-                    <Pressable onPress={fetchCategories} style={styles.retryButton}>
+                    <Pressable onPress={() => fetchCategories()} style={styles.retryButton}>
                         <Text style={styles.retryText}>REINTENTAR</Text>
                     </Pressable>
                 </View>

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -14,7 +14,10 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { PremiumAlert } from '../../../components/PremiumAlert';
+import { calculateRemainingTime, useTimer } from '../../../context/TimerContext';
 
 // Utils for status colors and labels
 const statusColors: Record<number, string> = {
@@ -37,6 +40,8 @@ const payMethodIcons: Record<string, any> = {
     transferencia: 'swap-horizontal-outline',
 };
 
+import { Skeleton } from '../../../components/ui/Skeleton';
+
 export default function VentasScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
@@ -46,6 +51,7 @@ export default function VentasScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [ventas, setVentas] = useState<any[]>([]);
     const [resumen, setResumen] = useState<any>(null);
+    const dataRef = useRef<string>('');
 
     const [selectedVenta, setSelectedVenta] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
@@ -55,13 +61,27 @@ export default function VentasScreen() {
     const [actionSheetVisible, setActionSheetVisible] = useState(false);
     const [activeVenta, setActiveVenta] = useState<any>(null);
 
-    // Toast modal state
-    const [toast, setToast] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' }>({
-        visible: false, title: '', message: '', type: 'success'
-    });
+    const { timers, serverOffset, refreshTimers } = useTimer();
+    const params = useLocalSearchParams();
+    const [activeTab, setActiveTab] = useState<'historial' | 'proceso'>((params.tab as any) === 'proceso' ? 'proceso' : 'historial');
+    const [, setTick] = useState(0);
+
+    // Alert state
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'info' | 'success' | 'warning' | 'danger';
+        onConfirm?: () => void;
+    }>({ visible: false, title: '', message: '', type: 'info' });
 
     const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        setToast({ visible: true, title, message, type });
+        Toast.show({
+            type,
+            text1: title,
+            text2: message,
+            visibilityTime: 4000
+        });
     };
 
     const bg = isDark ? '#000000' : '#F3F4F6';
@@ -70,12 +90,45 @@ export default function VentasScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    const fetchVentas = useCallback(async () => {
+    const VentasSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <View style={[styles.header, { paddingTop: insets.top + 10, height: 160 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <Skeleton width={150} height={30} />
+                    <Skeleton width={44} height={44} borderRadius={22} />
+                </View>
+                <Skeleton width="60%" height={24} />
+            </View>
+            <View style={{ padding: 16 }}>
+                <Skeleton height={140} borderRadius={24} style={{ marginBottom: 20 }} />
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                    <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
+                    <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
+                </View>
+                {[1, 2, 3].map(i => (
+                    <View key={i} style={{ padding: 16, borderRadius: 20, marginBottom: 14, backgroundColor: cardBg, borderWidth: 1, borderColor }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <Skeleton width={100} height={20} />
+                            <Skeleton width={80} height={20} borderRadius={10} />
+                        </View>
+                        <Skeleton width="100%" height={60} borderRadius={12} />
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+
+    const fetchVentas = useCallback(async (isManual = false) => {
         try {
             const [resSales, resResumen] = await Promise.all([
                 apiClient('/sales?limit=50').catch(() => ({ success: false, data: [] })),
                 apiClient('/sales?tipo=resumen').catch(() => ({ success: false, data: null }))
             ]);
+
+            const newData = { sales: resSales.data, resumen: resResumen.data };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
 
             if (resSales.success) {
                 setVentas(resSales.data || []);
@@ -83,9 +136,26 @@ export default function VentasScreen() {
             if (resResumen.success) {
                 setResumen(resResumen.data);
             }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
+
         } catch (error) {
             console.error('Error fetching ventas:', error);
-            showToast('Error', 'No se pudieron cargar las ventas.');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -96,9 +166,17 @@ export default function VentasScreen() {
         fetchVentas();
     }, [fetchVentas]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick(t => t + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     const onRefresh = () => {
         setRefreshing(true);
-        fetchVentas();
+        fetchVentas(true);
+        refreshTimers();
     };
 
     const handleOpenActionSheet = (venta: any) => {
@@ -126,6 +204,34 @@ export default function VentasScreen() {
         }
     };
 
+    const handleFinalizarVenta = async (venta: any) => {
+        setAlertConfig({
+            visible: true,
+            title: 'Finalizar Venta',
+            message: '¿Estás seguro de que deseas finalizar esta venta? Esto liberará la habitación y detendrá el temporizador.',
+            type: 'danger',
+            onConfirm: async () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                try {
+                    const res = await apiClient(`/ventas/${venta.id_venta}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ estado: 1 }) // 1 = Completado/Finalizado
+                    });
+
+                    if (res.success || (res && !res.error)) {
+                        showToast('Éxito', 'La venta ha sido finalizada y el temporizador detenido.', 'success');
+                        fetchVentas();
+                        refreshTimers();
+                    } else {
+                        showToast('Error', res.message || res.error || 'No se pudo finalizar la venta');
+                    }
+                } catch (error) {
+                    showToast('Error', 'Error al procesar la finalización de la venta');
+                }
+            }
+        });
+    };
+
     const handleAnularVenta = async () => {
         if (!activeVenta) return;
         setActionSheetVisible(false);
@@ -150,6 +256,19 @@ export default function VentasScreen() {
     const renderVentaCard = ({ item }: { item: any }) => {
         const productCount = item.detalles ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0) : 0;
         const statusColor = statusColors[item.estado] || '#6B7280';
+
+        // Check if this sale has an active timer (matching room or service ID)
+        const activeTimer = timers.find(t =>
+            (t.servicioId && t.servicioId === item.id_venta) ||
+            (t.roomId && t.roomId === item.habitacion_id && item.estado === 2)
+        );
+
+        const remaining = activeTimer ? calculateRemainingTime(activeTimer, serverOffset) : 0;
+        const formatTime = (secs: number) => {
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        };
 
         return (
             <Pressable
@@ -213,10 +332,35 @@ export default function VentasScreen() {
                                 </Text>
                             </View>
                         </View>
+
+                        {activeTimer && (
+                            <View style={[styles.timerPill, { backgroundColor: remaining < 60 ? '#EF444420' : '#8B5CF620', borderColor: remaining < 60 ? '#EF444440' : '#8B5CF640' }]}>
+                                <Ionicons name="time" size={16} color={remaining < 60 ? '#EF4444' : '#8B5CF6'} />
+                                <View>
+                                    <Text style={[styles.timerLabel, { color: textSecondary }]}>RESTANTE</Text>
+                                    <Text style={[styles.timerValue, { color: remaining < 60 ? '#EF4444' : textPrimary }]}>
+                                        {formatTime(remaining)}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
                     </View>
 
                     {/* Right Info Section */}
                     <View style={styles.cardRightContent}>
+                        {item.estado === 2 && (
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.finishBtn,
+                                    pressed && { opacity: 0.7 }
+                                ]}
+                                onPress={() => handleFinalizarVenta(item)}
+                            >
+                                <Ionicons name="stop-circle" size={16} color="#FFF" />
+                                <Text style={styles.finishBtnText}>Finalizar</Text>
+                            </Pressable>
+                        )}
+
                         <View style={styles.methodBadgeContainer}>
                             <Ionicons name={payMethodIcons[item.metodo_pago] || 'wallet-outline'} size={14} color={textSecondary} />
                             <Text style={[styles.methodText, { color: textSecondary }]}>
@@ -252,43 +396,75 @@ export default function VentasScreen() {
         <View style={[styles.container, { backgroundColor: bg }]}>
             {/* Header */}
             <View style={[styles.header, { backgroundColor: isDark ? '#111827' : '#FFFFFF', paddingTop: insets.top + 10, paddingBottom: 15 }]}>
-                <View style={styles.headerContent}>
-                    <View>
-                        <Text style={[styles.headerTitle, { color: textPrimary }]}>Ventas</Text>
-                        <Text style={[styles.headerSubtitle, { color: textSecondary }]}>Historial de transacciones</Text>
+                <View style={styles.headerTop}>
+                    <Pressable onPress={() => router.replace('/cajero/(tabs)' as any)} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={24} color={textPrimary} />
+                    </Pressable>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10 }}>
+                        <View>
+                            <Text style={[styles.headerTitle, { color: textPrimary }]}>Ventas</Text>
+                            <Text style={[styles.headerSubtitle, { color: textSecondary }]}>Historial de transacciones</Text>
+                        </View>
+                        <View style={styles.headerActions}>
+                            <Pressable
+                                onPress={() => router.push(activeTab === 'historial' ? '/cajero/nueva-venta' : '/cajero/nuevo-servicio')}
+                                style={styles.plusBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel={activeTab === 'historial' ? 'Nueva Venta' : 'Nuevo Servicio'}
+                            >
+                                <Ionicons name="add" size={20} color="#FFFFFF" />
+                                <Text style={styles.plusBtnText}>Nuevo</Text>
+                            </Pressable>
+                        </View>
                     </View>
-
-                    <View style={styles.headerActions}>
-
-                        <Pressable onPress={() => router.push('/cajero/nueva-venta')} style={styles.plusBtn}>
-                            <Ionicons name="add" size={20} color="#FFFFFF" />
-                            <Text style={styles.plusBtnText}>Nuevo</Text>
-                        </Pressable>
-                    </View>
+                </View>
+                <View style={[styles.tabContainer, { borderColor }]}>
+                    <Pressable
+                        style={[styles.tab, activeTab === 'historial' && { backgroundColor: '#8B5CF6' }]}
+                        onPress={() => setActiveTab('historial')}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'historial' ? { color: '#FFF' } : { color: textSecondary }]}>
+                            Listado de Ventas
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        style={[styles.tab, activeTab === 'proceso' && { backgroundColor: '#8B5CF6' }]}
+                        onPress={() => setActiveTab('proceso')}
+                    >
+                        <View style={styles.tabWithBadge}>
+                            <Text style={[styles.tabText, activeTab === 'proceso' ? { color: '#FFF' } : { color: textSecondary }]}>
+                                Ventas con Habitación
+                            </Text>
+                            {timers.filter(t => t.tipoTransaccion === 'venta').length > 0 && (
+                                <View style={styles.tabBadge}>
+                                    <Text style={styles.tabBadgeText}>
+                                        {timers.filter(t => t.tipoTransaccion === 'venta').length}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    </Pressable>
                 </View>
             </View>
+            {/* Main Content */}
+            <FlatList
+                data={activeTab === 'historial'
+                    ? ventas
+                    : ventas.filter(v => v.estado === 2 || timers.some(t => t.tipoTransaccion === 'venta' && (t.servicioId === v.id_venta || (t.roomId === v.habitacion_id && v.estado === 2))))}
+                renderItem={renderVentaCard}
+                keyExtractor={item => item.id_venta.toString()}
+                contentContainerStyle={styles.listContainer}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                ListHeaderComponent={null}
+                ListEmptyComponent={
+                    <View style={[styles.emptyCard, { borderColor }]}>
+                        <Ionicons name="receipt-outline" size={64} color={textSecondary} />
+                        <Text style={[styles.emptyText, { color: textPrimary }]}>No hay ventas registradas</Text>
+                        <Text style={[styles.emptySub, { color: textSecondary }]}>Las ventas aparecerán conforme se procesen los pagos.</Text>
+                    </View>
+                }
+            />
 
-            {loading ? (
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#8B5CF6" />
-                </View>
-            ) : (
-                <FlatList
-                    data={ventas}
-                    renderItem={renderVentaCard}
-                    keyExtractor={item => item.id_venta.toString()}
-                    contentContainerStyle={styles.listContainer}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
-                    ListHeaderComponent={null}
-                    ListEmptyComponent={
-                        <View style={[styles.emptyCard, { borderColor }]}>
-                            <Ionicons name="receipt-outline" size={64} color={textSecondary} />
-                            <Text style={[styles.emptyText, { color: textPrimary }]}>No hay ventas registradas</Text>
-                            <Text style={[styles.emptySub, { color: textSecondary }]}>Las ventas aparecerán conforme se procesen los pagos.</Text>
-                        </View>
-                    }
-                />
-            )}
 
             {/* Detail Modal */}
             <Modal
@@ -342,7 +518,7 @@ export default function VentasScreen() {
                                         <View style={styles.gridItem}>
                                             <Text style={[styles.gridLabel, { color: textSecondary }]}>GARZÓN</Text>
                                             <Text style={[styles.gridValue, { color: textPrimary }]}>
-                                                {selectedVenta.garzon_nombre || 'sebastian flores'}
+                                                {selectedVenta.garzon_nombre || 'Cajero'}
                                             </Text>
                                         </View>
                                     </View>
@@ -463,34 +639,18 @@ export default function VentasScreen() {
                 </Pressable>
             </Modal>
 
-            {/* Custom Toast Modal */}
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={toast.visible}
-                onRequestClose={() => setToast(prev => ({ ...prev, visible: false }))}
-            >
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-                    <View style={[styles.toastCard, { backgroundColor: cardBg, borderColor }]}>
-                        <View style={[styles.toastIconBox, { backgroundColor: toast.type === 'success' ? '#10B98120' : '#EF444420' }]}>
-                            <Ionicons
-                                name={toast.type === 'success' ? 'checkmark-circle-outline' : 'warning-outline'}
-                                size={48}
-                                color={toast.type === 'success' ? '#10B981' : '#EF4444'}
-                            />
-                        </View>
-                        <Text style={[styles.toastTitle, { color: textPrimary }]}>{toast.title}</Text>
-                        <Text style={[styles.toastMessage, { color: textSecondary }]}>{toast.message}</Text>
-                        <Pressable
-                            style={[styles.toastBtn, { backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444' }]}
-                            onPress={() => setToast(prev => ({ ...prev, visible: false }))}
-                        >
-                            <Text style={styles.toastBtnText}>Entendido</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
-        </View>
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={alertConfig.onConfirm}
+                onCancel={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                showCancel
+                confirmText="Finalizar"
+                cancelText="Cancelar"
+            />
+        </View >
     );
 }
 
@@ -506,7 +666,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        marginBottom: 10,
     },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
@@ -659,4 +818,77 @@ const styles = StyleSheet.create({
     actionText: { fontSize: 16, fontWeight: '700' },
     actionCancelBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     actionCancelText: { fontSize: 16, fontWeight: '800' },
+
+    // Tab Styles
+    tabContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(155,155,155,0.05)',
+        borderRadius: 16,
+        padding: 4,
+        marginTop: 15,
+        borderWidth: 1,
+    },
+    tab: {
+        flex: 1,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tabText: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    tabWithBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    tabBadge: {
+        backgroundColor: '#EF4444',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    tabBadgeText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '900',
+    },
+
+    // Timer Pill inside Card
+    timerPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: 8,
+        borderRadius: 14,
+        marginTop: 10,
+        borderWidth: 1,
+    },
+    timerLabel: {
+        fontSize: 8,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    timerValue: {
+        fontSize: 16,
+        fontWeight: '900',
+        fontFamily: 'monospace',
+    },
+    finishBtn: {
+        backgroundColor: '#EF4444',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        marginBottom: 8,
+    },
+    finishBtnText: {
+        color: '#FFF',
+        fontSize: 11,
+        fontWeight: '900',
+    },
 });

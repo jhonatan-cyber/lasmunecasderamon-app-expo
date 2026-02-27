@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -8,25 +8,32 @@ import {
     Modal,
     Platform,
     Pressable,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     useColorScheme,
-    View
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
+import { HostessSelectModal } from '../../../components/cajero/forms/HostessSelectModal';
+import { PaymentMethod, PaymentMethodSelect } from '../../../components/cajero/forms/PaymentMethodSelect';
+import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
 import { useAuthStore } from '../../../store/authStore';
 
 export default function NuevaVentaScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const user = useAuthStore(state => state.user);
+    const user = useAuthStore((state) => state.user);
 
     // Initial Data
     const [loadingInitial, setLoadingInitial] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
     const [habitaciones, setHabitaciones] = useState<any[]>([]);
     const [clientes, setClientes] = useState<any[]>([]);
@@ -36,7 +43,7 @@ export default function NuevaVentaScreen() {
     const [cart, setCart] = useState<any[]>([]);
     const [selectedCliente, setSelectedCliente] = useState<any>(null);
     const [selectedHabitacion, setSelectedHabitacion] = useState<any>(null);
-    const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+    const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
     const [enableTip, setEnableTip] = useState(false);
 
     // config & totals state
@@ -55,7 +62,7 @@ export default function NuevaVentaScreen() {
     const [modalHostessSelections, setModalHostessSelections] = useState<{ [key: number]: number[] }>({});
 
     // For Hostess selection sub-modal
-    const [hostessSelectionTarget, setHostessSelectionTarget] = useState<{ productId: number, isChampagne: boolean, max: number } | null>(null);
+    const [hostessSelectionTarget, setHostessSelectionTarget] = useState<{ productId: number; isChampagne: boolean; max: number } | null>(null);
     const [hostessSubModalVisible, setHostessSubModalVisible] = useState(false);
     const [hostessModalVisible, setHostessModalVisible] = useState(false);
     const [roomModalVisible, setRoomModalVisible] = useState(false);
@@ -63,9 +70,14 @@ export default function NuevaVentaScreen() {
     const [activeCartIdx, setActiveCartIdx] = useState<number | null>(null);
 
     // Toast
-    const [toast, setToast] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' }>({
-        visible: false, title: '', message: '', type: 'success'
-    });
+    const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
+        Toast.show({
+            type,
+            text1: title,
+            text2: message,
+            visibilityTime: 4000,
+        });
+    };
 
     const [submitting, setSubmitting] = useState(false);
 
@@ -75,49 +87,51 @@ export default function NuevaVentaScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        setToast({ visible: true, title, message, type });
-        setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
-    };
-
     // Load Initial Data
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
-                    apiClient('/cashregister/status'),
-                    apiClient('/users?anfitrionas=1'),
-                    apiClient('/rooms'),
-                    apiClient('/clients'),
-                    apiClient('/categories')
-                ]);
+    const fetchInitialData = useCallback(async (isRefreshing = false) => {
+        if (!isRefreshing) setLoadingInitial(true);
+        try {
+            const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
+                apiClient('/cashregister/status'),
+                apiClient('/users?anfitrionas=1'),
+                apiClient('/rooms'),
+                apiClient('/clients'),
+                apiClient('/categories'),
+            ]);
 
-                setCajaAbierta(cajaRes.success && cajaRes.data.hasOpenCaja);
-                if (anfitrionasRes.success) setAnfitrionas(anfitrionasRes.data);
-                if (roomsRes.success) setHabitaciones(roomsRes.data);
-                if (Array.isArray(clientsRes)) {
-                    setClientes(clientsRes);
-                } else if (clientsRes && clientsRes.success) {
-                    setClientes(clientsRes.data || []);
-                }
-
-                if (categoriesRes.success) {
-                    setCategories(categoriesRes.data || []);
-                }
-
-                if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
-                    showToast('Caja Cerrada', 'Debes abrir una caja antes de realizar ventas.', 'error');
-                }
-            } catch (error) {
-                console.error('Error fetching initial data:', error);
-                showToast('Error', 'No se pudo cargar la información necesaria.');
-            } finally {
-                setLoadingInitial(false);
+            setCajaAbierta(cajaRes.success && cajaRes.data.hasOpenCaja);
+            if (anfitrionasRes.success) setAnfitrionas(anfitrionasRes.data);
+            if (roomsRes.success) setHabitaciones(roomsRes.data);
+            if (Array.isArray(clientsRes)) {
+                setClientes(clientsRes);
+            } else if (clientsRes && clientsRes.success) {
+                setClientes(clientsRes.data || []);
             }
-        };
 
-        fetchInitialData();
+            if (categoriesRes.success) {
+                setCategories(categoriesRes.data || []);
+            }
+
+            if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
+                showToast('Caja Cerrada', 'Debes abrir una caja antes de realizar ventas.', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching initial data:', error);
+            showToast('Error', 'No se pudo cargar la información necesaria.');
+        } finally {
+            setLoadingInitial(false);
+            setRefreshing(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchInitialData();
+    }, [fetchInitialData]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchInitialData(true);
+    };
 
     const isChampagneProduct = (producto: any) => {
         const cat = (producto.categoria || '').toLowerCase();
@@ -161,9 +175,8 @@ export default function NuevaVentaScreen() {
         }
     };
 
-
     const updateModalQty = (id: number, delta: number) => {
-        setModalQuantities(prev => {
+        setModalQuantities((prev) => {
             const curr = prev[id] || 1;
             const next = Math.max(1, curr + delta);
             return { ...prev, [id]: next };
@@ -174,10 +187,10 @@ export default function NuevaVentaScreen() {
         if (!hostessSelectionTarget) return;
         const { productId, max } = hostessSelectionTarget;
 
-        setModalHostessSelections(prev => {
+        setModalHostessSelections((prev) => {
             const current = prev[productId] || [];
             if (current.includes(hostessId)) {
-                return { ...prev, [productId]: current.filter(id => id !== hostessId) };
+                return { ...prev, [productId]: current.filter((id) => id !== hostessId) };
             } else {
                 if (current.length < max) {
                     return { ...prev, [productId]: [...current, hostessId] };
@@ -211,14 +224,14 @@ export default function NuevaVentaScreen() {
             cantidad: qty,
             subtotal: price * qty,
             selectedHostesses: selectedHostesses,
-            isChampagne: isChampagneProduct(prod)
+            isChampagne: isChampagneProduct(prod),
         };
 
-        setCart(prev => [...prev, item]);
+        setCart((prev) => [...prev, item]);
 
         // Reset selections for this product in modal
-        setModalQuantities(prev => ({ ...prev, [id]: 1 }));
-        setModalHostessSelections(prev => ({ ...prev, [id]: [] }));
+        setModalQuantities((prev) => ({ ...prev, [id]: 1 }));
+        setModalHostessSelections((prev) => ({ ...prev, [id]: [] }));
 
         showToast('Agregado', `${item.nombre} sumado al carrito`, 'success');
 
@@ -228,51 +241,54 @@ export default function NuevaVentaScreen() {
         }
     };
 
-
     const removeFromCart = (index: number) => {
-        setCart(prev => prev.filter((_, i) => i !== index));
+        setCart((prev) => prev.filter((_, i) => i !== index));
     };
 
     const updateQuantity = (index: number, delta: number) => {
-        setCart(prev => prev.map((item, i) => {
-            if (i === index) {
-                const newQty = Math.max(1, item.cantidad + delta);
-                return { ...item, cantidad: newQty };
-            }
-            return item;
-        }));
+        setCart((prev) =>
+            prev.map((item, i) => {
+                if (i === index) {
+                    const newQty = Math.max(1, item.cantidad + delta);
+                    return { ...item, cantidad: newQty };
+                }
+                return item;
+            })
+        );
     };
 
     const toggleHostess = (hostessId: number) => {
         if (activeCartIdx === null) return;
 
-        setCart(prev => prev.map((item, i) => {
-            if (i === activeCartIdx) {
-                const exists = item.selectedHostesses.includes(hostessId);
-                let newSelections = [];
+        setCart((prev) =>
+            prev.map((item, i) => {
+                if (i === activeCartIdx) {
+                    const exists = item.selectedHostesses.includes(hostessId);
+                    let newSelections = [];
 
-                if (exists) {
-                    newSelections = item.selectedHostesses.filter((id: number) => id !== hostessId);
-                } else {
-                    const max = getHostessLimit(item, item.cantidad);
-                    if (item.selectedHostesses.length < max) {
-                        newSelections = [...item.selectedHostesses, hostessId];
+                    if (exists) {
+                        newSelections = item.selectedHostesses.filter((id: number) => id !== hostessId);
                     } else {
-                        showToast('Límite', `Máximo ${max} anfitrionas`);
-                        return item;
+                        const max = getHostessLimit(item, item.cantidad);
+                        if (item.selectedHostesses.length < max) {
+                            newSelections = [...item.selectedHostesses, hostessId];
+                        } else {
+                            showToast('Límite', `Máximo ${max} anfitrionas`);
+                            return item;
+                        }
                     }
+                    return { ...item, selectedHostesses: newSelections };
                 }
-                return { ...item, selectedHostesses: newSelections };
-            }
-            return item;
-        }));
+                return item;
+            })
+        );
     };
 
-    const subtotal = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
+    const subtotal = cart.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
     const propina = enableTip ? Math.round(subtotal * 0.1) : 0;
     const total = subtotal + propina;
 
-    const showPrivateSelectors = cart.some(item => item.precio >= 30000);
+    const showPrivateSelectors = cart.some((item) => item.precio >= 30000);
 
     const handleSubmit = async () => {
         if (!cajaAbierta) {
@@ -295,33 +311,33 @@ export default function NuevaVentaScreen() {
         setSubmitting(true);
         try {
             // Aggregate all unique hostess IDs
-            const allHostesses = Array.from(new Set(cart.flatMap(item => item.selectedHostesses)));
-            const totalComision = cart.reduce((acc, item) => acc + (item.comision * item.cantidad), 0);
+            const allHostesses = Array.from(new Set(cart.flatMap((item) => item.selectedHostesses)));
+            const totalComision = cart.reduce((acc, item) => acc + item.comision * item.cantidad, 0);
 
             const ventaData = {
-                cliente_id: selectedCliente?.id_cliente || null,
+                cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
                 habitacion_id: selectedHabitacion?.id_habitacion || null,
                 metodo_pago: metodoPago,
                 propina: propina,
                 sub_total: subtotal,
                 total: total,
                 total_comision: totalComision,
-                detalles: cart.map(item => ({
+                detalles: cart.map((item) => ({
                     producto_id: item.id_producto,
                     precio: item.precio,
                     comision: item.comision * item.cantidad,
                     cantidad: item.cantidad,
                     sub_total: item.precio * item.cantidad,
                     hostesses: item.selectedHostesses,
-                    hostess_id: item.selectedHostesses.length > 0 ? item.selectedHostesses[0] : null
+                    hostess_id: item.selectedHostesses.length > 0 ? item.selectedHostesses[0] : null,
                 })),
                 usuarios: allHostesses,
-                tiempo: selectedHabitacion ? selectedTime : null
+                tiempo: selectedHabitacion ? selectedTime : null,
             };
 
             const res = await apiClient('/sales', {
                 method: 'POST',
-                body: JSON.stringify(ventaData)
+                body: JSON.stringify(ventaData),
             });
 
             if (res.success) {
@@ -329,12 +345,12 @@ export default function NuevaVentaScreen() {
                 if (propina > 0 && res.data?.id_venta) {
                     await apiClient('/tips', {
                         method: 'POST',
-                        body: JSON.stringify({ venta_id: res.data.id_venta, monto: propina })
-                    }).catch(e => console.error('Tip reg error:', e));
+                        body: JSON.stringify({ venta_id: res.data.id_venta, monto: propina }),
+                    }).catch((e) => console.error('Tip reg error:', e));
                 }
 
                 showToast('Éxito', 'Venta realizada correctamente', 'success');
-                setTimeout(() => router.push('/cajero/ventas'), 1500);
+                setTimeout(() => router.replace('/cajero/ventas'), 1500);
             } else {
                 showToast('Error', res.message || 'No se pudo crear la venta');
             }
@@ -359,7 +375,20 @@ export default function NuevaVentaScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: bg }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <View style={[styles.header, { backgroundColor: cardBg, paddingTop: insets.top + 10, paddingBottom: 15 }]}>
+                <View style={styles.headerTop}>
+                    <Pressable onPress={() => router.replace('/cajero/ventas')} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={24} color={textPrimary} />
+                    </Pressable>
+                    <Text style={[styles.headerTitle, { color: textPrimary, marginLeft: 10 }]}>Nueva Venta</Text>
+                </View>
+            </View>
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+            >
                 {/* 1. Selection Section */}
                 <View style={[styles.browserContainer]}>
                     <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Categoría</Text>
@@ -489,31 +518,10 @@ export default function NuevaVentaScreen() {
                     </Pressable>
 
                     {/* Método Pago */}
-                    <View style={{ marginTop: 20 }}>
-                        <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
-                        <View style={styles.payMethodsRow}>
-                            {(['efectivo', 'tarjeta', 'transferencia'] as const).map(method => (
-                                <Pressable
-                                    key={method}
-                                    style={[
-                                        styles.payMethodCard,
-                                        { borderColor, backgroundColor: metodoPago === method ? '#8B5CF620' : 'transparent' },
-                                        metodoPago === method && { borderColor: '#8B5CF6' }
-                                    ]}
-                                    onPress={() => setMetodoPago(method)}
-                                >
-                                    <Ionicons
-                                        name={method === 'efectivo' ? 'cash' : method === 'tarjeta' ? 'card' : 'swap-horizontal'}
-                                        size={24}
-                                        color={metodoPago === method ? '#8B5CF6' : textSecondary}
-                                    />
-                                    <Text style={[styles.payMethodText, { color: metodoPago === method ? '#8B5CF6' : textSecondary }]}>
-                                        {method.charAt(0).toUpperCase() + method.slice(1)}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
+                    <PaymentMethodSelect
+                        selectedMethod={metodoPago}
+                        onSelect={setMetodoPago}
+                    />
 
                     {/* Tip Toggle */}
                     <Pressable
@@ -555,15 +563,14 @@ export default function NuevaVentaScreen() {
                             <ActivityIndicator size="small" color="#FFF" />
                         ) : (
                             <>
-                                <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 8 }} />
-                                <Text style={styles.submitBtnText}>Confirmar y Guardar Venta</Text>
+                                <Text style={styles.submitBtnText}>Generar Venta</Text>
                             </>
                         )}
                     </Pressable>
                 </View>
             </ScrollView>
 
-            {/* Product Selection Modal (SaleProductModal Style) */}
+            {/* Product Selection Modal */}
             <Modal visible={modalOpen} animationType="slide" transparent>
                 <View style={[styles.modalOverlay, { justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }]}>
                     <View style={[styles.modalContentWide, { backgroundColor: cardBg, maxHeight: '90%' }]}>
@@ -603,12 +610,12 @@ export default function NuevaVentaScreen() {
                                             <View style={styles.modalProductTop}>
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={[styles.modalProductName, { color: textPrimary }]}>{item.nombre || item.name}</Text>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                                    <View style={{ marginTop: 4 }}>
                                                         <Text style={[styles.modalProductPrice, { color: '#10B981' }]}>
                                                             ${(item.precio ?? item.price ?? 0).toLocaleString()}
                                                         </Text>
                                                         {hasComm && (
-                                                            <View style={styles.commBadge}>
+                                                            <View style={[styles.commBadge, { alignSelf: 'flex-start', marginTop: 4 }]}>
                                                                 <Text style={styles.commBadgeText}>COMISIÓN: ${(item.comision || item.commission || 0).toLocaleString()}</Text>
                                                             </View>
                                                         )}
@@ -649,23 +656,21 @@ export default function NuevaVentaScreen() {
                                                             {
                                                                 borderColor: selected.length > 0 ? '#8B5CF6' : borderColor,
                                                                 backgroundColor: selected.length > 0 ? '#8B5CF610' : 'transparent',
-                                                                flex: 1
-                                                            }
+                                                                flex: 1,
+                                                            },
                                                         ]}
                                                         onPress={() => {
                                                             setHostessSelectionTarget({
                                                                 productId: id,
                                                                 isChampagne: isChamp,
-                                                                max: getHostessLimit(item, qty)
+                                                                max: getHostessLimit(item, qty),
                                                             });
                                                             setHostessSubModalVisible(true);
                                                         }}
                                                     >
                                                         <Ionicons name="people-outline" size={18} color={selected.length > 0 ? '#8B5CF6' : textSecondary} />
                                                         <Text style={[styles.modalHostessText, { color: selected.length > 0 ? '#8B5CF6' : textSecondary }]}>
-                                                            {selected.length > 0
-                                                                ? `${selected.length} seleccionada(s)`
-                                                                : `Asignar anfitriona`}
+                                                            {selected.length > 0 ? `${selected.length} seleccionada(s)` : `Asignar anfitriona`}
                                                         </Text>
                                                     </Pressable>
                                                 </View>
@@ -682,100 +687,37 @@ export default function NuevaVentaScreen() {
                 </View>
             </Modal>
 
-            <Modal visible={hostessSubModalVisible} animationType="fade" transparent>
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg, height: '70%', borderTopLeftRadius: 32, borderTopRightRadius: 32 }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Asignar Anfitrionas</Text>
-                            <Pressable onPress={() => setHostessSubModalVisible(false)}><Ionicons name="close" size={24} color={textPrimary} /></Pressable>
-                        </View>
-                        <FlatList
-                            data={anfitrionas}
-                            keyExtractor={item => (item.id || item.id_usuario).toString()}
-                            renderItem={({ item }) => {
-                                const hostessId = item.id || item.id_usuario;
-                                const isSelected = modalHostessSelections[hostessSelectionTarget?.productId || 0]?.includes(hostessId);
-                                return (
-                                    <TouchableOpacity
-                                        style={[styles.listItem, { borderBottomColor: borderColor }]}
-                                        onPress={() => toggleHostessInModal(hostessId)}
-                                    >
-                                        <View style={[styles.avatar, { backgroundColor: isDark ? '#4B5563' : '#8B5CF6' }]}>
-                                            <Text style={styles.avatarText}>{(item.nick || 'A')[0].toUpperCase()}</Text>
-                                        </View>
-                                        <Text style={[styles.listItemTitle, { color: textPrimary, marginLeft: 16, flex: 1 }]}>{item.nick}</Text>
-                                        <View style={[styles.radio, { borderColor: isSelected ? '#8B5CF6' : borderColor, backgroundColor: isSelected ? '#8B5CF6' : 'transparent' }]}>
-                                            {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            }}
-                        />
-                        <Pressable style={[styles.modalActionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => setHostessSubModalVisible(false)}>
-                            <Text style={styles.modalActionBtnText}>Confirmar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            {/* Sub-modals using reusable components */}
+            <HostessSelectModal
+                visible={hostessSubModalVisible}
+                hostesses={anfitrionas}
+                selectedIds={modalHostessSelections[hostessSelectionTarget?.productId || 0] || []}
+                max={hostessSelectionTarget?.max}
+                onClose={() => setHostessSubModalVisible(false)}
+                onToggle={toggleHostessInModal}
+                title="Asignar Anfitrionas"
+            />
 
-            <Modal visible={hostessModalVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Modificar Anfitrionas</Text>
-                            <Pressable onPress={() => setHostessModalVisible(false)}><Ionicons name="close" size={24} color={textPrimary} /></Pressable>
-                        </View>
-                        <FlatList
-                            data={anfitrionas}
-                            keyExtractor={item => (item.id || item.id_usuario).toString()}
-                            renderItem={({ item }) => {
-                                const hostessId = item.id || item.id_usuario;
-                                const isSelected = activeCartIdx !== null && cart[activeCartIdx].selectedHostesses.includes(hostessId);
-                                return (
-                                    <TouchableOpacity style={[styles.listItem, { borderBottomColor: borderColor }]} onPress={() => toggleHostess(hostessId)}>
-                                        <View style={[styles.avatar, { backgroundColor: isDark ? '#4B5563' : '#8B5CF6' }]}>
-                                            <Text style={styles.avatarText}>{(item.nick || 'A')[0].toUpperCase()}</Text>
-                                        </View>
-                                        <Text style={[styles.listItemTitle, { color: textPrimary, marginLeft: 16, flex: 1 }]}>{item.nick}</Text>
-                                        <View style={[styles.radio, { borderColor: isSelected ? '#8B5CF6' : borderColor, backgroundColor: isSelected ? '#8B5CF6' : 'transparent' }]}>
-                                            {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            }}
-                        />
-                        <Pressable style={styles.modalActionBtn} onPress={() => setHostessModalVisible(false)}><Text style={styles.modalActionBtnText}>Listo</Text></Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <HostessSelectModal
+                visible={hostessModalVisible}
+                hostesses={anfitrionas}
+                selectedIds={activeCartIdx !== null ? cart[activeCartIdx].selectedHostesses : []}
+                max={activeCartIdx !== null ? getHostessLimit(cart[activeCartIdx], cart[activeCartIdx].cantidad) : undefined}
+                onClose={() => setHostessModalVisible(false)}
+                onToggle={toggleHostess}
+                title="Modificar Anfitrionas"
+            />
 
-
-            <Modal visible={roomModalVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Habitación</Text>
-                            <Pressable onPress={() => setRoomModalVisible(false)}><Ionicons name="close" size={24} color={textPrimary} /></Pressable>
-                        </View>
-                        <FlatList
-                            data={habitaciones}
-                            keyExtractor={item => (item.id || item.id_habitacion || Math.random()).toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity style={[styles.listItem, { borderBottomColor: borderColor }]} onPress={() => { setSelectedHabitacion(item); setRoomModalVisible(false); }}>
-                                    <Ionicons name="business" size={24} color={item.estado === 1 ? '#10B981' : '#EF4444'} />
-                                    <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <Text style={[styles.listItemTitle, { color: textPrimary }]}>{item.nombre}</Text>
-                                        <Text style={{ fontSize: 12, color: item.estado === 1 ? '#10B981' : '#EF4444' }}>{item.estado === 1 ? 'Disponible' : 'Ocupada'}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
-                        <Pressable style={[styles.modalActionBtn, { backgroundColor: '#6B7280' }]} onPress={() => { setSelectedHabitacion(null); setRoomModalVisible(false); }}>
-                            <Text style={styles.modalActionBtnText}>Quitar Habitación</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <RoomSelectModal
+                visible={roomModalVisible}
+                rooms={habitaciones}
+                selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
+                onClose={() => setRoomModalVisible(false)}
+                onSelect={(room) => {
+                    setSelectedHabitacion(room);
+                    setRoomModalVisible(false);
+                }}
+            />
 
             <Modal visible={timeModalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
@@ -801,52 +743,39 @@ export default function NuevaVentaScreen() {
                 </View>
             </Modal>
 
-            <Modal visible={clientModalVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Cliente</Text>
-                            <Pressable onPress={() => setClientModalVisible(false)}><Ionicons name="close" size={24} color={textPrimary} /></Pressable>
-                        </View>
-                        <FlatList
-                            data={clientes}
-                            keyExtractor={item => (item.id_cliente || item.id || Math.random()).toString()}
-                            renderItem={({ item }) => {
-                                const clientId = item.id_cliente || item.id;
-                                const name = item.nombre || item.name || 'Cliente';
-                                const lastName = item.apellido || item.last_name || '';
-                                return (
-                                    <TouchableOpacity
-                                        style={[styles.listItem, { borderBottomColor: borderColor }]}
-                                        onPress={() => { setSelectedCliente(item); setClientModalVisible(false); }}
-                                    >
-                                        <View style={styles.avatarSimple}><Text style={{ color: '#FFF' }}>{name[0]}</Text></View>
-                                        <Text style={[styles.listItemTitle, { color: textPrimary, marginLeft: 12 }]}>{name} {lastName}</Text>
-                                    </TouchableOpacity>
-                                );
-                            }}
-                        />
-                        <Pressable style={[styles.modalActionBtn, { backgroundColor: '#6B7280' }]} onPress={() => { setSelectedCliente(null); setClientModalVisible(false); }}>
-                            <Text style={styles.modalActionBtnText}>Anónimo</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <ClientSelectModal
+                visible={clientModalVisible}
+                clients={clientes}
+                selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
+                max={1}
+                onClose={() => setClientModalVisible(false)}
+                onToggle={(id) => {
+                    const client = clientes.find(c => (c.id_cliente || c.id) === id);
+                    setSelectedCliente(client);
+                    setClientModalVisible(false);
+                }}
+            />
 
-            <Modal animationType="fade" transparent visible={toast.visible}>
-                <View style={styles.toastOverlay}>
-                    <View style={[styles.toastContent, { backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444' }]}>
-                        <Ionicons name={toast.type === 'success' ? 'checkmark-circle' : 'alert-circle'} size={24} color="#FFF" />
-                        <Text style={styles.toastText}>{toast.message}</Text>
-                    </View>
-                </View>
-            </Modal>
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    header: {
+        paddingHorizontal: 16,
+        marginBottom: 8,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+    },
+    headerTop: { flexDirection: 'row', alignItems: 'center' },
+    backBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    headerTitle: { fontSize: 22, fontWeight: '800' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
     section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
@@ -855,11 +784,7 @@ const styles = StyleSheet.create({
     browserTitle: { fontSize: 13, fontWeight: '900', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase', paddingHorizontal: 4 },
     categoryScroll: {
         paddingHorizontal: 4,
-        gap: 12
-    },
-    categoryGrid: {
-        flexDirection: 'row',
-        rowGap: 12
+        gap: 12,
     },
     categorySmallCard: {
         width: 140,
@@ -869,20 +794,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        minHeight: 64
+        minHeight: 64,
     },
     catIconBox: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     catSmallName: { fontSize: 12, fontWeight: '800' },
-    searchInputContainerMini: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 44, marginTop: 16 },
-    searchInputMini: { flex: 1, marginLeft: 10, fontSize: 14, fontWeight: '600' },
-    searchResultsBox: { marginTop: 12, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
-    searchItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1 },
-    searchItemName: { fontSize: 14, fontWeight: '700' },
-    searchItemCat: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-    searchItemPrice: { fontSize: 15, fontWeight: '800', color: '#10B981', marginRight: 12 },
-    addBtn: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
+    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '80%' },
     modalContentWide: { width: '95%', alignSelf: 'center', borderRadius: 32, padding: 20 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
@@ -898,7 +815,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 14,
-        padding: 4
+        padding: 4,
     },
     modalQtyBtn: {
         width: 32,
@@ -910,7 +827,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 2
+        elevation: 2,
     },
     modalQtyText: { marginHorizontal: 16, fontSize: 16, fontWeight: '900' },
     modalProductBottom: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 12 },
@@ -922,10 +839,7 @@ const styles = StyleSheet.create({
     listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
     avatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
     avatarText: { color: '#FFF', fontWeight: '900', fontSize: 18 },
-    avatarSimple: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center' },
     listItemTitle: { fontSize: 16, fontWeight: '800' },
-    listItemSub: { fontSize: 13, fontWeight: '600' },
-    radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
     modalActionBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     modalActionBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
     cartItem: { flexDirection: 'row', paddingVertical: 16, borderBottomWidth: 1 },
@@ -943,12 +857,8 @@ const styles = StyleSheet.create({
     selectorLabel: { fontSize: 12, fontWeight: '700' },
     selectorVal: { fontSize: 15, fontWeight: '800', marginTop: 2 },
     inputGroupLabel: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1 },
-    payMethodsRow: { flexDirection: 'row', gap: 10 },
-    payMethodCard: { flex: 1, padding: 12, borderRadius: 16, borderWidth: 2, alignItems: 'center', gap: 4 },
-    payMethodText: { fontSize: 11, fontWeight: '800' },
     tipToggle: { flexDirection: 'row', alignItems: 'center', marginTop: 24, padding: 16, borderRadius: 16, borderWidth: 1, borderStyle: 'dotted' },
     tipTitle: { fontSize: 14, fontWeight: '800' },
-    tipSub: { fontSize: 12, fontWeight: '500' },
     checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
     summaryCard: { marginTop: 20, padding: 24, borderRadius: 32, borderWidth: 1, elevation: 20 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
@@ -958,7 +868,4 @@ const styles = StyleSheet.create({
     totalValFinal: { fontSize: 28, fontWeight: '900', color: '#8B5CF6' },
     submitBtn: { height: 64, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
     submitBtnText: { color: '#FFF', fontSize: 17, fontWeight: '900' },
-    toastOverlay: { flex: 1, justifyContent: 'flex-end', padding: 20, paddingBottom: 100 },
-    toastContent: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, gap: 12, elevation: 10 },
-    toastText: { color: '#FFF', fontWeight: '800', fontSize: 14, flex: 1 },
 });

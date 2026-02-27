@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -16,6 +16,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { useAuthStore } from '../../../store/authStore';
 
@@ -30,6 +31,7 @@ export default function CajaScreen() {
     const [cajaAbierta, setCajaAbierta] = useState(false);
     const [cajaInfo, setCajaInfo] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);
+    const dataRef = useRef<string>('');
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalType, setModalType] = useState<'abrir' | 'cerrar' | 'retiro'>('abrir');
@@ -37,11 +39,14 @@ export default function CajaScreen() {
     const [motivoRetiro, setMotivoRetiro] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    // Toast modal state
-    const [toast, setToast] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' }>({ visible: false, title: '', message: '', type: 'success' });
-
+    // Toast
     const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        setToast({ visible: true, title, message, type });
+        Toast.show({
+            type,
+            text1: title,
+            text2: message,
+            visibilityTime: 4000
+        });
     };
 
     const bg = isDark ? '#000000' : '#F3F4F6';
@@ -50,12 +55,17 @@ export default function CajaScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             const [statusRes, statsRes] = await Promise.all([
                 apiClient('/cashregister/status').catch(() => ({ success: false, data: null })),
                 apiClient('/cashregister?resumen=1').catch(() => null)
             ]);
+
+            const newData = { status: statusRes?.data, stats: statsRes?.data };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
 
             if (statusRes.success && statusRes.data) {
                 setCajaAbierta(statusRes.data.hasOpenCaja);
@@ -68,14 +78,32 @@ export default function CajaScreen() {
             if (statsRes && statsRes.success && statsRes.data) {
                 setStats(statsRes.data);
             }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching caja state:', error);
-            showToast('Error', 'No se pudo cargar la información de la caja');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar la información',
+                    visibilityTime: 3000
+                });
+            } else {
+                showToast('Error', 'No se pudo cargar la información de la caja');
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [user?.id]);
 
     useEffect(() => {
         fetchData();
@@ -83,7 +111,7 @@ export default function CajaScreen() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     };
 
     const handleOpenModal = (type: 'abrir' | 'cerrar' | 'retiro') => {
@@ -376,33 +404,6 @@ export default function CajaScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* Custom Premium Notification Modal */}
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={toast.visible}
-                onRequestClose={() => setToast(prev => ({ ...prev, visible: false }))}
-            >
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-                    <View style={[styles.toastContent, { backgroundColor: cardBg, borderColor }]}>
-                        <View style={[styles.toastIconBox, { backgroundColor: toast.type === 'success' ? '#10B98120' : '#EF444420' }]}>
-                            <Ionicons
-                                name={toast.type === 'success' ? 'checkmark-circle-outline' : 'warning-outline'}
-                                size={48}
-                                color={toast.type === 'success' ? '#10B981' : '#EF4444'}
-                            />
-                        </View>
-                        <Text style={[styles.toastTitle, { color: textPrimary }]}>{toast.title}</Text>
-                        <Text style={[styles.toastMessage, { color: textSecondary }]}>{toast.message}</Text>
-                        <Pressable
-                            style={[styles.toastBtn, { backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444' }]}
-                            onPress={() => setToast(prev => ({ ...prev, visible: false }))}
-                        >
-                            <Text style={styles.toastBtnText}>Entendido</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }

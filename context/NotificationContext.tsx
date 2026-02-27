@@ -1,10 +1,14 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import React, { createContext, useContext, useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import EventSource from 'react-native-sse';
 import Toast, { BaseToast, ErrorToast, ToastConfig } from 'react-native-toast-message';
 import { API_URL } from '../api/client';
+import { PremiumAlert } from '../components/PremiumAlert';
 import { useAuthStore } from '../store/authStore';
+import { registerForPushNotificationsAsync } from '../utils/pushNotifications';
 
 interface NotificationContextType {
     // Aquí podemos agregar funciones como registrar para notificaciones push si fuera necesario
@@ -111,6 +115,23 @@ const toastConfig: ToastConfig = {
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const user = useAuthStore(state => state.user);
     const eventSourceRef = useRef<EventSource | null>(null);
+    const [showPermissionModal, setShowPermissionModal] = React.useState(false);
+
+    useEffect(() => {
+        const checkPermission = async () => {
+            if (Platform.OS === 'web' || !Device.isDevice || !user) return;
+
+            const { status } = await Notifications.getPermissionsAsync();
+            if (status !== 'granted') {
+                setShowPermissionModal(true);
+            } else {
+                // Si ya tiene permiso, registrar el token normalmente
+                registerForPushNotificationsAsync();
+            }
+        };
+
+        checkPermission();
+    }, [user]);
 
     useEffect(() => {
         // En SDK 53+, las notificaciones remotas no funcionan en Expo Go (Android).
@@ -243,7 +264,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return (
         <NotificationContext.Provider value={{}}>
             {children}
-            <Toast config={toastConfig} />
+            <PremiumAlert
+                visible={showPermissionModal}
+                title="🔔 Activar Notificaciones"
+                message="Para recibir pedidos y actualizaciones de servicios al instante, activa las notificaciones. Esto te permitirá responder mucho más rápido a tus clientes."
+                confirmText="Activar Ahora"
+                cancelText="Más Tarde"
+                showCancel
+                onConfirm={async () => {
+                    setShowPermissionModal(false);
+                    await registerForPushNotificationsAsync();
+                }}
+                onCancel={() => setShowPermissionModal(false)}
+            />
+            <Toast config={toastConfig} position="top" topOffset={60} />
         </NotificationContext.Provider>
     );
 };

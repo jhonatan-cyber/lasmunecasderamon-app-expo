@@ -13,9 +13,11 @@ export default function CajeroLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="perfil" options={{ title: 'Mi Perfil' }} />
             <Stack.Screen name="administrativo" options={{ title: 'Resumen Administrativo', headerShown: false }} />
-            <Stack.Screen name="ventas" options={{ title: 'Ventas' }} />
+            <Stack.Screen name="ventas" options={{ title: 'Ventas', headerShown: false }} />
             <Stack.Screen name="cuentas" options={{ title: 'Cuentas' }} />
             <Stack.Screen name="solicitudes" options={{ title: 'Solicitudes' }} />
+            <Stack.Screen name="nuevo-servicio" options={{ title: 'Nuevo Servicio', headerShown: false }} />
+            <Stack.Screen name="servicios" options={{ title: 'Servicios Activos', headerShown: false }} />
         </Stack>
     );
 }

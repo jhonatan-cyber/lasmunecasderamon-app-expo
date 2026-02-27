@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
+    Alert,
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     useColorScheme,
-    View,
+    View
 } from 'react-native';
 import { apiClient } from '../../../../api/client';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 
 interface Servicio {
     id_servicio: number;
@@ -22,7 +23,7 @@ interface Servicio {
     habitacion: string;
     anfitriona: string;
     cliente: string;
-    estado: number; // 1=En proceso, 0=Finalizado/Pagado
+    estado: number; // 0=Anulado, 1=Finalizado, 2=En Proceso, 3=Pausado, 4=Solicitud Anulación
 }
 
 export default function ServiciosScreen() {
@@ -38,6 +39,34 @@ export default function ServiciosScreen() {
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
+
+    const ServicesSkeleton = () => (
+        <View style={[styles.container, { backgroundColor: bg }]}>
+            <View style={{ margin: 16 }}>
+                <Skeleton height={120} borderRadius={16} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            </View>
+            <View style={{ padding: 16, gap: 10 }}>
+                {[1, 2, 3, 4].map(i => (
+                    <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                            <Skeleton width={120} height={20} />
+                            <Skeleton width={80} height={20} borderRadius={10} />
+                        </View>
+                        <Skeleton height={15} width="60%" style={{ marginBottom: 10 }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Skeleton width={100} height={25} />
+                            <Skeleton width={60} height={25} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
 
     const fetchData = useCallback(async () => {
         try {
@@ -57,6 +86,40 @@ export default function ServiciosScreen() {
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    const handleAssistance = async (servicioId: number, roomName: string, type: string) => {
+        const performRequest = async () => {
+            try {
+                const res = await apiClient('/notifications/assistance', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        servicioId,
+                        roomName,
+                        type
+                    })
+                });
+
+                if (res.success) {
+                    Alert.alert('Solicitud enviada', `Se ha solicitado ${type} para la habitación ${roomName}`);
+                }
+            } catch (err) {
+                Alert.alert('Error', 'No se pudo enviar la solicitud');
+            }
+        };
+
+        if (type === 'Seguridad') {
+            Alert.alert(
+                'Confirmar Seguridad',
+                `¿Estás seguro de solicitar personal de SEGURIDAD para la habitación ${roomName}?`,
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'SÍ, LLAMAR', style: 'destructive', onPress: performRequest }
+                ]
+            );
+        } else {
+            performRequest();
+        }
+    };
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -86,13 +149,13 @@ export default function ServiciosScreen() {
 
     // Filter logic
     const filteredData = servicios.filter((s) => {
-        if (filter === 'pendiente') return s.estado === 1 || s.estado === 2 || s.estado === 3; // Activo, En proceso o Pausado
-        if (filter === 'pagado') return s.estado === 0; // Finalizado/Pagado
+        if (filter === 'pendiente') return s.estado === 2 || s.estado === 3 || s.estado === 4; // En proceso, Pausado o Solicitud
+        if (filter === 'pagado') return s.estado === 1; // Finalizado
         return true;
     });
 
-    const pendientes = servicios.filter(s => s.estado === 1 || s.estado === 2 || s.estado === 3);
-    const pagados = servicios.filter(s => s.estado === 0);
+    const pendientes = servicios.filter(s => s.estado === 2 || s.estado === 3 || s.estado === 4);
+    const pagados = servicios.filter(s => s.estado === 1);
 
     // El "Total a Cobrar" son las comisiones de servicios que aún están pendientes o finalizados pero no cobrados.
     // En este sistema, si el servicio está en la lista de 'servicios' y tiene una comisión asignada, 
@@ -101,14 +164,17 @@ export default function ServiciosScreen() {
     const totalEstimado = servicios.reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
 
     const renderItem = ({ item, index }: { item: Servicio; index: number }) => {
-        const isFinalizado = item.estado === 0;
-        const isPausado = item.estado === 3;
+        const isAnulado = item.estado === 0;
+        const isFinalizado = item.estado === 1;
         const isProceso = item.estado === 2;
-        const isActivo = item.estado === 1;
+        const isPausado = item.estado === 3;
+        const isSolicitud = item.estado === 4;
 
         const getStatusStyles = () => {
+            if (isAnulado) return { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#f87171' : '#991b1b', label: 'Anulado' };
             if (isFinalizado) return { bg: isDark ? '#065F46' : '#D1FAE5', text: isDark ? '#6EE7B7' : '#065F46', label: 'Finalizado' };
             if (isPausado) return { bg: isDark ? '#475569' : '#E2E8F0', text: isDark ? '#CBD5E1' : '#475569', label: 'Pausado' };
+            if (isSolicitud) return { bg: isDark ? '#1e3a8a' : '#dbeafe', text: isDark ? '#60a5fa' : '#1e40af', label: 'Solicitud Anul.' };
             return { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E', label: 'En proceso' };
         };
 
@@ -154,19 +220,41 @@ export default function ServiciosScreen() {
                             <Text style={[styles.priceValue, { color: '#10B981' }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
                         </View>
                     </View>
+
+                    {isProceso && (
+                        <View style={styles.assistanceContainer}>
+                            <Text style={[styles.assistanceTitle, { color: textSecondary }]}>SILENT ASSISTANCE:</Text>
+                            <View style={styles.assistanceGrid}>
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff' }]}
+                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Tragos')}
+                                >
+                                    <Ionicons name="beer-outline" size={14} color={isDark ? '#818cf8' : '#3730a3'} />
+                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#818cf8' : '#3730a3' }]}>Tragos</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#064e3b' : '#d1fae5' }]}
+                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo')}
+                                >
+                                    <Ionicons name="sparkles-outline" size={14} color={isDark ? '#34d399' : '#065f46'} />
+                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#34d399' : '#065f46' }]}>Servicio</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#450a0a' : '#fee2e2' }]}
+                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Seguridad')}
+                                >
+                                    <Ionicons name="alert-circle-outline" size={14} color={isDark ? '#f87171' : '#b91c1c'} />
+                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#f87171' : '#b91c1c' }]}>ALERTA</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
                 </View>
             </View>
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando servicios...</Text>
-            </View>
-        );
-    }
+    if (loading) return <ServicesSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -276,4 +364,9 @@ const styles = StyleSheet.create({
     retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
+    assistanceContainer: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(156, 163, 175, 0.1)' },
+    assistanceTitle: { fontSize: 10, fontWeight: '800', marginBottom: 10, letterSpacing: 0.5 },
+    assistanceGrid: { flexDirection: 'row', gap: 8 },
+    assistanceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 12 },
+    assistanceBtnText: { fontSize: 11, fontWeight: '700' },
 });

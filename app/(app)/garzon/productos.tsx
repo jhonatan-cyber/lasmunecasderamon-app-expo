@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -37,6 +37,7 @@ export default function ProductosScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const dataRef = useRef<string>('');
 
     // Get cart from persistent store
     const {
@@ -62,7 +63,7 @@ export default function ProductosScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             setError('');
             const [prodData, anfData, roomData] = await Promise.all([
@@ -70,14 +71,38 @@ export default function ProductosScreen() {
                 apiClient('/anfitrionas'),
                 apiClient('/rooms?status=1'),
             ]);
+
+            const newData = { products: prodData.data, anfitrionas: anfData.data, rooms: roomData.data };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
             if (prodData.success) {
                 const active = (prodData.data || []).filter((p: Product) => p.status === 1);
                 setProducts(active);
             }
             if (anfData.success) setAnfitrionas(anfData.data || []);
             if (roomData.success) setRooms(roomData.data || []);
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (err: any) {
+            console.error('Error fetching data:', err);
             setError(err.message || 'Error de conexión');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar la lista de productos',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -88,7 +113,7 @@ export default function ProductosScreen() {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     }, [fetchData]);
 
     const hasCommission = (product: Product) => (product.commission || 0) > 0;

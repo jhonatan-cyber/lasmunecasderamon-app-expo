@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -14,6 +14,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 import { CajeroActionGrid } from '../../../../components/CajeroActionGrid';
 import { CajeroStats } from '../../../../components/CajeroStats';
@@ -33,6 +34,7 @@ export default function CajeroHomeScreen() {
     const [userStatus, setUserStatus] = useState<number>(1);
     const [hasNewAlert, setHasNewAlert] = useState(false);
     const [pendingCount, setPendingCount] = useState<number>(0);
+    const dataRef = useRef<string>('');
     const [alertConfig, setAlertConfig] = useState<{ visible: boolean; title: string; message: string; type: 'info' | 'success' | 'warning' | 'danger'; onConfirm?: () => void; showCancel?: boolean }>({ visible: false, title: '', message: '', type: 'info' });
 
     const bg = isDark ? '#000000' : '#F3F4F6';
@@ -43,7 +45,7 @@ export default function CajeroHomeScreen() {
         setAlertConfig({ visible: true, title, message, type, onConfirm, showCancel });
     };
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             const [statsRes, userRes, pendingRes] = await Promise.all([
                 apiClient('/caja/stats'),
@@ -65,8 +67,30 @@ export default function CajeroHomeScreen() {
             if (statusRes.success && statusRes.status) {
                 setUserStatus(statusRes.status);
             }
+
+            const newData = { stats: statsRes, user: userRes.user, pending: pendingRes.count || 0, status: statusRes.status };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching cajero data:', error);
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -79,7 +103,7 @@ export default function CajeroHomeScreen() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     };
 
     if (loading) {

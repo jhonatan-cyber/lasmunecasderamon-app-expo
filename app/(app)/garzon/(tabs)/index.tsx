@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -16,6 +16,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 import { GarzonActionCard } from '../../../../components/GarzonActionCard';
 import { GarzonStats } from '../../../../components/GarzonStats';
@@ -59,6 +60,7 @@ export default function GarzonHomeScreen() {
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [hasOpenCaja, setHasOpenCaja] = useState<boolean>(true); // Default to true to avoid flicker
+    const dataRef = useRef<string>('');
 
     const [alertConfig, setAlertConfig] = useState<{ visible: boolean; title: string; message: string; type: 'info' | 'success' | 'warning' | 'danger'; onConfirm?: () => void; showCancel?: boolean }>({ visible: false, title: '', message: '', type: 'info' });
 
@@ -72,7 +74,7 @@ export default function GarzonHomeScreen() {
         setAlertConfig({ visible: true, title, message, type, onConfirm, showCancel });
     };
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             const [statsRes, eventsRes, userRes, cajaRes] = await Promise.all([
                 apiClient('/events/stats'),
@@ -81,33 +83,45 @@ export default function GarzonHomeScreen() {
                 apiClient('/cashregister/status')
             ]);
 
+            const newData = { stats: statsRes.data, events: eventsRes.data, user: userRes.user, caja: cajaRes.data };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
             if (statsRes.success) setStats(statsRes.data);
-
-            if (eventsRes.success) {
-                setRecentActivity(eventsRes.data || []);
-            }
-
-            if (userRes.success && userRes.user) {
-                useAuthStore.getState().updateProfile(userRes.user);
-            }
-
-            if (cajaRes.success && cajaRes.data) {
-                setHasOpenCaja(cajaRes.data.hasOpenCaja);
-            }
+            if (eventsRes.success) setRecentActivity(eventsRes.data || []);
+            if (userRes.success && userRes.user) useAuthStore.getState().updateProfile(userRes.user);
+            if (cajaRes.success && cajaRes.data) setHasOpenCaja(cajaRes.data.hasOpenCaja);
 
             // Sync status
             const statusRes = await apiClient('/users/status');
             if (statusRes.success && statusRes.status) {
                 setUserStatus(statusRes.status);
             }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching garzon data:', error);
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
-            setRefreshing(true);
-            setTimeout(() => setRefreshing(false), 500);
+            setRefreshing(false);
         }
-    }, []);
+    }, [isDark]);
 
 
 
@@ -127,7 +141,7 @@ export default function GarzonHomeScreen() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     };
 
     if (loading) {

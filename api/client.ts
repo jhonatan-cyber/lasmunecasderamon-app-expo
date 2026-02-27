@@ -12,7 +12,7 @@ const getBaseUrl = () => {
 
     // 2. DYNAMIC FOR NATIVE: Asks Expo for the host laptop's IP
     // debuggerHost is automatically updated by Expo whenever you run npx expo start
-    const debuggerHost = Constants.expoConfig?.hostUri;
+    const debuggerHost = (Constants as any).expoConfig?.hostUri;
     const localIP = debuggerHost?.split(':')[0];
 
     if (localIP) {

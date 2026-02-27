@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -62,7 +63,9 @@ export default function ServiciosScreen() {
     const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const dataRef = useRef<string>('');
 
     // Form states
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -80,14 +83,19 @@ export default function ServiciosScreen() {
     const primaryColor = '#8B5CF6'; // Violet for services
 
     // Fetch data
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isRefreshing = false) => {
         try {
-            setLoading(true);
+            if (!isRefreshing) setLoading(true);
             const [roomData, anfData, clientData] = await Promise.all([
                 apiClient('/rooms'),
                 apiClient('/anfitrionas/disponibles'),
                 apiClient('/clients'),
             ]);
+
+            const newData = { rooms: roomData.data, anfitrionas: anfData.data, clients: clientData.data || clientData };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
 
             if (roomData.success) setRooms(roomData.data || []);
             if (anfData.success) setAnfitrionas(anfData.data || []);
@@ -98,21 +106,36 @@ export default function ServiciosScreen() {
             } else if (clientData.success) {
                 setClients(clientData.data || []);
             }
+
+            if (isRefreshing) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (err: any) {
             console.error('Error fetching data:', err);
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: 'No se pudieron cargar los datos necesarios',
+                text2: isRefreshing ? 'No se pudieron actualizar los datos' : 'No se pudieron cargar los datos necesarios',
             });
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     }, []);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData(true);
+    };
 
     // Helpers from web logic
     const hasComision = useMemo(() => {
@@ -261,6 +284,7 @@ export default function ServiciosScreen() {
                 style={styles.container}
                 contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={primaryColor} />}
             >
 
                 {/* Habitaciones */}

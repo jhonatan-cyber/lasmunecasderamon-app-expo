@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -10,6 +10,7 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 
 interface Comision {
@@ -29,6 +30,7 @@ export default function ComisionesScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+    const dataRef = useRef<string>('');
 
     const bg = isDark ? '#000000' : '#FFFFFF';
     const cardBg = isDark ? '#1F2937' : '#F3F4F6';
@@ -36,19 +38,46 @@ export default function ComisionesScreen() {
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isManual = false) => {
         try {
             setError('');
             const data = await apiClient('/commissions/user');
             if (data.success) {
-                // Filtramos solo las que son de tipo 'venta' (productos) según lo solicitado
                 const onlyVentas = (data.data || []).filter((c: Comision) => c.tipo === 'venta');
+                const serialized = JSON.stringify(onlyVentas);
+                const hasChanges = dataRef.current !== serialized;
+                dataRef.current = serialized;
                 setComisiones(onlyVentas);
+                
+                if (isManual) {
+                    Toast.show({
+                        type: hasChanges ? 'success' : 'info',
+                        text1: hasChanges ? 'Éxito' : 'Información',
+                        text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                        visibilityTime: 3000
+                    });
+                }
             } else {
                 setError(data.message || 'Error al cargar comisiones');
+                if (isManual) {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: data.message || 'Error al cargar comisiones',
+                        visibilityTime: 3000
+                    });
+                }
             }
         } catch (err: any) {
             setError(err.message || 'Error de conexión');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar',
+                    visibilityTime: 3000
+                });
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -59,7 +88,7 @@ export default function ComisionesScreen() {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchData();
+        fetchData(true);
     }, [fetchData]);
 
     const formatDate = (dateStr: string) => {
@@ -188,7 +217,7 @@ export default function ComisionesScreen() {
             {error ? (
                 <View style={[styles.errorCard, { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' }]}>
                     <Text style={styles.errorText}>⚠️ {error}</Text>
-                    <Pressable onPress={fetchData} style={({ pressed }) => [styles.retryButton, pressed && { opacity: 0.7 }]}>
+                    <Pressable onPress={() => fetchData()} style={({ pressed }) => [styles.retryButton, pressed && { opacity: 0.7 }]}>
                         <Text style={styles.retryText}>Reintentar</Text>
                     </Pressable>
                 </View>

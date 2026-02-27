@@ -3,8 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
     Dimensions,
     FlatList,
     Modal,
@@ -17,12 +15,15 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 import { DonutChart } from '../../../../components/DonutChart';
+import { PremiumAlert } from '../../../../components/PremiumAlert';
 import { PremiumCalendar } from '../../../../components/PremiumCalendar';
 import { PremiumHeaderActions } from '../../../../components/PremiumHeaderActions';
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { getStatusColor, getStatusLabel, PremiumUserProfile } from '../../../../components/PremiumUserProfile';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 import { useAuthStore } from '../../../../store/authStore';
 
 // --- Constants ---
@@ -51,7 +52,6 @@ interface Badge {
 
 export default function AnfitrionaHomeScreen() {
     const user = useAuthStore((state) => state.user);
-    const logout = useAuthStore((state) => state.logout);
     const router = useRouter();
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const [events, setEvents] = useState<Event[]>([]);
@@ -63,7 +63,6 @@ export default function AnfitrionaHomeScreen() {
     const [hasNewAlert, setHasNewAlert] = useState(false);
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [currentMonth, setCurrentMonth] = useState(new Date());
     const insets = useSafeAreaInsets();
     const dataRef = useRef<{ events: any[], stats: any, status: number }>({ events: [], stats: {}, status: 1 });
 
@@ -80,15 +79,13 @@ export default function AnfitrionaHomeScreen() {
         showCancel?: boolean;
     }>({ visible: false, title: '', message: '', type: 'info' });
 
-    const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'info' }>({
-        visible: false,
-        message: '',
-        type: 'info'
-    });
-
     const showToast = useCallback((message: string, type: 'success' | 'info' = 'success') => {
-        setToast({ visible: true, message, type });
-        setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2500);
+        Toast.show({
+            type: type === 'info' ? 'info' : 'success',
+            text1: type === 'success' ? 'Éxito' : 'Información',
+            text2: message,
+            visibilityTime: 3000
+        });
     }, []);
 
     const showAlert = useCallback((title: string, message: string, type: 'info' | 'success' | 'warning' | 'danger' = 'info', onConfirm?: () => void, showCancel = false) => {
@@ -123,21 +120,21 @@ export default function AnfitrionaHomeScreen() {
                 if (userRes.user.status !== dataRef.current.status) hasChanges = true;
                 setUserStatus(userRes.user.status || 1);
 
-                // Compare with current store user to avoid redundant updates
                 const currentStoreUser = useAuthStore.getState().user;
                 if (JSON.stringify(userRes.user) !== JSON.stringify(currentStoreUser)) {
                     useAuthStore.getState().updateProfile(userRes.user);
                 }
             }
 
-            if (isManual) {
-                if (hasChanges) {
-                    showToast('Datos actualizados', 'success');
-                } else {
-                    showToast('Sin cambios en los datos', 'info');
-                }
-            }
 
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
             if (isManual) showToast('Error al actualizar', 'info');
@@ -164,9 +161,17 @@ export default function AnfitrionaHomeScreen() {
                 setUserStatus(newStatus);
             }
         } catch (error) {
-            Alert.alert('Error', 'No se pudo actualizar el estado');
+            showAlert('Error', 'No se pudo actualizar el estado', 'danger');
         }
     };
+
+    const dailyGrowth = useMemo(() => {
+        if (!stats?.weeklyIncome || stats.weeklyIncome.length < 2) return 0;
+        const sorted = [...stats.weeklyIncome].sort((a, b) => new Date(b.day).getTime() - new Date(a.day).getTime());
+        const today = sorted[0]?.total || 0;
+        const yesterday = sorted[1]?.total || 1; // avoid div by zero
+        return Math.round(((today - yesterday) / yesterday) * 100);
+    }, [stats]);
 
     const selectedEvents = useMemo(() => {
         if (selectedDates.length === 0) return [];
@@ -177,15 +182,50 @@ export default function AnfitrionaHomeScreen() {
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [selectedDates, events]);
 
-
-
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
+    const DashboardSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <View style={[styles.header, { paddingTop: insets.top + 10, height: 160 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <Skeleton width={100} height={40} borderRadius={20} />
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <Skeleton width={40} height={40} borderRadius={20} />
+                        <Skeleton width={40} height={40} borderRadius={20} />
+                    </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                    <Skeleton width={80} height={80} borderRadius={40} />
+                    <View style={{ gap: 8 }}>
+                        <Skeleton width={120} height={20} />
+                        <Skeleton width={80} height={15} />
+                    </View>
+                </View>
             </View>
-        );
-    }
+
+            <View style={styles.statusControlGrid}>
+                {[1, 2, 3].map(i => <Skeleton key={i} style={{ flex: 1 }} height={40} borderRadius={12} />)}
+            </View>
+
+            <View style={styles.analyticsRow}>
+                <Skeleton style={{ flex: 1 }} height={140} borderRadius={24} />
+                <Skeleton style={{ flex: 1 }} height={140} borderRadius={24} />
+            </View>
+
+            <View style={{ marginHorizontal: 16, marginTop: 15 }}>
+                <Skeleton height={180} borderRadius={24} />
+            </View>
+
+            <View style={{ marginHorizontal: 16, marginTop: 25, gap: 15 }}>
+                <Skeleton width={150} height={25} />
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <Skeleton width={120} height={100} borderRadius={20} />
+                    <Skeleton width={120} height={100} borderRadius={20} />
+                    <Skeleton width={120} height={100} borderRadius={20} />
+                </View>
+            </View>
+        </View>
+    );
+
+    if (loading) return <DashboardSkeleton />;
 
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
@@ -199,14 +239,12 @@ export default function AnfitrionaHomeScreen() {
                     colors={isDark ? ['#1E1B4B', '#000000'] : ['#F3F4F6', '#FFFFFF']}
                     style={[styles.header, { paddingTop: insets.top + 10 }]}
                 >
-                    {/* Utility Icons Row */}
                     <PremiumHeaderActions
                         hasNewAlert={hasNewAlert}
                         setHasNewAlert={setHasNewAlert}
                         showAlert={showAlert}
                         profilePath="/anfitriona/perfil"
                     />
-
                     <PremiumUserProfile user={user} userStatus={userStatus} />
                 </LinearGradient>
 
@@ -260,15 +298,19 @@ export default function AnfitrionaHomeScreen() {
                             style={StyleSheet.absoluteFill}
                         />
                         <View style={[styles.cardHeader, { marginBottom: 8 }]}>
-                            <RNText style={[styles.cardTitle, { color: textPrimary }]}>Servicios</RNText>
-                            <Ionicons name="heart" size={14} color="#10B981" />
+                            <RNText style={[styles.cardTitle, { color: textPrimary }]}>Crecimiento</RNText>
+                            <Ionicons name="trending-up" size={14} color={dailyGrowth >= 0 ? '#10B981' : '#EF4444'} />
                         </View>
                         <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                            <RNText style={[styles.bigStat, { color: '#10B981', fontSize: 28 }]}>{stats?.svcCount || 0}</RNText>
-                            <RNText style={[styles.statLabel, { color: textSecondary, fontSize: 10 }]}>Completados</RNText>
-                            <View style={[styles.trendTag, { marginTop: 2 }]}>
-                                <Ionicons name="arrow-up" size={8} color="#10B981" />
-                                <RNText style={[styles.trendText, { fontSize: 9 }]}>+12%</RNText>
+                            <RNText style={[styles.bigStat, { color: dailyGrowth >= 0 ? '#10B981' : '#EF4444', fontSize: 28 }]}>
+                                {dailyGrowth >= 0 ? '+' : ''}{dailyGrowth}%
+                            </RNText>
+                            <RNText style={[styles.statLabel, { color: textSecondary, fontSize: 10 }]}>v/s ayer</RNText>
+                            <View style={[styles.trendTag, { marginTop: 2, backgroundColor: dailyGrowth >= 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)' }]}>
+                                <Ionicons name={dailyGrowth >= 0 ? "arrow-up" : "arrow-down"} size={8} color={dailyGrowth >= 0 ? "#10B981" : "#EF4444"} />
+                                <RNText style={[styles.trendText, { fontSize: 9, color: dailyGrowth >= 0 ? "#10B981" : "#EF4444" }]}>
+                                    {stats?.svcCount || 0} svc
+                                </RNText>
                             </View>
                         </View>
                     </View>
@@ -289,27 +331,29 @@ export default function AnfitrionaHomeScreen() {
 
                     <View style={styles.chartContainer}>
                         {stats?.weeklyIncome?.length > 0 ? (
-                            stats.weeklyIncome.map((s, i) => {
+                            (() => {
                                 const max = Math.max(...stats.weeklyIncome.map(x => x.total), 1);
-                                const height = (s.total / max) * 100;
-                                const isToday = new Date(s.day).toDateString() === new Date().toDateString();
-                                return (
-                                    <View key={i} style={styles.chartBarCol}>
-                                        <View style={styles.barWrapper}>
-                                            <LinearGradient
-                                                colors={isToday ? ['#C084FC', '#8B5CF6'] : ['#8B5CF6', '#6D28D9']}
-                                                style={[styles.chartBar, { height: `${Math.max(5, height)}%` }]}
-                                            />
-                                            {height > 10 && (
-                                                <RNText style={styles.barVal}>${(s.total / 1000).toFixed(0)}k</RNText>
-                                            )}
+                                return stats.weeklyIncome.map((s, i) => {
+                                    const height = (s.total / max) * 100;
+                                    const isToday = new Date(s.day).toDateString() === new Date().toDateString();
+                                    return (
+                                        <View key={i} style={styles.chartBarCol}>
+                                            <View style={styles.barWrapper}>
+                                                <LinearGradient
+                                                    colors={isToday ? ['#C084FC', '#8B5CF6'] : ['#8B5CF6', '#6D28D9']}
+                                                    style={[styles.chartBar, { height: `${Math.max(5, height)}%` }]}
+                                                />
+                                                {height > 10 && (
+                                                    <RNText style={styles.barVal}>${(s.total / 1000).toFixed(0)}k</RNText>
+                                                )}
+                                            </View>
+                                            <RNText style={[styles.chartDay, { color: isToday ? '#8B5CF6' : textSecondary, fontWeight: isToday ? '900' : '500' }]}>
+                                                {new Date(s.day).toLocaleDateString('es-ES', { weekday: 'narrow' }).toUpperCase()}
+                                            </RNText>
                                         </View>
-                                        <RNText style={[styles.chartDay, { color: isToday ? '#8B5CF6' : textSecondary, fontWeight: isToday ? '900' : '500' }]}>
-                                            {new Date(s.day).toLocaleDateString('es-ES', { weekday: 'narrow' }).toUpperCase()}
-                                        </RNText>
-                                    </View>
-                                );
-                            })
+                                    );
+                                });
+                            })()
                         ) : (
                             <View style={styles.emptyChart}>
                                 <Ionicons name="bar-chart-outline" size={40} color={borderColor} />
@@ -347,138 +391,82 @@ export default function AnfitrionaHomeScreen() {
                     events={events}
                 />
 
-                {/* Selection Bar */}
-                {selectedDates.length > 0 && (
-                    <View style={styles.selectionFloat}>
-                        <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
-                        <View style={styles.selectionActions}>
-                            <Pressable onPress={() => setSelectedDates([])} style={styles.clearBtn}><RNText style={styles.clearBtnText}>Borrar</RNText></Pressable>
-                            <Pressable onPress={() => setIsModalVisible(true)} style={styles.viewBtn}><RNText style={styles.viewBtnText}>Detalles</RNText></Pressable>
-                        </View>
-                    </View>
-                )}
-
                 <View style={{ height: 100 }} />
-
-                {/* Modal */}
-                <Modal visible={isModalVisible} animationType="slide" transparent={true} onRequestClose={() => setIsModalVisible(false)}>
-                    <View style={styles.modalOverlayBottom}>
-                        <View style={[styles.modalContent, { backgroundColor: bg }]}>
-                            <View style={styles.modalHeader}>
-                                <View>
-                                    <RNText style={[styles.modalTitle, { color: textPrimary }]}>Eventos Detallados</RNText>
-                                    <RNText style={[styles.modalSubtitle, { color: textSecondary }]}>{selectedDates.length} días</RNText>
-                                </View>
-                                <Pressable style={[styles.closeBtn, { backgroundColor: cardBg }]} onPress={() => setIsModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={textPrimary} />
-                                </Pressable>
-                            </View>
-                            <FlatList
-                                data={selectedEvents}
-                                keyExtractor={(item) => `${item.type}-${item.id}`}
-                                renderItem={({ item }) => {
-                                    const isAnticipo = item.type === 'anticipo';
-                                    const iconName = item.type === 'servicio' ? 'heart' :
-                                        item.type === 'comision' ? 'wallet' :
-                                            item.type === 'asistencia' ? 'calendar' : 'cash';
-                                    const iconColor = isAnticipo ? '#EF4444' : '#8B5CF6';
-
-                                    return (
-                                        <View style={[styles.eventItem, { backgroundColor: cardBg, borderColor }]}>
-                                            <View style={[styles.iconBox, { backgroundColor: `${iconColor}20` }]}>
-                                                <Ionicons name={iconName as any} size={18} color={iconColor} />
-                                            </View>
-                                            <View style={styles.eventInfo}>
-                                                <RNText style={[styles.eventTitle, { color: textPrimary }]}>
-                                                    {item.type === 'comision' ? 'VENTA' : item.type.toUpperCase()} {item.codigo}
-                                                </RNText>
-                                                <RNText style={[styles.eventTime, { color: textSecondary }]}>
-                                                    {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString()}
-                                                </RNText>
-                                            </View>
-                                            <RNText style={[styles.eventPrice, { color: isAnticipo ? '#EF4444' : '#10B981' }]}>
-                                                {isAnticipo ? '-' : '+'}${item.amount.toLocaleString()}
-                                            </RNText>
-                                        </View>
-                                    );
-                                }}
-                                contentContainerStyle={{ padding: 20 }}
-                            />
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* Premium Alert Modal */}
-                <Modal
-                    transparent
-                    visible={alertConfig.visible}
-                    animationType="fade"
-                    onRequestClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-                >
-                    <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-                        <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
-                            <View style={[styles.alertIconHeader, {
-                                backgroundColor: alertConfig.type === 'danger' ? '#EF444420' :
-                                    alertConfig.type === 'success' ? '#10B98120' :
-                                        alertConfig.type === 'warning' ? '#F59E0B20' : '#8B5CF620'
-                            }]}>
-                                <Ionicons
-                                    name={alertConfig.type === 'danger' ? 'alert-circle' :
-                                        alertConfig.type === 'success' ? 'checkmark-circle' :
-                                            alertConfig.type === 'warning' ? 'warning' : 'information-circle'}
-                                    size={40}
-                                    color={alertConfig.type === 'danger' ? '#EF4444' :
-                                        alertConfig.type === 'success' ? '#10B981' :
-                                            alertConfig.type === 'warning' ? '#F59E0B' : '#8B5CF6'}
-                                />
-                            </View>
-
-                            <RNText style={[styles.alertTitle, { color: textPrimary }]}>{alertConfig.title}</RNText>
-                            <RNText style={[styles.alertMessage, { color: textSecondary }]}>{alertConfig.message}</RNText>
-
-                            <View style={styles.alertActions}>
-                                {alertConfig.showCancel && (
-                                    <Pressable
-                                        onPress={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-                                        style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1 }]}
-                                    >
-                                        <RNText style={[styles.alertBtnText, { color: textPrimary }]}>Cancelar</RNText>
-                                    </Pressable>
-                                )}
-                                <Pressable
-                                    onPress={() => {
-                                        setAlertConfig(prev => ({ ...prev, visible: false }));
-                                        alertConfig.onConfirm?.();
-                                    }}
-                                    style={[styles.alertBtn, {
-                                        backgroundColor: alertConfig.type === 'danger' ? '#EF4444' : '#8B5CF6',
-                                        flex: alertConfig.showCancel ? 1 : 0,
-                                        minWidth: alertConfig.showCancel ? 0 : 120
-                                    }]}
-                                >
-                                    <RNText style={[styles.alertBtnText, { color: '#FFF' }]}>
-                                        {alertConfig.type === 'danger' ? 'Confirmar' : 'Aceptar'}
-                                    </RNText>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
             </ScrollView>
 
-            {/* Premium Toast Notification */}
-            {toast.visible && (
-                <View style={[styles.toastContainer, { top: insets.top + 10 }]}>
-                    <View style={[styles.toastContent, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor }]}>
-                        <Ionicons
-                            name={toast.type === 'success' ? 'checkmark-circle' : 'information-circle'}
-                            size={18}
-                            color={toast.type === 'success' ? '#10B981' : '#8B5CF6'}
-                        />
-                        <RNText style={[styles.toastText, { color: textPrimary }]}>{toast.message}</RNText>
+            {/* Selection Bar */}
+            {selectedDates.length > 0 && (
+                <View style={styles.selectionFloat}>
+                    <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
+                    <View style={styles.selectionActions}>
+                        <Pressable onPress={() => setSelectedDates([])} style={styles.clearBtn}><RNText style={styles.clearBtnText}>Borrar</RNText></Pressable>
+                        <Pressable onPress={() => setIsModalVisible(true)} style={styles.viewBtn}><RNText style={styles.viewBtnText}>Detalles</RNText></Pressable>
                     </View>
                 </View>
             )}
+
+            {/* Modal */}
+            <Modal visible={isModalVisible} animationType="slide" transparent={true} onRequestClose={() => setIsModalVisible(false)}>
+                <View style={styles.modalOverlayBottom}>
+                    <View style={[styles.modalContent, { backgroundColor: bg }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <RNText style={[styles.modalTitle, { color: textPrimary }]}>Eventos Detallados</RNText>
+                                <RNText style={[styles.modalSubtitle, { color: textSecondary }]}>{selectedDates.length} días</RNText>
+                            </View>
+                            <Pressable style={[styles.closeBtn, { backgroundColor: cardBg }]} onPress={() => setIsModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={textPrimary} />
+                            </Pressable>
+                        </View>
+                        <FlatList
+                            data={selectedEvents}
+                            keyExtractor={(item) => `${item.type}-${item.id}`}
+                            renderItem={({ item }) => {
+                                const isAnticipo = item.type === 'anticipo';
+                                const iconName = item.type === 'servicio' ? 'heart' :
+                                    item.type === 'comision' ? 'wallet' :
+                                        item.type === 'asistencia' ? 'calendar' : 'cash';
+                                const iconColor = isAnticipo ? '#EF4444' : '#8B5CF6';
+
+                                return (
+                                    <View style={[styles.eventItem, { backgroundColor: cardBg, borderColor }]}>
+                                        <View style={[styles.iconBox, { backgroundColor: `${iconColor}20` }]}>
+                                            <Ionicons name={iconName as any} size={18} color={iconColor} />
+                                        </View>
+                                        <View style={styles.eventInfo}>
+                                            <RNText style={[styles.eventTitle, { color: textPrimary }]}>
+                                                {item.type === 'comision' ? 'VENTA' : item.type.toUpperCase()} {item.codigo}
+                                            </RNText>
+                                            <RNText style={[styles.eventTime, { color: textSecondary }]}>
+                                                {new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString()}
+                                            </RNText>
+                                        </View>
+                                        <RNText style={[styles.eventPrice, { color: isAnticipo ? '#EF4444' : '#10B981' }]}>
+                                            {isAnticipo ? '-' : '+'}${item.amount.toLocaleString()}
+                                        </RNText>
+                                    </View>
+                                );
+                            }}
+                            contentContainerStyle={{ padding: 20 }}
+                        />
+                    </View>
+                </View>
+            </Modal>
+
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={() => {
+                    setAlertConfig(prev => ({ ...prev, visible: false }));
+                    alertConfig.onConfirm?.();
+                }}
+                onCancel={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                showCancel={alertConfig.showCancel}
+                confirmText={alertConfig.type === 'danger' ? 'Confirmar' : 'Aceptar'}
+                cancelText="Cancelar"
+            />
         </View>
     );
 }
@@ -487,19 +475,7 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { paddingHorizontal: 20, paddingBottom: 10 },
-    headerTop: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginBottom: 15 },
-    headerUser: { flexDirection: 'row', alignItems: 'center' },
-    avatarContainer: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, overflow: 'hidden' },
-    avatar: { width: '100%', height: '100%' },
-    avatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-    avatarEmoji: { fontSize: 24 },
-    headerInfo: { flex: 1, marginLeft: 15 },
-    username: { fontSize: 22, fontWeight: '900' },
-    statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-    statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
-    statusText: { fontSize: 13, fontWeight: '700' },
-    iconButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    statusControlGrid: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 20 },
+    statusControlGrid: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 20, marginTop: 10 },
     statusBtn: { flex: 1, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
     statusBtnText: { fontSize: 13, fontWeight: '700' },
     glassCard: { borderRadius: 24, padding: 18, borderWidth: 1, marginBottom: 16 },
@@ -523,78 +499,11 @@ const styles = StyleSheet.create({
     emptyChart: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
     noCharts: { fontSize: 13, fontWeight: '600' },
     badgesWrapper: { marginBottom: 20 },
-    sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 12 },
+    sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 12 },
     badgesList: { paddingHorizontal: 16, gap: 12 },
     badgeItem: { padding: 12, borderRadius: 20, borderWidth: 1, width: 120, alignItems: 'center' },
     badgeIcon: { fontSize: 32, marginBottom: 6 },
     badgeTitle: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
-    notificationDot: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#EF4444',
-        borderWidth: 2,
-        borderColor: '#1F2937'
-    },
-    alertCard: {
-        width: '85%',
-        borderRadius: 32,
-        padding: 24,
-        alignItems: 'center',
-        elevation: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-    },
-    alertIconHeader: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    alertTitle: {
-        fontSize: 20,
-        fontWeight: '900',
-        textAlign: 'center',
-        marginBottom: 10,
-    },
-    alertMessage: {
-        fontSize: 15,
-        textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 25,
-    },
-    alertActions: {
-        flexDirection: 'row',
-        gap: 12,
-        width: '100%',
-        justifyContent: 'center',
-    },
-    alertBtn: {
-        flex: 1,
-        height: 54,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-    },
-    alertBtnText: {
-        fontSize: 14,
-        fontWeight: '800',
-        textAlign: 'center',
-    },
-    actionsRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20 },
-    miniSummary: { flex: 1, padding: 15, borderRadius: 20, borderWidth: 1 },
-    label: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-    value: { fontSize: 24, fontWeight: '800', marginTop: 4 },
-    exportBtn: { flex: 1, borderRadius: 20, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
-    exportBtnText: { color: '#FFF', fontWeight: '800', fontSize: 15 },
     selectionFloat: { position: 'absolute', bottom: 30, left: 20, right: 20, backgroundColor: '#1F2937', padding: 16, borderRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 10 },
     selectionText: { fontWeight: '700' },
     selectionActions: { flexDirection: 'row', gap: 10 },
@@ -602,7 +511,6 @@ const styles = StyleSheet.create({
     clearBtnText: { color: '#EF4444', fontWeight: '800' },
     viewBtn: { backgroundColor: '#8B5CF6', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
     viewBtnText: { color: '#FFF', fontWeight: '800' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
     modalHeader: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#37415120' },
@@ -615,29 +523,4 @@ const styles = StyleSheet.create({
     eventTitle: { fontSize: 15, fontWeight: '700' },
     eventTime: { fontSize: 12, marginTop: 2 },
     eventPrice: { fontSize: 16, fontWeight: '800' },
-    toastContainer: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        zIndex: 9999,
-    },
-    toastContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        gap: 8,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-    },
-    toastText: {
-        fontSize: 13,
-        fontWeight: '700',
-    },
 });
