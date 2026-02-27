@@ -1,14 +1,14 @@
-import { Slot } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-import { NotificationProvider } from '../context/NotificationContext';
-import { TimerProvider } from '../context/TimerContext';
-import { useAuthStore } from '../store/authStore';
+import { Slot } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import { NotificationProvider } from "../context/NotificationContext";
+import { TimerProvider } from "../context/TimerContext";
+import { useAuthStore } from "../store/authStore";
 
-SplashScreen.preventAutoHideAsync().catch(() => { });
+SplashScreen.preventAutoHideAsync().catch(() => {});
 export default function RootLayout() {
   const { isLoading, checkAuth } = useAuthStore();
   useEffect(() => {
@@ -17,13 +17,20 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => { });
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [isLoading]);
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fff",
+        }}
+      >
         <ActivityIndicator size="large" color="#000" />
       </View>
     );
@@ -34,7 +41,6 @@ export default function RootLayout() {
       <NotificationProvider>
         <TimerProvider>
           <Slot />
-          <Toast />
         </TimerProvider>
       </NotificationProvider>
     </SafeAreaProvider>

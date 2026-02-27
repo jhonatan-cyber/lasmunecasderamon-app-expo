@@ -374,16 +374,7 @@ export default function NuevaVentaScreen() {
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: bg }]}
-        >
-            <View style={[styles.header, { backgroundColor: cardBg, paddingTop: insets.top + 10, paddingBottom: 15 }]}>
-                <View style={styles.headerTop}>
-                    <Pressable onPress={() => router.replace('/cajero/ventas')} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color={textPrimary} />
-                    </Pressable>
-                    <Text style={[styles.headerTitle, { color: textPrimary, marginLeft: 10 }]}>Nueva Venta</Text>
-                </View>
-            </View>
-
+        > 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
