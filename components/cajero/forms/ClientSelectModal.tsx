@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     modalActionBtn: {
         height: 50,
         borderRadius: 16,
-        backgroundColor: '#8B5CF6',
+        backgroundColor: '#E11D48',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,

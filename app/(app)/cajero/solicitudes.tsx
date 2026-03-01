@@ -327,7 +327,7 @@ export default function SolicitudesScreen() {
     const renderItem = ({ item }: { item: any }) => {
         const isSolicitud = item.tipoItem === 'solicitud';
         const iconName = isSolicitud ? 'receipt' : 'beer';
-        const color = isSolicitud ? '#8B5CF6' : '#F59E0B';
+        const color = isSolicitud ? '#E11D48' : '#F59E0B';
         const bedText = isSolicitud ? `Hab: ${item.habitacion_nombre || 'N/A'}` : `Mesa/Sala`;
         const personText = isSolicitud ? `Gz: ${item.solicitado_por_nombre || 'Desconocido'}` : `Gz: ${item.garzon || 'Desconocido'}`;
         const timeText = new Date(isSolicitud ? item.fecha_solicitud : item.fecha_crea).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -387,7 +387,7 @@ export default function SolicitudesScreen() {
         <View style={[styles.container, { backgroundColor: bg }]}>
             {loading ? (
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#8B5CF6" />
+                    <ActivityIndicator size="large" color="#E11D48" />
                 </View>
             ) : (
                 <FlatList
@@ -395,7 +395,7 @@ export default function SolicitudesScreen() {
                     keyExtractor={item => item.id_unificado}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                     ListEmptyComponent={
                         <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
                             <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" style={{ marginBottom: 12 }} />
@@ -423,14 +423,14 @@ export default function SolicitudesScreen() {
                     <View style={[styles.checkoutModal, { backgroundColor: cardBg, borderColor }]}>
                         {loadingDetails ? (
                             <View style={styles.centerContainer}>
-                                <ActivityIndicator size="large" color="#8B5CF6" />
+                                <ActivityIndicator size="large" color="#E11D48" />
                                 <Text style={{ color: textSecondary, marginTop: 10 }}>Cargando pedido...</Text>
                             </View>
                         ) : selectedPedido && (
                             <>
                                 <View style={styles.modalHeaderRow}>
                                     <View style={styles.iconBox}>
-                                        <Ionicons name="card-outline" size={24} color="#8B5CF6" />
+                                        <Ionicons name="card-outline" size={24} color="#E11D48" />
                                     </View>
                                     <View>
                                         <Text style={[styles.modalTitleText, { color: textPrimary }]}>Procesar Pago</Text>
@@ -448,7 +448,7 @@ export default function SolicitudesScreen() {
                                             {pedidoDetails.map((item, idx) => (
                                                 <View key={idx} style={[styles.productDetailRow, idx !== pedidoDetails.length - 1 && { borderBottomWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
                                                     <View style={styles.productQuantityBox}>
-                                                        <Text style={[styles.productQuantity, { color: '#8B5CF6' }]}>{item.cantidad}x</Text>
+                                                        <Text style={[styles.productQuantity, { color: '#E11D48' }]}>{item.cantidad}x</Text>
                                                     </View>
                                                     <View style={styles.productInfoCol}>
                                                         <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={2}>
@@ -498,7 +498,7 @@ export default function SolicitudesScreen() {
                                         style={[styles.tipCheckboxContainer, { borderColor }]}
                                         onPress={() => setAgregarPropina(!agregarPropina)}
                                     >
-                                        <View style={[styles.checkbox, { borderColor: agregarPropina ? '#8B5CF6' : textSecondary, backgroundColor: agregarPropina ? '#8B5CF6' : 'transparent' }]}>
+                                        <View style={[styles.checkbox, { borderColor: agregarPropina ? '#E11D48' : textSecondary, backgroundColor: agregarPropina ? '#E11D48' : 'transparent' }]}>
                                             {agregarPropina && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                                         </View>
                                         <View style={{ flex: 1, marginLeft: 12 }}>
@@ -507,7 +507,7 @@ export default function SolicitudesScreen() {
                                         </View>
                                     </Pressable>
 
-                                    <View style={[styles.totalsBox, { backgroundColor: '#8B5CF610' }]}>
+                                    <View style={[styles.totalsBox, { backgroundColor: '#E11D4810' }]}>
                                         <View style={styles.totalRow}>
                                             <Text style={[styles.totalLabel, { color: textSecondary }]}>Subtotal</Text>
                                             <Text style={[styles.totalValue, { color: textPrimary }]}>${(selectedPedido.total).toLocaleString()}</Text>
@@ -515,12 +515,12 @@ export default function SolicitudesScreen() {
                                         {agregarPropina && (
                                             <View style={[styles.totalRow, { marginTop: 4 }]}>
                                                 <Text style={[styles.totalLabel, { color: textSecondary }]}>Propina (10%)</Text>
-                                                <Text style={[styles.totalValue, { color: '#8B5CF6' }]}>+${(selectedPedido.total * 0.10).toLocaleString()}</Text>
+                                                <Text style={[styles.totalValue, { color: '#E11D48' }]}>+${(selectedPedido.total * 0.10).toLocaleString()}</Text>
                                             </View>
                                         )}
                                         <View style={[styles.totalRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(139, 92, 246, 0.2)', paddingTop: 12 }]}>
                                             <Text style={[styles.finalLabel, { color: textPrimary }]}>Monto Final</Text>
-                                            <Text style={[styles.finalValue, { color: '#8B5CF6' }]}>${(selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.10 : 0)).toLocaleString()}</Text>
+                                            <Text style={[styles.finalValue, { color: '#E11D48' }]}>${(selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.10 : 0)).toLocaleString()}</Text>
                                         </View>
                                     </View>
                                 </ScrollView>
@@ -534,7 +534,7 @@ export default function SolicitudesScreen() {
                                         <Text style={[styles.modalBtnActionText, { color: textSecondary }]}>Cancelar</Text>
                                     </Pressable>
                                     <Pressable
-                                        style={[styles.modalBtnAction, { backgroundColor: '#8B5CF6', opacity: !metodoPago || submittingCheckout ? 0.6 : 1 }]}
+                                        style={[styles.modalBtnAction, { backgroundColor: '#E11D48', opacity: !metodoPago || submittingCheckout ? 0.6 : 1 }]}
                                         onPress={handleCheckoutSubmit}
                                         disabled={!metodoPago || submittingCheckout}
                                     >
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     card: { borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    iconBox: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#8B5CF620', justifyContent: 'center', alignItems: 'center' },
+    iconBox: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#E11D4820', justifyContent: 'center', alignItems: 'center' },
     codigo: { fontSize: 16, fontWeight: '800' },
     typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginLeft: 8 },
     typeText: { fontSize: 12, fontWeight: '700' },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 16, fontWeight: '700' },
     receiptContainer: { borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1 },
     productDetailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-    productQuantityBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#8B5CF615', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    productQuantityBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E11D4815', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
     productQuantity: { fontSize: 13, fontWeight: '800' },
     productInfoCol: { flex: 1, justifyContent: 'center', paddingRight: 8 },
     productName: { fontSize: 14, fontWeight: '700', marginBottom: 2 },

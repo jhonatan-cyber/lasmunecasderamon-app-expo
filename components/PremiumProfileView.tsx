@@ -233,7 +233,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
     return (
         <ScrollView style={[styles.container, { backgroundColor: bg }]} showsVerticalScrollIndicator={false}>
             <View style={styles.profileHero}>
-                <View style={[styles.avatarBorder, { borderColor: '#8B5CF6' }]}>
+                <View style={[styles.avatarBorder, { borderColor: '#E11D48' }]}>
                     {image || user?.foto ? (
                         <Image
                             source={{ uri: image ? image : (user?.foto?.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user?.foto}`) }}
@@ -263,7 +263,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: textSecondary }]}>Nickname / Nombre de Escena</Text>
                     <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-                        <Ionicons name="star-outline" size={20} color="#8B5CF6" style={styles.inputIcon} />
+                        <Ionicons name="star-outline" size={20} color="#E11D48" style={styles.inputIcon} />
                         <TextInput
                             style={[styles.input, { color: textPrimary }]}
                             value={nick}
@@ -277,7 +277,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: textSecondary }]}>Teléfono</Text>
                     <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-                        <Ionicons name="call-outline" size={20} color="#8B5CF6" style={styles.inputIcon} />
+                        <Ionicons name="call-outline" size={20} color="#E11D48" style={styles.inputIcon} />
                         <TextInput
                             style={[styles.input, { color: textPrimary }]}
                             value={phone}
@@ -292,7 +292,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: textSecondary }]}>Dirección</Text>
                     <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-                        <Ionicons name="location-outline" size={20} color="#8B5CF6" style={styles.inputIcon} />
+                        <Ionicons name="location-outline" size={20} color="#E11D48" style={styles.inputIcon} />
                         <TextInput
                             style={[styles.input, { color: textPrimary }]}
                             value={address}
@@ -311,7 +311,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                         accessibilityLabel="Seleccionar estado civil"
                         accessibilityRole="combobox"
                     >
-                        <Ionicons name="heart-outline" size={20} color="#8B5CF6" style={styles.inputIcon} />
+                        <Ionicons name="heart-outline" size={20} color="#E11D48" style={styles.inputIcon} />
                         <Text style={[styles.input, { color: textPrimary, paddingTop: 12 }]}>{estadoCivil}</Text>
                         <Ionicons name="chevron-down" size={20} color={textSecondary} />
                     </Pressable>
@@ -322,7 +322,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                 <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: textSecondary }]}>Nueva Contraseña (Dejar en blanco para mantener)</Text>
                     <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#8B5CF6" style={styles.inputIcon} />
+                        <Ionicons name="lock-closed-outline" size={20} color="#E11D48" style={styles.inputIcon} />
                         <TextInput
                             style={[styles.input, { color: textPrimary }]}
                             value={password}
@@ -363,11 +363,11 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                     <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
                         <Text style={[styles.modalTitle, { color: textPrimary }]}>Elegir Foto</Text>
                         <Pressable style={styles.modalOption} onPress={takePhoto}>
-                            <Ionicons name="camera-outline" size={24} color="#8B5CF6" />
+                            <Ionicons name="camera-outline" size={24} color="#E11D48" />
                             <Text style={[styles.modalOptionText, { color: textPrimary }]}>Cámara</Text>
                         </Pressable>
                         <Pressable style={styles.modalOption} onPress={pickImage}>
-                            <Ionicons name="image-outline" size={24} color="#8B5CF6" />
+                            <Ionicons name="image-outline" size={24} color="#E11D48" />
                             <Text style={[styles.modalOptionText, { color: textPrimary }]}>Galería</Text>
                         </Pressable>
                         <Pressable style={styles.cancelModalBtn} onPress={() => dispatch({ type: 'SET_IMAGE_PICKER_VISIBLE', payload: false })}>
@@ -393,7 +393,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                                     }}
                                 >
                                     <Text style={[styles.modalOptionText, { color: textPrimary, fontWeight: estadoCivil === opt ? '800' : '400' }]}>{opt}</Text>
-                                    {estadoCivil === opt && <Ionicons name="checkmark" size={20} color="#8B5CF6" />}
+                                    {estadoCivil === opt && <Ionicons name="checkmark" size={20} color="#E11D48" />}
                                 </Pressable>
                             ))}
                         </ScrollView>
@@ -414,10 +414,10 @@ const styles = StyleSheet.create({
     avatar: { width: '124%', height: '124%', borderRadius: 60 }, // Fixed size
     avatarPlaceholder: { width: '100%', height: '100%', borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
     avatarEmoji: { fontSize: 60 },
-    editPhotoBadge: { position: 'absolute', bottom: 5, right: 5, backgroundColor: '#8B5CF6', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#000' },
+    editPhotoBadge: { position: 'absolute', bottom: 5, right: 5, backgroundColor: '#E11D48', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#000' },
     userName: { fontSize: 24, fontWeight: '800', marginTop: 16 },
-    roleBadge: { backgroundColor: '#8B5CF620', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, marginTop: 8 },
-    roleText: { color: '#8B5CF6', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+    roleBadge: { backgroundColor: '#E11D4820', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, marginTop: 8 },
+    roleText: { color: '#E11D48', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
     formContainer: { padding: 24 },
     inputGroup: { marginBottom: 20 },
     inputLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8, marginLeft: 4 },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     input: { flex: 1, fontSize: 16, fontWeight: '600' },
     divider: { height: 1, width: '100%', marginVertical: 30, opacity: 0.1 },
     actionContainer: { marginTop: 10, gap: 16 },
-    saveBtn: { backgroundColor: '#8B5CF6', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    saveBtn: { backgroundColor: '#E11D48', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#E11D48', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
     saveBtnText: { color: '#FFF', fontSize: 18, fontWeight: '800' },
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12 },
     logoutBtnText: { color: '#EF4444', fontSize: 15, fontWeight: '700', marginLeft: 8 },
@@ -436,5 +436,5 @@ const styles = StyleSheet.create({
     modalOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#37415120', justifyContent: 'space-between' },
     modalOptionText: { fontSize: 16, fontWeight: '600', marginLeft: 12 },
     cancelModalBtn: { marginTop: 20, padding: 12 },
-    cancelModalBtnText: { color: '#8B5CF6', fontSize: 16, fontWeight: '800', textAlign: 'center' },
+    cancelModalBtnText: { color: '#E11D48', fontSize: 16, fontWeight: '800', textAlign: 'center' },
 });

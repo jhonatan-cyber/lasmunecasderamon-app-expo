@@ -4,12 +4,14 @@ import React, { memo, useCallback, useEffect, useMemo, useReducer, useRef, useSt
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   useColorScheme,
+  useWindowDimensions,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,12 +34,22 @@ const safeNumber = (val: any) => {
 };
 
 // --- ServiceCard Component ---
-const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar, theme }: {
-  item: Timer & { waiter_name?: string; habitacion_comision?: number; created_at?: string; estado?: number };
+const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar, onPress, theme }: {
+  item: Timer & {
+    waiter_name?: string;
+    habitacion_comision?: number;
+    precio_habitacion?: number;
+    precio_servicio?: number;
+    iva?: number;
+    pago_estado?: number;
+    created_at?: string;
+    estado?: number;
+  };
   activeTab: string;
   serverOffset: number;
   onFinalizar: (t: Timer) => void;
   onEditar?: (t: Timer) => void;
+  onPress?: (t: any) => void;
   theme: any;
 }) => {
   const [remaining, setRemaining] = useState(() => calculateRemainingTime(item, serverOffset));
@@ -76,7 +88,10 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: isOverdue ? theme.danger : theme.border }]}>
+    <Pressable
+      onPress={() => onPress && onPress(item)}
+      style={({ pressed }) => [styles.card, { backgroundColor: theme.card, borderColor: isOverdue ? theme.danger : theme.border, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.roomBadge}>
           <View style={[styles.iconBox, { backgroundColor: theme.accent + "15" }]}>
@@ -141,6 +156,24 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={[styles.totalLabel, { color: theme.textMuted }]}>TOTAL COBRADO</Text>
           <Text style={[styles.totalPrice, { color: theme.text }]}>${total.toLocaleString()}</Text>
+          {activeTab === "finalizados" && (
+            <View style={[
+              styles.statusBadge,
+              {
+                backgroundColor: item.pago_estado === 0 ? theme.success + '15' : theme.danger + '15',
+                marginTop: 4,
+                borderColor: item.pago_estado === 0 ? theme.success : theme.danger,
+                borderWidth: 1
+              }
+            ]}>
+              <Text style={[
+                styles.statusLabel,
+                { color: item.pago_estado === 0 ? theme.success : theme.danger, fontSize: 8 }
+              ]}>
+                {item.pago_estado === 0 ? 'COBRADO ✓' : 'POR COBRAR ⚠'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -168,7 +201,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
           </Pressable>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 });
 
@@ -179,7 +212,9 @@ type ScreenState = {
   finalizados: Timer[];
   loadingFinalizados: boolean;
   editModalVisible: boolean;
+  detailModalVisible: boolean;
   selectedTimer: Timer | null;
+  selectedServiceDetail: any | null;
   alertConfig: {
     visible: boolean;
     title: string;
@@ -195,6 +230,7 @@ type Action =
   | { type: 'SET_FINALIZADOS'; payload: Timer[] }
   | { type: 'SET_LOADING_FINALIZADOS'; payload: boolean }
   | { type: 'SET_EDIT_MODAL'; visible: boolean; timer?: Timer }
+  | { type: 'SET_DETAIL_MODAL'; visible: boolean; service?: any }
   | { type: 'SET_ALERT'; payload: Partial<ScreenState['alertConfig']> }
   | { type: 'CLOSE_ALERT' };
 
@@ -204,7 +240,9 @@ const initialState: ScreenState = {
   finalizados: [],
   loadingFinalizados: false,
   editModalVisible: false,
+  detailModalVisible: false,
   selectedTimer: null,
+  selectedServiceDetail: null,
   alertConfig: { visible: false, title: "", message: "", type: "info" },
 };
 
@@ -215,6 +253,7 @@ function reducer(state: ScreenState, action: Action): ScreenState {
     case 'SET_FINALIZADOS': return { ...state, finalizados: action.payload };
     case 'SET_LOADING_FINALIZADOS': return { ...state, loadingFinalizados: action.payload };
     case 'SET_EDIT_MODAL': return { ...state, editModalVisible: action.visible, selectedTimer: action.timer || null };
+    case 'SET_DETAIL_MODAL': return { ...state, detailModalVisible: action.visible, selectedServiceDetail: action.service || null };
     case 'SET_ALERT': return { ...state, alertConfig: { ...state.alertConfig, ...action.payload } };
     case 'CLOSE_ALERT': return { ...state, alertConfig: { ...state.alertConfig, visible: false } };
     default: return state;
@@ -250,6 +289,26 @@ const styles = StyleSheet.create({
   timerTotalLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   paymentMethodBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(156, 163, 175, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   paymentMethodText: { fontSize: 10, fontWeight: '800' },
+
+  // Detail Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitleText: { fontSize: 24, fontWeight: '900' },
+  modalSubText: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(156, 163, 175, 0.1)', justifyContent: 'center', alignItems: 'center' },
+  detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  gridItem: { width: '47%', padding: 12, borderRadius: 16, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center' },
+  gridLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
+  gridValue: { fontSize: 13, fontWeight: '700' },
+  summarySection: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 20 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryLabel: { fontSize: 13, fontWeight: '600' },
+  summaryVal: { fontSize: 14, fontWeight: '700' },
+  totalLabelFinal: { fontSize: 14, fontWeight: '900' },
+  totalValFinal: { fontSize: 22, fontWeight: '900' },
+  modalCloseBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
 });
 export default function ServiciosActivosScreen() {
   const isDark = (useColorScheme() ?? "dark") === "dark";
@@ -270,7 +329,7 @@ export default function ServiciosActivosScreen() {
     text: isDark ? "#F9FAFB" : "#0F172A",
     textMuted: isDark ? "#9CA3AF" : "#64748B",
     border: isDark ? "#1F2937" : "#E2E8F0",
-    accent: "#8B5CF6",
+    accent: "#E11D48",
     success: "#10B981",
     danger: "#EF4444",
     warning: "#F59E0B",
@@ -290,23 +349,18 @@ export default function ServiciosActivosScreen() {
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
     try {
-      const cajaRes = await apiClient("/cashregister/status");
-      let cajaId = null;
-      if (cajaRes.success && cajaRes.data?.hasOpenCaja) {
-        cajaId = cajaRes.data?.cajaInfo?.id_caja || cajaRes.data?.openCaja?.id_caja || cajaRes.data?.caja?.id_caja;
-      } else if (cajaRes.data?.id_caja) {
-        cajaId = cajaRes.data.id_caja;
-      } else if (cajaRes.id_caja) {
-        cajaId = cajaRes.id_caja;
-      }
+      const statusRes = await apiClient("/cashregister/status").catch((e) => { console.error("❌ Error fetch status caja:", e); return null; });
+      const openCajaId = statusRes?.data?.cajaInfo?.id_caja || statusRes?.data?.openCaja?.id_caja;
 
-      if (!cajaId) {
-        dispatch({ type: 'SET_FINALIZADOS', payload: [] });
-        if (isManual) Toast.show({ type: "info", text1: "Información", text2: "No hay caja abierta" });
-        return;
-      }
+      console.log("ℹ️ [Servicios] Buscando finalizados. Caja detectada:", openCajaId);
 
-      const res = await apiClient(`/servicios?all=true&caja_id=${cajaId}`);
+      const endpoint = openCajaId
+        ? `/servicios?all=true&caja_id=${openCajaId}&limit=50`
+        : `/servicios?all=true&limit=50`;
+
+      const res = await apiClient(endpoint);
+      console.log("ℹ️ [Servicios] Resultado API:", res.success, "cant:", res.data?.length);
+
       if (res.success && Array.isArray(res.data)) {
         const serialized = JSON.stringify(res.data);
         const hasChanges = dataRef.current !== serialized;
@@ -330,13 +384,17 @@ export default function ServiciosActivosScreen() {
           waiter_name: s.usuario_nick || "Admin",
           created_at: s.fecha_crea,
           habitacion_comision: safeNumber(s.habitacion_comision),
+          precio_habitacion: safeNumber(s.precio_habitacion),
+          precio_servicio: safeNumber(s.precio_servicio),
+          iva: safeNumber(s.iva),
+          pago_estado: s.pago_estado,
           estado: s.estado,
         }));
         dispatch({ type: 'SET_FINALIZADOS', payload: mapped });
         if (isManual) Toast.show({ type: hasChanges ? "success" : "info", text1: hasChanges ? "Éxito" : "Sin cambios" });
       }
     } catch (error) {
-      console.error(error);
+      console.error("❌ ERROR en fetchFinalizados:", error);
       if (isManual) Toast.show({ type: "error", text1: "Error", text2: "No se pudo actualizar" });
     } finally {
       dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: false });
@@ -426,6 +484,7 @@ export default function ServiciosActivosScreen() {
       serverOffset={serverOffset}
       onFinalizar={onFinalizar}
       onEditar={onEditar}
+      onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: t })}
       theme={theme}
     />
   ), [activeTab, serverOffset, onFinalizar, onEditar, theme]);
@@ -445,18 +504,36 @@ export default function ServiciosActivosScreen() {
         onTabChange={(tabId: string) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId as any })}
       />
 
-      {loadingTimers || (activeTab === "finalizados" && loadingFinalizados) ? (
-        <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 40 }} />
+      {activeTab === "activos" ? (
+        loadingTimers ? (
+          <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 40 }} />
+        ) : (
+          <FlatList
+            data={activeServicios}
+            renderItem={renderItem}
+            keyExtractor={(item) => `active-${item.id}`}
+            numColumns={numColumns}
+            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+            ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios activos</Text>}
+          />
+        )
       ) : (
-        <FlatList
-          data={activeTab === 'activos' ? activeServicios : finalizados}
-          renderItem={renderItem}
-          numColumns={numColumns}
-          columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
-          contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios</Text>}
-        />
+        loadingFinalizados ? (
+          <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 40 }} />
+        ) : (
+          <FlatList
+            data={finalizados}
+            renderItem={renderItem}
+            keyExtractor={(item) => `finalizado-${item.id}`}
+            numColumns={numColumns}
+            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+            ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios finalizados</Text>}
+          />
+        )
       )}
 
       <PremiumAlert
@@ -477,6 +554,124 @@ export default function ServiciosActivosScreen() {
           timer={selectedTimer}
         />
       )}
+
+      {/* Detail Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={state.detailModalVisible}
+        onRequestClose={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
+      >
+        <View style={state.detailModalVisible ? styles.modalOverlay : { display: 'none' }}>
+          <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            {state.selectedServiceDetail && (
+              <>
+                <View style={styles.modalHeader}>
+                  <View>
+                    <Text style={[styles.modalTitleText, { color: theme.text }]}>Detalles de Servicio</Text>
+                    <Text style={[styles.modalSubText, { color: theme.textMuted }]}>Código: {state.selectedServiceDetail.servicioCode}</Text>
+                  </View>
+                  <Pressable onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })} style={styles.closeBtn}>
+                    <Ionicons name="close" size={24} color={theme.textMuted} />
+                  </Pressable>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                  <View style={styles.detailsGrid}>
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>
+                        {new Date(state.selectedServiceDetail.created_at).toLocaleDateString('es-ES')}
+                      </Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HORA</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>
+                        {new Date(state.selectedServiceDetail.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>CLIENTE</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.clienteNombre || "Sin cliente"}</Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>TIEMPO</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.duration} min</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailsGrid}>
+                    <View style={[styles.gridItem, { width: '100%' }]}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONA(S) ASIGNADA(S)</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.anfitrionas}</Text>
+                    </View>
+                    <View style={[styles.gridItem, { width: '100%' }]}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.roomName}</Text>
+                    </View>
+
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>MÉTODO DE PAGO</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>
+                        {state.selectedServiceDetail.metodo_pago ? state.selectedServiceDetail.metodo_pago.toUpperCase() : "EFECTIVO"}
+                      </Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ATENDIDO POR</Text>
+                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.waiter_name}</Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.summarySection, { backgroundColor: isDark ? '#111827' : '#F9FAFB', borderColor: theme.border }]}>
+                    <View style={styles.summaryRow}>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Habitación</Text>
+                      <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.precio_habitacion || 0).toLocaleString()}</Text>
+                    </View>
+                    <View style={[styles.summaryRow, { marginTop: 4 }]}>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio del Servicio</Text>
+                      <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.precio_servicio || 0).toLocaleString()}</Text>
+                    </View>
+                    {(state.selectedServiceDetail.iva || 0) > 0 && (
+                      <View style={[styles.summaryRow, { marginTop: 4 }]}>
+                        <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>IVA (Gestión Tarjeta)</Text>
+                        <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.iva || 0).toLocaleString()}</Text>
+                      </View>
+                    )}
+
+                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
+                      <Text style={[styles.totalLabelFinal, { color: theme.text }]}>TOTAL COBRADO</Text>
+                      <Text style={[styles.totalValFinal, { color: theme.accent }]}>${(state.selectedServiceDetail.total || 0).toLocaleString()}</Text>
+                    </View>
+
+                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
+                      <Text style={[styles.totalLabelFinal, { color: theme.text }]}>ESTADO COMISIONES</Text>
+                      <Text style={[styles.totalValFinal, { color: state.selectedServiceDetail.pago_estado === 0 ? theme.success : theme.danger, fontSize: 16 }]}>
+                        {state.selectedServiceDetail.pago_estado === 0 ? 'LIQUIDADAS / PAGADAS ✓' : 'PENDIENTES DE PAGO ⚠'}
+                      </Text>
+                    </View>
+
+                    {state.selectedServiceDetail.anfitrionas && (
+                      <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
+                        <Text style={[styles.totalLabelFinal, { color: theme.text }]}>COMISIÓN P/ ANFITRIONA</Text>
+                        <Text style={[styles.totalValFinal, { color: theme.success, fontSize: 18 }]}>
+                          ${Math.floor(state.selectedServiceDetail.precio_servicio / (String(state.selectedServiceDetail.anfitrionas).split(', ').length || 1)).toLocaleString()}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
+
+                <Pressable
+                  style={[styles.modalCloseBtn, { backgroundColor: theme.accent }]}
+                  onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
+                >
+                  <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

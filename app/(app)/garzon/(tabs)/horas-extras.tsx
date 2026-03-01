@@ -149,7 +149,7 @@ export default function HorasExtrasScreen() {
                         </View>
                         <View style={styles.amountItem}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValue, { color: '#8B5CF6', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                            <Text style={[styles.amountValue, { color: '#E11D48', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                         </View>
                     </View>
 
@@ -177,7 +177,7 @@ export default function HorasExtrasScreen() {
         <View style={[styles.container, { backgroundColor: bg }]}>
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>HORAS EXTRAS PENDIENTES</Text>
-                <Text style={[styles.summaryAmount, { color: '#8B5CF6' }]}>${totalPendiente.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: '#E11D48' }]}>${totalPendiente.toLocaleString()}</Text>
                 <Text style={[styles.summaryDetail, { color: textSecondary }]}>
                     {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''} de {horasExtras.length} total
                 </Text>

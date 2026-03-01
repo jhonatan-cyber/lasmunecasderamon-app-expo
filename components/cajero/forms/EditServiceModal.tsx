@@ -53,7 +53,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
-    const accentColor = '#8B5CF6';
+    const accentColor = '#E11D48';
 
     useEffect(() => {
         if (visible && timer) {
@@ -413,7 +413,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                             <Text style={[styles.btnText, { color: textSecondary }]}>CANCELAR</Text>
                         </Pressable>
                         <Pressable
-                            style={[styles.btn, styles.saveBtn, { backgroundColor: '#8B5CF6' }]}
+                            style={[styles.btn, styles.saveBtn, { backgroundColor: '#E11D48' }]}
                             onPress={handleSave}
                             disabled={loading}
                         >
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
     },
     saveBtn: {
         elevation: 4,
-        shadowColor: '#8B5CF6',
+        shadowColor: '#E11D48',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

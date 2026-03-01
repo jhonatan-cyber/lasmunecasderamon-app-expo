@@ -355,7 +355,7 @@ export default function NuevaCuentaScreen() {
     if (loadingInitial) {
         return (
             <View style={[styles.centerContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#E11D48" />
             </View>
         );
     }
@@ -368,7 +368,7 @@ export default function NuevaCuentaScreen() {
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
             >
                 <View style={styles.browserContainer}>
                     <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
@@ -381,8 +381,8 @@ export default function NuevaCuentaScreen() {
                                 accessibilityLabel={`Categoría ${cat.name}`}
                                 accessibilityRole="button"
                             >
-                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#8B5CF615' : '#10B98115' }]}>
-                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#8B5CF6' : '#10B981'} />
+                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#E11D4815' : '#10B98115' }]}>
+                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#E11D48' : '#10B981'} />
                                 </View>
                                 <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name}</Text>
                             </Pressable>
@@ -416,7 +416,7 @@ export default function NuevaCuentaScreen() {
                         accessibilityLabel="Seleccionar cliente"
                         accessibilityRole="button"
                     >
-                        <Ionicons name="person-outline" size={22} color="#8B5CF6" />
+                        <Ionicons name="person-outline" size={22} color="#E11D48" />
                         <View style={{ flex: 1, marginLeft: 12 }}>
                             <Text style={[styles.selectorLabel, { color: textSecondary }]}>Cliente *</Text>
                             <Text style={[styles.selectorVal, { color: textPrimary }]}>
@@ -452,7 +452,7 @@ export default function NuevaCuentaScreen() {
                     </View>
 
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: '#8B5CF6' }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, { backgroundColor: '#E11D48' }, submitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
                         disabled={submitting}
                         accessibilityLabel="Registrar cuenta"
@@ -478,7 +478,7 @@ export default function NuevaCuentaScreen() {
                         </View>
 
                         {modalLoading ? (
-                            <ActivityIndicator color="#8B5CF6" size="large" />
+                            <ActivityIndicator color="#E11D48" size="large" />
                         ) : (
                             <FlatList
                                 data={modalProducts}
@@ -515,7 +515,7 @@ export default function NuevaCuentaScreen() {
                                             </Pressable>
                                         </View>
                                         <Pressable
-                                            style={[styles.modalAddBtn, { backgroundColor: '#8B5CF6' }]}
+                                            style={[styles.modalAddBtn, { backgroundColor: '#E11D48' }]}
                                             onPress={() => {
                                                 const id = item.id || item.id_producto;
                                                 const hasComm = Number(item.comision || item.commission || 0) > 0;
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
     totalLabelFinal: { fontSize: 18, fontWeight: '900' },
-    totalValFinal: { fontSize: 26, fontWeight: '900', color: '#8B5CF6' },
+    totalValFinal: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
     submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -668,6 +668,6 @@ const styles = StyleSheet.create({
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
     modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
-    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#E11D48', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

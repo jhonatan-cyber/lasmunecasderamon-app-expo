@@ -1,18 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
+    Modal,
     Pressable,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     useColorScheme,
-    View,
+    View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 
 interface Comision {
     id_comision: number;
@@ -22,6 +25,10 @@ interface Comision {
     fecha_mod: string | null;
     estado: number; // 0=pagado, 1=pendiente
     tipo: 'venta' | 'servicio' | 'otro';
+    total_original?: number;
+    cliente_nombre?: string;
+    habitacion_nombre?: string;
+    productos?: any;
 }
 
 export default function ComisionesScreen() {
@@ -31,6 +38,8 @@ export default function ComisionesScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+    const [selectedComision, setSelectedComision] = useState<Comision | null>(null);
+    const [modalVisible, setModalVisible] = useState(false);
     const dataRef = useRef<string>('');
 
     const bg = isDark ? '#000000' : '#FFFFFF';
@@ -127,68 +136,107 @@ export default function ComisionesScreen() {
     const renderItem = ({ item, index }: { item: Comision; index: number }) => {
         const isPendiente = item.estado === 1;
         return (
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                <View style={styles.cardHeader}>
-                    <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                        <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        {item.codigo ? (
-                            <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
-                                <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
-                                <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo}</Text>
-                            </View>
-                        ) : null}
-                        <View style={[
-                            styles.statusBadge,
-                            { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
-                        ]}>
-                            <Text style={[
-                                styles.statusText,
-                                { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+            <MotiView
+                from={{ opacity: 0, translateY: 40 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'spring', delay: index * 100 }}
+            >
+                <Pressable
+                    onPress={() => {
+                        setSelectedComision(item);
+                        setModalVisible(true);
+                    }}
+                    style={({ pressed }) => [
+                        styles.card,
+                        { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.8 : 1 }
+                    ]}
+                >
+                    <View style={styles.cardHeader}>
+                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {item.codigo ? (
+                                <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
+                                    <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
+                                    <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo}</Text>
+                                </View>
+                            ) : null}
+                            <View style={[
+                                styles.statusBadge,
+                                { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
                             ]}>
-                                {isPendiente ? 'Por cobrar' : 'Pagada'}
+                                <Text style={[
+                                    styles.statusText,
+                                    { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+                                ]}>
+                                    {isPendiente ? 'Por cobrar' : 'Pagada'}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.cardBody}>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={16} color={textSecondary} />
+                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
+                            <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
+                        </View>
+
+                        <View style={styles.amountRow}>
+                            <View>
+                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Comisión por Venta</Text>
+                                <Text style={[styles.typeBadge, { color: '#3B82F6' }]}>Venta de Productos</Text>
+                            </View>
+                            <Text style={[styles.amountValue, { color: '#10B981' }]}>
+                                ${(item.comision || 0).toLocaleString()}
                             </Text>
                         </View>
-                    </View>
-                </View>
 
-                <View style={styles.cardBody}>
-                    <View style={styles.dateRow}>
-                        <Ionicons name="calendar-outline" size={16} color={textSecondary} />
-                        <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                        <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
+                        {item.fecha_mod && item.estado === 0 ? (
+                            <View style={styles.paymentRow}>
+                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Text style={[styles.paymentText, { color: textSecondary }]}>Pagada el: {formatDate(item.fecha_mod)}</Text>
+                            </View>
+                        ) : null}
                     </View>
-
-                    <View style={styles.amountRow}>
-                        <View>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Comisión por Venta</Text>
-                            <Text style={[styles.typeBadge, { color: '#3B82F6' }]}>Venta de Productos</Text>
-                        </View>
-                        <Text style={[styles.amountValue, { color: '#10B981' }]}>
-                            ${(item.comision || 0).toLocaleString()}
-                        </Text>
-                    </View>
-
-                    {item.fecha_mod && item.estado === 0 ? (
-                        <View style={styles.paymentRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                            <Text style={[styles.paymentText, { color: textSecondary }]}>Pagada el: {formatDate(item.fecha_mod)}</Text>
-                        </View>
-                    ) : null}
-                </View>
-            </View>
+                </Pressable>
+            </MotiView>
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando comisiones...</Text>
+    const ComisionesSkeleton = () => (
+        <View style={[styles.container, { backgroundColor: bg }]}>
+            <View style={{ margin: 16 }}>
+                <Skeleton height={140} borderRadius={16} />
             </View>
-        );
-    }
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            </View>
+            <View style={{ padding: 16, gap: 10 }}>
+                {[1, 2, 3].map(i => (
+                    <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                            <Skeleton width={32} height={32} borderRadius={16} />
+                            <Skeleton width={120} height={20} borderRadius={10} />
+                        </View>
+                        <Skeleton height={15} width="80%" style={{ marginBottom: 12 }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                            <View style={{ gap: 5 }}>
+                                <Skeleton width={100} height={15} />
+                                <Skeleton width={120} height={15} />
+                            </View>
+                            <Skeleton width={80} height={30} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+
+    if (loading) return <ComisionesSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -209,10 +257,10 @@ export default function ComisionesScreen() {
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
                         key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? textPrimary : cardBg, borderColor }]}
+                        style={[styles.filterButton, { backgroundColor: filter === f ? '#E11D48' : cardBg, borderColor: filter === f ? '#E11D48' : borderColor }]}
                         onPress={() => setFilter(f)}
                     >
-                        <Text style={[styles.filterText, { color: filter === f ? bg : textSecondary }]}>
+                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
                             {f === 'all' ? `Todas (${comisiones.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Pagadas (${comisiones.length - pendientes.length})`}
                         </Text>
                     </Pressable>
@@ -242,6 +290,88 @@ export default function ComisionesScreen() {
                     </View>
                 }
             />
+
+            {/* Detail Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
+                        {selectedComision && (
+                            <>
+                                <View style={styles.modalHeader}>
+                                    <View>
+                                        <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalles de Venta</Text>
+                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedComision.codigo || 'N/A'}</Text>
+                                    </View>
+                                    <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                                        <Ionicons name="close" size={24} color={textSecondary} />
+                                    </Pressable>
+                                </View>
+
+                                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                                    <View style={styles.detailsGrid}>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>FECHA</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{formatDate(selectedComision.fecha_crea)}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>HORA</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{formatTime(selectedComision.fecha_crea)}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>CLIENTE</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedComision.cliente_nombre || "Sin cliente"}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedComision.habitacion_nombre || "Barra"}</Text>
+                                        </View>
+                                    </View>
+
+                                    {selectedComision.productos && (
+                                        <View style={{ marginBottom: 20 }}>
+                                            <Text style={[styles.sectionTitle, { color: textSecondary }]}>PRODUCTOS</Text>
+                                            {typeof selectedComision.productos === 'string' ? JSON.parse(selectedComision.productos).map((p: any, idx: number) => (
+                                                <View key={idx} style={styles.productRow}>
+                                                    <Text style={[styles.productText, { color: textPrimary }]}>{p.cantidad}x {p.nombre}</Text>
+                                                </View>
+                                            )) : selectedComision.productos.map((p: any, idx: number) => (
+                                                <View key={idx} style={styles.productRow}>
+                                                    <Text style={[styles.productText, { color: textPrimary }]}>{p.cantidad}x {p.nombre}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    )}
+
+                                    <View style={[styles.summarySection, { backgroundColor: isDark ? '#111827' : '#F9FAFB', borderColor }]}>
+                                        <View style={styles.summaryRow}>
+                                            <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTADO DE PAGO</Text>
+                                            <Text style={[styles.totalValFinal, { color: selectedComision.estado === 0 ? '#10B981' : '#EF4444', fontSize: 18 }]}>
+                                                {selectedComision.estado === 0 ? 'COBRADA ✓' : 'POR COBRAR ⚠'}
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', paddingTop: 12 }]}>
+                                            <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTA ES MI COMISIÓN</Text>
+                                            <Text style={[styles.totalValFinal, { color: '#10B981', fontSize: 26 }]}>${(selectedComision.comision || 0).toLocaleString()}</Text>
+                                        </View>
+                                    </View>
+                                </ScrollView>
+
+                                <Pressable
+                                    style={[styles.modalCloseBtn, { backgroundColor: '#E11D48' }]}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
+                                </Pressable>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -283,4 +413,25 @@ const styles = StyleSheet.create({
     retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
+
+    // Modal Styles
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    modalTitleText: { fontSize: 24, fontWeight: '900' },
+    modalSubText: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+    closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(156, 163, 175, 0.1)', justifyContent: 'center', alignItems: 'center' },
+    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+    gridItem: { width: '47%', padding: 12, borderRadius: 16, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center' },
+    gridLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
+    gridValue: { fontSize: 13, fontWeight: '700' },
+    summarySection: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 20 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    totalLabelFinal: { fontSize: 14, fontWeight: '900' },
+    totalValFinal: { fontSize: 22, fontWeight: '900' },
+    modalCloseBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+    modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
+    sectionTitle: { fontSize: 10, fontWeight: '800', letterSpacing: 1, marginBottom: 12 },
+    productRow: { marginBottom: 8, paddingLeft: 12 },
+    productText: { fontSize: 14, fontWeight: '600' },
 });

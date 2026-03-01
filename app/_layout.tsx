@@ -1,15 +1,18 @@
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, LogBox, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import { NotificationProvider } from "../context/NotificationContext";
 import { SalesProvider } from "../context/SalesContext";
 import { TimerProvider } from "../context/TimerContext";
 import { useAuthStore } from "../store/authStore";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+LogBox.ignoreLogs([
+  'SafeAreaView has been deprecated',
+]);
+
+SplashScreen.preventAutoHideAsync().catch(() => { });
 export default function RootLayout() {
   const { isLoading, checkAuth } = useAuthStore();
   useEffect(() => {
@@ -18,7 +21,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => {});
+      SplashScreen.hideAsync().catch(() => { });
     }
   }, [isLoading]);
 

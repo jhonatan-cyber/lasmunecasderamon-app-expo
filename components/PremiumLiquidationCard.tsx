@@ -67,15 +67,15 @@ export function PremiumLiquidationCard({
                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
                     <style>
                         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1F2937; }
-                        .header { text-align: center; border-bottom: 2px solid #8B5CF6; padding-bottom: 20px; margin-bottom: 30px; }
-                        .logo { font-size: 28px; font-weight: 900; color: #8B5CF6; margin-bottom: 5px; }
+                        .header { text-align: center; border-bottom: 2px solid #E11D48; padding-bottom: 20px; margin-bottom: 30px; }
+                        .logo { font-size: 28px; font-weight: 900; color: #E11D48; margin-bottom: 5px; }
                         .subtitle { font-size: 14px; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; }
                         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
                         .info-box { background: #F9FAFB; padding: 15px; border-radius: 12px; }
                         .info-label { font-size: 10px; color: #9CA3AF; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
                         .info-value { font-size: 16px; font-weight: bold; }
                         table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-                        th { text-align: left; background: #8B5CF6; color: white; padding: 12px; font-size: 12px; }
+                        th { text-align: left; background: #E11D48; color: white; padding: 12px; font-size: 12px; }
                         td { padding: 12px; border-bottom: 1px solid #E5E7EB; font-size: 13px; }
                         .total-row { background: #F3F4F6; }
                         .total-label { font-weight: bold; text-align: right; }
@@ -154,25 +154,48 @@ export function PremiumLiquidationCard({
     }, [user, events, title, totalLabel, totalCalculated, onExportSuccess]);
 
     return (
-        <View style={styles.actionsRow}>
-            <View style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}>
-                <Text style={[styles.label, { color: textSecondary }]}>{totalLabel}</Text>
-                <Text style={[styles.value, { color: '#10B981' }]}>${totalCalculated.toLocaleString()}</Text>
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={[styles.title, { color: textPrimary }]}>{title}</Text>
+                <Text style={[styles.subtitle, { color: textSecondary }]}>{subtitle}</Text>
             </View>
-            <Pressable
-                onPress={handleExportReport}
-                style={[styles.exportBtn, { backgroundColor: '#8B5CF6' }]}
-                accessibilityLabel="Exportar Liquidación a PDF"
-                accessibilityRole="button"
-            >
-                <Ionicons name="document-text-outline" size={20} color="#FFF" />
-                <Text style={styles.exportBtnText}>Liquidación</Text>
-            </Pressable>
+            <View style={styles.actionsRow}>
+                <View style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}>
+                    <Text style={[styles.label, { color: textSecondary }]}>{totalLabel}</Text>
+                    <Text style={[styles.value, { color: '#10B981' }]}>${totalCalculated.toLocaleString()}</Text>
+                </View>
+                <Pressable
+                    onPress={handleExportReport}
+                    style={[styles.exportBtn, { backgroundColor: '#E11D48' }]}
+                    accessibilityLabel="Exportar Liquidación a PDF"
+                    accessibilityRole="button"
+                >
+                    <Ionicons name="document-text-outline" size={20} color="#FFF" />
+                    <Text style={styles.exportBtnText}>Liquidación</Text>
+                </Pressable>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        marginBottom: 10,
+    },
+    header: {
+        paddingHorizontal: 20,
+        marginBottom: 12,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '900',
+        letterSpacing: 0.5,
+    },
+    subtitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 2,
+    },
     actionsRow: {
         flexDirection: 'row',
         gap: 12,

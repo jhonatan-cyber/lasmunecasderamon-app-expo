@@ -10,6 +10,7 @@ interface PremiumHeaderActionsProps {
     onNotificationPress?: () => void;
     showAlert: (title: string, message: string, type: 'info' | 'success' | 'warning' | 'danger', onConfirm?: () => void, showCancel?: boolean) => void;
     profilePath: string;
+    showNotifications?: boolean;
 }
 
 export const PremiumHeaderActions = ({
@@ -18,7 +19,8 @@ export const PremiumHeaderActions = ({
     setHasNewAlert,
     onNotificationPress,
     showAlert,
-    profilePath
+    profilePath,
+    showNotifications = true
 }: PremiumHeaderActionsProps) => {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const logout = useAuthStore(state => state.logout);
@@ -47,24 +49,26 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
-            <Pressable
-                onPress={() => {
-                    if (onNotificationPress) {
-                        onNotificationPress();
-                        return;
-                    }
-                    if (setHasNewAlert) setHasNewAlert(false);
-                    showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
-                }}
-                style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
-            >
-                <Ionicons name="notifications-outline" size={20} color={textPrimary} />
-                {showDot && (
-                    <View style={styles.notificationBadge}>
-                        {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
-                    </View>
-                )}
-            </Pressable>
+            {showNotifications && (
+                <Pressable
+                    onPress={() => {
+                        if (onNotificationPress) {
+                            onNotificationPress();
+                            return;
+                        }
+                        if (setHasNewAlert) setHasNewAlert(false);
+                        showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
+                    }}
+                    style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                >
+                    <Ionicons name="notifications-outline" size={20} color={textPrimary} />
+                    {showDot && (
+                        <View style={styles.notificationBadge}>
+                            {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
+                        </View>
+                    )}
+                </Pressable>
+            )}
             <Pressable
                 onPress={() => router.push(profilePath as any)}
                 style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}

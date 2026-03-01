@@ -1,18 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     useColorScheme,
-    View,
+    View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 
 interface Asistencia {
     id_asistencia: number;
@@ -128,72 +129,100 @@ export default function AsistenciaScreen() {
     const renderItem = ({ item, index }: { item: Asistencia; index: number }) => {
         const isPendiente = item.estado === 1;
         return (
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                <View style={styles.cardHeader}>
-                    <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                        <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
-                    </View>
-                    <View style={styles.cardHeaderRight}>
-                        <View style={[
-                            styles.statusBadge,
-                            { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
-                        ]}>
-                            <Text style={[
-                                styles.statusText,
-                                { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+            <MotiView
+                from={{ opacity: 0, translateY: 30 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'spring', delay: index * 100 }}
+            >
+                <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                    <View style={styles.cardHeader}>
+                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+                        </View>
+                        <View style={styles.cardHeaderRight}>
+                            <View style={[
+                                styles.statusBadge,
+                                { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
                             ]}>
-                                {isPendiente ? 'Por cobrar' : 'Cobrado'}
-                            </Text>
+                                <Text style={[
+                                    styles.statusText,
+                                    { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+                                ]}>
+                                    {isPendiente ? 'Por cobrar' : 'Cobrado'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
 
-                <View style={styles.cardBody}>
-                    <View style={styles.dateRow}>
-                        <Ionicons name="calendar-outline" size={16} color={textSecondary} />
-                        <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha)}</Text>
-                        {item.hora ? (
-                            <>
-                                <Ionicons name="time-outline" size={16} color={textSecondary} style={{ marginLeft: 12 }} />
-                                <Text style={[styles.dateText, { color: textSecondary }]}>{item.hora?.slice(0, 5)}</Text>
-                            </>
+                    <View style={styles.cardBody}>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={16} color={textSecondary} />
+                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha)}</Text>
+                            {item.hora ? (
+                                <>
+                                    <Ionicons name="time-outline" size={16} color={textSecondary} style={{ marginLeft: 12 }} />
+                                    <Text style={[styles.dateText, { color: textSecondary }]}>{item.hora?.slice(0, 5)}</Text>
+                                </>
+                            ) : null}
+                        </View>
+
+                        <View style={styles.amountsRow}>
+                            <View style={styles.amountItem}>
+                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Sueldo</Text>
+                                <Text style={[styles.amountValue, { color: textPrimary }]}>${(item.sueldo || 0).toLocaleString()}</Text>
+                            </View>
+                            <View style={styles.amountItem}>
+                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Aporte</Text>
+                                <Text style={[styles.amountValue, { color: '#EF4444' }]}>-${(item.aporte || 0).toLocaleString()}</Text>
+                            </View>
+                            <View style={styles.amountItem}>
+                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
+                                <Text style={[styles.amountValue, { color: '#10B981', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                            </View>
+                        </View>
+
+                        {item.fecha_pago && item.estado === 0 ? (
+                            <View style={styles.paymentRow}>
+                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
+                            </View>
                         ) : null}
                     </View>
-
-                    <View style={styles.amountsRow}>
-                        <View style={styles.amountItem}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Sueldo</Text>
-                            <Text style={[styles.amountValue, { color: textPrimary }]}>${(item.sueldo || 0).toLocaleString()}</Text>
-                        </View>
-                        <View style={styles.amountItem}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Aporte</Text>
-                            <Text style={[styles.amountValue, { color: '#EF4444' }]}>-${(item.aporte || 0).toLocaleString()}</Text>
-                        </View>
-                        <View style={styles.amountItem}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValue, { color: '#10B981', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
-                        </View>
-                    </View>
-
-                    {item.fecha_pago && item.estado === 0 ? (
-                        <View style={styles.paymentRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                            <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
-                        </View>
-                    ) : null}
                 </View>
-            </View>
+            </MotiView>
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando asistencias...</Text>
+    const AsistenciaSkeleton = () => (
+        <View style={[styles.container, { backgroundColor: bg }]}>
+            <View style={{ margin: 16 }}>
+                <Skeleton height={140} borderRadius={16} />
             </View>
-        );
-    }
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            </View>
+            <View style={{ padding: 16, gap: 10 }}>
+                {[1, 2, 3].map(i => (
+                    <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                            <Skeleton width={32} height={32} borderRadius={16} />
+                            <Skeleton width={80} height={20} borderRadius={10} />
+                        </View>
+                        <Skeleton height={15} width="60%" style={{ marginBottom: 15 }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Skeleton width={60} height={30} />
+                            <Skeleton width={60} height={30} />
+                            <Skeleton width={60} height={30} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+
+    if (loading) return <AsistenciaSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -215,15 +244,15 @@ export default function AsistenciaScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? textPrimary : cardBg,
-                                borderColor,
+                                backgroundColor: filter === f ? '#E11D48' : cardBg,
+                                borderColor: filter === f ? '#E11D48' : borderColor,
                             },
                         ]}
                         onPress={() => setFilter(f)}
                     >
                         <Text style={[
                             styles.filterText,
-                            { color: filter === f ? bg : textSecondary },
+                            { color: filter === f ? '#FFFFFF' : textSecondary },
                         ]}>
                             {f === 'all' ? `Todas (${asistencias.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${asistencias.length - pendientes.length})`}
                         </Text>

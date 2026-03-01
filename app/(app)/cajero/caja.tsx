@@ -282,12 +282,12 @@ export default function CajaScreen() {
 
             {loading ? (
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#8B5CF6" />
+                    <ActivityIndicator size="large" color="#E11D48" />
                 </View>
             ) : (
                 <ScrollView
                     style={styles.content}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                 >
                     <View style={[styles.statusCard, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusHeader}>
@@ -340,7 +340,7 @@ export default function CajaScreen() {
                     {cajaAbierta && stats && (
                         <View style={[styles.statsCard, { backgroundColor: cardBg, borderColor }]}>
                             <Text style={[styles.statsTitle, { color: textPrimary }]}>Resumen del Turno</Text>
-                            <StatItem label="Balance Total Calculado" value={stats.balance_total} color="#8B5CF6" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Balance Total Calculado" value={stats.balance_total} color="#E11D48" borderColor={borderColor} textSecondary={textSecondary} />
                             <StatItem label="Efectivo Esperado" value={stats.total_efectivo} color="#10B981" borderColor={borderColor} textSecondary={textSecondary} />
                             <StatItem label="Tarjetas" value={stats.total_tarjeta} color="#3B82F6" borderColor={borderColor} textSecondary={textSecondary} />
                             <StatItem label="Transferencias" value={stats.total_transferencia} color="#F59E0B" borderColor={borderColor} textSecondary={textSecondary} />

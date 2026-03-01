@@ -46,7 +46,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             case 'danger': return '#EF4444';
             case 'success': return '#10B981';
             case 'warning': return '#F59E0B';
-            default: return '#8B5CF6';
+            default: return '#E11D48';
         }
     };
 
@@ -84,7 +84,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                             style={[
                                 styles.alertBtn,
                                 {
-                                    backgroundColor: type === 'danger' ? '#EF4444' : '#8B5CF6',
+                                    backgroundColor: type === 'danger' ? '#EF4444' : '#E11D48',
                                     flex: showCancel ? 1 : 0,
                                     minWidth: showCancel ? 0 : (isTablet ? 160 : 120),
                                     height: isTablet ? 60 : 54

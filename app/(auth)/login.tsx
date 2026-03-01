@@ -289,7 +289,7 @@ export default function LoginScreen() {
                         <View style={[styles.alertIconHeader, {
                             backgroundColor: alertConfig.type === 'danger' ? '#EF444420' :
                                 alertConfig.type === 'success' ? '#10B98120' :
-                                    alertConfig.type === 'warning' ? '#F59E0B20' : '#8B5CF620'
+                                    alertConfig.type === 'warning' ? '#F59E0B20' : '#E11D4820'
                         }]}>
                             <Ionicons
                                 name={alertConfig.type === 'danger' ? 'alert-circle' :
@@ -298,7 +298,7 @@ export default function LoginScreen() {
                                 size={40}
                                 color={alertConfig.type === 'danger' ? '#EF4444' :
                                     alertConfig.type === 'success' ? '#10B981' :
-                                        alertConfig.type === 'warning' ? '#F59E0B' : '#8B5CF6'}
+                                        alertConfig.type === 'warning' ? '#F59E0B' : '#E11D48'}
                             />
                         </View>
 
@@ -319,7 +319,7 @@ export default function LoginScreen() {
                                     alertConfig.onConfirm?.();
                                 }}
                                 style={[styles.alertBtn, {
-                                    backgroundColor: alertConfig.type === 'danger' ? '#EF4444' : '#8B5CF6',
+                                    backgroundColor: alertConfig.type === 'danger' ? '#EF4444' : '#E11D48',
                                     flex: alertConfig.showCancel ? 1 : 0,
                                     minWidth: alertConfig.showCancel ? 0 : 120
                                 }]}>

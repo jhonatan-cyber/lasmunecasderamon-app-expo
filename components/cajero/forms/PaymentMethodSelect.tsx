@@ -42,21 +42,21 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 styles.card,
                                 {
                                     borderColor,
-                                    backgroundColor: isSelected ? '#8B5CF620' : 'transparent',
+                                    backgroundColor: isSelected ? '#E11D4820' : 'transparent',
                                 },
-                                isSelected && { borderColor: '#8B5CF6' },
+                                isSelected && { borderColor: '#E11D48' },
                             ]}
                             onPress={() => onSelect(method.id)}
                         >
                             <Ionicons
                                 name={method.icon}
                                 size={18}
-                                color={isSelected ? '#8B5CF6' : textSecondary}
+                                color={isSelected ? '#E11D48' : textSecondary}
                             />
                             <Text
                                 style={[
                                     styles.methodText,
-                                    { color: isSelected ? '#8B5CF6' : textSecondary },
+                                    { color: isSelected ? '#E11D48' : textSecondary },
                                 ]}
                             >
                                 {method.label}

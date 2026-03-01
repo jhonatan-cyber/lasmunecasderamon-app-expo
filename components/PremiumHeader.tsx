@@ -63,6 +63,7 @@ export function PremiumHeader({
                         accessibilityRole="button"
                     >
                         <Ionicons name="add" size={20} color="#FFF" />
+                        <Text style={styles.plusBtnText}>Nuevo</Text>
                     </Pressable>
                 )}
 
@@ -76,7 +77,7 @@ export function PremiumHeader({
                         return (
                             <Pressable
                                 key={tab.id}
-                                style={[styles.tab, isActive && { backgroundColor: "#8B5CF6" }]}
+                                style={[styles.tab, isActive && { backgroundColor: "#E11D48" }]}
                                 onPress={() => onTabChange(tab.id)}
                                 accessibilityRole="button"
                             >
@@ -109,13 +110,20 @@ const styles = StyleSheet.create({
         fontWeight: "900",
     },
     plusBtn: {
-        backgroundColor: "#8B5CF6",
-        width: 44,
+        flexDirection: "row",
+        backgroundColor: "#E11D48",
+        paddingHorizontal: 16,
         height: 44,
         borderRadius: 22,
         justifyContent: "center",
         alignItems: "center",
         marginLeft: "auto",
+        gap: 6,
+    },
+    plusBtnText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "bold",
     },
     rightComponent: {
         marginLeft: "auto",

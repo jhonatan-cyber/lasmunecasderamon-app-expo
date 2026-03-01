@@ -215,7 +215,7 @@ export default function CuentasScreen() {
         );
     }, [cardBg, borderColor, textPrimary, textSecondary, handleCobrarCuenta]);
 
-    if (loading) return <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center' }}><ActivityIndicator size="large" color="#8B5CF6" /></View>;
+    if (loading) return <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center' }}><ActivityIndicator size="large" color="#E11D48" /></View>;
 
     const filteredCuentas = activeTab === "historial" ? cuentas : cuentas.filter((c) => c.estado === 1);
 
@@ -239,9 +239,9 @@ export default function CuentasScreen() {
                 renderItem={renderCuentaCard}
                 keyExtractor={(item) => item.id_cuenta.toString()}
                 contentContainerStyle={styles.listContainer}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                 ListHeaderComponent={resumen && (
-                    <View style={[styles.resumenCard, { backgroundColor: "#8B5CF6" }]}>
+                    <View style={[styles.resumenCard, { backgroundColor: "#E11D48" }]}>
                         <Text style={styles.resumenLabel}>TOTAL POR COBRAR</Text>
                         <Text style={styles.resumenValue}>${(resumen.total_por_cobrar || 0).toLocaleString()}</Text>
                     </View>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     rowIcon: { marginRight: 8 },
     detailValue: { fontSize: 14, fontWeight: "600" },
     cardRightContent: { alignItems: "flex-end", justifyContent: "space-between" },
-    finishBtn: { backgroundColor: "#8B5CF6", flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, gap: 6, marginBottom: 8 },
+    finishBtn: { backgroundColor: "#E11D48", flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, gap: 6, marginBottom: 8 },
     finishBtnText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
     cardTotalBig: { fontSize: 20, fontWeight: "900" },
 });

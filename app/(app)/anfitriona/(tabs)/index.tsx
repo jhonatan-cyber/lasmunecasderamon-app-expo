@@ -1,10 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { AnimatePresence, MotiView } from 'moti';
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
-    ActivityIndicator,
     Dimensions,
+    FlatList,
+    Modal,
+    Platform,
+    Pressable,
     RefreshControl,
     Text as RNText,
     ScrollView,
@@ -13,6 +18,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import EventSource from 'react-native-sse';
 import Toast from 'react-native-toast-message';
 import { API_URL, apiClient } from '../../../../api/client';
 import { AnimatedButton } from '../../../../components/AnimatedButton';
@@ -23,6 +29,7 @@ import { PremiumCalendar } from '../../../../components/PremiumCalendar';
 import { PremiumHeaderActions } from '../../../../components/PremiumHeaderActions';
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { PremiumUserProfile } from '../../../../components/PremiumUserProfile';
+import { SkeletonLoader } from '../../../../components/SkeletonLoader';
 import { useAuthStore } from '../../../../store/authStore';
 
 const { width } = Dimensions.get('window');
@@ -161,6 +168,7 @@ export default function AnfitrionaHomeScreen() {
     );
 
     const onRefresh = useCallback(() => {
+        if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         dispatch({ type: 'SET_REFRESHING', payload: true });
         fetchData(true);
     }, [fetchData]);
@@ -180,7 +188,7 @@ export default function AnfitrionaHomeScreen() {
                 try {
                     const payload = JSON.parse(event.data);
 
-                    if (['user_status_updated', 'timer_started', 'timer_stopped', 'timer_paused', 'timer_resumed'].includes(payload.type)) {
+                    if (['user_status_updated', 'timer_started', 'timer_stopped', 'timer_paused', 'timer_resumed', 'service_created', 'venta_created'].includes(payload.type)) {
                         console.log(`[AnfitrionaHome] Event ${payload.type} received, refreshing dashboard`);
                         fetchData();
                     }
@@ -215,14 +223,60 @@ export default function AnfitrionaHomeScreen() {
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [selectedDates, events]);
 
-    if (loading) return <View style={{ flex: 1, backgroundColor: bg, padding: 20 }}><ActivityIndicator size="large" color="#8B5CF6" /></View>;
+    const DashboardSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <View style={[styles.header, { paddingTop: insets.top + 10, height: 260 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <SkeletonLoader width={40} height={40} borderRadius={20} />
+                    <SkeletonLoader width={40} height={40} borderRadius={20} />
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                    <SkeletonLoader width={70} height={70} borderRadius={35} />
+                    <View style={{ gap: 8 }}>
+                        <SkeletonLoader width={150} height={20} />
+                        <SkeletonLoader width={100} height={15} />
+                    </View>
+                </View>
+                <SkeletonLoader width="100%" height={50} borderRadius={25} style={{ marginTop: 25 }} />
+            </View>
+            <View style={styles.analyticsRow}>
+                <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
+                <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
+            </View>
+            <View style={{ padding: 16 }}>
+                <SkeletonLoader width="100%" height={280} borderRadius={24} />
+            </View>
+        </View>
+    );
+
+    const handleAssistance = async (type: string) => {
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        try {
+            const res = await apiClient('/notifications/assistance', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type,
+                    message: `Solicitud de ${type} en habitación ${activeService?.habitacion}`,
+                    servicioId: activeService?.id_servicio,
+                    roomName: activeService?.habitacion
+                })
+            });
+            if (res.success) {
+                Toast.show({ type: 'success', text1: 'Solicitud enviada', text2: `${type} notificado con éxito` });
+            }
+        } catch (err) {
+            Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar la solicitud' });
+        }
+    };
+
+    if (loading) return <DashboardSkeleton />;
 
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
             <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
             >
                 <AnimatedScreen>
                     <LinearGradient
@@ -234,63 +288,140 @@ export default function AnfitrionaHomeScreen() {
                             setHasNewAlert={(val) => dispatch({ type: 'SET_NEW_ALERT', payload: val })}
                             showAlert={showAlert}
                             profilePath="/anfitriona/perfil"
+                            showNotifications={false}
                         />
                         <PremiumUserProfile user={user} userStatus={userStatus} />
 
-                        <View style={styles.callStaffContainer}>
-                            <AnimatedButton
-                                style={styles.callStaffBtn}
-                                onPress={() => {
-                                    showAlert(
-                                        'Llamar Staff',
-                                        '¿Deseas enviar una notificación de llamado a los garzones y cajera?',
-                                        'warning',
-                                        async () => {
-                                            try {
-                                                const res = await apiClient('/notifications/assistance', {
-                                                    method: 'POST',
-                                                    body: JSON.stringify({
-                                                        type: 'Llamado General',
-                                                        message: 'Anfitriona solicita atención',
-                                                        servicioId: activeService?.id_servicio,
-                                                        roomName: activeService?.habitacion
-                                                    })
-                                                });
-                                                if (res.success) {
-                                                    Toast.show({ type: 'success', text1: 'Llamado enviado', text2: `Personal notificado ${activeService ? `en Hab. ${activeService.habitacion}` : ''}` });
-                                                }
-                                            } catch (err) {
-                                                Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar el llamado' });
-                                            }
-                                        },
-                                        true
-                                    );
-                                }}
-                            >
-                                <Ionicons name="notifications" size={18} color="#FFFFFF" />
-                                <RNText style={styles.callStaffBtnText}>LLAMAR STAFF</RNText>
-                            </AnimatedButton>
-                            {activeService && (
-                                <RNText style={{ color: '#F43F5E', fontSize: 11, fontWeight: '700', marginTop: 8 }}>
-                                    Estas en Hab: {activeService.habitacion}
-                                </RNText>
+                        <AnimatePresence>
+                            {!activeService && (
+                                <MotiView
+                                    from={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.5 }}
+                                    style={styles.callStaffContainer}
+                                >
+                                    <AnimatedButton
+                                        style={styles.callStaffBtn}
+                                        onPress={() => {
+                                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                                            showAlert(
+                                                'Solicitud de Personal',
+                                                '¿Deseas enviar una notificación de llamado a los garzones y cajera?',
+                                                'warning',
+                                                async () => {
+                                                    try {
+                                                        const res = await apiClient('/notifications/assistance', {
+                                                            method: 'POST',
+                                                            body: JSON.stringify({
+                                                                type: 'Llamado General',
+                                                                message: 'Anfitriona solicita atención',
+                                                                servicioId: activeService?.id_servicio,
+                                                                roomName: activeService?.habitacion
+                                                            })
+                                                        });
+                                                        if (res.success) {
+                                                            Toast.show({ type: 'success', text1: 'Llamado enviado', text2: `Personal notificado ${activeService ? `en Hab. ${activeService.habitacion}` : ''}` });
+                                                        }
+                                                    } catch (err) {
+                                                        Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar el llamado' });
+                                                    }
+                                                },
+                                                true
+                                            );
+                                        }}
+                                    >
+                                        <Ionicons name="notifications" size={18} color="#FFFFFF" />
+                                        <RNText style={styles.callStaffBtnText}>SOLICITAR PERSONAL</RNText>
+                                    </AnimatedButton>
+                                </MotiView>
                             )}
-                        </View>
+                        </AnimatePresence>
                     </LinearGradient>
+
+                    <AnimatePresence>
+                        {activeService && (
+                            <MotiView
+                                from={{ opacity: 0, scale: 0.9, translateY: -20 }}
+                                animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, translateY: -20 }}
+                                style={styles.activeServiceCard}
+                            >
+                                <LinearGradient
+                                    colors={['#E11D48', '#881337']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.activeServiceGradient}
+                                >
+                                    <View style={styles.activeServiceHeader}>
+                                        <View>
+                                            <RNText style={styles.activeServiceLabel}>SERVICIO EN CURSO</RNText>
+                                            <RNText style={styles.activeServiceRoom}>HABITACIÓN {activeService.habitacion}</RNText>
+                                        </View>
+                                        <View style={styles.activeServiceTimer}>
+                                            <Ionicons name="time" size={20} color="#FFFFFF" />
+                                            <RNText style={styles.activeServiceStatus}>ACTIVO</RNText>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.activeServiceActions}>
+                                        <Pressable style={styles.actionIconButton} onPress={() => handleAssistance('Tragos')}>
+                                            <Ionicons name="beer" size={20} color="#FFFFFF" />
+                                            <RNText style={styles.actionIconText}>Tragos</RNText>
+                                        </Pressable>
+                                        <Pressable style={styles.actionIconButton} onPress={() => handleAssistance('Limpieza')}>
+                                            <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+                                            <RNText style={styles.actionIconText}>Limpieza</RNText>
+                                        </Pressable>
+                                        <Pressable style={styles.actionIconButton} onPress={() => handleAssistance('Seguridad')}>
+                                            <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />
+                                            <RNText style={styles.actionIconText}>Alerta</RNText>
+                                        </Pressable>
+                                    </View>
+                                </LinearGradient>
+                            </MotiView>
+                        )}
+                    </AnimatePresence>
 
 
                     <View style={styles.analyticsRow}>
-                        <View style={[styles.glassCard, { flex: 1, backgroundColor: cardBg, borderColor }]}>
-                            <View style={styles.cardHeader}>
-                                <RNText style={[styles.cardTitle, { color: textPrimary }]}>Meta Semanal</RNText>
-                                <Ionicons name="flag" size={14} color="#8B5CF6" />
-                            </View>
-                            <View style={{ alignItems: 'center' }}>
-                                <DonutChart percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 50000) * 100))} color="#8B5CF6" isDark={isDark} size={70} strokeWidth={5} />
-                                <RNText style={[styles.goalStatus, { color: textSecondary }]}>${(stats?.totalEarnings || 0).toLocaleString()} <RNText style={{ opacity: 0.5 }}>/ $50k</RNText></RNText>
-                            </View>
-                        </View>
-                        <View style={[styles.glassCard, { flex: 1, backgroundColor: cardBg, borderColor }]}>
+                        <MotiView
+                            from={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ type: 'spring', delay: 100 }}
+                            style={[styles.glassCard, { flex: 1, backgroundColor: cardBg, borderColor }]}
+                        >
+                            <Pressable
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    const missing = 50000 - (stats?.totalEarnings || 0);
+                                    const daysLeft = 7 - new Date().getDay();
+                                    const dailyNeeded = missing > 0 ? Math.round(missing / Math.max(1, daysLeft)) : 0;
+
+                                    showAlert(
+                                        'Proyección de Meta',
+                                        missing > 0
+                                            ? `Te faltan $${missing.toLocaleString()} para tu meta. Necesitas aprox. $${dailyNeeded.toLocaleString()} por día.`
+                                            : '¡Felicidades! Has superado tu meta semanal.',
+                                        'info'
+                                    );
+                                }}
+                            >
+                                <View style={styles.cardHeader}>
+                                    <RNText style={[styles.cardTitle, { color: textPrimary }]}>Meta Semanal</RNText>
+                                    <Ionicons name="flag" size={14} color="#E11D48" />
+                                </View>
+                                <View style={{ alignItems: 'center' }}>
+                                    <DonutChart percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 50000) * 100))} color="#E11D48" isDark={isDark} size={70} strokeWidth={5} />
+                                    <RNText style={[styles.goalStatus, { color: textSecondary }]}>${(stats?.totalEarnings || 0).toLocaleString()} <RNText style={{ opacity: 0.5 }}>/ $50k</RNText></RNText>
+                                </View>
+                            </Pressable>
+                        </MotiView>
+                        <MotiView
+                            from={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ type: 'spring', delay: 200 }}
+                            style={[styles.glassCard, { flex: 1, backgroundColor: cardBg, borderColor }]}
+                        >
                             <View style={styles.cardHeader}>
                                 <RNText style={[styles.cardTitle, { color: textPrimary }]}>Crecimiento</RNText>
                                 <Ionicons name="trending-up" size={14} color={dailyGrowth >= 0 ? '#10B981' : '#EF4444'} />
@@ -299,19 +430,32 @@ export default function AnfitrionaHomeScreen() {
                                 <RNText style={[styles.bigStat, { color: dailyGrowth >= 0 ? '#10B981' : '#EF4444' }]}>{dailyGrowth >= 0 ? '+' : ''}{dailyGrowth}%</RNText>
                                 <RNText style={[styles.statLabel, { color: textSecondary }]}>v/s ayer</RNText>
                             </View>
-                        </View>
+                        </MotiView>
                     </View>
 
-                    <PremiumCalendar
-                        events={events}
-                        selectedDates={selectedDates}
-                        onDateToggle={(dateStr) => {
-                            const next = selectedDates.includes(dateStr) ? selectedDates.filter(d => d !== dateStr) : [...selectedDates, dateStr];
-                            dispatch({ type: 'UPDATE_SELECTED_DATES', payload: next });
-                        }}
-                    />
+                    <MotiView
+                        from={{ opacity: 0, translateY: 30 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'spring', delay: 300 }}
+                    >
+                        <PremiumCalendar
+                            events={events}
+                            selectedDates={selectedDates}
+                            onDateToggle={(dateStr) => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                const next = selectedDates.includes(dateStr) ? selectedDates.filter(d => d !== dateStr) : [...selectedDates, dateStr];
+                                dispatch({ type: 'UPDATE_SELECTED_DATES', payload: next });
+                            }}
+                        />
+                    </MotiView>
 
-                    <PremiumLiquidationCard user={user} events={events} />
+                    <MotiView
+                        from={{ opacity: 0, translateY: 30 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'spring', delay: 400 }}
+                    >
+                        <PremiumLiquidationCard user={user} events={events} />
+                    </MotiView>
 
                     <View style={{ height: 100 }} />
                 </AnimatedScreen>
@@ -323,12 +467,94 @@ export default function AnfitrionaHomeScreen() {
                 message={alertConfig.message}
                 type={alertConfig.type}
                 onConfirm={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } });
                     alertConfig.onConfirm?.();
                 }}
-                onCancel={() => dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } })}
+                onCancel={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } });
+                }}
                 showCancel={alertConfig.showCancel}
             />
+
+            {selectedDates.length > 0 && (
+                <MotiView
+                    from={{ translateY: 100, opacity: 0 }}
+                    animate={{ translateY: 0, opacity: 1 }}
+                    style={styles.selectionFloat}
+                >
+                    <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
+                    <View style={styles.selectionActions}>
+                        <Pressable
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                dispatch({ type: 'UPDATE_SELECTED_DATES', payload: [] });
+                            }}
+                            style={styles.clearBtn}
+                        >
+                            <RNText style={styles.clearBtnText}>Borrar</RNText>
+                        </Pressable>
+                        <Pressable
+                            onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                dispatch({ type: 'SET_MODAL_VISIBLE', payload: true });
+                            }}
+                            style={styles.viewBtn}
+                        >
+                            <RNText style={styles.viewBtnText}>Detalles</RNText>
+                        </Pressable>
+                    </View>
+                </MotiView>
+            )}
+
+            <Modal visible={isModalVisible} animationType="slide" transparent={true} onRequestClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })}>
+                <View style={styles.modalOverlayBottom}>
+                    <View style={[styles.modalContent, { backgroundColor: bg }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <RNText style={[styles.modalTitle, { color: textPrimary }]}>Eventos Detallados</RNText>
+                                <RNText style={[styles.modalSubtitle, { color: textSecondary }]}>{selectedDates.length} días seleccionados</RNText>
+                            </View>
+                            <Pressable style={[styles.closeBtn, { backgroundColor: cardBg }]} onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: false })}>
+                                <Ionicons name="close" size={24} color={textPrimary} />
+                            </Pressable>
+                        </View>
+                        <FlatList
+                            data={selectedEvents}
+                            keyExtractor={(item, index) => `${item.type}-${item.id}-${index}`}
+                            renderItem={({ item }) => {
+                                const isAnticipo = item.type === 'anticipo';
+                                const iconName = item.type === 'venta' ? 'cart' :
+                                    item.type === 'propina' ? 'heart' :
+                                        item.type === 'comision' ? 'star' :
+                                            item.type === 'servicio' ? 'time' : 'cash';
+                                const iconColor = isAnticipo ? '#EF4444' : '#10B981';
+
+                                return (
+                                    <View style={[styles.eventItem, { backgroundColor: cardBg, borderColor }]}>
+                                        <View style={[styles.iconBox, { backgroundColor: `${iconColor}20` }]}>
+                                            <Ionicons name={iconName as any} size={18} color={iconColor} />
+                                        </View>
+                                        <View style={styles.eventInfo}>
+                                            <RNText style={[styles.eventTitle, { color: textPrimary }]}>
+                                                {item.type.toUpperCase()} {item.codigo || `#${item.id}`}
+                                            </RNText>
+                                            <RNText style={[styles.eventTime, { color: textSecondary }]}>
+                                                {new Date(item.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                            </RNText>
+                                        </View>
+                                        <RNText style={[styles.eventPrice, { color: isAnticipo ? '#EF4444' : '#10B981' }]}>
+                                            {isAnticipo ? '-' : '+'}${item.amount.toLocaleString()}
+                                        </RNText>
+                                    </View>
+                                );
+                            }}
+                            contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -361,4 +587,104 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.2)'
     },
     callStaffBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+    activeServiceCard: {
+        marginHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 24,
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: '#E11D48',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        marginBottom: 20
+    },
+    activeServiceGradient: {
+        padding: 20,
+    },
+    activeServiceHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    activeServiceLabel: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 10,
+        fontWeight: '900',
+        letterSpacing: 2
+    },
+    activeServiceRoom: {
+        color: '#FFFFFF',
+        fontSize: 22,
+        fontWeight: '900',
+        marginTop: 2
+    },
+    activeServiceTimer: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6
+    },
+    activeServiceStatus: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '800'
+    },
+    activeServiceActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10
+    },
+    actionIconButton: {
+        flex: 1,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        height: 50,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 4
+    },
+    actionIconText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '800'
+    },
+    selectionFloat: {
+        position: 'absolute',
+        bottom: 30,
+        left: 20,
+        right: 20,
+        backgroundColor: '#1F2937',
+        padding: 16,
+        borderRadius: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 10
+    },
+    selectionText: { fontSize: 13, fontWeight: '700' },
+    selectionActions: { flexDirection: 'row', gap: 10 },
+    clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
+    clearBtnText: { color: '#EF4444', fontWeight: '800', fontSize: 13 },
+    viewBtn: { backgroundColor: '#E11D48', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+    viewBtnText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
+    modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
+    modalHeader: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#37415120' },
+    modalTitle: { fontSize: 22, fontWeight: '900' },
+    modalSubtitle: { fontSize: 14, marginTop: 4 },
+    closeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    eventItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+    iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    eventInfo: { flex: 1, marginLeft: 15 },
+    eventTitle: { fontSize: 14, fontWeight: '700' },
+    eventTime: { fontSize: 12, marginTop: 2 },
+    eventPrice: { fontSize: 16, fontWeight: '800' },
 });

@@ -19,8 +19,8 @@ export const GarzonStats = ({ stats }: GarzonStatsProps) => {
             {/* Quick Stats Grid */}
             <View style={styles.statsGrid}>
                 <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
-                        <Ionicons name="restaurant" size={20} color="#8B5CF6" />
+                    <View style={[styles.iconContainer, { backgroundColor: '#E11D4820' }]}>
+                        <Ionicons name="restaurant" size={20} color="#E11D48" />
                     </View>
                     <View>
                         <Text style={[styles.statValue, { color: textPrimary }]}>{stats?.svcCount || 0}</Text>
@@ -48,13 +48,13 @@ export const GarzonStats = ({ stats }: GarzonStatsProps) => {
                         <Text style={[styles.cardTitle, { color: textPrimary }]}>Meta de Ventas</Text>
                         <Text style={{ fontSize: 12, color: textSecondary }}>Basado en propinas semanales</Text>
                     </View>
-                    <Ionicons name="trending-up" size={18} color="#8B5CF6" />
+                    <Ionicons name="trending-up" size={18} color="#E11D48" />
                 </View>
 
                 <View style={styles.goalContainer}>
                     <DonutChart
                         percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 300000) * 100))}
-                        color="#8B5CF6"
+                        color="#E11D48"
                         size={100}
                         strokeWidth={8}
                         label="Propina"

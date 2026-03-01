@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import React from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
@@ -12,10 +13,16 @@ interface StatCardProps {
     cardBg: string;
     textPrimary: string;
     textSecondary: string;
+    index: number;
 }
 
-const StatCard = ({ label, value, icon, color, isDark, borderColor, cardBg, textPrimary, textSecondary }: StatCardProps) => (
-    <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
+const StatCard = ({ label, value, icon, color, isDark, borderColor, cardBg, textPrimary, textSecondary, index }: StatCardProps) => (
+    <MotiView
+        from={{ opacity: 0, scale: 0.5, translateY: 20 }}
+        animate={{ opacity: 1, scale: 1, translateY: 0 }}
+        transition={{ type: 'spring', delay: index * 100 }}
+        style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}
+    >
         <View style={[styles.iconIndicator, { backgroundColor: color }]} />
         <View style={styles.cardContent}>
             <View style={[styles.iconWrapper, { backgroundColor: `${color}15` }]}>
@@ -26,7 +33,7 @@ const StatCard = ({ label, value, icon, color, isDark, borderColor, cardBg, text
                 <Text style={[styles.statValue, { color: textPrimary }]} numberOfLines={1}>{value}</Text>
             </View>
         </View>
-    </View>
+    </MotiView>
 );
 
 interface CajeroStatsProps {
@@ -47,7 +54,7 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
             label: 'Balance Total',
             value: `$${(stats?.balance_total || 0).toLocaleString()}`,
             icon: 'wallet' as const,
-            color: '#8B5CF6'
+            color: '#E11D48'
         },
         {
             label: 'Ventas Hoy',
@@ -76,6 +83,7 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
                     <StatCard
                         key={index}
                         {...item}
+                        index={index}
                         isDark={isDark}
                         borderColor={borderColor}
                         cardBg={cardBg}

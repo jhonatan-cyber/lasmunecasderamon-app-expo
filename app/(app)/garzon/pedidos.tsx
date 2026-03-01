@@ -111,7 +111,7 @@ export default function PedidosScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#E11D48" />
                 <Text style={[styles.loadingText, { color: textSecondary }]}>Actualizando catálogo...</Text>
             </View>
         );
@@ -144,7 +144,7 @@ export default function PedidosScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <View style={[styles.emptyIconBg, { backgroundColor: cardBg }]}>

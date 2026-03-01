@@ -78,7 +78,7 @@ export const CartList: React.FC<CartListProps> = ({
                             {group.subItems.map((sub: any, sIdx: number) => (
                                 <View key={sIdx} style={styles.subItemRow}>
                                     <View style={{ flex: 1, paddingRight: 10 }}>
-                                        <Text style={{ fontSize: 13, color: sub.hostessNames ? '#8B5CF6' : textSecondary, fontWeight: '700' }}>
+                                        <Text style={{ fontSize: 13, color: sub.hostessNames ? '#E11D48' : textSecondary, fontWeight: '700' }}>
                                             {sub.hostessNames ? `Anfitrionas: ${sub.hostessNames}` : 'Sin anfitriona'}
                                         </Text>
                                     </View>

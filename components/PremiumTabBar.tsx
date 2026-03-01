@@ -6,24 +6,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/**
- * PremiumTabBar - Refactorizado para cumplir estrictamente con las reglas de Hooks
- * y evitar errores en React 19 / New Architecture.
- */
 export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-    // === 1. HOOKS (Siempre al inicio) ===
     const colorScheme = useColorScheme();
     const insets = useSafeAreaInsets();
     const indicatorPosition = useSharedValue(0);
-
-    // === 2. LÓGICA DE NEGOCIO Y ESTILOS ===
     const isDark = (colorScheme ?? 'dark') === 'dark';
     const bgColor = isDark ? '#0F172A' : '#FFFFFF';
     const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
-    const activeTintColor = '#8B5CF6';
+    const activeTintColor = '#E11D48';
     const inactiveTintColor = isDark ? '#9CA3AF' : '#6B7280';
 
-    // Se filtran las rutas que no deben aparecer en el TabBar
     const visibleRoutes = state.routes.filter(r => {
         const options = descriptors[r.key].options as any;
         return options.href !== null;
@@ -32,11 +24,9 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
     const numTabs = visibleRoutes.length || 1;
     const tabWidth = SCREEN_WIDTH / numTabs;
 
-    // Encontrar el índice visual real de la ruta activa
     const activeRouteKey = state.routes[state.index].key;
     const visualIndex = visibleRoutes.findIndex(r => r.key === activeRouteKey);
 
-    // === 3. EFECTOS Y ESTILOS ANIMADOS ===
     useEffect(() => {
         const targetPos = visualIndex >= 0 ? visualIndex * tabWidth : 0;
         indicatorPosition.value = withSpring(targetPos, {
@@ -57,13 +47,11 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
                 { width: tabWidth },
                 indicatorStyle
             ]}>
-                <View style={[styles.indicatorInner, { backgroundColor: 'rgba(139, 92, 246, 0.08)' }]} />
             </Animated.View>
 
             {state.routes.map((route, index) => {
                 const { options } = descriptors[route.key];
 
-                // Expo Router's href: null oculta el tab
                 if ((options as any).href === null) return null;
 
                 const label =

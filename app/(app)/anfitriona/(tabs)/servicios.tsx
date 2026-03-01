@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { MotiView } from 'moti';
 import { useCallback, useState } from 'react';
 import {
     FlatList,
+    Modal,
     Pressable,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     useColorScheme,
@@ -21,11 +24,16 @@ interface Servicio {
     tiempo: number;
     fecha_crea: string;
     precio_servicio: number;
+    precio_habitacion?: number;
+    total?: number;
+    metodo_pago?: string;
+    creado_por?: string;
     comision_usuario: number; // Nueva comisión específica del usuario
     habitacion: string;
     anfitriona: string;
     cliente: string;
     estado: number; // 0=Anulado, 1=Finalizado, 2=En Proceso, 3=Pausado, 4=Solicitud Anulación
+    pago_estado?: number; // 0=Pagado, 1=Por pagar, 2=Anulado
 }
 
 export default function ServiciosScreen() {
@@ -35,6 +43,8 @@ export default function ServiciosScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null);
     const [alertConfig, setAlertConfig] = useState({
         visible: false,
         title: '',
@@ -79,21 +89,32 @@ export default function ServiciosScreen() {
     );
 
     const fetchData = useCallback(async () => {
+        const isManual = refreshing;
         try {
             setError('');
-            const data = await apiClient('/servicios/user');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
+            const data = await apiClient('/servicios/user', { signal: controller.signal });
+            clearTimeout(timeoutId);
+
             if (data.success) {
                 setServicios(data.data || []);
+                if (isManual) {
+                    Toast.show({ type: 'success', text1: 'Sincronizado', text2: 'Datos actualizados desde el servidor' });
+                }
             } else {
                 setError(data.message || 'Error al cargar servicios');
+                if (isManual) Toast.show({ type: 'error', text1: 'Error', text2: data.message });
             }
         } catch (err: any) {
-            setError(err.message || 'Error de conexión');
+            const msg = err.name === 'AbortError' ? 'Tiempo de espera agotado' : (err.message || 'Error de conexión');
+            setError(msg);
+            if (isManual) Toast.show({ type: 'error', text1: 'Fallo de conexión', text2: msg });
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [refreshing]);
 
     useFocusEffect(
         useCallback(() => {
@@ -166,26 +187,30 @@ export default function ServiciosScreen() {
 
     // Filter logic
     const filteredData = servicios.filter((s) => {
-        if (filter === 'pendiente') return s.estado === 2 || s.estado === 3 || s.estado === 4; // En proceso, Pausado o Solicitud
-        if (filter === 'pagado') return s.estado === 1; // Finalizado
+        const estadoNum = Number(s.estado);
+        if (filter === 'pendiente') return estadoNum === 2 || estadoNum === 3 || estadoNum === 4; // En proceso, Pausado o Solicitud
+        if (filter === 'pagado') return estadoNum === 1; // Finalizado
         return true;
     });
 
-    const pendientes = servicios.filter(s => s.estado === 2 || s.estado === 3 || s.estado === 4);
-    const pagados = servicios.filter(s => s.estado === 1);
+    const pendientes = servicios.filter(s => {
+        const estadoNum = Number(s.estado);
+        return estadoNum === 2 || estadoNum === 3 || estadoNum === 4;
+    });
+    const pagados = servicios.filter(s => Number(s.estado) === 1);
 
-    // El "Total a Cobrar" son las comisiones de servicios que aún están pendientes o finalizados pero no cobrados.
-    // En este sistema, si el servicio está en la lista de 'servicios' y tiene una comisión asignada, 
-    // sumamos las comisiones de los servicios finalizados para el total a cobrar.
-    const totalACobrar = pagados.reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
+    // El "Total a Cobrar" son las comisiones de servicios que aún están pendientes de pago a la anfitriona (pago_estado === 1) y el servicio está finalizado.
+    const totalACobrar = pagados
+        .filter(s => s.pago_estado === 1 || s.pago_estado === undefined)
+        .reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
     const totalEstimado = servicios.reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
 
     const renderItem = ({ item, index }: { item: Servicio; index: number }) => {
-        const isAnulado = item.estado === 0;
-        const isFinalizado = item.estado === 1;
-        const isProceso = item.estado === 2;
-        const isPausado = item.estado === 3;
-        const isSolicitud = item.estado === 4;
+        const isAnulado = Number(item.estado) === 0;
+        const isFinalizado = Number(item.estado) === 1;
+        const isProceso = Number(item.estado) === 2;
+        const isPausado = Number(item.estado) === 3;
+        const isSolicitud = Number(item.estado) === 4;
 
         const getStatusStyles = () => {
             if (isAnulado) return { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#f87171' : '#991b1b', label: 'Anulado' };
@@ -198,76 +223,106 @@ export default function ServiciosScreen() {
         const status = getStatusStyles();
 
         return (
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                <View style={styles.cardHeader}>
-                    <View style={styles.headerLeft}>
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+            <MotiView
+                from={{ opacity: 0, translateY: 50 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'spring', delay: index * 100 }}
+            >
+                <Pressable
+                    style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+                    onPress={() => {
+                        setSelectedServicio(item);
+                        setModalVisible(true);
+                    }}
+                >
+                    <View style={styles.cardHeader}>
+                        <View style={styles.headerLeft}>
+                            <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                                <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+                            </View>
+                            <Text style={[styles.habitacionText, { color: textPrimary }]}>{item.habitacion}</Text>
                         </View>
-                        <Text style={[styles.habitacionText, { color: textPrimary }]}>{item.habitacion}</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                            <Text style={[styles.statusText, { color: status.text }]}>{status.label}</Text>
+                        </View>
+                        {isFinalizado && (
+                            <View style={[
+                                styles.statusBadge,
+                                {
+                                    backgroundColor: item.pago_estado === 0 ? '#065F4620' : '#EF444420',
+                                    marginLeft: 8,
+                                    borderColor: item.pago_estado === 0 ? '#10B981' : '#EF4444',
+                                    borderWidth: 1
+                                }
+                            ]}>
+                                <Text style={[
+                                    styles.statusText,
+                                    { color: item.pago_estado === 0 ? '#10B981' : '#EF4444', fontSize: 10 }
+                                ]}>
+                                    {item.pago_estado === 0 ? 'COBRADO' : 'POR COBRAR'}
+                                </Text>
+                            </View>
+                        )}
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                        <Text style={[styles.statusText, { color: status.text }]}>{status.label}</Text>
-                    </View>
-                </View>
 
-                <View style={styles.cardBody}>
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
-                            <Ionicons name="calendar-outline" size={14} color={textSecondary} />
-                            <Text style={[styles.infoText, { color: textSecondary }]}>{formatDate(item.fecha_crea)}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Ionicons name="time-outline" size={14} color={textSecondary} />
-                            <Text style={[styles.infoText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.detailsContainer}>
-                        <View style={styles.detailRow}>
-                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Código:</Text>
-                            <Text style={[styles.detailValue, { color: textPrimary }]}>{item.codigo}</Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Tiempo:</Text>
-                            <Text style={[styles.detailValue, { color: textPrimary }]}>{item.tiempo} min</Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Mi Comisión:</Text>
-                            <Text style={[styles.priceValue, { color: '#10B981' }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
-                        </View>
-                    </View>
-
-                    {isProceso && (
-                        <View style={styles.assistanceContainer}>
-                            <Text style={[styles.assistanceTitle, { color: textSecondary }]}>SILENT ASSISTANCE:</Text>
-                            <View style={styles.assistanceGrid}>
-                                <Pressable
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff' }]}
-                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Tragos')}
-                                >
-                                    <Ionicons name="beer-outline" size={14} color={isDark ? '#818cf8' : '#3730a3'} />
-                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#818cf8' : '#3730a3' }]}>Tragos</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#064e3b' : '#d1fae5' }]}
-                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo')}
-                                >
-                                    <Ionicons name="sparkles-outline" size={14} color={isDark ? '#34d399' : '#065f46'} />
-                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#34d399' : '#065f46' }]}>Servicio</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#450a0a' : '#fee2e2' }]}
-                                    onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Seguridad')}
-                                >
-                                    <Ionicons name="alert-circle-outline" size={14} color={isDark ? '#f87171' : '#b91c1c'} />
-                                    <Text style={[styles.assistanceBtnText, { color: isDark ? '#f87171' : '#b91c1c' }]}>ALERTA</Text>
-                                </Pressable>
+                    <View style={styles.cardBody}>
+                        <View style={styles.infoRow}>
+                            <View style={styles.infoItem}>
+                                <Ionicons name="calendar-outline" size={14} color={textSecondary} />
+                                <Text style={[styles.infoText, { color: textSecondary }]}>{formatDate(item.fecha_crea)}</Text>
+                            </View>
+                            <View style={styles.infoItem}>
+                                <Ionicons name="time-outline" size={14} color={textSecondary} />
+                                <Text style={[styles.infoText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
                             </View>
                         </View>
-                    )}
-                </View>
-            </View>
+
+                        <View style={styles.detailsContainer}>
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Código:</Text>
+                                <Text style={[styles.detailValue, { color: textPrimary }]}>{item.codigo}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Tiempo:</Text>
+                                <Text style={[styles.detailValue, { color: textPrimary }]}>{item.tiempo} min</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Mi Comisión:</Text>
+                                <Text style={[styles.priceValue, { color: '#10B981' }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
+                            </View>
+                        </View>
+
+                        {isProceso && (
+                            <View style={styles.assistanceContainer}>
+                                <Text style={[styles.assistanceTitle, { color: textSecondary }]}>SILENT ASSISTANCE:</Text>
+                                <View style={styles.assistanceGrid}>
+                                    <Pressable
+                                        style={[styles.assistanceBtn, { backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff' }]}
+                                        onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Tragos')}
+                                    >
+                                        <Ionicons name="beer-outline" size={14} color={isDark ? '#818cf8' : '#3730a3'} />
+                                        <Text style={[styles.assistanceBtnText, { color: isDark ? '#818cf8' : '#3730a3' }]}>Tragos</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        style={[styles.assistanceBtn, { backgroundColor: isDark ? '#064e3b' : '#d1fae5' }]}
+                                        onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo')}
+                                    >
+                                        <Ionicons name="sparkles-outline" size={14} color={isDark ? '#34d399' : '#065f46'} />
+                                        <Text style={[styles.assistanceBtnText, { color: isDark ? '#34d399' : '#065f46' }]}>Servicio</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        style={[styles.assistanceBtn, { backgroundColor: isDark ? '#450a0a' : '#fee2e2' }]}
+                                        onPress={() => handleAssistance(item.id_servicio, item.habitacion, 'Seguridad')}
+                                    >
+                                        <Ionicons name="alert-circle-outline" size={14} color={isDark ? '#f87171' : '#b91c1c'} />
+                                        <Text style={[styles.assistanceBtnText, { color: isDark ? '#f87171' : '#b91c1c' }]}>ALERTA</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                </Pressable>
+            </MotiView>
         );
     };
 
@@ -293,15 +348,15 @@ export default function ServiciosScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? textPrimary : cardBg,
-                                borderColor,
+                                backgroundColor: filter === f ? '#E11D48' : cardBg,
+                                borderColor: filter === f ? '#E11D48' : borderColor,
                             },
                         ]}
                         onPress={() => setFilter(f)}
                     >
                         <Text style={[
                             styles.filterText,
-                            { color: filter === f ? bg : textSecondary },
+                            { color: filter === f ? '#FFFFFF' : textSecondary },
                         ]}>
                             {f === 'all' ? `Todos (${servicios.length})` : f === 'pendiente' ? `En proceso (${pendientes.length})` : `Finalizados (${pagados.length})`}
                         </Text>
@@ -332,6 +387,99 @@ export default function ServiciosScreen() {
                     </View>
                 }
             />
+
+            {/* Detail Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
+                        {selectedServicio && (
+                            <>
+                                <View style={styles.modalHeader}>
+                                    <View>
+                                        <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalles de Servicio</Text>
+                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedServicio.codigo}</Text>
+                                    </View>
+                                    <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                                        <Ionicons name="close" size={24} color={textSecondary} />
+                                    </Pressable>
+                                </View>
+
+                                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                                    <View style={styles.detailsGrid}>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>FECHA</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{formatDate(selectedServicio.fecha_crea)}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>HORA</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{formatTime(selectedServicio.fecha_crea)}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>CLIENTE</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.cliente || "Sin cliente registrado"}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>TIEMPO</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.tiempo} min</Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.detailsGrid}>
+                                        <View style={[styles.gridItem, { width: '100%' }]}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>ANFITRIONA(S) ASIGNADA(S)</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.anfitriona}</Text>
+                                        </View>
+                                        <View style={[styles.gridItem, { width: '100%' }]}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.habitacion}</Text>
+                                        </View>
+
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.metodo_pago ? selectedServicio.metodo_pago.toUpperCase() : "No def."}</Text>
+                                        </View>
+                                        <View style={styles.gridItem}>
+                                            <Text style={[styles.gridLabel, { color: textSecondary }]}>ATENDIDO POR</Text>
+                                            <Text style={[styles.gridValue, { color: textPrimary }]}>{selectedServicio.creado_por || "Garzón/Cajero"}</Text>
+                                        </View>
+
+                                    </View>
+
+                                    <View style={[styles.summarySection, { backgroundColor: isDark ? '#111827' : '#F9FAFB', borderColor }]}>
+                                        <View style={[styles.summaryRow, { marginTop: 4 }]}>
+                                            <Text style={[styles.summaryLabel, { color: textSecondary }]}>Precio del Servicio</Text>
+                                            <Text style={[styles.summaryVal, { color: textPrimary }]}>${(selectedServicio.precio_servicio || 0).toLocaleString()}</Text>
+                                        </View>
+                                        <View style={[styles.summaryRow, { marginTop: 8, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', paddingTop: 12 }]}>
+                                            <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTADO DE PAGO</Text>
+                                            <Text style={[styles.totalValFinal, { color: selectedServicio.pago_estado === 0 ? '#10B981' : '#EF4444', fontSize: 18 }]}>
+                                                {selectedServicio.pago_estado === 0 ? 'PAGADO ✓' : 'POR COBRAR ⚠'}
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', paddingTop: 12 }]}>
+                                            <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTA ES MI COMISIÓN</Text>
+                                            <Text style={[styles.totalValFinal, { color: '#10B981', fontSize: 26 }]}>${(selectedServicio.comision_usuario || 0).toLocaleString()}</Text>
+                                        </View>
+                                    </View>
+                                </ScrollView>
+
+                                <Pressable
+                                    style={[styles.modalCloseBtn, { backgroundColor: '#E11D48' }]}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
+                                </Pressable>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
             <PremiumAlert
                 visible={alertConfig.visible}
                 title={alertConfig.title}
@@ -354,7 +502,7 @@ const styles = StyleSheet.create({
         padding: 20, alignItems: 'center', borderWidth: 1,
     },
     summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#8B5CF6', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#E11D48', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: {
@@ -395,4 +543,21 @@ const styles = StyleSheet.create({
     assistanceGrid: { flexDirection: 'row', gap: 8 },
     assistanceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 12 },
     assistanceBtnText: { fontSize: 11, fontWeight: '700' },
+    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+    detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: "90%", padding: 24, paddingBottom: 35 },
+    modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 },
+    modalTitleText: { fontSize: 24, fontWeight: "900", marginBottom: 4 },
+    modalSubText: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
+    closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(155,155,155,0.1)", justifyContent: "center", alignItems: "center" },
+    detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginBottom: 16 },
+    gridItem: { width: "45%", backgroundColor: "rgba(155,155,155,0.05)", padding: 16, borderRadius: 16, flexGrow: 1 },
+    gridLabel: { fontSize: 11, fontWeight: "800", marginBottom: 6, letterSpacing: 0.5 },
+    gridValue: { fontSize: 15, fontWeight: "700" },
+    summarySection: { padding: 16, borderRadius: 16, borderWidth: 1, marginTop: 10, marginBottom: 20 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    summaryVal: { fontSize: 16, fontWeight: '700' },
+    totalLabelFinal: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    totalValFinal: { fontSize: 22, fontWeight: '900', color: '#10B981' },
+    modalCloseBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginTop: 10, elevation: 4, shadowColor: '#E11D48', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

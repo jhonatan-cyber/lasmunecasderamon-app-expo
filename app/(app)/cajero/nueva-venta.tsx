@@ -27,8 +27,8 @@ import { HostessSelectModal } from '../../../components/cajero/forms/HostessSele
 import { PaymentMethod, PaymentMethodSelect } from '../../../components/cajero/forms/PaymentMethodSelect';
 import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '../../../components/cajero/forms/TipCheckbox';
-import { useAuthStore } from '../../../store/authStore';
 import { useSales } from '../../../context/SalesContext';
+import { useAuthStore } from '../../../store/authStore';
 
 type VentaState = {
     loadingInitial: boolean;
@@ -179,7 +179,7 @@ export default function NuevaVentaScreen() {
 
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
-    
+
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
@@ -366,11 +366,11 @@ export default function NuevaVentaScreen() {
         }
     }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas]);
 
-    if (loadingInitial) return <View style={[styles.centerContainer, { backgroundColor: bg }]}><ActivityIndicator size="large" color="#8B5CF6" /></View>;
+    if (loadingInitial) return <View style={[styles.centerContainer, { backgroundColor: bg }]}><ActivityIndicator size="large" color="#E11D48" /></View>;
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>
-            <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}>
                 <CategorySelector
                     categories={categories}
                     onSelectCategory={handleOpenCategory}
@@ -385,7 +385,7 @@ export default function NuevaVentaScreen() {
                             accessibilityLabel="Seleccionar habitación"
                             accessibilityRole="button"
                         >
-                            <Ionicons name="business" size={20} color="#8B5CF6" />
+                            <Ionicons name="business" size={20} color="#E11D48" />
                             <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación'}</Text>
                         </Pressable>
                     )}
@@ -458,7 +458,7 @@ export default function NuevaVentaScreen() {
                                 <Ionicons name="close" size={26} color={textPrimary} />
                             </Pressable>
                         </View>
-                        {modalLoading ? <ActivityIndicator size="large" color="#8B5CF6" style={{ margin: 40 }} /> : (
+                        {modalLoading ? <ActivityIndicator size="large" color="#E11D48" style={{ margin: 40 }} /> : (
                             <FlatList
                                 data={modalProducts}
                                 keyExtractor={(item) => (item.id || item.id_producto).toString()}
@@ -557,7 +557,7 @@ export default function NuevaVentaScreen() {
                                 >
                                     <Ionicons name="time" size={22} color="#10B981" />
                                     <Text style={[styles.productName, { color: textPrimary, marginLeft: 16 }]}>{item} minutos</Text>
-                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color="#8B5CF6" style={{ marginLeft: 'auto' }} />}
+                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color="#E11D48" style={{ marginLeft: 'auto' }} />}
                                 </TouchableOpacity>
                             )}
                         />
@@ -595,7 +595,7 @@ export default function NuevaVentaScreen() {
                     id: a.id_usuario || a.id,
                     id_usuario: a.id_usuario || a.id,
                     nick: a.nick,
-                    status: a.status || 0
+                    status: a.estado_servicio || 1
                 }))}
                 selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
                 max={hostessSelectionTarget?.max}
@@ -650,8 +650,8 @@ const styles = StyleSheet.create({
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
     totalLabel: { fontSize: 18, fontWeight: '900' },
-    totalValue: { fontSize: 26, fontWeight: '900', color: '#8B5CF6' },
-    submitBtn: { backgroundColor: '#8B5CF6', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    totalValue: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
+    submitBtn: { backgroundColor: '#E11D48', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
     modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-    addBtn: { backgroundColor: '#8B5CF6', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    addBtn: { backgroundColor: '#E11D48', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#E11D48', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

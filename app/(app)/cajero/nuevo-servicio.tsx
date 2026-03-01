@@ -321,7 +321,7 @@ export default function NuevoServicioScreen() {
   if (loadingInitial) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: bg }]}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
+        <ActivityIndicator size="large" color="#E11D48" />
       </View>
     );
   }
@@ -375,7 +375,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar habitación"
             accessibilityRole="button"
           >
-            <Ionicons name="business" size={22} color="#8B5CF6" />
+            <Ionicons name="business" size={22} color="#E11D48" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorLabel, { color: textSecondary }]}>
                 Habitación (Requerido)
@@ -523,7 +523,7 @@ export default function NuevoServicioScreen() {
           <Pressable
             style={[
               styles.submitBtn,
-              { backgroundColor: "#8B5CF6" },
+              { backgroundColor: "#E11D48" },
               (submitting || !cajaAbierta) && { opacity: 0.7 },
             ]}
             onPress={handleSubmit}
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 14, fontWeight: "600" },
   summaryVal: { fontSize: 15, fontWeight: "800" },
   totalLabelFinal: { fontSize: 16, fontWeight: "900" },
-  totalValFinal: { fontSize: 28, fontWeight: "900", color: "#8B5CF6" },
+  totalValFinal: { fontSize: 28, fontWeight: "900", color: "#E11D48" },
   submitBtn: {
     height: 60,
     borderRadius: 20,

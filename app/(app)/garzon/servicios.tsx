@@ -41,6 +41,7 @@ interface Anfitriona {
     name: string;
     nombre?: string;
     foto: string;
+    estado_servicio?: number;
 }
 
 interface Client {
@@ -80,7 +81,7 @@ export default function ServiciosScreen() {
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
-    const primaryColor = '#8B5CF6'; // Violet for services
+    const primaryColor = '#E11D48'; // Violet for services
 
     // Fetch data
     const fetchData = useCallback(async (isRefreshing = false) => {
@@ -353,6 +354,9 @@ export default function ServiciosScreen() {
                                 </View>
                                 <Text style={[styles.hostessNick, { color: textPrimary }]} numberOfLines={1}>
                                     {anf.nick || anf.nombre || anf.name}
+                                </Text>
+                                <Text style={[{ color: anf.estado_servicio === 2 ? '#EF4444' : '#10B981', fontSize: 9, fontWeight: '800', marginTop: 4, textAlign: 'center' }]}>
+                                    {anf.estado_servicio === 2 ? 'OCUPADA' : 'LIBRE'}
                                 </Text>
                             </Pressable>
                         );

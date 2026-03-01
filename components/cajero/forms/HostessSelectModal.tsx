@@ -15,7 +15,8 @@ interface Hostess {
   id: number | string;
   id_usuario?: number | string;
   nick: string;
-  status: number;
+  status?: number;
+  estado_servicio?: number;
 }
 
 interface HostessSelectModalProps {
@@ -74,7 +75,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
             renderItem={({ item }) => {
               const id = Number(item.id_usuario || item.id);
               const isSelected = selectedIds.includes(id);
-              const isBusy = item.status === 2;
+              const isBusy = (item.estado_servicio || item.status) === 2;
               const isMaxReached = max !== undefined && selectedIds.length >= max;
               const isDisabled = isBusy || (isMaxReached && !isSelected);
 
@@ -92,7 +93,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                   <View
                     style={[
                       styles.avatar,
-                      { backgroundColor: isBusy ? "#EF4444" : "#8B5CF6" },
+                      { backgroundColor: isBusy ? "#EF4444" : "#E11D48" },
                     ]}
                   >
                     <Text style={styles.avatarText}>
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
   modalActionBtn: {
     height: 50,
     borderRadius: 16,
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "#E11D48",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,

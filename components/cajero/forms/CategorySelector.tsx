@@ -38,8 +38,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                         accessibilityLabel={`Categoría ${cat.name || cat.nombre}`}
                         accessibilityRole="button"
                     >
-                        <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#8B5CF615' : '#10B98115' }]}>
-                            <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#8B5CF6' : '#10B981'} />
+                        <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#E11D4815' : '#10B98115' }]}>
+                            <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#E11D48' : '#10B981'} />
                         </View>
                         <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name || cat.nombre}</Text>
                     </Pressable>

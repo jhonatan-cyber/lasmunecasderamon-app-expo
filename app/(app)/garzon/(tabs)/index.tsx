@@ -177,7 +177,7 @@ export default function GarzonHomeScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#E11D48" />
             </View>
         );
     }
@@ -187,7 +187,7 @@ export default function GarzonHomeScreen() {
             <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
             >
                 <AnimatedScreen>
                     <LinearGradient
@@ -211,7 +211,7 @@ export default function GarzonHomeScreen() {
                                 title="PEDIDOS"
                                 description={hasOpenCaja ? "Inicia una nueva orden" : "Caja cerrada"}
                                 icon="beer"
-                                color="#8B5CF6"
+                                color="#E11D48"
                                 disabled={!hasOpenCaja}
                                 onPress={() => router.push('/(app)/garzon/pedidos')}
                             />
@@ -342,7 +342,7 @@ export default function GarzonHomeScreen() {
                                 </Pressable>
                             )}
                             <Pressable
-                                style={[styles.alertBtn, { backgroundColor: '#8B5CF6', flex: 1.5 }]}
+                                style={[styles.alertBtn, { backgroundColor: '#E11D48', flex: 1.5 }]}
                                 onPress={() => {
                                     dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } });
                                     alertConfig.onConfirm?.();
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     selectionActions: { flexDirection: 'row', gap: 10 },
     clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
     clearBtnText: { color: '#EF4444', fontWeight: '800' },
-    viewBtn: { backgroundColor: '#8B5CF6', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+    viewBtn: { backgroundColor: '#E11D48', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
     viewBtnText: { color: '#FFF', fontWeight: '800' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },

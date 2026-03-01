@@ -105,7 +105,7 @@ export default function AdministrativoScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#E11D48" />
             </View>
         );
     }
@@ -124,7 +124,7 @@ export default function AdministrativoScreen() {
             <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
             >
                 <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
                     <PremiumLiquidationCard
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     selectionActions: { flexDirection: 'row', gap: 10 },
     clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
     clearBtnText: { color: '#EF4444', fontWeight: '800' },
-    viewBtn: { backgroundColor: '#8B5CF6', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+    viewBtn: { backgroundColor: '#E11D48', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
     viewBtnText: { color: '#FFF', fontWeight: '800' },
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },

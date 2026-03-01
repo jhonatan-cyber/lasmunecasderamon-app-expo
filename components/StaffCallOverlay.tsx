@@ -101,7 +101,7 @@ export function StaffCallOverlay() {
                         const voiceMessage = `Solicitud de asistencia. La anfitriona ${hostessName} se encuentra ${location} y solicita ${typeNormalized}.`;
 
                         const userRole = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-                        triggerNotificationEffects("LLAMADO STAFF", voiceMessage, userRole, true);
+                        triggerNotificationEffects("Solicitud de Personal", voiceMessage, userRole, true);
 
                         return [callData, ...prev];
                     });
@@ -170,18 +170,18 @@ export function StaffCallOverlay() {
                         styles.card,
                         {
                             backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                            borderColor: '#8B5CF6',
+                            borderColor: '#E11D48',
                             zIndex: 1000 - index
                         }
                     ]}
                 >
                     <View style={styles.cardHeader}>
                         <View style={styles.iconBox}>
-                            <Ionicons name="notifications" size={20} color="#8B5CF6" />
+                            <Ionicons name="notifications" size={20} color="#E11D48" />
                         </View>
                         <View style={styles.textContainer}>
                             <Text style={[styles.title, { color: isDark ? '#FFF' : '#000' }]}>
-                                LLAMADO DE ATENCIÓN
+                                SOLICITUD DE PERSONAL
                             </Text>
                             <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
                                 {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
@@ -197,7 +197,7 @@ export function StaffCallOverlay() {
                         style={({ pressed }) => [
                             styles.btn,
                             {
-                                backgroundColor: '#8B5CF6',
+                                backgroundColor: '#E11D48',
                                 opacity: (pressed || accepting === call.id) ? 0.7 : 1
                             }
                         ]}
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: '#8B5CF620',
+        backgroundColor: '#E11D4820',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,

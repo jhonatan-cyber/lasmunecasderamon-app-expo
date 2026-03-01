@@ -31,8 +31,8 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
             onPress={onPress}
         >
             <View style={styles.categoryContent}>
-                <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? '#8B5CF620' : '#10B98120' }]}>
-                    <Ionicons name="wine" size={30} color={index % 2 === 0 ? '#8B5CF6' : '#10B981'} />
+                <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? '#E11D4820' : '#10B98120' }]}>
+                    <Ionicons name="wine" size={30} color={index % 2 === 0 ? '#E11D48' : '#10B981'} />
                 </View>
 
                 <View style={styles.categoryInfo}>
@@ -44,7 +44,7 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
 
                 <View style={styles.categoryRight}>
                     <View style={[styles.productsBadge, { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                        <Text style={[styles.productsCount, { color: '#8B5CF6' }]}>
+                        <Text style={[styles.productsCount, { color: '#E11D48' }]}>
                             {item.total_products}
                         </Text>
                     </View>

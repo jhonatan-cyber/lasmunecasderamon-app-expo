@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -13,7 +12,7 @@ import {
   Text,
   useColorScheme,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -159,11 +158,11 @@ export default function VentasScreen() {
   const fetchVentas = useCallback(async (isManual = false) => {
     try {
       const [resSales, resResumen] = await Promise.all([
-        apiClient("/sales?limit=50").catch(() => ({
+        apiClient("/ventas?limit=50").catch(() => ({
           success: false,
           data: [],
         })),
-        apiClient("/sales?tipo=resumen").catch(() => ({
+        apiClient("/ventas?tipo=resumen").catch(() => ({
           success: false,
           data: null,
         })),
@@ -410,11 +409,11 @@ export default function VentasScreen() {
                   <View
                     style={[
                       styles.hostessPill,
-                      { backgroundColor: "#8B5CF610" },
+                      { backgroundColor: "#E11D4810" },
                     ]}
                   >
                     <Text
-                      style={[styles.hostessText, { color: "#8B5CF6" }]}
+                      style={[styles.hostessText, { color: "#E11D48" }]}
                       numberOfLines={1}
                     >
                       {item.usuarios_nicks}
@@ -461,15 +460,15 @@ export default function VentasScreen() {
                 style={[
                   styles.timerPill,
                   {
-                    backgroundColor: remaining < 60 ? "#EF444420" : "#8B5CF620",
-                    borderColor: remaining < 60 ? "#EF444440" : "#8B5CF640",
+                    backgroundColor: remaining < 60 ? "#EF444420" : "#E11D4820",
+                    borderColor: remaining < 60 ? "#EF444440" : "#E11D4840",
                   },
                 ]}
               >
                 <Ionicons
                   name="time"
                   size={16}
-                  color={remaining < 60 ? "#EF4444" : "#8B5CF6"}
+                  color={remaining < 60 ? "#EF4444" : "#E11D48"}
                 />
                 <View>
                   <Text style={[styles.timerLabel, { color: textSecondary }]}>
@@ -602,7 +601,7 @@ export default function VentasScreen() {
           <Pressable
             style={[
               styles.tab,
-              activeTab === "historial" && { backgroundColor: "#8B5CF6" },
+              activeTab === "historial" && { backgroundColor: "#E11D48" },
             ]}
             onPress={() => setActiveTab("historial")}
           >
@@ -620,7 +619,7 @@ export default function VentasScreen() {
           <Pressable
             style={[
               styles.tab,
-              activeTab === "proceso" && { backgroundColor: "#8B5CF6" },
+              activeTab === "proceso" && { backgroundColor: "#E11D48" },
             ]}
             onPress={() => setActiveTab("proceso")}
           >
@@ -637,12 +636,12 @@ export default function VentasScreen() {
               </Text>
               {timers.filter((t) => t.tipoTransaccion === "venta").length >
                 0 && (
-                <View style={styles.tabBadge}>
-                  <Text style={styles.tabBadgeText}>
-                    {timers.filter((t) => t.tipoTransaccion === "venta").length}
-                  </Text>
-                </View>
-              )}
+                  <View style={styles.tabBadge}>
+                    <Text style={styles.tabBadgeText}>
+                      {timers.filter((t) => t.tipoTransaccion === "venta").length}
+                    </Text>
+                  </View>
+                )}
             </View>
           </Pressable>
         </View>
@@ -653,15 +652,15 @@ export default function VentasScreen() {
           activeTab === "historial"
             ? ventas
             : ventas.filter(
-                (v) =>
-                  v.estado === 2 ||
-                  timers.some(
-                    (t) =>
-                      t.tipoTransaccion === "venta" &&
-                      (t.servicioId === v.id_venta ||
-                        (t.roomId === v.habitacion_id && v.estado === 2)),
-                  ),
-              )
+              (v) =>
+                v.estado === 2 ||
+                timers.some(
+                  (t) =>
+                    t.tipoTransaccion === "venta" &&
+                    (t.servicioId === v.id_venta ||
+                      (t.roomId === v.habitacion_id && v.estado === 2)),
+                ),
+            )
         }
         renderItem={renderVentaCard}
         numColumns={numColumns}
@@ -671,7 +670,7 @@ export default function VentasScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#8B5CF6"
+            tintColor="#E11D48"
           />
         }
         ListEmptyComponent={
@@ -703,7 +702,7 @@ export default function VentasScreen() {
           >
             {loadingDetail ? (
               <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#E11D48" />
                 <Text style={{ color: textSecondary, marginTop: 10 }}>
                   Cargando detalles...
                 </Text>
@@ -812,13 +811,13 @@ export default function VentasScreen() {
                       </Text>
                       <View style={styles.hostessBadges}>
                         {selectedVenta.usuarios &&
-                        selectedVenta.usuarios.length > 0 ? (
+                          selectedVenta.usuarios.length > 0 ? (
                           selectedVenta.usuarios.map((u: any, idx: number) => (
                             <View
                               key={idx}
                               style={[
                                 styles.hostessBadgeDetail,
-                                { backgroundColor: "#8B5CF615" },
+                                { backgroundColor: "#E11D4815" },
                               ]}
                             >
                               <Text style={styles.hostessTextDetail}>
@@ -1036,7 +1035,7 @@ export default function VentasScreen() {
                   <Pressable
                     style={[
                       styles.modalCloseBtn,
-                      { backgroundColor: "#8B5CF6" },
+                      { backgroundColor: "#E11D48" },
                     ]}
                     onPress={() => setModalVisible(false)}
                   >
@@ -1081,9 +1080,9 @@ export default function VentasScreen() {
               onPress={() => handleVerDetalles(activeVenta?.id_venta)}
             >
               <View
-                style={[styles.actionIconBox, { backgroundColor: "#8B5CF615" }]}
+                style={[styles.actionIconBox, { backgroundColor: "#E11D4815" }]}
               >
-                <Ionicons name="eye-outline" size={22} color="#8B5CF6" />
+                <Ionicons name="eye-outline" size={22} color="#E11D48" />
               </View>
               <Text style={[styles.actionText, { color: textPrimary }]}>
                 Ver Detalles / Recibo
@@ -1188,10 +1187,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "#E11D48",
     justifyContent: "center",
     elevation: 2,
-    shadowColor: "#8B5CF6",
+    shadowColor: "#E11D48",
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -1209,7 +1208,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginBottom: 20,
     elevation: 8,
-    shadowColor: "#8B5CF6",
+    shadowColor: "#E11D48",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -1424,7 +1423,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
   },
-  hostessTextDetail: { fontSize: 13, fontWeight: "800", color: "#8B5CF6" },
+  hostessTextDetail: { fontSize: 13, fontWeight: "800", color: "#E11D48" },
 
   tableContainer: {
     borderRadius: 16,
@@ -1459,7 +1458,7 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 14, fontWeight: "700" },
   summaryVal: { fontSize: 15, fontWeight: "800" },
   totalLabelFinal: { fontSize: 18, fontWeight: "900" },
-  totalValFinal: { fontSize: 24, fontWeight: "900", color: "#8B5CF6" },
+  totalValFinal: { fontSize: 24, fontWeight: "900", color: "#E11D48" },
 
   modalCloseBtn: {
     height: 56,

@@ -13,7 +13,7 @@ export const CajeroActionGrid = () => {
     const cols = isTablet ? 3 : 2;
     const spacing = isTablet ? 24 : 16;
     const actions = [
-        { title: "VENTAS", description: "Realizar nueva venta", icon: "cart" as const, color: "#8B5CF6", route: '/cajero/ventas' },
+        { title: "VENTAS", description: "Realizar nueva venta", icon: "cart" as const, color: "#E11D48", route: '/cajero/ventas' },
         { title: "CUENTAS", description: "Cuentas pendientes", icon: "receipt" as const, color: "#3B82F6", route: '/cajero/cuentas' },
         { title: "SERVICIOS", description: "Gestión de privados", icon: "bed" as const, color: "#EF4444", route: '/cajero/servicios' },
         { title: "CAJA", description: "Control de cajas", icon: "cash" as const, color: "#10B981", route: '/cajero/caja' },

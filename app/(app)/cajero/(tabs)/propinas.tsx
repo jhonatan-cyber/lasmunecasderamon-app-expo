@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     useColorScheme,
-    View,
+    View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 
 interface Propina {
     id_detalle_propina: number;
@@ -48,7 +49,7 @@ export default function PropinasScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setPropinas(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -122,65 +123,92 @@ export default function PropinasScreen() {
     const renderItem = ({ item, index }: { item: Propina; index: number }) => {
         const isPendiente = item.estado === 1;
         return (
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                <View style={styles.cardHeader}>
-                    <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                        <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        {item.codigo_venta ? (
-                            <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
-                                <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
-                                <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo_venta}</Text>
-                            </View>
-                        ) : null}
-                        <View style={[
-                            styles.statusBadge,
-                            { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
-                        ]}>
-                            <Text style={[
-                                styles.statusText,
-                                { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+            <MotiView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'spring', delay: index * 50 }}
+            >
+                <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                    <View style={styles.cardHeader}>
+                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {item.codigo_venta ? (
+                                <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
+                                    <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
+                                    <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo_venta}</Text>
+                                </View>
+                            ) : null}
+                            <View style={[
+                                styles.statusBadge,
+                                { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1E3A5F' : '#DBEAFE') }
                             ]}>
-                                {isPendiente ? 'Por cobrar' : 'Cobrada'}
+                                <Text style={[
+                                    styles.statusText,
+                                    { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }
+                                ]}>
+                                    {isPendiente ? 'Por cobrar' : 'Cobrada'}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.cardBody}>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={16} color={textSecondary} />
+                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
+                            <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
+                        </View>
+
+                        <View style={styles.amountRow}>
+                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Propina</Text>
+                            <Text style={[styles.amountValue, { color: '#10B981' }]}>
+                                ${(item.monto || 0).toLocaleString()}
                             </Text>
                         </View>
+
+                        {item.propina_fecha_crea && item.estado === 0 ? (
+                            <View style={styles.paymentRow}>
+                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Text style={[styles.paymentText, { color: textSecondary }]}>Pagada: {formatDate(item.propina_fecha_crea)}</Text>
+                            </View>
+                        ) : null}
                     </View>
                 </View>
-
-                <View style={styles.cardBody}>
-                    <View style={styles.dateRow}>
-                        <Ionicons name="calendar-outline" size={16} color={textSecondary} />
-                        <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                        <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
-                    </View>
-
-                    <View style={styles.amountRow}>
-                        <Text style={[styles.amountLabel, { color: textSecondary }]}>Propina</Text>
-                        <Text style={[styles.amountValue, { color: '#10B981' }]}>
-                            ${(item.monto || 0).toLocaleString()}
-                        </Text>
-                    </View>
-
-                    {item.propina_fecha_crea && item.estado === 0 ? (
-                        <View style={styles.paymentRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                            <Text style={[styles.paymentText, { color: textSecondary }]}>Pagada: {formatDate(item.propina_fecha_crea)}</Text>
-                        </View>
-                    ) : null}
-                </View>
-            </View>
+            </MotiView>
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando propinas...</Text>
+    const ListSkeleton = () => (
+        <View style={[styles.container, { backgroundColor: bg }]}>
+            <View style={{ margin: 16 }}>
+                <Skeleton height={140} borderRadius={16} />
             </View>
-        );
-    }
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 15 }}>
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 12 }}>
+                {[1, 2, 3].map(i => (
+                    <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                            <Skeleton width={32} height={32} borderRadius={16} />
+                            <Skeleton width={80} height={20} borderRadius={10} />
+                        </View>
+                        <Skeleton height={15} width="60%" style={{ marginBottom: 15 }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Skeleton width={80} height={20} />
+                            <Skeleton width={100} height={30} />
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+
+    if (loading) return <ListSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -201,10 +229,16 @@ export default function PropinasScreen() {
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
                         key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? textPrimary : cardBg, borderColor }]}
+                        style={[
+                            styles.filterButton,
+                            {
+                                backgroundColor: filter === f ? '#E11D48' : cardBg,
+                                borderColor: filter === f ? '#E11D48' : borderColor
+                            }
+                        ]}
                         onPress={() => setFilter(f)}
                     >
-                        <Text style={[styles.filterText, { color: filter === f ? bg : textSecondary }]}>
+                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
                             {f === 'all' ? `Todas (${propinas.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${propinas.length - pendientes.length})`}
                         </Text>
                     </Pressable>

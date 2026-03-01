@@ -103,15 +103,15 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
                     return (
                         <Pressable
                             key={i}
-                            style={[styles.dayCell, isSelected && { backgroundColor: '#8B5CF6' }]}
+                            style={[styles.dayCell, isSelected && { backgroundColor: '#E11D48' }]}
                             onPress={() => handleDatePress(d.day, d.month, d.year)}
                             accessibilityLabel={`Día ${d.day} de ${currentMonth.toLocaleDateString('es-ES', { month: 'long' })}`}
                             accessibilityRole="button"
                         >
-                            <Text style={[styles.dayText, { color: d.current ? textPrimary : textSecondary }, isSelected && { color: '#FFF' }, isToday && !isSelected && { color: '#8B5CF6', fontWeight: 'bold' }]}>
+                            <Text style={[styles.dayText, { color: d.current ? textPrimary : textSecondary }, isSelected && { color: '#FFF' }, isToday && !isSelected && { color: '#E11D48', fontWeight: 'bold' }]}>
                                 {d.day}
                             </Text>
-                            {hasEvnt && <View style={[styles.eventDot, { backgroundColor: isSelected ? '#FFF' : '#8B5CF6' }]} />}
+                            {hasEvnt && <View style={[styles.eventDot, { backgroundColor: isSelected ? '#FFF' : '#E11D48' }]} />}
                         </Pressable>
                     );
                 })}

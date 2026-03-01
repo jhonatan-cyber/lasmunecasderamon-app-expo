@@ -76,7 +76,7 @@ export const toastConfig: ToastConfig = {
   order: (props: BaseToastProps) => (
     <BaseToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#8B5CF6" }]}
+      style={[commonStyle, { borderLeftColor: "#E11D48" }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}

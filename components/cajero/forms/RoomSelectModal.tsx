@@ -120,7 +120,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={24}
-                      color="#8B5CF6"
+                      color="#E11D48"
                     />
                   )}
                 </TouchableOpacity>
