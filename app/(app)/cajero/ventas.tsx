@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   Text,
   useColorScheme,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,6 +67,9 @@ export default function VentasScreen() {
   const [activeVenta, setActiveVenta] = useState<any>(null);
 
   const { timers, serverOffset, refreshTimers } = useTimer();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const numColumns = isTablet ? 2 : 1;
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<"historial" | "proceso">(
     (params.tab as any) === "proceso" ? "proceso" : "historial",
@@ -659,7 +664,8 @@ export default function VentasScreen() {
               )
         }
         renderItem={renderVentaCard}
-        keyExtractor={(item) => item.id_venta.toString()}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns > 1 ? { gap: 12, marginHorizontal: 12 } : undefined}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl
@@ -668,7 +674,6 @@ export default function VentasScreen() {
             tintColor="#8B5CF6"
           />
         }
-        ListHeaderComponent={null}
         ListEmptyComponent={
           <View style={[styles.emptyCard, { borderColor }]}>
             <Ionicons name="receipt-outline" size={64} color={textSecondary} />
@@ -1256,10 +1261,11 @@ const styles = StyleSheet.create({
 
   // Card Improved
   card: {
+    flex: 1,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderLeftWidth: 6, // Status Indicator Bar
+    borderLeftWidth: 6,
     marginBottom: 14,
     elevation: 3,
     shadowColor: "#000",

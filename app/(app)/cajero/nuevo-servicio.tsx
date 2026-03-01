@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,30 +24,114 @@ import {
 } from "../../../components/cajero/forms/PaymentMethodSelect";
 import { RoomSelectModal } from "../../../components/cajero/forms/RoomSelectModal";
 
+type ServiceState = {
+  loadingInitial: boolean;
+  anfitrionas: any[];
+  habitaciones: any[];
+  clientes: any[];
+  cajaAbierta: boolean | null;
+  selectedHostesses: number[];
+  selectedClients: number[];
+  selectedHabitacion: any;
+  precioServicio: string;
+  metodoPago: PaymentMethod;
+  submitting: boolean;
+  hostessModalVisible: boolean;
+  roomModalVisible: boolean;
+  clientModalVisible: boolean;
+};
+
+type ServiceAction =
+  | { type: 'SET_LOADING_INITIAL'; payload: boolean }
+  | { type: 'SET_INITIAL_DATA'; payload: { anfitrionas: any[], habitaciones: any[], clientes: any[], cajaAbierta: boolean } }
+  | { type: 'SET_SELECTED_HOSTESSES'; payload: number[] }
+  | { type: 'SET_SELECTED_CLIENTS'; payload: number[] }
+  | { type: 'SET_SELECTED_HABITACION'; payload: any }
+  | { type: 'SET_PRECIO_SERVICIO'; payload: string }
+  | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
+  | { type: 'SET_SUBMITTING'; payload: boolean }
+  | { type: 'SET_MODAL_VISIBLE'; modal: 'hostess' | 'room' | 'client'; visible: boolean };
+
+const initialServiceState: ServiceState = {
+  loadingInitial: true,
+  anfitrionas: [],
+  habitaciones: [],
+  clientes: [],
+  cajaAbierta: null,
+  selectedHostesses: [],
+  selectedClients: [],
+  selectedHabitacion: null,
+  precioServicio: "0",
+  metodoPago: "efectivo",
+  submitting: false,
+  hostessModalVisible: false,
+  roomModalVisible: false,
+  clientModalVisible: false,
+};
+
+function serviceReducer(state: ServiceState, action: ServiceAction): ServiceState {
+  switch (action.type) {
+    case 'SET_LOADING_INITIAL': return { ...state, loadingInitial: action.payload };
+    case 'SET_INITIAL_DATA': return { ...state, ...action.payload };
+    case 'SET_SELECTED_HOSTESSES': return { ...state, selectedHostesses: action.payload };
+    case 'SET_SELECTED_CLIENTS': return { ...state, selectedClients: action.payload };
+    case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
+    case 'SET_PRECIO_SERVICIO': return { ...state, precioServicio: action.payload };
+    case 'SET_METODO_PAGO': return { ...state, metodoPago: action.payload };
+    case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+    case 'SET_MODAL_VISIBLE':
+      if (action.modal === 'hostess') return { ...state, hostessModalVisible: action.visible };
+      if (action.modal === 'room') return { ...state, roomModalVisible: action.visible };
+      if (action.modal === 'client') return { ...state, clientModalVisible: action.visible };
+      return state;
+    default: return state;
+  }
+}
+
+const showToast = (
+  title: string,
+  message: string,
+  type: "success" | "error" = "error",
+) => {
+  Toast.show({
+    type,
+    text1: title,
+    text2: message,
+    visibilityTime: 4000,
+  });
+};
+
+const generateCode = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export default function NuevoServicioScreen() {
   const isDark = (useColorScheme() ?? "dark") === "dark";
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Data State
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
-  const [habitaciones, setHabitaciones] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null);
-
-  // Form State
-  const [selectedHostesses, setSelectedHostesses] = useState<number[]>([]);
-  const [selectedClients, setSelectedClients] = useState<number[]>([]);
-  const [selectedHabitacion, setSelectedHabitacion] = useState<any>(null);
-  const [precioServicio, setPrecioServicio] = useState<string>("0");
-  const [metodoPago, setMetodoPago] = useState<PaymentMethod>("efectivo");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Modals
-  const [hostessModalVisible, setHostessModalVisible] = useState(false);
-  const [roomModalVisible, setRoomModalVisible] = useState(false);
-  const [clientModalVisible, setClientModalVisible] = useState(false);
+  const [state, dispatch] = useReducer(serviceReducer, initialServiceState);
+  const {
+    loadingInitial,
+    anfitrionas,
+    habitaciones,
+    clientes,
+    cajaAbierta,
+    selectedHostesses,
+    selectedClients,
+    selectedHabitacion,
+    precioServicio,
+    metodoPago,
+    submitting,
+    hostessModalVisible,
+    roomModalVisible,
+    clientModalVisible,
+  } = state;
 
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#1F2937" : "#FFFFFF";
@@ -55,21 +139,8 @@ export default function NuevoServicioScreen() {
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#374151" : "#E5E7EB";
 
-  const showToast = (
-    title: string,
-    message: string,
-    type: "success" | "error" = "error",
-  ) => {
-    Toast.show({
-      type,
-      text1: title,
-      text2: message,
-      visibilityTime: 4000,
-    });
-  };
-
   const fetchInitialData = useCallback(async () => {
-    setLoadingInitial(true);
+    dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all(
         [
@@ -80,14 +151,22 @@ export default function NuevoServicioScreen() {
         ],
       );
 
-      setCajaAbierta(cajaRes.success && cajaRes.data.hasOpenCaja);
-      if (anfitrionasRes.success) setAnfitrionas(anfitrionasRes.data);
-      if (roomsRes.success) setHabitaciones(roomsRes.data);
+      let fetchedClients = [];
       if (Array.isArray(clientsRes)) {
-        setClientes(clientsRes);
+        fetchedClients = clientsRes;
       } else if (clientsRes && clientsRes.success) {
-        setClientes(clientsRes.data || []);
+        fetchedClients = clientsRes.data || [];
       }
+
+      dispatch({
+        type: 'SET_INITIAL_DATA',
+        payload: {
+          cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
+          anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
+          habitaciones: roomsRes.success ? roomsRes.data : [],
+          clientes: fetchedClients,
+        }
+      });
 
       if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
         showToast(
@@ -100,7 +179,7 @@ export default function NuevoServicioScreen() {
       console.error("Error fetching initial data:", error);
       showToast("Error", "No se pudo cargar la información necesaria.");
     } finally {
-      setLoadingInitial(false);
+      dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
     }
   }, []);
 
@@ -108,44 +187,27 @@ export default function NuevoServicioScreen() {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  const hasAnfitrionaComision = useMemo(
-    () =>
-      selectedHabitacion && (selectedHabitacion.comision_anfitriona ?? 0) > 0,
-    [selectedHabitacion],
-  );
+  const hasAnfitrionaComision = selectedHabitacion && (selectedHabitacion.comision_anfitriona ?? 0) > 0;
 
-  const maxHostesses = useMemo(
-    () =>
-      hasAnfitrionaComision ? Math.min(3, 4 - selectedClients.length) : 10,
-    [hasAnfitrionaComision, selectedClients.length],
-  );
-  const maxClients = useMemo(
-    () => (hasAnfitrionaComision ? 4 - selectedHostesses.length : 4),
-    [hasAnfitrionaComision, selectedHostesses.length],
-  );
+  const maxHostesses = hasAnfitrionaComision ? Math.min(3, 4 - selectedClients.length) : 10;
+  const maxClients = hasAnfitrionaComision ? 4 - selectedHostesses.length : 4;
 
-  const numericPrecioServicio =
-    parseInt(precioServicio.replace(/\./g, "")) || 0;
+  const numericPrecioServicio = parseInt(precioServicio.replace(/\./g, "")) || 0;
 
   const totals = useMemo(() => {
     const numAnfitrionas = selectedHostesses.length || 1;
     const numClientes = selectedClients.length || 1;
     const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
 
-    // Multiplicador por tiempo: si es 60 minutos, todo se duplica (como en la web)
     const multiplicadorTiempo = selectedHabitacion?.tiempo === 60 ? 2 : 1;
 
     let multiplicadorServicio = numAnfitrionas;
     let multiplicadorHabitacion = numAnfitrionas;
 
-    // REGLA WEB: Para habitaciones con comisión
     if (tieneComision) {
-      // REGLA: Para habitaciones con comisión, NO multiplicar por número de clientes ni anfitrionas
-      // El precio es por habitación, no por persona
       multiplicadorServicio = 1;
       multiplicadorHabitacion = 1;
     } else if (numClientes > numAnfitrionas) {
-      // Si no hay comisión y hay más clientes que anfitrionas
       multiplicadorServicio = numClientes;
       multiplicadorHabitacion = numClientes;
     }
@@ -159,14 +221,12 @@ export default function NuevoServicioScreen() {
     const subTotalGeneral = subTotalServicio + subTotalHabitacion;
 
     let calculatedIva = 0;
-    // REGLA WEB: Si hay comisión, el IVA siempre es 0 (incluso con tarjeta)
     if (metodoPago === "tarjeta" && !tieneComision) {
       calculatedIva = Math.floor(subTotalServicio * 0.2);
     }
 
     let currentTotal = subTotalGeneral + calculatedIva;
 
-    // Redondeo solo si es tarjeta y NO tiene comisión
     if (metodoPago === "tarjeta" && !tieneComision) {
       const totalRedondeado = Math.ceil(currentTotal / 5000) * 5000;
       const excedente = totalRedondeado - currentTotal;
@@ -188,36 +248,27 @@ export default function NuevoServicioScreen() {
     metodoPago,
   ]);
 
-  const generateCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
   const toggleHostess = (hostessId: number) => {
-    setSelectedHostesses((prev) =>
-      prev.includes(hostessId)
-        ? prev.filter((id) => id !== hostessId)
-        : prev.length < maxHostesses
-          ? [...prev, hostessId]
-          : (showToast("Límite", `Máximo ${maxHostesses} anfitrionas`), prev),
-    );
+    const next = selectedHostesses.includes(hostessId)
+      ? selectedHostesses.filter((id) => id !== hostessId)
+      : selectedHostesses.length < maxHostesses
+        ? [...selectedHostesses, hostessId]
+        : (showToast("Límite", `Máximo ${maxHostesses} anfitrionas`), selectedHostesses);
+
+    dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: next });
   };
 
   const toggleClient = (clientId: number) => {
-    setSelectedClients((prev) =>
-      prev.includes(clientId)
-        ? prev.filter((id) => id !== clientId)
-        : prev.length < maxClients
-          ? [...prev, clientId]
-          : (showToast("Límite", `Máximo ${maxClients} clientes`), prev),
-    );
+    const next = selectedClients.includes(clientId)
+      ? selectedClients.filter((id) => id !== clientId)
+      : selectedClients.length < maxClients
+        ? [...selectedClients, clientId]
+        : (showToast("Límite", `Máximo ${maxClients} clientes`), selectedClients);
+
+    dispatch({ type: 'SET_SELECTED_CLIENTS', payload: next });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!cajaAbierta) {
       showToast("Caja Cerrada", "Abre una caja primero.");
       return;
@@ -231,7 +282,7 @@ export default function NuevoServicioScreen() {
       return;
     }
 
-    setSubmitting(true);
+    dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
       const payload = {
         codigo: generateCode(),
@@ -255,7 +306,7 @@ export default function NuevoServicioScreen() {
       });
       if (res.success) {
         showToast("Éxito", "Servicio creado correctamente", "success");
-        setTimeout(() => router.replace("/cajero/servicios" as any), 1500);
+        setTimeout(() => router.replace("/cajero/servicios"), 1500);
       } else {
         showToast("Error", res.message || "No se pudo crear el servicio");
       }
@@ -263,9 +314,9 @@ export default function NuevoServicioScreen() {
       console.error("Submit error:", error);
       showToast("Error", "Ocurrió un error al procesar el servicio.");
     } finally {
-      setSubmitting(false);
+      dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
-  };
+  }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, router]);
 
   if (loadingInitial) {
     return (
@@ -277,7 +328,7 @@ export default function NuevoServicioScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: bg }]}
     >
       <View
@@ -292,8 +343,10 @@ export default function NuevoServicioScreen() {
       >
         <View style={styles.headerTop}>
           <Pressable
-            onPress={() => router.replace("/cajero/servicios" as any)}
+            onPress={() => router.replace("/cajero/servicios")}
             style={styles.backBtn}
+            accessibilityLabel="Volver a la lista de servicios"
+            accessibilityRole="button"
           >
             <Ionicons name="arrow-back" size={24} color={textPrimary} />
           </Pressable>
@@ -318,7 +371,9 @@ export default function NuevoServicioScreen() {
 
           <Pressable
             style={[styles.selectorBtn, { borderColor }]}
-            onPress={() => setRoomModalVisible(true)}
+            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
+            accessibilityLabel="Seleccionar habitación"
+            accessibilityRole="button"
           >
             <Ionicons name="business" size={22} color="#8B5CF6" />
             <View style={{ flex: 1, marginLeft: 12 }}>
@@ -334,7 +389,9 @@ export default function NuevoServicioScreen() {
 
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
-            onPress={() => setHostessModalVisible(true)}
+            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'hostess', visible: true })}
+            accessibilityLabel="Seleccionar anfitrionas"
+            accessibilityRole="button"
           >
             <Ionicons name="people" size={22} color="#10B981" />
             <View style={{ flex: 1, marginLeft: 12 }}>
@@ -344,12 +401,12 @@ export default function NuevoServicioScreen() {
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedHostesses.length > 0
                   ? selectedHostesses
-                      .map(
-                        (id) =>
-                          anfitrionas.find((a) => (a.id_usuario || a.id) === id)
-                            ?.nick,
-                      )
-                      .join(", ")
+                    .map(
+                      (id) =>
+                        anfitrionas.find((a) => (a.id_usuario || a.id) === id)
+                          ?.nick,
+                    )
+                    .join(", ")
                   : "Seleccionar anfitrionas"}
               </Text>
             </View>
@@ -358,7 +415,9 @@ export default function NuevoServicioScreen() {
 
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
-            onPress={() => setClientModalVisible(true)}
+            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: true })}
+            accessibilityLabel="Seleccionar clientes"
+            accessibilityRole="button"
           >
             <Ionicons name="person" size={22} color="#3B82F6" />
             <View style={{ flex: 1, marginLeft: 12 }}>
@@ -368,15 +427,15 @@ export default function NuevoServicioScreen() {
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedClients.length > 0
                   ? selectedClients
-                      .map((id) => {
-                        const cl = clientes.find(
-                          (c) => (c.id_cliente || c.id) === id,
-                        );
-                        return cl
-                          ? `${cl.nombre || cl.name || ""} ${cl.apellido || cl.last_name || ""}`.trim()
-                          : "Cliente";
-                      })
-                      .join(", ")
+                    .map((id) => {
+                      const cl = clientes.find(
+                        (c) => (c.id_cliente || c.id) === id,
+                      );
+                      return cl
+                        ? `${cl.nombre || cl.name || ""} ${cl.apellido || cl.last_name || ""}`.trim()
+                        : "Cliente";
+                    })
+                    .join(", ")
                   : "Seleccionar clientes (Opcional)"}
               </Text>
             </View>
@@ -397,13 +456,14 @@ export default function NuevoServicioScreen() {
                 value={precioServicio}
                 onChangeText={(val) => {
                   const clean = val.replace(/[^0-9]/g, "");
-                  setPrecioServicio(
-                    clean === ""
+                  dispatch({
+                    type: 'SET_PRECIO_SERVICIO',
+                    payload: clean === ""
                       ? "0"
                       : parseInt(clean)
-                          .toLocaleString("es-CL")
-                          .replace(/,/g, "."),
-                  );
+                        .toLocaleString("es-CL")
+                        .replace(/,/g, "."),
+                  });
                 }}
               />
             </View>
@@ -411,7 +471,7 @@ export default function NuevoServicioScreen() {
 
           <PaymentMethodSelect
             selectedMethod={metodoPago}
-            onSelect={setMetodoPago}
+            onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })}
           />
         </View>
 
@@ -468,6 +528,8 @@ export default function NuevoServicioScreen() {
             ]}
             onPress={handleSubmit}
             disabled={submitting || !cajaAbierta}
+            accessibilityLabel="Generar nuevo servicio"
+            accessibilityRole="button"
           >
             {submitting ? (
               <ActivityIndicator size="small" color="#FFF" />
@@ -496,10 +558,10 @@ export default function NuevoServicioScreen() {
         selectedRoomId={
           selectedHabitacion?.id_habitacion || selectedHabitacion?.id
         }
-        onClose={() => setRoomModalVisible(false)}
+        onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
         onSelect={(room) => {
-          setSelectedHabitacion(room);
-          setRoomModalVisible(false);
+          dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
+          dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
         }}
       />
 
@@ -508,7 +570,7 @@ export default function NuevoServicioScreen() {
         hostesses={anfitrionas}
         selectedIds={selectedHostesses}
         max={maxHostesses}
-        onClose={() => setHostessModalVisible(false)}
+        onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'hostess', visible: false })}
         onToggle={toggleHostess}
       />
 
@@ -517,7 +579,7 @@ export default function NuevoServicioScreen() {
         clients={clientes}
         selectedIds={selectedClients}
         max={maxClients}
-        onClose={() => setClientModalVisible(false)}
+        onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
         onToggle={toggleClient}
       />
     </KeyboardAvoidingView>
@@ -546,7 +608,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: { fontSize: 20, fontWeight: "800" },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,

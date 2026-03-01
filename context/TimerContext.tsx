@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import EventSource from "react-native-sse";
+import Toast from "react-native-toast-message";
 import { API_URL, apiClient } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
@@ -91,7 +92,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const eventSourceRef = useRef<EventSource | null>(null);
   const timersRef = useRef<Timer[]>([]);
 
-  // Sincronizar ref con estado para el intervalo
+  // Sincronizar ref con estado para el intervalo de voz
   useEffect(() => {
     timersRef.current = timers;
   }, [timers]);
@@ -141,68 +142,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Loop de avisos por voz (Solo Cajero)
-  useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== "cajero") return;
-
-    const interval = setInterval(() => {
-      const currentTimers = timersRef.current;
-      currentTimers.forEach((timer) => {
-        if (!timer.isActive || timer.isPaused || timer.estado === 3) return;
-
-        const remSeconds = calculateRemainingTime(timer, serverOffset);
-        const remMinutes = Math.floor(remSeconds / 60);
-
-        // Avisar a los 5 y 1 minuto
-        if (
-          (remMinutes === 5 || remMinutes === 1) &&
-          timer.lastAnnouncedMinute !== remMinutes &&
-          remSeconds > 0
-        ) {
-          const mensaje = `Atención: quedan ${remMinutes} minuto${remMinutes > 1 ? "s" : ""} en la ${timer.roomName}`;
-          announceVoice(mensaje);
-
-          // Marcar como anunciado
-          setTimers((prev) =>
-            prev.map((t) =>
-              t.id === timer.id ? { ...t, lastAnnouncedMinute: remMinutes } : t,
-            ),
-          );
-        }
-      });
-    }, 5000); // Revisar cada 5 segundos
-
-    return () => clearInterval(interval);
-  }, [user, serverOffset]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchActiveTimers();
-
-      // Conectar a SSE para actualizaciones en tiempo real
-      const sseUrl = `${API_URL.replace("/api", "")}/api/notifications/sse`;
-      const es = new EventSource(sseUrl);
-      eventSourceRef.current = es;
-
-      es.addEventListener("message", (event: any) => {
-        if (!event.data) return;
-        try {
-          const payload = JSON.parse(event.data);
-          handleSSEEvent(payload);
-        } catch (err) {
-          console.error("[TimerContext] SSE parse error:", err);
-        }
-      });
-
-      return () => {
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close();
-        }
-      };
-    }
-  }, [user?.id]);
-
-  const handleSSEEvent = (payload: any) => {
+  const handleSSEEvent = useCallback((payload: any) => {
     switch (payload.type) {
       case "timer_started":
         const newTimerData = payload.data;
@@ -228,7 +168,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           waiter_name: newTimerData.waiter_name,
           habitacion_comision: newTimerData.habitacion_comision || 0,
           anfitrionas_ids: newTimerData.anfitrionas_ids || [],
-          created_at: newTimerData.created_at,
+          created_at: newTimerData.created_at || newTimerData.startTime,
           estado: newTimerData.estado || 2,
         };
         setTimers((prev) => [
@@ -238,6 +178,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       case "timer_stopped":
+        const currentUser = useAuthStore.getState().user;
+        const stoppedTimer = timersRef.current.find((t) => t.servicioId === payload.data.servicioId);
+        if (currentUser?.role?.toLowerCase() === "cajero") {
+          const roomLabel = stoppedTimer?.roomName || payload.data?.habitacion_numero || payload.data?.habitacion_id || payload.data?.roomName || 'asignada';
+          Toast.show({
+            type: "success",
+            text1: "Servicio Finalizado Automáticamente",
+            text2: `La habitación ${roomLabel} ha terminado su tiempo.`,
+          });
+        }
         setTimers((prev) =>
           prev.filter((t) => t.servicioId !== payload.data.servicioId),
         );
@@ -269,7 +219,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
                 isPaused: false,
                 estado: 2,
                 startTime: new Date(payload.data.newStartTime),
-                lastAnnouncedMinute: undefined, // Resetear para que pueda volver a anunciar si cambió drásticamente
+                lastAnnouncedMinute: undefined,
               };
             }
             return t;
@@ -283,17 +233,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             if (t.servicioId === payload.data.servicioId) {
               return {
                 ...t,
-                duration: payload.data.duration || t.duration,
-                roomId: payload.data.roomId || t.roomId,
+                ...payload.data,
+                duration: Number(payload.data.duration || t.duration),
+                startTime: payload.data.startTime ? new Date(payload.data.startTime) : t.startTime,
                 roomName: payload.data.roomName || t.roomName,
-                startTime: payload.data.startTime
-                  ? new Date(payload.data.startTime)
-                  : t.startTime,
-                anfitrionas:
-                  payload.data.anfitrionas !== undefined
-                    ? payload.data.anfitrionas
-                    : t.anfitrionas,
-                lastAnnouncedMinute: undefined, // Resetear
+                anfitrionas: payload.data.anfitrionas !== undefined ? payload.data.anfitrionas : t.anfitrionas,
+                lastAnnouncedMinute: undefined,
               };
             }
             return t;
@@ -301,7 +246,72 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         break;
     }
-  };
+  }, [serverOffset]);
+
+  // Loop de avisos por voz (Solo Cajero)
+  useEffect(() => {
+    if (!user || user.role?.toLowerCase() !== "cajero") return;
+
+    const interval = setInterval(() => {
+      const currentTimers = timersRef.current;
+      currentTimers.forEach((timer) => {
+        if (!timer.isActive || timer.isPaused || timer.estado === 3) return;
+
+        const remSeconds = calculateRemainingTime(timer, serverOffset);
+        const remMinutes = Math.floor(remSeconds / 60);
+
+        if (
+          (remMinutes === 5 || remMinutes === 1) &&
+          timer.lastAnnouncedMinute !== remMinutes &&
+          remSeconds > 0
+        ) {
+          const mensaje = `Atención: quedan ${remMinutes} minuto${remMinutes > 1 ? "s" : ""} en la ${timer.roomName}`;
+          announceVoice(mensaje);
+
+          setTimers((prev) =>
+            prev.map((t) =>
+              t.id === timer.id ? { ...t, lastAnnouncedMinute: remMinutes } : t,
+            ),
+          );
+        }
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, serverOffset]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    fetchActiveTimers();
+
+    const sseUrl = `${API_URL.replace("/api", "")}/api/notifications/sse`;
+    let es: EventSource | null = null;
+
+    try {
+      es = new EventSource(sseUrl);
+      eventSourceRef.current = es;
+
+      es.addEventListener("message", (event: any) => {
+        if (!event.data) return;
+        try {
+          const payload = JSON.parse(event.data);
+          handleSSEEvent(payload);
+        } catch (err) {
+          console.error("[TimerContext] SSE parse error:", err);
+        }
+      });
+    } catch (err) {
+      console.error("[TimerContext] SSE init error:", err);
+    }
+
+    return () => {
+      if (es) {
+        es.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, [user?.id, handleSSEEvent, fetchActiveTimers]);
 
   return (
     <TimerContext.Provider

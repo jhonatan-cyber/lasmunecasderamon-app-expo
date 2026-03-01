@@ -19,7 +19,11 @@ export const DonutChart = ({ percent, color, size = 80, strokeWidth = 6, label =
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
     return (
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
+        <View
+            style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}
+            accessibilityLabel={`Gráfico de progreso: ${percent}% ${label}`}
+            accessibilityRole="image"
+        >
             <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
                 <Circle
                     cx={size / 2}

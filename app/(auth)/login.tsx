@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as NavigationBar from 'expo-navigation-bar';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Appearance,
     Image,
+    ImageBackground,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -18,6 +21,7 @@ import {
     View
 } from 'react-native';
 import { apiClient } from '../../api/client';
+import { AnimatedScreen } from '../../components/AnimatedScreen';
 import { useAuthStore } from '../../store/authStore';
 
 export default function LoginScreen() {
@@ -34,6 +38,16 @@ export default function LoginScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme() ?? 'dark';
     const isDark = colorScheme === 'dark';
+
+    useFocusEffect(
+        useCallback(() => {
+            // Con edgeToEdgeEnabled: true en app.json, setPosition y setBackgroundColor ya no son necesarios
+            // y producen advertencias. Solo nos aseguramos de que el estilo de los botones sea el correcto.
+            if (Platform.OS === 'android') {
+                NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+            }
+        }, [isDark])
+    );
 
     const toggleTheme = () => {
         Appearance.setColorScheme(isDark ? 'light' : 'dark');
@@ -111,140 +125,157 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}
-        >
-            <ScrollView
-                contentContainerStyle={styles.inner}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
+        <View style={styles.container}>
+            <ImageBackground
+                source={require('../../assets/images/login_bg.png')}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
             >
-                <StatusBar style={isDark ? 'light' : 'dark'} />
+                <LinearGradient
+                    colors={isDark ? ['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)', '#000000'] : ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.8)', '#FFFFFF']}
+                    style={StyleSheet.absoluteFillObject}
+                />
 
-                {/* Logo */}
-                <View style={styles.logoContainer}>
-                    <Image
-                        source={require('../../assets/images/logo2.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                </View>
-
-                {/* Title */}
-                <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                    Iniciar Sesión
-                </Text>
-                <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                    Ingresa tus credenciales para continuar
-                </Text>
-
-                {/* Form */}
-                <View style={styles.formContainer}>
-                    {error ? (
-                        <View style={[styles.errorContainer, { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' }]}>
-                            <Text style={styles.errorText}>{error}</Text>
-                        </View>
-                    ) : null}
-
-                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000' }]}>Usuario</Text>
-                    <TextInput
-                        style={[
-                            styles.input,
-                            {
-                                backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
-                                color: isDark ? '#FFFFFF' : '#000000',
-                                borderColor: isDark ? '#374151' : '#E5E7EB',
-                            },
-                        ]}
-                        placeholder="pepe (se completará automáticamente)"
-                        placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
-                        autoCapitalize="none"
-                        value={username}
-                        onChangeText={setUsername}
-                        returnKeyType="next"
-                        onSubmitEditing={() => passwordRef.current?.focus()}
-                    />
-
-                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>Contraseña</Text>
-                    <View style={styles.passwordContainer}>
-                        <TextInput
-                            style={[
-                                styles.input,
-                                {
-                                    backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
-                                    color: isDark ? '#FFFFFF' : '#000000',
-                                    borderColor: isDark ? '#374151' : '#E5E7EB',
-                                    width: '100%',
-                                },
-                            ]}
-                            placeholder="Ingresa tu contraseña"
-                            placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
-                            secureTextEntry={!showPassword}
-                            value={password}
-                            onChangeText={setPassword}
-                            ref={passwordRef}
-                            returnKeyType="go"
-                            onSubmitEditing={handleLogin}
-                        />
-                        <Pressable
-                            style={styles.eyeIcon}
-                            onPress={() => setShowPassword(!showPassword)}
-                        >
-                            <Ionicons
-                                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                size={22}
-                                color={isDark ? '#9CA3AF' : '#6B7280'}
-                            />
-                        </Pressable>
-                    </View>
-
-                    {/* Login Button */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.loginButton,
-                            {
-                                backgroundColor: isDark ? '#FFFFFF' : '#000000',
-                                borderColor: isDark ? '#FFFFFF' : '#000000',
-                            },
-                            loading && { opacity: 0.5 },
-                            pressed && !loading && { opacity: 0.8 },
-                        ]}
-                        onPress={handleLogin}
-                        disabled={loading}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        contentContainerStyle={styles.inner}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
                     >
-                        {loading ? (
-                            <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
-                        ) : (
-                            <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                                Iniciar Sesión
-                            </Text>
-                        )}
-                    </Pressable>
+                        <AnimatedScreen delay={100}>
+                            <StatusBar style={isDark ? 'light' : 'dark'} translucent backgroundColor="transparent" />
 
-                    {/* Theme Toggle */}
-                    <Pressable
-                        style={({ pressed }) => [styles.themeToggle, pressed && { opacity: 0.6 }]}
-                        onPress={toggleTheme}
-                    >
-                        <Ionicons
-                            name={isDark ? 'sunny-outline' : 'moon-outline'}
-                            size={28}
-                            color={isDark ? '#9CA3AF' : '#6B7280'}
-                        />
-                    </Pressable>
+                            {/* Logo */}
+                            <View style={styles.logoContainer}>
+                                <Image
+                                    source={require('../../assets/images/logo2.png')}
+                                    style={styles.logo}
+                                    resizeMode="contain"
+                                />
+                            </View>
 
-                    {/* Forgot Password */}
-                    <Pressable
-                        onPress={handleResetPassword}
-                        style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
-                    >
-                        <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                            ¿Olvidaste tu contraseña?
-                        </Text>
-                    </Pressable>
-                </View>
-            </ScrollView>
+                            {/* Title */}
+                            <View style={styles.headerTextContainer}>
+                                <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                                    Iniciar Sesión
+                                </Text>
+                                <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
+                                    Ingresa tus credenciales para continuar
+                                </Text>
+                            </View>
+
+                            {/* Form */}
+                            <View style={styles.formContainer}>
+                                {error ? (
+                                    <View style={[styles.errorContainer, { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' }]}>
+                                        <Text style={styles.errorText}>{error}</Text>
+                                    </View>
+                                ) : null}
+
+                                <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000' }]}>Usuario</Text>
+                                <TextInput
+                                    style={[
+                                        styles.input,
+                                        {
+                                            backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+                                            color: isDark ? '#FFFFFF' : '#000000',
+                                            borderColor: isDark ? '#374151' : '#E5E7EB',
+                                        },
+                                    ]}
+                                    placeholder="pepe (se completará automáticamente)"
+                                    placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                                    autoCapitalize="none"
+                                    value={username}
+                                    onChangeText={setUsername}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => passwordRef.current?.focus()}
+                                />
+
+                                <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>Contraseña</Text>
+                                <View style={styles.passwordContainer}>
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            {
+                                                backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+                                                color: isDark ? '#FFFFFF' : '#000000',
+                                                borderColor: isDark ? '#374151' : '#E5E7EB',
+                                                width: '100%',
+                                            },
+                                        ]}
+                                        placeholder="Ingresa tu contraseña"
+                                        placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                                        secureTextEntry={!showPassword}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        ref={passwordRef}
+                                        returnKeyType="go"
+                                        onSubmitEditing={handleLogin}
+                                    />
+                                    <Pressable
+                                        style={styles.eyeIcon}
+                                        onPress={() => setShowPassword(!showPassword)}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                            size={22}
+                                            color={isDark ? '#9CA3AF' : '#6B7280'}
+                                        />
+                                    </Pressable>
+                                </View>
+
+                                {/* Login Button */}
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.loginButton,
+                                        {
+                                            backgroundColor: isDark ? '#FFFFFF' : '#000000',
+                                            borderColor: isDark ? '#FFFFFF' : '#000000',
+                                        },
+                                        loading && { opacity: 0.5 },
+                                        pressed && !loading && { opacity: 0.8 },
+                                    ]}
+                                    onPress={handleLogin}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+                                    ) : (
+                                        <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+                                            Iniciar Sesión
+                                        </Text>
+                                    )}
+                                </Pressable>
+
+                                {/* Theme Toggle */}
+                                <Pressable
+                                    style={({ pressed }) => [styles.themeToggle, pressed && { opacity: 0.6 }]}
+                                    onPress={toggleTheme}
+                                >
+                                    <Ionicons
+                                        name={isDark ? 'sunny-outline' : 'moon-outline'}
+                                        size={28}
+                                        color={isDark ? '#9CA3AF' : '#6B7280'}
+                                    />
+                                </Pressable>
+
+                                {/* Forgot Password */}
+                                <Pressable
+                                    onPress={handleResetPassword}
+                                    style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
+                                >
+                                    <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                                        ¿Olvidaste tu contraseña?
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </AnimatedScreen>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </ImageBackground>
 
             {/* Premium Alert Modal */}
             <Modal
@@ -300,7 +331,7 @@ export default function LoginScreen() {
                     </View>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
@@ -310,29 +341,34 @@ const styles = StyleSheet.create({
     },
     inner: {
         flexGrow: 1,
-        paddingHorizontal: 30,
+        paddingHorizontal: 25,
         justifyContent: 'center',
-        paddingBottom: 40,
+        paddingTop: 40,
+        paddingBottom: 60,
+    },
+    headerTextContainer: {
+        marginBottom: 35,
     },
     logoContainer: {
         alignItems: 'center',
-        marginTop: 60,
-        marginBottom: 30,
+        marginTop: 20,
+        marginBottom: 20,
     },
     logo: {
         width: 180,
         height: 120,
     },
     title: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 32,
+        fontWeight: '900',
         textAlign: 'center',
         marginBottom: 8,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'center',
-        marginBottom: 35,
+        lineHeight: 22,
     },
     formContainer: {
         width: '100%',
@@ -344,23 +380,30 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     input: {
-        height: 54,
-        borderRadius: 9999,
+        height: 60,
+        borderRadius: 20,
         paddingHorizontal: 24,
-        fontSize: 15,
-        borderWidth: 1,
+        fontSize: 16,
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 2,
     },
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         position: 'relative',
+        height: 60,
     },
     eyeIcon: {
         position: 'absolute',
         right: 20,
         height: '100%',
         justifyContent: 'center',
-        paddingHorizontal: 5,
+        paddingHorizontal: 10,
+        zIndex: 10,
     },
     errorContainer: {
         padding: 12,
@@ -374,17 +417,22 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     loginButton: {
-        height: 54,
-        borderRadius: 9999,
+        height: 60,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 28,
-        borderWidth: 1,
+        marginTop: 35,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 8,
     },
     loginButtonText: {
-        fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: 0.3,
+        fontSize: 18,
+        fontWeight: '900',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
     themeToggle: {
         alignItems: 'center',

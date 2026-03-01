@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -26,6 +26,8 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     cancelText = 'Cancelar'
 }) => {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { width } = Dimensions.get('window');
+    const isTablet = width >= 768;
 
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
@@ -48,6 +50,10 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
         }
     };
 
+    const alertWidth = isTablet ? '60%' : '90%';
+    const iconSize = isTablet ? 56 : 40;
+    const padding = isTablet ? 32 : 24;
+
     return (
         <Modal
             transparent
@@ -56,21 +62,21 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             onRequestClose={onCancel}
         >
             <View style={styles.modalOverlay}>
-                <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
-                    <View style={[styles.alertIconHeader, { backgroundColor: `${getColor()}20` }]}>
-                        <Ionicons name={getIcon()} size={40} color={getColor()} />
+                <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', width: alertWidth, padding }]}>
+                    <View style={[styles.alertIconHeader, { backgroundColor: `${getColor()}20`, width: iconSize + 16, height: iconSize + 16, borderRadius: (iconSize + 16) / 2 }]}>
+                        <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
                     </View>
 
-                    <Text style={[styles.alertTitle, { color: textPrimary }]}>{title}</Text>
-                    <Text style={[styles.alertMessage, { color: textSecondary }]}>{message}</Text>
+                    <Text style={[styles.alertTitle, { color: textPrimary, fontSize: isTablet ? 24 : 20 }]}>{title}</Text>
+                    <Text style={[styles.alertMessage, { color: textSecondary, fontSize: isTablet ? 17 : 15 }]}>{message}</Text>
 
                     <View style={styles.alertActions}>
                         {showCancel && (
                             <Pressable
                                 onPress={onCancel}
-                                style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1 }]}
+                                style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1, height: isTablet ? 60 : 54 }]}
                             >
-                                <Text style={[styles.alertBtnText, { color: textPrimary }]}>{cancelText}</Text>
+                                <Text style={[styles.alertBtnText, { color: textPrimary, fontSize: isTablet ? 16 : 14 }]}>{cancelText}</Text>
                             </Pressable>
                         )}
                         <Pressable
@@ -80,11 +86,12 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                 {
                                     backgroundColor: type === 'danger' ? '#EF4444' : '#8B5CF6',
                                     flex: showCancel ? 1 : 0,
-                                    minWidth: showCancel ? 0 : 120
+                                    minWidth: showCancel ? 0 : (isTablet ? 160 : 120),
+                                    height: isTablet ? 60 : 54
                                 }
                             ]}
                         >
-                            <Text style={[styles.alertBtnText, { color: '#FFF' }]}>{confirmText}</Text>
+                            <Text style={[styles.alertBtnText, { color: '#FFF', fontSize: isTablet ? 16 : 14 }]}>{confirmText}</Text>
                         </Pressable>
                     </View>
                 </View>

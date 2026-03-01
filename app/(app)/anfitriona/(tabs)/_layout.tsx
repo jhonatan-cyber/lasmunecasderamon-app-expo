@@ -30,7 +30,7 @@ export default function AnfitrionaTabsLayout() {
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
             <Tabs
-                tabBar={props => <PremiumTabBar {...props} />}
+                tabBar={(props) => <PremiumTabBar {...props} />}
                 screenOptions={{
                     headerStyle: {
                         backgroundColor: isDark ? '#000000' : '#FFFFFF',

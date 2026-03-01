@@ -3,7 +3,7 @@ import * as Device from "expo-device";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import * as Speech from "expo-speech";
-import { Platform } from "react-native";
+import { Platform, Vibration } from "react-native";
 import { apiClient } from "../api/client";
 
 export async function registerForPushNotificationsAsync(): Promise<
@@ -92,17 +92,23 @@ export async function triggerNotificationEffects(
   title: string,
   body: string,
   role?: string,
+  isPriority: boolean = false
 ) {
   try {
     // 1. Respuesta táctica (Vibración)
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    if (isPriority) {
+      // Patrón agresivo para llamados: vibrar 500ms, pausa 200ms, vibrar 500ms...
+      Vibration.vibrate([0, 500, 200, 500, 200, 500]);
+    } else {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
 
-    // 2. Si el usuario es Cajero, leer la notificación en voz alta (TTS)
+    // 2. Si el usuario es Staff, leer la notificación en voz alta (TTS)
     const roleLower = (role || "").toLowerCase();
-    if (roleLower === "cajero" || roleLower === "administrador") {
+    if (roleLower === "cajero" || roleLower === "administrador" || roleLower === "garzon") {
       const textToSpeak = `${title}. ${body}`;
       Speech.speak(textToSpeak, {
-        language: "es-US",
+        language: "es-ES", // Cambiado a es-ES para mejor acento local si está disponible
         pitch: 1.0,
         rate: 0.9,
       });

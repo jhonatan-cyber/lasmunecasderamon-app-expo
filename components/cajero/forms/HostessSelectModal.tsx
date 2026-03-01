@@ -21,6 +21,7 @@ interface Hostess {
 interface HostessSelectModalProps {
   visible: boolean;
   onClose: () => void;
+  onConfirm?: () => void;
   onToggle: (id: number) => void;
   hostesses: Hostess[];
   selectedIds: number[];
@@ -31,6 +32,7 @@ interface HostessSelectModalProps {
 export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   visible,
   onClose,
+  onConfirm,
   onToggle,
   hostesses,
   selectedIds,
@@ -58,7 +60,11 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 </Text>
               )}
             </View>
-            <Pressable onPress={onClose}>
+            <Pressable
+              accessibilityLabel="Cerrar modal"
+              accessibilityRole="button"
+              onPress={onClose}
+            >
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
           </View>
@@ -69,10 +75,19 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               const id = Number(item.id_usuario || item.id);
               const isSelected = selectedIds.includes(id);
               const isBusy = item.status === 2;
+              const isMaxReached = max !== undefined && selectedIds.length >= max;
+              const isDisabled = isBusy || (isMaxReached && !isSelected);
+
               return (
                 <TouchableOpacity
-                  style={[styles.listItem, { borderBottomColor: borderColor }]}
-                  onPress={() => onToggle(id)}
+                  accessibilityLabel={`${item.nick}, ${isSelected ? 'seleccionada' : 'no seleccionada'}, ${isBusy ? 'ocupada' : 'disponible'}`}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected, disabled: isDisabled }}
+                  style={[styles.listItem, { borderBottomColor: borderColor, opacity: isDisabled ? 0.4 : 1 }]}
+                  onPress={() => {
+                    if (!isDisabled) onToggle(id);
+                  }}
+                  disabled={isDisabled}
                 >
                   <View
                     style={[
@@ -117,7 +132,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               );
             }}
           />
-          <Pressable style={styles.modalActionBtn} onPress={onClose}>
+          <Pressable style={styles.modalActionBtn} onPress={onConfirm || onClose}>
             <Text style={styles.modalActionBtnText}>Confirmar</Text>
           </Pressable>
         </View>

@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { StaffCallOverlay } from '../../components/StaffCallOverlay';
 import { useNotificationHandler } from '../../hooks/useNotificationHandler';
 import { useAuthStore } from '../../store/authStore';
 import { configureNotifications } from '../../utils/pushNotifications';
@@ -15,13 +16,21 @@ export default function AppLayout() {
             // Configurar comportamiento global (banners, sonidos)
             configureNotifications();
         }
-    }, [user]);
+    }, [user?.id]);
 
     if (!user) {
         return <Redirect href="/(auth)/login" />;
     }
 
     return (
-        <Stack screenOptions={{ headerShown: false }} />
+        <>
+            <Stack
+                screenOptions={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                }}
+            />
+            <StaffCallOverlay />
+        </>
     );
 }

@@ -9,19 +9,19 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 
-interface SkeletonProps {
+interface SkeletonLoaderProps {
     width?: number | string;
     height?: number | string;
     borderRadius?: number;
     style?: StyleProp<ViewStyle>;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({
+export function SkeletonLoader({
     width = '100%',
     height = 20,
     borderRadius = 8,
-    style
-}) => {
+    style,
+}: SkeletonLoaderProps) {
     const shimmerValue = useSharedValue(0);
 
     useEffect(() => {
@@ -36,7 +36,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         const translateX = interpolate(
             shimmerValue.value,
             [0, 1],
-            [-200, 200]
+            [-150, 150]
         );
         return {
             transform: [{ translateX }],
@@ -53,7 +53,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         >
             <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
                 <LinearGradient
-                    colors={['transparent', 'rgba(255, 255, 255, 0.3)', 'transparent']}
+                    colors={['transparent', 'rgba(255, 255, 255, 0.2)', 'transparent']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={StyleSheet.absoluteFill}
@@ -61,11 +61,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({
             </Animated.View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
     },
 });

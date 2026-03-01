@@ -28,7 +28,7 @@ export default function CajeroTabsLayout() {
     return (
         <>
             <Tabs
-                tabBar={props => <PremiumTabBar {...props} />}
+                tabBar={(props) => <PremiumTabBar {...props} />}
                 screenOptions={{
                     headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
                     headerTintColor: isDark ? '#FFFFFF' : '#000000',

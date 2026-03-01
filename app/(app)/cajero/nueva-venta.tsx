@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -14,82 +14,192 @@ import {
     Text,
     TouchableOpacity,
     useColorScheme,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { CartList } from '../../../components/cajero/forms/CartList';
+import { CategorySelector } from '../../../components/cajero/forms/CategorySelector';
 import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
 import { HostessSelectModal } from '../../../components/cajero/forms/HostessSelectModal';
 import { PaymentMethod, PaymentMethodSelect } from '../../../components/cajero/forms/PaymentMethodSelect';
 import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
+import { TipCheckbox } from '../../../components/cajero/forms/TipCheckbox';
 import { useAuthStore } from '../../../store/authStore';
+import { useSales } from '../../../context/SalesContext';
+
+type VentaState = {
+    loadingInitial: boolean;
+    refreshing: boolean;
+    anfitrionas: any[];
+    habitaciones: any[];
+    clientes: any[];
+    cajaAbierta: boolean | null;
+    cart: any[];
+    selectedCliente: any;
+    selectedHabitacion: any;
+    metodoPago: PaymentMethod;
+    enableTip: boolean;
+    selectedTime: number;
+    timeModalVisible: boolean;
+    categories: any[];
+    modalOpen: boolean;
+    modalCategoria: any;
+    modalProducts: any[];
+    modalLoading: boolean;
+    modalQuantities: { [key: number]: number };
+    modalHostessSelections: { [key: number]: number[] };
+    hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
+    hostessSubModalVisible: boolean;
+    hostessModalVisible: boolean;
+    roomModalVisible: boolean;
+    clientModalVisible: boolean;
+    activeCartIdx: number | null;
+    submitting: boolean;
+};
+
+type VentaAction =
+    | { type: 'SET_LOADING_INITIAL'; payload: boolean }
+    | { type: 'SET_REFRESHING'; payload: boolean }
+    | { type: 'SET_INITIAL_DATA'; payload: any }
+    | { type: 'SET_CART'; payload: any[] }
+    | { type: 'SET_SELECTED_CLIENTE'; payload: any }
+    | { type: 'SET_SELECTED_HABITACION'; payload: any }
+    | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
+    | { type: 'SET_ENABLE_TIP'; payload: boolean }
+    | { type: 'SET_SELECTED_TIME'; payload: number }
+    | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
+    | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
+    | { type: 'SET_MODAL_LOADING'; payload: boolean }
+    | { type: 'SET_MODAL_QUANTITY'; productId: number; quantity: number }
+    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: number[] }
+    | { type: 'SET_HOSTESS_TARGET'; target: any }
+    | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
+    | { type: 'SET_SUBMITTING'; payload: boolean };
+
+const initialVentaState: VentaState = {
+    loadingInitial: true,
+    refreshing: false,
+    anfitrionas: [],
+    habitaciones: [],
+    clientes: [],
+    cajaAbierta: null,
+    cart: [],
+    selectedCliente: null,
+    selectedHabitacion: null,
+    metodoPago: 'efectivo',
+    enableTip: false,
+    selectedTime: 60,
+    timeModalVisible: false,
+    categories: [],
+    modalOpen: false,
+    modalCategoria: null,
+    modalProducts: [],
+    modalLoading: false,
+    modalQuantities: {},
+    modalHostessSelections: {},
+    hostessSelectionTarget: null,
+    hostessSubModalVisible: false,
+    hostessModalVisible: false,
+    roomModalVisible: false,
+    clientModalVisible: false,
+    activeCartIdx: null,
+    submitting: false,
+};
+
+function ventaReducer(state: VentaState, action: VentaAction): VentaState {
+    switch (action.type) {
+        case 'SET_LOADING_INITIAL': return { ...state, loadingInitial: action.payload };
+        case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
+        case 'SET_INITIAL_DATA': return { ...state, ...action.payload };
+        case 'SET_CART': return { ...state, cart: action.payload };
+        case 'SET_SELECTED_CLIENTE': return { ...state, selectedCliente: action.payload };
+        case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
+        case 'SET_METODO_PAGO': return { ...state, metodoPago: action.payload };
+        case 'SET_ENABLE_TIP': return { ...state, enableTip: action.payload };
+        case 'SET_SELECTED_TIME': return { ...state, selectedTime: action.payload };
+        case 'SET_MODAL_VISIBLE':
+            return { ...state, [`${action.modal}ModalVisible`]: action.visible, modalOpen: action.modal === 'category' ? action.visible : state.modalOpen };
+        case 'OPEN_CATEGORY_MODAL':
+            return { ...state, modalOpen: true, modalCategoria: action.category, modalProducts: action.products, modalQuantities: {}, modalHostessSelections: {} };
+        case 'SET_MODAL_LOADING': return { ...state, modalLoading: action.payload };
+        case 'SET_MODAL_QUANTITY':
+            return { ...state, modalQuantities: { ...state.modalQuantities, [action.productId]: action.quantity } };
+        case 'SET_MODAL_HOSTESSES':
+            return { ...state, modalHostessSelections: { ...state.modalHostessSelections, [action.productId]: action.hostesses } };
+        case 'SET_HOSTESS_TARGET':
+            return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
+        case 'SET_ACTIVE_CART_IDX': return { ...state, activeCartIdx: action.payload };
+        case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+        default: return state;
+    }
+}
+
+const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
+    Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
+};
+
+const isChampagneProduct = (producto: any) => {
+    const cat = (producto.categoria || '').toLowerCase();
+    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+};
+
+const getChampagneLimit = (precio: number) => {
+    if (precio >= 240000) return 5;
+    if (precio >= 200000) return 4;
+    if (precio >= 140000) return 3;
+    if (precio >= 120000) return 2;
+    return 1;
+};
+
+const getHostessLimit = (prod: any, qty: number) => {
+    const price = prod.precio ?? prod.price ?? 0;
+    if (isChampagneProduct(prod)) {
+        return getChampagneLimit(price) * qty;
+    }
+    return qty;
+};
 
 export default function NuevaVentaScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((state) => state.user);
+    const { refreshVentas } = useSales();
 
-    // Initial Data
-    const [loadingInitial, setLoadingInitial] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [anfitrionas, setAnfitrionas] = useState<any[]>([]);
-    const [habitaciones, setHabitaciones] = useState<any[]>([]);
-    const [clientes, setClientes] = useState<any[]>([]);
-    const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null);
+    const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
+    const {
+        loadingInitial, refreshing, anfitrionas, habitaciones, clientes, cajaAbierta,
+        cart, selectedCliente, selectedHabitacion, metodoPago, enableTip, selectedTime, timeModalVisible,
+        categories, modalOpen, modalCategoria, modalProducts, modalLoading,
+        modalQuantities, modalHostessSelections, hostessSelectionTarget, hostessSubModalVisible, roomModalVisible, clientModalVisible, submitting
+    } = state;
 
-    // Form State
-    const [cart, setCart] = useState<any[]>([]);
-    const [selectedCliente, setSelectedCliente] = useState<any>(null);
-    const [selectedHabitacion, setSelectedHabitacion] = useState<any>(null);
-    const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
-    const [enableTip, setEnableTip] = useState(false);
-
-    // config & totals state
-    const [selectedTime, setSelectedTime] = useState(60);
-    const [timeModalVisible, setTimeModalVisible] = useState(false);
-
-    // Categories and Browser
-    const [categories, setCategories] = useState<any[]>([]);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalCategoria, setModalCategoria] = useState<any>(null);
-    const [modalProducts, setModalProducts] = useState<any[]>([]);
-    const [modalLoading, setModalLoading] = useState(false);
-
-    // States for selections within the modal
-    const [modalQuantities, setModalQuantities] = useState<{ [key: number]: number }>({});
-    const [modalHostessSelections, setModalHostessSelections] = useState<{ [key: number]: number[] }>({});
-
-    // For Hostess selection sub-modal
-    const [hostessSelectionTarget, setHostessSelectionTarget] = useState<{ productId: number; isChampagne: boolean; max: number } | null>(null);
-    const [hostessSubModalVisible, setHostessSubModalVisible] = useState(false);
-    const [hostessModalVisible, setHostessModalVisible] = useState(false);
-    const [roomModalVisible, setRoomModalVisible] = useState(false);
-    const [clientModalVisible, setClientModalVisible] = useState(false);
-    const [activeCartIdx, setActiveCartIdx] = useState<number | null>(null);
-
-    // Toast
-    const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        Toast.show({
-            type,
-            text1: title,
-            text2: message,
-            visibilityTime: 4000,
-        });
-    };
-
-    const [submitting, setSubmitting] = useState(false);
-
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
+    
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
-    // Load Initial Data
+    const spacing = isTablet ? 24 : 16;
+    const borderRadius = isTablet ? 28 : 24;
+    const fontSize = isTablet ? 18 : 14;
+
+    const dynamicStyles = {
+        scrollContent: { padding: spacing, paddingBottom: 100 },
+        section: { padding: spacing, borderRadius: borderRadius, marginBottom: spacing },
+        summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
+        submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
+        selectorBtn: { padding: isTablet ? 18 : 14, borderRadius: isTablet ? 20 : 16 },
+    };
+
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
-        if (!isRefreshing) setLoadingInitial(true);
+        if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
             const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
                 apiClient('/cashregister/status'),
@@ -99,28 +209,30 @@ export default function NuevaVentaScreen() {
                 apiClient('/categories'),
             ]);
 
-            setCajaAbierta(cajaRes.success && cajaRes.data.hasOpenCaja);
-            if (anfitrionasRes.success) setAnfitrionas(anfitrionasRes.data);
-            if (roomsRes.success) setHabitaciones(roomsRes.data);
+            const fetchedData: any = {
+                cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
+                anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
+                habitaciones: roomsRes.success ? roomsRes.data : [],
+                categories: categoriesRes.success ? (categoriesRes.data || []) : []
+            };
+
             if (Array.isArray(clientsRes)) {
-                setClientes(clientsRes);
+                fetchedData.clientes = clientsRes;
             } else if (clientsRes && clientsRes.success) {
-                setClientes(clientsRes.data || []);
+                fetchedData.clientes = clientsRes.data || [];
             }
 
-            if (categoriesRes.success) {
-                setCategories(categoriesRes.data || []);
-            }
+            dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
 
             if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
-                showToast('Caja Cerrada', 'Debes abrir una caja antes de realizar ventas.', 'error');
+                showToast('Caja Cerrada', 'Abre una caja primero.');
             }
         } catch (error) {
-            console.error('Error fetching initial data:', error);
-            showToast('Error', 'No se pudo cargar la información necesaria.');
+            console.error('Error fetching data:', error);
+            showToast('Error', 'No se pudo cargar la información.');
         } finally {
-            setLoadingInitial(false);
-            setRefreshing(false);
+            dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
+            dispatch({ type: 'SET_REFRESHING', payload: false });
         }
     }, []);
 
@@ -128,605 +240,324 @@ export default function NuevaVentaScreen() {
         fetchInitialData();
     }, [fetchInitialData]);
 
-    const onRefresh = () => {
-        setRefreshing(true);
+    const onRefresh = useCallback(() => {
+        dispatch({ type: 'SET_REFRESHING', payload: true });
         fetchInitialData(true);
-    };
+    }, [fetchInitialData]);
 
-    const isChampagneProduct = (producto: any) => {
-        const cat = (producto.categoria || '').toLowerCase();
-        return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-    };
-
-    const getChampagneLimit = (precio: number) => {
-        if (precio >= 240000) return 5;
-        if (precio >= 200000) return 4;
-        if (precio >= 140000) return 3;
-        if (precio >= 120000) return 2;
-        return 1;
-    };
-
-    const getHostessLimit = (prod: any, qty: number) => {
-        const price = prod.precio ?? prod.price ?? 0;
-        if (isChampagneProduct(prod)) {
-            return getChampagneLimit(price);
-        }
-        return qty;
-    };
-
-    const handleOpenCategory = async (cat: any) => {
-        setModalCategoria(cat);
-        setModalOpen(true);
-        setModalLoading(true);
-        setModalQuantities({});
-        setModalHostessSelections({});
+    const handleOpenCategory = useCallback(async (cat: any) => {
+        dispatch({ type: 'SET_MODAL_LOADING', payload: true });
+        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: true });
         try {
             const res = await apiClient(`/products?category_id=${cat.id}`);
             if (res.success) {
-                setModalProducts(res.data || []);
-            } else {
-                setModalProducts([]);
-            }
+                dispatch({ type: 'OPEN_CATEGORY_MODAL', category: cat, products: res.data || [] });
+            } else showToast('Error', 'No se pudieron cargar los productos');
         } catch (error) {
-            console.error('Fetch products error:', error);
-            setModalProducts([]);
+            console.error('Fetch error:', error);
         } finally {
-            setModalLoading(false);
+            dispatch({ type: 'SET_MODAL_LOADING', payload: false });
         }
-    };
+    }, []);
 
-    const updateModalQty = (id: number, delta: number) => {
-        setModalQuantities((prev) => {
-            const curr = prev[id] || 1;
-            const next = Math.max(1, curr + delta);
-            return { ...prev, [id]: next };
-        });
-    };
-
-    const toggleHostessInModal = (hostessId: number) => {
-        if (!hostessSelectionTarget) return;
-        const { productId, max } = hostessSelectionTarget;
-
-        setModalHostessSelections((prev) => {
-            const current = prev[productId] || [];
-            if (current.includes(hostessId)) {
-                return { ...prev, [productId]: current.filter((id) => id !== hostessId) };
-            } else {
-                if (current.length < max) {
-                    return { ...prev, [productId]: [...current, hostessId] };
-                } else {
-                    showToast('Límite', `Máximo ${max} anfitrionas`);
-                    return prev;
-                }
-            }
-        });
-    };
-
-    const addProductToCart = (prod: any) => {
+    const addProductToCart = useCallback((prod: any) => {
         const id = prod.id || prod.id_producto;
-        const qty = modalQuantities[id] || 1;
-        const selectedHostesses = modalHostessSelections[id] || [];
-        const hasComm = (prod.comision || prod.commission || 0) > 0;
+        const totalQty = modalQuantities[id] || 1;
+        const hostesses = modalHostessSelections[id] || [];
 
-        if (hasComm && selectedHostesses.length === 0) {
-            showToast('Asignación', 'Debes asignar al menos una anfitriona');
-            return;
-        }
+        const hostessesToProcess = hostesses.length > 0 ? hostesses : [null];
+        const baseQty = hostesses.length > 0 ? Math.floor(totalQty / hostesses.length) : totalQty;
+        let remainingQty = totalQty;
 
-        const price = prod.precio ?? prod.price ?? 0;
-        const comm = prod.comision ?? prod.commission ?? 0;
+        const newCart = [...cart];
 
-        const item = {
-            id_producto: id,
-            nombre: prod.nombre || prod.name || 'Producto',
-            precio: price,
-            comision: comm,
-            cantidad: qty,
-            subtotal: price * qty,
-            selectedHostesses: selectedHostesses,
-            isChampagne: isChampagneProduct(prod),
-        };
+        hostessesToProcess.forEach((hId, index) => {
+            const isLast = index === hostessesToProcess.length - 1;
+            const itemQty = isLast ? remainingQty : (baseQty === 0 ? 1 : baseQty);
+            remainingQty -= itemQty;
 
-        setCart((prev) => [...prev, item]);
+            const itemHostesses = hId ? [hId] : [];
+            const hostessNames = hId ? (anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '') : null;
 
-        // Reset selections for this product in modal
-        setModalQuantities((prev) => ({ ...prev, [id]: 1 }));
-        setModalHostessSelections((prev) => ({ ...prev, [id]: [] }));
-
-        showToast('Agregado', `${item.nombre} sumado al carrito`, 'success');
-
-        // If it was the only product in search-like view, close modal
-        if (modalProducts.length === 1) {
-            setModalOpen(false);
-        }
-    };
-
-    const removeFromCart = (index: number) => {
-        setCart((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const updateQuantity = (index: number, delta: number) => {
-        setCart((prev) =>
-            prev.map((item, i) => {
-                if (i === index) {
-                    const newQty = Math.max(1, item.cantidad + delta);
-                    return { ...item, cantidad: newQty };
-                }
-                return item;
-            })
-        );
-    };
-
-    const toggleHostess = (hostessId: number) => {
-        if (activeCartIdx === null) return;
-
-        setCart((prev) =>
-            prev.map((item, i) => {
-                if (i === activeCartIdx) {
-                    const exists = item.selectedHostesses.includes(hostessId);
-                    let newSelections = [];
-
-                    if (exists) {
-                        newSelections = item.selectedHostesses.filter((id: number) => id !== hostessId);
-                    } else {
-                        const max = getHostessLimit(item, item.cantidad);
-                        if (item.selectedHostesses.length < max) {
-                            newSelections = [...item.selectedHostesses, hostessId];
-                        } else {
-                            showToast('Límite', `Máximo ${max} anfitrionas`);
-                            return item;
-                        }
-                    }
-                    return { ...item, selectedHostesses: newSelections };
-                }
-                return item;
-            })
-        );
-    };
-
-    const subtotal = cart.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-    const propina = enableTip ? Math.round(subtotal * 0.1) : 0;
-    const total = subtotal + propina;
-
-    const showPrivateSelectors = cart.some((item) => item.precio >= 30000);
-
-    const handleSubmit = async () => {
-        if (!cajaAbierta) {
-            showToast('Error', 'La caja está cerrada.');
-            return;
-        }
-        if (cart.length === 0) {
-            showToast('Error', 'El carrito está vacío.');
-            return;
-        }
-
-        // Validate commissions
-        for (const item of cart) {
-            if (item.comision > 0 && item.selectedHostesses.length === 0) {
-                showToast('Faltan datos', `Asigna al menos una anfitriona a ${item.nombre}`, 'error');
-                return;
-            }
-        }
-
-        setSubmitting(true);
-        try {
-            // Aggregate all unique hostess IDs
-            const allHostesses = Array.from(new Set(cart.flatMap((item) => item.selectedHostesses)));
-            const totalComision = cart.reduce((acc, item) => acc + item.comision * item.cantidad, 0);
-
-            const ventaData = {
-                cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
-                habitacion_id: selectedHabitacion?.id_habitacion || null,
-                metodo_pago: metodoPago,
-                propina: propina,
-                sub_total: subtotal,
-                total: total,
-                total_comision: totalComision,
-                detalles: cart.map((item) => ({
-                    producto_id: item.id_producto,
-                    precio: item.precio,
-                    comision: item.comision * item.cantidad,
-                    cantidad: item.cantidad,
-                    sub_total: item.precio * item.cantidad,
-                    hostesses: item.selectedHostesses,
-                    hostess_id: item.selectedHostesses.length > 0 ? item.selectedHostesses[0] : null,
-                })),
-                usuarios: allHostesses,
-                tiempo: selectedHabitacion ? selectedTime : null,
-            };
-
-            const res = await apiClient('/sales', {
-                method: 'POST',
-                body: JSON.stringify(ventaData),
+            const existingItemIndex = newCart.findIndex((item) => {
+                const itemId = item.id || item.id_producto;
+                const currentH = item.anfitrionas || [];
+                const sortedCurrent = [...currentH].sort().join(',');
+                const sortedNew = [...itemHostesses].sort().join(',');
+                return itemId === id && sortedCurrent === sortedNew;
             });
 
-            if (res.success) {
-                // If tip > 0, register it
-                if (propina > 0 && res.data?.id_venta) {
-                    await apiClient('/tips', {
-                        method: 'POST',
-                        body: JSON.stringify({ venta_id: res.data.id_venta, monto: propina }),
-                    }).catch((e) => console.error('Tip reg error:', e));
-                }
-
-                showToast('Éxito', 'Venta realizada correctamente', 'success');
-                setTimeout(() => router.replace('/cajero/ventas'), 1500);
+            if (existingItemIndex >= 0) {
+                newCart[existingItemIndex].quantity += itemQty;
             } else {
-                showToast('Error', res.message || 'No se pudo crear la venta');
+                newCart.push({
+                    ...prod,
+                    quantity: itemQty,
+                    anfitrionas: itemHostesses,
+                    hostessNames: hostessNames || null,
+                });
             }
+        });
+
+        dispatch({ type: 'SET_CART', payload: newCart });
+        showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
+    }, [cart, modalQuantities, modalHostessSelections, anfitrionas]);
+
+    const removeFromCart = useCallback((index: number) => {
+        const newCart = [...cart];
+        newCart.splice(index, 1);
+        dispatch({ type: 'SET_CART', payload: newCart });
+    }, [cart]);
+
+    const updateQuantity = useCallback((index: number, delta: number) => {
+        const newCart = [...cart];
+        const newQty = Math.max(1, (newCart[index].quantity || 1) + delta);
+        newCart[index].quantity = newQty;
+        dispatch({ type: 'SET_CART', payload: newCart });
+    }, [cart]);
+
+    const totals = useMemo(() => {
+        const subtotal = cart.reduce((acc, item) => acc + (item.precio || item.price || 0) * (item.quantity || 1), 0);
+        const tip = enableTip ? subtotal * 0.1 : 0;
+        return { subtotal, tip, total: subtotal + tip };
+    }, [cart, enableTip]);
+
+    // Calcular si hay algún producto que tenga comisión para habilitar o no la selección de habitación
+    const hasCommissionItem = useMemo(() => {
+        return cart.some(item => Number(item.commission || item.comision || 0) > 0);
+    }, [cart]);
+
+    const handleSubmit = useCallback(async () => {
+        if (!cajaAbierta) return showToast('Error', 'Caja cerrada');
+        if (cart.length === 0) return showToast('Error', 'Carrito vacío');
+
+        dispatch({ type: 'SET_SUBMITTING', payload: true });
+        try {
+            const payload = {
+                detalles: cart.map(item => ({
+                    producto_id: item.id || item.id_producto,
+                    cantidad: item.quantity || item.cantidad || 1,
+                    precio: item.precio || item.price || 0,
+                    sub_total: (item.precio || item.price || 0) * (item.quantity || item.cantidad || 1),
+                    comision: Number(item.comision || item.commission || 0) * (item.quantity || item.cantidad || 1),
+                    hostesses: item.anfitrionas?.map((a: any) => typeof a === 'object' ? (a.id_usuario || a.id) : a) || []
+                })),
+                cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
+                habitacion_id: hasCommissionItem ? (selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null) : null,
+                metodo_pago: metodoPago,
+                propina: totals.tip,
+                sub_total: totals.subtotal,
+                total: totals.total,
+                tiempo: selectedTime,
+                usuarios: cart.flatMap((item: any) => item.anfitrionas?.map((a: any) => typeof a === 'object' ? (a.id_usuario || a.id) : a) || [])
+            };
+
+            const res = await apiClient('/sales', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.success) {
+                showToast('Éxito', 'Venta realizada', 'success');
+                refreshVentas();
+                router.replace('/cajero/ventas');
+            } else showToast('Error', res.message || 'Error al vender');
         } catch (error) {
             console.error('Submit error:', error);
-            showToast('Error', 'Ocurrió un error al procesar la venta.');
+            showToast('Error', 'Error de conexión');
         } finally {
-            setSubmitting(false);
+            dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    };
+    }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas]);
 
-    if (loadingInitial) {
-        return (
-            <View style={[styles.centerContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
-            </View>
-        );
-    }
+    if (loadingInitial) return <View style={[styles.centerContainer, { backgroundColor: bg }]}><ActivityIndicator size="large" color="#8B5CF6" /></View>;
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.container, { backgroundColor: bg }]}
-        > 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
-            >
-                {/* 1. Selection Section */}
-                <View style={[styles.browserContainer]}>
-                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Categoría</Text>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}>
+                <CategorySelector
+                    categories={categories}
+                    onSelectCategory={handleOpenCategory}
+                />
 
-                    {/* Category Horizonatal Slide */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.categoryScroll}
-                    >
-                        {categories.map((cat, idx) => {
-                            let iconName = 'beer-outline';
-
-                            return (
-                                <Pressable
-                                    key={cat.id}
-                                    style={[styles.categorySmallCard, { backgroundColor: cardBg, borderColor }]}
-                                    onPress={() => handleOpenCategory(cat)}
-                                >
-                                    <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#8B5CF615' : '#10B98115' }]}>
-                                        <Ionicons name={iconName as any} size={20} color={idx % 2 === 0 ? '#8B5CF6' : '#10B981'} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.catSmallName, { color: textPrimary }]} numberOfLines={2}>{cat.name}</Text>
-                                    </View>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
-                </View>
-
-                {/* 2. Cart Section */}
-                {cart.length > 0 && (
-                    <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-                        <Text style={[styles.sectionTitle, { color: textPrimary }]}>Carrito de Consumo</Text>
-                        {cart.map((item, idx) => (
-                            <View key={idx} style={[styles.cartItem, { borderBottomColor: borderColor }]}>
-                                <View style={styles.cartItemInfo}>
-                                    <Text style={[styles.cartItemName, { color: textPrimary }]}>{item.nombre}</Text>
-                                    <Text style={[styles.cartItemPrice, { color: textSecondary }]}>${(item.precio ?? 0).toLocaleString()} c/u</Text>
-                                    {item.comision > 0 && (
-                                        <Pressable
-                                            style={[styles.hostessSelector, { backgroundColor: item.selectedHostesses.length > 0 ? '#8B5CF620' : '#EF444410' }]}
-                                            onPress={() => {
-                                                setActiveCartIdx(idx);
-                                                setHostessModalVisible(true);
-                                            }}
-                                        >
-                                            <Ionicons name="people" size={14} color={item.selectedHostesses.length > 0 ? '#8B5CF6' : '#EF4444'} />
-                                            <Text style={[styles.hostessSelectorText, { color: item.selectedHostesses.length > 0 ? '#8B5CF6' : '#EF4444' }]}>
-                                                {item.selectedHostesses.length > 0
-                                                    ? `${item.selectedHostesses.length} asignada(s)`
-                                                    : 'Asignar Anfitriona'}
-                                            </Text>
-                                        </Pressable>
-                                    )}
-                                </View>
-
-                                <View style={styles.cartActions}>
-                                    <View style={styles.qtyBox}>
-                                        <Pressable onPress={() => updateQuantity(idx, -1)} style={styles.qtyBtn}>
-                                            <Ionicons name="remove" size={18} color={textPrimary} />
-                                        </Pressable>
-                                        <Text style={[styles.qtyText, { color: textPrimary }]}>{item.cantidad}</Text>
-                                        <Pressable onPress={() => updateQuantity(idx, 1)} style={styles.qtyBtn}>
-                                            <Ionicons name="add" size={18} color={textPrimary} />
-                                        </Pressable>
-                                    </View>
-                                    <Pressable onPress={() => removeFromCart(idx)} style={styles.removeBtn}>
-                                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                    </Pressable>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                )}
-
-                {/* 3. config & totals */}
-                <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-                    <Text style={[styles.sectionTitle, { color: textPrimary }]}>2. Configuración de Venta</Text>
-
-                    {showPrivateSelectors && (
-                        <>
-                            {/* Habitación */}
-                            <Pressable
-                                style={[styles.selectorBtn, { borderColor }]}
-                                onPress={() => setRoomModalVisible(true)}
-                            >
-                                <Ionicons name="business-outline" size={22} color="#8B5CF6" />
-                                <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={[styles.selectorLabel, { color: textSecondary }]}>Habitación (Opcional)</Text>
-                                    <Text style={[styles.selectorVal, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Ninguna seleccionada'}</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                            </Pressable>
-
-                            {/* Tiempo */}
-                            <Pressable
-                                style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
-                                onPress={() => setTimeModalVisible(true)}
-                            >
-                                <Ionicons name="time-outline" size={22} color="#10B981" />
-                                <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={[styles.selectorLabel, { color: textSecondary }]}>Tiempo de Estancia</Text>
-                                    <Text style={[styles.selectorVal, { color: textPrimary }]}>{selectedTime} minutos</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                            </Pressable>
-                        </>
+                <View style={[styles.section, dynamicStyles.section, { backgroundColor: cardBg, borderColor }]}>
+                    <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: isTablet ? 16 : 13 }]}>2. Detalles de la Venta</Text>
+                    {hasCommissionItem && (
+                        <Pressable
+                            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor }]}
+                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
+                            accessibilityLabel="Seleccionar habitación"
+                            accessibilityRole="button"
+                        >
+                            <Ionicons name="business" size={20} color="#8B5CF6" />
+                            <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación'}</Text>
+                        </Pressable>
                     )}
-
-                    {/* Cliente */}
+                    {selectedHabitacion && (Number(selectedHabitacion.precio || 0) === 0 && Number(selectedHabitacion.comision_anfitriona || selectedHabitacion.comision || 0) === 0 && Number(selectedHabitacion.tiempo || 0) === 0) && (
+                        <Pressable
+                            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
+                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: true })}
+                            accessibilityLabel="Tiempo de estancia"
+                            accessibilityRole="button"
+                        >
+                            <Ionicons name="time-outline" size={20} color="#10B981" />
+                            <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedTime} minutos</Text>
+                        </Pressable>
+                    )}
                     <Pressable
-                        style={[styles.selectorBtn, { borderColor, marginTop: showPrivateSelectors ? 12 : 0 }]}
-                        onPress={() => setClientModalVisible(true)}
+                        style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: hasCommissionItem ? spacing / 2 : 0 }]}
+                        onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: true })}
+                        accessibilityLabel="Seleccionar cliente"
+                        accessibilityRole="button"
                     >
-                        <Ionicons name="person-outline" size={22} color="#3B82F6" />
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={[styles.selectorLabel, { color: textSecondary }]}>Cliente (Opcional)</Text>
-                            <Text style={[styles.selectorVal, { color: textPrimary }]}>
-                                {selectedCliente
-                                    ? `${selectedCliente.nombre || selectedCliente.name || ''} ${selectedCliente.apellido || selectedCliente.last_name || ''}`.trim() || 'Cliente seleccionado'
-                                    : 'Sin registrar'}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+                        <Ionicons name="person" size={20} color="#10B981" />
+                        <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedCliente?.nombre || 'Seleccionar Cliente'}</Text>
                     </Pressable>
-
-                    {/* Método Pago */}
-                    <PaymentMethodSelect
-                        selectedMethod={metodoPago}
-                        onSelect={setMetodoPago}
-                    />
-
-                    {/* Tip Toggle */}
-                    <Pressable
-                        style={[styles.tipToggle, { borderColor, backgroundColor: enableTip ? '#10B98110' : 'transparent' }]}
-                        onPress={() => setEnableTip(!enableTip)}
-                    >
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.tipTitle, { color: textPrimary }]}>Incluir Propina (10%)</Text>
-                        </View>
-                        <View style={[styles.checkbox, { backgroundColor: enableTip ? '#10B981' : 'transparent', borderColor: enableTip ? '#10B981' : borderColor }]}>
-                            {enableTip && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                        </View>
-                    </Pressable>
+                    <PaymentMethodSelect selectedMethod={metodoPago} onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })} />
                 </View>
 
-                {/* Summary */}
-                <View style={[styles.summaryCard, { backgroundColor: isDark ? '#111827' : '#FFFFFF', borderTopColor: borderColor }]}>
+                <CartList
+                    items={cart}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeFromCart}
+                />
+
+                <View style={[styles.summaryCard, dynamicStyles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal</Text>
-                        <Text style={[styles.summaryVal, { color: textPrimary }]}>${subtotal.toLocaleString()}</Text>
+                        <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
                     </View>
-                    {enableTip && (
-                        <View style={styles.summaryRow}>
-                            <Text style={[styles.summaryLabel, { color: textSecondary }]}>Propina (10%)</Text>
-                            <Text style={[styles.summaryVal, { color: '#10B981' }]}>+${propina.toLocaleString()}</Text>
-                        </View>
-                    )}
-                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
-                        <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>TOTAL A PAGAR</Text>
-                        <Text style={styles.totalValFinal}>${total.toLocaleString()}</Text>
-                    </View>
+                    <TipCheckbox
+                        enabled={enableTip}
+                        onToggle={(val: boolean) => dispatch({ type: 'SET_ENABLE_TIP', payload: val })}
+                        tipAmount={totals.tip}
+                    />
 
+                    <View style={[styles.summaryRow, { marginTop: 10, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 10 }]}>
+                        <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
+                        <Text style={styles.totalValue}>${totals.total.toLocaleString()}</Text>
+                    </View>
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: '#8B5CF6' }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, dynamicStyles.submitBtn, (submitting || !cajaAbierta) && { opacity: 0.7 }]}
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={submitting || !cajaAbierta}
+                        accessibilityLabel="Finalizar venta"
+                        accessibilityRole="button"
                     >
-                        {submitting ? (
-                            <ActivityIndicator size="small" color="#FFF" />
-                        ) : (
-                            <>
-                                <Text style={styles.submitBtnText}>Generar Venta</Text>
-                            </>
-                        )}
+                        {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Finalizar Venta</Text>}
                     </Pressable>
                 </View>
             </ScrollView>
 
-            {/* Product Selection Modal */}
-            <Modal visible={modalOpen} animationType="slide" transparent>
-                <View style={[styles.modalOverlay, { justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-                    <View style={[styles.modalContentWide, { backgroundColor: cardBg, maxHeight: '90%' }]}>
+            <Modal visible={modalOpen} animationType="slide" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
                         <View style={styles.modalHeader}>
-                            <View>
-                                <Text style={[styles.modalTitle, { color: textPrimary }]}>
-                                    {modalCategoria?.name || 'Productos'}
-                                </Text>
-                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>Selecciona y configura antes de añadir</Text>
-                            </View>
-                            <Pressable onPress={() => setModalOpen(false)} style={styles.closeModalBtn}>
+                            <Text style={[styles.modalTitle, { color: textPrimary }]}>{modalCategoria?.name || 'Productos'}</Text>
+                            <Pressable
+                                onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
+                                accessibilityLabel="Cerrar modal"
+                                accessibilityRole="button"
+                            >
                                 <Ionicons name="close" size={26} color={textPrimary} />
                             </Pressable>
                         </View>
-
-                        {modalLoading ? (
-                            <View style={{ padding: 40, alignItems: 'center' }}>
-                                <ActivityIndicator color="#8B5CF6" size="large" />
-                            </View>
-                        ) : (
+                        {modalLoading ? <ActivityIndicator size="large" color="#8B5CF6" style={{ margin: 40 }} /> : (
                             <FlatList
                                 data={modalProducts}
-                                keyExtractor={(item, index) => (item.id || item.id_producto || index).toString()}
-                                contentContainerStyle={{ padding: 16 }}
-                                ListEmptyComponent={
-                                    <Text style={{ textAlign: 'center', color: textSecondary, marginTop: 40 }}>No hay productos disponibles</Text>
-                                }
-                                renderItem={({ item }) => {
-                                    const id = item.id || item.id_producto;
-                                    const qty = modalQuantities[id] || 1;
-                                    const selected = modalHostessSelections[id] || [];
-                                    const hasComm = (item.comision || item.commission || 0) > 0;
-                                    const isChamp = isChampagneProduct(item);
-
-                                    return (
-                                        <View style={[styles.modalProductRow, { borderBottomColor: borderColor }]}>
-                                            <View style={styles.modalProductTop}>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={[styles.modalProductName, { color: textPrimary }]}>{item.nombre || item.name}</Text>
-                                                    <View style={{ marginTop: 4 }}>
-                                                        <Text style={[styles.modalProductPrice, { color: '#10B981' }]}>
-                                                            ${(item.precio ?? item.price ?? 0).toLocaleString()}
-                                                        </Text>
-                                                        {hasComm && (
-                                                            <View style={[styles.commBadge, { alignSelf: 'flex-start', marginTop: 4 }]}>
-                                                                <Text style={styles.commBadgeText}>COMISIÓN: ${(item.comision || item.commission || 0).toLocaleString()}</Text>
-                                                            </View>
-                                                        )}
-                                                    </View>
-                                                </View>
-
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                    <View style={[styles.modalQtyControl, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}>
-                                                        <Pressable
-                                                            onPress={() => updateModalQty(id, -1)}
-                                                            style={[styles.modalQtyBtn, { backgroundColor: isDark ? '#4B5563' : '#FFFFFF' }]}
-                                                        >
-                                                            <Ionicons name="remove" size={18} color={textPrimary} />
-                                                        </Pressable>
-                                                        <Text style={[styles.modalQtyText, { color: textPrimary }]}>{qty}</Text>
-                                                        <Pressable
-                                                            onPress={() => updateModalQty(id, 1)}
-                                                            style={[styles.modalQtyBtn, { backgroundColor: isDark ? '#4B5563' : '#FFFFFF' }]}
-                                                        >
-                                                            <Ionicons name="add" size={18} color={textPrimary} />
-                                                        </Pressable>
-                                                    </View>
-
-                                                    <Pressable
-                                                        style={[styles.modalAddBtn, { backgroundColor: '#8B5CF6' }]}
-                                                        onPress={() => addProductToCart(item)}
-                                                    >
-                                                        <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
-                                                    </Pressable>
-                                                </View>
-                                            </View>
-
-                                            {hasComm && (
-                                                <View style={styles.modalProductBottom}>
-                                                    <Pressable
-                                                        style={[
-                                                            styles.modalHostessSelector,
-                                                            {
-                                                                borderColor: selected.length > 0 ? '#8B5CF6' : borderColor,
-                                                                backgroundColor: selected.length > 0 ? '#8B5CF610' : 'transparent',
-                                                                flex: 1,
-                                                            },
-                                                        ]}
-                                                        onPress={() => {
-                                                            setHostessSelectionTarget({
-                                                                productId: id,
-                                                                isChampagne: isChamp,
-                                                                max: getHostessLimit(item, qty),
-                                                            });
-                                                            setHostessSubModalVisible(true);
-                                                        }}
-                                                    >
-                                                        <Ionicons name="people-outline" size={18} color={selected.length > 0 ? '#8B5CF6' : textSecondary} />
-                                                        <Text style={[styles.modalHostessText, { color: selected.length > 0 ? '#8B5CF6' : textSecondary }]}>
-                                                            {selected.length > 0 ? `${selected.length} seleccionada(s)` : `Asignar anfitriona`}
-                                                        </Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
+                                keyExtractor={(item) => (item.id || item.id_producto).toString()}
+                                renderItem={({ item }) => (
+                                    <View style={[styles.productItem, { borderBottomColor: borderColor }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.productName, { color: textPrimary }]}>{item.name || item.nombre}</Text>
+                                            <Text style={[styles.productPrice, { color: textSecondary }]}>${(item.precio || item.price || 0).toLocaleString()}</Text>
                                         </View>
-                                    );
-                                }}
+                                        <View style={styles.modalQuantityActions}>
+                                            <Pressable
+                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
+                                                onPress={() => {
+                                                    const id = item.id || item.id_producto;
+                                                    const qty = Math.max(1, (modalQuantities[id] || 1) - 1);
+                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
+                                                }}
+                                            >
+                                                <Ionicons name="remove" size={16} color={textPrimary} />
+                                            </Pressable>
+                                            <Text style={[styles.modalQtyText, { color: textPrimary }]}>
+                                                {modalQuantities[item.id || item.id_producto] || 1}
+                                            </Text>
+                                            <Pressable
+                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
+                                                onPress={() => {
+                                                    const id = item.id || item.id_producto;
+                                                    const qty = (modalQuantities[id] || 1) + 1;
+                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
+                                                }}
+                                            >
+                                                <Ionicons name="add" size={16} color={textPrimary} />
+                                            </Pressable>
+                                        </View>
+                                        <Pressable
+                                            style={styles.addBtn}
+                                            onPress={() => {
+                                                const id = item.id || item.id_producto;
+                                                const hasComm = Number(item.comision || item.commission || 0) > 0;
+
+                                                if (hasComm) {
+                                                    dispatch({
+                                                        type: 'SET_HOSTESS_TARGET',
+                                                        target: {
+                                                            productId: id,
+                                                            product: item,
+                                                            max: getHostessLimit(item, modalQuantities[id] || 1),
+                                                            isChampagne: isChampagneProduct(item)
+                                                        }
+                                                    });
+                                                } else {
+                                                    addProductToCart(item);
+                                                }
+                                            }}
+                                            accessibilityLabel={`Añadir ${item.name || item.nombre}`}
+                                            accessibilityRole="button"
+                                        >
+                                            <Ionicons name="add" size={24} color="#FFF" />
+                                        </Pressable>
+                                    </View>
+                                )}
                             />
                         )}
-                        <Pressable style={[styles.modalBottomClose, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} onPress={() => setModalOpen(false)}>
-                            <Text style={[styles.modalBottomCloseText, { color: textPrimary }]}>Cerrar</Text>
+                        <Pressable
+                            style={styles.confirmModalBtn}
+                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
+                            accessibilityLabel="Confirmar selección de productos"
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.confirmModalBtnText}>Confirmar</Text>
                         </Pressable>
                     </View>
                 </View>
             </Modal>
 
-            {/* Sub-modals using reusable components */}
-            <HostessSelectModal
-                visible={hostessSubModalVisible}
-                hostesses={anfitrionas}
-                selectedIds={modalHostessSelections[hostessSelectionTarget?.productId || 0] || []}
-                max={hostessSelectionTarget?.max}
-                onClose={() => setHostessSubModalVisible(false)}
-                onToggle={toggleHostessInModal}
-                title="Asignar Anfitrionas"
-            />
-
-            <HostessSelectModal
-                visible={hostessModalVisible}
-                hostesses={anfitrionas}
-                selectedIds={activeCartIdx !== null ? cart[activeCartIdx].selectedHostesses : []}
-                max={activeCartIdx !== null ? getHostessLimit(cart[activeCartIdx], cart[activeCartIdx].cantidad) : undefined}
-                onClose={() => setHostessModalVisible(false)}
-                onToggle={toggleHostess}
-                title="Modificar Anfitrionas"
-            />
-
-            <RoomSelectModal
-                visible={roomModalVisible}
-                rooms={habitaciones}
-                selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
-                onClose={() => setRoomModalVisible(false)}
-                onSelect={(room) => {
-                    setSelectedHabitacion(room);
-                    setRoomModalVisible(false);
-                }}
-            />
-
-            <Modal visible={timeModalVisible} animationType="slide" transparent>
+            <Modal visible={timeModalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
+                    <View style={[styles.modalContent, { backgroundColor: cardBg, padding: 0 }]} >
+                        <View style={[styles.modalHeader, { padding: 24, paddingBottom: 10, marginBottom: 0 }]}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>Tiempo de Estancia</Text>
-                            <Pressable onPress={() => setTimeModalVisible(false)}><Ionicons name="close" size={24} color={textPrimary} /></Pressable>
+                            <Pressable onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}>
+                                <Ionicons name="close" size={26} color={textPrimary} />
+                            </Pressable>
                         </View>
                         <FlatList
                             data={[10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]}
-                            keyExtractor={item => item.toString()}
+                            keyExtractor={(item) => item.toString()}
+                            contentContainerStyle={{ paddingHorizontal: 24 }}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    style={[styles.listItem, { borderBottomColor: borderColor }]}
-                                    onPress={() => { setSelectedTime(item); setTimeModalVisible(false); }}
+                                    style={[styles.productItem, { borderBottomColor: borderColor }]}
+                                    onPress={() => {
+                                        dispatch({ type: 'SET_SELECTED_TIME', payload: item });
+                                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false });
+                                    }}
                                 >
                                     <Ionicons name="time" size={22} color="#10B981" />
-                                    <Text style={[styles.listItemTitle, { color: textPrimary, marginLeft: 16 }]}>{item} minutos</Text>
+                                    <Text style={[styles.productName, { color: textPrimary, marginLeft: 16 }]}>{item} minutos</Text>
+                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color="#8B5CF6" style={{ marginLeft: 'auto' }} />}
                                 </TouchableOpacity>
                             )}
                         />
@@ -734,129 +565,105 @@ export default function NuevaVentaScreen() {
                 </View>
             </Modal>
 
-            <ClientSelectModal
-                visible={clientModalVisible}
-                clients={clientes}
-                selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
-                max={1}
-                onClose={() => setClientModalVisible(false)}
-                onToggle={(id) => {
-                    const client = clientes.find(c => (c.id_cliente || c.id) === id);
-                    setSelectedCliente(client);
-                    setClientModalVisible(false);
+            <RoomSelectModal
+                visible={roomModalVisible}
+                rooms={habitaciones}
+                selectedRoomId={selectedHabitacion?.id || selectedHabitacion?.id_habitacion}
+                onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
+                onSelect={(room) => {
+                    dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
+                    dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
                 }}
             />
 
+            <ClientSelectModal
+                visible={clientModalVisible}
+                clients={clientes}
+                selectedIds={selectedCliente ? [selectedCliente.id || selectedCliente.id_cliente] : []}
+                max={1}
+                onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
+                onToggle={(id) => {
+                    const cl = clientes.find(c => (c.id_cliente || c.id) === id);
+                    dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl });
+                    dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
+                }}
+            />
+
+            <HostessSelectModal
+                visible={hostessSubModalVisible && hostessSelectionTarget !== null}
+                hostesses={anfitrionas.map(a => ({
+                    id: a.id_usuario || a.id,
+                    id_usuario: a.id_usuario || a.id,
+                    nick: a.nick,
+                    status: a.status || 0
+                }))}
+                selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
+                max={hostessSelectionTarget?.max}
+                onToggle={(id) => {
+                    if (!hostessSelectionTarget) return;
+                    const pid = hostessSelectionTarget.productId;
+                    const currentSelected = modalHostessSelections[pid] || [];
+                    let newSelected;
+
+                    if (currentSelected.includes(id)) {
+                        newSelected = currentSelected.filter(x => x !== id);
+                    } else {
+                        if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
+                            showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
+                            return;
+                        }
+                        newSelected = [...currentSelected, id];
+                    }
+                    dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
+                }}
+                onClose={() => {
+                    dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
+                }}
+                onConfirm={() => {
+                    if (hostessSelectionTarget) {
+                        const pid = hostessSelectionTarget.productId;
+                        const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0;
+                        const currentSelected = modalHostessSelections[pid] || [];
+                        if (hasComm && currentSelected.length === 0) {
+                            showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
+                            return;
+                        }
+                        addProductToCart(hostessSelectionTarget.product);
+                        dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
+                    }
+                }}
+            />
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: {
-        paddingHorizontal: 16,
-        marginBottom: 8,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-    },
-    headerTop: { flexDirection: 'row', alignItems: 'center' },
-    backBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-    headerTitle: { fontSize: 22, fontWeight: '800' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
-    section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
-    sectionTitle: { fontSize: 13, fontWeight: '900', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.6 },
-    browserContainer: { marginBottom: 20 },
-    browserTitle: { fontSize: 13, fontWeight: '900', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase', paddingHorizontal: 4 },
-    categoryScroll: {
-        paddingHorizontal: 4,
-        gap: 12,
-    },
-    categorySmallCard: {
-        width: 140,
-        padding: 12,
-        borderRadius: 20,
-        borderWidth: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        minHeight: 64,
-    },
-    catIconBox: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    catSmallName: { fontSize: 12, fontWeight: '800' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '80%' },
-    modalContentWide: { width: '95%', alignSelf: 'center', borderRadius: 32, padding: 20 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
-    modalSubtitle: { fontSize: 13, fontWeight: '600' },
-    closeModalBtn: { padding: 4 },
-    modalProductRow: { paddingVertical: 16, borderBottomWidth: 1 },
-    modalProductTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    modalProductName: { fontSize: 16, fontWeight: '800', flex: 1, marginRight: 10 },
-    modalProductPrice: { fontSize: 15, fontWeight: '800' },
-    commBadge: { backgroundColor: '#8B5CF615', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    commBadgeText: { fontSize: 9, fontWeight: '900', color: '#8B5CF6' },
-    modalQtyControl: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 14,
-        padding: 4,
-    },
-    modalQtyBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    modalQtyText: { marginHorizontal: 16, fontSize: 16, fontWeight: '900' },
-    modalProductBottom: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 12 },
-    modalHostessSelector: { flex: 1, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, height: 44, gap: 8 },
-    modalHostessText: { fontSize: 12, fontWeight: '700', flex: 1 },
-    modalAddBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-    modalBottomClose: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-    modalBottomCloseText: { fontSize: 14, fontWeight: '800' },
-    listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
-    avatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-    avatarText: { color: '#FFF', fontWeight: '900', fontSize: 18 },
-    listItemTitle: { fontSize: 16, fontWeight: '800' },
-    modalActionBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-    modalActionBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-    cartItem: { flexDirection: 'row', paddingVertical: 16, borderBottomWidth: 1 },
-    cartItemInfo: { flex: 1 },
-    cartItemName: { fontSize: 15, fontWeight: '800' },
-    cartItemPrice: { fontSize: 13, fontWeight: '600', marginTop: 2 },
-    hostessSelector: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, marginTop: 8, alignSelf: 'flex-start' },
-    hostessSelectorText: { fontSize: 12, fontWeight: '800' },
-    cartActions: { alignItems: 'flex-end', justifyContent: 'space-between' },
-    qtyBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 12, padding: 4 },
-    qtyBtn: { width: 24, height: 24, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-    qtyText: { marginHorizontal: 10, fontSize: 14, fontWeight: '900' },
-    removeBtn: { marginTop: 10 },
-    selectorBtn: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1 },
-    selectorLabel: { fontSize: 12, fontWeight: '700' },
-    selectorVal: { fontSize: 15, fontWeight: '800', marginTop: 2 },
-    inputGroupLabel: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1 },
-    tipToggle: { flexDirection: 'row', alignItems: 'center', marginTop: 24, padding: 16, borderRadius: 16, borderWidth: 1, borderStyle: 'dotted' },
-    tipTitle: { fontSize: 14, fontWeight: '800' },
-    checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
-    summaryCard: { marginTop: 20, padding: 24, borderRadius: 32, borderWidth: 1, elevation: 20 },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
+    sectionTitle: { fontSize: 13, fontWeight: '900', marginBottom: 15, textTransform: 'uppercase', opacity: 0.6 },
+    selectorBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(155,155,155,0.03)' },
+    selectorText: { fontSize: 14, fontWeight: '700' },
+    summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
-    totalLabelFinal: { fontSize: 16, fontWeight: '900' },
-    totalValFinal: { fontSize: 28, fontWeight: '900', color: '#8B5CF6' },
-    submitBtn: { height: 64, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
-    submitBtnText: { color: '#FFF', fontSize: 17, fontWeight: '900' },
+    totalLabel: { fontSize: 18, fontWeight: '900' },
+    totalValue: { fontSize: 26, fontWeight: '900', color: '#8B5CF6' },
+    submitBtn: { backgroundColor: '#8B5CF6', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    modalTitle: { fontSize: 22, fontWeight: '900' },
+    productItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+    productName: { fontSize: 16, fontWeight: '800' },
+    productPrice: { fontSize: 14, fontWeight: '900', marginTop: 4, color: '#10B981' },
+    modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
+    modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+    modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
+    addBtn: { backgroundColor: '#8B5CF6', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

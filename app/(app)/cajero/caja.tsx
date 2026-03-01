@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -20,34 +20,95 @@ import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { useAuthStore } from '../../../store/authStore';
 
+type CajaState = {
+    loading: boolean;
+    refreshing: boolean;
+    cajaAbierta: boolean;
+    cajaInfo: any;
+    stats: any;
+    modalVisible: boolean;
+    modalType: 'abrir' | 'cerrar' | 'retiro';
+    monto: string;
+    motivoRetiro: string;
+    submitting: boolean;
+};
+
+type CajaAction =
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_REFRESHING'; payload: boolean }
+    | { type: 'SET_CAJA_STATUS'; payload: { abierta: boolean; info: any } }
+    | { type: 'SET_STATS'; payload: any }
+    | { type: 'OPEN_MODAL'; payload: 'abrir' | 'cerrar' | 'retiro' }
+    | { type: 'CLOSE_MODAL' }
+    | { type: 'SET_MONTO'; payload: string }
+    | { type: 'SET_MOTIVO'; payload: string }
+    | { type: 'SET_SUBMITTING'; payload: boolean };
+
+const initialCajaState: CajaState = {
+    loading: true,
+    refreshing: false,
+    cajaAbierta: false,
+    cajaInfo: null,
+    stats: null,
+    modalVisible: false,
+    modalType: 'abrir',
+    monto: '',
+    motivoRetiro: '',
+    submitting: false,
+};
+
+function cajaReducer(state: CajaState, action: CajaAction): CajaState {
+    switch (action.type) {
+        case 'SET_LOADING': return { ...state, loading: action.payload };
+        case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
+        case 'SET_CAJA_STATUS': return { ...state, cajaAbierta: action.payload.abierta, cajaInfo: action.payload.info };
+        case 'SET_STATS': return { ...state, stats: action.payload };
+        case 'OPEN_MODAL': return { ...state, modalVisible: true, modalType: action.payload, monto: '', motivoRetiro: '' };
+        case 'CLOSE_MODAL': return { ...state, modalVisible: false };
+        case 'SET_MONTO': return { ...state, monto: action.payload };
+        case 'SET_MOTIVO': return { ...state, motivoRetiro: action.payload };
+        case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+        default: return state;
+    }
+}
+
+const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
+    Toast.show({
+        type,
+        text1: title,
+        text2: message,
+        visibilityTime: 4000
+    });
+};
+
+const StatItem = ({ label, value, color, borderColor, textSecondary }: { label: string, value: number, color: string, borderColor: string, textSecondary: string }) => (
+    <View style={[styles.statItem, { borderBottomColor: borderColor }]}>
+        <Text style={[styles.statLabel, { color: textSecondary }]}>{label}</Text>
+        <Text style={[styles.statValue, { color }]}>${(value || 0).toLocaleString()}</Text>
+    </View>
+);
+
 export default function CajaScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore(state => state.user);
 
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [cajaAbierta, setCajaAbierta] = useState(false);
-    const [cajaInfo, setCajaInfo] = useState<any>(null);
-    const [stats, setStats] = useState<any>(null);
+    const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
+    const {
+        loading,
+        refreshing,
+        cajaAbierta,
+        cajaInfo,
+        stats,
+        modalVisible,
+        modalType,
+        monto,
+        motivoRetiro,
+        submitting
+    } = state;
+
     const dataRef = useRef<string>('');
-
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalType, setModalType] = useState<'abrir' | 'cerrar' | 'retiro'>('abrir');
-    const [monto, setMonto] = useState('');
-    const [motivoRetiro, setMotivoRetiro] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-
-    // Toast
-    const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-        Toast.show({
-            type,
-            text1: title,
-            text2: message,
-            visibilityTime: 4000
-        });
-    };
 
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
@@ -56,6 +117,7 @@ export default function CajaScreen() {
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
     const fetchData = useCallback(async (isManual = false) => {
+        if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
         try {
             const [statusRes, statsRes] = await Promise.all([
                 apiClient('/cashregister/status').catch(() => ({ success: false, data: null })),
@@ -68,15 +130,13 @@ export default function CajaScreen() {
             dataRef.current = serialized;
 
             if (statusRes.success && statusRes.data) {
-                setCajaAbierta(statusRes.data.hasOpenCaja);
-                setCajaInfo(statusRes.data.cajaInfo);
+                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: statusRes.data.hasOpenCaja, info: statusRes.data.cajaInfo } });
             } else {
-                setCajaAbierta(false);
-                setCajaInfo(null);
+                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: false, info: null } });
             }
 
             if (statsRes && statsRes.success && statsRes.data) {
-                setStats(statsRes.data);
+                dispatch({ type: 'SET_STATS', payload: statsRes.data });
             }
 
             if (isManual) {
@@ -100,8 +160,8 @@ export default function CajaScreen() {
                 showToast('Error', 'No se pudo cargar la información de la caja');
             }
         } finally {
-            setLoading(false);
-            setRefreshing(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
+            dispatch({ type: 'SET_REFRESHING', payload: false });
         }
     }, [user?.id]);
 
@@ -109,32 +169,36 @@ export default function CajaScreen() {
         fetchData();
     }, [fetchData]);
 
-    const onRefresh = () => {
-        setRefreshing(true);
+    const onRefresh = useCallback(() => {
+        dispatch({ type: 'SET_REFRESHING', payload: true });
         fetchData(true);
-    };
+    }, [fetchData]);
 
-    const handleOpenModal = (type: 'abrir' | 'cerrar' | 'retiro') => {
-        setModalType(type);
-        setMonto('');
-        setMotivoRetiro('');
-        setModalVisible(true);
+    const handleOpenModal = useCallback((type: 'abrir' | 'cerrar' | 'retiro') => {
+        dispatch({ type: 'OPEN_MODAL', payload: type });
+    }, []);
+
+    const handleMontoChange = (text: string) => {
+        const cleanNumber = text.replace(/\D/g, '');
+        const formatted = cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        dispatch({ type: 'SET_MONTO', payload: formatted });
     };
 
     const handleSubmit = async () => {
-        if (!monto || isNaN(Number(monto))) {
+        const cleanMonto = monto.replace(/\./g, '');
+        if (!cleanMonto || isNaN(Number(cleanMonto))) {
             showToast('Error', 'Por favor ingresa un monto válido');
             return;
         }
 
-        const numericMonto = Number(monto);
+        const numericMonto = Number(cleanMonto);
 
         if (numericMonto < 0) {
             showToast('Error', 'El monto no puede ser negativo');
             return;
         }
 
-        setSubmitting(true);
+        dispatch({ type: 'SET_SUBMITTING', payload: true });
 
         try {
             if (modalType === 'abrir') {
@@ -148,7 +212,7 @@ export default function CajaScreen() {
 
                 if (res.success) {
                     showToast('Turno Iniciado', 'Caja abierta correctamente', 'success');
-                    setModalVisible(false);
+                    dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
                 } else {
                     showToast('Error', res.message || 'Error al abrir caja');
@@ -156,12 +220,12 @@ export default function CajaScreen() {
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) {
                     showToast('Error', 'Por favor ingresa un motivo del retiro');
-                    setSubmitting(false);
+                    dispatch({ type: 'SET_SUBMITTING', payload: false });
                     return;
                 }
                 if (!cajaInfo?.id_caja) {
                     showToast('Error', 'No se encontró la ID de la caja');
-                    setSubmitting(false);
+                    dispatch({ type: 'SET_SUBMITTING', payload: false });
                     return;
                 }
 
@@ -177,7 +241,7 @@ export default function CajaScreen() {
 
                 if (res.success) {
                     showToast('Retiro Exitoso', `Retiro de $${numericMonto.toLocaleString()} realizado.`, 'success');
-                    setModalVisible(false);
+                    dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
                 } else {
                     showToast('Error', res.message || 'Error al retirar efectivo');
@@ -185,7 +249,7 @@ export default function CajaScreen() {
             } else {
                 if (!cajaInfo?.id_caja) {
                     showToast('Error', 'No se encontró la ID de la caja a cerrar');
-                    setSubmitting(false);
+                    dispatch({ type: 'SET_SUBMITTING', payload: false });
                     return;
                 }
 
@@ -200,7 +264,7 @@ export default function CajaScreen() {
 
                 if (res.success) {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
-                    setModalVisible(false);
+                    dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
                 } else {
                     showToast('Error', res.message || 'Error al cerrar caja');
@@ -209,16 +273,9 @@ export default function CajaScreen() {
         } catch (error: any) {
             showToast('Error', error.message || `Error al ${modalType} caja`);
         } finally {
-            setSubmitting(false);
+            dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
     };
-
-    const StatItem = ({ label, value, color = textPrimary }: { label: string, value: number, color?: string }) => (
-        <View style={[styles.statItem, { borderBottomColor: borderColor }]}>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>{label}</Text>
-            <Text style={[styles.statValue, { color }]}>${(value || 0).toLocaleString()}</Text>
-        </View>
-    );
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -245,12 +302,16 @@ export default function CajaScreen() {
                                     <Pressable
                                         style={[styles.actionBtn, { backgroundColor: '#F59E0B' }]}
                                         onPress={() => handleOpenModal('retiro')}
+                                        accessibilityLabel="Retirar efectivo de la caja"
+                                        accessibilityRole="button"
                                     >
                                         <Text style={styles.actionBtnText}>Retiro</Text>
                                     </Pressable>
                                     <Pressable
                                         style={[styles.actionBtn, { backgroundColor: '#EF4444' }]}
                                         onPress={() => handleOpenModal('cerrar')}
+                                        accessibilityLabel="Cerrar caja"
+                                        accessibilityRole="button"
                                     >
                                         <Text style={styles.actionBtnText}>Cerrar</Text>
                                     </Pressable>
@@ -259,6 +320,8 @@ export default function CajaScreen() {
                                 <Pressable
                                     style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
                                     onPress={() => handleOpenModal('abrir')}
+                                    accessibilityLabel="Abrir caja"
+                                    accessibilityRole="button"
                                 >
                                     <Text style={styles.actionBtnText}>Abrir Caja</Text>
                                 </Pressable>
@@ -277,16 +340,16 @@ export default function CajaScreen() {
                     {cajaAbierta && stats && (
                         <View style={[styles.statsCard, { backgroundColor: cardBg, borderColor }]}>
                             <Text style={[styles.statsTitle, { color: textPrimary }]}>Resumen del Turno</Text>
-                            <StatItem label="Balance Total Calculado" value={stats.balance_total} color="#8B5CF6" />
-                            <StatItem label="Efectivo Esperado" value={stats.total_efectivo} color="#10B981" />
-                            <StatItem label="Tarjetas" value={stats.total_tarjeta} color="#3B82F6" />
-                            <StatItem label="Transferencias" value={stats.total_transferencia} color="#F59E0B" />
-                            <StatItem label="Servicios" value={stats.total_servicios} />
-                            <StatItem label="Devoluciones" value={stats.total_devoluciones} color="#EF4444" />
-                            <StatItem label="Propinas" value={stats.total_propina} />
-                            <StatItem label="Anticipos" value={stats.total_anticipo} />
-                            <StatItem label="IVA" value={stats.total_iva} />
-                            <StatItem label="Comisiones" value={stats.total_comisiones} />
+                            <StatItem label="Balance Total Calculado" value={stats.balance_total} color="#8B5CF6" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Efectivo Esperado" value={stats.total_efectivo} color="#10B981" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Tarjetas" value={stats.total_tarjeta} color="#3B82F6" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Transferencias" value={stats.total_transferencia} color="#F59E0B" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Servicios" value={stats.total_servicios} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Devoluciones" value={stats.total_devoluciones} color="#EF4444" borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Propinas" value={stats.total_propina} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Anticipos" value={stats.total_anticipo} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="IVA" value={stats.total_iva} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
+                            <StatItem label="Comisiones" value={stats.total_comisiones} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
                         </View>
                     )}
                 </ScrollView>
@@ -296,7 +359,7 @@ export default function CajaScreen() {
                 animationType="fade"
                 transparent={true}
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -326,11 +389,10 @@ export default function CajaScreen() {
                             <TextInput
                                 style={[styles.input, { color: textPrimary }]}
                                 value={monto}
-                                onChangeText={setMonto}
+                                onChangeText={handleMontoChange}
                                 keyboardType="numeric"
                                 placeholder="0"
                                 placeholderTextColor={textSecondary}
-                                autoFocus
                             />
                         </View>
 
@@ -341,7 +403,7 @@ export default function CajaScreen() {
                                     <TextInput
                                         style={[styles.input, { color: textPrimary, paddingLeft: 0, width: '100%' }]}
                                         value={motivoRetiro}
-                                        onChangeText={setMotivoRetiro}
+                                        onChangeText={(val) => dispatch({ type: 'SET_MOTIVO', payload: val })}
                                         placeholder="Motivo del retiro"
                                         placeholderTextColor={textSecondary}
                                     />
@@ -375,7 +437,7 @@ export default function CajaScreen() {
                         <View style={styles.modalActions}>
                             <Pressable
                                 style={[styles.modalBtn, styles.cancelBtn]}
-                                onPress={() => setModalVisible(false)}
+                                onPress={() => dispatch({ type: 'CLOSE_MODAL' })}
                                 disabled={submitting}
                             >
                                 <Text style={[styles.cancelBtnText, { color: textPrimary }]}>Cancelar</Text>

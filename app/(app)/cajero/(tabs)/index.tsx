@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { AnimatedScreen } from '../../../../components/AnimatedScreen';
 import { CajeroActionGrid } from '../../../../components/CajeroActionGrid';
 import { CajeroStats } from '../../../../components/CajeroStats';
 import { PremiumHeaderActions } from '../../../../components/PremiumHeaderActions';
@@ -121,24 +122,26 @@ export default function CajeroHomeScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
             >
-                <LinearGradient
-                    colors={isDark ? ['#1E1B4B', '#000000'] : ['#E0E7FF', '#F3F4F6']}
-                    style={[styles.header, { paddingTop: insets.top + 10 }]}
-                >
-                    <PremiumHeaderActions
-                        hasNewAlert={hasNewAlert}
-                        notificationCount={pendingCount}
-                        setHasNewAlert={setHasNewAlert}
-                        onNotificationPress={() => router.push('/cajero/solicitudes')}
-                        showAlert={showAlert}
-                        profilePath="/cajero/perfil"
-                    />
-                    <PremiumUserProfile user={user} userStatus={userStatus} />
-                </LinearGradient>
+                <AnimatedScreen>
+                    <LinearGradient
+                        colors={isDark ? ['#1E1B4B', '#000000'] : ['#E0E7FF', '#F3F4F6']}
+                        style={[styles.header, { paddingTop: insets.top + 10 }]}
+                    >
+                        <PremiumHeaderActions
+                            hasNewAlert={hasNewAlert}
+                            notificationCount={pendingCount}
+                            setHasNewAlert={setHasNewAlert}
+                            onNotificationPress={() => router.push('/cajero/solicitudes')}
+                            showAlert={showAlert}
+                            profilePath="/cajero/perfil"
+                        />
+                        <PremiumUserProfile user={user} userStatus={userStatus} />
+                    </LinearGradient>
 
-                <CajeroStats stats={stats} />
+                    <CajeroStats stats={stats} />
 
-                <CajeroActionGrid />
+                    <CajeroActionGrid />
+                </AnimatedScreen>
 
                 <View style={{ height: 100 }} />
             </ScrollView>

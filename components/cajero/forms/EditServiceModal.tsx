@@ -14,14 +14,15 @@ import {
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { Timer } from '../../../context/TimerContext';
-import { PaymentMethod, PaymentMethodSelect } from './PaymentMethodSelect';
 import { HostessSelectModal } from './HostessSelectModal';
+import { PaymentMethod, PaymentMethodSelect } from './PaymentMethodSelect';
 
 interface Anfitriona {
     id_usuario: number;
     nombre: string;
     apellido: string;
     nick: string;
+    status?: number;
 }
 
 interface EditServiceModalProps {
@@ -69,10 +70,10 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         try {
             const res = await apiClient('/rooms');
             console.log('[EditServiceModal] Respuesta habitaciones:', JSON.stringify(res, null, 2));
-            
+
             if (res.success && Array.isArray(res.data)) {
                 console.log('[EditServiceModal] Total habitaciones:', res.data.length);
-                
+
                 // Log de todas las habitaciones para debug
                 res.data.forEach((h: any, index: number) => {
                     console.log(`[EditServiceModal] Habitación ${index}:`, {
@@ -82,25 +83,25 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                         comision: h.comision_anfitriona
                     });
                 });
-                
+
                 // Buscar habitación sin comisión que tenga precio y tiempo
                 const habitacionSinComision = res.data.find((h: any) => {
                     const precio = h.precio || h.price || 0;
                     const tiempo = h.tiempo || h.time || 0;
                     const comision = h.comision_anfitriona || 0;
-                    
+
                     const cumple = comision === 0 && precio > 0 && tiempo > 0;
-                    
+
                     console.log(`[EditServiceModal] Evaluando ${h.nombre || h.name}:`, {
                         precio,
                         tiempo,
                         comision,
                         cumple
                     });
-                    
+
                     return cumple;
                 });
-                
+
                 if (habitacionSinComision) {
                     const precio = habitacionSinComision.precio || habitacionSinComision.price || 0;
                     setPrecioHabitacionSinComision(precio);
@@ -121,16 +122,16 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         try {
             // Obtener anfitrionas disponibles
             const disponiblesRes = await apiClient('/anfitrionas/disponibles');
-            
+
             // Obtener anfitrionas del servicio actual
             const servicioRes = await apiClient(`/servicios/${timer?.servicioId}`);
-            
+
             let todasAnfitrionas: Anfitriona[] = [];
-            
+
             if (disponiblesRes.success && Array.isArray(disponiblesRes.data)) {
                 todasAnfitrionas = [...disponiblesRes.data];
             }
-            
+
             // Agregar las anfitrionas del servicio actual si no están en disponibles
             if (servicioRes.success && servicioRes.data?.usuarios) {
                 const anfitrionasServicio = servicioRes.data.usuarios;
@@ -140,7 +141,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     }
                 });
             }
-            
+
             setAnfitrionasDisponibles(todasAnfitrionas);
         } catch (error) {
             console.error('[EditServiceModal] Error fetching anfitrionas:', error);
@@ -187,7 +188,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             // Replicar lógica de la web: subtotal = precioBase * #anfitrionas
             const numAnfitrionas = anfitrionasSeleccionadas.length;
             const subTotalServicio = numericPrecio * numAnfitrionas;
-            
+
             // Precio de habitación multiplicado por número de anfitrionas
             const precioHabitacionTotal = precioHabitacionSinComision * numAnfitrionas;
 
@@ -343,7 +344,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                         {anfitrionasSeleccionadas.length > 0 && (
                             <View style={[styles.summaryBox, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderColor }]}>
                                 <Text style={[styles.summaryTitle, { color: textPrimary }]}>RESUMEN</Text>
-                                
+
                                 <View style={styles.summaryRow}>
                                     <Text style={[styles.summaryLabel, { color: textSecondary }]}>Servicio ({anfitrionasSeleccionadas.length} anfitriona{anfitrionasSeleccionadas.length > 1 ? 's' : ''})</Text>
                                     <Text style={[styles.summaryValue, { color: textPrimary }]}>
@@ -383,12 +384,12 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                                                 iva = Math.floor(totalServicio * 0.20);
                                             }
                                             let total = totalServicio + totalHabitacion + iva;
-                                            
+
                                             // Redondeo si es tarjeta
                                             if (metodoPago === 'tarjeta') {
                                                 total = Math.ceil(total / 5000) * 5000;
                                             }
-                                            
+
                                             return total.toLocaleString('es-CL');
                                         })()}
                                     </Text>
@@ -433,7 +434,8 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     hostesses={anfitrionasDisponibles.map(anf => ({
                         id: anf.id_usuario,
                         id_usuario: anf.id_usuario,
-                        nick: anf.nick
+                        nick: anf.nick,
+                        status: anf.status || 0
                     }))}
                     selectedIds={anfitrionasSeleccionadas}
                     title="Seleccionar Anfitrionas"
@@ -557,7 +559,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         marginBottom: 20,
-        marginTop:10,
+        marginTop: 10,
     },
     summaryTitle: {
         fontSize: 11,

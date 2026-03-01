@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { isTablet } from './dimensions';
 
 const tintColorLight = '#000000';
 const tintColorDark = '#FFFFFF';
@@ -6,31 +7,127 @@ const tintColorDark = '#FFFFFF';
 export const Colors = {
   light: {
     text: '#000000',
+    textSecondary: '#6B7280',
+    textMuted: '#9CA3AF',
     background: '#FFFFFF',
-    card: '#F3F4F6',
+    backgroundSecondary: '#F3F4F6',
+    card: '#FFFFFF',
+    cardSecondary: '#F9FAFB',
     border: '#E5E7EB',
+    borderLight: '#F3F4F6',
     tint: tintColorLight,
+    tintSecondary: '#8B5CF6',
     icon: '#6B7280',
+    iconSecondary: '#9CA3AF',
     tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorLight,
     error: '#EF4444',
+    errorLight: '#FEE2E2',
+    success: '#10B981',
+    successLight: '#D1FAE5',
+    warning: '#F59E0B',
+    warningLight: '#FEF3C7',
+    info: '#3B82F6',
+    infoLight: '#DBEAFE',
+    accent: '#8B5CF6',
+    accentLight: '#EDE9FE',
+    danger: '#EF4444',
+    dangerLight: '#FEE2E2',
   },
   dark: {
     text: '#FFFFFF',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
     background: '#000000',
+    backgroundSecondary: '#111827',
     card: '#1F2937',
+    cardSecondary: '#374151',
     border: '#374151',
+    borderLight: '#4B5563',
     tint: tintColorDark,
+    tintSecondary: '#A78BFA',
     icon: '#9CA3AF',
+    iconSecondary: '#6B7280',
     tabIconDefault: '#4B5563',
     tabIconSelected: tintColorDark,
     error: '#F87171',
+    errorLight: '#7F1D1D',
+    success: '#34D399',
+    successLight: '#064E3B',
+    warning: '#FBBF24',
+    warningLight: '#78350F',
+    info: '#60A5FA',
+    infoLight: '#1E3A8A',
+    accent: '#A78BFA',
+    accentLight: '#4C1D95',
+    danger: '#F87171',
+    dangerLight: '#7F1D1D',
   },
 };
 
+export const Spacing = {
+  xs: isTablet ? 6 : 4,
+  sm: isTablet ? 10 : 8,
+  md: isTablet ? 18 : 16,
+  lg: isTablet ? 24 : 20,
+  xl: isTablet ? 30 : 24,
+  xxl: isTablet ? 40 : 32,
+} as const;
+
+export const FontSize = {
+  xs: isTablet ? 12 : 10,
+  sm: isTablet ? 14 : 12,
+  md: isTablet ? 16 : 14,
+  lg: isTablet ? 18 : 16,
+  xl: isTablet ? 22 : 18,
+  xxl: isTablet ? 26 : 22,
+  xxxl: isTablet ? 32 : 28,
+} as const;
+
+export const FontWeight = {
+  normal: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
+  extrabold: '800' as const,
+  black: '900' as const,
+};
+
+export const BorderRadius = {
+  sm: isTablet ? 10 : 8,
+  md: isTablet ? 14 : 12,
+  lg: isTablet ? 18 : 16,
+  xl: isTablet ? 24 : 20,
+  xxl: isTablet ? 32 : 28,
+  full: 9999,
+} as const;
+
+export const Shadows = {
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-
     sans: 'system-ui',
     serif: 'ui-serif',
     rounded: 'ui-rounded',

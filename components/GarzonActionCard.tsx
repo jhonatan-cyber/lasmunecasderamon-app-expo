@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AnimatedButton } from './AnimatedButton';
 
 interface GarzonActionCardProps {
     title: string;
@@ -12,34 +13,47 @@ interface GarzonActionCardProps {
 }
 
 export const GarzonActionCard = ({ title, description, icon, color, onPress, disabled }: GarzonActionCardProps) => {
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
+
+    const iconSize = isTablet ? 32 : 24;
+    const fontSize = isTablet ? 14 : 12;
+    const descSize = isTablet ? 11 : 9;
+    const minHeight = isTablet ? 100 : 80;
+    const padding = isTablet ? 20 : 16;
+    const iconBoxSize = isTablet ? 48 : 40;
+
     return (
-        <Pressable
+        <AnimatedButton
             onPress={disabled ? undefined : onPress}
-            style={({ pressed }) => [
+            disabled={disabled}
+            style={[
                 styles.card,
                 {
                     backgroundColor: disabled ? '#9CA3AF' : color,
-                    opacity: disabled ? 0.6 : (pressed ? 0.9 : 1)
+                    opacity: disabled ? 0.6 : 1,
+                    minHeight,
+                    padding,
                 }
             ]}
         >
             <View style={styles.content}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name={icon} size={28} color="#FFF" />
+                <View style={[styles.iconContainer, { width: iconBoxSize, height: iconBoxSize, borderRadius: isTablet ? 14 : 12 }]}>
+                    <Ionicons name={icon} size={iconSize} color="#FFF" />
                 </View>
                 <View style={styles.textContainer}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.description}>{description}</Text>
+                    <Text style={[styles.title, { fontSize }]}>{title}</Text>
+                    <Text style={[styles.description, { fontSize: descSize }]}>{description}</Text>
                 </View>
             </View>
-        </Pressable>
+        </AnimatedButton>
     );
 };
 
 const styles = StyleSheet.create({
     card: {
         flex: 1,
-        borderRadius: 24,
+        borderRadius: 20,
         padding: 16,
         minHeight: 80,
         justifyContent: 'center',
@@ -54,8 +68,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconContainer: {
-        width: 36,
-        height: 36,
+        width: 40,
+        height: 40,
         borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
@@ -73,7 +87,7 @@ const styles = StyleSheet.create({
     },
     description: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: 8,
+        fontSize: 9,
         fontWeight: '600',
         marginTop: 1,
     },

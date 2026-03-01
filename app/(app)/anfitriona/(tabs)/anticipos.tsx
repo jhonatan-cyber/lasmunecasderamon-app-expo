@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -48,7 +49,7 @@ export default function AnticiposScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setAnticipos(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -84,9 +85,11 @@ export default function AnticiposScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchAnticipos();
-    }, [fetchAnticipos]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchAnticipos();
+        }, [fetchAnticipos])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);

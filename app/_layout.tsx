@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { NotificationProvider } from "../context/NotificationContext";
+import { SalesProvider } from "../context/SalesContext";
 import { TimerProvider } from "../context/TimerContext";
 import { useAuthStore } from "../store/authStore";
 
@@ -39,9 +40,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <NotificationProvider>
-        <TimerProvider>
-          <Slot />
-        </TimerProvider>
+        <SalesProvider>
+          <TimerProvider>
+            <Slot />
+          </TimerProvider>
+        </SalesProvider>
       </NotificationProvider>
     </SafeAreaProvider>
   );

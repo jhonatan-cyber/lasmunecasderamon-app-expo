@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-    Alert,
     FlatList,
     Pressable,
     RefreshControl,
@@ -10,7 +10,9 @@ import {
     useColorScheme,
     View
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { PremiumAlert } from '../../../../components/PremiumAlert';
 import { Skeleton } from '../../../../components/ui/Skeleton';
 
 interface Servicio {
@@ -33,6 +35,14 @@ export default function ServiciosScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        type: 'warning' as 'info' | 'success' | 'warning' | 'danger',
+        onConfirm: () => { },
+        showCancel: true
+    });
 
     const bg = isDark ? '#000000' : '#FFFFFF';
     const cardBg = isDark ? '#1F2937' : '#F3F4F6';
@@ -85,7 +95,11 @@ export default function ServiciosScreen() {
         }
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [fetchData])
+    );
 
     const handleAssistance = async (servicioId: number, roomName: string, type: string) => {
         const performRequest = async () => {
@@ -100,22 +114,25 @@ export default function ServiciosScreen() {
                 });
 
                 if (res.success) {
-                    Alert.alert('Solicitud enviada', `Se ha solicitado ${type} para la habitación ${roomName}`);
+                    Toast.show({ type: 'success', text1: 'Solicitud enviada', text2: `Se ha solicitado ${type} para la habitación ${roomName}` });
                 }
             } catch (err) {
-                Alert.alert('Error', 'No se pudo enviar la solicitud');
+                Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar la solicitud' });
             }
         };
 
         if (type === 'Seguridad') {
-            Alert.alert(
-                'Confirmar Seguridad',
-                `¿Estás seguro de solicitar personal de SEGURIDAD para la habitación ${roomName}?`,
-                [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'SÍ, LLAMAR', style: 'destructive', onPress: performRequest }
-                ]
-            );
+            setAlertConfig({
+                visible: true,
+                title: 'Confirmar Alerta',
+                message: `¿Estás seguro de enviar una ALERTA de seguridad para la habitación ${roomName}?`,
+                type: 'danger',
+                onConfirm: () => {
+                    setAlertConfig(prev => ({ ...prev, visible: false }));
+                    performRequest();
+                },
+                showCancel: true
+            });
         } else {
             performRequest();
         }
@@ -314,6 +331,15 @@ export default function ServiciosScreen() {
                         <Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron servicios</Text>
                     </View>
                 }
+            />
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={alertConfig.onConfirm}
+                onCancel={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                showCancel={alertConfig.showCancel}
             />
         </View>
     );

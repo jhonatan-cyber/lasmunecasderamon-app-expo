@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
     Alert,
     Platform,
@@ -53,16 +53,13 @@ export function PremiumLiquidationCard({
 
     const totalCalculated = useMemo(() => {
         return events.reduce((sum, e) => {
-            // Solo sumar/restar si el estado es 1 (pendiente/por pagar) o si no tiene estado definido
-            // (algunos eventos como asistencias o registros históricos podrían no tenerlo)
             if (e.estado !== undefined && e.estado !== 1) return sum;
-
             if (e.type === 'anticipo') return sum - (e.amount || 0);
             return sum + (e.amount || 0);
         }, 0);
     }, [events]);
 
-    const handleExportReport = async () => {
+    const handleExportReport = useCallback(async () => {
         try {
             const html = `
                 <html>
@@ -154,7 +151,7 @@ export function PremiumLiquidationCard({
             console.error('Error generating PDF:', error);
             Alert.alert('Error', 'No se pudo generar el reporte PDF.');
         }
-    };
+    }, [user, events, title, totalLabel, totalCalculated, onExportSuccess]);
 
     return (
         <View style={styles.actionsRow}>
@@ -162,7 +159,12 @@ export function PremiumLiquidationCard({
                 <Text style={[styles.label, { color: textSecondary }]}>{totalLabel}</Text>
                 <Text style={[styles.value, { color: '#10B981' }]}>${totalCalculated.toLocaleString()}</Text>
             </View>
-            <Pressable onPress={handleExportReport} style={[styles.exportBtn, { backgroundColor: '#8B5CF6' }]}>
+            <Pressable
+                onPress={handleExportReport}
+                style={[styles.exportBtn, { backgroundColor: '#8B5CF6' }]}
+                accessibilityLabel="Exportar Liquidación a PDF"
+                accessibilityRole="button"
+            >
                 <Ionicons name="document-text-outline" size={20} color="#FFF" />
                 <Text style={styles.exportBtnText}>Liquidación</Text>
             </Pressable>
