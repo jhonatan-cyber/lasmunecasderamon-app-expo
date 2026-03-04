@@ -8,7 +8,8 @@ export default function Index() {
         return <Redirect href="/(auth)/login" />;
     }
 
-    const role = user.role?.toLowerCase() || '';
+    const roleName = typeof user.role === 'string' ? user.role : (user.role as any)?.name || '';
+    const role = roleName.toLowerCase();
 
     if (role.includes('garzon')) {
         return <Redirect href="/(app)/garzon/(tabs)" />;

@@ -10,12 +10,13 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Comision {
     id_comision: number;
@@ -32,7 +33,7 @@ interface Comision {
 }
 
 export default function ComisionesScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [comisiones, setComisiones] = useState<Comision[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -157,9 +158,9 @@ export default function ComisionesScreen() {
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             {item.codigo ? (
-                                <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
-                                    <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
-                                    <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo}</Text>
+                                <View style={[styles.ventaBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                                    <Ionicons name="receipt-outline" size={12} color={accentColor} />
+                                    <Text style={[styles.ventaText, { color: accentColor }]}>{item.codigo}</Text>
                                 </View>
                             ) : null}
                             <View style={[
@@ -188,7 +189,7 @@ export default function ComisionesScreen() {
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Comisión por Venta</Text>
                                 <Text style={[styles.typeBadge, { color: '#3B82F6' }]}>Venta de Productos</Text>
                             </View>
-                            <Text style={[styles.amountValue, { color: '#10B981' }]}>
+                            <Text style={[styles.amountValue, { color: isPendiente ? accentColor : '#10B981' }]}>
                                 ${(item.comision || 0).toLocaleString()}
                             </Text>
                         </View>
@@ -207,13 +208,14 @@ export default function ComisionesScreen() {
 
     const ComisionesSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Comisiones" subtitle="Mis ganancias por ventas" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={140} borderRadius={16} />
+                <Skeleton width="100%" height={140} borderRadius={16} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
             <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3].map(i => (
@@ -240,9 +242,11 @@ export default function ComisionesScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Comisiones" subtitle="Mis ganancias por ventas" />
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>COMISIONES POR VENTAS (Pendiente)</Text>
-                <Text style={styles.summaryAmount}>${totalPendiente.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalPendiente.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>
                         Historial total: ${totalGeneral.toLocaleString()}
@@ -257,7 +261,7 @@ export default function ComisionesScreen() {
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
                         key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? '#E11D48' : cardBg, borderColor: filter === f ? '#E11D48' : borderColor }]}
+                        style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor: filter === f ? accentColor : borderColor }]}
                         onPress={() => setFilter(f)}
                     >
                         <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
@@ -282,7 +286,7 @@ export default function ComisionesScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
                         <Ionicons name="cart-outline" size={48} color={textSecondary} />
@@ -356,13 +360,13 @@ export default function ComisionesScreen() {
                                         </View>
                                         <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', paddingTop: 12 }]}>
                                             <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTA ES MI COMISIÓN</Text>
-                                            <Text style={[styles.totalValFinal, { color: '#10B981', fontSize: 26 }]}>${(selectedComision.comision || 0).toLocaleString()}</Text>
+                                            <Text style={[styles.totalValFinal, { color: accentColor, fontSize: 26 }]}>${(selectedComision.comision || 0).toLocaleString()}</Text>
                                         </View>
                                     </View>
                                 </ScrollView>
 
                                 <Pressable
-                                    style={[styles.modalCloseBtn, { backgroundColor: '#E11D48' }]}
+                                    style={[styles.modalCloseBtn, { backgroundColor: accentColor }]}
                                     onPress={() => setModalVisible(false)}
                                 >
                                     <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
@@ -382,7 +386,7 @@ const styles = StyleSheet.create({
     loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1 },
     summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#10B981', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },

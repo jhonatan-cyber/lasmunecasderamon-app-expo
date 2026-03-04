@@ -7,9 +7,9 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { DeviceEventEmitter } from 'react-native';
 import EventSource from "react-native-sse";
-import Toast from "react-native-toast-message";
-import { API_URL, apiClient } from "../api/client";
+import { apiClient } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
 export interface Timer {
@@ -24,7 +24,7 @@ export interface Timer {
   startTime: Date;
   servicioCode: string;
   clienteNombre: string;
-  tipoTransaccion?: "servicio" | "venta";
+  tipoTransaccion?: "servicio" | "venta" | "cuenta";
   anfitrionas?: string;
   precio_servicio?: number;
   precio_habitacion?: number;
@@ -37,6 +37,7 @@ export interface Timer {
   created_at?: string;
   estado?: number;
   lastAnnouncedMinute?: number;
+  isOverdueNotified?: boolean;
 }
 
 interface TimerContextType {
@@ -97,9 +98,12 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     timersRef.current = timers;
   }, [timers]);
 
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fetchActiveTimers = useCallback(async () => {
     try {
-      const data = await apiClient("/timers/active");
+      // Timeout corto (8s) para no bloquear la UI — si falla, hace retry automático
+      const data = await apiClient("/timers/active", { timeout: 8000 });
       if (data.success && Array.isArray(data.data)) {
         if (data.serverTime) {
           const serverDate = new Date(data.serverTime);
@@ -131,12 +135,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           anfitrionas_ids: t.anfitrionas_ids || [],
           created_at: t.created_at,
           estado: t.estado,
+          isOverdueNotified: false,
         }));
 
         setTimers(activeTimers);
       }
     } catch (error) {
-      console.error("[TimerContext] Error fetching active timers:", error);
+      // Silencioso — programa retry en 5s sin mostrar error al usuario
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = setTimeout(() => {
+        fetchActiveTimers();
+      }, 5000);
     } finally {
       setLoading(false);
     }
@@ -170,33 +179,53 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           anfitrionas_ids: newTimerData.anfitrionas_ids || [],
           created_at: newTimerData.created_at || newTimerData.startTime,
           estado: newTimerData.estado || 2,
+          isOverdueNotified: false,
         };
         setTimers((prev) => [
-          ...prev.filter((t) => t.servicioId !== newTimer.servicioId),
+          ...prev.filter((t) => !(String(t.servicioId) === String(newTimer.servicioId) && t.tipoTransaccion === newTimer.tipoTransaccion)),
           newTimer,
         ]);
+        DeviceEventEmitter.emit('refresh_sales');
+        DeviceEventEmitter.emit('refresh_requests');
+        DeviceEventEmitter.emit('refresh_cuentas');
         break;
 
       case "timer_stopped":
-        const currentUser = useAuthStore.getState().user;
-        const stoppedTimer = timersRef.current.find((t) => t.servicioId === payload.data.servicioId);
-        if (currentUser?.role?.toLowerCase() === "cajero") {
-          const roomLabel = stoppedTimer?.roomName || payload.data?.habitacion_numero || payload.data?.habitacion_id || payload.data?.roomName || 'asignada';
-          Toast.show({
-            type: "success",
-            text1: "Servicio Finalizado Automáticamente",
-            text2: `La habitación ${roomLabel} ha terminado su tiempo.`,
-          });
-        }
-        setTimers((prev) =>
-          prev.filter((t) => t.servicioId !== payload.data.servicioId),
+        // Buscar el timer ANTES de removerlo del estado para tener sus metadatos
+        const targetServicioId = payload.data.servicioId;
+        const stoppedTimerInfo = timersRef.current.find(
+          (t) => String(t.servicioId) === String(targetServicioId)
         );
+
+        const roomNameForEvent =
+          stoppedTimerInfo?.roomName ||
+          payload.data?.roomName ||
+          payload.data?.habitacion_numero ||
+          payload.data?.habitacion_id ||
+          'asignada';
+
+        console.log(`[TimerContext] Emitiendo refresh_sales para habitación: ${roomNameForEvent}`);
+
+        const targetTipo = payload.data.tipoTransaccion || 'servicio';
+
+        setTimers((prev) =>
+          prev.filter((t) => !(String(t.servicioId) === String(targetServicioId) && (t.tipoTransaccion === targetTipo || !t.tipoTransaccion))),
+        );
+
+        DeviceEventEmitter.emit('refresh_sales', {
+          roomName: roomNameForEvent,
+          automatic: true,
+          servicioId: targetServicioId
+        });
+        DeviceEventEmitter.emit('refresh_requests');
+        DeviceEventEmitter.emit('refresh_cuentas');
         break;
 
-      case "timer_paused":
+      case "timer_paused": {
+        const targetTipoP = payload.data.tipoTransaccion || 'servicio';
         setTimers((prev) =>
           prev.map((t) => {
-            if (t.servicioId === payload.data.servicioId) {
+            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoP) {
               const currentRemaining = calculateRemainingTime(t, serverOffset);
               return {
                 ...t,
@@ -208,12 +237,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
+        DeviceEventEmitter.emit('refresh_sales');
+        DeviceEventEmitter.emit('refresh_requests');
+        DeviceEventEmitter.emit('refresh_cuentas');
         break;
+      }
 
-      case "timer_resumed":
+      case "timer_resumed": {
+        const targetTipoR = payload.data.tipoTransaccion || 'servicio';
         setTimers((prev) =>
           prev.map((t) => {
-            if (t.servicioId === payload.data.servicioId) {
+            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoR) {
               return {
                 ...t,
                 isPaused: false,
@@ -225,12 +259,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
+        DeviceEventEmitter.emit('refresh_sales');
+        DeviceEventEmitter.emit('refresh_requests');
+        DeviceEventEmitter.emit('refresh_cuentas');
         break;
+      }
 
-      case "timer_updated":
+      case "timer_updated": {
+        const targetTipoU = payload.data.tipoTransaccion || 'servicio';
         setTimers((prev) =>
           prev.map((t) => {
-            if (t.servicioId === payload.data.servicioId) {
+            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoU) {
               return {
                 ...t,
                 ...payload.data,
@@ -244,13 +283,18 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
+        DeviceEventEmitter.emit('refresh_sales');
+        DeviceEventEmitter.emit('refresh_requests');
+        DeviceEventEmitter.emit('refresh_cuentas');
         break;
+      }
     }
   }, [serverOffset]);
 
   // Loop de avisos por voz (Solo Cajero)
   useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== "cajero") return;
+    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
+    if (roleName?.toLowerCase() !== "cajero") return;
 
     const interval = setInterval(() => {
       const currentTimers = timersRef.current;
@@ -274,6 +318,20 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             ),
           );
         }
+
+        if (remSeconds <= 0 && !timer.isOverdueNotified) {
+          DeviceEventEmitter.emit('refresh_sales', {
+            roomName: timer.roomName,
+            automatic: true,
+            servicioId: timer.servicioId
+          });
+
+          setTimers((prev) =>
+            prev.map((t) =>
+              t.id === timer.id ? { ...t, isOverdueNotified: true } : t,
+            ),
+          );
+        }
       });
     }, 5000);
 
@@ -281,35 +339,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user, serverOffset]);
 
   useEffect(() => {
-    if (!user?.id) return;
-
     fetchActiveTimers();
 
-    const sseUrl = `${API_URL.replace("/api", "")}/api/notifications/sse`;
-    let es: EventSource | null = null;
-
-    try {
-      es = new EventSource(sseUrl);
-      eventSourceRef.current = es;
-
-      es.addEventListener("message", (event: any) => {
-        if (!event.data) return;
-        try {
-          const payload = JSON.parse(event.data);
-          handleSSEEvent(payload);
-        } catch (err) {
-          console.error("[TimerContext] SSE parse error:", err);
-        }
-      });
-    } catch (err) {
-      console.error("[TimerContext] SSE init error:", err);
-    }
+    // Suscribirse al canal SSE centralizado desde NotificationContext
+    const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+      handleSSEEvent(payload);
+    });
 
     return () => {
-      if (es) {
-        es.close();
-        eventSourceRef.current = null;
-      }
+      subscription.remove();
+      // Cancelar retry pendiente al desmontar
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, [user?.id, handleSSEEvent, fetchActiveTimers]);
 

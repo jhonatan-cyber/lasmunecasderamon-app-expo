@@ -12,8 +12,7 @@ import {
     Text as RNText,
     ScrollView,
     StyleSheet,
-    useColorScheme,
-    View,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -21,11 +20,13 @@ import { apiClient } from '../../../../api/client';
 import { AnimatedScreen } from '../../../../components/AnimatedScreen';
 import { GarzonActionCard } from '../../../../components/GarzonActionCard';
 import { GarzonStats } from '../../../../components/GarzonStats';
+import { PremiumAlert } from '../../../../components/PremiumAlert';
 import { PremiumCalendar } from '../../../../components/PremiumCalendar';
 import { PremiumHeaderActions } from '../../../../components/PremiumHeaderActions';
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { PremiumUserProfile } from '../../../../components/PremiumUserProfile';
 import { StaggeredFadeIn } from '../../../../components/StaggeredFadeIn';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../../store/authStore';
 
 const { width } = Dimensions.get('window');
@@ -88,7 +89,7 @@ function garzonReducer(state: GarzonState, action: GarzonAction): GarzonState {
 export default function GarzonHomeScreen() {
     const user = useAuthStore((state) => state.user);
     const router = useRouter();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
     const dataRef = useRef<string>('');
 
@@ -177,7 +178,7 @@ export default function GarzonHomeScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#E11D48" />
+                <ActivityIndicator size="large" color={accentColor} />
             </View>
         );
     }
@@ -187,11 +188,11 @@ export default function GarzonHomeScreen() {
             <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
                 <AnimatedScreen>
                     <LinearGradient
-                        colors={isDark ? ['#1E1B4B', '#000000'] : ['#E0E7FF', '#F3F4F6']}
+                        colors={gradientColors as any}
                         style={[styles.header, { paddingTop: insets.top + 10 }]}
                     >
                         <PremiumHeaderActions
@@ -211,7 +212,7 @@ export default function GarzonHomeScreen() {
                                 title="PEDIDOS"
                                 description={hasOpenCaja ? "Inicia una nueva orden" : "Caja cerrada"}
                                 icon="beer"
-                                color="#E11D48"
+                                color={accentColor}
                                 disabled={!hasOpenCaja}
                                 onPress={() => router.push('/(app)/garzon/pedidos')}
                             />
@@ -257,7 +258,7 @@ export default function GarzonHomeScreen() {
                     />
 
                     {selectedDates.length > 0 && (
-                        <View style={styles.selectionFloat}>
+                        <View style={[styles.selectionFloat, { backgroundColor: isDark ? '#1F2937' : '#374151' }]}>
                             <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
                             <View style={styles.selectionActions}>
                                 <Pressable
@@ -270,7 +271,7 @@ export default function GarzonHomeScreen() {
                                 </Pressable>
                                 <Pressable
                                     onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', payload: true })}
-                                    style={styles.viewBtn}
+                                    style={[styles.viewBtn, { backgroundColor: accentColor }]}
                                     accessibilityLabel="Ver detalles"
                                     accessibilityRole="button"
                                 >
@@ -325,37 +326,18 @@ export default function GarzonHomeScreen() {
                 </View>
             </Modal>
 
-            <Modal transparent visible={alertConfig.visible} animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
-                        <RNText style={[styles.alertTitle, { color: textPrimary }]}>{alertConfig.title}</RNText>
-                        <RNText style={[styles.alertMessage, { color: textSecondary }]}>{alertConfig.message}</RNText>
-                        <View style={styles.alertActions}>
-                            {alertConfig.showCancel && (
-                                <Pressable
-                                    style={[styles.alertBtn, { flex: 1 }]}
-                                    onPress={() => dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } })}
-                                    accessibilityLabel="Cancelar"
-                                    accessibilityRole="button"
-                                >
-                                    <RNText style={[styles.alertBtnText, { color: textSecondary }]}>Cancelar</RNText>
-                                </Pressable>
-                            )}
-                            <Pressable
-                                style={[styles.alertBtn, { backgroundColor: '#E11D48', flex: 1.5 }]}
-                                onPress={() => {
-                                    dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } });
-                                    alertConfig.onConfirm?.();
-                                }}
-                                accessibilityLabel="Aceptar"
-                                accessibilityRole="button"
-                            >
-                                <RNText style={styles.alertBtnText}>Aceptar</RNText>
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onConfirm={() => {
+                    dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } });
+                    alertConfig.onConfirm?.();
+                }}
+                onCancel={() => dispatch({ type: 'SET_ALERT', payload: { ...alertConfig, visible: false } })}
+                showCancel={alertConfig.showCancel}
+            />
         </View>
     );
 }

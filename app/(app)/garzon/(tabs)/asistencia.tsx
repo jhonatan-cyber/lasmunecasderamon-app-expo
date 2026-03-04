@@ -7,11 +7,12 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Asistencia {
     id_asistencia: number;
@@ -26,7 +27,7 @@ interface Asistencia {
 }
 
 export default function AsistenciaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -49,7 +50,7 @@ export default function AsistenciaScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setAsistencias(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -168,13 +169,13 @@ export default function AsistenciaScreen() {
                         </View>
                         <View style={styles.amountItem}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValue, { color: '#10B981', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                            <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                         </View>
                     </View>
 
                     {item.fecha_pago && item.estado === 0 ? (
                         <View style={styles.paymentRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                            <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                             <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
                         </View>
                     ) : null}
@@ -186,7 +187,7 @@ export default function AsistenciaScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
+                <ActivityIndicator size="large" color={accentColor} />
                 <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando asistencias...</Text>
             </View>
         );
@@ -194,10 +195,12 @@ export default function AsistenciaScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
+
             {/* Summary Card */}
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL A COBRAR (Pendientes)</Text>
-                <Text style={styles.summaryAmount}>${totalACobrar.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalACobrar.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Sueldo: ${totalSueldo.toLocaleString()}</Text>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>
@@ -212,7 +215,7 @@ export default function AsistenciaScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? textPrimary : cardBg,
+                                backgroundColor: filter === f ? accentColor : cardBg,
                                 borderColor,
                             },
                         ]}
@@ -220,7 +223,7 @@ export default function AsistenciaScreen() {
                     >
                         <Text style={[
                             styles.filterText,
-                            { color: filter === f ? bg : textSecondary },
+                            { color: filter === f ? '#FFFFFF' : textSecondary },
                         ]}>
                             {f === 'all' ? `Todas (${asistencias.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${asistencias.length - pendientes.length})`}
                         </Text>
@@ -244,7 +247,7 @@ export default function AsistenciaScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
         padding: 20, alignItems: 'center', borderWidth: 1,
     },
     summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#10B981', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: {

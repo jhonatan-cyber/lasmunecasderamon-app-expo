@@ -10,13 +10,14 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 import { PremiumAlert } from '../../../../components/PremiumAlert';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Servicio {
     id_servicio: number;
@@ -37,7 +38,7 @@ interface Servicio {
 }
 
 export default function ServiciosScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [servicios, setServicios] = useState<Servicio[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -62,13 +63,14 @@ export default function ServiciosScreen() {
 
     const ServicesSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Servicios" subtitle="Mi historial de atención" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={120} borderRadius={16} />
+                <Skeleton width="100%" height={120} borderRadius={16} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
             <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3, 4].map(i => (
@@ -288,7 +290,7 @@ export default function ServiciosScreen() {
                             </View>
                             <View style={styles.detailRow}>
                                 <Text style={[styles.detailLabel, { color: textSecondary }]}>Mi Comisión:</Text>
-                                <Text style={[styles.priceValue, { color: '#10B981' }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
+                                <Text style={[styles.priceValue, { color: accentColor }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
@@ -330,10 +332,12 @@ export default function ServiciosScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Servicios" subtitle="Mi historial de atención" />
+
             {/* Summary Card */}
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL A COBRAR (Finalizados)</Text>
-                <Text style={styles.summaryAmount}>${totalACobrar.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalACobrar.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Proyectado: ${totalEstimado.toLocaleString()}</Text>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Servicios: {pagados.length}</Text>
@@ -348,8 +352,8 @@ export default function ServiciosScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? '#E11D48' : cardBg,
-                                borderColor: filter === f ? '#E11D48' : borderColor,
+                                backgroundColor: filter === f ? accentColor : cardBg,
+                                borderColor: filter === f ? accentColor : borderColor,
                             },
                         ]}
                         onPress={() => setFilter(f)}
@@ -379,7 +383,7 @@ export default function ServiciosScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
                         <Ionicons name="diamond-outline" size={48} color={textSecondary} />
@@ -463,13 +467,13 @@ export default function ServiciosScreen() {
                                         </View>
                                         <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', paddingTop: 12 }]}>
                                             <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>ESTA ES MI COMISIÓN</Text>
-                                            <Text style={[styles.totalValFinal, { color: '#10B981', fontSize: 26 }]}>${(selectedServicio.comision_usuario || 0).toLocaleString()}</Text>
+                                            <Text style={[styles.totalValFinal, { color: accentColor, fontSize: 26 }]}>${(selectedServicio.comision_usuario || 0).toLocaleString()}</Text>
                                         </View>
                                     </View>
                                 </ScrollView>
 
                                 <Pressable
-                                    style={[styles.modalCloseBtn, { backgroundColor: '#E11D48' }]}
+                                    style={[styles.modalCloseBtn, { backgroundColor: accentColor }]}
                                     onPress={() => setModalVisible(false)}
                                 >
                                     <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
@@ -502,7 +506,7 @@ const styles = StyleSheet.create({
         padding: 20, alignItems: 'center', borderWidth: 1,
     },
     summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#E11D48', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: {
@@ -558,6 +562,6 @@ const styles = StyleSheet.create({
     summaryVal: { fontSize: 16, fontWeight: '700' },
     totalLabelFinal: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
     totalValFinal: { fontSize: 22, fontWeight: '900', color: '#10B981' },
-    modalCloseBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginTop: 10, elevation: 4, shadowColor: '#E11D48', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    modalCloseBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginTop: 10, elevation: 4, shadowColor: 'rgba(0,0,0,0.2)', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
     modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

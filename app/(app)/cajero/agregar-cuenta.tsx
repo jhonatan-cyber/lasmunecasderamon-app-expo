@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
@@ -13,33 +14,22 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
+    useColorScheme,
     useWindowDimensions,
-    View
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
-import { PremiumHeader } from '../../../components/PremiumHeader';
 import { CartList } from "../../../components/cajero/forms/CartList";
-import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
 import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
-import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
-import { Skeleton } from '../../../components/ui/Skeleton';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { useAuthStore } from '../../../store/authStore';
 
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
     anfitrionas: any[];
-    habitaciones: any[];
-    clientes: any[];
-    cajaAbierta: boolean | null;
-    cart: any[];
-    selectedCliente: any;
-    selectedHabitacion: any;
     categories: any[];
+    cart: any[];
     modalOpen: boolean;
     modalCategoria: any;
     modalProducts: any[];
@@ -48,13 +38,10 @@ type CuentaState = {
     modalHostessSelections: { [key: number]: number[] };
     hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
     hostessSubModalVisible: boolean;
-    hostessModalVisible: boolean;
-    roomModalVisible: boolean;
-    clientModalVisible: boolean;
-    activeCartIdx: number | null;
-    selectedTime: number;
-    timeModalVisible: boolean;
     submitting: boolean;
+    extraTiempo: number;
+    timeModalVisible: boolean;
+    cuentaDetalle: any;
 };
 
 type CuentaAction =
@@ -62,29 +49,22 @@ type CuentaAction =
     | { type: 'SET_REFRESHING'; payload: boolean }
     | { type: 'SET_INITIAL_DATA'; payload: any }
     | { type: 'SET_CART'; payload: any[] }
-    | { type: 'SET_SELECTED_CLIENTE'; payload: any }
-    | { type: 'SET_SELECTED_HABITACION'; payload: any }
     | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
     | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
     | { type: 'SET_MODAL_LOADING'; payload: boolean }
     | { type: 'SET_MODAL_QUANTITY'; productId: number; quantity: number }
     | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: number[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
-    | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
-    | { type: 'SET_SELECTED_TIME'; payload: number }
-    | { type: 'SET_SUBMITTING'; payload: boolean };
+    | { type: 'SET_SUBMITTING'; payload: boolean }
+    | { type: 'SET_EXTRA_TIEMPO'; payload: number }
+    | { type: 'SET_TIME_MODAL_VISIBLE'; payload: boolean };
 
 const initialCuentaState: CuentaState = {
     loadingInitial: true,
     refreshing: false,
     anfitrionas: [],
-    habitaciones: [],
-    clientes: [],
-    cajaAbierta: null,
-    cart: [],
-    selectedCliente: null,
-    selectedHabitacion: null,
     categories: [],
+    cart: [],
     modalOpen: false,
     modalCategoria: null,
     modalProducts: [],
@@ -93,13 +73,10 @@ const initialCuentaState: CuentaState = {
     modalHostessSelections: {},
     hostessSelectionTarget: null,
     hostessSubModalVisible: false,
-    hostessModalVisible: false,
-    roomModalVisible: false,
-    clientModalVisible: false,
-    activeCartIdx: null,
-    selectedTime: 5,
-    timeModalVisible: false,
     submitting: false,
+    extraTiempo: 0,
+    timeModalVisible: false,
+    cuentaDetalle: null,
 };
 
 function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
@@ -108,10 +85,8 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
         case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
         case 'SET_INITIAL_DATA': return { ...state, ...action.payload };
         case 'SET_CART': return { ...state, cart: action.payload };
-        case 'SET_SELECTED_CLIENTE': return { ...state, selectedCliente: action.payload };
-        case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
         case 'SET_MODAL_VISIBLE':
-            return { ...state, [`${action.modal}ModalVisible`]: action.visible, modalOpen: action.modal === 'category' ? action.visible : state.modalOpen };
+            return { ...state, modalOpen: action.visible };
         case 'OPEN_CATEGORY_MODAL':
             return { ...state, modalOpen: true, modalCategoria: action.category, modalProducts: action.products, modalQuantities: {}, modalHostessSelections: {} };
         case 'SET_MODAL_LOADING': return { ...state, modalLoading: action.payload };
@@ -121,9 +96,9 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
             return { ...state, modalHostessSelections: { ...state.modalHostessSelections, [action.productId]: action.hostesses } };
         case 'SET_HOSTESS_TARGET':
             return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
-        case 'SET_ACTIVE_CART_IDX': return { ...state, activeCartIdx: action.payload };
-        case 'SET_SELECTED_TIME': return { ...state, selectedTime: action.payload };
         case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+        case 'SET_EXTRA_TIEMPO': return { ...state, extraTiempo: action.payload };
+        case 'SET_TIME_MODAL_VISIBLE': return { ...state, timeModalVisible: action.payload };
         default: return state;
     }
 }
@@ -158,20 +133,33 @@ const getHostessLimit = (prod: any, qty: number) => {
     return qty;
 };
 
-export default function NuevaCuentaScreen() {
-    const { accentColor, isDark } = useAccentColor();
+export default function AgregarCuentaScreen() {
+    const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const user = useAuthStore((state) => state.user);
+    const params = useLocalSearchParams();
+
+    const cuentaOriginal = useMemo(() => {
+        if (params.cuenta && typeof params.cuenta === 'string') {
+            try {
+                return JSON.parse(params.cuenta);
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    }, [params.cuenta]);
 
     const [state, dispatch] = useReducer(cuentaReducer, initialCuentaState);
     const {
-        loadingInitial, refreshing, anfitrionas, habitaciones, clientes, cajaAbierta,
-        cart, selectedCliente, selectedHabitacion, categories, modalOpen, modalCategoria,
+        loadingInitial, refreshing, anfitrionas, categories, modalOpen, modalCategoria,
         modalProducts, modalLoading, modalQuantities, modalHostessSelections, hostessSelectionTarget,
-        hostessSubModalVisible, roomModalVisible, clientModalVisible,
-        activeCartIdx, submitting
+        hostessSubModalVisible, cart, submitting, extraTiempo, timeModalVisible, cuentaDetalle
     } = state;
+
+    const hasRoom = !!(cuentaOriginal?.habitacion_id);
+    // IDs de anfitrionas ya asignadas a la cuenta (para pre-selección)
+    const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
@@ -190,38 +178,30 @@ export default function NuevaCuentaScreen() {
         section: { padding: spacing, borderRadius: borderRadius, marginBottom: spacing },
         summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
         submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
-        selectorBtn: { padding: isTablet ? 18 : 14, borderRadius: isTablet ? 20 : 16 },
     };
 
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
-            const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
-                apiClient('/cashregister/status'),
+            const requests: Promise<any>[] = [
                 apiClient('/users?anfitrionas=1'),
-                apiClient('/rooms'),
-                apiClient('/clients'),
                 apiClient('/categories'),
-            ]);
-
-            const fetchedData: any = {
-                cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-                anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
-                habitaciones: roomsRes.success ? roomsRes.data : [],
-                categories: categoriesRes.success ? (categoriesRes.data || []) : []
-            };
-
-            if (Array.isArray(clientsRes)) {
-                fetchedData.clientes = clientsRes;
-            } else if (clientsRes && clientsRes.success) {
-                fetchedData.clientes = clientsRes.data || [];
+            ];
+            // También fetched el detalle completo de la cuenta para obtener los usuarios asignados
+            if (cuentaOriginal?.id_cuenta) {
+                requests.push(apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`));
             }
 
-            dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
+            const [anfitrionasRes, categoriesRes, cuentaDetalleRes] = await Promise.all(requests);
 
-            if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
-                showToast('Caja Cerrada', 'Debes abrir una caja antes de registrar consumos.', 'error');
-            }
+            dispatch({
+                type: 'SET_INITIAL_DATA', payload: {
+                    anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
+                    categories: categoriesRes.success ? (categoriesRes.data || []) : [],
+                    cuentaDetalle: cuentaDetalleRes || null,
+                }
+            });
+
         } catch (error) {
             console.error('Error fetching initial data:', error);
             showToast('Error', 'No se pudo cargar la información necesaria.');
@@ -229,11 +209,15 @@ export default function NuevaCuentaScreen() {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
-    }, [user?.id]);
+    }, [cuentaOriginal?.id_cuenta]);
 
     useEffect(() => {
         fetchInitialData();
-    }, [fetchInitialData]);
+        if (!cuentaOriginal) {
+            showToast('Error', 'No se recibió la información de la cuenta');
+            router.back();
+        }
+    }, [fetchInitialData, cuentaOriginal]);
 
     const onRefresh = useCallback(() => {
         dispatch({ type: 'SET_REFRESHING', payload: true });
@@ -302,65 +286,60 @@ export default function NuevaCuentaScreen() {
 
     const totals = useMemo(() => {
         const subtotal = cart.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-        const totalComision = cart.reduce((acc, item) => acc + item.comision * item.cantidad, 0);
-        return { subtotal, totalComision, total: subtotal };
-    }, [cart]);
-
-    const generateCodigo = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = '';
-        for (let i = 0; i < 8; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-    };
+        return { subtotal, total: subtotal + (cuentaOriginal?.total || 0) };
+    }, [cart, cuentaOriginal]);
 
     const handleSubmit = useCallback(async () => {
-        if (!cajaAbierta) {
-            showToast('Error', 'La caja está cerrada.');
-            return;
-        }
-        if (!selectedCliente) {
-            showToast('Error', 'Debes seleccionar un cliente.');
-            return;
-        }
         if (cart.length === 0) {
-            showToast('Error', 'La cuenta está vacía.');
+            showToast('Error', 'No has agregado nuevos productos.');
             return;
         }
 
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
-            const cuentaData = {
-                codigo: generateCodigo(),
-                cliente_id: selectedCliente?.id || selectedCliente?.id_cliente,
-                habitacion_id: selectedHabitacion?.id_habitacion || null,
-                tiempo: (selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0)) ? state.selectedTime : (selectedHabitacion?.tiempo || 0),
-                total_comision: totals.totalComision,
-                sub_total: totals.subtotal,
-                total: totals.total,
+            // Unir anfitrionas de la cuenta original (desde detalle completo) con las nuevas
+            // Usamos cuentaDetalle porque cuentaOriginal (del listado) no trae el array de usuarios
+            const originalUserIds = (cuentaDetalle?.usuarios || [])
+                .map((u: any) => u.usuario_id || u.id_usuario)
+                .filter(Boolean) as number[];
+            const mergedHostessIds = new Set<number>(originalUserIds);
+
+            cart.forEach(item => {
+                if (item.selectedHostesses && Array.isArray(item.selectedHostesses)) {
+                    item.selectedHostesses.forEach((hId: number) => {
+                        if (hId) mergedHostessIds.add(hId);
+                    });
+                }
+            });
+
+            const cuentaData: any = {
                 detalles: cart.map((item) => ({
                     producto_id: item.id_producto || item.id,
                     precio: item.precio,
                     cantidad: item.cantidad,
                     sub_total: item.precio * item.cantidad,
                     comision: item.comision * (item.cantidad || 1),
-                    hostesses: item.selectedHostesses,
+                    hostesses: item.selectedHostesses || [],
                     isChampagne: item.isChampagne
                 })),
-                usuarios: [...new Set(cart.flatMap(item => item.selectedHostesses || []).filter(h => h !== null))]
+                usuarios: Array.from(mergedHostessIds)
             };
 
-            const res = await apiClient('/cuentas', {
-                method: 'POST',
+            // Si hay tiempo extra y la cuenta tiene habitación, adjuntarlo
+            if (extraTiempo > 0 && hasRoom) {
+                cuentaData.extraTiempo = extraTiempo;
+            }
+
+            const res = await apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`, {
+                method: 'PUT',
                 body: JSON.stringify(cuentaData),
             });
 
             if (res.success) {
-                showToast('Éxito', 'Cuenta registrada correctamente', 'success');
-                setTimeout(() => router.replace('/cajero/cuentas'), 1500);
+                showToast('Éxito', 'Productos agregados correctamente', 'success');
+                setTimeout(() => router.back(), 1500);
             } else {
-                showToast('Error', res.message || 'No se pudo crear la cuenta');
+                showToast('Error', res.message || 'No se pudo actualizar la cuenta');
             }
         } catch (error) {
             console.error('Submit error:', error);
@@ -368,43 +347,15 @@ export default function NuevaCuentaScreen() {
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    }, [cajaAbierta, selectedCliente, selectedHabitacion, cart, totals, router, state.selectedTime]);
+    }, [cart, cuentaOriginal, router, extraTiempo, hasRoom, cuentaDetalle]);
 
-    const NuevaCuentaSkeleton = () => (
-        <View style={{ flex: 1, backgroundColor: bg }}>
-            <PremiumHeader title="Nueva Cuenta" subtitle="Cargando información..." />
-            <ScrollView contentContainerStyle={dynamicStyles.scrollContent}>
-                <View style={styles.browserContainer}>
-                    <Skeleton width={200} height={20} style={{ marginBottom: 16 }} />
-                    <View style={{ flexDirection: 'row', gap: 12 }}>
-                        {[1, 2, 3].map((i) => (
-                            <Skeleton key={i} width={140} height={64} borderRadius={20} />
-                        ))}
-                    </View>
-                </View>
-
-                <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-                    <Skeleton width={150} height={18} style={{ marginBottom: 15 }} />
-                    <Skeleton width="100%" height={56} borderRadius={16} style={{ marginBottom: 12 }} />
-                    <Skeleton width="100%" height={56} borderRadius={16} />
-                </View>
-
-                <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-                        <Skeleton width={100} height={18} />
-                        <Skeleton width={80} height={18} />
-                    </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 15 }}>
-                        <Skeleton width={120} height={24} />
-                        <Skeleton width={100} height={32} />
-                    </View>
-                    <Skeleton width="100%" height={60} borderRadius={20} />
-                </View>
-            </ScrollView>
-        </View>
-    );
-
-    if (loadingInitial) return <NuevaCuentaSkeleton />;
+    if (loadingInitial) {
+        return (
+            <View style={[styles.centerContainer, { backgroundColor: bg }]}>
+                <ActivityIndicator size="large" color="#E11D48" />
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
@@ -414,17 +365,67 @@ export default function NuevaCuentaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'dark' : 'light'} />
 
-            <PremiumHeader
-                title="Nueva Cuenta"
-                subtitle="Aperturar cuenta"
-                onBack={() => router.back()}
-            />
+            {/* Header premium con gradiente */}
+            <LinearGradient
+                colors={isDark ? ['#FFFFFF', '#F1F5F9'] : ['#2D2870', '#1E1B4B', '#0F0D2E']}
+                style={[
+                    styles.header,
+                    {
+                        paddingTop: insets.top + (isTablet ? 20 : 10),
+                        paddingBottom: 25,
+                        borderBottomLeftRadius: 32,
+                        borderBottomRightRadius: 32,
+                    },
+                ]}
+            >
+                <View style={styles.headerTop}>
+                    <Pressable
+                        onPress={() => router.back()}
+                        style={styles.backBtn}
+                    >
+                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#111827" : "#FFFFFF"} />
+                    </Pressable>
+                    <View style={{ flex: 1, marginLeft: 15 }}>
+                        <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
+                            Agregar Productos
+                        </Text>
+                        <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
+                            Cuenta {cuentaOriginal?.codigo}
+                        </Text>
+                    </View>
+                </View>
+            </LinearGradient>
 
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
                 keyboardShouldPersistTaps="handled"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
             >
+                <View style={[styles.infoBanner, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor }]}>
+                    <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={{ marginRight: 10 }} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: textPrimary, fontSize: 13, fontWeight: "600" }}>Estás agregando a la cuenta {cuentaOriginal?.codigo}</Text>
+                        <Text style={{ color: textSecondary, fontSize: 12 }}>Cliente: {cuentaOriginal?.cliente_nombre || 'Sin cliente'}</Text>
+                    </View>
+                </View>
+
+                {/* Selector de tiempo extra (solo si tiene habitación) */}
+                {hasRoom && (
+                    <Pressable
+                        style={[styles.tiempoChip, { backgroundColor: extraTiempo > 0 ? '#3B82F610' : cardBg, borderColor: extraTiempo > 0 ? '#3B82F6' : borderColor }]}
+                        onPress={() => dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: true })}
+                    >
+                        <Ionicons name="timer-outline" size={18} color={extraTiempo > 0 ? '#3B82F6' : textSecondary} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>TIEMPO EXTRA HABITACIÓN</Text>
+                            <Text style={[styles.tiempoChipValue, { color: extraTiempo > 0 ? '#3B82F6' : textPrimary }]}>
+                                {extraTiempo > 0 ? `+ ${extraTiempo} minutos` : 'Sin tiempo extra'}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-down" size={16} color={extraTiempo > 0 ? '#3B82F6' : textSecondary} />
+                    </Pressable>
+                )}
+
                 <View style={styles.browserContainer}>
                     <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
@@ -436,8 +437,8 @@ export default function NuevaCuentaScreen() {
                                 accessibilityLabel={`Categoría ${cat.name}`}
                                 accessibilityRole="button"
                             >
-                                <View style={[styles.catIconBox, { backgroundColor: `${accentColor}15` }]}>
-                                    <Ionicons name="beer-outline" size={20} color={accentColor} />
+                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#E11D4815' : '#10B98115' }]}>
+                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#E11D48' : '#10B981'} />
                                 </View>
                                 <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name}</Text>
                             </Pressable>
@@ -445,10 +446,10 @@ export default function NuevaCuentaScreen() {
                     </ScrollView>
                 </View>
 
-                {cart.length > 0 && (
+                {cart.length > 0 ? (
                     <CartList
                         items={cart}
-                        title="Listado de Consumo"
+                        title="Nuevos Consumos"
                         onUpdateQuantity={(idx: number, delta: number) => {
                             const newCart = [...cart];
                             newCart[idx].cantidad = Math.max(1, newCart[idx].cantidad + delta);
@@ -461,79 +462,34 @@ export default function NuevaCuentaScreen() {
                             dispatch({ type: 'SET_CART', payload: newCart });
                         }}
                     />
+                ) : (
+                    <View style={[styles.emptyCartBox, { backgroundColor: cardBg, borderColor }]}>
+                        <Text style={[styles.emptyCartText, { color: textSecondary }]}>No se han agregado nuevos consumos</Text>
+                    </View>
                 )}
-
-                <View style={[styles.section, dynamicStyles.section, { backgroundColor: cardBg, borderColor }]}>
-                    <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: isTablet ? 16 : 13 }]}>2. Datos del Registro</Text>
-
-                    <Pressable
-                        style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor }]}
-                        onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: true })}
-                        accessibilityLabel="Seleccionar cliente"
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="person" size={20} color={accentColor} />
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>CLIENTE</Text>
-                            <Text style={[styles.selectorText, { color: textPrimary }]}>
-                                {selectedCliente
-                                    ? ((selectedCliente.nombre || selectedCliente.name || '') + ' ' + (selectedCliente.apellido || selectedCliente.last_name || '')).trim() || 'Cliente Seleccionado'
-                                    : 'Seleccionar Cliente'}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                    </Pressable>
-
-                    <Pressable
-                        style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
-                        onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
-                        accessibilityLabel="Seleccionar habitación"
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="business" size={20} color="#10B981" />
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>HABITACIÓN / ÁREA</Text>
-                            <Text style={[styles.selectorText, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación (Opcional)'}</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                    </Pressable>
-
-                    {/* Selector de tiempo si la habitación no tiene costo/comisión */}
-                    {selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0) && (
-                        <Pressable
-                            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2, backgroundColor: isDark ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.05)' }]}
-                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: true })}
-                        >
-                            <Ionicons name="time" size={20} color="#3B82F6" />
-                            <View style={{ flex: 1, marginLeft: 10 }}>
-                                <Text style={[styles.selectorLabel, { color: '#3B82F6', fontSize: 10, fontWeight: '700' }]}>DURACIÓN DEL REGISTRO</Text>
-                                <Text style={[styles.selectorText, { color: textPrimary }]}>
-                                    {state.selectedTime > 0 ? `${state.selectedTime} minutos` : 'Seleccionar duración'}
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-down" size={18} color="#3B82F6" />
-                        </Pressable>
-                    )}
-                </View>
 
                 <View style={[styles.summaryCard, dynamicStyles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Consumo Total</Text>
-                        <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
+                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Total Original</Text>
+                        <Text style={[styles.summaryVal, { color: textPrimary }]}>${(cuentaOriginal?.total || 0).toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Nuevos Consumos</Text>
+                        <Text style={[styles.summaryVal, { color: '#E11D48' }]}>+ ${totals.subtotal.toLocaleString()}</Text>
                     </View>
                     <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
-                        <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>TOTAL CUENTA</Text>
-                        <Text style={[styles.totalValFinal, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
+                        <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>NUEVO TOTAL</Text>
+                        <Text style={styles.totalValFinal}>${totals.total.toLocaleString()}</Text>
                     </View>
 
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: accentColor }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, { backgroundColor: cart.length > 0 ? '#E11D48' : '#9CA3AF' }, submitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
-                        disabled={submitting}
-                        accessibilityLabel="Registrar cuenta"
+                        disabled={submitting || cart.length === 0}
+                        accessibilityLabel="Agregar productos"
                         accessibilityRole="button"
                     >
-                        {submitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.submitBtnText}>Aperturar / Registrar Cuenta</Text>}
+                        {submitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.submitBtnText}>Agregar a Cuenta</Text>}
                     </Pressable>
                 </View>
             </ScrollView>
@@ -553,7 +509,7 @@ export default function NuevaCuentaScreen() {
                         </View>
 
                         {modalLoading ? (
-                            <ActivityIndicator color={accentColor} size="large" />
+                            <ActivityIndicator color="#E11D48" size="large" />
                         ) : (
                             <FlatList
                                 data={modalProducts}
@@ -590,18 +546,27 @@ export default function NuevaCuentaScreen() {
                                             </Pressable>
                                         </View>
                                         <Pressable
-                                            style={[styles.modalAddBtn, { backgroundColor: accentColor }]}
+                                            style={[styles.modalAddBtn, { backgroundColor: '#E11D48' }]}
                                             onPress={() => {
                                                 const id = item.id || item.id_producto;
                                                 const hasComm = Number(item.comision || item.commission || 0) > 0;
 
                                                 if (hasComm) {
+                                                    const max = getHostessLimit(item, modalQuantities[id] || 1);
+
+                                                    // Pre-seleccionar anfitrionas de la cuenta si el producto aún no tiene selección
+                                                    const currentSelections = modalHostessSelections[id] || [];
+                                                    if (currentSelections.length === 0 && accountHostessIds.length > 0) {
+                                                        const preSelected = accountHostessIds.slice(0, max);
+                                                        dispatch({ type: 'SET_MODAL_HOSTESSES', productId: id, hostesses: preSelected });
+                                                    }
+
                                                     dispatch({
                                                         type: 'SET_HOSTESS_TARGET',
                                                         target: {
                                                             productId: id,
                                                             product: item,
-                                                            max: getHostessLimit(item, modalQuantities[id] || 1),
+                                                            max,
                                                             isChampagne: isChampagneProduct(item)
                                                         }
                                                     });
@@ -620,7 +585,7 @@ export default function NuevaCuentaScreen() {
                         )}
 
                         <Pressable
-                            style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
+                            style={styles.confirmModalBtn}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
                             accessibilityLabel="Confirmar selección de productos"
                             accessibilityRole="button"
@@ -631,31 +596,48 @@ export default function NuevaCuentaScreen() {
                 </View>
             </Modal>
 
-            <ClientSelectModal
-                visible={clientModalVisible}
-                clients={clientes}
-                selectedIds={selectedCliente ? [Number(selectedCliente.id_cliente || selectedCliente.id)] : []}
-                max={1}
-                onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
-                onToggle={(id) => {
-                    const client = clientes.find(c => Number(c.id_cliente || c.id) === id);
-                    if (client) {
-                        dispatch({ type: 'SET_SELECTED_CLIENTE', payload: client });
-                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
-                    }
-                }}
-            />
-
-            <RoomSelectModal
-                visible={roomModalVisible}
-                rooms={habitaciones}
-                selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
-                onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
-                onSelect={(room) => {
-                    dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
-                    dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
-                }}
-            />
+            {/* Modal selección de tiempo extra */}
+            <Modal visible={timeModalVisible} animationType="slide" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContentWide, { backgroundColor: cardBg, height: 'auto', maxHeight: '60%' }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Tiempo Extra</Text>
+                            <Pressable onPress={() => dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false })}>
+                                <Ionicons name="close" size={26} color={textPrimary} />
+                            </Pressable>
+                        </View>
+                        <Text style={{ color: textSecondary, fontSize: 13, marginBottom: 16, fontWeight: '600' }}>
+                            Selecciona cuántos minutos agregar a la habitación
+                        </Text>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {/* Opción sin tiempo extra */}
+                            <Pressable
+                                style={[styles.timeOption, { borderColor: extraTiempo === 0 ? '#3B82F6' : borderColor, backgroundColor: extraTiempo === 0 ? '#3B82F610' : 'transparent' }]}
+                                onPress={() => {
+                                    dispatch({ type: 'SET_EXTRA_TIEMPO', payload: 0 });
+                                    dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false });
+                                }}
+                            >
+                                <Text style={[styles.timeOptionText, { color: extraTiempo === 0 ? '#3B82F6' : textPrimary }]}>Sin tiempo extra</Text>
+                                {extraTiempo === 0 && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+                            </Pressable>
+                            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map((t) => (
+                                <Pressable
+                                    key={t}
+                                    style={[styles.timeOption, { borderColor: extraTiempo === t ? '#3B82F6' : borderColor, backgroundColor: extraTiempo === t ? '#3B82F610' : 'transparent' }]}
+                                    onPress={() => {
+                                        dispatch({ type: 'SET_EXTRA_TIEMPO', payload: t });
+                                        dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false });
+                                    }}
+                                >
+                                    <Text style={[styles.timeOptionText, { color: extraTiempo === t ? '#3B82F6' : textPrimary }]}>+ {t} minutos</Text>
+                                    {extraTiempo === t && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             <HostessSelectModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
@@ -701,35 +683,6 @@ export default function NuevaCuentaScreen() {
                     }
                 }}
             />
-
-            {/* Modal de Selección de Tiempo */}
-            <Modal visible={state.timeModalVisible} animationType="fade" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Seleccionar Tiempo</Text>
-                            <Pressable onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}>
-                                <Ionicons name="close" size={26} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        <ScrollView>
-                            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map((t) => (
-                                <TouchableOpacity
-                                    key={t}
-                                    style={[styles.listItem, { borderBottomColor: borderColor }]}
-                                    onPress={() => {
-                                        dispatch({ type: 'SET_SELECTED_TIME', payload: t });
-                                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false });
-                                    }}
-                                >
-                                    <Text style={[styles.listItemTitle, { color: textPrimary, flex: 1 }]}>{t} minutos</Text>
-                                    {state.selectedTime === t && <Ionicons name="checkmark-circle" size={24} color={accentColor} />}
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -743,69 +696,45 @@ const styles = StyleSheet.create({
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
-    section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
-    sectionTitle: { fontSize: 13, fontWeight: '900', marginBottom: 15, textTransform: 'uppercase', opacity: 0.6 },
+    infoBanner: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 20 },
     browserContainer: { marginBottom: 20 },
     browserTitle: { fontSize: 13, fontWeight: '900', marginBottom: 16, textTransform: 'uppercase', opacity: 0.6 },
     categoryScroll: { gap: 12 },
     categorySmallCard: { width: 140, padding: 12, borderRadius: 20, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 64 },
     catIconBox: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     catSmallName: { fontSize: 12, fontWeight: '800' },
-    cartItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1 },
-    cartItemInfo: { flex: 1 },
-    cartItemName: { fontSize: 16, fontWeight: '700' },
-    cartItemPrice: { fontSize: 13, marginTop: 2 },
-    cartActions: { justifyContent: 'center' },
-    selectorBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(155,155,155,0.03)' },
-    selectorText: { fontSize: 14, fontWeight: '700' },
-    selectorLabel: { fontWeight: '900', marginBottom: 2, letterSpacing: 0.3 },
+    emptyCartBox: { padding: 20, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    emptyCartText: { fontSize: 14, fontWeight: '600' },
     summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
     totalLabelFinal: { fontSize: 18, fontWeight: '900' },
     totalValFinal: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
-    submitBtn: {
-        height: 60,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-        backgroundColor: "#E11D48",
-        elevation: 4,
-        shadowColor: "#E11D48",
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 }
-    },
-    submitBtnText: { color: '#FFF', fontSize: 17, fontWeight: '900', letterSpacing: 0.5 },
+    submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContentWide: { width: '95%', alignSelf: 'center', borderRadius: 32, padding: 20, height: '80%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
-    modalProductsList: { padding: 16 },
     modalProductRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
     modalProductName: { fontSize: 16, fontWeight: '800' },
     modalProductPrice: { fontSize: 14, fontWeight: '900', marginTop: 4 },
     modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-    modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10, elevation: 2, shadowColor: "#E11D48", shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
-    confirmModalBtn: {
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#E11D48',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-        elevation: 3,
-        shadowColor: "#E11D48",
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 3 }
-    },
+    modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#E11D48', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '70%', width: '100%' },
-    listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1 },
-    listItemTitle: { fontSize: 16, fontWeight: '700' },
+    tiempoChip: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20,
+    },
+    tiempoChipLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+    tiempoChipValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
+    timeOption: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8,
+    },
+    timeOptionText: { fontSize: 15, fontWeight: '700' },
 });

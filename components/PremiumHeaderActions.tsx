@@ -26,7 +26,9 @@ export const PremiumHeaderActions = ({
     const logout = useAuthStore(state => state.logout);
     const router = useRouter();
 
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    // Forzar siempre blanco para el header premium
+    const iconColor = '#FFFFFF';
+    const btnBg = 'rgba(255,255,255,0.15)';
 
     const toggleTheme = () => {
         Appearance.setColorScheme(isDark ? 'light' : 'dark');
@@ -59,11 +61,11 @@ export const PremiumHeaderActions = ({
                         if (setHasNewAlert) setHasNewAlert(false);
                         showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
                     }}
-                    style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                    style={[styles.iconButton, { backgroundColor: btnBg }]}
                 >
-                    <Ionicons name="notifications-outline" size={20} color={textPrimary} />
+                    <Ionicons name="notifications-outline" size={20} color={iconColor} />
                     {showDot && (
-                        <View style={styles.notificationBadge}>
+                        <View style={[styles.notificationBadge, { borderColor: isDark ? '#1E1B4B' : '#FFF' }]}>
                             {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
                         </View>
                     )}
@@ -71,21 +73,21 @@ export const PremiumHeaderActions = ({
             )}
             <Pressable
                 onPress={() => router.push(profilePath as any)}
-                style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                style={[styles.iconButton, { backgroundColor: btnBg }]}
             >
-                <Ionicons name="settings-outline" size={20} color={textPrimary} />
+                <Ionicons name="settings-outline" size={20} color={iconColor} />
             </Pressable>
             <Pressable
                 onPress={toggleTheme}
-                style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                style={[styles.iconButton, { backgroundColor: btnBg }]}
             >
-                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={textPrimary} />
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={iconColor} />
             </Pressable>
             <Pressable
                 onPress={handleLogout}
-                style={[styles.iconButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                style={[styles.iconButton, { backgroundColor: btnBg }]}
             >
-                <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+                <Ionicons name="log-out-outline" size={20} color={iconColor} />
             </Pressable>
         </View>
     );
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#000',
+        borderColor: '#000', // Movido a inline para soporte de tema
     },
     notificationText: {
         color: '#FFFFFF',

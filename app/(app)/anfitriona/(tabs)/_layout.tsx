@@ -32,18 +32,7 @@ export default function AnfitrionaTabsLayout() {
             <Tabs
                 tabBar={(props) => <PremiumTabBar {...props} />}
                 screenOptions={{
-                    headerStyle: {
-                        backgroundColor: isDark ? '#000000' : '#FFFFFF',
-                        elevation: 0,
-                        shadowOpacity: 0,
-                    },
-                    headerTintColor: isDark ? '#FFFFFF' : '#0F172A',
-                    headerTitleAlign: 'center',
-                    headerTitleStyle: {
-                        fontWeight: '900',
-                        fontSize: 20,
-                        letterSpacing: -0.5,
-                    },
+                    headerShown: false
                 }}>
                 <Tabs.Screen name="servicios" options={{
                     title: 'Servicios',

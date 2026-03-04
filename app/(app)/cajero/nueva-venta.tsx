@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
     ActivityIndicator,
@@ -13,13 +14,13 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useColorScheme,
     useWindowDimensions,
-    View,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { PremiumHeader } from '../../../components/PremiumHeader';
 import { CartList } from '../../../components/cajero/forms/CartList';
 import { CategorySelector } from '../../../components/cajero/forms/CategorySelector';
 import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
@@ -27,7 +28,9 @@ import { HostessSelectModal } from '../../../components/cajero/forms/HostessSele
 import { PaymentMethod, PaymentMethodSelect } from '../../../components/cajero/forms/PaymentMethodSelect';
 import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '../../../components/cajero/forms/TipCheckbox';
+import { Skeleton } from '../../../components/ui/Skeleton';
 import { useSales } from '../../../context/SalesContext';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../store/authStore';
 
 type VentaState = {
@@ -91,7 +94,7 @@ const initialVentaState: VentaState = {
     selectedHabitacion: null,
     metodoPago: 'efectivo',
     enableTip: false,
-    selectedTime: 60,
+    selectedTime: 5,
     timeModalVisible: false,
     categories: [],
     modalOpen: false,
@@ -149,21 +152,21 @@ const isChampagneProduct = (producto: any) => {
 const getChampagneLimit = (precio: number) => {
     if (precio >= 240000) return 5;
     if (precio >= 200000) return 4;
-    if (precio >= 140000) return 3;
+    if (precio >= 160000) return 3;
     if (precio >= 120000) return 2;
     return 1;
 };
 
-const getHostessLimit = (prod: any, qty: number) => {
+const getHostessLimit = (prod: any) => {
     const price = prod.precio ?? prod.price ?? 0;
     if (isChampagneProduct(prod)) {
-        return getChampagneLimit(price) * qty;
+        return getChampagneLimit(price);
     }
-    return qty;
+    return 1;
 };
 
 export default function NuevaVentaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((state) => state.user);
@@ -201,7 +204,7 @@ export default function NuevaVentaScreen() {
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
-            const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
+            const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.allSettled([
                 apiClient('/cashregister/status'),
                 apiClient('/users?anfitrionas=1'),
                 apiClient('/rooms'),
@@ -209,22 +212,30 @@ export default function NuevaVentaScreen() {
                 apiClient('/categories'),
             ]);
 
+            const caja = cajaRes.status === 'fulfilled' ? cajaRes.value : null;
+            const anfitrionas = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value : null;
+            const rooms = roomsRes.status === 'fulfilled' ? roomsRes.value : null;
+            const clients = clientsRes.status === 'fulfilled' ? clientsRes.value : null;
+            const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value : null;
+
             const fetchedData: any = {
-                cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-                anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
-                habitaciones: roomsRes.success ? roomsRes.data : [],
-                categories: categoriesRes.success ? (categoriesRes.data || []) : []
+                // null = desconocido (request falló), true/false = confirmado por el servidor
+                cajaAbierta: cajaRes.status === 'fulfilled' ? (caja?.success && caja?.data?.hasOpenCaja) : null,
+                anfitrionas: anfitrionas?.success ? anfitrionas.data : [],
+                habitaciones: rooms?.success ? rooms.data : [],
+                categories: categories?.success ? (categories.data || []) : []
             };
 
-            if (Array.isArray(clientsRes)) {
-                fetchedData.clientes = clientsRes;
-            } else if (clientsRes && clientsRes.success) {
-                fetchedData.clientes = clientsRes.data || [];
+            if (Array.isArray(clients)) {
+                fetchedData.clientes = clients;
+            } else if (clients?.success) {
+                fetchedData.clientes = clients.data || [];
             }
 
             dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
 
-            if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
+            // Solo avisar si el servidor CONFIRMÓ que no hay caja abierta (no si hubo error de red)
+            if (cajaRes.status === 'fulfilled' && (!caja?.success || !caja?.data?.hasOpenCaja)) {
                 showToast('Caja Cerrada', 'Abre una caja primero.');
             }
         } catch (error) {
@@ -262,42 +273,35 @@ export default function NuevaVentaScreen() {
 
     const addProductToCart = useCallback((prod: any) => {
         const id = prod.id || prod.id_producto;
-        const totalQty = modalQuantities[id] || 1;
+        const qty = modalQuantities[id] || 1;
         const hostesses = modalHostessSelections[id] || [];
-
-        const hostessesToProcess = hostesses.length > 0 ? hostesses : [null];
-        const baseQty = hostesses.length > 0 ? Math.floor(totalQty / hostesses.length) : totalQty;
-        let remainingQty = totalQty;
 
         const newCart = [...cart];
 
-        hostessesToProcess.forEach((hId, index) => {
-            const isLast = index === hostessesToProcess.length - 1;
-            const itemQty = isLast ? remainingQty : (baseQty === 0 ? 1 : baseQty);
-            remainingQty -= itemQty;
+        // Las anfitrionas acompañan el producto pero NO multiplican la cantidad
+        const itemHostesses = hostesses.length > 0 ? hostesses : [];
+        const hostessNames = hostesses.length > 0
+            ? hostesses.map((hId: number) => anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
+            : null;
 
-            const itemHostesses = hId ? [hId] : [];
-            const hostessNames = hId ? (anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '') : null;
-
-            const existingItemIndex = newCart.findIndex((item) => {
-                const itemId = item.id || item.id_producto;
-                const currentH = item.anfitrionas || [];
-                const sortedCurrent = [...currentH].sort().join(',');
-                const sortedNew = [...itemHostesses].sort().join(',');
-                return itemId === id && sortedCurrent === sortedNew;
-            });
-
-            if (existingItemIndex >= 0) {
-                newCart[existingItemIndex].quantity += itemQty;
-            } else {
-                newCart.push({
-                    ...prod,
-                    quantity: itemQty,
-                    anfitrionas: itemHostesses,
-                    hostessNames: hostessNames || null,
-                });
-            }
+        const existingItemIndex = newCart.findIndex((item) => {
+            const itemId = item.id || item.id_producto;
+            const currentH = item.anfitrionas || [];
+            const sortedCurrent = [...currentH].sort().join(',');
+            const sortedNew = [...itemHostesses].sort().join(',');
+            return itemId === id && sortedCurrent === sortedNew;
         });
+
+        if (existingItemIndex >= 0) {
+            newCart[existingItemIndex].quantity += qty;
+        } else {
+            newCart.push({
+                ...prod,
+                quantity: qty,
+                anfitrionas: itemHostesses,
+                hostessNames: hostessNames || null,
+            });
+        }
 
         dispatch({ type: 'SET_CART', payload: newCart });
         showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
@@ -328,7 +332,8 @@ export default function NuevaVentaScreen() {
     }, [cart]);
 
     const handleSubmit = useCallback(async () => {
-        if (!cajaAbierta) return showToast('Error', 'Caja cerrada');
+        // null = estado desconocido (error de red), se permite intentar — el backend valida
+        if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
         if (cart.length === 0) return showToast('Error', 'Carrito vacío');
 
         dispatch({ type: 'SET_SUBMITTING', payload: true });
@@ -348,7 +353,7 @@ export default function NuevaVentaScreen() {
                 propina: totals.tip,
                 sub_total: totals.subtotal,
                 total: totals.total,
-                tiempo: selectedTime,
+                tiempo: selectedHabitacion && Number(selectedHabitacion.tiempo || 0) > 0 ? Number(selectedHabitacion.tiempo) : selectedTime,
                 usuarios: cart.flatMap((item: any) => item.anfitrionas?.map((a: any) => typeof a === 'object' ? (a.id_usuario || a.id) : a) || [])
             };
 
@@ -366,11 +371,45 @@ export default function NuevaVentaScreen() {
         }
     }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas]);
 
-    if (loadingInitial) return <View style={[styles.centerContainer, { backgroundColor: bg }]}><ActivityIndicator size="large" color="#E11D48" /></View>;
+    const NuevaVentaSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <PremiumHeader title="Nueva Venta" subtitle="Cargando información..." />
+            <View style={{ padding: spacing }}>
+                <View style={{ marginBottom: 25 }}>
+                    <Skeleton width={180} height={20} style={{ marginBottom: 15 }} />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                        {[1, 2, 3, 4].map(i => (
+                            <Skeleton key={i} width={120} height={100} borderRadius={20} />
+                        ))}
+                    </ScrollView>
+                </View>
+
+                <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+                    <Skeleton width={150} height={15} style={{ marginBottom: 20 }} />
+                    <Skeleton width="100%" height={50} borderRadius={16} style={{ marginBottom: 12 }} />
+                    <Skeleton width="100%" height={50} borderRadius={16} style={{ marginBottom: 12 }} />
+                    <Skeleton width="100%" height={80} borderRadius={16} />
+                </View>
+
+                <Skeleton width="100%" height={200} borderRadius={32} />
+            </View>
+        </View>
+    );
+
+    if (loadingInitial) return <NuevaVentaSkeleton />;
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>
-            <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar style={isDark ? 'dark' : 'light'} />
+
+            <PremiumHeader
+                title="Nueva Venta"
+                subtitle="Registrar productos y servicios"
+                onBack={() => router.back()}
+            />
+
+            <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}>
                 <CategorySelector
                     categories={categories}
                     onSelectCategory={handleOpenCategory}
@@ -385,11 +424,11 @@ export default function NuevaVentaScreen() {
                             accessibilityLabel="Seleccionar habitación"
                             accessibilityRole="button"
                         >
-                            <Ionicons name="business" size={20} color="#E11D48" />
+                            <Ionicons name="business" size={20} color={accentColor} />
                             <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación'}</Text>
                         </Pressable>
                     )}
-                    {selectedHabitacion && (Number(selectedHabitacion.precio || 0) === 0 && Number(selectedHabitacion.comision_anfitriona || selectedHabitacion.comision || 0) === 0 && Number(selectedHabitacion.tiempo || 0) === 0) && (
+                    {selectedHabitacion && (Number(selectedHabitacion.tiempo || 0) === 0) && (
                         <Pressable
                             style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: true })}
@@ -406,7 +445,7 @@ export default function NuevaVentaScreen() {
                         accessibilityLabel="Seleccionar cliente"
                         accessibilityRole="button"
                     >
-                        <Ionicons name="person" size={20} color="#10B981" />
+                        <Ionicons name="person" size={20} color={accentColor} />
                         <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedCliente?.nombre || 'Seleccionar Cliente'}</Text>
                     </Pressable>
                     <PaymentMethodSelect selectedMethod={metodoPago} onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })} />
@@ -431,12 +470,12 @@ export default function NuevaVentaScreen() {
 
                     <View style={[styles.summaryRow, { marginTop: 10, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 10 }]}>
                         <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
-                        <Text style={styles.totalValue}>${totals.total.toLocaleString()}</Text>
+                        <Text style={[styles.totalValue, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
                     </View>
                     <Pressable
-                        style={[styles.submitBtn, dynamicStyles.submitBtn, (submitting || !cajaAbierta) && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false) && { opacity: 0.7 }]}
                         onPress={handleSubmit}
-                        disabled={submitting || !cajaAbierta}
+                        disabled={submitting || cajaAbierta === false}
                         accessibilityLabel="Finalizar venta"
                         accessibilityRole="button"
                     >
@@ -458,7 +497,7 @@ export default function NuevaVentaScreen() {
                                 <Ionicons name="close" size={26} color={textPrimary} />
                             </Pressable>
                         </View>
-                        {modalLoading ? <ActivityIndicator size="large" color="#E11D48" style={{ margin: 40 }} /> : (
+                        {modalLoading ? <ActivityIndicator size="large" color={accentColor} style={{ margin: 40 }} /> : (
                             <FlatList
                                 data={modalProducts}
                                 keyExtractor={(item) => (item.id || item.id_producto).toString()}
@@ -494,7 +533,7 @@ export default function NuevaVentaScreen() {
                                             </Pressable>
                                         </View>
                                         <Pressable
-                                            style={styles.addBtn}
+                                            style={[styles.addBtn, { backgroundColor: accentColor }]}
                                             onPress={() => {
                                                 const id = item.id || item.id_producto;
                                                 const hasComm = Number(item.comision || item.commission || 0) > 0;
@@ -505,7 +544,7 @@ export default function NuevaVentaScreen() {
                                                         target: {
                                                             productId: id,
                                                             product: item,
-                                                            max: getHostessLimit(item, modalQuantities[id] || 1),
+                                                            max: getHostessLimit(item),
                                                             isChampagne: isChampagneProduct(item)
                                                         }
                                                     });
@@ -523,7 +562,7 @@ export default function NuevaVentaScreen() {
                             />
                         )}
                         <Pressable
-                            style={styles.confirmModalBtn}
+                            style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
                             accessibilityLabel="Confirmar selección de productos"
                             accessibilityRole="button"
@@ -557,7 +596,7 @@ export default function NuevaVentaScreen() {
                                 >
                                     <Ionicons name="time" size={22} color="#10B981" />
                                     <Text style={[styles.productName, { color: textPrimary, marginLeft: 16 }]}>{item} minutos</Text>
-                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color="#E11D48" style={{ marginLeft: 'auto' }} />}
+                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color={accentColor} style={{ marginLeft: 'auto' }} />}
                                 </TouchableOpacity>
                             )}
                         />
@@ -639,6 +678,23 @@ export default function NuevaVentaScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    header: {
+        paddingHorizontal: 20,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
+    backBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(155,155,155,0.1)',
+    },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
     section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },

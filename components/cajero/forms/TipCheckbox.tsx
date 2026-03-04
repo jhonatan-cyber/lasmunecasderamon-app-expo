@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 interface TipCheckboxProps {
     enabled: boolean;
@@ -15,7 +16,7 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
     tipAmount,
     label = 'Propina (10%)'
 }) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
@@ -30,7 +31,7 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
                 <Ionicons
                     name={enabled ? "checkbox" : "square-outline"}
                     size={20}
-                    color={enabled ? "#10B981" : textSecondary}
+                    color={enabled ? accentColor : textSecondary}
                     style={{ marginRight: 8 }}
                 />
                 <Text style={[styles.label, { color: textSecondary }]}>{label}</Text>

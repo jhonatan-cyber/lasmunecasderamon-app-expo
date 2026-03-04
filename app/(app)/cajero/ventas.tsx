@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   Modal,
   Pressable,
@@ -10,7 +12,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   useWindowDimensions,
   View
 } from "react-native";
@@ -22,13 +23,15 @@ import {
   calculateRemainingTime,
   useTimer,
 } from "../../../context/TimerContext";
+import { useAccentColor } from "../../../hooks/useAccentColor";
+import { rotateColor } from "../../../utils/colors";
 
 // Utils for status colors and labels
 const statusColors: Record<number, string> = {
-  1: "#10B981", // Completado (Green)
-  2: "#3B82F6", // En proceso (Blue)
-  3: "#F59E0B", // Pdte. Anulación (Yellow)
-  0: "#EF4444", // Anulado (Red)
+  1: "#10B981", // Pagada -> Verde (estándar de éxito)
+  2: "#3B82F6", // En Proceso -> Azul
+  3: "#EF4444", // Anulada -> Rojo
+  4: "#F59E0B", // Por Anular -> Ambar
 };
 
 const statusLabels: Record<number, string> = {
@@ -46,16 +49,22 @@ const payMethodIcons: Record<string, any> = {
 
 import { Skeleton } from "../../../components/ui/Skeleton";
 
+// Persistencia de estado de carga para evitar skeleton en re-navegación
+let initialVentasLoaded = false;
+
 export default function VentasScreen() {
-  const isDark = (useColorScheme() ?? "dark") === "dark";
+  const { accentColor, gradientColors, isDark } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialVentasLoaded);
   const [refreshing, setRefreshing] = useState(false);
   const [ventas, setVentas] = useState<any[]>([]);
   const [resumen, setResumen] = useState<any>(null);
+  const [loadingSales, setLoadingSales] = useState(false);
   const dataRef = useRef<string>("");
+  const isFocused = useRef(true);
+  const lastNotifiedId = useRef<number | null>(null);
 
   const [selectedVenta, setSelectedVenta] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -82,7 +91,10 @@ export default function VentasScreen() {
     message: string;
     type: "info" | "success" | "warning" | "danger";
     onConfirm?: () => void;
-  }>({ visible: false, title: "", message: "", type: "info" });
+    onCancel?: () => void;
+    showCancel?: boolean;
+    confirmText?: string;
+  }>({ visible: false, title: "", message: "", type: "info", showCancel: true });
 
   const showToast = (
     title: string,
@@ -103,6 +115,77 @@ export default function VentasScreen() {
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#374151" : "#E5E7EB";
 
+  const DetailSkeleton = () => (
+    <View style={{ padding: 20 }}>
+      {/* Header Skeleton */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 25 }}>
+        <View>
+          <Skeleton width={180} height={28} style={{ marginBottom: 10 }} />
+          <Skeleton width={120} height={18} />
+        </View>
+        <Skeleton width={44} height={44} borderRadius={22} />
+      </View>
+
+      {/* Grid Info Skeleton */}
+      <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
+        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
+        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
+      </View>
+
+      {/* Hostess Badges Skeleton */}
+      <Skeleton width={140} height={20} style={{ marginBottom: 12 }} />
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 25 }}>
+        <Skeleton width={90} height={32} borderRadius={16} />
+        <Skeleton width={90} height={32} borderRadius={16} />
+      </View>
+
+      {/* Table Skeleton */}
+      <Skeleton width="100%" height={180} borderRadius={24} style={{ marginBottom: 25 }} />
+
+      {/* Footer Summary Skeleton */}
+      <View style={{ gap: 15 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Skeleton width={100} height={18} />
+          <Skeleton width={80} height={18} />
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Skeleton width={120} height={26} />
+          <Skeleton width={140} height={32} borderRadius={16} />
+        </View>
+      </View>
+    </View>
+  );
+
+  const VentaCardSkeleton = () => (
+    <View
+      style={{
+        width: isTablet ? "48.5%" : "100%",
+        padding: 16,
+        borderRadius: 24,
+        marginBottom: 14,
+        backgroundColor: cardBg,
+        borderWidth: 1,
+        borderColor,
+      }}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15 }}>
+        <Skeleton width={120} height={20} />
+        <Skeleton width={80} height={20} borderRadius={12} />
+      </View>
+      <View style={{ gap: 8, marginBottom: 15 }}>
+        <Skeleton width="90%" height={14} />
+        <Skeleton width="70%" height={14} />
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <View style={{ gap: 4 }}>
+          <Skeleton width={60} height={12} />
+          <Skeleton width={100} height={24} />
+        </View>
+        <Skeleton width={100} height={40} borderRadius={12} />
+      </View>
+    </View>
+  );
+
   const VentasSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <View
@@ -120,49 +203,55 @@ export default function VentasScreen() {
         </View>
         <Skeleton width="60%" height={24} />
       </View>
-      <View style={{ padding: 16 }}>
-        <Skeleton height={140} borderRadius={24} style={{ marginBottom: 20 }} />
+      <View style={{ padding: isTablet ? 12 : 16 }}>
+        <Skeleton height={isTablet ? 180 : 140} borderRadius={24} style={{ marginBottom: 20 }} />
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
           <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
           <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
         </View>
-        {[1, 2, 3].map((i) => (
-          <View
-            key={i}
-            style={{
-              padding: 16,
-              borderRadius: 20,
-              marginBottom: 14,
-              backgroundColor: cardBg,
-              borderWidth: 1,
-              borderColor,
-            }}
-          >
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          {[1, 2, 3, 4].map((i) => (
             <View
+              key={i}
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 10,
+                width: isTablet ? "48.5%" : "100%",
+                padding: 16,
+                borderRadius: 20,
+                marginBottom: 14,
+                backgroundColor: cardBg,
+                borderWidth: 1,
+                borderColor,
               }}
             >
-              <Skeleton width={100} height={20} />
-              <Skeleton width={80} height={20} borderRadius={10} />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 10,
+                }}
+              >
+                <Skeleton width={100} height={20} />
+                <Skeleton width={80} height={20} borderRadius={10} />
+              </View>
+              <Skeleton width="100%" height={60} borderRadius={12} />
             </View>
-            <Skeleton width="100%" height={60} borderRadius={12} />
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
     </View>
   );
 
   const fetchVentas = useCallback(async (isManual = false) => {
     try {
+      if (!isManual && !initialVentasLoaded) setLoading(true);
+      if (isManual) setLoadingSales(true);
+      const timestamp = Date.now();
       const [resSales, resResumen] = await Promise.all([
-        apiClient("/ventas?limit=50").catch(() => ({
+        apiClient(`/sales?limit=50&_t=${timestamp}`).catch(() => ({
           success: false,
           data: [],
         })),
-        apiClient("/ventas?tipo=resumen").catch(() => ({
+        apiClient(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
           success: false,
           data: null,
         })),
@@ -188,6 +277,7 @@ export default function VentasScreen() {
           visibilityTime: 3000,
         });
       }
+      setAlertConfig(prev => ({ ...prev, visible: false }));
     } catch (error) {
       console.error("Error fetching ventas:", error);
       if (isManual) {
@@ -199,7 +289,9 @@ export default function VentasScreen() {
         });
       }
     } finally {
+      initialVentasLoaded = true;
       setLoading(false);
+      setLoadingSales(false);
       setRefreshing(false);
     }
   }, []);
@@ -207,6 +299,50 @@ export default function VentasScreen() {
   useEffect(() => {
     fetchVentas();
   }, [fetchVentas]);
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocused.current = true;
+      fetchVentas();
+      refreshTimers();
+      return () => { isFocused.current = false; };
+    }, [fetchVentas, refreshTimers])
+  );
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
+      console.log("[DEBUG] Event refresh_sales received, updating list...", data);
+
+      // Si es automático, mostrar el modal de aviso
+      if (data?.automatic && data?.roomName) {
+        // Evitar duplicados para el mismo ID de servicio en esta pantalla
+        if (data.servicioId && lastNotifiedId.current === data.servicioId) {
+          console.log("[DEBUG] Duplicate event ignored in Ventas for ID:", data.servicioId);
+          return;
+        }
+        lastNotifiedId.current = data.servicioId || null;
+
+        // Mostrar el modal (Avisar al usuario)
+        setAlertConfig({
+          visible: true,
+          title: "Tiempo Agotado",
+          message: `El tiempo de la habitación ${data.roomName} ha terminado. La habitación ha sido liberada.`,
+          type: "success",
+          showCancel: false,
+          confirmText: "Aceptar",
+          onConfirm: () => {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+            fetchVentas();
+            refreshTimers();
+          }
+        });
+      } else {
+        fetchVentas();
+        refreshTimers();
+      }
+    });
+    return () => subscription.remove();
+  }, [fetchVentas, refreshTimers]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -254,7 +390,6 @@ export default function VentasScreen() {
         "¿Estás seguro de que deseas finalizar esta venta? Esto liberará la habitación y detendrá el temporizador.",
       type: "danger",
       onConfirm: async () => {
-        setAlertConfig((prev) => ({ ...prev, visible: false }));
         try {
           const res = await apiClient(`/ventas/${venta.id_venta}`, {
             method: "PUT",
@@ -262,20 +397,19 @@ export default function VentasScreen() {
           });
 
           if (res.success || (res && !res.error)) {
-            showToast(
-              "Éxito",
-              "La venta ha sido finalizada y el temporizador detenido.",
-              "success",
-            );
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con éxito." });
             fetchVentas();
             refreshTimers();
           } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
             showToast(
               "Error",
               res.message || res.error || "No se pudo finalizar la venta",
             );
           }
         } catch (error) {
+          setAlertConfig(prev => ({ ...prev, visible: false }));
           showToast("Error", "Error al procesar la finalización de la venta");
         }
       },
@@ -320,7 +454,10 @@ export default function VentasScreen() {
     const productCount = item.detalles
       ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0)
       : 0;
-    const statusColor = statusColors[item.estado] || "#6B7280";
+    // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
+    // O mejor aún: usar una rotación del color de acento según la posición/ID
+    const itemAccent = rotateColor(accentColor, (item.id_venta % 10) * 36);
+    const statusColor = item.estado === 2 ? itemAccent : (statusColors[item.estado] || "#6B7280");
 
     // Check if this sale has an active timer (matching room or service ID)
     const activeTimer = timers.find(
@@ -409,11 +546,11 @@ export default function VentasScreen() {
                   <View
                     style={[
                       styles.hostessPill,
-                      { backgroundColor: "#E11D4810" },
+                      { backgroundColor: `${accentColor}15` },
                     ]}
                   >
                     <Text
-                      style={[styles.hostessText, { color: "#E11D48" }]}
+                      style={[styles.hostessText, { color: accentColor }]}
                       numberOfLines={1}
                     >
                       {item.usuarios_nicks}
@@ -460,15 +597,15 @@ export default function VentasScreen() {
                 style={[
                   styles.timerPill,
                   {
-                    backgroundColor: remaining < 60 ? "#EF444420" : "#E11D4820",
-                    borderColor: remaining < 60 ? "#EF444440" : "#E11D4840",
+                    backgroundColor: remaining < 60 ? "#EF444420" : `${accentColor}20`,
+                    borderColor: remaining < 60 ? "#EF444440" : `${accentColor}40`,
                   },
                 ]}
               >
                 <Ionicons
                   name="time"
                   size={16}
-                  color={remaining < 60 ? "#EF4444" : "#E11D48"}
+                  color={remaining < 60 ? "#EF4444" : accentColor}
                 />
                 <View>
                   <Text style={[styles.timerLabel, { color: textSecondary }]}>
@@ -493,6 +630,7 @@ export default function VentasScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.finishBtn,
+                  { backgroundColor: accentColor },
                   pressed && { opacity: 0.7 },
                 ]}
                 onPress={() => handleFinalizarVenta(item)}
@@ -509,7 +647,7 @@ export default function VentasScreen() {
                 color={textSecondary}
               />
               <Text style={[styles.methodText, { color: textSecondary }]}>
-                {item.metodo_pago.toUpperCase()}
+                {item.metodo_pago?.toUpperCase() || "N/A"}
               </Text>
             </View>
 
@@ -539,16 +677,22 @@ export default function VentasScreen() {
     );
   };
 
+  if (loading) return <VentasSkeleton />;
+
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      {/* Header */}
-      <View
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style={isDark ? 'dark' : 'light'} />
+      {/* Header con gradiente igual al Dashboard */}
+      <LinearGradient
+        colors={gradientColors as any}
         style={[
           styles.header,
           {
-            backgroundColor: isDark ? "#111827" : "#FFFFFF",
-            paddingTop: insets.top + 10,
-            paddingBottom: 15,
+            paddingTop: insets.top + (isTablet ? 20 : 10),
+            paddingBottom: 25,
+            borderBottomLeftRadius: 32,
+            borderBottomRightRadius: 32,
           },
         ]}
       >
@@ -557,7 +701,7 @@ export default function VentasScreen() {
             onPress={() => router.replace("/cajero/(tabs)" as any)}
             style={styles.backBtn}
           >
-            <Ionicons name="arrow-back" size={24} color={textPrimary} />
+            <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#111827" : "#FFFFFF"} />
           </Pressable>
           <View
             style={{
@@ -569,10 +713,10 @@ export default function VentasScreen() {
             }}
           >
             <View>
-              <Text style={[styles.headerTitle, { color: textPrimary }]}>
+              <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
                 Ventas
               </Text>
-              <Text style={[styles.headerSubtitle, { color: textSecondary }]}>
+              <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
                 Historial de transacciones
               </Text>
             </View>
@@ -585,32 +729,46 @@ export default function VentasScreen() {
                       : "/cajero/nuevo-servicio",
                   )
                 }
-                style={styles.plusBtn}
+                style={[
+                  styles.plusBtn,
+                  { backgroundColor: isDark ? '#111827' : accentColor, shadowColor: accentColor }
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel={
                   activeTab === "historial" ? "Nueva Venta" : "Nuevo Servicio"
                 }
               >
-                <Ionicons name="add" size={20} color="#FFFFFF" />
-                <Text style={styles.plusBtnText}>Nuevo</Text>
+                <Ionicons name="add" size={isTablet ? 24 : 20} color="#FFFFFF" />
+                <Text style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}>Nuevo</Text>
               </Pressable>
             </View>
           </View>
         </View>
-        <View style={[styles.tabContainer, { borderColor }]}>
+        <View style={[styles.tabContainer, {
+          borderColor: isDark ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+          backgroundColor: isDark ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.1)',
+          height: isTablet ? 56 : 48
+        }]}>
           <Pressable
             style={[
               styles.tab,
-              activeTab === "historial" && { backgroundColor: "#E11D48" },
+              activeTab === "historial" && { backgroundColor: accentColor },
             ]}
-            onPress={() => setActiveTab("historial")}
+            onPress={() => {
+              if (activeTab !== "historial") {
+                setLoadingSales(true);
+                setTimeout(() => setLoadingSales(false), 400);
+              }
+              setActiveTab("historial");
+            }}
           >
             <Text
               style={[
                 styles.tabText,
+                isTablet && { fontSize: 16 },
                 activeTab === "historial"
                   ? { color: "#FFF" }
-                  : { color: textSecondary },
+                  : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
               ]}
             >
               Listado de Ventas
@@ -619,17 +777,24 @@ export default function VentasScreen() {
           <Pressable
             style={[
               styles.tab,
-              activeTab === "proceso" && { backgroundColor: "#E11D48" },
+              activeTab === "proceso" && { backgroundColor: accentColor },
             ]}
-            onPress={() => setActiveTab("proceso")}
+            onPress={() => {
+              if (activeTab !== "proceso") {
+                setLoadingSales(true);
+                setTimeout(() => setLoadingSales(false), 400);
+              }
+              setActiveTab("proceso");
+            }}
           >
             <View style={styles.tabWithBadge}>
               <Text
                 style={[
                   styles.tabText,
+                  isTablet && { fontSize: 16 },
                   activeTab === "proceso"
                     ? { color: "#FFF" }
-                    : { color: textSecondary },
+                    : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
                 ]}
               >
                 Ventas con Habitación
@@ -645,32 +810,34 @@ export default function VentasScreen() {
             </View>
           </Pressable>
         </View>
-      </View>
+      </LinearGradient>
       {/* Main Content */}
       <FlatList
         data={
-          activeTab === "historial"
-            ? ventas
-            : ventas.filter(
-              (v) =>
-                v.estado === 2 ||
-                timers.some(
-                  (t) =>
-                    t.tipoTransaccion === "venta" &&
-                    (t.servicioId === v.id_venta ||
-                      (t.roomId === v.habitacion_id && v.estado === 2)),
-                ),
-            )
+          loadingSales
+            ? [1, 2, 3, 4]
+            : (activeTab === "historial"
+              ? ventas
+              : ventas.filter(
+                (v) =>
+                  v.estado === 2 ||
+                  timers.some(
+                    (t) =>
+                      t.tipoTransaccion === "venta" &&
+                      (t.servicioId === v.id_venta ||
+                        (t.roomId === v.habitacion_id && v.estado === 2)),
+                  ),
+              ))
         }
-        renderItem={renderVentaCard}
+        renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
-        columnWrapperStyle={numColumns > 1 ? { gap: 12, marginHorizontal: 12 } : undefined}
-        contentContainerStyle={styles.listContainer}
+        columnWrapperStyle={numColumns > 1 ? { gap: 12 } : undefined}
+        contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#E11D48"
+            tintColor={accentColor}
           />
         }
         ListEmptyComponent={
@@ -701,12 +868,7 @@ export default function VentasScreen() {
             ]}
           >
             {loadingDetail ? (
-              <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#E11D48" />
-                <Text style={{ color: textSecondary, marginTop: 10 }}>
-                  Cargando detalles...
-                </Text>
-              </View>
+              <DetailSkeleton />
             ) : (
               selectedVenta && (
                 <>
@@ -792,12 +954,15 @@ export default function VentasScreen() {
                         <Text
                           style={[styles.gridLabel, { color: textSecondary }]}
                         >
-                          GARZÓN
+                          {selectedVenta.garzon_nombre ? "GARZÓN / CAJERO" : "CAJERO"}
                         </Text>
                         <Text
                           style={[styles.gridValue, { color: textPrimary }]}
                         >
-                          {selectedVenta.garzon_nombre || "Cajero"}
+                          {selectedVenta.garzon_nombre
+                            ? `${selectedVenta.garzon_nombre} / ${selectedVenta.cajero_nombre || selectedVenta.cajero_nick || "Cajero"}`
+                            : (selectedVenta.cajero_nombre || selectedVenta.cajero_nick || "Cajero")
+                          }
                         </Text>
                       </View>
                     </View>
@@ -817,10 +982,10 @@ export default function VentasScreen() {
                               key={idx}
                               style={[
                                 styles.hostessBadgeDetail,
-                                { backgroundColor: "#E11D4815" },
+                                { backgroundColor: `${accentColor}15` },
                               ]}
                             >
-                              <Text style={styles.hostessTextDetail}>
+                              <Text style={[styles.hostessTextDetail, { color: accentColor }]}>
                                 {u.nick || "User"}
                               </Text>
                             </View>
@@ -1000,7 +1165,7 @@ export default function VentasScreen() {
                             Propina
                           </Text>
                           <Text
-                            style={[styles.summaryVal, { color: "#10B981" }]}
+                            style={[styles.summaryVal, { color: statusColors[1] }]}
                           >
                             ${selectedVenta.propina.toLocaleString()}
                           </Text>
@@ -1025,7 +1190,7 @@ export default function VentasScreen() {
                         >
                           TOTAL
                         </Text>
-                        <Text style={styles.totalValFinal}>
+                        <Text style={[styles.totalValFinal, { color: accentColor }]}>
                           ${selectedVenta.total.toLocaleString()}
                         </Text>
                       </View>
@@ -1035,7 +1200,7 @@ export default function VentasScreen() {
                   <Pressable
                     style={[
                       styles.modalCloseBtn,
-                      { backgroundColor: "#E11D48" },
+                      { backgroundColor: accentColor },
                     ]}
                     onPress={() => setModalVisible(false)}
                   >
@@ -1077,15 +1242,18 @@ export default function VentasScreen() {
                 styles.actionItem,
                 pressed && styles.actionItemPressed,
               ]}
-              onPress={() => handleVerDetalles(activeVenta?.id_venta)}
+              onPress={() => activeVenta && handleVerDetalles(activeVenta.id_venta)}
             >
               <View
-                style={[styles.actionIconBox, { backgroundColor: "#E11D4815" }]}
+                style={[
+                  styles.actionIconBox,
+                  { backgroundColor: `${accentColor}15` },
+                ]}
               >
-                <Ionicons name="eye-outline" size={22} color="#E11D48" />
+                <Ionicons name="eye-outline" size={24} color={accentColor} />
               </View>
               <Text style={[styles.actionText, { color: textPrimary }]}>
-                Ver Detalles / Recibo
+                Ver Detalles
               </Text>
             </Pressable>
 
@@ -1132,9 +1300,9 @@ export default function VentasScreen() {
         message={alertConfig.message}
         type={alertConfig.type}
         onConfirm={alertConfig.onConfirm}
-        onCancel={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
-        showCancel
-        confirmText="Finalizar"
+        onCancel={alertConfig.onCancel || (() => setAlertConfig((prev) => ({ ...prev, visible: false })))}
+        showCancel={alertConfig.showCancel}
+        confirmText={alertConfig.confirmText || "Confirmar"}
         cancelText="Cancelar"
       />
     </View>
@@ -1180,13 +1348,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: 'rgba(155,155,155,0.1)',
   },
   plusBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#E11D48",
     justifyContent: "center",
     elevation: 2,
@@ -1197,8 +1366,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   plusBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  headerTitle: { fontSize: 20, fontWeight: "800" },
-  headerSubtitle: { fontSize: 13, fontWeight: "500", opacity: 0.8 },
+  headerTitle: { fontSize: 24, fontWeight: "800" },
+  headerSubtitle: { fontSize: 15, fontWeight: "500", opacity: 0.8 },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContainer: { padding: 16, paddingBottom: 100 },
 

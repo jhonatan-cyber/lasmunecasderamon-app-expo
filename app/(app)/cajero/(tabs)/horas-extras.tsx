@@ -1,18 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface HoraExtra {
     id_hora_extra: number;
@@ -26,7 +28,7 @@ interface HoraExtra {
 }
 
 export default function HorasExtrasScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [horasExtras, setHorasExtras] = useState<HoraExtra[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -85,7 +87,11 @@ export default function HorasExtrasScreen() {
         }
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [fetchData])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -116,7 +122,7 @@ export default function HorasExtrasScreen() {
             <MotiView
                 from={{ opacity: 0, translateY: 20 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: index * 50 }}
+                transition={{ type: 'spring', delay: index * 100 }}
             >
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.cardHeader}>
@@ -155,13 +161,13 @@ export default function HorasExtrasScreen() {
                             </View>
                             <View style={styles.amountItem}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: '#E11D48', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                                <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
                         {item.fecha_mod && item.estado === 0 ? (
                             <View style={styles.paymentRow}>
-                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                                 <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_mod)}</Text>
                             </View>
                         ) : null}
@@ -171,17 +177,18 @@ export default function HorasExtrasScreen() {
         );
     };
 
-    const ListSkeleton = () => (
+    const HorasExtrasSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Horas Extras" subtitle="Mi tiempo adicional laborado" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={140} borderRadius={16} />
+                <Skeleton width="100%" height={140} borderRadius={16} />
             </View>
-            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 15 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
-            <View style={{ paddingHorizontal: 16, gap: 12 }}>
+            <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3].map(i => (
                     <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
@@ -199,13 +206,15 @@ export default function HorasExtrasScreen() {
         </View>
     );
 
-    if (loading) return <ListSkeleton />;
+    if (loading) return <HorasExtrasSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Horas Extras" subtitle="Mi tiempo adicional laborado" />
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>HORAS EXTRAS PENDIENTES</Text>
-                <Text style={[styles.summaryAmount, { color: '#E11D48' }]}>${totalPendiente.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalPendiente.toLocaleString()}</Text>
                 <Text style={[styles.summaryDetail, { color: textSecondary }]}>
                     {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''} de {horasExtras.length} total
                 </Text>
@@ -218,8 +227,8 @@ export default function HorasExtrasScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? '#E11D48' : cardBg,
-                                borderColor: filter === f ? '#E11D48' : borderColor
+                                backgroundColor: filter === f ? accentColor : cardBg,
+                                borderColor: filter === f ? accentColor : borderColor
                             }
                         ]}
                         onPress={() => setFilter(f)}
@@ -246,7 +255,7 @@ export default function HorasExtrasScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
                         <Ionicons name="time-outline" size={48} color={textSecondary} />
@@ -263,7 +272,7 @@ const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1 },
-    summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
+    summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
     summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetail: { fontSize: 13 },
     filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },
@@ -290,5 +299,5 @@ const styles = StyleSheet.create({
     retryButton: { backgroundColor: '#EF4444', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 9999 },
     retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
-    emptyText: { fontSize: 15, marginTop: 12 },
+    emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

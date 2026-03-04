@@ -1,24 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { MotiView } from 'moti';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
     Dimensions,
     Platform,
     RefreshControl,
-    Text as RNText,
     ScrollView,
     StyleSheet,
-    useColorScheme,
-    View,
+    useWindowDimensions,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EventSource from 'react-native-sse';
 import Toast from 'react-native-toast-message';
 import { API_URL, apiClient } from '../../../../api/client';
-import { AnimatedButton } from '../../../../components/AnimatedButton';
 import { AnimatedScreen } from '../../../../components/AnimatedScreen';
 import { CajeroActionGrid } from '../../../../components/CajeroActionGrid';
 import { CajeroStats } from '../../../../components/CajeroStats';
@@ -27,15 +25,19 @@ import { PremiumHeaderActions } from '../../../../components/PremiumHeaderAction
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { PremiumUserProfile } from '../../../../components/PremiumUserProfile';
 import { SkeletonLoader } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../../store/authStore';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Variable global para persistir el estado de carga inicial entre navegaciones
+let initialLoadDone = false;
 
 type CajeroState = {
     loading: boolean;
     refreshing: boolean;
     stats: any;
-    events: any[]; // User's own events (commissions, etc)
+    events: any[];
     userStatus: number;
     hasNewAlert: boolean;
     pendingCount: number;
@@ -57,7 +59,7 @@ type CajeroAction =
     | { type: 'SET_ALERT'; payload: CajeroState['alertConfig'] };
 
 const initialState: CajeroState = {
-    loading: true,
+    loading: true, // Valor base, se sobreescribe en el componente
     refreshing: false,
     stats: null,
     events: [],
@@ -79,17 +81,19 @@ function cajeroReducer(state: CajeroState, action: CajeroAction): CajeroState {
 }
 
 export default function CajeroHomeScreen() {
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const user = useAuthStore((state) => state.user);
     const router = useRouter();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
     const insets = useSafeAreaInsets();
     const dataRef = useRef<string>('');
 
-    const [state, dispatch] = useReducer(cajeroReducer, initialState);
+    const [state, dispatch] = useReducer(cajeroReducer, { ...initialState, loading: !initialLoadDone });
     const { loading, refreshing, stats, events, userStatus, hasNewAlert, pendingCount, alertConfig } = state;
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
     const showAlert = useCallback((title: string, message: string, type: CajeroState['alertConfig']['type'] = 'info', onConfirm?: () => void, showCancel = false) => {
@@ -98,7 +102,7 @@ export default function CajeroHomeScreen() {
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
-            const [statsRes, userRes, pendingRes, statusRes, eventsRes] = await Promise.all([
+            const [statsRes, userRes, pendingRes, statusRes, eventsRes] = await Promise.allSettled([
                 apiClient('/caja/stats'),
                 apiClient('/auth/me'),
                 apiClient('/solicitudes-servicios/pending-count'),
@@ -106,7 +110,13 @@ export default function CajeroHomeScreen() {
                 apiClient('/events/user')
             ]);
 
-            const newData = { stats: statsRes, user: userRes.user, pending: pendingRes.count || 0, status: statusRes.status };
+            const stats = statsRes.status === 'fulfilled' ? statsRes.value : null;
+            const userResVal = userRes.status === 'fulfilled' ? userRes.value : null;
+            const pendingResVal = pendingRes.status === 'fulfilled' ? pendingRes.value : null;
+            const statusResVal = statusRes.status === 'fulfilled' ? statusRes.value : null;
+            const eventsResVal = eventsRes.status === 'fulfilled' ? eventsRes.value : null;
+
+            const newData = { stats, user: userResVal?.user, pending: pendingResVal?.count || 0, status: statusResVal?.status };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
@@ -114,15 +124,15 @@ export default function CajeroHomeScreen() {
             dispatch({
                 type: 'SET_DATA',
                 payload: {
-                    stats: statsRes,
-                    userStatus: statusRes.status || 1,
-                    pendingCount: pendingRes.count || 0,
-                    events: eventsRes.data || []
+                    stats,
+                    userStatus: statusResVal?.status || 1,
+                    pendingCount: pendingResVal?.count || 0,
+                    events: eventsResVal?.data || []
                 }
             });
 
-            if (userRes.success && userRes.user) {
-                useAuthStore.getState().updateProfile(userRes.user);
+            if (userResVal?.success && userResVal?.user) {
+                useAuthStore.getState().updateProfile(userResVal.user);
             }
 
             if (isManual) {
@@ -140,6 +150,7 @@ export default function CajeroHomeScreen() {
                 Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar' });
             }
         } finally {
+            initialLoadDone = true;
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
@@ -189,7 +200,10 @@ export default function CajeroHomeScreen() {
 
     const DashboardSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
-            <View style={[styles.headerSkeleton, { paddingTop: insets.top + 10 }]}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={[styles.headerSkeleton, { paddingTop: insets.top + 10 }]}
+            >
                 <View style={styles.skeletonTopRow}>
                     <SkeletonLoader width={40} height={40} borderRadius={20} />
                     <SkeletonLoader width={40} height={40} borderRadius={20} />
@@ -201,7 +215,7 @@ export default function CajeroHomeScreen() {
                         <SkeletonLoader width={100} height={15} />
                     </View>
                 </View>
-            </View>
+            </LinearGradient>
             <View style={styles.skeletonStatsContainer}>
                 <View style={styles.skeletonStatsRow}>
                     <SkeletonLoader width={(width - 40) / 2} height={80} borderRadius={16} />
@@ -224,85 +238,53 @@ export default function CajeroHomeScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
+            {/* Oscuro=header oscuro→iconos light | Claro=header blanco→iconos dark */}
+            <StatusBar style={isDark ? 'light' : 'dark'} />
             <ScrollView
                 style={styles.container}
+                contentContainerStyle={isTablet && styles.tabletContentContainer}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
                 <AnimatedScreen>
                     <LinearGradient
-                        colors={isDark ? ['#1E1B4B', '#000000'] : ['#E0E7FF', '#F3F4F6']}
-                        style={[styles.header, { paddingTop: insets.top + 10 }]}
+                        colors={gradientColors as any}
+                        style={[styles.header, { paddingTop: insets.top + (isTablet ? 30 : 10), paddingBottom: isTablet ? 60 : 40 }]}
                     >
-                        <PremiumHeaderActions
-                            hasNewAlert={hasNewAlert}
-                            notificationCount={pendingCount}
-                            setHasNewAlert={(val) => dispatch({ type: 'SET_NEW_ALERT', payload: val })}
-                            onNotificationPress={() => router.push('/cajero/solicitudes')}
-                            showAlert={showAlert}
-                            profilePath="/cajero/perfil"
-                        />
-                        <PremiumUserProfile user={user} userStatus={userStatus} />
-
-                        <MotiView
-                            from={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            style={styles.callStaffContainer}
-                        >
-                            <AnimatedButton
-                                style={styles.callStaffBtn}
-                                onPress={() => {
-                                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                                    showAlert(
-                                        'Solicitud de Personal',
-                                        '¿Deseas enviar una notificación de llamado a los garzones?',
-                                        'warning',
-                                        async () => {
-                                            try {
-                                                const res = await apiClient('/notifications/assistance', {
-                                                    method: 'POST',
-                                                    body: JSON.stringify({
-                                                        type: 'Llamado de Caja',
-                                                        message: 'Cajera solicita atención en barra/caja',
-                                                        roomName: 'Caja'
-                                                    })
-                                                });
-                                                if (res.success) {
-                                                    Toast.show({ type: 'success', text1: 'Llamado enviado', text2: 'Personal notificado' });
-                                                }
-                                            } catch (err) {
-                                                Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar el llamado' });
-                                            }
-                                        },
-                                        true
-                                    );
-                                }}
-                            >
-                                <Ionicons name="notifications" size={18} color="#FFFFFF" />
-                                <RNText style={styles.callStaffBtnText}>SOLICITAR PERSONAL</RNText>
-                            </AnimatedButton>
-                        </MotiView>
+                        <View style={isTablet && styles.tabletMaxWidth}>
+                            <PremiumHeaderActions
+                                hasNewAlert={hasNewAlert}
+                                notificationCount={pendingCount}
+                                setHasNewAlert={(val) => dispatch({ type: 'SET_NEW_ALERT', payload: val })}
+                                onNotificationPress={() => router.push('/cajero/solicitudes')}
+                                showAlert={showAlert}
+                                profilePath="/cajero/perfil"
+                            />
+                            <PremiumUserProfile user={user} userStatus={userStatus} />
+                        </View>
                     </LinearGradient>
 
-                    <CajeroStats stats={stats} />
+                    <View style={isTablet && styles.tabletMaxWidth}>
+                        <CajeroStats stats={stats} />
 
-                    <MotiView
-                        from={{ opacity: 0, translateY: 30 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        transition={{ type: 'spring', delay: 400 }}
-                        style={{ marginTop: 20 }}
-                    >
-                        <CajeroActionGrid />
-                    </MotiView>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 30 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: 'spring', delay: 400 }}
+                            style={{ marginTop: isTablet ? 30 : 20 }}
+                        >
+                            <CajeroActionGrid />
+                        </MotiView>
 
-                    <MotiView
-                        from={{ opacity: 0, translateY: 30 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        transition={{ type: 'spring', delay: 500 }}
-                        style={{ marginTop: 25 }}
-                    >
-                        <PremiumLiquidationCard user={user} events={events} />
-                    </MotiView>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 30 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: 'spring', delay: 500 }}
+                            style={{ marginTop: isTablet ? 30 : 25 }}
+                        >
+                            <PremiumLiquidationCard user={user} events={events} />
+                        </MotiView>
+                    </View>
                 </AnimatedScreen>
 
                 <View style={{ height: 100 }} />
@@ -340,7 +322,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 30,
         height: 220,
-        backgroundColor: '#1E1B4B',
+        backgroundColor: '#2D2870',
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
     },
@@ -388,4 +370,10 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.2)'
     },
     callStaffBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+    tabletContentContainer: {
+        width: '100%',
+    },
+    tabletMaxWidth: {
+        width: '100%',
+    },
 });

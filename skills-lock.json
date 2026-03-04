@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "code-refactoring": {
+      "source": "supercent-io/skills-template",
+      "sourceType": "github",
+      "computedHash": "65079112f3cd1e2cc897390d78dd7185333d61b15b68b754bedddfddcdf6d857"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",

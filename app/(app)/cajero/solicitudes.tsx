@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    DeviceEventEmitter,
     FlatList,
     KeyboardAvoidingView,
     Modal,
@@ -13,6 +16,7 @@ import {
     StyleSheet,
     Text,
     useColorScheme,
+    useWindowDimensions,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +28,9 @@ export default function SolicitudesScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
+    const numColumns = isTablet ? 2 : 1;
 
     const [solicitudes, setSolicitudes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,6 +140,13 @@ export default function SolicitudesScreen() {
 
     useEffect(() => {
         fetchSolicitudes();
+    }, [fetchSolicitudes]);
+
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('refresh_requests', () => {
+            fetchSolicitudes();
+        });
+        return () => subscription.remove();
     }, [fetchSolicitudes]);
 
     const onRefresh = () => {
@@ -385,6 +399,40 @@ export default function SolicitudesScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar style={isDark ? 'dark' : 'light'} />
+
+            {/* Header premium con gradiente */}
+            <LinearGradient
+                colors={isDark ? ['#FFFFFF', '#F1F5F9'] : ['#2D2870', '#1E1B4B', '#0F0D2E']}
+                style={[
+                    styles.header,
+                    {
+                        paddingTop: insets.top + (isTablet ? 20 : 10),
+                        paddingBottom: 25,
+                        borderBottomLeftRadius: 32,
+                        borderBottomRightRadius: 32,
+                    },
+                ]}
+            >
+                <View style={styles.headerTop}>
+                    <Pressable
+                        onPress={() => router.back()}
+                        style={styles.backBtn}
+                    >
+                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#111827" : "#FFFFFF"} />
+                    </Pressable>
+                    <View style={{ flex: 1, marginLeft: 15 }}>
+                        <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
+                            Solicitudes
+                        </Text>
+                        <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
+                            {!cajaAbierta ? 'Caja cerrada' : 'Pendientes de aprobación'}
+                        </Text>
+                    </View>
+                </View>
+            </LinearGradient>
+
             {loading ? (
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color="#E11D48" />
@@ -394,6 +442,8 @@ export default function SolicitudesScreen() {
                     data={solicitudes}
                     keyExtractor={item => item.id_unificado}
                     renderItem={renderItem}
+                    numColumns={numColumns}
+                    columnWrapperStyle={isTablet ? { gap: 16, marginHorizontal: 16 } : undefined}
                     contentContainerStyle={styles.listContainer}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                     ListEmptyComponent={
@@ -569,24 +619,22 @@ export default function SolicitudesScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: {
-        paddingHorizontal: 16,
-        paddingBottom: 20,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        marginBottom: 10,
+        paddingHorizontal: 20,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'flex-start' },
-    headerTitle: { fontSize: 20, fontWeight: '800' },
-    headerSubtitle: { fontSize: 14, textAlign: 'center', marginTop: -5 },
+    headerTop: { flexDirection: 'row', alignItems: 'center' },
+    backBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(155,155,155,0.1)',
+    },
+    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContainer: { padding: 16, paddingBottom: 100 },
-    card: { borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+    card: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     iconBox: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#E11D4820', justifyContent: 'center', alignItems: 'center' },
@@ -634,48 +682,4 @@ const styles = StyleSheet.create({
     modalActionsRow: { flexDirection: 'row', gap: 12, marginTop: 'auto' },
     modalBtnAction: { flex: 1, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
     modalBtnActionText: { fontSize: 16, fontWeight: '800' },
-    // Toast Styles
-    toastOverlay: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-    },
-    toastContent: {
-        width: '90%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 15,
-    },
-    toastIconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    toastTextContainer: {
-        flex: 1,
-    },
-    toastTitle: {
-        fontSize: 16,
-        fontWeight: '800',
-        marginBottom: 2,
-    },
-    toastMessage: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    toastCloseBtn: {
-        padding: 4,
-        marginLeft: 8,
-    },
 });

@@ -14,7 +14,6 @@ import {
     Text as RNText,
     ScrollView,
     StyleSheet,
-    useColorScheme,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +29,7 @@ import { PremiumHeaderActions } from '../../../../components/PremiumHeaderAction
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { PremiumUserProfile } from '../../../../components/PremiumUserProfile';
 import { SkeletonLoader } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../../store/authStore';
 
 const { width } = Dimensions.get('window');
@@ -91,10 +91,36 @@ function anfitrionaReducer(state: AnfitrionaState, action: AnfitrionaAction): An
     }
 }
 
+const DashboardSkeleton = ({ bg, insets, width, styles }: any) => (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+        <View style={[styles.header, { paddingTop: insets.top + 10, height: 260 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                <SkeletonLoader width={40} height={40} borderRadius={20} />
+                <SkeletonLoader width={40} height={40} borderRadius={20} />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                <SkeletonLoader width={70} height={70} borderRadius={35} />
+                <View style={{ gap: 8 }}>
+                    <SkeletonLoader width={150} height={20} />
+                    <SkeletonLoader width={100} height={15} />
+                </View>
+            </View>
+            <SkeletonLoader width="100%" height={50} borderRadius={25} style={{ marginTop: 25 }} />
+        </View>
+        <View style={styles.analyticsRow}>
+            <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
+            <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
+        </View>
+        <View style={{ padding: 16 }}>
+            <SkeletonLoader width="100%" height={280} borderRadius={24} />
+        </View>
+    </View>
+);
+
 export default function AnfitrionaHomeScreen() {
     const user = useAuthStore((state) => state.user);
     const router = useRouter();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
     const dataRef = useRef<string>('');
 
@@ -223,31 +249,6 @@ export default function AnfitrionaHomeScreen() {
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [selectedDates, events]);
 
-    const DashboardSkeleton = () => (
-        <View style={{ flex: 1, backgroundColor: bg }}>
-            <View style={[styles.header, { paddingTop: insets.top + 10, height: 260 }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                    <SkeletonLoader width={40} height={40} borderRadius={20} />
-                    <SkeletonLoader width={40} height={40} borderRadius={20} />
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                    <SkeletonLoader width={70} height={70} borderRadius={35} />
-                    <View style={{ gap: 8 }}>
-                        <SkeletonLoader width={150} height={20} />
-                        <SkeletonLoader width={100} height={15} />
-                    </View>
-                </View>
-                <SkeletonLoader width="100%" height={50} borderRadius={25} style={{ marginTop: 25 }} />
-            </View>
-            <View style={styles.analyticsRow}>
-                <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
-                <SkeletonLoader width={(width - 44) / 2} height={140} borderRadius={24} />
-            </View>
-            <View style={{ padding: 16 }}>
-                <SkeletonLoader width="100%" height={280} borderRadius={24} />
-            </View>
-        </View>
-    );
 
     const handleAssistance = async (type: string) => {
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -269,18 +270,18 @@ export default function AnfitrionaHomeScreen() {
         }
     };
 
-    if (loading) return <DashboardSkeleton />;
+    if (loading) return <DashboardSkeleton bg={bg} insets={insets} width={width} styles={styles} />;
 
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
             <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
                 <AnimatedScreen>
                     <LinearGradient
-                        colors={isDark ? ['#1E1B4B', '#000000'] : ['#F3F4F6', '#FFFFFF']}
+                        colors={gradientColors as any}
                         style={[styles.header, { paddingTop: insets.top + 10 }]}
                     >
                         <PremiumHeaderActions
@@ -301,7 +302,7 @@ export default function AnfitrionaHomeScreen() {
                                     style={styles.callStaffContainer}
                                 >
                                     <AnimatedButton
-                                        style={styles.callStaffBtn}
+                                        style={[styles.callStaffBtn, { backgroundColor: accentColor, shadowColor: accentColor }]}
                                         onPress={() => {
                                             if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                                             showAlert(
@@ -344,10 +345,10 @@ export default function AnfitrionaHomeScreen() {
                                 from={{ opacity: 0, scale: 0.9, translateY: -20 }}
                                 animate={{ opacity: 1, scale: 1, translateY: 0 }}
                                 exit={{ opacity: 0, scale: 0.9, translateY: -20 }}
-                                style={styles.activeServiceCard}
+                                style={[styles.activeServiceCard, { shadowColor: accentColor }]}
                             >
                                 <LinearGradient
-                                    colors={['#E11D48', '#881337']}
+                                    colors={[accentColor, `${accentColor}88`]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.activeServiceGradient}
@@ -411,7 +412,7 @@ export default function AnfitrionaHomeScreen() {
                                     <Ionicons name="flag" size={14} color="#E11D48" />
                                 </View>
                                 <View style={{ alignItems: 'center' }}>
-                                    <DonutChart percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 50000) * 100))} color="#E11D48" isDark={isDark} size={70} strokeWidth={5} />
+                                    <DonutChart percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 50000) * 100))} color={accentColor} isDark={isDark} size={70} strokeWidth={5} />
                                     <RNText style={[styles.goalStatus, { color: textSecondary }]}>${(stats?.totalEarnings || 0).toLocaleString()} <RNText style={{ opacity: 0.5 }}>/ $50k</RNText></RNText>
                                 </View>
                             </Pressable>
@@ -482,7 +483,7 @@ export default function AnfitrionaHomeScreen() {
                 <MotiView
                     from={{ translateY: 100, opacity: 0 }}
                     animate={{ translateY: 0, opacity: 1 }}
-                    style={styles.selectionFloat}
+                    style={[styles.selectionFloat, { backgroundColor: isDark ? '#1F2937' : '#374151' }]}
                 >
                     <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
                     <View style={styles.selectionActions}>
@@ -500,7 +501,7 @@ export default function AnfitrionaHomeScreen() {
                                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                 dispatch({ type: 'SET_MODAL_VISIBLE', payload: true });
                             }}
-                            style={styles.viewBtn}
+                            style={[styles.viewBtn, { backgroundColor: accentColor }]}
                         >
                             <RNText style={styles.viewBtnText}>Detalles</RNText>
                         </Pressable>
@@ -571,7 +572,6 @@ const styles = StyleSheet.create({
     goalStatus: { textAlign: 'center', fontSize: 11, fontWeight: '700', marginTop: 8 },
     callStaffContainer: { marginTop: 15, alignItems: 'center' },
     callStaffBtn: {
-        backgroundColor: '#F43F5E',
         paddingHorizontal: 25,
         height: 48,
         borderRadius: 24,
@@ -579,7 +579,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
         elevation: 10,
-        shadowColor: '#F43F5E',
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.5,
         shadowRadius: 10,
@@ -593,7 +592,6 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         elevation: 8,
-        shadowColor: '#E11D48',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -658,7 +656,6 @@ const styles = StyleSheet.create({
         bottom: 30,
         left: 20,
         right: 20,
-        backgroundColor: '#1F2937',
         padding: 16,
         borderRadius: 20,
         flexDirection: 'row',
@@ -673,7 +670,7 @@ const styles = StyleSheet.create({
     selectionActions: { flexDirection: 'row', gap: 10 },
     clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
     clearBtnText: { color: '#EF4444', fontWeight: '800', fontSize: 13 },
-    viewBtn: { backgroundColor: '#E11D48', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+    viewBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
     viewBtnText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },

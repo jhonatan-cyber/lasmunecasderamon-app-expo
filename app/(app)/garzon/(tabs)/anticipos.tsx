@@ -7,11 +7,12 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Anticipo {
     id_anticipo: number;
@@ -25,7 +26,7 @@ interface Anticipo {
 }
 
 export default function AnticiposScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [anticipos, setAnticipos] = useState<Anticipo[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +49,7 @@ export default function AnticiposScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setAnticipos(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -160,7 +161,7 @@ export default function AnticiposScreen() {
 
                     <View style={styles.amountRow}>
                         <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                        <Text style={[styles.amountValue, { color: isPendiente ? '#F59E0B' : '#10B981' }]}>
+                        <Text style={[styles.amountValue, { color: isPendiente ? '#F59E0B' : accentColor }]}>
                             ${(item.monto || 0).toLocaleString()}
                         </Text>
                     </View>
@@ -181,7 +182,7 @@ export default function AnticiposScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
+                <ActivityIndicator size="large" color={accentColor} />
                 <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando anticipos...</Text>
             </View>
         );
@@ -189,6 +190,8 @@ export default function AnticiposScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Anticipos" subtitle="Mis retiros de efectivo" />
+
             {/* Summary */}
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>ANTICIPOS PENDIENTES</Text>
@@ -210,11 +213,11 @@ export default function AnticiposScreen() {
                         key={f}
                         style={[
                             styles.filterButton,
-                            { backgroundColor: filter === f ? textPrimary : cardBg, borderColor },
+                            { backgroundColor: filter === f ? accentColor : cardBg, borderColor },
                         ]}
                         onPress={() => setFilter(f)}
                     >
-                        <Text style={[styles.filterText, { color: filter === f ? bg : textSecondary }]}>
+                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
                             {f === 'all' ? `Todos (${anticipos.length})` : f === 'pendiente' ? `Por pagar (${pendientes.length})` : `Pagados (${anticipos.length - pendientes.length})`}
                         </Text>
                     </Pressable>
@@ -237,7 +240,7 @@ export default function AnticiposScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>

@@ -2,9 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
-import { apiClient } from '../api/client';
+import { apiClient, setUnauthorizedHandler } from '../api/client';
 
-// Helper for cross-platform secure token storage
 const TokenStorage = {
     save: async (token: string) => {
         if (Platform.OS === 'web') {
@@ -47,111 +46,119 @@ interface AuthState {
     user: User | null;
     token: string | null;
     isLoading: boolean;
+    sessionExpired: boolean;
     login: (username: string, password: string, codigo?: string) => Promise<{ requiereCodigo?: boolean, user?: User }>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
+    clearSessionExpired: () => void;
     tempAuthData: { username: string; password: string; userTmp?: any } | null;
     setTempAuthData: (data: { username: string; password: string; userTmp?: any } | null) => void;
     updateProfile: (partialUser: Partial<User>) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-    user: null,
-    token: null,
-    isLoading: true, // Empieza cargando para verificar token en secure store
+export const useAuthStore = create<AuthState>((set, get) => {
 
-    tempAuthData: null,
-    setTempAuthData: (data) => set({ tempAuthData: data }),
-
-    login: async (username, password, codigo) => {
-        try {
-            // Check domain
-            let emailToSend = username.trim();
-            if (!emailToSend.includes('@')) {
-                emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
-            }
-
-            const payload: any = { email: emailToSend, password };
-            if (codigo) {
-                payload.codigo = codigo;
-            }
-
-            const response = await apiClient('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.requiereCodigo) {
-                return { requiereCodigo: true, user: response.user };
-            }
-
-            if (!response.success && !response.token) {
-                throw new Error(response.message || 'Error en autenticación');
-            }
-
-            const { token, user } = response;
-            await TokenStorage.save(token);
-            await AsyncStorage.setItem('user', JSON.stringify(user));
-
-            set({ user, token, tempAuthData: null });
-            return { requiereCodigo: false };
-        } catch (error: any) {
-            throw new Error(error.message);
+    setUnauthorizedHandler(() => {
+        if (get().user !== null) {
+            set({ sessionExpired: true });
         }
-    },
+    });
 
-    logout: async () => {
-        try {
-            await apiClient('/logout', { method: 'POST' });
-        } catch (e) {
-            console.error('API Logout failed:', e);
-        }
-        await TokenStorage.remove();
-        await AsyncStorage.removeItem('user');
-        set({ user: null, token: null });
-    },
+    return {
+        user: null,
+        token: null,
+        isLoading: true,
+        sessionExpired: false,
 
-    checkAuth: async () => {
-        console.log("Starting checkAuth...");
-        try {
+        clearSessionExpired: () => set({ sessionExpired: false }),
 
-            const withTimeout = (promise: Promise<any>, timeoutMs: number) => {
-                let timeoutHandle: any;
-                const timeoutPromise = new Promise((_, reject) => {
-                    timeoutHandle = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
+        tempAuthData: null,
+        setTempAuthData: (data) => set({ tempAuthData: data }),
+
+        login: async (username, password, codigo) => {
+            try {
+                let emailToSend = username.trim();
+                if (!emailToSend.includes('@')) {
+                    emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+                }
+
+                const payload: any = { email: emailToSend, password };
+                if (codigo) {
+                    payload.codigo = codigo;
+                }
+
+                const response = await apiClient('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
                 });
-                return Promise.race([
-                    promise.then(result => {
-                        clearTimeout(timeoutHandle);
-                        return result;
-                    }),
-                    timeoutPromise
-                ]);
-            };
 
-            const token = await withTimeout(TokenStorage.get(), 2000).catch(() => null);
-            console.log("Got token from SecureStore");
-            const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
-            console.log("Got user from AsyncStorage");
+                if (response.requiereCodigo) {
+                    return { requiereCodigo: true, user: response.user };
+                }
 
-            if (token && userStr) {
-                set({ token, user: JSON.parse(userStr) });
+                if (!response.success && !response.token) {
+                    throw new Error(response.message || 'Error en autenticación');
+                }
+
+                const { token, user } = response;
+                await TokenStorage.save(token);
+                await AsyncStorage.setItem('user', JSON.stringify(user));
+
+                set({ user, token, tempAuthData: null });
+                return { requiereCodigo: false };
+            } catch (error: any) {
+                throw new Error(error.message);
             }
-        } catch (e) {
-            console.log("Error in checkAuth:", e);
-        } finally {
-            console.log("Setting isLoading to false");
-            set({ isLoading: false });
-        }
-    },
+        },
 
-    updateProfile: async (partialUser) => {
-        const currentUser = get().user;
-        if (currentUser) {
-            const updatedUser = { ...currentUser, ...partialUser };
-            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-            set({ user: updatedUser });
+        logout: async () => {
+            try {
+                await apiClient('/logout', { method: 'POST' });
+            } catch (e) {
+                console.error('API Logout failed:', e);
+            }
+            await TokenStorage.remove();
+            await AsyncStorage.removeItem('user');
+            set({ user: null, token: null, sessionExpired: false });
+        },
+
+        checkAuth: async () => {
+            try {
+
+                const withTimeout = (promise: Promise<any>, timeoutMs: number) => {
+                    let timeoutHandle: any;
+                    const timeoutPromise = new Promise((_, reject) => {
+                        timeoutHandle = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
+                    });
+                    return Promise.race([
+                        promise.then(result => {
+                            clearTimeout(timeoutHandle);
+                            return result;
+                        }),
+                        timeoutPromise
+                    ]);
+                };
+
+                const token = await withTimeout(TokenStorage.get(), 2000).catch(() => null);
+                const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
+                if (token && userStr) {
+                    set({ token, user: JSON.parse(userStr) });
+                }
+            } catch (e) {
+                console.log("Error in checkAuth:", e);
+            } finally {
+                set({ isLoading: false });
+            }
+        },
+
+        updateProfile: async (partialUser) => {
+            const currentUser = get().user;
+            if (currentUser) {
+                const updatedUser = { ...currentUser, ...partialUser };
+                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+                set({ user: updatedUser });
+            }
         }
-    }
-}));
+    };
+});

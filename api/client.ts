@@ -2,6 +2,24 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+// Error especial para token inválido / sesión expirada
+export class UnauthorizedError extends Error {
+    code = 'UNAUTHORIZED';
+    constructor(message = 'Sesión inválida o expirada') {
+        super(message);
+        this.name = 'UnauthorizedError';
+    }
+}
+
+// Callback que se invoca cuando el servidor retorna 401.
+// Se registra desde el authStore para evitar dependencia circular.
+// Por defecto no hace nada (solo lanza el error tipado).
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void) {
+    onUnauthorized = handler;
+}
+
 // Detect the best IP for the current platform
 const getBaseUrl = () => {
     // 1. DYNAMIC FOR WEB: Detects the current hostname of the browser
@@ -26,7 +44,9 @@ const getBaseUrl = () => {
 export const BASE_URL = getBaseUrl();
 export const API_URL = `${BASE_URL}/api`;
 
-export const apiClient = async (endpoint: string, options: RequestInit = {}) => {
+export const apiClient = async (endpoint: string, options: RequestInit & { timeout?: number } = {}) => {
+    const { timeout: customTimeout, ...fetchOptions } = options;
+    options = fetchOptions;
     const url = `${API_URL}${endpoint}`;
 
     // Set default headers
@@ -58,8 +78,28 @@ export const apiClient = async (endpoint: string, options: RequestInit = {}) => 
         headers,
     };
 
-    const response = await fetch(url, config);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), customTimeout ?? 20000);
+
+    let response: Response;
+    try {
+        response = await fetch(url, { ...config, signal: controller.signal });
+    } catch (err: any) {
+        if (err?.name === 'AbortError') {
+            throw new Error('La petición tardó demasiado. Verifica tu conexión.');
+        }
+        throw err;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+
     const data = await response.json().catch(() => ({}));
+
+    if (response.status === 401) {
+        // Notificar al store (sin importarlo directamente → evita dependencia circular)
+        onUnauthorized?.();
+        throw new UnauthorizedError(data.error || data.message || 'Sesión inválida o expirada');
+    }
 
     if (!response.ok) {
         throw new Error(data.error || data.message || 'Error en la petición API');

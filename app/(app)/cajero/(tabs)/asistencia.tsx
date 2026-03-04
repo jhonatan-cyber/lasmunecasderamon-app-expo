@@ -1,18 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Asistencia {
     id_asistencia: number;
@@ -27,7 +29,7 @@ interface Asistencia {
 }
 
 export default function AsistenciaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -86,16 +88,17 @@ export default function AsistenciaScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchAsistencias();
-    }, [fetchAsistencias]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchAsistencias();
+        }, [fetchAsistencias])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchAsistencias(true);
     }, [fetchAsistencias]);
 
-    // Format date
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
         try {
@@ -110,14 +113,12 @@ export default function AsistenciaScreen() {
         }
     };
 
-    // Filter
     const filteredData = asistencias.filter((a) => {
         if (filter === 'pendiente') return a.estado === 1;
         if (filter === 'pagado') return a.estado === 0;
         return true;
     });
 
-    // Totals (only pending estado=1)
     const pendientes = asistencias.filter((a) => a.estado === 1);
     const totalSueldo = pendientes.reduce((sum, a) => sum + (a.sueldo || 0), 0);
     const totalAporte = pendientes.reduce((sum, a) => sum + (a.aporte || 0), 0);
@@ -127,9 +128,9 @@ export default function AsistenciaScreen() {
         const isPendiente = item.estado === 1;
         return (
             <MotiView
-                from={{ opacity: 0, translateY: 20 }}
+                from={{ opacity: 0, translateY: 30 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: index * 50 }}
+                transition={{ type: 'spring', delay: index * 100 }}
             >
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.cardHeader}>
@@ -174,13 +175,13 @@ export default function AsistenciaScreen() {
                             </View>
                             <View style={styles.amountItem}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: '#10B981', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                                <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
                         {item.fecha_pago && item.estado === 0 ? (
                             <View style={styles.paymentRow}>
-                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                                 <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
                             </View>
                         ) : null}
@@ -190,17 +191,18 @@ export default function AsistenciaScreen() {
         );
     };
 
-    const ListSkeleton = () => (
+    const AsistenciaSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={140} borderRadius={16} />
+                <Skeleton width="100%" height={140} borderRadius={16} />
             </View>
-            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 15 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+            <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
-            <View style={{ paddingHorizontal: 16, gap: 12 }}>
+            <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3].map(i => (
                     <View key={i} style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor, backgroundColor: cardBg }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
@@ -219,21 +221,21 @@ export default function AsistenciaScreen() {
         </View>
     );
 
-    if (loading) return <ListSkeleton />;
+    if (loading) return <AsistenciaSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            {/* Summary Card */}
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL A COBRAR (Pendientes)</Text>
-                <Text style={styles.summaryAmount}>${totalACobrar.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalACobrar.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Sueldo: ${totalSueldo.toLocaleString()}</Text>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>
                 </View>
             </View>
 
-            {/* Filter Tabs */}
             <View style={styles.filterRow}>
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
@@ -241,8 +243,8 @@ export default function AsistenciaScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? '#E11D48' : cardBg,
-                                borderColor: filter === f ? '#E11D48' : borderColor,
+                                backgroundColor: filter === f ? accentColor : cardBg,
+                                borderColor: filter === f ? accentColor : borderColor,
                             },
                         ]}
                         onPress={() => setFilter(f)}
@@ -273,7 +275,7 @@ export default function AsistenciaScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
@@ -294,8 +296,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 16, marginTop: 16, borderRadius: 16,
         padding: 20, alignItems: 'center', borderWidth: 1,
     },
-    summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#10B981', marginBottom: 8 },
+    summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: {
@@ -335,5 +337,5 @@ const styles = StyleSheet.create({
     retryButton: { backgroundColor: '#EF4444', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 9999 },
     retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
-    emptyText: { fontSize: 15, marginTop: 12 },
+    emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

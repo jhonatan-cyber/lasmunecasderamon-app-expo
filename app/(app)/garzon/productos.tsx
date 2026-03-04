@@ -66,23 +66,27 @@ export default function ProductosScreen() {
     const fetchData = useCallback(async (isManual = false) => {
         try {
             setError('');
-            const [prodData, anfData, roomData] = await Promise.all([
+            const [prodRes, anfRes, roomRes] = await Promise.allSettled([
                 apiClient(`/products?category_id=${categoryId}`),
                 apiClient('/anfitrionas'),
                 apiClient('/rooms?status=1'),
             ]);
 
-            const newData = { products: prodData.data, anfitrionas: anfData.data, rooms: roomData.data };
+            const prodData = prodRes.status === 'fulfilled' ? prodRes.value : null;
+            const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
+            const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
+
+            const newData = { products: prodData?.data, anfitrionas: anfData?.data, rooms: roomData?.data };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (prodData.success) {
+            if (prodData?.success) {
                 const active = (prodData.data || []).filter((p: Product) => p.status === 1);
                 setProducts(active);
             }
-            if (anfData.success) setAnfitrionas(anfData.data || []);
-            if (roomData.success) setRooms(roomData.data || []);
+            if (anfData?.success) setAnfitrionas(anfData.data || []);
+            if (roomData?.success) setRooms(roomData.data || []);
 
             if (isManual) {
                 Toast.show({

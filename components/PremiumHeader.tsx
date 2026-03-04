@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
     Pressable,
     StyleSheet,
     Text,
-    useColorScheme,
-    View,
+    useWindowDimensions,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAccentColor } from "../hooks/useAccentColor";
 
 export interface PremiumHeaderTab {
     id: string;
@@ -16,7 +18,8 @@ export interface PremiumHeaderTab {
 
 export interface PremiumHeaderProps {
     title: string;
-    onBack: () => void;
+    subtitle?: string;
+    onBack?: () => void;
     showAddButton?: boolean;
     onAdd?: () => void;
     tabs?: PremiumHeaderTab[];
@@ -27,6 +30,7 @@ export interface PremiumHeaderProps {
 
 export function PremiumHeader({
     title,
+    subtitle,
     onBack,
     showAddButton = false,
     onAdd,
@@ -35,114 +39,87 @@ export function PremiumHeader({
     onTabChange,
     rightComponent,
 }: PremiumHeaderProps) {
-    const isDark = (useColorScheme() ?? "dark") === "dark";
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
-
-    const textPrimary = isDark ? "#FFFFFF" : "#000000";
-    const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-    const headerBg = isDark ? "#111827" : "#FFFFFF";
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
 
     return (
-        <View style={[styles.header, { paddingTop: insets.top + 10, backgroundColor: headerBg }]}>
+        <LinearGradient
+            colors={gradientColors as any}
+            style={[
+                styles.header,
+                {
+                    paddingTop: insets.top + (isTablet ? 20 : 10),
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                }
+            ]}
+        >
             <View style={styles.headerTop}>
-                <Pressable
-                    onPress={onBack}
-                    style={styles.backBtn}
-                    accessibilityLabel="Volver"
-                    accessibilityRole="button"
-                >
-                    <Ionicons name="arrow-back" size={24} color={textPrimary} />
-                </Pressable>
-                <Text style={[styles.headerTitle, { color: textPrimary, marginLeft: 15 }]}>{title}</Text>
-
-                {showAddButton && !rightComponent && (
-                    <Pressable
-                        onPress={onAdd}
-                        style={styles.plusBtn}
-                        accessibilityLabel="Agregar Nuevo"
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="add" size={20} color="#FFF" />
-                        <Text style={styles.plusBtnText}>Nuevo</Text>
+                {onBack && (
+                    <Pressable onPress={onBack} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color="#FFFFFF" />
                     </Pressable>
                 )}
-
-                {rightComponent && <View style={styles.rightComponent}>{rightComponent}</View>}
+                <View style={{ flex: 1, marginLeft: onBack ? 10 : 0 }}>
+                    <Text style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}>
+                        {title}
+                    </Text>
+                    {subtitle && (
+                        <Text style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>
+                            {subtitle}
+                        </Text>
+                    )}
+                </View>
+                {rightComponent}
+                {showAddButton && (
+                    <Pressable
+                        onPress={onAdd}
+                        style={[styles.plusBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                    >
+                        <Ionicons name="add" size={isTablet ? 24 : 20} color="#FFFFFF" />
+                        <Text style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}>Nuevo</Text>
+                    </Pressable>
+                )}
             </View>
 
-            {tabs && tabs.length > 0 && onTabChange && (
-                <View style={styles.tabContainer}>
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <Pressable
-                                key={tab.id}
-                                style={[styles.tab, isActive && { backgroundColor: "#E11D48" }]}
-                                onPress={() => onTabChange(tab.id)}
-                                accessibilityRole="button"
-                            >
-                                <Text style={[styles.tabText, { color: isActive ? "#FFF" : textSecondary }]}>
-                                    {tab.label}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
+            {tabs && tabs.length > 0 && (
+                <View style={[styles.tabContainer, {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    height: isTablet ? 56 : 48
+                }]}>
+                    {tabs.map((tab) => (
+                        <Pressable
+                            key={tab.id}
+                            style={[styles.tab, activeTab === tab.id && { backgroundColor: accentColor }]}
+                            onPress={() => onTabChange && onTabChange(tab.id)}
+                        >
+                            <Text style={[
+                                styles.tabText,
+                                isTablet && { fontSize: 16 },
+                                activeTab === tab.id ? { color: "#FFF" } : { color: "rgba(255,255,255,0.7)" }
+                            ]}>
+                                {tab.label}
+                            </Text>
+                        </Pressable>
+                    ))}
                 </View>
             )}
-        </View>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
-    header: {
-        paddingHorizontal: 20,
-        paddingBottom: 15,
-    },
-    headerTop: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    backBtn: {
-        padding: 5,
-    },
-    headerTitle: {
-        fontSize: 22,
-        fontWeight: "900",
-    },
-    plusBtn: {
-        flexDirection: "row",
-        backgroundColor: "#E11D48",
-        paddingHorizontal: 16,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: "center",
-        alignItems: "center",
-        marginLeft: "auto",
-        gap: 6,
-    },
-    plusBtnText: {
-        color: "#FFFFFF",
-        fontSize: 14,
-        fontWeight: "bold",
-    },
-    rightComponent: {
-        marginLeft: "auto",
-    },
-    tabContainer: {
-        flexDirection: "row",
-        marginTop: 20,
-        backgroundColor: "rgba(155,155,155,0.1)",
-        borderRadius: 12,
-        padding: 4,
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: "center",
-        borderRadius: 10,
-    },
-    tabText: {
-        fontSize: 14,
-        fontWeight: "700",
-    },
+    header: { paddingHorizontal: 16, paddingBottom: 25 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
+    headerTitle: { fontSize: 24, fontWeight: '800' },
+    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+    plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 4 },
+    plusBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+    tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: 16, padding: 4, borderWidth: 1 },
+    tab: { flex: 1, height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
+    tabText: { fontSize: 14, fontWeight: '700' },
 });

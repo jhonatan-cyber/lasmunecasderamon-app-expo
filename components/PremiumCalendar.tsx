@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 interface CalendarEvent {
     date: string;
@@ -14,7 +15,7 @@ interface PremiumCalendarProps {
 }
 
 export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: PremiumCalendarProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
@@ -103,15 +104,15 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
                     return (
                         <Pressable
                             key={i}
-                            style={[styles.dayCell, isSelected && { backgroundColor: '#E11D48' }]}
+                            style={[styles.dayCell, isSelected && { backgroundColor: accentColor }]}
                             onPress={() => handleDatePress(d.day, d.month, d.year)}
                             accessibilityLabel={`Día ${d.day} de ${currentMonth.toLocaleDateString('es-ES', { month: 'long' })}`}
                             accessibilityRole="button"
                         >
-                            <Text style={[styles.dayText, { color: d.current ? textPrimary : textSecondary }, isSelected && { color: '#FFF' }, isToday && !isSelected && { color: '#E11D48', fontWeight: 'bold' }]}>
+                            <Text style={[styles.dayText, { color: d.current ? textPrimary : textSecondary }, isSelected && { color: '#FFF' }, isToday && !isSelected && { color: accentColor, fontWeight: 'bold' }]}>
                                 {d.day}
                             </Text>
-                            {hasEvnt && <View style={[styles.eventDot, { backgroundColor: isSelected ? '#FFF' : '#E11D48' }]} />}
+                            {hasEvnt && <View style={[styles.eventDot, { backgroundColor: isSelected ? '#FFF' : accentColor }]} />}
                         </Pressable>
                     );
                 })}

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 export interface Category {
     id?: number;
@@ -21,7 +22,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     onSelectCategory,
     title = '1. Selección de Categoría'
 }) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
@@ -38,8 +39,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                         accessibilityLabel={`Categoría ${cat.name || cat.nombre}`}
                         accessibilityRole="button"
                     >
-                        <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#E11D4815' : '#10B98115' }]}>
-                            <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#E11D48' : '#10B981'} />
+                        <View style={[styles.catIconBox, { backgroundColor: `${accentColor}15` }]}>
+                            <Ionicons name="beer-outline" size={20} color={accentColor} />
                         </View>
                         <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name || cat.nombre}</Text>
                     </Pressable>

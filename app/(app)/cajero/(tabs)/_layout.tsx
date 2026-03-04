@@ -30,10 +30,7 @@ export default function CajeroTabsLayout() {
             <Tabs
                 tabBar={(props) => <PremiumTabBar {...props} />}
                 screenOptions={{
-                    headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
-                    headerTintColor: isDark ? '#FFFFFF' : '#000000',
-                    headerTitleAlign: 'left',
-                    headerTitleStyle: { fontWeight: '800', fontSize: 22 },
+                    headerShown: false,
                 }}>
                 <Tabs.Screen name="asistencia" options={{
                     title: 'Asistencia',
@@ -45,7 +42,6 @@ export default function CajeroTabsLayout() {
                 }} />
                 <Tabs.Screen name="index" options={{
                     title: 'Inicio',
-                    headerShown: false,
                     tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
                 }} />
                 <Tabs.Screen name="propinas" options={{

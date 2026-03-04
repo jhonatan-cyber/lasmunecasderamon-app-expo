@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import {
   ActivityIndicator,
@@ -10,12 +11,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
-  View,
+  useWindowDimensions,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { apiClient } from "../../../api/client";
+import { PremiumHeader } from "../../../components/PremiumHeader";
 import { ClientSelectModal } from "../../../components/cajero/forms/ClientSelectModal";
 import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
 import {
@@ -23,6 +25,8 @@ import {
   PaymentMethodSelect,
 } from "../../../components/cajero/forms/PaymentMethodSelect";
 import { RoomSelectModal } from "../../../components/cajero/forms/RoomSelectModal";
+import { Skeleton } from "../../../components/ui/Skeleton";
+import { useAccentColor } from "../../../hooks/useAccentColor";
 
 type ServiceState = {
   loadingInitial: boolean;
@@ -111,7 +115,7 @@ const generateCode = () => {
 };
 
 export default function NuevoServicioScreen() {
-  const isDark = (useColorScheme() ?? "dark") === "dark";
+  const { accentColor, isDark } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -132,6 +136,9 @@ export default function NuevoServicioScreen() {
     roomModalVisible,
     clientModalVisible,
   } = state;
+
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
 
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#1F2937" : "#FFFFFF";
@@ -318,45 +325,49 @@ export default function NuevoServicioScreen() {
     }
   }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, router]);
 
-  if (loadingInitial) {
-    return (
-      <View style={[styles.centerContainer, { backgroundColor: bg }]}>
-        <ActivityIndicator size="large" color="#E11D48" />
-      </View>
-    );
-  }
+  const NuevoServicioSkeleton = () => (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      <PremiumHeader title="Nuevo Servicio" subtitle="Cargando información..." />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+          <Skeleton width={180} height={15} style={{ marginBottom: 20 }} />
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} width="100%" height={60} borderRadius={16} style={{ marginBottom: 12 }} />
+          ))}
+          <Skeleton width={150} height={12} style={{ marginTop: 10, marginBottom: 10 }} />
+          <Skeleton width="100%" height={54} borderRadius={16} />
+        </View>
+
+        <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+            <Skeleton width={80} height={15} />
+            <Skeleton width={80} height={15} />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 15 }}>
+            <Skeleton width={120} height={20} />
+            <Skeleton width={100} height={30} />
+          </View>
+          <Skeleton width="100%" height={60} borderRadius={20} />
+        </View>
+      </ScrollView>
+    </View>
+  );
+
+  if (loadingInitial) return <NuevoServicioSkeleton />;
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: bg }]}
     >
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: cardBg,
-            paddingTop: insets.top + 10,
-            paddingBottom: 15,
-          },
-        ]}
-      >
-        <View style={styles.headerTop}>
-          <Pressable
-            onPress={() => router.replace("/cajero/servicios")}
-            style={styles.backBtn}
-            accessibilityLabel="Volver a la lista de servicios"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={24} color={textPrimary} />
-          </Pressable>
-          <Text
-            style={[styles.headerTitle, { color: textPrimary, marginLeft: 10 }]}
-          >
-            Nuevo Servicio
-          </Text>
-        </View>
-      </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style={isDark ? 'dark' : 'light'} />
+
+      <PremiumHeader
+        title="Nuevo Servicio"
+        subtitle="Asignación de habitación y anfitrionas"
+        onBack={() => router.replace("/cajero/servicios")}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -375,7 +386,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar habitación"
             accessibilityRole="button"
           >
-            <Ionicons name="business" size={22} color="#E11D48" />
+            <Ionicons name="business" size={22} color={accentColor} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorLabel, { color: textSecondary }]}>
                 Habitación (Requerido)
@@ -516,14 +527,14 @@ export default function NuevoServicioScreen() {
             <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>
               TOTAL SERVICIO
             </Text>
-            <Text style={styles.totalValFinal}>
+            <Text style={[styles.totalValFinal, { color: accentColor }]}>
               ${totals.total.toLocaleString()}
             </Text>
           </View>
           <Pressable
             style={[
               styles.submitBtn,
-              { backgroundColor: "#E11D48" },
+              { backgroundColor: accentColor },
               (submitting || !cajaAbierta) && { opacity: 0.7 },
             ]}
             onPress={handleSubmit}
@@ -606,8 +617,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: 'rgba(155,155,155,0.1)',
   },
-  headerTitle: { fontSize: 20, fontWeight: "800" },
+  headerTitle: { fontSize: 22, fontWeight: "800" },
+  headerSubtitle: { fontSize: 13, fontWeight: "500", opacity: 0.8 },
   scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {

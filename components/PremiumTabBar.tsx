@@ -1,19 +1,20 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
-import { Dimensions, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useAccentColor } from '../hooks/useAccentColor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-    const colorScheme = useColorScheme();
+    const { accentColor, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
     const indicatorPosition = useSharedValue(0);
-    const isDark = (colorScheme ?? 'dark') === 'dark';
     const bgColor = isDark ? '#0F172A' : '#FFFFFF';
     const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
-    const activeTintColor = '#E11D48';
+    const activeTintColor = accentColor;
     const inactiveTintColor = isDark ? '#9CA3AF' : '#6B7280';
 
     const visibleRoutes = state.routes.filter(r => {
@@ -86,8 +87,8 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
                         style={styles.tabItem}
                     >
                         <View style={[
-                            isFocused && !isCenter ? styles.activeIconBg : null,
-                            isCenter && isFocused ? styles.activeCenterIconBg : null,
+                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: `${accentColor}15` }] : null,
+                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: `${accentColor}15` }] : null,
                             isCenter ? styles.centerTab : null
                         ]}>
                             {options.tabBarIcon && options.tabBarIcon({

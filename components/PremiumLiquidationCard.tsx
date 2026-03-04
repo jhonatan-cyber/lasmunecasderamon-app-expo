@@ -8,9 +8,9 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 interface Event {
     type: string;
@@ -44,7 +44,7 @@ export function PremiumLiquidationCard({
     totalLabel = 'Acumulado',
     onExportSuccess
 }: PremiumLiquidationCardProps) {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
 
     const cardBg = isDark ? '#1F2937' : '#F3F4F6';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
@@ -67,15 +67,15 @@ export function PremiumLiquidationCard({
                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
                     <style>
                         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1F2937; }
-                        .header { text-align: center; border-bottom: 2px solid #E11D48; padding-bottom: 20px; margin-bottom: 30px; }
-                        .logo { font-size: 28px; font-weight: 900; color: #E11D48; margin-bottom: 5px; }
+                        .header { text-align: center; border-bottom: 2px solid ${accentColor}; padding-bottom: 20px; margin-bottom: 30px; }
+                        .logo { font-size: 28px; font-weight: 900; color: ${accentColor}; margin-bottom: 5px; }
                         .subtitle { font-size: 14px; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; }
                         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
                         .info-box { background: #F9FAFB; padding: 15px; border-radius: 12px; }
                         .info-label { font-size: 10px; color: #9CA3AF; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
                         .info-value { font-size: 16px; font-weight: bold; }
                         table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-                        th { text-align: left; background: #E11D48; color: white; padding: 12px; font-size: 12px; }
+                        th { text-align: left; background: ${accentColor}; color: white; padding: 12px; font-size: 12px; }
                         td { padding: 12px; border-bottom: 1px solid #E5E7EB; font-size: 13px; }
                         .total-row { background: #F3F4F6; }
                         .total-label { font-weight: bold; text-align: right; }
@@ -166,7 +166,7 @@ export function PremiumLiquidationCard({
                 </View>
                 <Pressable
                     onPress={handleExportReport}
-                    style={[styles.exportBtn, { backgroundColor: '#E11D48' }]}
+                    style={[styles.exportBtn, { backgroundColor: accentColor }]}
                     accessibilityLabel="Exportar Liquidación a PDF"
                     accessibilityRole="button"
                 >

@@ -7,11 +7,12 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Propina {
     id_detalle_propina: number;
@@ -25,7 +26,7 @@ interface Propina {
 }
 
 export default function PropinasScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [propinas, setPropinas] = useState<Propina[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +49,7 @@ export default function PropinasScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setPropinas(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -129,9 +130,9 @@ export default function PropinasScreen() {
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         {item.codigo_venta ? (
-                            <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
-                                <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
-                                <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo_venta}</Text>
+                            <View style={[styles.ventaBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                                <Ionicons name="receipt-outline" size={12} color={accentColor} />
+                                <Text style={[styles.ventaText, { color: accentColor }]}>{item.codigo_venta}</Text>
                             </View>
                         ) : null}
                         <View style={[
@@ -157,7 +158,7 @@ export default function PropinasScreen() {
 
                     <View style={styles.amountRow}>
                         <Text style={[styles.amountLabel, { color: textSecondary }]}>Propina</Text>
-                        <Text style={[styles.amountValue, { color: '#10B981' }]}>
+                        <Text style={[styles.amountValue, { color: isPendiente ? accentColor : '#10B981' }]}>
                             ${(item.monto || 0).toLocaleString()}
                         </Text>
                     </View>
@@ -176,7 +177,7 @@ export default function PropinasScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
+                <ActivityIndicator size="large" color={accentColor} />
                 <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando propinas...</Text>
             </View>
         );
@@ -184,9 +185,11 @@ export default function PropinasScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Propinas" subtitle="Mis ganancias por servicio" />
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>PROPINAS PENDIENTES</Text>
-                <Text style={styles.summaryAmount}>${totalPendiente.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalPendiente.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>
                         Total recibido: ${totalGeneral.toLocaleString()}
@@ -201,10 +204,10 @@ export default function PropinasScreen() {
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
                         key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? textPrimary : cardBg, borderColor }]}
+                        style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor }]}
                         onPress={() => setFilter(f)}
                     >
-                        <Text style={[styles.filterText, { color: filter === f ? bg : textSecondary }]}>
+                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
                             {f === 'all' ? `Todas (${propinas.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${propinas.length - pendientes.length})`}
                         </Text>
                     </Pressable>
@@ -226,7 +229,7 @@ export default function PropinasScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
                         <Ionicons name="cash-outline" size={48} color={textSecondary} />
@@ -244,7 +247,7 @@ const styles = StyleSheet.create({
     loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1 },
     summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#10B981', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },

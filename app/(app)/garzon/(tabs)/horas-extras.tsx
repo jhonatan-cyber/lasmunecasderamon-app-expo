@@ -7,11 +7,12 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface HoraExtra {
     id_hora_extra: number;
@@ -25,7 +26,7 @@ interface HoraExtra {
 }
 
 export default function HorasExtrasScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [horasExtras, setHorasExtras] = useState<HoraExtra[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +49,7 @@ export default function HorasExtrasScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setHorasExtras(data.data || []);
-                
+
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
@@ -149,13 +150,13 @@ export default function HorasExtrasScreen() {
                         </View>
                         <View style={styles.amountItem}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValue, { color: '#E11D48', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                            <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                         </View>
                     </View>
 
                     {item.fecha_mod && item.estado === 0 ? (
                         <View style={styles.paymentRow}>
-                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                            <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                             <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_mod)}</Text>
                         </View>
                     ) : null}
@@ -167,7 +168,7 @@ export default function HorasExtrasScreen() {
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={textPrimary} />
+                <ActivityIndicator size="large" color={accentColor} />
                 <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando horas extras...</Text>
             </View>
         );
@@ -175,9 +176,11 @@ export default function HorasExtrasScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Horas Extras" subtitle="Mi tiempo adicional registrado" />
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>HORAS EXTRAS PENDIENTES</Text>
-                <Text style={[styles.summaryAmount, { color: '#E11D48' }]}>${totalPendiente.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalPendiente.toLocaleString()}</Text>
                 <Text style={[styles.summaryDetail, { color: textSecondary }]}>
                     {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''} de {horasExtras.length} total
                 </Text>
@@ -187,10 +190,10 @@ export default function HorasExtrasScreen() {
                 {(['all', 'pendiente', 'pagado'] as const).map((f) => (
                     <Pressable
                         key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? textPrimary : cardBg, borderColor }]}
+                        style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor }]}
                         onPress={() => setFilter(f)}
                     >
-                        <Text style={[styles.filterText, { color: filter === f ? bg : textSecondary }]}>
+                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
                             {f === 'all' ? `Todas (${horasExtras.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${horasExtras.length - pendientes.length})`}
                         </Text>
                     </Pressable>
@@ -212,7 +215,7 @@ export default function HorasExtrasScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
                         <Ionicons name="time-outline" size={48} color={textSecondary} />

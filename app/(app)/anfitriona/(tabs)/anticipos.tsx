@@ -8,12 +8,13 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Anticipo {
     id_anticipo: number;
@@ -27,7 +28,7 @@ interface Anticipo {
 }
 
 export default function AnticiposScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [anticipos, setAnticipos] = useState<Anticipo[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -169,14 +170,14 @@ export default function AnticiposScreen() {
 
                         <View style={styles.amountRow}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                            <Text style={[styles.amountValue, { color: isPendiente ? '#F59E0B' : '#10B981' }]}>
+                            <Text style={[styles.amountValue, { color: isPendiente ? '#F59E0B' : accentColor }]}>
                                 ${(item.monto || 0).toLocaleString()}
                             </Text>
                         </View>
 
                         {item.fecha_mod && item.estado === 0 ? (
                             <View style={styles.paymentRow}>
-                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                                 <Text style={[styles.paymentText, { color: textSecondary }]}>
                                     Pagado: {formatDate(item.fecha_mod)}
                                 </Text>
@@ -190,13 +191,14 @@ export default function AnticiposScreen() {
 
     const AnticipoSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Anticipos" subtitle="Mis retiros de efectivo" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={140} borderRadius={16} />
+                <Skeleton width="100%" height={140} borderRadius={16} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
             <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3].map(i => (
@@ -220,6 +222,8 @@ export default function AnticiposScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Anticipos" subtitle="Mis retiros de efectivo" />
+
             {/* Summary */}
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>ANTICIPOS PENDIENTES</Text>
@@ -241,7 +245,7 @@ export default function AnticiposScreen() {
                         key={f}
                         style={[
                             styles.filterButton,
-                            { backgroundColor: filter === f ? '#E11D48' : cardBg, borderColor: filter === f ? '#E11D48' : borderColor },
+                            { backgroundColor: filter === f ? accentColor : cardBg, borderColor: filter === f ? accentColor : borderColor },
                         ]}
                         onPress={() => setFilter(f)}
                     >
@@ -268,7 +272,7 @@ export default function AnticiposScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>

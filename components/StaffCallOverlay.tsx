@@ -38,8 +38,11 @@ export function StaffCallOverlay() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const sseRef = useRef<EventSource | null>(null);
 
-    const isStaff = user?.role === 'garzon' || user?.role === 'cajero' || user?.role === 'administrador';
-    const isHostess = user?.role === 'anfitriona';
+    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
+    const safeRole = roleName.toLowerCase();
+
+    const isStaff = safeRole === 'garzon' || safeRole === 'cajero' || safeRole === 'administrador';
+    const isHostess = safeRole === 'anfitriona';
 
     const fetchPending = useCallback(async () => {
         if (!isStaff) return;

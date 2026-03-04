@@ -87,24 +87,27 @@ export default function ServiciosScreen() {
     const fetchData = useCallback(async (isRefreshing = false) => {
         try {
             if (!isRefreshing) setLoading(true);
-            const [roomData, anfData, clientData] = await Promise.all([
+            const [roomRes, anfRes, clientRes] = await Promise.allSettled([
                 apiClient('/rooms'),
                 apiClient('/anfitrionas/disponibles'),
                 apiClient('/clients'),
             ]);
 
-            const newData = { rooms: roomData.data, anfitrionas: anfData.data, clients: clientData.data || clientData };
+            const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
+            const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
+            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
+
+            const newData = { rooms: roomData?.data, anfitrionas: anfData?.data, clients: clientData?.data || clientData };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (roomData.success) setRooms(roomData.data || []);
-            if (anfData.success) setAnfitrionas(anfData.data || []);
+            if (roomData?.success) setRooms(roomData.data || []);
+            if (anfData?.success) setAnfitrionas(anfData.data || []);
 
-            // Los clientes devuelven un array directamente, no un objeto con .success
             if (Array.isArray(clientData)) {
                 setClients(clientData);
-            } else if (clientData.success) {
+            } else if (clientData?.success) {
                 setClients(clientData.data || []);
             }
 

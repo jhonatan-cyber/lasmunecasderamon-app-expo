@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 export interface CartItem {
     id?: number;
@@ -29,7 +30,7 @@ export const CartList: React.FC<CartListProps> = ({
     title = '3. Carrito',
     hideQuantityControls = false
 }) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
@@ -78,7 +79,7 @@ export const CartList: React.FC<CartListProps> = ({
                             {group.subItems.map((sub: any, sIdx: number) => (
                                 <View key={sIdx} style={styles.subItemRow}>
                                     <View style={{ flex: 1, paddingRight: 10 }}>
-                                        <Text style={{ fontSize: 13, color: sub.hostessNames ? '#E11D48' : textSecondary, fontWeight: '700' }}>
+                                        <Text style={{ fontSize: 13, color: sub.hostessNames ? accentColor : textSecondary, fontWeight: '700' }}>
                                             {sub.hostessNames ? `Anfitrionas: ${sub.hostessNames}` : 'Sin anfitriona'}
                                         </Text>
                                     </View>

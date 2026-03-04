@@ -3,17 +3,19 @@ import { useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
-    useColorScheme,
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
-import { Skeleton } from '../../../../components/ui/Skeleton';
+import { PremiumHeader } from '../../../../components/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 interface Asistencia {
     id_asistencia: number;
@@ -28,7 +30,7 @@ interface Asistencia {
 }
 
 export default function AsistenciaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -177,13 +179,13 @@ export default function AsistenciaScreen() {
                             </View>
                             <View style={styles.amountItem}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: '#10B981', fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                                <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
                         {item.fecha_pago && item.estado === 0 ? (
                             <View style={styles.paymentRow}>
-                                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                                <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                                 <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
                             </View>
                         ) : null}
@@ -195,13 +197,14 @@ export default function AsistenciaScreen() {
 
     const AsistenciaSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
             <View style={{ margin: 16 }}>
-                <Skeleton height={140} borderRadius={16} />
+                <Skeleton width="100%" height={140} borderRadius={16} />
             </View>
             <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
-                <Skeleton style={{ flex: 1 }} height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
+                <Skeleton width="30%" height={35} borderRadius={20} />
             </View>
             <View style={{ padding: 16, gap: 10 }}>
                 {[1, 2, 3].map(i => (
@@ -222,14 +225,23 @@ export default function AsistenciaScreen() {
         </View>
     );
 
-    if (loading) return <AsistenciaSkeleton />;
+    if (loading) return (
+        <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={accentColor} />
+            </View>
+        </View>
+    );
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader title="Asistencia" subtitle="Registro de turnos y pagos" />
+
             {/* Summary Card */}
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL A COBRAR (Pendientes)</Text>
-                <Text style={styles.summaryAmount}>${totalACobrar.toLocaleString()}</Text>
+                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalACobrar.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Sueldo: ${totalSueldo.toLocaleString()}</Text>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>
@@ -244,8 +256,8 @@ export default function AsistenciaScreen() {
                         style={[
                             styles.filterButton,
                             {
-                                backgroundColor: filter === f ? '#E11D48' : cardBg,
-                                borderColor: filter === f ? '#E11D48' : borderColor,
+                                backgroundColor: filter === f ? accentColor : cardBg,
+                                borderColor: filter === f ? accentColor : borderColor,
                             },
                         ]}
                         onPress={() => setFilter(f)}
@@ -276,7 +288,7 @@ export default function AsistenciaScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
                     <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
@@ -298,7 +310,7 @@ const styles = StyleSheet.create({
         padding: 20, alignItems: 'center', borderWidth: 1,
     },
     summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', color: '#10B981', marginBottom: 8 },
+    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: {

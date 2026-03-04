@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   Modal,
   Pressable,
@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   useWindowDimensions,
   View
 } from "react-native";
@@ -20,11 +19,13 @@ import { apiClient } from "../../../api/client";
 import { PremiumAlert } from "../../../components/PremiumAlert";
 import { PremiumHeader } from "../../../components/PremiumHeader";
 import { EditServiceModal } from "../../../components/cajero/forms/EditServiceModal";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import {
   calculateRemainingTime,
   Timer,
   useTimer,
 } from "../../../context/TimerContext";
+import { useAccentColor } from "../../../hooks/useAccentColor";
 
 // --- Helper for safe number conversion ---
 const safeNumber = (val: any) => {
@@ -205,11 +206,39 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   );
 });
 
+const ServiceSkeleton = ({ theme }: { theme: any }) => (
+  <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={styles.cardHeader}>
+      <View style={styles.roomBadge}>
+        <Skeleton width={34} height={34} borderRadius={10} />
+        <View style={{ gap: 4 }}>
+          <Skeleton width={120} height={18} />
+          <Skeleton width={100} height={11} />
+        </View>
+      </View>
+      <Skeleton width={80} height={20} borderRadius={16} />
+    </View>
+    <View style={styles.detailsList}>
+      <Skeleton width="90%" height={14} style={{ marginBottom: 4 }} />
+      <Skeleton width="80%" height={14} style={{ marginBottom: 4 }} />
+      <Skeleton width="70%" height={14} />
+    </View>
+    <View style={styles.financeBox}>
+      <Skeleton width={60} height={20} borderRadius={10} />
+      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <Skeleton width={80} height={12} />
+        <Skeleton width={100} height={20} />
+      </View>
+    </View>
+  </View>
+);
+
 // --- State Management ---
 type ScreenState = {
   refreshing: boolean;
   activeTab: 'activos' | 'finalizados';
   finalizados: Timer[];
+  loadingActivos: boolean;
   loadingFinalizados: boolean;
   editModalVisible: boolean;
   detailModalVisible: boolean;
@@ -221,6 +250,9 @@ type ScreenState = {
     message: string;
     type: "info" | "success" | "warning" | "danger";
     onConfirm?: () => void;
+    onCancel?: () => void;
+    showCancel?: boolean;
+    confirmText?: string;
   };
 };
 
@@ -228,6 +260,7 @@ type Action =
   | { type: 'SET_REFRESHING'; payload: boolean }
   | { type: 'SET_ACTIVE_TAB'; payload: 'activos' | 'finalizados' }
   | { type: 'SET_FINALIZADOS'; payload: Timer[] }
+  | { type: 'SET_LOADING_ACTIVOS'; payload: boolean }
   | { type: 'SET_LOADING_FINALIZADOS'; payload: boolean }
   | { type: 'SET_EDIT_MODAL'; visible: boolean; timer?: Timer }
   | { type: 'SET_DETAIL_MODAL'; visible: boolean; service?: any }
@@ -238,12 +271,13 @@ const initialState: ScreenState = {
   refreshing: false,
   activeTab: 'activos',
   finalizados: [],
+  loadingActivos: false,
   loadingFinalizados: false,
   editModalVisible: false,
   detailModalVisible: false,
   selectedTimer: null,
   selectedServiceDetail: null,
-  alertConfig: { visible: false, title: "", message: "", type: "info" },
+  alertConfig: { visible: false, title: "", message: "", type: "info", showCancel: true },
 };
 
 function reducer(state: ScreenState, action: Action): ScreenState {
@@ -251,6 +285,7 @@ function reducer(state: ScreenState, action: Action): ScreenState {
     case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
     case 'SET_ACTIVE_TAB': return { ...state, activeTab: action.payload };
     case 'SET_FINALIZADOS': return { ...state, finalizados: action.payload };
+    case 'SET_LOADING_ACTIVOS': return { ...state, loadingActivos: action.payload };
     case 'SET_LOADING_FINALIZADOS': return { ...state, loadingFinalizados: action.payload };
     case 'SET_EDIT_MODAL': return { ...state, editModalVisible: action.visible, selectedTimer: action.timer || null };
     case 'SET_DETAIL_MODAL': return { ...state, detailModalVisible: action.visible, selectedServiceDetail: action.service || null };
@@ -311,7 +346,7 @@ const styles = StyleSheet.create({
   modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
 });
 export default function ServiciosActivosScreen() {
-  const isDark = (useColorScheme() ?? "dark") === "dark";
+  const { accentColor, isDark } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -319,9 +354,10 @@ export default function ServiciosActivosScreen() {
   const numColumns = isTablet ? 2 : 1;
   const { timers, loading: loadingTimers, refreshTimers, serverOffset } = useTimer();
   const dataRef = useRef<string>("");
+  const isFocused = useRef(true);
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { refreshing, activeTab, finalizados, loadingFinalizados, editModalVisible, selectedTimer, alertConfig } = state;
+  const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig } = state;
 
   const theme = {
     bg: isDark ? "#000000" : "#F8FAFC",
@@ -329,7 +365,7 @@ export default function ServiciosActivosScreen() {
     text: isDark ? "#F9FAFB" : "#0F172A",
     textMuted: isDark ? "#9CA3AF" : "#64748B",
     border: isDark ? "#1F2937" : "#E2E8F0",
-    accent: "#E11D48",
+    accent: accentColor,
     success: "#10B981",
     danger: "#EF4444",
     warning: "#F59E0B",
@@ -407,11 +443,16 @@ export default function ServiciosActivosScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      isFocused.current = true;
       if (activeTab === "finalizados") {
         fetchFinalizados();
       } else {
-        refreshTimers();
+        dispatch({ type: 'SET_LOADING_ACTIVOS', payload: true });
+        refreshTimers().finally(() => dispatch({ type: 'SET_LOADING_ACTIVOS', payload: false }));
       }
+      return () => {
+        isFocused.current = false;
+      };
     }, [activeTab, fetchFinalizados, refreshTimers])
   );
 
@@ -440,6 +481,26 @@ export default function ServiciosActivosScreen() {
     prevOverdueCount.current = currentOverdueCount;
   }, [timers, serverOffset, activeTab, fetchFinalizados]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
+      console.log("ℹ [Servicios] Refresh event received.", data);
+      // Actualizamos listas silenciosamente
+      refreshTimers();
+      fetchFinalizados();
+    });
+
+    const subClose = DeviceEventEmitter.addListener("timer_alert_closed", () => {
+      // Si el GlobalTimerAlert se cierra, refrescamos también.
+      refreshTimers();
+      fetchFinalizados();
+    });
+
+    return () => {
+      sub.remove();
+      subClose.remove();
+    };
+  }, [refreshTimers, fetchFinalizados]);
+
   const onRefresh = useCallback(async () => {
     dispatch({ type: 'SET_REFRESHING', payload: true });
     if (activeTab === "activos") await refreshTimers();
@@ -455,17 +516,19 @@ export default function ServiciosActivosScreen() {
         message: "¿Seguro que deseas finalizar el servicio?",
         type: "danger",
         onConfirm: async () => {
-          dispatch({ type: 'CLOSE_ALERT' });
           try {
             const res = await apiClient(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
             if (res.success) {
-              Toast.show({ type: "success", text1: "Éxito", text2: "Servicio finalizado" });
+              dispatch({ type: 'CLOSE_ALERT' });
+              Toast.show({ type: "success", text1: "Servicio Finalizado", text2: "El servicio ha finalizado con éxito." });
               refreshTimers();
               fetchFinalizados();
             } else {
+              dispatch({ type: 'CLOSE_ALERT' });
               Toast.show({ type: "error", text1: "Error", text2: res.message || "No se pudo finalizar" });
             }
           } catch (e) {
+            dispatch({ type: 'CLOSE_ALERT' });
             Toast.show({ type: "error", text1: "Error", text2: "Error de conexión" });
           }
         }
@@ -505,8 +568,15 @@ export default function ServiciosActivosScreen() {
       />
 
       {activeTab === "activos" ? (
-        loadingTimers ? (
-          <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 40 }} />
+        (loadingTimers || loadingActivos) ? (
+          <FlatList
+            data={[1, 2, 3, 4]}
+            renderItem={() => <ServiceSkeleton theme={theme} />}
+            keyExtractor={(item) => `skeleton-${item}`}
+            numColumns={numColumns}
+            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
+          />
         ) : (
           <FlatList
             data={activeServicios}
@@ -521,7 +591,14 @@ export default function ServiciosActivosScreen() {
         )
       ) : (
         loadingFinalizados ? (
-          <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 40 }} />
+          <FlatList
+            data={[1, 2, 3, 4]}
+            renderItem={() => <ServiceSkeleton theme={theme} />}
+            keyExtractor={(item) => `skeleton-fin-${item}`}
+            numColumns={numColumns}
+            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
+          />
         ) : (
           <FlatList
             data={finalizados}
@@ -542,8 +619,9 @@ export default function ServiciosActivosScreen() {
         message={alertConfig.message}
         type={alertConfig.type}
         onConfirm={alertConfig.onConfirm}
-        onCancel={() => dispatch({ type: 'CLOSE_ALERT' })}
-        showCancel
+        onCancel={alertConfig.onCancel || (() => dispatch({ type: 'CLOSE_ALERT' }))}
+        showCancel={alertConfig.showCancel}
+        confirmText={alertConfig.confirmText || "Confirmar"}
       />
 
       {selectedTimer && (

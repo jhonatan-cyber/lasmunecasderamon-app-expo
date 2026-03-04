@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
-    ActivityIndicator,
+    Animated,
+    Easing,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -13,6 +16,7 @@ import {
     Text,
     TextInput,
     useColorScheme,
+    useWindowDimensions,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +24,7 @@ import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { useAuthStore } from '../../../store/authStore';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 type CajaState = {
     loading: boolean;
     refreshing: boolean;
@@ -73,21 +78,93 @@ function cajaReducer(state: CajaState, action: CajaAction): CajaState {
 }
 
 const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-    Toast.show({
-        type,
-        text1: title,
-        text2: message,
-        visibilityTime: 4000
-    });
+    Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
-const StatItem = ({ label, value, color, borderColor, textSecondary }: { label: string, value: number, color: string, borderColor: string, textSecondary: string }) => (
-    <View style={[styles.statItem, { borderBottomColor: borderColor }]}>
-        <Text style={[styles.statLabel, { color: textSecondary }]}>{label}</Text>
-        <Text style={[styles.statValue, { color }]}>${(value || 0).toLocaleString()}</Text>
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+const SkeletonBox = ({ width, height, borderRadius = 12, style = {} }: { width: number | string, height: number, borderRadius?: number, style?: any }) => {
+    const anim = useRef(new Animated.Value(0.3)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(anim, { toValue: 1, duration: 800, easing: Easing.ease, useNativeDriver: true }),
+                Animated.timing(anim, { toValue: 0.3, duration: 800, easing: Easing.ease, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+    return (
+        <Animated.View
+            style={[{ width, height, borderRadius, backgroundColor: '#374151', opacity: anim }, style]}
+        />
+    );
+};
+
+const CajaSkeleton = ({ isDark, cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
+    <View style={{ gap: 16, padding: 16 }}>
+        {/* Status card skeleton */}
+        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <SkeletonBox width={130} height={32} borderRadius={20} />
+                <SkeletonBox width={90} height={36} borderRadius={12} />
+            </View>
+            <SkeletonBox width={200} height={14} borderRadius={8} style={{ marginTop: 16 }} />
+        </View>
+        {/* Metrics 2-col */}
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1 }]}>
+                <SkeletonBox width={60} height={10} borderRadius={6} />
+                <SkeletonBox width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+            </View>
+            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1 }]}>
+                <SkeletonBox width={60} height={10} borderRadius={6} />
+                <SkeletonBox width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+            </View>
+        </View>
+        {/* Breakdown list */}
+        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, gap: 16 }]}>
+            <SkeletonBox width={140} height={14} borderRadius={8} />
+            {[1, 2, 3, 4, 5].map(i => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <SkeletonBox width={110} height={12} borderRadius={6} />
+                    <SkeletonBox width={70} height={12} borderRadius={6} />
+                </View>
+            ))}
+        </View>
     </View>
 );
 
+// ─── Stat Card ─────────────────────────────────────────────────────────────────
+const MetricCard = ({
+    label, value, icon, color, bgColor, isDark, cardBg, borderColor
+}: {
+    label: string; value: number; icon: any; color: string; bgColor: string;
+    isDark: boolean; cardBg: string; borderColor: string;
+}) => (
+    <View style={[styles.metricCard, { backgroundColor: cardBg, borderColor }]}>
+        <View style={[styles.metricIconBox, { backgroundColor: bgColor }]}>
+            <Ionicons name={icon} size={18} color={color} />
+        </View>
+        <Text style={[styles.metricLabel, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{label}</Text>
+        <Text style={[styles.metricValue, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+            ${value.toLocaleString()}
+        </Text>
+    </View>
+);
+
+// ─── Row Item ──────────────────────────────────────────────────────────────────
+const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor }: {
+    label: string; value: number; accent?: string;
+    textPrimary: string; textSecondary: string; borderColor: string;
+}) => (
+    <View style={[styles.statRow, { borderBottomColor: borderColor }]}>
+        <Text style={[styles.statRowLabel, { color: textSecondary }]}>{label}</Text>
+        <Text style={[styles.statRowValue, { color: accent ?? textPrimary }]}>
+            ${value.toLocaleString()}
+        </Text>
+    </View>
+);
+
+// ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function CajaScreen() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
@@ -95,26 +172,16 @@ export default function CajaScreen() {
     const user = useAuthStore(state => state.user);
 
     const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
-    const {
-        loading,
-        refreshing,
-        cajaAbierta,
-        cajaInfo,
-        stats,
-        modalVisible,
-        modalType,
-        monto,
-        motivoRetiro,
-        submitting
-    } = state;
-
+    const { loading, refreshing, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    const bg = isDark ? '#060912' : '#F1F5F9';
+    const cardBg = isDark ? '#111827' : '#FFFFFF';
+    const textPrimary = isDark ? '#F9FAFB' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const borderColor = isDark ? '#1F2937' : '#E2E8F0';
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
 
     const fetchData = useCallback(async (isManual = false) => {
         if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
@@ -142,494 +209,425 @@ export default function CajaScreen() {
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Éxito' : 'Información',
-                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
-                    visibilityTime: 3000
+                    text1: hasChanges ? 'Actualizado' : 'Sin cambios',
+                    text2: hasChanges ? 'Datos de caja actualizados' : 'Los datos no han cambiado',
+                    visibilityTime: 2500
                 });
             }
-        } catch (error) {
-            console.error('Error fetching caja state:', error);
-            if (isManual) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: 'No se pudo actualizar la información',
-                    visibilityTime: 3000
-                });
-            } else {
-                showToast('Error', 'No se pudo cargar la información de la caja');
-            }
+        } catch {
+            if (isManual) showToast('Error', 'No se pudo actualizar la información');
+            else showToast('Error', 'No se pudo cargar la información de la caja');
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
     }, [user?.id]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     const onRefresh = useCallback(() => {
         dispatch({ type: 'SET_REFRESHING', payload: true });
         fetchData(true);
     }, [fetchData]);
 
-    const handleOpenModal = useCallback((type: 'abrir' | 'cerrar' | 'retiro') => {
-        dispatch({ type: 'OPEN_MODAL', payload: type });
-    }, []);
-
     const handleMontoChange = (text: string) => {
-        const cleanNumber = text.replace(/\D/g, '');
-        const formatted = cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        const clean = text.replace(/\D/g, '');
+        const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         dispatch({ type: 'SET_MONTO', payload: formatted });
     };
 
     const handleSubmit = async () => {
         const cleanMonto = monto.replace(/\./g, '');
-        if (!cleanMonto || isNaN(Number(cleanMonto))) {
-            showToast('Error', 'Por favor ingresa un monto válido');
-            return;
-        }
-
+        if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
         const numericMonto = Number(cleanMonto);
-
-        if (numericMonto < 0) {
-            showToast('Error', 'El monto no puede ser negativo');
-            return;
-        }
-
+        if (numericMonto < 0) { showToast('Error', 'El monto no puede ser negativo'); return; }
         dispatch({ type: 'SET_SUBMITTING', payload: true });
-
         try {
             if (modalType === 'abrir') {
-                const res = await apiClient('/cashregister', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        monto_apertura: numericMonto,
-                        usuario_id_apertura: user?.id || 1
-                    })
-                });
-
-                if (res.success) {
-                    showToast('Turno Iniciado', 'Caja abierta correctamente', 'success');
-                    dispatch({ type: 'CLOSE_MODAL' });
-                    fetchData();
-                } else {
-                    showToast('Error', res.message || 'Error al abrir caja');
-                }
+                const res = await apiClient('/cashregister', { method: 'POST', body: JSON.stringify({ monto_apertura: numericMonto, usuario_id_apertura: user?.id || 1 }) });
+                if (res.success) { showToast('Turno Iniciado', 'Caja abierta correctamente', 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                else showToast('Error', res.message || 'Error al abrir caja');
             } else if (modalType === 'retiro') {
-                if (!motivoRetiro.trim()) {
-                    showToast('Error', 'Por favor ingresa un motivo del retiro');
-                    dispatch({ type: 'SET_SUBMITTING', payload: false });
-                    return;
-                }
-                if (!cajaInfo?.id_caja) {
-                    showToast('Error', 'No se encontró la ID de la caja');
-                    dispatch({ type: 'SET_SUBMITTING', payload: false });
-                    return;
-                }
-
-                const res = await apiClient('/cashregister/retiro', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        id_caja: cajaInfo.id_caja,
-                        monto: numericMonto,
-                        motivo: motivoRetiro,
-                        usuario_id: user?.id || 1
-                    })
-                });
-
-                if (res.success) {
-                    showToast('Retiro Exitoso', `Retiro de $${numericMonto.toLocaleString()} realizado.`, 'success');
-                    dispatch({ type: 'CLOSE_MODAL' });
-                    fetchData();
-                } else {
-                    showToast('Error', res.message || 'Error al retirar efectivo');
-                }
+                if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                const res = await apiClient('/cashregister/retiro', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
+                if (res.success) { showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                else showToast('Error', res.message || 'Error al retirar efectivo');
             } else {
-                if (!cajaInfo?.id_caja) {
-                    showToast('Error', 'No se encontró la ID de la caja a cerrar');
-                    dispatch({ type: 'SET_SUBMITTING', payload: false });
-                    return;
-                }
-
-                const res = await apiClient('/cashregister', {
-                    method: 'PATCH',
-                    body: JSON.stringify({
-                        id_caja: cajaInfo.id_caja,
-                        monto_cierre: numericMonto,
-                        usuario_id_cierre: user?.id || 1
-                    })
-                });
-
-                if (res.success) {
-                    showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
-                    dispatch({ type: 'CLOSE_MODAL' });
-                    fetchData();
-                } else {
-                    showToast('Error', res.message || 'Error al cerrar caja');
-                }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                const res = await apiClient('/cashregister', { method: 'PATCH', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto_cierre: numericMonto, usuario_id_cierre: user?.id || 1 }) });
+                if (res.success) { showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                else showToast('Error', res.message || 'Error al cerrar caja');
             }
-        } catch (error: any) {
-            showToast('Error', error.message || `Error al ${modalType} caja`);
+        } catch (e: any) {
+            showToast('Error', e.message || `Error al ${modalType} caja`);
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
     };
 
+    const modalConfig = {
+        abrir: { title: 'Apertura de Turno', subtitle: 'Ingresa el monto base para iniciar el turno', icon: 'wallet-outline', color: '#10B981', btnText: 'Abrir Caja' },
+        retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline', color: '#F59E0B', btnText: 'Realizar Retiro' },
+        cerrar: { title: 'Cierre de Turno', subtitle: 'Ingresa el monto en efectivo al cierre', icon: 'lock-closed-outline', color: '#EF4444', btnText: 'Cerrar Caja' },
+    }[modalType];
+
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar style={isDark ? 'dark' : 'light'} />
+
+            {/* ── Header — mismo patrón que cuentas/ventas/servicios ── */}
+            <LinearGradient
+                colors={isDark ? ['#FFFFFF', '#F1F5F9'] : ['#2D2870', '#1E1B4B', '#0F0D2E']}
+                style={[
+                    styles.header,
+                    {
+                        paddingTop: insets.top + (isTablet ? 20 : 10),
+                        paddingBottom: 25,
+                        borderBottomLeftRadius: 32,
+                        borderBottomRightRadius: 32,
+                    },
+                ]}
+            >
+                <View style={styles.headerTop}>
+                    <Pressable
+                        onPress={() => router.replace('/cajero/(tabs)' as any)}
+                        style={styles.backBtn}
+                        accessibilityLabel="Volver"
+                    >
+                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? '#111827' : '#FFFFFF'} />
+                    </Pressable>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10 }}>
+                        <View>
+                            <Text style={[styles.headerTitle, { color: isDark ? '#111827' : '#FFFFFF' }, isTablet && { fontSize: 28 }]}>
+                                Caja
+                            </Text>
+                            <Text style={[styles.headerSubtitle, { color: isDark ? '#6B7280' : 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>
+                                {cajaAbierta && cajaInfo?.fecha_apertura
+                                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+                                    : 'Turno no iniciado'}
+                            </Text>
+                        </View>
+                        <Pressable
+                            style={styles.backBtn}
+                            onPress={onRefresh}
+                            accessibilityLabel="Actualizar caja"
+                        >
+                            <Ionicons name="refresh-outline" size={isTablet ? 26 : 22} color={isDark ? '#111827' : '#FFFFFF'} />
+                        </Pressable>
+                    </View>
+                </View>
+            </LinearGradient>
 
             {loading ? (
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#E11D48" />
-                </View>
+                <ScrollView style={{ flex: 1 }}>
+                    <CajaSkeleton isDark={isDark} cardBg={cardBg} borderColor={borderColor} />
+                </ScrollView>
             ) : (
                 <ScrollView
-                    style={styles.content}
+                    style={{ flex: 1 }}
+                    contentContainerStyle={styles.scroll}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                    showsVerticalScrollIndicator={false}
                 >
-                    <View style={[styles.statusCard, { backgroundColor: cardBg, borderColor }]}>
-                        <View style={styles.statusHeader}>
-                            <View style={[styles.statusIndicator, { backgroundColor: cajaAbierta ? '#10B98120' : '#EF444420' }]}>
+                    {/* ── Status Card ── */}
+                    <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                        <View style={styles.statusRow}>
+                            {/* Status Pill */}
+                            <View style={[styles.statusPill, { backgroundColor: cajaAbierta ? '#10B98118' : '#EF444418' }]}>
                                 <View style={[styles.statusDot, { backgroundColor: cajaAbierta ? '#10B981' : '#EF4444' }]} />
-                                <Text style={[styles.statusText, { color: cajaAbierta ? '#10B981' : '#EF4444' }]}>
+                                <Text style={[styles.statusLabel, { color: cajaAbierta ? '#10B981' : '#EF4444' }]}>
                                     {cajaAbierta ? 'Caja Abierta' : 'Caja Cerrada'}
                                 </Text>
                             </View>
-                            {cajaAbierta ? (
-                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                            {/* Action Buttons */}
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {cajaAbierta ? (
+                                    <>
+                                        <Pressable
+                                            style={[styles.actionBtn, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B40' }]}
+                                            onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'retiro' })}
+                                            accessibilityLabel="Retirar efectivo"
+                                        >
+                                            <Ionicons name="arrow-down-circle-outline" size={15} color="#F59E0B" />
+                                            <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Retiro</Text>
+                                        </Pressable>
+                                        <Pressable
+                                            style={[styles.actionBtn, { backgroundColor: '#EF444420', borderColor: '#EF444440' }]}
+                                            onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' })}
+                                            accessibilityLabel="Cerrar caja"
+                                        >
+                                            <Ionicons name="lock-closed-outline" size={15} color="#EF4444" />
+                                            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cerrar</Text>
+                                        </Pressable>
+                                    </>
+                                ) : (
                                     <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: '#F59E0B' }]}
-                                        onPress={() => handleOpenModal('retiro')}
-                                        accessibilityLabel="Retirar efectivo de la caja"
-                                        accessibilityRole="button"
+                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }]}
+                                        onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                        accessibilityLabel="Abrir caja"
                                     >
-                                        <Text style={styles.actionBtnText}>Retiro</Text>
+                                        <Ionicons name="power-outline" size={15} color="#10B981" />
+                                        <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Abrir Caja</Text>
                                     </Pressable>
-                                    <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: '#EF4444' }]}
-                                        onPress={() => handleOpenModal('cerrar')}
-                                        accessibilityLabel="Cerrar caja"
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={styles.actionBtnText}>Cerrar</Text>
-                                    </Pressable>
-                                </View>
-                            ) : (
-                                <Pressable
-                                    style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
-                                    onPress={() => handleOpenModal('abrir')}
-                                    accessibilityLabel="Abrir caja"
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.actionBtnText}>Abrir Caja</Text>
-                                </Pressable>
-                            )}
+                                )}
+                            </View>
                         </View>
 
                         {cajaAbierta && cajaInfo && (
-                            <View style={styles.infoBox}>
-                                <Text style={[styles.infoText, { color: textSecondary }]}>
-                                    Abierta el: {new Date(cajaInfo.fecha_apertura).toLocaleString()}
+                            <View style={[styles.openedInfo, { borderTopColor: borderColor }]}>
+                                <Ionicons name="time-outline" size={13} color={textSecondary} />
+                                <Text style={[styles.openedText, { color: textSecondary }]}>
+                                    Apertura: {new Date(cajaInfo.fecha_apertura).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                 </Text>
                             </View>
                         )}
                     </View>
 
                     {cajaAbierta && stats && (
-                        <View style={[styles.statsCard, { backgroundColor: cardBg, borderColor }]}>
-                            <Text style={[styles.statsTitle, { color: textPrimary }]}>Resumen del Turno</Text>
-                            <StatItem label="Balance Total Calculado" value={stats.balance_total} color="#E11D48" borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Efectivo Esperado" value={stats.total_efectivo} color="#10B981" borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Tarjetas" value={stats.total_tarjeta} color="#3B82F6" borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Transferencias" value={stats.total_transferencia} color="#F59E0B" borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Servicios" value={stats.total_servicios} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Devoluciones" value={stats.total_devoluciones} color="#EF4444" borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Propinas" value={stats.total_propina} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Anticipos" value={stats.total_anticipo} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="IVA" value={stats.total_iva} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
-                            <StatItem label="Comisiones" value={stats.total_comisiones} color={textPrimary} borderColor={borderColor} textSecondary={textSecondary} />
+                        <>
+                            {/* ── 2-col Metric Cards ── */}
+                            <View style={styles.metricsGrid}>
+                                <MetricCard
+                                    label="Balance Total" value={stats.balance_total || 0}
+                                    icon="trending-up-outline" color="#E11D48" bgColor="#E11D4818"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Efectivo en Caja" value={stats.total_efectivo || 0}
+                                    icon="cash-outline" color="#10B981" bgColor="#10B98118"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Comisiones" value={stats.total_comisiones || 0}
+                                    icon="people-outline" color="#8B5CF6" bgColor="#8B5CF618"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Propinas" value={stats.total_propina || 0}
+                                    icon="heart-outline" color="#F59E0B" bgColor="#F59E0B18"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                            </View>
+
+                            {/* ── Breakdown Card ── */}
+                            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                                <View style={styles.breakdownHeader}>
+                                    <Ionicons name="bar-chart-outline" size={16} color="#E11D48" />
+                                    <Text style={[styles.breakdownTitle, { color: textPrimary }]}>Desglose del Turno</Text>
+                                </View>
+
+                                <StatRow label="Ventas" value={stats.total_ventas || 0} accent="#10B981" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Tarjetas" value={stats.total_tarjeta || 0} accent="#3B82F6" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Transferencias" value={stats.total_transferencia || 0} accent="#6366F1" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Servicios" value={stats.total_servicios || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="IVA" value={stats.total_iva || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Anticipos" value={stats.total_anticipo || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Devoluciones" value={stats.total_devoluciones || 0} accent="#EF4444" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+
+                                {/* Divider + total */}
+                                <View style={[styles.totalRow, { borderTopColor: borderColor }]}>
+                                    <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL INGRESADO</Text>
+                                    <Text style={styles.totalValue}>
+                                        ${(stats.balance_total || 0).toLocaleString()}
+                                    </Text>
+                                </View>
+                            </View>
+                        </>
+                    )}
+
+                    {!cajaAbierta && (
+                        <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#1F2937' : '#F1F5F9' }]}>
+                                <Ionicons name="wallet-outline" size={36} color={textSecondary} />
+                            </View>
+                            <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
+                            <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
+                                Abre la caja para comenzar a registrar movimientos del turno
+                            </Text>
+                            <Pressable
+                                style={styles.emptyOpenBtn}
+                                onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                            >
+                                <Ionicons name="power-outline" size={18} color="#FFF" />
+                                <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
+                            </Pressable>
                         </View>
                     )}
                 </ScrollView>
             )}
 
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.modalOverlay}
-                >
-                    <View style={[styles.modalContent, { backgroundColor: cardBg, borderColor }]}>
-                        <View style={styles.modalHeaderIcon}>
-                            <Ionicons
-                                name={modalType === 'abrir' ? 'wallet-outline' : modalType === 'retiro' ? 'cash-outline' : 'lock-closed-outline'}
-                                size={40}
-                                color={modalType === 'abrir' ? '#10B981' : modalType === 'retiro' ? '#F59E0B' : '#EF4444'}
-                            />
-                        </View>
-                        <Text style={[styles.modalTitle, { color: textPrimary }]}>
-                            {modalType === 'abrir' ? 'Apertura de Turno' : modalType === 'retiro' ? 'Retirar Efectivo' : 'Cierre de Turno'}
-                        </Text>
-                        <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                            {modalType === 'abrir'
-                                ? 'Ingresa el monto de base con el que iniciarás la caja'
-                                : modalType === 'retiro'
-                                    ? 'Ingresa el monto a retirar de la caja de efectivo'
-                                    : 'Ingresa el monto total en efectivo al cierre de la caja'}
-                        </Text>
+            {/* ── Modal ── */}
+            <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+                    <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>
+                        {/* Modal top accent bar */}
+                        <View style={[styles.modalAccent, { backgroundColor: modalConfig.color }]} />
 
-                        <View style={[styles.inputContainer, { borderColor, backgroundColor: isDark ? '#111827' : '#F9FAFB' }]}>
-                            <Text style={[styles.currencySymbol, { color: textPrimary }]}>$</Text>
-                            <TextInput
-                                style={[styles.input, { color: textPrimary }]}
-                                value={monto}
-                                onChangeText={handleMontoChange}
-                                keyboardType="numeric"
-                                placeholder="0"
-                                placeholderTextColor={textSecondary}
-                            />
-                        </View>
+                        <View style={styles.modalBody}>
+                            <View style={[styles.modalIconBox, { backgroundColor: `${modalConfig.color}20` }]}>
+                                <Ionicons name={modalConfig.icon as any} size={32} color={modalConfig.color} />
+                            </View>
+                            <Text style={[styles.modalTitle, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                                {modalConfig.title}
+                            </Text>
+                            <Text style={[styles.modalSubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                                {modalConfig.subtitle}
+                            </Text>
 
-                        {modalType === 'retiro' && (
-                            <>
-                                <View style={[styles.inputContainer, { borderColor, backgroundColor: isDark ? '#111827' : '#F9FAFB', marginTop: 12 }]}>
-                                    <Ionicons name="document-text-outline" size={20} color={textSecondary} style={{ marginRight: 8 }} />
+                            {/* Monto Input */}
+                            <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC' }]}>
+                                <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
+                                <TextInput
+                                    style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}
+                                    value={monto}
+                                    onChangeText={handleMontoChange}
+                                    keyboardType="numeric"
+                                    placeholder="0"
+                                    placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
+                                    autoFocus
+                                />
+                            </View>
+
+                            {/* Motivo (retiro) */}
+                            {modalType === 'retiro' && (
+                                <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC', marginBottom: 0 }]}>
+                                    <Ionicons name="document-text-outline" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} style={{ marginRight: 8 }} />
                                     <TextInput
-                                        style={[styles.input, { color: textPrimary, paddingLeft: 0, width: '100%' }]}
+                                        style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827', fontSize: 15 }]}
                                         value={motivoRetiro}
-                                        onChangeText={(val) => dispatch({ type: 'SET_MOTIVO', payload: val })}
+                                        onChangeText={val => dispatch({ type: 'SET_MOTIVO', payload: val })}
                                         placeholder="Motivo del retiro"
-                                        placeholderTextColor={textSecondary}
+                                        placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
                                     />
                                 </View>
-                                {stats && (
-                                    <View style={[styles.expectedBox, { backgroundColor: '#F59E0B20', marginTop: 16 }]}>
-                                        <Ionicons name="wallet-outline" size={24} color="#F59E0B" />
-                                        <View style={{ flex: 1, marginLeft: 12 }}>
-                                            <Text style={[styles.expectedLabel, { color: '#F59E0B' }]}>Efectivo disponible en caja</Text>
-                                            <Text style={[styles.expectedValue, { color: '#F59E0B' }]}>
-                                                ${(stats.total_efectivo || 0).toLocaleString()}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                )}
-                            </>
-                        )}
+                            )}
 
-                        {modalType === 'cerrar' && stats && (
-                            <View style={[styles.expectedBox, { backgroundColor: '#10B98120' }]}>
-                                <Ionicons name="cash-outline" size={24} color="#10B981" />
-                                <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={[styles.expectedLabel, { color: '#10B981' }]}>Efectivo esperado</Text>
-                                    <Text style={[styles.expectedValue, { color: '#10B981' }]}>
-                                        ${(stats.total_efectivo || 0).toLocaleString()}
+                            {/* Efectivo info box (retiro / cerrar) */}
+                            {(modalType === 'retiro' || modalType === 'cerrar') && stats && (
+                                <View style={[styles.infoBox, { backgroundColor: `${modalConfig.color}12`, marginTop: 16 }]}>
+                                    <Ionicons name="information-circle-outline" size={18} color={modalConfig.color} />
+                                    <Text style={{ color: modalConfig.color, fontSize: 13, fontWeight: '700', marginLeft: 8 }}>
+                                        Efectivo disponible: ${(stats.total_efectivo || 0).toLocaleString()}
                                     </Text>
                                 </View>
-                            </View>
-                        )}
+                            )}
 
-                        <View style={styles.modalActions}>
-                            <Pressable
-                                style={[styles.modalBtn, styles.cancelBtn]}
-                                onPress={() => dispatch({ type: 'CLOSE_MODAL' })}
-                                disabled={submitting}
-                            >
-                                <Text style={[styles.cancelBtnText, { color: textPrimary }]}>Cancelar</Text>
-                            </Pressable>
-                            <Pressable
-                                style={[
-                                    styles.modalBtn,
-                                    { backgroundColor: modalType === 'abrir' ? '#10B981' : modalType === 'retiro' ? '#F59E0B' : '#EF4444' },
-                                    submitting && { opacity: 0.7 }
-                                ]}
-                                onPress={handleSubmit}
-                                disabled={submitting}
-                            >
-                                {submitting ? (
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
-                                ) : (
-                                    <View style={styles.btnContentRow}>
-                                        <Text style={styles.confirmBtnText}>
-                                            {modalType === 'abrir' ? 'Abrir Caja' : modalType === 'retiro' ? 'Realizar Retiro' : 'Cerrar Caja'}
-                                        </Text>
-                                    </View>
-                                )}
-                            </Pressable>
+                            {/* Actions */}
+                            <View style={styles.modalActions}>
+                                <Pressable
+                                    style={[styles.modalBtn, { backgroundColor: isDark ? '#1F2937' : '#F1F5F9' }]}
+                                    onPress={() => dispatch({ type: 'CLOSE_MODAL' })}
+                                    disabled={submitting}
+                                >
+                                    <Text style={[styles.modalBtnCancel, { color: isDark ? '#9CA3AF' : '#475569' }]}>Cancelar</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.modalBtn, { backgroundColor: modalConfig.color, opacity: submitting ? 0.7 : 1 }]}
+                                    onPress={handleSubmit}
+                                    disabled={submitting}
+                                >
+                                    <Text style={styles.modalBtnConfirm}>{submitting ? 'Procesando...' : modalConfig.btnText}</Text>
+                                </Pressable>
+                            </View>
                         </View>
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
-
         </View>
     );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: {
-        paddingHorizontal: 16,
-        paddingBottom: 20,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        marginBottom: 10,
-    },
+
+    // Header — mismo patrón que cuentas/ventas/servicios
+    header: { paddingHorizontal: 16 },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'flex-start' },
-    headerTitle: { fontSize: 20, fontWeight: '800' },
-    centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    content: { flex: 1, padding: 16 },
-    statusCard: {
-        padding: 20,
-        borderRadius: 20,
-        borderWidth: 1,
-        marginBottom: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
+    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
+    headerTitle: { fontSize: 24, fontWeight: '800' },
+    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+
+    // Scroll
+    scroll: { padding: 16, gap: 12, paddingBottom: 40 },
+
+    // Card
+    card: { borderRadius: 20, borderWidth: 1, padding: 16 },
+    skeletonCard: { borderRadius: 20, borderWidth: 1, padding: 16 },
+
+    // Status
+    statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    statusPill: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20
     },
-    statusHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    statusIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        gap: 8,
-    },
-    statusDot: { width: 8, height: 8, borderRadius: 4 },
-    statusText: { fontSize: 14, fontWeight: '700' },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
+    statusLabel: { fontSize: 13, fontWeight: '800' },
+    openedInfo: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
+    openedText: { fontSize: 12, fontWeight: '500' },
+
+    // Action Buttons
     actionBtn: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 12,
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        paddingHorizontal: 12, paddingVertical: 8,
+        borderRadius: 12, borderWidth: 1
     },
-    actionBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-    infoBox: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(156, 163, 175, 0.2)' },
-    infoText: { fontSize: 13, fontWeight: '500' },
-    statsCard: {
-        padding: 20,
-        borderRadius: 20,
-        borderWidth: 1,
-        marginBottom: 32,
+    actionBtnText: { fontSize: 13, fontWeight: '700' },
+
+    // Metrics Grid
+    metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    metricCard: {
+        flex: 1, minWidth: '44%', borderRadius: 18, borderWidth: 1,
+        padding: 14, gap: 4
     },
-    statsTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
-    statItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(156, 163, 175, 0.2)',
+    metricIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    metricLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+    metricValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+
+    // Breakdown
+    breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+    breakdownTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+    statRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: 1 },
+    statRowLabel: { fontSize: 14, fontWeight: '500' },
+    statRowValue: { fontSize: 15, fontWeight: '800' },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, marginTop: 4 },
+    totalLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+    totalValue: { fontSize: 22, fontWeight: '900', color: '#E11D48' },
+
+    // Empty State
+    emptyIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+    emptyTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+    emptySubtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center', marginBottom: 24, maxWidth: 260, lineHeight: 20 },
+    emptyOpenBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#10B981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14
     },
-    statLabel: { fontSize: 14, fontWeight: '500' },
-    statValue: { fontSize: 16, fontWeight: '700' },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
+    emptyOpenBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+
+    // Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalCard: { borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
+    modalAccent: { height: 4, width: '100%' },
+    modalBody: { padding: 24, paddingBottom: 32 },
+    modalIconBox: {
+        width: 70, height: 70, borderRadius: 35,
+        justifyContent: 'center', alignItems: 'center',
+        alignSelf: 'center', marginBottom: 16
     },
-    modalContent: {
-        width: '100%',
-        borderRadius: 24,
-        padding: 24,
-        borderWidth: 1,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
+    modalTitle: { fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 6 },
+    modalSubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+    inputBox: {
+        flexDirection: 'row', alignItems: 'center',
+        borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16,
+        marginBottom: 12, height: 58
     },
-    modalTitle: { fontSize: 22, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
-    modalSubtitle: { fontSize: 14, fontWeight: '500', marginBottom: 24, textAlign: 'center' },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        marginBottom: 24,
-        height: 56,
-    },
-    currencySymbol: { fontSize: 24, fontWeight: '700', marginRight: 8 },
-    input: { flex: 1, fontSize: 24, fontWeight: '700', height: '100%' },
-    expectedBox: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 24,
-    },
-    expectedLabel: { fontSize: 13, fontWeight: '600', opacity: 0.8 },
-    expectedValue: { fontSize: 20, fontWeight: '800', marginTop: 2 },
-    modalActions: { flexDirection: 'row', gap: 12 },
-    btnContentRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    modalBtn: {
-        flex: 1,
-        height: 52,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cancelBtn: { backgroundColor: 'rgba(156, 163, 175, 0.2)' },
-    cancelBtnText: { fontSize: 16, fontWeight: '700' },
-    confirmBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-    modalHeaderIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(156, 163, 175, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        alignSelf: 'center',
-        marginBottom: 16,
-    },
-    toastContent: {
-        width: '85%',
-        borderRadius: 24,
-        padding: 32,
-        alignItems: 'center',
-        borderWidth: 1,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
-    },
-    toastIconBox: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    toastTitle: { fontSize: 24, fontWeight: '800', marginBottom: 12, textAlign: 'center' },
-    toastMessage: { fontSize: 16, fontWeight: '500', textAlign: 'center', marginBottom: 32, lineHeight: 24 },
-    toastBtn: {
-        width: '100%',
-        height: 56,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    toastBtnText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+    currencySign: { fontSize: 26, fontWeight: '800', marginRight: 8 },
+    input: { flex: 1, fontSize: 26, fontWeight: '800' },
+    infoBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 12 },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
+    modalBtn: { flex: 1, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    modalBtnCancel: { fontSize: 15, fontWeight: '700' },
+    modalBtnConfirm: { color: '#FFF', fontSize: 15, fontWeight: '800' },
 });

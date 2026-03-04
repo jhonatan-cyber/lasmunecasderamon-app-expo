@@ -4,9 +4,9 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    useColorScheme,
-    View,
+    View
 } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia';
 
@@ -19,7 +19,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     selectedMethod,
     onSelect,
 }) => {
-    const isDark = useColorScheme() === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
 
@@ -42,21 +42,21 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 styles.card,
                                 {
                                     borderColor,
-                                    backgroundColor: isSelected ? '#E11D4820' : 'transparent',
+                                    backgroundColor: isSelected ? `${accentColor}20` : 'transparent',
                                 },
-                                isSelected && { borderColor: '#E11D48' },
+                                isSelected && { borderColor: accentColor },
                             ]}
                             onPress={() => onSelect(method.id)}
                         >
                             <Ionicons
                                 name={method.icon}
                                 size={18}
-                                color={isSelected ? '#E11D48' : textSecondary}
+                                color={isSelected ? accentColor : textSecondary}
                             />
                             <Text
                                 style={[
                                     styles.methodText,
-                                    { color: isSelected ? '#E11D48' : textSecondary },
+                                    { color: isSelected ? accentColor : textSecondary },
                                 ]}
                             >
                                 {method.label}

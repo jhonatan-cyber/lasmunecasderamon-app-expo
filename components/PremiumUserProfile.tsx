@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '../api/client';
 
 interface PremiumUserProfileProps {
@@ -26,14 +26,14 @@ export const getStatusLabel = (status: number) => {
 };
 
 export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
+    // Forzar siempre blanco para el header premium
+    const textPrimary = '#FFFFFF';
+    const textSecondary = 'rgba(255,255,255,0.7)';
+    const cardBg = 'rgba(255,255,255,0.1)';
 
     return (
         <View style={styles.headerUser}>
-            <View style={[styles.avatarContainer, { borderColor: getStatusColor(userStatus, isDark) }]}>
+            <View style={[styles.avatarContainer, { borderColor: getStatusColor(userStatus, true) }]}>
                 {user?.foto ? (
                     <Image
                         source={{ uri: user.foto.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user.foto}` }}
@@ -50,7 +50,7 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
                     {user?.name || user?.nick || user?.username || 'Usuario'}
                 </Text>
                 <View style={styles.statusRow}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, isDark) }]} />
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, true) }]} />
                     <Text style={[styles.statusText, { color: textSecondary }]}>
                         {getStatusLabel(userStatus)}
                     </Text>

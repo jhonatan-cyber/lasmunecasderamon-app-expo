@@ -16,14 +16,14 @@ export function useNotificationHandler() {
     useEffect(() => {
         if (!user) return;
 
-       
+
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
             const { title, body } = notification.request.content;
 
             triggerNotificationEffects(title || '', body || '', (user.role as any)?.name || user.role);
         });
 
-        
+
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
             const data = response.notification.request.content.data;
             const type = data?.type as string;
@@ -41,7 +41,8 @@ export function useNotificationHandler() {
     }, [user]);
 
     const handleNotificationNavigation = (type: string, data: any) => {
-        const role = user?.role?.toLowerCase();
+        const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
+        const role = roleName?.toLowerCase();
 
         switch (type) {
             case 'new_service_request':
@@ -50,19 +51,19 @@ export function useNotificationHandler() {
                 }
                 break;
 
-            case 'timer_ended': 
+            case 'timer_ended':
                 if (role === 'cajero' || role === 'administrador') {
                     router.push('/(app)/cajero/servicios');
                 }
                 break;
 
-            case 'order_created': 
+            case 'order_created':
                 if (role === 'cajero' || role === 'administrador') {
                     router.push('/(app)/cajero/ventas');
                 }
                 break;
 
-            case 'service_request_approved': 
+            case 'service_request_approved':
                 if (role === 'garzon') router.push('/(app)/garzon' as any);
                 if (role === 'anfitriona') router.push('/(app)/anfitriona' as any);
                 break;

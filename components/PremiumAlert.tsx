@@ -59,10 +59,21 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             transparent
             visible={visible}
             animationType="fade"
-            onRequestClose={onCancel}
+            onRequestClose={onCancel ?? onConfirm}
         >
             <View style={styles.modalOverlay}>
                 <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', width: alertWidth, padding }]}>
+
+                    {/* Botón cerrar ✕ — esquina superior derecha */}
+                    <Pressable
+                        onPress={onCancel ?? onConfirm}
+                        style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}
+                        accessibilityLabel="Cerrar"
+                        accessibilityRole="button"
+                    >
+                        <Ionicons name="close" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    </Pressable>
+
                     <View style={[styles.alertIconHeader, { backgroundColor: `${getColor()}20`, width: iconSize + 16, height: iconSize + 16, borderRadius: (iconSize + 16) / 2 }]}>
                         <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
                     </View>
@@ -118,6 +129,17 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
+    },
+    closeBtn: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
     },
     alertIconHeader: {
         width: 80,
