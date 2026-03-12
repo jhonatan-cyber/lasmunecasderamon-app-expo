@@ -41,7 +41,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                             <View style={styles.subStatItem}>
                                 <Ionicons name="sparkles-sharp" size={14} color="rgba(255,255,255,0.8)" />
                                 <Text style={styles.subStatText}>
-                                    {events?.filter(e => e.type !== 'anticipo' && (e.estado === 1 || e.estado === undefined)).length || 0} Ventas
+                                    {new Set(events?.filter(e => e.type === 'propina').map(e => e.codigo)).size || 0} Ventas con Propina
                                 </Text>
                             </View>
                         </View>
