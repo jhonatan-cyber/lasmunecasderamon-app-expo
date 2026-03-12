@@ -6,6 +6,7 @@ import {
     ActivityIndicator,
     Dimensions,
     FlatList,
+    Platform,
     Pressable,
     RefreshControl,
     StyleSheet,
@@ -13,9 +14,11 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
+import { Skeleton } from '../../../components/ui/Skeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 import { CategoryCard } from '../../../components/CategoryCard';
 import { PremiumHeader } from '../../../components/PremiumHeader';
 
@@ -31,6 +34,7 @@ interface Category {
 }
 
 export default function PedidosScreen() {
+    const { accentColor, gradientColors } = useAccentColor();
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -109,14 +113,36 @@ export default function PedidosScreen() {
         />
     );
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#E11D48" />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Actualizando catálogo...</Text>
+    const PedidosSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={[styles.header, {
+                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
+                    paddingBottom: 25,
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                    height: 160
+                }]}
+            >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
+                     <Skeleton width={150} height={30} />
+                     <Skeleton width={44} height={44} borderRadius={22} />
+                </View>
+                <View style={{ paddingHorizontal: 20 }}>
+                    <Skeleton width="60%" height={24} />
+                </View>
+            </LinearGradient>
+
+            <View style={{ padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 15 }}>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} width={(width - 55) / 2} height={180} borderRadius={24} />
+                ))}
             </View>
-        );
-    }
+        </View>
+    );
+
+    if (loading) return <PedidosSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -161,6 +187,7 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 16, fontSize: 16, fontWeight: '600', letterSpacing: -0.5 },
+    header: { paddingHorizontal: 20, paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
     topBanner: {
         paddingHorizontal: 20,
         paddingBottom: 20,

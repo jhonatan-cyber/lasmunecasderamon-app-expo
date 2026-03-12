@@ -206,7 +206,7 @@ export default function GarzonHomeScreen() {
                     
                     <View style={{ height: 10 }} />
 
-                    <GarzonStats stats={stats} />
+                    <GarzonStats stats={stats} events={recentActivity} />
 
                     <View style={styles.actionGrid}>
                         <StaggeredFadeIn index={0} style={{ flex: 1 }}>

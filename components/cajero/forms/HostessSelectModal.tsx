@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   FlatList,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -10,11 +11,13 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { useAccentColor } from "../../../hooks/useAccentColor";
 
 interface Hostess {
   id: number | string;
   id_usuario?: number | string;
   nick: string;
+  foto?: string;
   status?: number;
   estado_servicio?: number;
 }
@@ -40,11 +43,12 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   max,
   title = "Seleccionar Anfitrionas",
 }) => {
-  const isDark = useColorScheme() === "dark";
+  const { accentColor, isDark } = useAccentColor();
   const cardBg = isDark ? "#1F2937" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#000000";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#374151" : "#E5E7EB";
+  const primaryColor = accentColor;
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -93,12 +97,19 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                   <View
                     style={[
                       styles.avatar,
-                      { backgroundColor: isBusy ? "#EF4444" : "#E11D48" },
+                      { backgroundColor: isBusy ? "#EF4444" : primaryColor },
                     ]}
                   >
-                    <Text style={styles.avatarText}>
-                      {(item.nick || "A")[0].toUpperCase()}
-                    </Text>
+                    {item.foto ? (
+                      <Image 
+                        source={{ uri: item.foto.startsWith('http') ? item.foto : `https://lasmunecasderamon.com/api/uploads/${item.foto}` }} 
+                        style={styles.avatarImage} 
+                      />
+                    ) : (
+                      <Text style={styles.avatarText}>
+                        {(item.nick || "A")[0].toUpperCase()}
+                      </Text>
+                    )}
                   </View>
                   <View style={{ flex: 1, marginLeft: 16 }}>
                     <Text
@@ -120,21 +131,25 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                     style={[
                       styles.checkbox,
                       {
-                        borderColor: isSelected ? "#10B981" : borderColor,
-                        backgroundColor: isSelected ? "#10B981" : "transparent",
+                        borderColor: isSelected ? primaryColor : borderColor,
+                        backgroundColor: isSelected ? primaryColor : "transparent",
+                        borderWidth: isSelected ? 0 : 2
                       },
                     ]}
                   >
                     {isSelected && (
-                      <Ionicons name="checkmark" size={16} color="#FFF" />
+                      <Ionicons name="checkmark-circle" size={24} color="#FFF" />
                     )}
                   </View>
                 </TouchableOpacity>
               );
             }}
           />
-          <Pressable style={styles.modalActionBtn} onPress={onConfirm || onClose}>
-            <Text style={styles.modalActionBtnText}>Confirmar</Text>
+          <Pressable 
+            style={[styles.modalActionBtn, { backgroundColor: primaryColor }]} 
+            onPress={onConfirm || onClose}
+          >
+            <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
           </Pressable>
         </View>
       </View>
@@ -187,25 +202,30 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontSize: 18,
   },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 22,
+  },
   listItemTitle: {
     fontSize: 16,
     fontWeight: "800",
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
   },
   modalActionBtn: {
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: "#E11D48",
+    height: 54,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   modalActionBtnText: {
     color: "#FFF",

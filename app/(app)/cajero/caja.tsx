@@ -22,7 +22,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../store/authStore';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CajaState = {
@@ -82,51 +84,37 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-const SkeletonBox = ({ width, height, borderRadius = 12, style = {} }: { width: number | string, height: number, borderRadius?: number, style?: any }) => {
-    const anim = useRef(new Animated.Value(0.3)).current;
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(anim, { toValue: 1, duration: 800, easing: Easing.ease, useNativeDriver: true }),
-                Animated.timing(anim, { toValue: 0.3, duration: 800, easing: Easing.ease, useNativeDriver: true }),
-            ])
-        ).start();
-    }, []);
-    return (
-        <Animated.View
-            style={[{ width, height, borderRadius, backgroundColor: '#374151', opacity: anim }, style]}
-        />
-    );
-};
-
-const CajaSkeleton = ({ isDark, cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
+const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
     <View style={{ gap: 16, padding: 16 }}>
         {/* Status card skeleton */}
-        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor }]}>
+        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, padding: 20 }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <SkeletonBox width={130} height={32} borderRadius={20} />
-                <SkeletonBox width={90} height={36} borderRadius={12} />
+                <Skeleton width={130} height={32} borderRadius={20} />
+                <Skeleton width={90} height={36} borderRadius={12} />
             </View>
-            <SkeletonBox width={200} height={14} borderRadius={8} style={{ marginTop: 16 }} />
+            <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 16 }} />
+            <Skeleton width={200} height={14} borderRadius={8} />
         </View>
         {/* Metrics 2-col */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1 }]}>
-                <SkeletonBox width={60} height={10} borderRadius={6} />
-                <SkeletonBox width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1, padding: 16 }]}>
+                <Skeleton width={40} height={40} borderRadius={12} style={{ marginBottom: 12 }} />
+                <Skeleton width={60} height={10} borderRadius={6} />
+                <Skeleton width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
             </View>
-            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1 }]}>
-                <SkeletonBox width={60} height={10} borderRadius={6} />
-                <SkeletonBox width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+            <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1, padding: 16 }]}>
+                <Skeleton width={40} height={40} borderRadius={12} style={{ marginBottom: 12 }} />
+                <Skeleton width={60} height={10} borderRadius={6} />
+                <Skeleton width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
             </View>
         </View>
         {/* Breakdown list */}
-        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, gap: 16 }]}>
-            <SkeletonBox width={140} height={14} borderRadius={8} />
+        <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, gap: 16, padding: 20 }]}>
+            <Skeleton width={140} height={14} borderRadius={8} />
             {[1, 2, 3, 4, 5].map(i => (
                 <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <SkeletonBox width={110} height={12} borderRadius={6} />
-                    <SkeletonBox width={70} height={12} borderRadius={6} />
+                    <Skeleton width={110} height={12} borderRadius={6} />
+                    <Skeleton width={70} height={12} borderRadius={6} />
                 </View>
             ))}
         </View>
@@ -166,7 +154,7 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
 
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function CajaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore(state => state.user);
@@ -176,10 +164,10 @@ export default function CajaScreen() {
     const dataRef = useRef<string>('');
 
     const bg = isDark ? '#060912' : '#F1F5F9';
-    const cardBg = isDark ? '#111827' : '#FFFFFF';
-    const textPrimary = isDark ? '#F9FAFB' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#1F2937' : '#E2E8F0';
+    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
@@ -278,14 +266,17 @@ export default function CajaScreen() {
         cerrar: { title: 'Cierre de Turno', subtitle: 'Confirma el cierre con el monto total calculado', icon: 'lock-closed-outline', color: '#EF4444', btnText: 'Cerrar Caja' },
     }[modalType];
 
+    const headerTextColor = isDark ? '#111827' : '#FFFFFF';
+    const headerSubColor = isDark ? '#4B5563' : 'rgba(255,255,255,0.8)';
+
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'dark' : 'light'} />
 
-            {/* ── Header — mismo patrón que cuentas/ventas/servicios ── */}
+            {/* ── Header ── */}
             <LinearGradient
-                colors={isDark ? ['#FFFFFF', '#F1F5F9'] : ['#2D2870', '#1E1B4B', '#0F0D2E']}
+                colors={gradientColors as any}
                 style={[
                     styles.header,
                     {
@@ -302,14 +293,14 @@ export default function CajaScreen() {
                         style={styles.backBtn}
                         accessibilityLabel="Volver"
                     >
-                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? '#111827' : '#FFFFFF'} />
+                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={headerTextColor} />
                     </Pressable>
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10 }}>
                         <View>
-                            <Text style={[styles.headerTitle, { color: isDark ? '#111827' : '#FFFFFF' }, isTablet && { fontSize: 28 }]}>
+                            <Text style={[styles.headerTitle, { color: headerTextColor }, isTablet && { fontSize: 28 }]}>
                                 Caja
                             </Text>
-                            <Text style={[styles.headerSubtitle, { color: isDark ? '#6B7280' : 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>
+                            <Text style={[styles.headerSubtitle, { color: headerSubColor }, isTablet && { fontSize: 17 }]}>
                                 {cajaAbierta && cajaInfo?.fecha_apertura
                                     ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
                                     : 'Turno no iniciado'}
@@ -320,7 +311,7 @@ export default function CajaScreen() {
                             onPress={onRefresh}
                             accessibilityLabel="Actualizar caja"
                         >
-                            <Ionicons name="refresh-outline" size={isTablet ? 26 : 22} color={isDark ? '#111827' : '#FFFFFF'} />
+                            <Ionicons name="refresh-outline" size={isTablet ? 26 : 22} color={headerTextColor} />
                         </Pressable>
                     </View>
                 </View>
@@ -334,7 +325,7 @@ export default function CajaScreen() {
                 <ScrollView
                     style={{ flex: 1 }}
                     contentContainerStyle={styles.scroll}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* ── Status Card ── */}
@@ -397,7 +388,7 @@ export default function CajaScreen() {
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
-                                    icon="trending-up-outline" color="#E11D48" bgColor="#E11D4818"
+                                    icon="trending-up-outline" color={accentColor} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
@@ -420,7 +411,7 @@ export default function CajaScreen() {
                             {/* ── Breakdown Card ── */}
                             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                                 <View style={styles.breakdownHeader}>
-                                    <Ionicons name="bar-chart-outline" size={16} color="#E11D48" />
+                                    <Ionicons name="bar-chart-outline" size={16} color={accentColor} />
                                     <Text style={[styles.breakdownTitle, { color: textPrimary }]}>Desglose del Turno</Text>
                                 </View>
 
@@ -435,7 +426,7 @@ export default function CajaScreen() {
                                 {/* Divider + total */}
                                 <View style={[styles.totalRow, { borderTopColor: borderColor }]}>
                                     <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL INGRESADO</Text>
-                                    <Text style={styles.totalValue}>
+                                    <Text style={[styles.totalValue, { color: accentColor }]}>
                                         ${(stats.balance_total || 0).toLocaleString()}
                                     </Text>
                                 </View>

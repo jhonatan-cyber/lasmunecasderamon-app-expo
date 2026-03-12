@@ -46,10 +46,10 @@ export function PremiumLiquidationCard({
 }: PremiumLiquidationCardProps) {
     const { accentColor, isDark } = useAccentColor();
 
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const cardBg = isDark ? 'rgba(31, 41, 55, 0.95)' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
 
     const totalCalculated = useMemo(() => {
         return events.reduce((sum, e) => {
@@ -205,8 +205,13 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 15,
         borderRadius: 20,
-        borderWidth: 1,
-        justifyContent: 'center'
+        borderWidth: 1.5,
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
     },
     label: {
         fontSize: 11,

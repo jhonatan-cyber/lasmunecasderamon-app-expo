@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,6 +20,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { useAuthStore } from '../../../store/authStore';
+import { useAccentColor } from '../../../hooks/useAccentColor';
+import { PremiumHeader } from '../../../components/PremiumHeader';
+import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
+import { HostessSelectModal } from '../../../components/cajero/forms/HostessSelectModal';
+import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
+import { Skeleton } from '../../../components/ui/Skeleton';
 
 interface Room {
     id: number;
@@ -54,10 +61,11 @@ interface Client {
 }
 
 export default function ServiciosScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const user = useAuthStore((state) => state.user);
+    const primaryColor = accentColor;
 
     // Data states
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -75,13 +83,15 @@ export default function ServiciosScreen() {
     const [servicePrice, setServicePrice] = useState<string>('');
     const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | ''>('');
     const [iva, setIva] = useState<string>('0');
+    const [roomModalVisible, setRoomModalVisible] = useState(false);
+    const [hostessModalVisible, setHostessModalVisible] = useState(false);
+    const [clientModalVisible, setClientModalVisible] = useState(false);
 
     const bg = isDark ? '#000000' : '#FFFFFF';
     const cardBg = isDark ? '#1F2937' : '#F3F4F6';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
-    const primaryColor = '#E11D48'; // Violet for services
 
     // Fetch data
     const fetchData = useCallback(async (isRefreshing = false) => {
@@ -146,6 +156,12 @@ export default function ServiciosScreen() {
         return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
     }, [selectedRoom]);
 
+    useEffect(() => {
+        if (hasComision) {
+            setServicePrice('');
+        }
+    }, [hasComision]);
+
     const maxHostesses = useMemo(() => {
         if (!hasComision) return 10;
         // Regla: Máximo 3 anfitrionas. 
@@ -193,7 +209,7 @@ export default function ServiciosScreen() {
 
         let total = subtotal + totalHabitacion + currentIva;
 
-        if (paymentMethod === 'tarjeta') {
+        if (paymentMethod === 'tarjeta' && !hasComision) {
             const totalRedondeado = Math.ceil(total / 5000) * 5000;
             const excedente = totalRedondeado - total;
             total = totalRedondeado;
@@ -232,10 +248,12 @@ export default function ServiciosScreen() {
             const payload = {
                 codigo,
                 cliente_id: selectedClients.length > 0 ? selectedClients[0] : null,
+                clientes: selectedClients,
                 habitacion_id: selectedRoom.id_habitacion || selectedRoom.id,
                 precio_servicio: parseInt(servicePrice.replace(/\./g, '')) || 0,
                 precio_habitacion: selectedRoom.precio || selectedRoom.price || 0,
                 comision_anfitriona: selectedRoom.comision_anfitriona || 0,
+                usuarios: selectedHostesses,
                 anfitrionas_ids: selectedHostesses,
                 metodo_pago: paymentMethod,
                 tiempo: selectedRoom.tiempo || selectedRoom.time || 0,
@@ -271,13 +289,39 @@ export default function ServiciosScreen() {
         return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={primaryColor} />
-            </View>
-        );
-    }
+    const ServiciosSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={[styles.header, {
+                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
+                    paddingBottom: 25,
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                    height: 160
+                }]}
+            >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
+                    <Skeleton width={150} height={30} />
+                    <Skeleton width={44} height={44} borderRadius={22} />
+                </View>
+                <View style={{ paddingHorizontal: 20 }}>
+                    <Skeleton width="60%" height={24} />
+                </View>
+            </LinearGradient>
+
+            <ScrollView style={{ flex: 1, padding: 20 }} showsVerticalScrollIndicator={false}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <View key={i} style={{ marginBottom: 20, gap: 10 }}>
+                        <Skeleton width={100} height={18} />
+                        <Skeleton width="100%" height={56} borderRadius={16} />
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
+
+    if (loading) return <ServiciosSkeleton />;
 
     return (
         <KeyboardAvoidingView
@@ -286,31 +330,55 @@ export default function ServiciosScreen() {
         >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={primaryColor} />}
             >
+                <PremiumHeader 
+                    title="Servicios"
+                    subtitle="Registrar nuevo servicio en habitación"
+                    onBack={() => router.back()}
+                />
+
+                <View style={{ padding: 20 }}>
 
                 {/* Habitaciones */}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>HABITACIÓN</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalSelect}>
-                    {rooms.filter(r => r.status === 1).map((room) => (
-                        <Pressable
-                            key={room.id || room.id_habitacion}
-                            onPress={() => setSelectedRoom(room)}
-                            style={[
-                                styles.roomCard,
-                                { backgroundColor: cardBg, borderColor: selectedRoom?.id === room.id ? primaryColor : borderColor },
-                                selectedRoom?.id === room.id && { borderWidth: 2 }
-                            ]}
-                        >
-                            <Text style={styles.roomEmoji}>🏠</Text>
-                            <Text style={[styles.roomName, { color: textPrimary }]}>{room.nombre || room.name || room.numero}</Text>
-                            <Text style={[styles.roomPrice, { color: primaryColor }]}>${(room.precio || room.price || 0).toLocaleString()}</Text>
-                            <Text style={[styles.roomTime, { color: textSecondary }]}>{room.tiempo || room.time} min</Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
+                <Pressable 
+                    onPress={() => setRoomModalVisible(true)}
+                    style={[styles.selectField, { backgroundColor: cardBg, borderColor: selectedRoom ? primaryColor : borderColor }]}
+                >
+                    <View style={styles.selectFieldContent}>
+                        <Ionicons name="business-outline" size={20} color={selectedRoom ? primaryColor : textSecondary} />
+                        <Text style={[styles.selectFieldText, { color: selectedRoom ? textPrimary : textSecondary }]}>
+                            {selectedRoom 
+                                ? `${selectedRoom.nombre || selectedRoom.name || selectedRoom.numero} - $${(selectedRoom.precio || selectedRoom.price || 0).toLocaleString()}`
+                                : 'Seleccionar habitación...'}
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-down" size={20} color={textSecondary} />
+                </Pressable>
+
+                <RoomSelectModal 
+                    visible={roomModalVisible}
+                    onClose={() => setRoomModalVisible(false)}
+                    onSelect={(room) => {
+                        setSelectedRoom(room as any);
+                        setRoomModalVisible(false);
+                    }}
+                    rooms={rooms.filter(r => 
+                        r.status === 1 && 
+                        (r.precio || r.price || 0) > 0 && 
+                        (r.tiempo || r.time || 0) > 0
+                    ).map(r => ({
+                        ...r,
+                        nombre: r.nombre || r.name || r.numero,
+                        precio: r.precio || r.price || 0,
+                        tiempo: r.tiempo || r.time || 0,
+                        estado: r.status
+                    }))}
+                    selectedRoomId={selectedRoom?.id_habitacion || selectedRoom?.id}
+                />
 
                 {hasComision && (
                     <View style={{ backgroundColor: primaryColor + '15', padding: 12, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: primaryColor + '40' }}>
@@ -324,109 +392,113 @@ export default function ServiciosScreen() {
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     ANFITRIONAS {hasComision && `(MÁX ${maxHostesses})`}
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalSelect}>
-                    {anfitrionas.map((anf) => {
-                        const isSelected = selectedHostesses.includes(anf.id_usuario || anf.id);
-                        return (
-                            <Pressable
-                                key={anf.id || anf.id_usuario}
-                                onPress={() => {
-                                    const id = anf.id_usuario || anf.id;
-                                    if (isSelected) {
-                                        setSelectedHostesses(prev => prev.filter(i => i !== id));
-                                    } else if (selectedHostesses.length < maxHostesses) {
-                                        setSelectedHostesses(prev => [...prev, id]);
-                                    } else {
-                                        Toast.show({
-                                            type: 'info',
-                                            text1: 'Límite alcanzado',
-                                            text2: hasComision
-                                                ? 'Máximo 3 anfitrionas y 4 personas en total'
-                                                : 'Máximo alcanzado'
-                                        });
-                                    }
-                                }}
-                                style={[
-                                    styles.hostessCard,
-                                    { backgroundColor: cardBg, borderColor: isSelected ? primaryColor : borderColor },
-                                    isSelected && { borderWidth: 2 }
-                                ]}
-                            >
-                                <View style={styles.avatarPlaceholder}>
-                                    <Text style={{ fontSize: 20 }}>💃</Text>
-                                </View>
-                                <Text style={[styles.hostessNick, { color: textPrimary }]} numberOfLines={1}>
-                                    {anf.nick || anf.nombre || anf.name}
-                                </Text>
-                                <Text style={[{ color: anf.estado_servicio === 2 ? '#EF4444' : '#10B981', fontSize: 9, fontWeight: '800', marginTop: 4, textAlign: 'center' }]}>
-                                    {anf.estado_servicio === 2 ? 'OCUPADA' : 'LIBRE'}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
-                </ScrollView>
+                <Pressable 
+                    onPress={() => setHostessModalVisible(true)}
+                    style={[styles.selectField, { backgroundColor: cardBg, borderColor: selectedHostesses.length > 0 ? primaryColor : borderColor }]}
+                >
+                    <View style={styles.selectFieldContent}>
+                        <Ionicons name="people-outline" size={20} color={selectedHostesses.length > 0 ? primaryColor : textSecondary} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.selectFieldText, { color: selectedHostesses.length > 0 ? textPrimary : textSecondary }]} numberOfLines={1}>
+                                {selectedHostesses.length > 0 
+                                    ? selectedHostesses.map(id => {
+                                        const anf = anfitrionas.find(a => (a.id_usuario || a.id) === id);
+                                        return anf?.nick || anf?.nombre || anf?.name || '';
+                                    }).filter(Boolean).join(', ')
+                                    : 'Seleccionar anfitrionas...'}
+                            </Text>
+                        </View>
+                    </View>
+                    <Ionicons name="chevron-down" size={20} color={textSecondary} />
+                </Pressable>
+
+                <HostessSelectModal 
+                    visible={hostessModalVisible}
+                    onClose={() => setHostessModalVisible(false)}
+                    onConfirm={() => setHostessModalVisible(false)}
+                    onToggle={(id) => {
+                        if (selectedHostesses.includes(id)) {
+                            setSelectedHostesses(prev => prev.filter(i => i !== id));
+                        } else if (selectedHostesses.length < maxHostesses) {
+                            setSelectedHostesses(prev => [...prev, id]);
+                        } else {
+                            Toast.show({
+                                type: 'info',
+                                text1: 'Límite alcanzado',
+                                text2: `Máximo ${maxHostesses} anfitrionas permitidas`
+                            });
+                        }
+                    }}
+                    hostesses={anfitrionas as any}
+                    selectedIds={selectedHostesses}
+                    max={maxHostesses}
+                />
 
                 {/* Clientes */}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     CLIENTES (OPCIONAL {hasComision && `- MÁX ${maxClients}`})
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalSelect}>
-                    {clients.map((cli) => {
-                        const isSelected = selectedClients.includes(cli.id_cliente || cli.id);
-                        return (
-                            <Pressable
-                                key={cli.id || cli.id_cliente}
-                                onPress={() => {
-                                    const id = cli.id_cliente || cli.id;
-                                    if (isSelected) {
-                                        setSelectedClients(prev => prev.filter(i => i !== id));
-                                    } else if (selectedClients.length < maxClients) {
-                                        setSelectedClients(prev => [...prev, id]);
-                                    } else {
-                                        Toast.show({
-                                            type: 'info',
-                                            text1: 'Límite alcanzado',
-                                            text2: hasComision
-                                                ? 'Máximo 4 personas en total (Clientes + Anfitrionas)'
-                                                : 'Máximo alcanzado'
-                                        });
-                                    }
-                                }}
-                                style={[
-                                    styles.clientCard,
-                                    { backgroundColor: cardBg, borderColor: isSelected ? primaryColor : borderColor },
-                                    isSelected && { borderWidth: 2 }
-                                ]}
-                            >
-                                <Text style={[styles.clientName, { color: textPrimary }]} numberOfLines={1}>
-                                    {cli.nombre || cli.name}
-                                </Text>
-                                <Text style={[styles.clientLastName, { color: textSecondary }]} numberOfLines={1}>
-                                    {cli.apellido || cli.lastName}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
-                </ScrollView>
+                <Pressable 
+                    onPress={() => setClientModalVisible(true)}
+                    style={[styles.selectField, { backgroundColor: cardBg, borderColor: selectedClients.length > 0 ? primaryColor : borderColor }]}
+                >
+                    <View style={styles.selectFieldContent}>
+                        <Ionicons name="person-outline" size={20} color={selectedClients.length > 0 ? primaryColor : textSecondary} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.selectFieldText, { color: selectedClients.length > 0 ? textPrimary : textSecondary }]} numberOfLines={1}>
+                                {selectedClients.length > 0 
+                                    ? selectedClients.map(id => {
+                                        const cli = clients.find(c => (c.id_cliente || c.id) === id);
+                                        return `${cli?.nombre || cli?.name || ''} ${cli?.apellido || cli?.lastName || ''}`.trim();
+                                    }).filter(Boolean).join(', ')
+                                    : 'Seleccionar clientes...'}
+                            </Text>
+                        </View>
+                    </View>
+                    <Ionicons name="chevron-down" size={20} color={textSecondary} />
+                </Pressable>
+
+                <ClientSelectModal 
+                    visible={clientModalVisible}
+                    onClose={() => setClientModalVisible(false)}
+                    onToggle={(id) => {
+                        if (selectedClients.includes(id)) {
+                            setSelectedClients(prev => prev.filter(i => i !== id));
+                        } else if (selectedClients.length < maxClients) {
+                            setSelectedClients(prev => [...prev, id]);
+                        } else {
+                            Toast.show({
+                                type: 'info',
+                                text1: 'Límite alcanzado',
+                                text2: `Máximo ${maxClients} clientes permitidos`
+                            });
+                        }
+                    }}
+                    clients={clients as any}
+                    selectedIds={selectedClients}
+                    max={maxClients}
+                />
 
                 {/* Precios y Pagos */}
                 <View style={styles.formSection}>
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.inputLabel, { color: textSecondary }]}>
-                            PRECIO DE SERVICIO {hasComision && '(OPCIONAL)'}
-                        </Text>
-                        <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-                            <Text style={{ color: textSecondary, fontSize: 18, marginRight: 8 }}>$</Text>
-                            <TextInput
-                                style={[styles.input, { color: textPrimary }]}
-                                placeholder="0"
-                                placeholderTextColor={textSecondary}
-                                keyboardType="numeric"
-                                value={servicePrice}
-                                onChangeText={(val) => setServicePrice(formatNumber(val))}
-                            />
+                    {!hasComision && (
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.inputLabel, { color: textSecondary }]}>
+                                PRECIO DE SERVICIO
+                            </Text>
+                            <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
+                                <Text style={{ color: textSecondary, fontSize: 18, marginRight: 8 }}>$</Text>
+                                <TextInput
+                                    style={[styles.input, { color: textPrimary }]}
+                                    placeholder="0"
+                                    placeholderTextColor={textSecondary}
+                                    keyboardType="numeric"
+                                    value={servicePrice}
+                                    onChangeText={(val) => setServicePrice(formatNumber(val))}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    )}
 
                     <Text style={[styles.sectionLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
                     <View style={styles.methodContainer}>
@@ -447,7 +519,7 @@ export default function ServiciosScreen() {
                         ))}
                     </View>
 
-                    {paymentMethod === 'tarjeta' && (
+                    {paymentMethod === 'tarjeta' && !hasComision && (
                         <View style={styles.inputGroup}>
                             <Text style={[styles.inputLabel, { color: textSecondary }]}>IVA (INC. REDONDEO)</Text>
                             <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor, opacity: 0.7 }]}>
@@ -502,6 +574,7 @@ export default function ServiciosScreen() {
                         </>
                     )}
                 </Pressable>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -513,6 +586,25 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     title: { fontSize: 22, fontWeight: '900', flex: 1 },
+    selectField: {
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        marginBottom: 10,
+    },
+    selectFieldContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    selectFieldText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
     sectionLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1, marginTop: 24, marginBottom: 12 },
     horizontalSelect: { marginBottom: 10 },
     roomCard: { width: 120, height: 140, borderRadius: 20, padding: 15, marginRight: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },

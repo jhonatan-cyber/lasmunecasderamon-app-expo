@@ -188,8 +188,9 @@ export default function VentasScreen() {
 
   const VentasSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View
-        style={[styles.header, { paddingTop: insets.top + 10, height: 160 }]}
+      <LinearGradient
+        colors={gradientColors as any}
+        style={[styles.header, { paddingTop: insets.top + (isTablet ? 20 : 10), paddingBottom: 25, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
       >
         <View
           style={{
@@ -202,7 +203,7 @@ export default function VentasScreen() {
           <Skeleton width={44} height={44} borderRadius={22} />
         </View>
         <Skeleton width="60%" height={24} />
-      </View>
+      </LinearGradient>
       <View style={{ padding: isTablet ? 12 : 16 }}>
         <Skeleton height={isTablet ? 180 : 140} borderRadius={24} style={{ marginBottom: 20 }} />
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>

@@ -28,6 +28,21 @@ import {
 import { useAccentColor } from "../../../hooks/useAccentColor";
 
 // --- Helper for safe number conversion ---
+// Helper para parsear fechas del backend de forma segura y evitar conflictos de zona horaria (UTC vs Local)
+const parseDateSafe = (dateStr: any) => {
+    if (!dateStr) return new Date();
+    if (typeof dateStr !== 'string') return new Date(dateStr);
+    if (dateStr.includes('Z') || dateStr.includes('+')) return new Date(dateStr);
+    try {
+        const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
+        const date = new Date(cleanDate);
+        if (isNaN(date.getTime())) return new Date(dateStr);
+        return date;
+    } catch (e) {
+        return new Date(dateStr);
+    }
+};
+
 const safeNumber = (val: any) => {
   if (typeof val === "number") return val;
   if (typeof val === "string") return parseFloat(val.replace(/[^0-9.]/g, "")) || 0;
@@ -411,7 +426,7 @@ export default function ServiciosActivosScreen() {
           remainingTime: 0,
           isActive: false,
           isPaused: false,
-          startTime: new Date(s.fecha_crea),
+          startTime: parseDateSafe(s.fecha_crea),
           servicioCode: s.codigo,
           clienteNombre: s.cliente_nombre,
           anfitrionas: s.anfitrionas_nombres,
@@ -656,18 +671,27 @@ export default function ServiciosActivosScreen() {
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                   <View style={styles.detailsGrid}>
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>
-                        {new Date(state.selectedServiceDetail.created_at).toLocaleDateString('es-ES')}
-                      </Text>
-                    </View>
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HORA</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>
-                        {new Date(state.selectedServiceDetail.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                    </View>
+                      {/* Aplicamos el offset para mostrar la hora local correcta (Local = Server - Offset) */}
+                      {(() => {
+                        const date = parseDateSafe(state.selectedServiceDetail.created_at);
+                        const localDate = new Date(date.getTime() - serverOffset);
+                        return (
+                          <>
+                            <View style={styles.gridItem}>
+                              <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA</Text>
+                              <Text style={[styles.gridValue, { color: theme.text }]}>
+                                {localDate.toLocaleDateString('es-ES')}
+                              </Text>
+                            </View>
+                            <View style={styles.gridItem}>
+                              <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HORA</Text>
+                              <Text style={[styles.gridValue, { color: theme.text }]}>
+                                {localDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                              </Text>
+                            </View>
+                          </>
+                        );
+                      })()}
                     <View style={styles.gridItem}>
                       <Text style={[styles.gridLabel, { color: theme.textMuted }]}>CLIENTE</Text>
                       <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.clienteNombre || "Sin cliente"}</Text>

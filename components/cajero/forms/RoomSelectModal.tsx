@@ -10,6 +10,7 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { useAccentColor } from "../../../hooks/useAccentColor";
 
 interface Room {
   id: number | string;
@@ -35,11 +36,12 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   rooms,
   selectedRoomId,
 }) => {
-  const isDark = useColorScheme() === "dark";
+  const { accentColor, isDark } = useAccentColor();
   const cardBg = isDark ? "#1F2937" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#000000";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? "#374151" : "#E5E7EB";
+  const primaryColor = accentColor;
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -120,7 +122,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                     <Ionicons
                       name="checkmark-circle"
                       size={24}
-                      color="#E11D48"
+                      color={primaryColor}
                     />
                   )}
                 </TouchableOpacity>

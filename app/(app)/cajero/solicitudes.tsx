@@ -19,7 +19,7 @@ import {
     Text,
     useColorScheme,
     useWindowDimensions,
-    View
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -27,13 +27,71 @@ import { API_URL, apiClient } from '../../../api/client';
 import { useAccentColor } from '../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../store/authStore';
 import { PremiumAlert } from '../../../components/PremiumAlert';
+import { useTimer } from '../../../context/TimerContext';
+import { Skeleton } from '../../../components/ui/Skeleton';
+
+// Helper para parsear fechas del backend de forma segura y evitar conflictos de zona horaria (UTC vs Local)
+const parseDateSafe = (dateStr: any) => {
+    if (!dateStr) return new Date();
+    if (typeof dateStr !== 'string') return new Date(dateStr);
+    
+    // Si ya viene con zona horaria (Z o offset +/-), el constructor nativo funcionará bien
+    if (dateStr.includes('Z') || dateStr.includes('+')) {
+        return new Date(dateStr);
+    }
+    
+    // Si no tiene zona horaria, forzamos el parseo como hora LOCAL para evitar desfases (ej. de 4 horas)
+    // Usamos el formato YYYY/MM/DD HH:mm:ss que es el más robusto para ser interpretado como local
+    try {
+        const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
+        const date = new Date(cleanDate);
+        
+        // Si el resultado no es un número válido, intentamos el nativo
+        if (isNaN(date.getTime())) return new Date(dateStr);
+        return date;
+    } catch (e) {
+        return new Date(dateStr);
+    }
+};
+
+const SolicitudesSkeleton = ({ bg, cardBg, borderColor, insets, isTablet, gradientColors }: any) => (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+        <LinearGradient
+            colors={gradientColors as any}
+            style={[styles.header, { paddingTop: insets.top + (isTablet ? 20 : 10), height: 160, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
+        >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                <Skeleton width={150} height={30} />
+                <Skeleton width={44} height={44} borderRadius={22} />
+            </View>
+            <Skeleton width="60%" height={24} />
+        </LinearGradient>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+            {[1, 2, 3, 4].map(i => (
+                <View key={i} style={[styles.card, { backgroundColor: cardBg, borderColor, padding: 20 }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                        <Skeleton width={120} height={20} />
+                        <Skeleton width={80} height={20} borderRadius={10} />
+                    </View>
+                    <Skeleton width="100%" height={60} borderRadius={12} style={{ marginBottom: 15 }} />
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <Skeleton style={{ flex: 1 }} height={44} borderRadius={12} />
+                        <Skeleton style={{ flex: 1 }} height={44} borderRadius={12} />
+                    </View>
+                </View>
+            ))}
+        </ScrollView>
+    </View>
+);
 
 export default function SolicitudesScreen() {
     const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
+    const { serverOffset } = useTimer();
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
+
     const numColumns = isTablet ? 2 : 1;
     const { openId, type: queryType } = useLocalSearchParams();
     const [processedOpenId, setProcessedOpenId] = useState<string | null>(null);
@@ -43,6 +101,8 @@ export default function SolicitudesScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [cajaAbierta, setCajaAbierta] = useState(true); // Default a true hasta verificar
     const dataRef = useRef<string>('');
+    // Tick local para re-render en tiempo real
+    const [nowTick, setNowTick] = useState(0);
 
     // Modal state for Checkout
     const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
@@ -51,7 +111,7 @@ export default function SolicitudesScreen() {
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia' | ''>('');
     const [agregarPropina, setAgregarPropina] = useState(false);
-    const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(0);
+    const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30); // Default to 30 mins
     const [submittingCheckout, setSubmittingCheckout] = useState(false);
 
     const bg = isDark ? '#0F0D2E' : '#F3F4F6';
@@ -72,6 +132,7 @@ export default function SolicitudesScreen() {
     // Modal para detalle de servicio
     const [serviceModalVisible, setServiceModalVisible] = useState(false);
     const [selectedService, setSelectedService] = useState<any>(null);
+    const [allHostesses, setAllHostesses] = useState<any[]>([]);
 
     // Toast
     const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
@@ -85,11 +146,16 @@ export default function SolicitudesScreen() {
 
     const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
-            const [resSolicitudes, resOrders, resStats] = await Promise.all([
+            const [resSolicitudes, resOrders, resStats, resAnfitrionas] = await Promise.all([
                 apiClient('/solicitudes-servicios?estado=pendiente').catch(() => ({ success: false, data: [] })),
                 apiClient('/orders').catch(() => ({ success: false, data: [] })),
-                apiClient('/caja/stats').catch(() => null)
+                apiClient('/caja/stats').catch(() => null),
+                apiClient('/users?anfitrionas=1').catch(() => ({ success: false, data: [] }))
             ]);
+
+            if (resAnfitrionas.success) {
+                setAllHostesses(resAnfitrionas.data || []);
+            }
 
             const newData = { solicitudes: resSolicitudes.data, orders: resOrders.data, stats: resStats };
             const serialized = JSON.stringify(newData);
@@ -107,7 +173,7 @@ export default function SolicitudesScreen() {
                     ...s,
                     tipoItem: 'solicitud',
                     id_unificado: `solicitud_${s.id_solicitud}`,
-                    fecha_orden: new Date(s.fecha_solicitud).getTime()
+                    fecha_orden: parseDateSafe(s.fecha_solicitud).getTime()
                 }));
                 combined = [...combined, ...arr];
             }
@@ -117,7 +183,7 @@ export default function SolicitudesScreen() {
                     ...o,
                     tipoItem: 'pedido',
                     id_unificado: `pedido_${o.id_pedido}`,
-                    fecha_orden: new Date(o.fecha_crea).getTime()
+                    fecha_orden: parseDateSafe(o.fecha_crea).getTime()
                 }));
                 combined = [...combined, ...arr];
             }
@@ -149,7 +215,6 @@ export default function SolicitudesScreen() {
         }
     }, []);
 
-    // Effect to handle navigation params (auto-open modal)
     useEffect(() => {
         if (openId && queryType && solicitudes.length > 0 && openId !== processedOpenId) {
             const id = Number(openId);
@@ -175,13 +240,17 @@ export default function SolicitudesScreen() {
     }, [fetchSolicitudes]);
 
     useEffect(() => {
+        const id = setInterval(() => setNowTick(t => t + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('refresh_requests', () => {
             fetchSolicitudes();
         });
         return () => subscription.remove();
     }, [fetchSolicitudes]);
 
-    // Real-time updates via SSE
     useEffect(() => {
         const user = useAuthStore.getState().user;
         if (!user?.id) return;
@@ -191,22 +260,17 @@ export default function SolicitudesScreen() {
 
         try {
             es = new EventSource(sseUrl);
-
             es.addEventListener('message', (event: any) => {
                 if (!event.data) return;
                 try {
                     const payload = JSON.parse(event.data);
                     if (['new_order', 'order_deleted', 'new_service_request', 'service_request_deleted'].includes(payload.type)) {
-                        console.log(`[Solicitudes] Event ${payload.type} received, refreshing`);
                         fetchSolicitudes();
-                        
-                        // Auto-open modal if it's a new order or request
                         if (payload.type === 'new_order' || payload.type === 'new_service_request') {
                             const id = payload.data.id || payload.data.id_solicitud;
                             if (id) {
-                                // We delay it a bit to let fetchSolicitudes update the state
                                 setTimeout(() => {
-                                    setProcessedOpenId(null); // Reset to ensure the other effect catches it
+                                    setProcessedOpenId(null);
                                     router.setParams({ openId: String(id), type: payload.type });
                                 }, 500);
                             }
@@ -237,7 +301,6 @@ export default function SolicitudesScreen() {
         }
 
         if (tipo === 'pedido' && itemInfo) {
-            // Logica especial para checkout de pedidos (Tragos/Botellas)
             setSelectedPedido(itemInfo);
             setMetodoPago('');
             setAgregarPropina(false);
@@ -249,8 +312,6 @@ export default function SolicitudesScreen() {
                 const res = await apiClient(`/orders/detail?id=${id}`);
                 if (res.success) {
                     setPedidoDetails(res.data);
-
-                    // Si ya venia con propina pre-seleccionada desde el garzon
                     if (res.data && res.data[0] && res.data[0].propina > 0) {
                         setAgregarPropina(true);
                     }
@@ -320,11 +381,10 @@ export default function SolicitudesScreen() {
             const sub_total = pedidoDetails.reduce((acc, obj) => acc + ((obj.precio || 0) * (obj.cantidad || 0)), 0);
             const propina = agregarPropina ? sub_total * 0.10 : 0;
 
-            // Construir JSON de anfitrionas que ganan comision si existe en detail[0]
             let usuariosIds: number[] = [];
             const anfs = pedido?.anfitrionas_con_ids || [];
             if (Array.isArray(anfs)) {
-                usuariosIds = anfs.map((a: any) => a.usuario_id).filter(id => id && !isNaN(id));
+                usuariosIds = anfs.map((a: any) => a.usuario_id).filter((id: any) => id && !isNaN(id));
             }
 
             const roomId = pedidoDetails.find(d => d.room_id)?.room_id || null;
@@ -336,7 +396,7 @@ export default function SolicitudesScreen() {
                 propina,
                 sub_total,
                 total: sub_total + propina,
-                detalles: pedidoDetails.map(item => ({
+                detalles: pedidoDetails.map((item: any) => ({
                     producto_id: item.id_producto || item.producto_id,
                     precio: item.precio || 0,
                     cantidad: item.cantidad || 0,
@@ -374,7 +434,6 @@ export default function SolicitudesScreen() {
             } else {
                 showToast('Advertencia', 'Venta lista pero falló al cerrar el proceso.', 'error');
             }
-
         } catch (error: any) {
             showToast('Error', error.message || 'Error de servidor procesando pedido', 'error');
         } finally {
@@ -431,9 +490,13 @@ export default function SolicitudesScreen() {
         const color = isSolicitud ? accentColor : '#F59E0B';
         const bedText = isSolicitud ? `Hab: ${item.habitacion_nombre || 'N/A'}` : `Mesa/Sala`;
         const personText = isSolicitud ? `Gz: ${item.solicitado_por_nombre || 'Desconocido'}` : `Gz: ${item.garzon || 'Desconocido'}`;
-        const timeDate = new Date(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
-        const timeText = timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const minutesElapsed = Math.floor((new Date().getTime() - timeDate.getTime()) / 60000);
+        const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
+        const localTimeDate = new Date(recordTime.getTime() - serverOffset);
+        const timeText = localTimeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const nowServerMs = Date.now() + serverOffset;
+        const minutesElapsed = Math.floor((nowServerMs - recordTime.getTime()) / 60000);
+        
         const isUrgent = minutesElapsed >= 5;
         const itemId = isSolicitud ? item.id_solicitud : item.id_pedido;
 
@@ -475,7 +538,7 @@ export default function SolicitudesScreen() {
                             <Text style={[styles.typeText, { color }]}>{isSolicitud ? 'Servicio' : 'Trago'}</Text>
                         </View>
                     </View>
-                    <Text style={styles.precio}>${(item.total || 0).toLocaleString()}</Text>
+                    <Text style={styles.precio}>${Math.floor(item.total || 0).toLocaleString('de-DE')}</Text>
                 </View>
 
                 <View style={styles.cardBody}>
@@ -521,12 +584,15 @@ export default function SolicitudesScreen() {
         );
     };
 
+    if (loading) {
+        return <SolicitudesSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} insets={insets} isTablet={isTablet} gradientColors={gradientColors} />;
+    }
+
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Header premium con gradiente */}
             <LinearGradient
                 colors={gradientColors as any}
                 style={[
@@ -570,32 +636,27 @@ export default function SolicitudesScreen() {
                 )}
             </LinearGradient>
 
-            {loading ? (
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={accentColor} />
-                </View>
-            ) : (
-                <FlatList
-                    data={solicitudes}
-                    keyExtractor={item => item.id_unificado}
-                    renderItem={renderItem}
-                    numColumns={numColumns}
-                    columnWrapperStyle={isTablet ? { gap: 16, marginHorizontal: 16 } : undefined}
-                    contentContainerStyle={styles.listContainer}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
-                    ListEmptyComponent={
-                        <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
-                            <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" style={{ marginBottom: 12 }} />
-                            <Text style={[styles.emptyText, { color: textPrimary }]}>
-                                {!cajaAbierta ? 'Caja Cerrada' : 'Todo al día'}
-                            </Text>
-                            <Text style={[styles.emptySub, { color: textSecondary }]}>
-                                {!cajaAbierta ? 'Abre una caja para procesar' : 'No hay solicitudes pendientes'}
-                            </Text>
-                        </View>
-                    }
-                />
-            )}
+            <FlatList
+                data={solicitudes}
+                keyExtractor={item => item.id_unificado}
+                renderItem={renderItem}
+                extraData={nowTick}
+                numColumns={numColumns}
+                columnWrapperStyle={isTablet ? { gap: 16, marginHorizontal: 16 } : undefined}
+                contentContainerStyle={styles.listContainer}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
+                ListEmptyComponent={
+                    <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
+                        <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" style={{ marginBottom: 12 }} />
+                        <Text style={[styles.emptyText, { color: textPrimary }]}>
+                            {!cajaAbierta ? 'Caja Cerrada' : 'Todo al día'}
+                        </Text>
+                        <Text style={[styles.emptySub, { color: textSecondary }]}>
+                            {!cajaAbierta ? 'Abre una caja para procesar' : 'No hay solicitudes pendientes'}
+                        </Text>
+                    </View>
+                }
+            />
 
             <Modal
                 animationType="slide"
@@ -603,164 +664,71 @@ export default function SolicitudesScreen() {
                 visible={checkoutModalVisible}
                 onRequestClose={() => setCheckoutModalVisible(false)}
             >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.modalOverlay}
-                >
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
                     <View style={[styles.checkoutModal, { backgroundColor: cardBg, borderColor }]}>
-                        {loadingDetails ? (
-                            <View style={styles.centerContainer}>
-                                <ActivityIndicator size="large" color={accentColor} />
-                                <Text style={{ color: textSecondary, marginTop: 10 }}>Cargando pedido...</Text>
-                            </View>
-                        ) : selectedPedido && (
+                        {selectedPedido && (
                             <>
                                 <View style={styles.modalHeaderRow}>
-                                    <View style={[styles.iconBox, { backgroundColor: `${accentColor}15` }]}>
-                                        <Ionicons name="card-outline" size={24} color={accentColor} />
+                                    <View style={[styles.iconBox, { backgroundColor: '#E11D4820' }]}>
+                                        <Ionicons name="card-outline" size={24} color="#E11D48" />
                                     </View>
                                     <View>
-                                        <Text style={[styles.modalTitleText, { color: textPrimary }]}>Procesar Pago</Text>
-                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Pedido: {selectedPedido.codigo}</Text>
+                                        <Text style={[styles.modalTitleText, { color: textPrimary }]}>Cerrar Pedido</Text>
+                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>{selectedPedido.codigo}</Text>
                                     </View>
                                 </View>
 
                                 <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-                                    <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
-                                        <View style={styles.infoRow}>
-                                            <Ionicons name="person-outline" size={18} color={accentColor} />
-                                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>
-                                                Cliente: <Text style={{ fontWeight: '700' }}>{selectedPedido.cliente || 'Sin cliente registrado'}</Text>
-                                            </Text>
-                                        </View>
-                                        <View style={[styles.infoRow, { marginTop: 6 }]}>
-                                            <Ionicons name="restaurant-outline" size={18} color={accentColor} />
-                                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>
-                                                Garzón: <Text style={{ fontWeight: '700' }}>{selectedPedido.garzon || 'N/A'}</Text>
-                                            </Text>
-                                        </View>
-                                        <View style={[styles.infoRow, { marginTop: 6 }]}>
-                                            <Ionicons name="calendar-outline" size={18} color={accentColor} />
-                                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>
-                                                Fecha/Hora: <Text style={{ fontWeight: '700' }}>
-                                                    {new Date(selectedPedido.fecha_crea).toLocaleDateString()} {new Date(selectedPedido.fecha_crea).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </Text>
-                                            </Text>
-                                        </View>
-
-                                        {/* NUEVO: Anfitrionas y Habitación del pedido */}
-                                        {Array.isArray(pedidoDetails[0]?.anfitrionas_con_ids) && pedidoDetails[0]?.anfitrionas_con_ids.length > 0 && (
-                                            <View style={[styles.infoRow, { marginTop: 6 }]}>
-                                                <Ionicons name="people-outline" size={18} color={accentColor} />
-                                                <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>
-                                                    Anfitrionas: <Text style={{ fontWeight: '700' }}>
-                                                        {pedidoDetails[0].anfitrionas_con_ids.map((a: any) => a.nick || a.nombre).join(', ')}
-                                                    </Text>
-                                                </Text>
-                                            </View>
-                                        )}
-                                        {pedidoDetails.find(d => d.room_name) && (
-                                            <View style={[styles.infoRow, { marginTop: 6 }]}>
-                                                <Ionicons name="bed-outline" size={18} color={accentColor} />
-                                                <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>
-                                                    Habitación: <Text style={{ fontWeight: '700' }}>{pedidoDetails.find(d => d.room_name).room_name}</Text>
-                                                </Text>
-                                            </View>
-                                        )}
+                                    <View style={styles.optionsTitleContainer}>
+                                        <Text style={[styles.sectionTitle, { color: textPrimary }]}>Resumen del Pedido</Text>
                                     </View>
 
-                                    <View style={[styles.divider, { backgroundColor: borderColor, marginVertical: 15, opacity: 0.1 }]} />
-
-                                    {/* Selector de Tiempo si hay habitación */}
-                                    {pedidoDetails.some(d => d.room_id) && (
-                                        <View style={{ paddingHorizontal: 16, marginBottom: 15 }}>
-                                            <Text style={[styles.sectionTitle, { color: textPrimary, marginBottom: 10 }]}>Tiempo de Temporizador</Text>
-                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                                                {Array.from({ length: 12 }, (_, i) => (i + 1) * 5).map(mins => (
-                                                    <Pressable
-                                                        key={mins}
-                                                        style={[
-                                                            styles.payMethodBtn,
-                                                            { 
-                                                                flex: 0,
-                                                                minWidth: 70,
-                                                                borderColor: selectedMinutesPedido === mins ? '#10B981' : borderColor,
-                                                                backgroundColor: selectedMinutesPedido === mins ? '#10B98115' : 'transparent'
-                                                            }
-                                                        ]}
-                                                        onPress={() => setSelectedMinutesPedido(mins)}
-                                                    >
-                                                        <Text style={[styles.payMethodLabel, { color: selectedMinutesPedido === mins ? '#10B981' : textSecondary }]}>{mins}m</Text>
-                                                    </Pressable>
-                                                ))}
-                                            </ScrollView>
-                                        </View>
-                                    )}
-
-                                    {/* Lista de productos con UI de "Ticket / Recibo" */}
                                     <View style={[styles.receiptContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor }]}>
-                                        <View style={styles.optionsTitleContainer}>
-                                            <Text style={[styles.sectionTitle, { color: textPrimary }]}>Resumen del Pedido</Text>
-                                        </View>
-                                        <View style={{ marginBottom: 4 }}>
-                                            {pedidoDetails.map((item, idx) => (
-                                                <View key={idx} style={[styles.productDetailRow, idx !== pedidoDetails.length - 1 && { borderBottomWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                                                    <View style={[styles.productQuantityBox, { backgroundColor: `${accentColor}15` }]}>
-                                                        <Text style={[styles.productQuantity, { color: accentColor }]}>{item.cantidad}x</Text>
-                                                    </View>
-                                                    <View style={styles.productInfoCol}>
-                                                        <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={2}>
-                                                            {item.producto || 'Producto Desconocido'}
-                                                        </Text>
-                                                        <Text style={[styles.productPrice, { color: textSecondary }]}>
-                                                            ${(item.precio || 0).toLocaleString()} c/u
-                                                        </Text>
-                                                    </View>
-                                                    <Text style={[styles.productSubtotal, { color: textPrimary }]}>
-                                                        ${((item.precio || 0) * (item.cantidad || 0)).toLocaleString()}
-                                                    </Text>
+                                        {loadingDetails ? (
+                                            <ActivityIndicator size="small" color="#E11D48" style={{ marginVertical: 20 }} />
+                                        ) : pedidoDetails.map((item: any, idx: number) => (
+                                            <View key={idx} style={styles.productDetailRow}>
+                                                <View style={[styles.productQuantityBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                                                    <Text style={[styles.productQuantity, { color: textPrimary }]}>{item.cantidad}x</Text>
                                                 </View>
-                                            ))}
-                                        </View>
+                                                <View style={styles.productInfoCol}>
+                                                    <Text style={[styles.productName, { color: textPrimary }]}>{item.nombre_producto || 'Producto'}</Text>
+                                                    <Text style={[styles.productPrice, { color: textSecondary }]}>${(item.precio || 0).toLocaleString()}</Text>
+                                                </View>
+                                                <Text style={[styles.productSubtotal, { color: textPrimary }]}>${((item.precio || 0) * (item.cantidad || 0)).toLocaleString()}</Text>
+                                            </View>
+                                        ))}
                                     </View>
 
                                     <View style={styles.optionsTitleContainer}>
                                         <Text style={[styles.sectionTitle, { color: textPrimary }]}>Método de Pago</Text>
                                     </View>
-
                                     <View style={styles.paymentMethodsGrid}>
-                                        {[
-                                            { id: 'efectivo', icon: 'cash-outline', label: 'Efectivo', color: '#10B981' },
-                                            { id: 'tarjeta', icon: 'card-outline', label: 'Tarjeta', color: '#3B82F6' },
-                                            { id: 'transferencia', icon: 'swap-horizontal-outline', label: 'Transf.', color: '#F59E0B' }
-                                        ].map(method => {
-                                            const isSelected = metodoPago === method.id;
-                                            return (
-                                                <Pressable
-                                                    key={method.id}
-                                                    style={[
-                                                        styles.payMethodBtn,
-                                                        { borderColor: isSelected ? method.color : borderColor },
-                                                        isSelected && { backgroundColor: `${method.color}15` }
-                                                    ]}
-                                                    onPress={() => setMetodoPago(method.id as any)}
-                                                >
-                                                    <Ionicons name={method.icon as any} size={24} color={isSelected ? method.color : textSecondary} />
-                                                    <Text style={[styles.payMethodLabel, { color: isSelected ? method.color : textSecondary }]}>{method.label}</Text>
-                                                </Pressable>
-                                            );
-                                        })}
+                                        {['efectivo', 'tarjeta', 'transferencia'].map((m: any) => (
+                                            <Pressable
+                                                key={m}
+                                                style={[
+                                                    styles.payMethodBtn,
+                                                    { borderColor: metodoPago === m ? '#E11D48' : borderColor },
+                                                    metodoPago === m && { backgroundColor: '#E11D4810' }
+                                                ]}
+                                                onPress={() => setMetodoPago(m)}
+                                            >
+                                                <Ionicons name={m === 'efectivo' ? 'cash' : m === 'tarjeta' ? 'card' : 'swap-horizontal'} size={24} color={metodoPago === m ? '#E11D48' : textSecondary} />
+                                                <Text style={[styles.payMethodLabel, { color: metodoPago === m ? '#E11D48' : textSecondary, textTransform: 'capitalize' }]}>{m}</Text>
+                                            </Pressable>
+                                        ))}
                                     </View>
 
-                                    <Pressable
-                                        style={[styles.tipCheckboxContainer, { borderColor }]}
+                                    <Pressable 
+                                        style={[styles.tipCheckboxContainer, { borderColor: agregarPropina ? '#E11D48' : borderColor, backgroundColor: agregarPropina ? '#E11D4805' : 'transparent' }]}
                                         onPress={() => setAgregarPropina(!agregarPropina)}
                                     >
                                         <View style={[styles.checkbox, { borderColor: agregarPropina ? '#E11D48' : textSecondary, backgroundColor: agregarPropina ? '#E11D48' : 'transparent' }]}>
                                             {agregarPropina && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                                         </View>
-                                        <View style={{ flex: 1, marginLeft: 12 }}>
-                                            <Text style={[styles.tipText, { color: textPrimary }]}>Agregar 10% de Propina</Text>
+                                        <View style={{ marginLeft: 12 }}>
+                                            <Text style={[styles.tipText, { color: textPrimary }]}>Sugerir Propina (10%)</Text>
                                             <Text style={[styles.tipSubText, { color: textSecondary }]}>+${(selectedPedido.total * 0.10).toLocaleString()}</Text>
                                         </View>
                                     </Pressable>
@@ -830,50 +798,93 @@ export default function SolicitudesScreen() {
                                 </View>
 
                                 <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-                                    <View style={[styles.receiptContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor }]}>
-                                        <View style={styles.productDetailRow}>
-                                            <View style={styles.productInfoCol}>
-                                                <Text style={[styles.productName, { color: textPrimary }]}>Precio Servicio</Text>
-                                            </View>
-                                            <Text style={[styles.productSubtotal, { color: textPrimary }]}>${(selectedService.precio_servicio || 0).toLocaleString()}</Text>
-                                        </View>
-                                        <View style={styles.productDetailRow}>
-                                            <View style={styles.productInfoCol}>
-                                                <Text style={[styles.productName, { color: textPrimary }]}>Precio Habitación</Text>
-                                            </View>
-                                            <Text style={[styles.productSubtotal, { color: textPrimary }]}>${(selectedService.precio_habitacion || 0).toLocaleString()}</Text>
-                                        </View>
-                                        <View style={[styles.productDetailRow, { borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', marginTop: 8 }]}>
-                                            <View style={styles.productInfoCol}>
-                                                <Text style={[styles.productName, { color: textPrimary, fontWeight: '800' }]}>TOTAL</Text>
-                                            </View>
-                                            <Text style={[styles.productSubtotal, { color: '#E11D48', fontSize: 18 }]}>${(selectedService.total || 0).toLocaleString()}</Text>
-                                        </View>
-                                    </View>
-
                                     <View style={styles.optionsTitleContainer}>
-                                        <Text style={[styles.sectionTitle, { color: textPrimary }]}>Información</Text>
+                                        <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: isTablet ? 18 : 13 }]}>Información</Text>
                                     </View>
 
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="bed-outline" size={20} color="#E11D48" />
-                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>Habitación: {selectedService.habitacion_nombre}</Text>
+                                        <Ionicons name="bed-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Habitación: {selectedService.habitacion_nombre}</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="person-outline" size={20} color="#E11D48" />
-                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>Solicitado por: {selectedService.solicitado_por_nombre}</Text>
+                                        <Ionicons name="person-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado por: {selectedService.solicitado_por_nombre}</Text>
+                                    </View>
+                                    <View style={[styles.infoRow, { marginBottom: 8 }]}>
+                                        <Ionicons name="people-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Anfitrionas ({selectedService.anfitrionas_ids?.length || 0}):</Text>
+                                    </View>
+                                    <View style={{ marginLeft: 8, marginBottom: 16 }}>
+                                        {(() => {
+                                            const anfsIds = Array.isArray(selectedService.anfitrionas_ids) ? selectedService.anfitrionas_ids : [];
+                                            const numAnfs = anfsIds.length || 1;
+                                            const comisionIndividual = Math.floor((selectedService.comision_anfitriona || 0) / numAnfs);
+
+                                            const displayAnfs = (Array.isArray(selectedService.anfitrionas_con_nicks) && selectedService.anfitrionas_con_nicks.length > 0)
+                                                ? selectedService.anfitrionas_con_nicks
+                                                : anfsIds.map((id: any) => {
+                                                        const found = allHostesses.find(h => (h.id_usuario || h.id) === Number(id));
+                                                        return found ? found : { id, nick: `ID: ${id}`, nombre: 'Anfitriona', apellido: '' };
+                                                    });
+
+                                            return displayAnfs.length > 0 ? (
+                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: isTablet ? 12 : 8 }}>
+                                                    {displayAnfs.map((anf: any, idx: number) => (
+                                                        <View key={idx} style={{ 
+                                                            backgroundColor: isDark ? 'rgba(225, 29, 72, 0.1)' : 'rgba(225, 29, 72, 0.05)',
+                                                            paddingHorizontal: isTablet ? 16 : 12,
+                                                            paddingVertical: isTablet ? 12 : 8,
+                                                            borderRadius: 14,
+                                                            borderWidth: 1,
+                                                            borderColor: isDark ? 'rgba(225, 29, 72, 0.2)' : 'rgba(225, 29, 72, 0.1)',
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center'
+                                                        }}>
+                                                            <View>
+                                                                <Text style={{ color: textPrimary, fontSize: isTablet ? 16 : 13, fontWeight: '800' }}>{anf.nick || anf.nombre}</Text>
+                                                                <Text style={{ color: '#10B981', fontSize: isTablet ? 15 : 12, fontWeight: '900' }}>+ ${comisionIndividual.toLocaleString('de-DE')}</Text>
+                                                            </View>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            ) : (
+                                                <Text style={{ color: textSecondary, fontSize: isTablet ? 16 : 13, fontStyle: 'italic' }}>No hay información de anfitrionas</Text>
+                                            );
+                                        })()}
+                                    </View>
+
+                                    <View style={[styles.infoRow, { marginBottom: 12 }]}>
+                                        <Ionicons name="time-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Tiempo: {selectedService.tiempo} min</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="people-outline" size={20} color="#E11D48" />
-                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>Anfitrionas: {selectedService.anfitrionas_ids?.length || 0}</Text>
+                                        <Ionicons name="calendar-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado: {parseDateSafe(selectedService.fecha_solicitud).toLocaleDateString()} {parseDateSafe(selectedService.fecha_solicitud).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                                     </View>
-                                    <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="time-outline" size={20} color="#E11D48" />
-                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>Tiempo: {selectedService.tiempo} min</Text>
+                                    <View style={[styles.infoRow, { marginBottom: 20 }]}>
+                                        <Ionicons name="card-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Método Pago: {selectedService.metodo_pago.toUpperCase()}</Text>
                                     </View>
-                                    <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="card-outline" size={20} color="#E11D48" />
-                                        <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8 }]}>Método Pago: {selectedService.metodo_pago.toUpperCase()}</Text>
+
+                                    <View style={[styles.receiptContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor, marginTop: 10, padding: isTablet ? 24 : 16 }]}>
+                                        <View style={styles.productDetailRow}>
+                                            <View style={styles.productInfoCol}>
+                                                <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>Precio Servicio</Text>
+                                            </View>
+                                            <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.precio_servicio || 0).toLocaleString('de-DE')}</Text>
+                                        </View>
+                                        <View style={styles.productDetailRow}>
+                                            <View style={styles.productInfoCol}>
+                                                <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>Precio Habitación</Text>
+                                            </View>
+                                            <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.precio_habitacion || 0).toLocaleString('de-DE')}</Text>
+                                        </View>
+                                        <View style={[styles.productDetailRow, { borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', marginTop: 8, paddingTop: 12 }]}>
+                                            <View style={styles.productInfoCol}>
+                                                <Text style={[styles.productName, { color: textPrimary, fontWeight: '800', fontSize: isTablet ? 22 : 16 }]}>TOTAL</Text>
+                                            </View>
+                                            <Text style={[styles.productSubtotal, { color: '#E11D48', fontSize: isTablet ? 26 : 18, fontWeight: '900' }]}>${Math.floor(selectedService.total || 0).toLocaleString('de-DE')}</Text>
+                                        </View>
                                     </View>
                                 </ScrollView>
 

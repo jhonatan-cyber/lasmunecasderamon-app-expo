@@ -3,12 +3,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Platform,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Skeleton } from '../../../../components/ui/Skeleton';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../../api/client';
 import { PremiumHeader } from '../../../../components/PremiumHeader';
@@ -26,7 +30,8 @@ interface Propina {
 }
 
 export default function PropinasScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const insets = useSafeAreaInsets();
     const [propinas, setPropinas] = useState<Propina[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -174,14 +179,38 @@ export default function PropinasScreen() {
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color={accentColor} />
-                <Text style={[styles.loadingText, { color: textSecondary }]}>Cargando propinas...</Text>
+    const PropinasSkeleton = () => (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={{
+                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
+                    paddingBottom: 25,
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                    height: 140,
+                    paddingHorizontal: 20
+                }}
+            >
+                <Skeleton width={150} height={28} style={{ marginBottom: 10 }} />
+                <Skeleton width={200} height={16} />
+            </LinearGradient>
+
+            <View style={{ padding: 16 }}>
+                <Skeleton height={140} borderRadius={16} style={{ marginBottom: 20 }} />
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+                    <Skeleton style={{ flex: 1 }} height={36} borderRadius={18} />
+                    <Skeleton style={{ flex: 1 }} height={36} borderRadius={18} />
+                    <Skeleton style={{ flex: 1 }} height={36} borderRadius={18} />
+                </View>
+                {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} height={120} borderRadius={16} style={{ marginBottom: 12 }} />
+                ))}
             </View>
-        );
-    }
+        </View>
+    );
+
+    if (loading) return <PropinasSkeleton />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>

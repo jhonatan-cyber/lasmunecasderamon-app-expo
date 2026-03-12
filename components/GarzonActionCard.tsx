@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 import { AnimatedButton } from './AnimatedButton';
 
 interface GarzonActionCardProps {
@@ -14,158 +16,97 @@ interface GarzonActionCardProps {
 
 export const GarzonActionCard = ({ title, description, icon, color, onPress, disabled }: GarzonActionCardProps) => {
     const { width } = useWindowDimensions();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { isDark } = useAccentColor();
     const isTablet = width >= 768;
 
-    const iconSize = isTablet ? 42 : 26;
-    const fontSize = isTablet ? 20 : 12;
-    const descSize = isTablet ? 14 : 9;
-    const minHeight = isTablet ? 140 : 82;
-    const padding = isTablet ? 26 : 14;
-    const iconBoxSize = isTablet ? 68 : 42;
+    const iconSize = isTablet ? 38 : 28;
+    const fontSize = isTablet ? 22 : 14;
+    const descSize = isTablet ? 14 : 10;
+    const minHeight = isTablet ? 160 : 100;
+    const padding = isTablet ? 24 : 16;
 
-    if (isDark) {
-        // Modo oscuro: fondo sólido de color (diseño original)
-        return (
-            <AnimatedButton
-                onPress={disabled ? undefined : onPress}
-                disabled={disabled}
-                style={[
-                    styles.card,
-                    {
-                        backgroundColor: disabled ? '#9CA3AF' : color,
-                        opacity: disabled ? 0.6 : 1,
-                        minHeight,
-                        padding,
-                        shadowColor: color,
-                    }
-                ]}
-            >
-                <View style={styles.content}>
-                    <View style={[styles.iconContainer, { width: iconBoxSize, height: iconBoxSize, borderRadius: isTablet ? 14 : 12 }]}>
-                        <Ionicons name={icon} size={iconSize} color="#FFF" />
-                    </View>
-                    <View style={styles.textContainer}>
-                        <Text style={[styles.title, { fontSize }]}>{title}</Text>
-                        <Text style={[styles.description, { fontSize: descSize }]}>{description}</Text>
-                    </View>
-                </View>
-            </AnimatedButton>
-        );
-    }
+    // Premium Floating Design
+    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
-    // Modo claro: fondo blanco con borde y sombra del color
     return (
         <AnimatedButton
             onPress={disabled ? undefined : onPress}
             disabled={disabled}
             style={[
-                styles.cardLight,
+                styles.cardContainer,
                 {
-                    opacity: disabled ? 0.5 : 1,
+                    backgroundColor: disabled ? (isDark ? '#374151' : '#F3F4F6') : cardBg,
                     minHeight,
                     padding,
-                    borderColor: `${color}40`,
                     shadowColor: color,
+                    shadowOpacity: isDark ? 0.3 : 0.15,
+                    opacity: disabled ? 0.6 : 1,
                 }
             ]}
         >
-            <View style={styles.content}>
-                <View style={[
-                    styles.iconContainerLight,
-                    {
-                        width: iconBoxSize,
-                        height: iconBoxSize,
-                        borderRadius: isTablet ? 16 : 14,
-                        backgroundColor: `${color}15`,
-                    }
-                ]}>
+            <View style={styles.topRow}>
+                <LinearGradient
+                    colors={[`${color}40`, `${color}10`]}
+                    style={[styles.iconBox, { width: isTablet ? 70 : 50, height: isTablet ? 70 : 50, borderRadius: isTablet ? 20 : 16 }]}
+                >
                     <Ionicons name={icon} size={iconSize} color={color} />
-                </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.titleLight, { fontSize, color: '#0F172A' }]}>{title}</Text>
-                    <Text style={[styles.descriptionLight, { fontSize: descSize, color: '#64748B' }]}>{description}</Text>
-                </View>
+                </LinearGradient>
             </View>
-            {/* Acento superior del color */}
-            <View style={[styles.accentBar, { backgroundColor: color }]} />
+            
+            <View style={styles.infoBox}>
+                <Text style={[styles.mainTitle, { fontSize, color: textPrimary }]} numberOfLines={1}>
+                    {title}
+                </Text>
+                <Text style={[styles.subDescription, { fontSize: descSize, color: textSecondary }]} numberOfLines={2}>
+                    {description}
+                </Text>
+            </View>
+
+            {/* Subtle light indicator */}
+            {!disabled && <View style={[styles.sideIndicator, { backgroundColor: color }]} />}
         </AnimatedButton>
     );
 };
 
 const styles = StyleSheet.create({
-    card: {
+    cardContainer: {
         flex: 1,
-        borderRadius: 20,
-        padding: 16,
-        minHeight: 80,
-        justifyContent: 'center',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    cardLight: {
-        flex: 1,
-        borderRadius: 20,
-        padding: 14,
-        minHeight: 82,
-        justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 10,
-        elevation: 5,
+        borderRadius: 28,
+        justifyContent: 'space-between',
+        shadowOffset: { width: 0, height: 10 },
+        shadowRadius: 20,
+        elevation: 10,
+        position: 'relative',
         overflow: 'hidden',
     },
-    accentBar: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 3,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-    },
-    content: {
+    topRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+    iconBox: {
         justifyContent: 'center',
         alignItems: 'center',
     },
-    iconContainerLight: {
-        justifyContent: 'center',
-        alignItems: 'center',
+    infoBox: {
+        marginTop: 12,
     },
-    textContainer: {
-        flex: 1,
-        marginLeft: 10,
-    },
-    title: {
-        color: '#FFF',
+    mainTitle: {
         fontWeight: '900',
-        fontSize: 12,
-        letterSpacing: 0.2,
+        letterSpacing: -0.5,
     },
-    titleLight: {
-        fontWeight: '900',
-        letterSpacing: 0.2,
-    },
-    description: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 9,
+    subDescription: {
         fontWeight: '600',
-        marginTop: 1,
+        marginTop: 4,
+        lineHeight: 14,
     },
-    descriptionLight: {
-        fontWeight: '600',
-        marginTop: 2,
-    },
+    sideIndicator: {
+        position: 'absolute',
+        top: 15,
+        right: 15,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    }
 });

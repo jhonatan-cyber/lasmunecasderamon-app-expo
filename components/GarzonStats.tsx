@@ -1,13 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { DonutChart } from './DonutChart';
 
 interface GarzonStatsProps {
     stats: any;
+    events: any[];
 }
 
-export const GarzonStats = ({ stats }: GarzonStatsProps) => {
+export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
@@ -18,27 +20,33 @@ export const GarzonStats = ({ stats }: GarzonStatsProps) => {
         <View style={styles.container}>
             {/* Quick Stats Grid */}
             <View style={styles.statsGrid}>
-                <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={[styles.iconContainer, { backgroundColor: '#E11D4820' }]}>
-                        <Ionicons name="restaurant" size={20} color="#E11D48" />
+                <LinearGradient
+                    colors={isDark ? ['#10B981', '#059669'] : ['#10B981', '#34D399']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.premiumStatCard}
+                >
+                    <View style={styles.premiumStatContent}>
+                        <View style={styles.premiumIconWrapper}>
+                            <MaterialCommunityIcons name="hand-coin" size={26} color="#FFFFFF" />
+                        </View>
+                        <View style={styles.premiumTextGroup}>
+                            <Text style={styles.premiumStatLabel}>TOTAL PROPINAS</Text>
+                            <Text style={styles.premiumStatValue}>
+                                ${(Number(stats?.totalEarnings) || 0).toLocaleString('es-CL')}
+                            </Text>
+                        </View>
+                        <View style={styles.premiumDivider} />
+                        <View style={styles.premiumSubStats}>
+                            <View style={styles.subStatItem}>
+                                <Ionicons name="sparkles-sharp" size={14} color="rgba(255,255,255,0.8)" />
+                                <Text style={styles.subStatText}>
+                                    {events?.filter(e => e.type !== 'anticipo' && (e.estado === 1 || e.estado === undefined)).length || 0} Ventas
+                                </Text>
+                            </View>
+                        </View>
                     </View>
-                    <View>
-                        <Text style={[styles.statValue, { color: textPrimary }]}>{stats?.svcCount || 0}</Text>
-                        <Text style={[styles.statLabel, { color: textSecondary }]}>Atenciones</Text>
-                    </View>
-                </View>
-
-                <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={[styles.iconContainer, { backgroundColor: '#10B98120' }]}>
-                        <Ionicons name="cash" size={20} color="#10B981" />
-                    </View>
-                    <View>
-                        <Text style={[styles.statValue, { color: textPrimary }]}>
-                            ${((stats?.totalEarnings || 0) / 1000).toFixed(1)}k
-                        </Text>
-                        <Text style={[styles.statLabel, { color: textSecondary }]}>Propina</Text>
-                    </View>
-                </View>
+                </LinearGradient>
             </View>
 
             {/* Performance Chart Card */}
@@ -62,7 +70,7 @@ export const GarzonStats = ({ stats }: GarzonStatsProps) => {
                     />
                     <View style={styles.goalInfo}>
                         <Text style={[styles.goalTarget, { color: textPrimary }]}>
-                            ${(stats?.totalEarnings || 0).toLocaleString('es-CL')}
+                            ${(Number(stats?.totalEarnings) || 0).toLocaleString('es-CL')}
                             <Text style={{ color: textSecondary, fontWeight: '400', fontSize: 14 }}> / $300k</Text>
                         </Text>
                         <Text style={[styles.goalPrompt, { color: textSecondary }]}>
@@ -98,6 +106,66 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 10,
         gap: 12,
+    },
+    premiumStatCard: {
+        flex: 1,
+        borderRadius: 28,
+        padding: 20,
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+    },
+    premiumStatContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    premiumIconWrapper: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    premiumTextGroup: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    premiumStatLabel: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 10,
+        fontWeight: '800',
+        letterSpacing: 1.2,
+        marginBottom: 2,
+    },
+    premiumStatValue: {
+        color: '#FFFFFF',
+        fontSize: 24,
+        fontWeight: '900',
+    },
+    premiumDivider: {
+        width: 1,
+        height: 40,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        marginHorizontal: 15,
+    },
+    premiumSubStats: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    subStatItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    subStatText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
     iconContainer: {
         width: 40,

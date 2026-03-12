@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, useColorScheme, View, ViewStyle } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -22,7 +22,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     borderRadius = 8,
     style
 }) => {
+    const isDark = useColorScheme() === 'dark';
     const shimmerValue = useSharedValue(0);
+
+    const baseColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+    const shimmerColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)';
 
     useEffect(() => {
         shimmerValue.value = withRepeat(
@@ -47,13 +51,18 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         <View
             style={[
                 styles.container,
-                { width: width as any, height: height as any, borderRadius },
+                {
+                    width: width as any,
+                    height: height as any,
+                    borderRadius,
+                    backgroundColor: baseColor
+                },
                 style,
             ]}
         >
             <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
                 <LinearGradient
-                    colors={['transparent', 'rgba(255, 255, 255, 0.3)', 'transparent']}
+                    colors={['transparent', shimmerColor, 'transparent']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={StyleSheet.absoluteFill}
@@ -65,7 +74,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'rgba(0, 0, 0, 0.08)',
         overflow: 'hidden',
     },
 });

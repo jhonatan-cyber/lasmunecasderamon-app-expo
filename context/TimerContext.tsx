@@ -12,6 +12,21 @@ import EventSource from "react-native-sse";
 import { apiClient } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
+// Helper para parsear fechas del backend de forma segura y evitar conflictos de zona horaria (UTC vs Local)
+const parseDateSafe = (dateStr: any) => {
+    if (!dateStr) return new Date();
+    if (typeof dateStr !== 'string') return new Date(dateStr);
+    if (dateStr.includes('Z') || dateStr.includes('+')) return new Date(dateStr);
+    try {
+        const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
+        const date = new Date(cleanDate);
+        if (isNaN(date.getTime())) return new Date(dateStr);
+        return date;
+    } catch (e) {
+        return new Date(dateStr);
+    }
+};
+
 export interface Timer {
   id: string;
   servicioId: number;
@@ -74,8 +89,10 @@ export const calculateRemainingTime = (
   }
 
   const now = new Date(Date.now() + offset);
-  const elapsedSeconds = Math.floor(
-    (now.getTime() - timer.startTime.getTime()) / 1000,
+  // Si por desfase horario el startTime quedara en el futuro, evitamos sumar tiempo extra
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - timer.startTime.getTime()) / 1000),
   );
   const totalDurationSeconds = timer.duration * 60;
   const remaining = totalDurationSeconds - elapsedSeconds;
@@ -120,7 +137,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           remainingTime: t.remainingTime || 0,
           isActive: true,
           isPaused: t.isPaused === 1 || t.estado === 3,
-          startTime: new Date(t.startTime),
+          startTime: parseDateSafe(t.startTime),
           servicioCode: t.codigo,
           clienteNombre: t.clienteNombre,
           tipoTransaccion: t.tipoTransaccion,
@@ -164,7 +181,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           remainingTime: newTimerData.duration * 60,
           isActive: true,
           isPaused: false,
-          startTime: new Date(newTimerData.startTime),
+          startTime: parseDateSafe(newTimerData.startTime),
           servicioCode: newTimerData.codigo,
           clienteNombre: newTimerData.clienteNombre,
           tipoTransaccion: newTimerData.tipoTransaccion,
@@ -252,7 +269,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...t,
                 isPaused: false,
                 estado: 2,
-                startTime: new Date(payload.data.newStartTime),
+                startTime: parseDateSafe(payload.data.newStartTime),
                 lastAnnouncedMinute: undefined,
               };
             }
@@ -274,7 +291,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...t,
                 ...payload.data,
                 duration: Number(payload.data.duration || t.duration),
-                startTime: payload.data.startTime ? new Date(payload.data.startTime) : t.startTime,
+                startTime: payload.data.startTime ? parseDateSafe(payload.data.startTime) : t.startTime,
                 roomName: payload.data.roomName || t.roomName,
                 anfitrionas: payload.data.anfitrionas !== undefined ? payload.data.anfitrionas : t.anfitrionas,
                 lastAnnouncedMinute: undefined,

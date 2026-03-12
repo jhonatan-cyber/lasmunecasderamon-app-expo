@@ -10,6 +10,7 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 interface Client {
     id: number | string;
@@ -37,11 +38,12 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
     selectedIds,
     max,
 }) => {
-    const isDark = useColorScheme() === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const cardBg = isDark ? '#1F2937' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const primaryColor = accentColor;
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
@@ -84,8 +86,8 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                                         style={[
                                             styles.checkbox,
                                             {
-                                                borderColor: isSelected ? '#10B981' : borderColor,
-                                                backgroundColor: isSelected ? '#10B981' : 'transparent',
+                                                borderColor: isSelected ? primaryColor : borderColor,
+                                                backgroundColor: isSelected ? primaryColor : 'transparent',
                                             },
                                         ]}
                                     >
@@ -95,8 +97,11 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                             );
                         }}
                     />
-                    <Pressable style={styles.modalActionBtn} onPress={onClose}>
-                        <Text style={styles.modalActionBtnText}>Confirmar</Text>
+                    <Pressable 
+                        style={[styles.modalActionBtn, { backgroundColor: primaryColor }]} 
+                        onPress={onClose}
+                    >
+                        <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
                     </Pressable>
                 </View>
             </View>
