@@ -237,9 +237,15 @@ export default function CajaScreen() {
     };
 
     const handleSubmit = async () => {
-        const cleanMonto = monto.replace(/\./g, '');
-        if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
-        const numericMonto = Number(cleanMonto);
+        let numericMonto = 0;
+        if (modalType === 'cerrar') {
+            numericMonto = stats?.balance_total || 0;
+        } else {
+            const cleanMonto = monto.replace(/\./g, '');
+            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
+            numericMonto = Number(cleanMonto);
+        }
+
         if (numericMonto < 0) { showToast('Error', 'El monto no puede ser negativo'); return; }
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
@@ -269,7 +275,7 @@ export default function CajaScreen() {
     const modalConfig = {
         abrir: { title: 'Apertura de Turno', subtitle: 'Ingresa el monto base para iniciar el turno', icon: 'wallet-outline', color: '#10B981', btnText: 'Abrir Caja' },
         retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline', color: '#F59E0B', btnText: 'Realizar Retiro' },
-        cerrar: { title: 'Cierre de Turno', subtitle: 'Ingresa el monto en efectivo al cierre', icon: 'lock-closed-outline', color: '#EF4444', btnText: 'Cerrar Caja' },
+        cerrar: { title: 'Cierre de Turno', subtitle: 'Confirma el cierre con el monto total calculado', icon: 'lock-closed-outline', color: '#EF4444', btnText: 'Cerrar Caja' },
     }[modalType];
 
     return (
@@ -469,26 +475,64 @@ export default function CajaScreen() {
                             <View style={[styles.modalIconBox, { backgroundColor: `${modalConfig.color}20` }]}>
                                 <Ionicons name={modalConfig.icon as any} size={32} color={modalConfig.color} />
                             </View>
-                            <Text style={[styles.modalTitle, { color: isDark ? '#F9FAFB' : '#111827' }]}>
-                                {modalConfig.title}
-                            </Text>
                             <Text style={[styles.modalSubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
                                 {modalConfig.subtitle}
                             </Text>
 
-                            {/* Monto Input */}
-                            <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC' }]}>
-                                <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
-                                <TextInput
-                                    style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}
-                                    value={monto}
-                                    onChangeText={handleMontoChange}
-                                    keyboardType="numeric"
-                                    placeholder="0"
-                                    placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
-                                    autoFocus
-                                />
-                            </View>
+                            {/* Detalles del dinero al cerrar */}
+                            {modalType === 'cerrar' && stats && (
+                                <View style={[styles.modalBreakdown, { backgroundColor: isDark ? '#1F293750' : '#F3F4F6', borderColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                                    <View style={styles.breakdownItem}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Monto Apertura (Base)</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: textPrimary }]}>${(stats.monto_apertura || 0).toLocaleString()}</Text>
+                                    </View>
+                                    <View style={styles.breakdownItem}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Ventas Efectivo (Turno)</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: isDark ? '#10B981' : '#059669' }]}>${((stats.total_efectivo || 0) - (stats.monto_apertura || 0)).toLocaleString()}</Text>
+                                    </View>
+                                    <View style={styles.breakdownItem}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Ventas con Tarjeta</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: isDark ? '#3B82F6' : '#2563EB' }]}>${(stats.total_tarjeta || 0).toLocaleString()}</Text>
+                                    </View>
+                                    <View style={styles.breakdownItem}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Transferencias</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: isDark ? '#8B5CF6' : '#7C3AED' }]}>${(stats.total_transferencia || 0).toLocaleString()}</Text>
+                                    </View>
+                                    {stats.total_devoluciones > 0 && (
+                                        <View style={styles.breakdownItem}>
+                                            <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Devoluciones</Text>
+                                            <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.total_devoluciones || 0).toLocaleString()}</Text>
+                                        </View>
+                                    )}
+                                    <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', marginTop: 8, paddingTop: 8 }]}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>BALANCE TOTAL</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: '#E11D48', fontWeight: '900', fontSize: 20 }]}>${(stats.balance_total || 0).toLocaleString()}</Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Monto Input / Info Box */}
+                            {modalType === 'cerrar' ? (
+                                <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC', justifyContent: 'center' }]}>
+                                    <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
+                                    <Text style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                                        {(stats?.balance_total || 0).toLocaleString()}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC' }]}>
+                                    <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
+                                    <TextInput
+                                        style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}
+                                        value={monto}
+                                        onChangeText={handleMontoChange}
+                                        keyboardType="numeric"
+                                        placeholder="0"
+                                        placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
+                                        autoFocus
+                                    />
+                                </View>
+                            )}
 
                             {/* Motivo (retiro) */}
                             {modalType === 'retiro' && (
@@ -504,8 +548,8 @@ export default function CajaScreen() {
                                 </View>
                             )}
 
-                            {/* Efectivo info box (retiro / cerrar) */}
-                            {(modalType === 'retiro' || modalType === 'cerrar') && stats && (
+                            {/* Efectivo info box (solo retiro) */}
+                            {modalType === 'retiro' && stats && (
                                 <View style={[styles.infoBox, { backgroundColor: `${modalConfig.color}12`, marginTop: 16 }]}>
                                     <Ionicons name="information-circle-outline" size={18} color={modalConfig.color} />
                                     <Text style={{ color: modalConfig.color, fontSize: 13, fontWeight: '700', marginLeft: 8 }}>
@@ -630,4 +674,25 @@ const styles = StyleSheet.create({
     modalBtn: { flex: 1, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
     modalBtnCancel: { fontSize: 15, fontWeight: '700' },
     modalBtnConfirm: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+    modalBreakdown: {
+        width: '100%',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        gap: 8
+    },
+    breakdownItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    breakdownItemLabel: {
+        fontSize: 13,
+        fontWeight: '600'
+    },
+    breakdownItemValue: {
+        fontSize: 14,
+        fontWeight: '700'
+    },
 });

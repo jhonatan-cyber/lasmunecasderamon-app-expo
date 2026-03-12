@@ -77,7 +77,7 @@ export const GarzonStats = ({ stats }: GarzonStatsProps) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 2,
+        marginTop: 15,
         paddingHorizontal: 10,
     },
     statsGrid: {

@@ -203,6 +203,8 @@ export default function GarzonHomeScreen() {
                         />
                         <PremiumUserProfile user={user} userStatus={userStatus} />
                     </LinearGradient>
+                    
+                    <View style={{ height: 10 }} />
 
                     <GarzonStats stats={stats} />
 

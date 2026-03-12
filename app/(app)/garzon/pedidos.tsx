@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { CategoryCard } from '../../../components/CategoryCard';
+import { PremiumHeader } from '../../../components/PremiumHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -119,14 +120,11 @@ export default function PedidosScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            <LinearGradient
-                colors={isDark ? ['#1E1B4B', '#000000'] : ['#E0E7FF', '#F3F4F6']}
-                style={[styles.topBanner, { paddingTop: insets.top }]}
-            >
-                <Text style={[styles.bannerSubtitle, { color: textSecondary }]}>
-                    Selecciona una categoría para ver los productos
-                </Text>
-            </LinearGradient>
+            <PremiumHeader 
+                title="Categorías"
+                subtitle="Selecciona una para ver los productos"
+                onBack={() => router.back()}
+            />
 
             {error ? (
                 <View style={[styles.errorCard, { backgroundColor: isDark ? '#451a1a' : '#FEF2F2' }]}>

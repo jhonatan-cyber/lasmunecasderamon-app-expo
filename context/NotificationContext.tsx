@@ -58,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     switch (payload.type) {
       case "new_order":
       case "new_service_request":
-        if (lowerRole !== "anfitriona") {
+        if (isCajeroOrAdmin) {
           const isOrder = payload.type === "new_order";
           Toast.show({
             type: "order",

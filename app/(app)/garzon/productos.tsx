@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Modal,
     Pressable,
@@ -20,6 +21,18 @@ import { apiClient } from '../../../api/client';
 import { Anfitriona, CartItem, Product, ProductCard, Room } from '../../../components/ProductCard';
 import { useAuthStore } from '../../../store/authStore';
 import { useCartStore } from '../../../store/cartStore';
+import { PremiumHeader } from '../../../components/PremiumHeader';
+import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
+import { PremiumAlert } from '../../../components/PremiumAlert';
+
+interface Client {
+    id: number;
+    id_cliente?: number;
+    name: string;
+    nombre?: string;
+    lastName: string;
+    apellido?: string;
+}
 
 
 
@@ -33,6 +46,10 @@ export default function ProductosScreen() {
     const [products, setProducts] = useState<Product[]>([]);
     const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+    const [clientModalVisible, setClientModalVisible] = useState(false);
+    const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
@@ -66,17 +83,19 @@ export default function ProductosScreen() {
     const fetchData = useCallback(async (isManual = false) => {
         try {
             setError('');
-            const [prodRes, anfRes, roomRes] = await Promise.allSettled([
+            const [prodRes, anfRes, roomRes, clientRes] = await Promise.allSettled([
                 apiClient(`/products?category_id=${categoryId}`),
                 apiClient('/anfitrionas'),
                 apiClient('/rooms?status=1'),
+                apiClient('/clients'),
             ]);
 
             const prodData = prodRes.status === 'fulfilled' ? prodRes.value : null;
             const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
             const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
+            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
 
-            const newData = { products: prodData?.data, anfitrionas: anfData?.data, rooms: roomData?.data };
+            const newData = { products: prodData?.data, anfitrionas: anfData?.data, rooms: roomData?.data, clients: clientData?.data || clientData };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
@@ -87,6 +106,12 @@ export default function ProductosScreen() {
             }
             if (anfData?.success) setAnfitrionas(anfData.data || []);
             if (roomData?.success) setRooms(roomData.data || []);
+            
+            if (Array.isArray(clientData)) {
+                setClients(clientData);
+            } else if (clientData?.success) {
+                setClients(clientData.data || []);
+            }
 
             if (isManual) {
                 Toast.show({
@@ -163,7 +188,7 @@ export default function ProductosScreen() {
             const orderData = {
                 codigo,
                 meseroId: user.id,
-                clienteId: null,
+                clienteId: selectedClientId,
                 subtotal: cartSubtotal,
                 total: cartSubtotal,
                 propina: tipAmount,
@@ -241,6 +266,20 @@ export default function ProductosScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
+            <PremiumHeader 
+                title={decodeURIComponent(categoryName || 'Productos')}
+                subtitle="Selecciona productos para tu orden"
+                onBack={() => router.back()}
+                rightComponent={cart.length > 0 ? (
+                    <Pressable 
+                        onPress={() => setClearCartAlertVisible(true)}
+                        style={styles.emptyCartBtn}
+                    >
+                        <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+                    </Pressable>
+                ) : null}
+            />
+
             <FlatList
                 data={products}
                 keyExtractor={(item) => item.id.toString()}
@@ -248,10 +287,60 @@ export default function ProductosScreen() {
                 contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={textPrimary} />}
                 ListHeaderComponent={
-                    <Text style={[styles.sectionTitle, { color: textSecondary }]}>
-                        {products.length} productos en {decodeURIComponent(categoryName || '')}
-                    </Text>
+                    <View>
+                        <Text style={[styles.sectionTitle, { color: textSecondary, marginBottom: 8 }]}>
+                            {products.length} productos en catálogo
+                        </Text>
+                        
+                        {/* Selector de Cliente (Opcional) */}
+                        <Text style={[styles.sectionLabel, { color: textSecondary }]}>CLIENTE (OPCIONAL)</Text>
+                        <Pressable 
+                            onPress={() => setClientModalVisible(true)}
+                            style={[styles.selectField, { backgroundColor: cardBg, borderColor }]}
+                        >
+                            <View style={styles.selectFieldContent}>
+                                <Ionicons name="person-outline" size={20} color={selectedClientId ? '#10B981' : textSecondary} />
+                                <Text style={[styles.selectFieldText, { color: selectedClientId ? textPrimary : textSecondary }]}>
+                                    {selectedClientId 
+                                        ? (() => {
+                                            const c = clients.find(cl => (cl.id_cliente || cl.id) === selectedClientId);
+                                            return `${c?.nombre || c?.name || ''} ${c?.apellido || c?.lastName || ''}`.trim() || 'Cliente seleccionado';
+                                          })()
+                                        : 'Seleccionar cliente...'}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-down" size={20} color={textSecondary} />
+                        </Pressable>
+                        
+                        <View style={{ height: 20 }} />
+                    </View>
                 }
+            />
+
+            <ClientSelectModal 
+                visible={clientModalVisible}
+                onClose={() => setClientModalVisible(false)}
+                clients={clients as any}
+                selectedIds={selectedClientId ? [selectedClientId] : []}
+                onToggle={(id) => {
+                    setSelectedClientId(selectedClientId === id ? null : id);
+                    setClientModalVisible(false);
+                }}
+            />
+
+            <PremiumAlert 
+                visible={clearCartAlertVisible}
+                title="Vaciar Carrito"
+                message="¿Estás seguro que deseas eliminar todos los productos del pedido? Esta acción no se puede deshacer."
+                type="danger"
+                showCancel
+                confirmText="Sí, vaciar"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                    clearCart();
+                    setClearCartAlertVisible(false);
+                }}
+                onCancel={() => setClearCartAlertVisible(false)}
             />
 
             {cart.length > 0 && (
@@ -367,7 +456,31 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     listContent: { padding: 16, paddingBottom: 120 },
-    sectionTitle: { fontSize: 13, marginBottom: 12, fontWeight: '600' },
+    sectionTitle: { fontSize: 13, fontWeight: '600' },
+    sectionLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 10, marginBottom: 10 },
+    selectField: {
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        marginBottom: 10,
+    },
+    selectFieldContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    selectFieldText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    horizontalSelect: { marginBottom: 10 },
+    clientCard: { width: 120, height: 60, borderRadius: 16, padding: 12, marginRight: 10, borderWidth: 1, justifyContent: 'center' },
+    clientName: { fontSize: 13, fontWeight: '700' },
+    clientLastName: { fontSize: 11, marginTop: 2 },
     cartBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
     cartTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     tipControl: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -387,4 +500,12 @@ const styles = StyleSheet.create({
     modalItemText: { fontSize: 16, fontWeight: '600' },
     doneBtn: { margin: 20, backgroundColor: '#10B981', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
     doneBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+    emptyCartBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
 });

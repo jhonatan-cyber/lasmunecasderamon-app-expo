@@ -24,7 +24,12 @@ export const PremiumHeaderActions = ({
 }: PremiumHeaderActionsProps) => {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const logout = useAuthStore(state => state.logout);
+    const user = useAuthStore(state => state.user);
     const router = useRouter();
+
+    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
+    const role = roleName.toLowerCase();
+    const isRestrictedRole = role.includes('garzon') || role.includes('anfitriona');
 
     // Forzar siempre blanco para el header premium
     const iconColor = '#FFFFFF';
@@ -51,7 +56,7 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
-            {showNotifications && (
+            {showNotifications && !isRestrictedRole && (
                 <Pressable
                     onPress={() => {
                         if (onNotificationPress) {

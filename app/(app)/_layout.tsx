@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import {
     Modal,
@@ -17,6 +17,7 @@ export default function AppLayout() {
     const sessionExpired = useAuthStore((state) => state.sessionExpired);
     const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
     const logout = useAuthStore((state) => state.logout);
+    const pathname = usePathname();
 
     // Inicializar el manejador central de notificaciones (Navegación, TTS, Haptics)
     useNotificationHandler();
@@ -36,6 +37,9 @@ export default function AppLayout() {
         clearSessionExpired();
         await logout();
     };
+
+    const isCajeroHome = pathname === '/cajero' || pathname.includes('/cajero/(tabs)');
+    const isSolicitudesPage = pathname.includes('/cajero/solicitudes');
 
     return (
         <>

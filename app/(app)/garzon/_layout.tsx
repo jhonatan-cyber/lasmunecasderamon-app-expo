@@ -11,9 +11,9 @@ export default function GarzonLayout() {
             headerTitleStyle: { fontWeight: '700' },
         }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="pedidos" options={{ title: 'Categorías' }} />
-            <Stack.Screen name="productos" options={{ title: 'Productos' }} />
-            <Stack.Screen name="perfil" options={{ title: 'Mi Perfil' }} />
+            <Stack.Screen name="pedidos" options={{ headerShown: false }} />
+            <Stack.Screen name="productos" options={{ headerShown: false }} />
+            <Stack.Screen name="perfil" options={{ headerShown: false }} />
         </Stack>
     );
 }

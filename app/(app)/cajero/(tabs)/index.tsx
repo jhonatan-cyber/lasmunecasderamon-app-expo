@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { MotiView } from 'moti';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
+    DeviceEventEmitter,
     Dimensions,
     Platform,
     RefreshControl,
@@ -25,6 +26,7 @@ import { PremiumHeaderActions } from '../../../../components/PremiumHeaderAction
 import { PremiumLiquidationCard } from '../../../../components/PremiumLiquidationCard';
 import { PremiumUserProfile } from '../../../../components/PremiumUserProfile';
 import { SkeletonLoader } from '../../../../components/SkeletonLoader';
+import { PendingSolicitudesAlert } from '../../../../components/PendingSolicitudesAlert';
 import { useAccentColor } from '../../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../../store/authStore';
 
@@ -160,6 +162,13 @@ export default function CajeroHomeScreen() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('refresh_requests', () => {
+            fetchData();
+        });
+        return () => sub.remove();
+    }, [fetchData]);
+
     // Real-time updates via SSE
     useEffect(() => {
         if (!user?.id) return;
@@ -174,8 +183,19 @@ export default function CajeroHomeScreen() {
                 if (!event.data) return;
                 try {
                     const payload = JSON.parse(event.data);
+
+                    if (payload.type === 'new_order' || payload.type === 'new_service_request') {
+                        // Navegar automáticamente a la pantalla de solicitudes con el ID para abrir el modal
+                        const id = payload.data.id || payload.data.id_solicitud;
+                        router.push({
+                            pathname: '/cajero/solicitudes',
+                            params: { openId: String(id), type: payload.type }
+                        });
+                        return;
+                    }
+
                     // Refresh on any relevant update
-                    if (['venta_created', 'service_created', 'service_finished', 'pending_solicitud', 'user_status_updated'].includes(payload.type)) {
+                    if (['venta_created', 'service_created', 'service_finished', 'pending_solicitud', 'user_status_updated', 'order_deleted', 'service_request_deleted'].includes(payload.type)) {
                         console.log(`[CajeroHome] Event ${payload.type} received, refreshing stats`);
                         fetchData();
                     }
@@ -265,6 +285,7 @@ export default function CajeroHomeScreen() {
                     </LinearGradient>
 
                     <View style={isTablet && styles.tabletMaxWidth}>
+                        <PendingSolicitudesAlert isInline />
                         <CajeroStats stats={stats} />
 
                         <MotiView
