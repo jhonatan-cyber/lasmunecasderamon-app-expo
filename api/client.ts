@@ -22,6 +22,14 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 // Detect the best IP for the current platform
 const getBaseUrl = () => {
+    // Production URL (Punycode for lasmuñecasderamon.com)
+    const PROD_URL = 'https://xn--lasmuecasderamon-bub.com';
+
+    // If not in development mode, use production URL
+    if (!__DEV__) {
+        return PROD_URL;
+    }
+
     // 1. DYNAMIC FOR WEB: Detects the current hostname of the browser
     if (Platform.OS === 'web') {
         const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
@@ -29,7 +37,6 @@ const getBaseUrl = () => {
     }
 
     // 2. DYNAMIC FOR NATIVE: Asks Expo for the host laptop's IP
-    // debuggerHost is automatically updated by Expo whenever you run npx expo start
     const debuggerHost = (Constants as any).expoConfig?.hostUri;
     const localIP = debuggerHost?.split(':')[0];
 
@@ -37,8 +44,8 @@ const getBaseUrl = () => {
         return `http://${localIP}:3000`;
     }
 
-    // Fallback if autodetection fails (uses your current IP as safety)
-    return 'http://192.168.0.6:3000';
+    // Fallback
+    return PROD_URL;
 };
 
 export const BASE_URL = getBaseUrl();
