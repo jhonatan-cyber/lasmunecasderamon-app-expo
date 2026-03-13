@@ -99,11 +99,11 @@ export default function GarzonHomeScreen() {
         hasNewAlert, selectedDates, isModalVisible, hasOpenCaja, alertConfig
     } = state;
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     const showAlert = useCallback((title: string, message: string, type: GarzonState['alertConfig']['type'] = 'info', onConfirm?: () => void, showCancel = false) => {
         dispatch({ type: 'SET_ALERT', payload: { visible: true, title, message, type, onConfirm, showCancel } });
@@ -260,7 +260,7 @@ export default function GarzonHomeScreen() {
                     />
 
                     {selectedDates.length > 0 && (
-                        <View style={[styles.selectionFloat, { backgroundColor: isDark ? '#1F2937' : '#374151' }]}>
+                        <View style={[styles.selectionFloat, { backgroundColor: isDark ? '#1E1B4B' : '#374151', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
                             <RNText style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</RNText>
                             <View style={styles.selectionActions}>
                                 <Pressable
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
     modalHeader: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#37415120' },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
+    modalTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     modalSubtitle: { fontSize: 14, marginTop: 4 },
     closeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     eventItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },

@@ -130,11 +130,11 @@ export default function AnfitrionaHomeScreen() {
         hasNewAlert, selectedDates, isModalVisible, alertConfig, activeService
     } = state;
 
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const showAlert = useCallback((title: string, message: string, type: AnfitrionaState['alertConfig']['type'] = 'info', onConfirm?: () => void, showCancel = false) => {
         dispatch({ type: 'SET_ALERT', payload: { visible: true, title, message, type, onConfirm, showCancel } });
@@ -565,9 +565,9 @@ const styles = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingBottom: 10, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
     glassCard: { borderRadius: 24, padding: 18, borderWidth: 1, marginBottom: 16 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-    cardTitle: { fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+    cardTitle: { fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
     analyticsRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginTop: 10 },
-    bigStat: { fontSize: 32, fontWeight: '900' },
+    bigStat: { fontSize: 32, fontWeight: '900', letterSpacing: -1 },
     statLabel: { fontSize: 11, fontWeight: '600' },
     goalStatus: { textAlign: 'center', fontSize: 11, fontWeight: '700', marginTop: 8 },
     callStaffContainer: { marginTop: 15, alignItems: 'center' },
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
     modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
     modalHeader: { padding: 25, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#37415120' },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
+    modalTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     modalSubtitle: { fontSize: 14, marginTop: 4 },
     closeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     eventItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },

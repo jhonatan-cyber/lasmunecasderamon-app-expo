@@ -43,11 +43,11 @@ export default function ComisionesScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1 },
-    summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
+    summaryLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
+    summaryAmount: { fontSize: 38, fontWeight: '900', letterSpacing: -0.5, marginBottom: 8 },
     summaryDetails: { flexDirection: 'row', gap: 16 },
     summaryDetail: { fontSize: 13 },
     filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },

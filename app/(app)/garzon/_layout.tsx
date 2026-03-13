@@ -6,9 +6,9 @@ export default function GarzonLayout() {
 
     return (
         <Stack screenOptions={{
-            headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
+            headerStyle: { backgroundColor: isDark ? '#0F0D2E' : '#FFFFFF' },
             headerTintColor: isDark ? '#FFFFFF' : '#000000',
-            headerTitleStyle: { fontWeight: '700' },
+            headerTitleStyle: { fontWeight: '900' },
         }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="pedidos" options={{ headerShown: false }} />

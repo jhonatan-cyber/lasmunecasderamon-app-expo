@@ -109,11 +109,11 @@ export default function VentasScreen() {
     });
   };
 
-  const bg = isDark ? "#000000" : "#F3F4F6";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#000000";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E7EB";
+  const bg = isDark ? "#0F0D2E" : "#F3F4F6";
+  const cardBg = isDark ? "#1E1B4B" : "#FFFFFF";
+  const textPrimary = isDark ? "#FFFFFF" : "#111827";
+  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
+  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
 
   const DetailSkeleton = () => (
     <View style={{ padding: 20 }}>
@@ -833,6 +833,19 @@ export default function VentasScreen() {
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
         columnWrapperStyle={numColumns > 1 ? { gap: 12 } : undefined}
+        ListHeaderComponent={resumen && activeTab === "historial" ? (
+          <View style={[styles.resumenCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : accentColor, shadowColor: isDark ? 'transparent' : accentColor, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
+            <View style={styles.resumenRow}>
+              <View>
+                <Text style={[styles.resumenLabel, { color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }]}>TOTAL VENTAS HOY</Text>
+                <Text style={[styles.resumenValue, { color: '#FFFFFF' }]}>${(resumen.total_hoy || 0).toLocaleString()}</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: 12, borderRadius: 16 }}>
+                <Ionicons name="stats-chart" size={32} color="#FFFFFF" />
+              </View>
+            </View>
+          </View>
+        ) : null}
         contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
           <RefreshControl
@@ -1367,21 +1380,20 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   plusBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  headerTitle: { fontSize: 24, fontWeight: "800" },
-  headerSubtitle: { fontSize: 15, fontWeight: "500", opacity: 0.8 },
+  headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContainer: { padding: 16, paddingBottom: 100 },
 
   // Resumen Card
   resumenCard: {
-    padding: 20,
-    borderRadius: 24,
+    padding: 24,
+    borderRadius: 32,
     marginBottom: 20,
-    elevation: 8,
-    shadowColor: "#E11D48",
-    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowRadius: 20,
   },
   resumenRow: {
     flexDirection: "row",
@@ -1450,7 +1462,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  cardCode: { fontSize: 17, fontWeight: "900", letterSpacing: 0.5 },
+  cardCode: { fontSize: 17, fontWeight: "900", letterSpacing: -0.5 },
   statusBadgeSmall: {
     flexDirection: "row",
     alignItems: "center",
@@ -1543,8 +1555,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  modalTitleText: { fontSize: 24, fontWeight: "900" },
-  modalSubText: { fontSize: 14, fontWeight: "600" },
+  modalTitleText: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
+  modalSubText: { fontSize: 12, fontWeight: "600" },
   closeBtn: {
     width: 40,
     height: 40,

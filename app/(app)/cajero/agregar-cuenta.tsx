@@ -23,6 +23,7 @@ import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
 import { CartList } from "../../../components/cajero/forms/CartList";
 import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 type CuentaState = {
     loadingInitial: boolean;
@@ -134,7 +135,7 @@ const getHostessLimit = (prod: any, qty: number) => {
 };
 
 export default function AgregarCuentaScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
@@ -164,11 +165,11 @@ export default function AgregarCuentaScreen() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const spacing = isTablet ? 24 : 16;
     const borderRadius = isTablet ? 28 : 24;
@@ -352,7 +353,7 @@ export default function AgregarCuentaScreen() {
     if (loadingInitial) {
         return (
             <View style={[styles.centerContainer, { backgroundColor: bg }]}>
-                <ActivityIndicator size="large" color="#E11D48" />
+                <ActivityIndicator size="large" color={accentColor} />
             </View>
         );
     }
@@ -367,7 +368,7 @@ export default function AgregarCuentaScreen() {
 
             {/* Header premium con gradiente */}
             <LinearGradient
-                colors={isDark ? ['#FFFFFF', '#F1F5F9'] : ['#2D2870', '#1E1B4B', '#0F0D2E']}
+                colors={gradientColors as any}
                 style={[
                     styles.header,
                     {
@@ -399,7 +400,7 @@ export default function AgregarCuentaScreen() {
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
                 keyboardShouldPersistTaps="handled"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
                 <View style={[styles.infoBanner, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor }]}>
                     <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={{ marginRight: 10 }} />
@@ -437,8 +438,8 @@ export default function AgregarCuentaScreen() {
                                 accessibilityLabel={`Categoría ${cat.name}`}
                                 accessibilityRole="button"
                             >
-                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? '#E11D4815' : '#10B98115' }]}>
-                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? '#E11D48' : '#10B981'} />
+                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? `${accentColor}15` : '#10B98115' }]}>
+                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? accentColor : '#10B981'} />
                                 </View>
                                 <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name}</Text>
                             </Pressable>
@@ -479,11 +480,11 @@ export default function AgregarCuentaScreen() {
                     </View>
                     <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
                         <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>NUEVO TOTAL</Text>
-                        <Text style={styles.totalValFinal}>${totals.total.toLocaleString()}</Text>
+                        <Text style={[styles.totalValFinal, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
                     </View>
 
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: cart.length > 0 ? '#E11D48' : '#9CA3AF' }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, { backgroundColor: cart.length > 0 ? accentColor : '#9CA3AF' }, submitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
                         disabled={submitting || cart.length === 0}
                         accessibilityLabel="Agregar productos"
@@ -509,7 +510,7 @@ export default function AgregarCuentaScreen() {
                         </View>
 
                         {modalLoading ? (
-                            <ActivityIndicator color="#E11D48" size="large" />
+                            <ActivityIndicator color={accentColor} size="large" />
                         ) : (
                             <FlatList
                                 data={modalProducts}
@@ -546,7 +547,7 @@ export default function AgregarCuentaScreen() {
                                             </Pressable>
                                         </View>
                                         <Pressable
-                                            style={[styles.modalAddBtn, { backgroundColor: '#E11D48' }]}
+                                            style={[styles.modalAddBtn, { backgroundColor: accentColor }]}
                                             onPress={() => {
                                                 const id = item.id || item.id_producto;
                                                 const hasComm = Number(item.comision || item.commission || 0) > 0;
@@ -585,7 +586,7 @@ export default function AgregarCuentaScreen() {
                         )}
 
                         <Pressable
-                            style={styles.confirmModalBtn}
+                            style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
                             accessibilityLabel="Confirmar selección de productos"
                             accessibilityRole="button"
@@ -691,7 +692,7 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { paddingHorizontal: 20 },
     headerTop: { flexDirection: 'row', alignItems: 'center' },
-    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

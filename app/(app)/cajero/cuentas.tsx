@@ -78,7 +78,7 @@ const statusLabels: Record<number, string> = {
     0: "Cobrado",
 };
 
-const CuentaTimer = React.memo(({ timer, serverOffset }: { timer: Timer; serverOffset: number }) => {
+const CuentaTimer = React.memo(({ timer, serverOffset, accentColor }: { timer: Timer; serverOffset: number; accentColor: string }) => {
     const [remaining, setRemaining] = React.useState(() => calculateRemainingTime(timer, serverOffset));
 
     React.useEffect(() => {
@@ -97,7 +97,7 @@ const CuentaTimer = React.memo(({ timer, serverOffset }: { timer: Timer; serverO
     const formatted = `${remaining < 0 ? '-' : ''}${m}:${s.toString().padStart(2, '0')}`;
 
     return (
-        <Text style={{ fontWeight: '900', color: isOverdue ? '#EF4444' : '#E11D48', fontSize: 13, flex: 1 }}>
+        <Text style={{ fontWeight: '900', color: isOverdue ? '#EF4444' : accentColor, fontSize: 13, flex: 1 }}>
             {isOverdue ? 'TIEMPO AGOTADO' : formatted}
         </Text>
     );
@@ -157,17 +157,18 @@ export default function CuentasScreen() {
 
     const [state, dispatch] = useReducer(cuentasReducer, initialCuentasState((params.tab as any) === "pendientes" ? "pendientes" : "historial"));
     const { timers, serverOffset, refreshTimers } = useTimer();
+    const { accentBg, accentBorder } = useAccentColor();
     const {
         loading, refreshing, cuentas, resumen, selectedCuenta, loadingDetail,
         modalVisible, actionSheetVisible, activeCuenta, activeTab, alertConfig,
         cobroModalVisible, cobroMetodoPago, cobroEnableTip, cobroSubmitting
     } = state;
 
-    const bg = isDark ? "#000000" : "#F3F4F6";
-    const cardBg = isDark ? "#1F2937" : "#FFFFFF";
-    const textPrimary = isDark ? "#FFFFFF" : "#000000";
-    const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-    const borderColor = isDark ? "#374151" : "#E5E7EB";
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     const fetchCuentas = useCallback(async (isManual = false) => {
         try {
@@ -469,8 +470,8 @@ export default function CuentasScreen() {
                 {/* Info grid */}
                 <View style={styles.cardInfoGrid}>
                     <View style={styles.cardInfoCell}>
-                        <View style={[styles.cardInfoIconBox, { backgroundColor: '#E11D4812' }]}>
-                            <Ionicons name="person" size={13} color="#E11D48" />
+                        <View style={[styles.cardInfoIconBox, { backgroundColor: accentBg }]}>
+                            <Ionicons name="person" size={13} color={accentColor} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[styles.cardInfoLabel, { color: textSecondary }]}>CLIENTE</Text>
@@ -494,10 +495,10 @@ export default function CuentasScreen() {
 
                 {/* Timer row (if active) */}
                 {hasTimer && (
-                    <View style={[styles.cardTimerRow, { backgroundColor: timer ? '#E11D4810' : `${textSecondary}08`, borderColor: timer ? '#E11D4825' : borderColor }]}>
-                        <Ionicons name="stopwatch" size={14} color={timer ? '#E11D48' : textSecondary} />
+                    <View style={[styles.cardTimerRow, { backgroundColor: timer ? accentBg : `${textSecondary}08`, borderColor: timer ? accentBorder : borderColor }]}>
+                        <Ionicons name="stopwatch" size={14} color={timer ? accentColor : textSecondary} />
                         {timer ? (
-                            <CuentaTimer timer={timer} serverOffset={serverOffset} />
+                            <CuentaTimer timer={timer} serverOffset={serverOffset} accentColor={accentColor} />
                         ) : (
                             <Text style={[styles.cardTimerSync, { color: textSecondary, flex: 1 }]}>Sincronizando...</Text>
                         )}
@@ -652,14 +653,14 @@ export default function CuentasScreen() {
                     </View>
                 }
                 ListHeaderComponent={resumen && resumen.total_por_cobrar > 0 ? (
-                    <View style={[styles.resumenCard, { backgroundColor: accentColor, shadowColor: accentColor }]}>
+                    <View style={[styles.resumenCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : accentColor, shadowColor: accentColor, borderColor: accentBorder, borderWidth: 1 }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <View style={styles.resumenIconBox}>
-                                <Ionicons name="wallet-outline" size={32} color="#FFF" />
-                            </View>
+                            <LinearGradient colors={[`${accentColor}40`, `${accentColor}10`]} style={styles.resumenIconBox}>
+                                <Ionicons name="wallet-outline" size={32} color={isDark ? accentColor : "#FFF"} />
+                            </LinearGradient>
                             <View style={{ marginLeft: 16 }}>
-                                <Text style={styles.resumenLabel}>TOTAL POR COBRAR</Text>
-                                <Text style={styles.resumenValue}>${(resumen.total_por_cobrar || 0).toLocaleString()}</Text>
+                                <Text style={[styles.resumenLabel, { color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }]}>TOTAL POR COBRAR</Text>
+                                <Text style={[styles.resumenValue, { color: isDark ? '#FFF' : '#FFF' }]}>${(resumen.total_por_cobrar || 0).toLocaleString()}</Text>
                             </View>
                         </View>
                     </View>
@@ -880,8 +881,8 @@ const styles = StyleSheet.create({
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: "center", alignItems: "center", backgroundColor: 'rgba(155,155,155,0.1)' },
     plusBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, height: 48, borderRadius: 24, backgroundColor: "#E11D48", justifyContent: "center", elevation: 2, shadowColor: "#E11D48", shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, gap: 4 },
     plusBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-    headerTitle: { fontSize: 24, fontWeight: "800" },
-    headerSubtitle: { fontSize: 15, fontWeight: "500", opacity: 0.8 },
+    headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
+    headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
     listContainer: { padding: 16, paddingBottom: 100 },
 
     // Tabs
@@ -893,16 +894,16 @@ const styles = StyleSheet.create({
     tabBadgeText: { color: '#E11D48', fontSize: 11, fontWeight: '900' },
 
     // Resumen
-    resumenCard: { padding: 20, borderRadius: 24, marginBottom: 20, elevation: 8, shadowColor: "#E11D48", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12 },
-    resumenLabel: { color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: "700" },
-    resumenValue: { color: "#FFFFFF", fontSize: 32, fontWeight: "900", marginTop: 4 },
-    resumenIconBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center" },
+    resumenCard: { padding: 24, borderRadius: 32, marginBottom: 20, elevation: 10, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+    resumenLabel: { fontSize: 13, fontWeight: "800", letterSpacing: 1 },
+    resumenValue: { fontSize: 36, fontWeight: "900", marginTop: 4 },
+    resumenIconBox: { width: 64, height: 64, borderRadius: 20, justifyContent: "center", alignItems: "center" },
 
     // Cards Premium
     card: {
-        flex: 1, borderRadius: 20, overflow: 'hidden', marginBottom: 14,
+        flex: 1, borderRadius: 24, overflow: 'hidden', marginBottom: 14,
         borderWidth: 1,
-        elevation: 4, shadowColor: "#000", shadowOpacity: 0.09, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }
+        elevation: 6, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }
     },
     cardAccentBar: { height: 4, width: '100%' },
     cardHeader: {
@@ -985,10 +986,10 @@ const styles = StyleSheet.create({
     // Modal
     modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
     detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, borderWidth: 1, borderBottomWidth: 0, height: "85%" },
-    modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-    modalTitleText: { fontSize: 24, fontWeight: "900" },
-    modalSubText: { fontSize: 14, fontWeight: "600" },
-    closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
+    modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
+    modalTitleText: { fontSize: 26, fontWeight: "900", letterSpacing: -0.5 },
+    modalSubText: { fontSize: 14, fontWeight: "600", marginTop: 2 },
+    closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(128,128,128,0.1)", justifyContent: "center", alignItems: "center" },
     detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginBottom: 24, paddingVertical: 10 },
     gridItem: { width: "47%", marginBottom: 12 },
     gridLabel: { fontSize: 11, fontWeight: "800", marginBottom: 4, letterSpacing: 0.5 },

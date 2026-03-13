@@ -163,11 +163,11 @@ export default function CajaScreen() {
     const { loading, refreshing, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#060912' : '#F1F5F9';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const bg = isDark ? '#0F0D2E' : '#F1F5F9';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+    const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     header: { paddingHorizontal: 16 },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
-    headerTitle: { fontSize: 24, fontWeight: '800' },
+    headerTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
 
     // Scroll

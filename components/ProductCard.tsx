@@ -60,10 +60,10 @@ export const ProductCard = ({
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const qty = cartItem?.quantity || 0;
 
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     const hasCommission = (product.commission || 0) > 0;
     const canSelectRoom = product.price >= 30000 && hasCommission;
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     },
     productName: {
         fontSize: 16,
-        fontWeight: '800',
-        letterSpacing: -0.3
+        fontWeight: '900',
+        letterSpacing: -0.5
     },
     productDesc: {
         fontSize: 11,

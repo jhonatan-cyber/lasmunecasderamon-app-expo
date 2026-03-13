@@ -115,10 +115,10 @@ export default function SolicitudesScreen() {
     const [submittingCheckout, setSubmittingCheckout] = useState(false);
 
     const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? 'rgba(255,255,255,0.05)' : '#E5E7EB';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     // Alert state
     const [alertConfig, setAlertConfig] = useState<{
@@ -143,6 +143,8 @@ export default function SolicitudesScreen() {
             visibilityTime: 4000
         });
     };
+
+    const { accentBg, accentBorder } = useAccentColor();
 
     const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
@@ -613,10 +615,10 @@ export default function SolicitudesScreen() {
                         <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#FFFFFF" : "#111827"} />
                     </Pressable>
                     <View style={{ flex: 1, marginLeft: 15 }}>
-                        <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
+                        <Text style={[styles.headerTitle, { color: isDark ? "#FFFFFF" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
                             Solicitudes
                         </Text>
-                        <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
+                        <Text style={[styles.headerSubtitle, { color: isDark ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
                             {!cajaAbierta ? 'Caja cerrada' : 'Pendientes de aprobación'}
                         </Text>
                     </View>
@@ -626,7 +628,7 @@ export default function SolicitudesScreen() {
                     <MotiView
                         from={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        style={styles.urgencyBar}
+                        style={[styles.urgencyBar]}
                     >
                         <Ionicons name="warning" size={20} color="#FFFFFF" />
                         <Text style={styles.urgencyBarText}>
@@ -669,8 +671,8 @@ export default function SolicitudesScreen() {
                         {selectedPedido && (
                             <>
                                 <View style={styles.modalHeaderRow}>
-                                    <View style={[styles.iconBox, { backgroundColor: '#E11D4820' }]}>
-                                        <Ionicons name="card-outline" size={24} color="#E11D48" />
+                                    <View style={[styles.iconBox, { backgroundColor: accentBg }]}>
+                                        <Ionicons name="card-outline" size={24} color={accentColor} />
                                     </View>
                                     <View>
                                         <Text style={[styles.modalTitleText, { color: textPrimary }]}>Cerrar Pedido</Text>
@@ -685,7 +687,7 @@ export default function SolicitudesScreen() {
 
                                     <View style={[styles.receiptContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor }]}>
                                         {loadingDetails ? (
-                                            <ActivityIndicator size="small" color="#E11D48" style={{ marginVertical: 20 }} />
+                                            <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 20 }} />
                                         ) : pedidoDetails.map((item: any, idx: number) => (
                                             <View key={idx} style={styles.productDetailRow}>
                                                 <View style={[styles.productQuantityBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
@@ -709,22 +711,22 @@ export default function SolicitudesScreen() {
                                                 key={m}
                                                 style={[
                                                     styles.payMethodBtn,
-                                                    { borderColor: metodoPago === m ? '#E11D48' : borderColor },
-                                                    metodoPago === m && { backgroundColor: '#E11D4810' }
+                                                    { borderColor: metodoPago === m ? accentColor : borderColor },
+                                                    metodoPago === m && { backgroundColor: accentBg }
                                                 ]}
                                                 onPress={() => setMetodoPago(m)}
                                             >
-                                                <Ionicons name={m === 'efectivo' ? 'cash' : m === 'tarjeta' ? 'card' : 'swap-horizontal'} size={24} color={metodoPago === m ? '#E11D48' : textSecondary} />
-                                                <Text style={[styles.payMethodLabel, { color: metodoPago === m ? '#E11D48' : textSecondary, textTransform: 'capitalize' }]}>{m}</Text>
+                                                <Ionicons name={m === 'efectivo' ? 'cash' : m === 'tarjeta' ? 'card' : 'swap-horizontal'} size={24} color={metodoPago === m ? accentColor : textSecondary} />
+                                                <Text style={[styles.payMethodLabel, { color: metodoPago === m ? accentColor : textSecondary, textTransform: 'capitalize' }]}>{m}</Text>
                                             </Pressable>
                                         ))}
                                     </View>
 
                                     <Pressable 
-                                        style={[styles.tipCheckboxContainer, { borderColor: agregarPropina ? '#E11D48' : borderColor, backgroundColor: agregarPropina ? '#E11D4805' : 'transparent' }]}
+                                        style={[styles.tipCheckboxContainer, { borderColor: agregarPropina ? accentColor : borderColor, backgroundColor: agregarPropina ? accentBg : 'transparent' }]}
                                         onPress={() => setAgregarPropina(!agregarPropina)}
                                     >
-                                        <View style={[styles.checkbox, { borderColor: agregarPropina ? '#E11D48' : textSecondary, backgroundColor: agregarPropina ? '#E11D48' : 'transparent' }]}>
+                                        <View style={[styles.checkbox, { borderColor: agregarPropina ? accentColor : textSecondary, backgroundColor: agregarPropina ? accentColor : 'transparent' }]}>
                                             {agregarPropina && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                                         </View>
                                         <View style={{ marginLeft: 12 }}>
@@ -733,7 +735,7 @@ export default function SolicitudesScreen() {
                                         </View>
                                     </Pressable>
 
-                                    <View style={[styles.totalsBox, { backgroundColor: '#E11D4810' }]}>
+                                    <View style={[styles.totalsBox, { backgroundColor: accentBg }]}>
                                         <View style={styles.totalRow}>
                                             <Text style={[styles.totalLabel, { color: textSecondary }]}>Subtotal</Text>
                                             <Text style={[styles.totalValue, { color: textPrimary }]}>${(selectedPedido.total).toLocaleString()}</Text>
@@ -741,12 +743,12 @@ export default function SolicitudesScreen() {
                                         {agregarPropina && (
                                             <View style={[styles.totalRow, { marginTop: 4 }]}>
                                                 <Text style={[styles.totalLabel, { color: textSecondary }]}>Propina (10%)</Text>
-                                                <Text style={[styles.totalValue, { color: '#E11D48' }]}>+${(selectedPedido.total * 0.10).toLocaleString()}</Text>
+                                                <Text style={[styles.totalValue, { color: accentColor }]}>+${(selectedPedido.total * 0.10).toLocaleString()}</Text>
                                             </View>
                                         )}
-                                        <View style={[styles.totalRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(139, 92, 246, 0.2)', paddingTop: 12 }]}>
+                                        <View style={[styles.totalRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 12 }]}>
                                             <Text style={[styles.finalLabel, { color: textPrimary }]}>Monto Final</Text>
-                                            <Text style={[styles.finalValue, { color: '#E11D48' }]}>${(selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.10 : 0)).toLocaleString()}</Text>
+                                            <Text style={[styles.finalValue, { color: accentColor }]}>${(selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.10 : 0)).toLocaleString()}</Text>
                                         </View>
                                     </View>
                                 </ScrollView>
@@ -760,7 +762,7 @@ export default function SolicitudesScreen() {
                                         <Text style={[styles.modalBtnActionText, { color: textSecondary }]}>Cancelar</Text>
                                     </Pressable>
                                     <Pressable
-                                        style={[styles.modalBtnAction, { backgroundColor: '#E11D48', opacity: !metodoPago || submittingCheckout ? 0.6 : 1 }]}
+                                        style={[styles.modalBtnAction, { backgroundColor: accentColor, opacity: !metodoPago || submittingCheckout ? 0.6 : 1 }]}
                                         onPress={handleCheckoutSubmit}
                                         disabled={!metodoPago || submittingCheckout}
                                     >
@@ -788,8 +790,8 @@ export default function SolicitudesScreen() {
                         {selectedService && (
                             <>
                                 <View style={styles.modalHeaderRow}>
-                                    <View style={[styles.iconBox, { backgroundColor: '#E11D4820' }]}>
-                                        <Ionicons name="receipt-outline" size={24} color="#E11D48" />
+                                    <View style={[styles.iconBox, { backgroundColor: accentBg }]}>
+                                        <Ionicons name="receipt-outline" size={24} color={accentColor} />
                                     </View>
                                     <View>
                                         <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Servicio</Text>
@@ -803,15 +805,15 @@ export default function SolicitudesScreen() {
                                     </View>
 
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="bed-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="bed-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Habitación: {selectedService.habitacion_nombre}</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="person-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="person-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado por: {selectedService.solicitado_por_nombre}</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 8 }]}>
-                                        <Ionicons name="people-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="people-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Anfitrionas ({selectedService.anfitrionas_ids?.length || 0}):</Text>
                                     </View>
                                     <View style={{ marginLeft: 8, marginBottom: 16 }}>
@@ -833,12 +835,12 @@ export default function SolicitudesScreen() {
                                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: isTablet ? 12 : 8 }}>
                                                     {displayAnfs.map((anf: any, idx: number) => (
                                                         <View key={idx} style={{ 
-                                                            backgroundColor: isDark ? 'rgba(225, 29, 72, 0.1)' : 'rgba(225, 29, 72, 0.05)',
+                                                            backgroundColor: accentBg,
                                                             paddingHorizontal: isTablet ? 16 : 12,
                                                             paddingVertical: isTablet ? 12 : 8,
                                                             borderRadius: 14,
                                                             borderWidth: 1,
-                                                            borderColor: isDark ? 'rgba(225, 29, 72, 0.2)' : 'rgba(225, 29, 72, 0.1)',
+                                                            borderColor: accentBorder,
                                                             flexDirection: 'row',
                                                             alignItems: 'center'
                                                         }}>
@@ -856,15 +858,15 @@ export default function SolicitudesScreen() {
                                     </View>
 
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="time-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="time-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Tiempo: {selectedService.tiempo} min</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 12 }]}>
-                                        <Ionicons name="calendar-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="calendar-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado: {parseDateSafe(selectedService.fecha_solicitud).toLocaleDateString()} {parseDateSafe(selectedService.fecha_solicitud).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                                     </View>
                                     <View style={[styles.infoRow, { marginBottom: 20 }]}>
-                                        <Ionicons name="card-outline" size={isTablet ? 24 : 20} color="#E11D48" />
+                                        <Ionicons name="card-outline" size={isTablet ? 24 : 20} color={accentColor} />
                                         <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Método Pago: {selectedService.metodo_pago.toUpperCase()}</Text>
                                     </View>
 
@@ -893,7 +895,7 @@ export default function SolicitudesScreen() {
                                             <View style={styles.productInfoCol}>
                                                 <Text style={[styles.productName, { color: textPrimary, fontWeight: '800', fontSize: isTablet ? 22 : 16 }]}>TOTAL</Text>
                                             </View>
-                                            <Text style={[styles.productSubtotal, { color: '#E11D48', fontSize: isTablet ? 26 : 18, fontWeight: '900' }]}>${Math.floor(selectedService.total || 0).toLocaleString('de-DE')}</Text>
+                                            <Text style={[styles.productSubtotal, { color: accentColor, fontSize: isTablet ? 26 : 18, fontWeight: '900' }]}>${Math.floor(selectedService.total || 0).toLocaleString('de-DE')}</Text>
                                         </View>
                                     </View>
                                 </ScrollView>
@@ -950,7 +952,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(155,155,155,0.1)',
     },
-    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContainer: { padding: 16, paddingBottom: 100 },
@@ -997,18 +999,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#EF4444',
-        paddingVertical: 8,
+        backgroundColor: '#E11D48',
+        paddingVertical: 12,
         paddingHorizontal: 16,
-        borderRadius: 12,
+        borderRadius: 16,
         marginTop: 15,
-        gap: 8,
+        gap: 10,
+        shadowColor: '#E11D48',
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)',
+        borderColor: 'rgba(255,255,255,0.2)',
     },
     urgencyBarText: {
         color: '#FFFFFF',
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: '900',
         letterSpacing: 0.5,
     },

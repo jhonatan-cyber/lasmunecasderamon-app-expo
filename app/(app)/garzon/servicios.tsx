@@ -87,11 +87,11 @@ export default function ServiciosScreen() {
     const [hostessModalVisible, setHostessModalVisible] = useState(false);
     const [clientModalVisible, setClientModalVisible] = useState(false);
 
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     // Fetch data
     const fetchData = useCallback(async (isRefreshing = false) => {
@@ -615,10 +615,10 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     selectFieldText: {
-        fontSize: 15,
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '700',
     },
-    sectionLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1, marginTop: 24, marginBottom: 12 },
+    sectionLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1, marginTop: 24, marginBottom: 12 },
     horizontalSelect: { marginBottom: 10 },
     roomCard: { width: 120, height: 140, borderRadius: 20, padding: 15, marginRight: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     roomEmoji: { fontSize: 28, marginBottom: 8 },
@@ -644,8 +644,8 @@ const styles = StyleSheet.create({
     summaryLabel: { fontSize: 13, fontWeight: '600' },
     summaryValue: { fontSize: 13, fontWeight: '700' },
     totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-    totalLabel: { fontSize: 16, fontWeight: '900' },
-    totalAmount: { fontSize: 24, fontWeight: '900' },
+    totalLabel: { fontSize: 16, fontWeight: '900', letterSpacing: -0.5 },
+    totalAmount: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
     submitBtn: { flexDirection: 'row', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginTop: 30 },
     submitText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 1 },
 });

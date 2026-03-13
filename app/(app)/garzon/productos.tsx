@@ -74,11 +74,11 @@ export default function ProductosScreen() {
     // Modal state
     const [activeConfigItem, setActiveConfigItem] = useState<{ productId: number, type: 'hostess' | 'room' } | null>(null);
 
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -344,7 +344,7 @@ export default function ProductosScreen() {
             />
 
             {cart.length > 0 && (
-                <View style={[styles.cartBar, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderTopColor: borderColor, paddingBottom: 16 + insets.bottom }]}>
+                <View style={[styles.cartBar, { backgroundColor: isDark ? '#1E1B4B' : '#FFFFFF', borderTopColor: borderColor, paddingBottom: 16 + insets.bottom }]}>
                     <View style={styles.cartTopRow}>
                         <View style={styles.tipControl}>
                             <Text style={[styles.tipText, { color: textSecondary }]}>Propina (10%)</Text>
@@ -381,7 +381,7 @@ export default function ProductosScreen() {
             {/* Config Modals */}
             <Modal visible={!!activeConfigItem} transparent animationType="slide">
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#111827' : '#FFFFFF', paddingBottom: insets.bottom }]}>
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1E1B4B' : '#FFFFFF', paddingBottom: insets.bottom }]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>
                                 {activeConfigItem?.type === 'hostess'
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     tipAmount: { fontSize: 13, fontWeight: '700' },
     cartMainRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cartLabel: { fontSize: 12, fontWeight: '600' },
-    cartTotal: { fontSize: 24, fontWeight: '900' },
+    cartTotal: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
     submitBtn: { backgroundColor: '#10B981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 9999 },
     submitText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

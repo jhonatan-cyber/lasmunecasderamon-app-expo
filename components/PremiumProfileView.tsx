@@ -139,11 +139,11 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
         dispatch({ type: 'SET_ALERT_CONFIG', payload: { ...alertConfig, visible: false } });
     }, [alertConfig]);
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#1F2937';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     useEffect(() => {
         if (user) {
@@ -243,7 +243,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                     ) : (
                         <>
                             <Text style={[styles.headerTitle, { color: isDark ? '#111827' : '#FFFFFF' }, isTablet && { fontSize: 28 }]}>Mi Perfil</Text>
-                            <Text style={[styles.headerSubtitle, { color: isDark ? '#6B7280' : 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>{roleLabel || 'Cuenta personal'}</Text>
+                            <Text style={[styles.headerSubtitle, { color: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>{roleLabel || 'Cuenta personal'}</Text>
                         </>
                     )}
                 </View>
@@ -298,7 +298,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                                 <Text style={styles.avatarEmoji}>{avatarEmoji}</Text>
                             </View>
                         )}
-                        <Pressable style={[styles.editPhotoBadge, { backgroundColor: accentColor }]} onPress={() => dispatch({ type: 'SET_IMAGE_PICKER_VISIBLE', payload: true })}>
+                        <Pressable style={[styles.editPhotoBadge, { backgroundColor: accentColor, borderColor: cardBg }]} onPress={() => dispatch({ type: 'SET_IMAGE_PICKER_VISIBLE', payload: true })}>
                             <Ionicons name="camera" size={16} color="#FFF" />
                         </Pressable>
                     </View>
@@ -485,15 +485,15 @@ const styles = StyleSheet.create({
     header: { paddingHorizontal: 16 },
     headerTop: { flexDirection: 'row', alignItems: 'center' },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
-    headerTitle: { fontSize: 24, fontWeight: '800' },
-    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+    headerTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    headerSubtitle: { fontSize: 13, fontWeight: '600', opacity: 0.8 },
     profileHero: { alignItems: 'center', paddingVertical: 32 },
     avatarBorder: { width: 140, height: 140, borderRadius: 70, borderWidth: 4, padding: 4, position: 'relative' },
     avatar: { width: '100%', height: '100%', borderRadius: 60 },
     avatarPlaceholder: { width: '100%', height: '100%', borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
     avatarEmoji: { fontSize: 60 },
     editPhotoBadge: { position: 'absolute', bottom: 5, right: 5, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#000' },
-    userName: { fontSize: 24, fontWeight: '800', marginTop: 16 },
+    userName: { fontSize: 24, fontWeight: '900', marginTop: 16, letterSpacing: -0.5 },
     roleBadge: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, marginTop: 8 },
     roleText: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
     formContainer: { padding: 24 },

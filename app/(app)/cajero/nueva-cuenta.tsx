@@ -176,11 +176,11 @@ export default function NuevaCuentaScreen() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const spacing = isTablet ? 24 : 16;
     const borderRadius = isTablet ? 28 : 24;
@@ -527,7 +527,7 @@ export default function NuevaCuentaScreen() {
                     </View>
 
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: accentColor }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, { backgroundColor: accentColor, shadowColor: accentColor }, submitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
                         disabled={submitting}
                         accessibilityLabel="Registrar cuenta"
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { paddingHorizontal: 20 },
     headerTop: { flexDirection: 'row', alignItems: 'center' },
-    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -764,16 +764,14 @@ const styles = StyleSheet.create({
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
     totalLabelFinal: { fontSize: 18, fontWeight: '900' },
-    totalValFinal: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
+    totalValFinal: { fontSize: 26, fontWeight: '900' },
     submitBtn: {
         height: 60,
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,
-        backgroundColor: "#E11D48",
         elevation: 4,
-        shadowColor: "#E11D48",
         shadowOpacity: 0.4,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 }
@@ -790,11 +788,10 @@ const styles = StyleSheet.create({
     modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-    modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10, elevation: 2, shadowColor: "#E11D48", shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10, elevation: 2, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
     confirmModalBtn: {
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#E11D48',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,

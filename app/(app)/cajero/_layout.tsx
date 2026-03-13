@@ -8,7 +8,7 @@ export default function CajeroLayout() {
     return (
         <>
             <Stack screenOptions={{
-                headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
+                headerStyle: { backgroundColor: isDark ? '#0F0D2E' : '#FFFFFF' },
                 headerTintColor: isDark ? '#FFFFFF' : '#000000',
                 headerTitleStyle: { fontWeight: '700' },
             }}>

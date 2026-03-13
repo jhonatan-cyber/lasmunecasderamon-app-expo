@@ -28,7 +28,7 @@ interface Anticipo {
 }
 
 export default function AnticiposScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, accentBg, accentBorder, isDark } = useAccentColor();
     const [anticipos, setAnticipos] = useState<Anticipo[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -36,11 +36,11 @@ export default function AnticiposScreen() {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
 
     const fetchAnticipos = useCallback(async (isManual = false) => {
         try {
@@ -148,11 +148,11 @@ export default function AnticiposScreen() {
                         </View>
                         <View style={[
                             styles.statusBadge,
-                            { backgroundColor: isPendiente ? (isDark ? '#7C2D12' : '#FEF3C7') : (isDark ? '#065F46' : '#D1FAE5') }
+                            { backgroundColor: isPendiente ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7') : (isDark ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') }
                         ]}>
                             <Text style={[
                                 styles.statusText,
-                                { color: isPendiente ? (isDark ? '#FDBA74' : '#92400E') : (isDark ? '#6EE7B7' : '#065F46') }
+                                { color: isPendiente ? (isDark ? '#F59E0B' : '#92400E') : (isDark ? '#10B981' : '#065F46') }
                             ]}>
                                 {isPendiente ? 'Por pagar' : 'Pagado'}
                             </Text>
@@ -222,15 +222,16 @@ export default function AnticiposScreen() {
         <View style={[styles.container, { backgroundColor: bg }]}>
             <PremiumHeader title="Anticipos" subtitle="Mis retiros de efectivo" />
 
-            <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
+            <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor, shadowColor: accentColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>ANTICIPOS PENDIENTES</Text>
                 <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalPendiente.toLocaleString()}</Text>
                 <View style={styles.summaryDetails}>
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>
-                        Total solicitado: ${totalGeneral.toLocaleString()}
+                        Solicitado: ${totalGeneral.toLocaleString()}
                     </Text>
+                    <View style={{ width: 1, height: 12, backgroundColor: borderColor, alignSelf: 'center' }} />
                     <Text style={[styles.summaryDetail, { color: textSecondary }]}>
-                        Pendientes: {pendientes.length}
+                        Items: {pendientes.length}
                     </Text>
                 </View>
             </View>
@@ -286,13 +287,14 @@ const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: {
-        marginHorizontal: 16, marginTop: 16, borderRadius: 16,
-        padding: 20, alignItems: 'center', borderWidth: 1,
+        marginHorizontal: 16, marginTop: 16, borderRadius: 24,
+        padding: 24, alignItems: 'center', borderWidth: 1,
+        elevation: 4, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12,
     },
-    summaryLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-    summaryAmount: { fontSize: 34, fontWeight: '800', marginBottom: 8 },
-    summaryDetails: { flexDirection: 'row', gap: 16 },
-    summaryDetail: { fontSize: 13 },
+    summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8, textTransform: 'uppercase' },
+    summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
+    summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+    summaryDetail: { fontSize: 13, fontWeight: '600' },
     filterRow: {
         flexDirection: 'row', paddingHorizontal: 16,
         marginTop: 16, marginBottom: 8, gap: 8,

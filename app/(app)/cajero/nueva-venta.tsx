@@ -183,11 +183,11 @@ export default function NuevaVentaScreen() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
+    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const spacing = isTablet ? 24 : 16;
     const borderRadius = isTablet ? 28 : 24;
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    headerTitle: { fontSize: 22, fontWeight: '800' },
+    headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     backBtn: {
         width: 44,
@@ -706,8 +706,8 @@ const styles = StyleSheet.create({
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
     totalLabel: { fontSize: 18, fontWeight: '900' },
-    totalValue: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
-    submitBtn: { backgroundColor: '#E11D48', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    totalValue: { fontSize: 26, fontWeight: '900' },
+    submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-    addBtn: { backgroundColor: '#E11D48', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#E11D48', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    addBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

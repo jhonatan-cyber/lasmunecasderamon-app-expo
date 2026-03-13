@@ -25,7 +25,7 @@ export default function AnfitrionaTabsLayout() {
         Appearance.setColorScheme(isDark ? 'light' : 'dark');
     };
 
-    const bgColor = isDark ? '#000000' : '#F3F4F6';
+    const bgColor = isDark ? '#0F0D2E' : '#F3F4F6';
 
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>

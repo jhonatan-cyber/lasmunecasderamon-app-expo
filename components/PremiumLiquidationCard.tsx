@@ -46,7 +46,7 @@ export function PremiumLiquidationCard({
 }: PremiumLiquidationCardProps) {
     const { accentColor, isDark } = useAccentColor();
 
-    const cardBg = isDark ? 'rgba(31, 41, 55, 0.95)' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
     const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';

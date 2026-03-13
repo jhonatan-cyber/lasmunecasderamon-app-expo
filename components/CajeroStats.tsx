@@ -63,7 +63,7 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 

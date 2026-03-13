@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   roomBadge: { flexDirection: "row", alignItems: "center", gap: 10 },
   iconBox: { width: 34, height: 34, borderRadius: 10, justifyContent: "center", alignItems: "center" },
-  roomName: { fontSize: 18, fontWeight: "900" },
+  roomName: { fontSize: 18, fontWeight: "900", letterSpacing: -0.5 },
   serviceCode: { fontSize: 11, fontWeight: "700" },
   statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, gap: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  modalTitleText: { fontSize: 24, fontWeight: '900' },
+  modalTitleText: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
   modalSubText: { fontSize: 12, fontWeight: '600', marginTop: 4 },
   closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(156, 163, 175, 0.1)', justifyContent: 'center', alignItems: 'center' },
   detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
@@ -375,11 +375,11 @@ export default function ServiciosActivosScreen() {
   const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig } = state;
 
   const theme = {
-    bg: isDark ? "#000000" : "#F8FAFC",
-    card: isDark ? "#111827" : "#FFFFFF",
+    bg: isDark ? "#0F0D2E" : "#F8FAFC",
+    card: isDark ? "#1E1B4B" : "#FFFFFF",
     text: isDark ? "#F9FAFB" : "#0F172A",
     textMuted: isDark ? "#9CA3AF" : "#64748B",
-    border: isDark ? "#1F2937" : "#E2E8F0",
+    border: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
     accent: accentColor,
     success: "#10B981",
     danger: "#EF4444",

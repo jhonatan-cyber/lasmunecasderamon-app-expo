@@ -140,11 +140,11 @@ export default function NuevoServicioScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
-  const bg = isDark ? "#000000" : "#F3F4F6";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#000000";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E7EB";
+  const bg = isDark ? "#0F0D2E" : "#F3F4F6";
+  const cardBg = isDark ? "#1E1B4B" : "#FFFFFF";
+  const textPrimary = isDark ? "#FFFFFF" : "#111827";
+  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
+  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "#E5E7EB";
 
   const fetchInitialData = useCallback(async () => {
     dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
@@ -493,7 +493,7 @@ export default function NuevoServicioScreen() {
           style={[
             styles.summaryCard,
             {
-              backgroundColor: isDark ? "#111827" : "#FFFFFF",
+              backgroundColor: isDark ? "#1E1B4B" : "#FFFFFF",
               borderTopColor: borderColor,
             },
           ]}
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: 'rgba(155,155,155,0.1)',
   },
-  headerTitle: { fontSize: 22, fontWeight: "800" },
+  headerTitle: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, fontWeight: "500", opacity: 0.8 },
   scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 14, fontWeight: "600" },
   summaryVal: { fontSize: 15, fontWeight: "800" },
   totalLabelFinal: { fontSize: 16, fontWeight: "900" },
-  totalValFinal: { fontSize: 28, fontWeight: "900", color: "#E11D48" },
+  totalValFinal: { fontSize: 28, fontWeight: "900" },
   submitBtn: {
     height: 60,
     borderRadius: 20,
