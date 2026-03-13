@@ -13,7 +13,6 @@
     "updates": {
       "url": "https://u.expo.dev/e026de98-e7d7-404d-abee-a44f0e121af8"
     },
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -25,7 +24,6 @@
         "backgroundImage": "./assets/images/logo1.png",
         "monochromeImage": "./assets/images/logo1.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
