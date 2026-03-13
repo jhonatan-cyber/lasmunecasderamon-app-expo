@@ -195,7 +195,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 
       {activeTab === "activos" && (
         <View style={styles.actionsBox}>
-          {((item.habitacion_comision ?? 0) > 0 || (item.precio_servicio ?? 0) === 0) && (
+          {(item.precio_servicio ?? 0) === 0 && (
             <Pressable
               style={[styles.editActionBtn, { backgroundColor: theme.warning }]}
               onPress={() => onEditar && onEditar(item)}
@@ -756,7 +756,15 @@ export default function ServiciosActivosScreen() {
                       <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
                         <Text style={[styles.totalLabelFinal, { color: theme.text }]}>COMISIÓN P/ ANFITRIONA</Text>
                         <Text style={[styles.totalValFinal, { color: theme.success, fontSize: 18 }]}>
-                          ${Math.floor(state.selectedServiceDetail.precio_servicio / (String(state.selectedServiceDetail.anfitrionas).split(', ').length || 1)).toLocaleString()}
+                          {(() => {
+                            const numAnfs = String(state.selectedServiceDetail.anfitrionas).split(', ').length || 1;
+                            const comisionHab = state.selectedServiceDetail.habitacion_comision || 0;
+                            const precServ = state.selectedServiceDetail.precio_servicio || 0;
+                            
+                            // Si la habitación tiene comisión, la dividimos. Si no, usamos el precio del servicio dividido.
+                            const totalComision = comisionHab > 0 ? (comisionHab / numAnfs) : (precServ / numAnfs);
+                            return `$${Math.floor(totalComision).toLocaleString()}`;
+                          })()}
                         </Text>
                       </View>
                     )}

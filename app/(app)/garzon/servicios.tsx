@@ -216,7 +216,12 @@ export default function ServiciosScreen() {
             currentIva += excedente;
         }
 
-        return { subtotal, totalHabitacion, total, iva: currentIva };
+        const comisionTotal = selectedRoom ? (selectedRoom.comision_anfitriona || 0) : 0;
+        const comisionPorAnfitriona = (comisionTotal > 0 && selectedHostesses.length > 0) 
+            ? Math.floor(comisionTotal / selectedHostesses.length) 
+            : comisionTotal;
+
+        return { subtotal, totalHabitacion, total, iva: currentIva, comisionPorAnfitriona };
     }, [servicePrice, selectedRoom, selectedHostesses.length, selectedClients.length, paymentMethod]);
 
     useEffect(() => {
@@ -544,6 +549,14 @@ export default function ServiciosScreen() {
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Habitación:</Text>
                         <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.totalHabitacion.toLocaleString()}</Text>
                     </View>
+                    {hasComision && selectedHostesses.length > 0 && (
+                        <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: primaryColor + '20' }]}>
+                            <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>Comisión p/Anf:</Text>
+                            <Text style={[styles.summaryValue, { color: '#10B981', fontWeight: '800' }]}>
+                                ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
+                            </Text>
+                        </View>
+                    )}
                     {paymentMethod === 'tarjeta' && (
                         <View style={styles.summaryRow}>
                             <Text style={[styles.summaryLabel, { color: textSecondary }]}>IVA/Ajuste:</Text>

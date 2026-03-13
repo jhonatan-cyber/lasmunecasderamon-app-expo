@@ -32,7 +32,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                         </View>
                         <View style={styles.premiumTextGroup}>
                             <Text style={styles.premiumStatLabel}>TOTAL PROPINAS</Text>
-                            <Text style={styles.premiumStatValue}>
+                            <Text style={styles.premiumStatValue} numberOfLines={1} adjustsFontSizeToFit>
                                 ${(Number(stats?.totalEarnings) || 0).toLocaleString('es-CL')}
                             </Text>
                         </View>
@@ -41,7 +41,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                             <View style={styles.subStatItem}>
                                 <Ionicons name="sparkles-sharp" size={14} color="rgba(255,255,255,0.8)" />
                                 <Text style={styles.subStatText}>
-                                    {new Set(events?.filter(e => e.type === 'propina').map(e => e.codigo)).size || 0} Ventas con Propina
+                                    {new Set(events?.filter(e => e.type === 'propina').map(e => e.codigo)).size || 0} Ventas con{'\n'}Propinas
                                 </Text>
                             </View>
                         </View>

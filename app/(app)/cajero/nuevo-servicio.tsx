@@ -246,6 +246,9 @@ export default function NuevoServicioScreen() {
       iva: calculatedIva,
       total: currentTotal,
       precioHabitacionActual: subTotalHabitacion,
+      comisionPorAnfitriona: (tieneComision && selectedHostesses.length > 0) 
+        ? Math.floor(selectedHabitacion.comision_anfitriona / selectedHostesses.length) 
+        : (selectedHabitacion?.comision_anfitriona || 0),
     };
   }, [
     numericPrecioServicio,
@@ -503,6 +506,16 @@ export default function NuevoServicioScreen() {
               ${totals.subTotal.toLocaleString()}
             </Text>
           </View>
+          {(selectedHabitacion?.comision_anfitriona ?? 0) > 0 && selectedHostesses.length > 0 && (
+            <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: borderColor }]}>
+              <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>
+                Comisión p/Anf
+              </Text>
+              <Text style={[styles.summaryVal, { color: '#10B981', fontWeight: '800' }]}>
+                ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
+              </Text>
+            </View>
+          )}
           {metodoPago === "tarjeta" && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>

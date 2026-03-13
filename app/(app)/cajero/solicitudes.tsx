@@ -405,7 +405,7 @@ export default function SolicitudesScreen() {
                     hostess_id: item.hostess_id || null
                 })),
                 usuarios: usuariosIds,
-                tiempo: selectedMinutesPedido,
+                tiempo: roomId ? selectedMinutesPedido : 0,
                 habitacion_id: roomId
             };
 
@@ -818,7 +818,9 @@ export default function SolicitudesScreen() {
                                         {(() => {
                                             const anfsIds = Array.isArray(selectedService.anfitrionas_ids) ? selectedService.anfitrionas_ids : [];
                                             const numAnfs = anfsIds.length || 1;
-                                            const comisionIndividual = Math.floor((selectedService.comision_anfitriona || 0) / numAnfs);
+                                            const comisionIndividual = (selectedService.comision_anfitriona || 0) > 0 
+                                                ? Math.floor(selectedService.comision_anfitriona / numAnfs)
+                                                : Math.floor(selectedService.precio_servicio || 0);
 
                                             const displayAnfs = (Array.isArray(selectedService.anfitrionas_con_nicks) && selectedService.anfitrionas_con_nicks.length > 0)
                                                 ? selectedService.anfitrionas_con_nicks
@@ -871,7 +873,7 @@ export default function SolicitudesScreen() {
                                             <View style={styles.productInfoCol}>
                                                 <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>Precio Servicio</Text>
                                             </View>
-                                            <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.precio_servicio || 0).toLocaleString('de-DE')}</Text>
+                                            <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor((selectedService.precio_servicio || 0) * (selectedService.anfitrionas_ids?.length || 1)).toLocaleString('de-DE')}</Text>
                                         </View>
                                         <View style={styles.productDetailRow}>
                                             <View style={styles.productInfoCol}>
@@ -879,6 +881,14 @@ export default function SolicitudesScreen() {
                                             </View>
                                             <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.precio_habitacion || 0).toLocaleString('de-DE')}</Text>
                                         </View>
+                                        {(selectedService.iva || 0) > 0 && (
+                                            <View style={styles.productDetailRow}>
+                                                <View style={styles.productInfoCol}>
+                                                    <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>IVA / Ajuste Tarjeta</Text>
+                                                </View>
+                                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.iva || 0).toLocaleString('de-DE')}</Text>
+                                            </View>
+                                        )}
                                         <View style={[styles.productDetailRow, { borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', marginTop: 8, paddingTop: 12 }]}>
                                             <View style={styles.productInfoCol}>
                                                 <Text style={[styles.productName, { color: textPrimary, fontWeight: '800', fontSize: isTablet ? 22 : 16 }]}>TOTAL</Text>

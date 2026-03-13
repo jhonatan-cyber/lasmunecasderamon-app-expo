@@ -353,7 +353,7 @@ export default function NuevaVentaScreen() {
                 propina: totals.tip,
                 sub_total: totals.subtotal,
                 total: totals.total,
-                tiempo: selectedHabitacion && Number(selectedHabitacion.tiempo || 0) > 0 ? Number(selectedHabitacion.tiempo) : selectedTime,
+                tiempo: selectedHabitacion ? (Number(selectedHabitacion.tiempo || 0) > 0 ? Number(selectedHabitacion.tiempo) : selectedTime) : 0,
                 usuarios: cart.flatMap((item: any) => item.anfitrionas?.map((a: any) => typeof a === 'object' ? (a.id_usuario || a.id) : a) || [])
             };
 
