@@ -33,6 +33,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.0"
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/logo1.png",
