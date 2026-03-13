@@ -36,7 +36,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: 🔍 Lint
         run: pnpm lint

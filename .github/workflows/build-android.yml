@@ -40,7 +40,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: 🚀 Build APK
         run: eas build --platform android --profile ${{ github.event.inputs.profile }} --non-interactive --no-wait
