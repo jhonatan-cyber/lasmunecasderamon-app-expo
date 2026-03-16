@@ -24,9 +24,9 @@ interface Client {
 interface ClientSelectModalProps {
     visible: boolean;
     onClose: () => void;
-    onToggle: (id: number) => void;
+    onToggle: (id: string) => void;
     clients: Client[];
-    selectedIds: number[];
+    selectedIds: string[];
     max?: number;
 }
 
@@ -66,7 +66,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                         data={clients}
                         keyExtractor={(item) => (item.id_cliente || item.id).toString()}
                         renderItem={({ item }) => {
-                            const id = Number(item.id_cliente || item.id);
+                            const id = String(item.id_cliente || item.id);
                             const isSelected = selectedIds.includes(id);
 
                             // Support both naming conventions from API

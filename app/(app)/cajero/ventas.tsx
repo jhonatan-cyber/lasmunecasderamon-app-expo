@@ -3,9 +3,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+const FlashList = ShopifyFlashList as any;
+import { MotiView } from "moti";
 import {
   DeviceEventEmitter,
-  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -19,10 +21,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { apiClient } from "../../../api/client";
 import { PremiumAlert } from "../../../components/PremiumAlert";
-import {
-  calculateRemainingTime,
-  useTimer,
-} from "../../../context/TimerContext";
+import { useTimer } from "../../../context/TimerContext";
+import { calculateRemainingTime, formatTime } from "../../../utils/timeUtils";
 import { useAccentColor } from "../../../hooks/useAccentColor";
 import { rotateColor } from "../../../utils/colors";
 
@@ -109,11 +109,11 @@ export default function VentasScreen() {
     });
   };
 
-  const bg = isDark ? "#0F0D2E" : "#F3F4F6";
-  const cardBg = isDark ? "#1E1B4B" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F3F4F6";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
-  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
 
   const DetailSkeleton = () => (
     <View style={{ padding: 20 }}>
@@ -477,19 +477,24 @@ export default function VentasScreen() {
     };
 
     return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          {
-            backgroundColor: cardBg,
-            borderColor,
-            borderLeftColor: statusColor,
-          },
-          pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-        ]}
-        onPress={() => handleOpenActionSheet(item)}
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 400 }}
       >
-        <View style={styles.cardMainRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.card,
+            {
+              backgroundColor: cardBg,
+              borderColor,
+              borderLeftColor: statusColor,
+            },
+            pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+          ]}
+          onPress={() => handleOpenActionSheet(item)}
+        >
+          <View style={styles.cardMainRow}>
           {/* Left Info Section */}
           <View style={styles.cardLeftContent}>
             <View style={styles.cardTopActions}>
@@ -588,6 +593,7 @@ export default function VentasScreen() {
                     year: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: 'UTC'
                   })}
                 </Text>
               </View>
@@ -674,7 +680,8 @@ export default function VentasScreen() {
             </View>
           </View>
         </View>
-      </Pressable>
+        </Pressable>
+      </MotiView>
     );
   };
 
@@ -813,10 +820,10 @@ export default function VentasScreen() {
         </View>
       </LinearGradient>
       {/* Main Content */}
-      <FlatList
+      <FlashList
         data={
           loadingSales
-            ? [1, 2, 3, 4]
+            ? [1, 2, 3, 4] as any
             : (activeTab === "historial"
               ? ventas
               : ventas.filter(
@@ -832,7 +839,7 @@ export default function VentasScreen() {
         }
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
-        columnWrapperStyle={numColumns > 1 ? { gap: 12 } : undefined}
+        estimatedItemSize={120}
         ListHeaderComponent={resumen && activeTab === "historial" ? (
           <View style={[styles.resumenCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : accentColor, shadowColor: isDark ? 'transparent' : accentColor, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
             <View style={styles.resumenRow}>

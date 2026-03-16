@@ -1,18 +1,19 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 import { GlobalTimerAlert } from '../../../components/cajero/GlobalTimerAlert';
 
 export default function CajeroLayout() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
 
     return (
         <>
             <Stack screenOptions={{
-                headerStyle: { backgroundColor: isDark ? '#0F0D2E' : '#FFFFFF' },
+                headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
                 headerTintColor: isDark ? '#FFFFFF' : '#000000',
                 headerTitleStyle: { fontWeight: '700' },
             }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="personal" options={{ title: 'Personal', headerShown: false }} />
                 <Stack.Screen name="perfil" options={{ title: 'Mi Perfil' }} />
                 <Stack.Screen name="administrativo" options={{ title: 'Resumen Administrativo', headerShown: false }} />
                 <Stack.Screen name="ventas" options={{ title: 'Ventas', headerShown: false }} />

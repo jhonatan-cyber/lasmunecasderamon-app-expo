@@ -103,7 +103,10 @@ export default function HorasExtrasScreen() {
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
-            return `${date.getDate()} ${date.toLocaleDateString('es-ES', { month: 'short' })} ${date.getFullYear()}`;
+            const day = date.getUTCDate();
+            const month = date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' });
+            const year = date.getUTCFullYear();
+            return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
     };
 

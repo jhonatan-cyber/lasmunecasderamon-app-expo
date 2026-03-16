@@ -65,24 +65,9 @@ export const Colors = {
   },
 };
 
-export const Spacing = {
-  xs: isTablet ? 6 : 4,
-  sm: isTablet ? 10 : 8,
-  md: isTablet ? 18 : 16,
-  lg: isTablet ? 24 : 20,
-  xl: isTablet ? 30 : 24,
-  xxl: isTablet ? 40 : 32,
-} as const;
+// Spacing, FontSize, and BorderRadius moved to constants/spacing.ts
 
-export const FontSize = {
-  xs: isTablet ? 12 : 10,
-  sm: isTablet ? 14 : 12,
-  md: isTablet ? 16 : 14,
-  lg: isTablet ? 18 : 16,
-  xl: isTablet ? 22 : 18,
-  xxl: isTablet ? 26 : 22,
-  xxxl: isTablet ? 32 : 28,
-} as const;
+// FontSize moved to constants/spacing.ts
 
 export const FontWeight = {
   normal: '400' as const,
@@ -93,14 +78,7 @@ export const FontWeight = {
   black: '900' as const,
 };
 
-export const BorderRadius = {
-  sm: isTablet ? 10 : 8,
-  md: isTablet ? 14 : 12,
-  lg: isTablet ? 18 : 16,
-  xl: isTablet ? 24 : 20,
-  xxl: isTablet ? 32 : 28,
-  full: 9999,
-} as const;
+// BorderRadius moved to constants/spacing.ts
 
 export const Shadows = {
   sm: {

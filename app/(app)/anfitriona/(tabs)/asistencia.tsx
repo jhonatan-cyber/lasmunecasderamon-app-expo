@@ -38,11 +38,11 @@ export default function AsistenciaScreen() {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
-    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
+    const bg = isDark ? '#000000' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#F3F4F6';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
 
     const fetchAsistencias = useCallback(async (isManual = false) => {
         try {
@@ -106,9 +106,11 @@ export default function AsistenciaScreen() {
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
-            const day = date.getDate();
-            const month = date.toLocaleDateString('es-ES', { month: 'short' });
-            const year = date.getFullYear();
+            // Usamos componentes UTC para evitar que el desfase de zona horaria (GMT-4)
+            // reste un día a la fecha almacenada en la base de datos.
+            const day = date.getUTCDate();
+            const month = date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' });
+            const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch {
             return 'Error';

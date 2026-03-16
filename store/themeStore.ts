@@ -21,7 +21,7 @@ export const THEME_OPTIONS = [
 ];
 
 interface ThemeState {
-    userColors: Record<number, string>; // userId -> hex color
+    userColors: Record<string, string>; // userId -> hex color
     getColor: (userId?: number) => string;
     getGradient: (userId?: number, isDark?: boolean) => string[];
     setAccentColor: (userId: number, color: string) => void;
@@ -33,30 +33,24 @@ export const useThemeStore = create<ThemeState>()(
             userColors: {},
 
             getColor: (userId) => {
-                if (!userId) return '#E11D48';
-                return get().userColors[userId] || '#E11D48';
+                if (userId === undefined || userId === null) return '#E11D48';
+                const color = get().userColors[String(userId)];
+                return color || '#E11D48';
             },
 
             getGradient: (userId, isDark) => {
                 const color = get().getColor(userId);
-                const theme = THEME_OPTIONS.find(t => t.color === color) || THEME_OPTIONS[0];
-
-                if (isDark) {
-                    // Si es dark mode, el gradiente del header suele ser de blanco a gris claro en nuestro diseño anterior
-                    // Pero el usuario pidió que el gradiente TAMBIÉN cambie.
-                    // En los otros módulos usamos ['#FFFFFF', '#F1F5F9'] para dark y ['#2D2870', '#1E1B4B', '#0F0D2E'] para light.
-                    // Si el usuario quiere que cambie, aplicaremos variaciones del color elegido.
-                    return theme.gradient;
-                }
-
+                const theme = THEME_OPTIONS.find(t => t.color.toLowerCase() === color.toLowerCase()) || THEME_OPTIONS[0];
                 return theme.gradient;
             },
 
             setAccentColor: (userId, color) => {
+                if (userId === undefined || userId === null) return;
+                console.log(`Setting accent color for user ${userId}: ${color}`);
                 set((state) => ({
                     userColors: {
                         ...state.userColors,
-                        [userId]: color
+                        [String(userId)]: color
                     }
                 }));
             },

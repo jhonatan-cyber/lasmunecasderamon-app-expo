@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 export interface Product {
-    id: number;
+    id: string;
     code: string;
     name: string;
-    category_id: number;
+    category_id: string;
     price: number;
     commission: number;
     description: string;
@@ -18,12 +19,12 @@ export interface Product {
 export interface CartItem {
     product: Product;
     quantity: number;
-    selectedHostesses: number[];
-    selectedRoom: number | null;
+    selectedHostesses: string[];
+    selectedRoom: string | null;
 }
 
 export interface Anfitriona {
-    id: number;
+    id: string;
     nick: string;
     name?: string;
     lastName?: string;
@@ -31,7 +32,7 @@ export interface Anfitriona {
 }
 
 export interface Room {
-    id: number;
+    id: string;
     name: string;
     price?: number;
     time?: number;
@@ -42,8 +43,8 @@ interface ProductCardProps {
     product: Product;
     cartItem?: CartItem;
     onAdd: (product: Product) => void;
-    onRemove: (productId: number) => void;
-    onConfigPress: (productId: number, type: 'hostess' | 'room') => void;
+    onRemove: (productId: string) => void;
+    onConfigPress: (productId: string, type: 'hostess' | 'room') => void;
     anfitrionas: Anfitriona[];
     rooms: Room[];
 }
@@ -57,13 +58,13 @@ export const ProductCard = ({
     anfitrionas,
     rooms
 }: ProductCardProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const qty = cartItem?.quantity || 0;
 
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const hasCommission = (product.commission || 0) > 0;
     const canSelectRoom = product.price >= 30000 && hasCommission;

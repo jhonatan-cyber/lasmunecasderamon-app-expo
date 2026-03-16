@@ -104,9 +104,10 @@ export default function AsistenciaScreen() {
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
-            const day = date.getDate();
-            const month = date.toLocaleDateString('es-ES', { month: 'short' });
-            const year = date.getFullYear();
+            // Usamos componentes UTC para evitar el desfase de zona horaria
+            const day = date.getUTCDate();
+            const month = date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' });
+            const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch {
             return 'Error';

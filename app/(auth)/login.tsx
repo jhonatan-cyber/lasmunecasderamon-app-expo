@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as LocalAuthentication from 'expo-local-authentication';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Appearance,
@@ -20,6 +21,7 @@ import {
     useColorScheme,
     View
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '../../api/client';
 import { AnimatedScreen } from '../../components/AnimatedScreen';
 import { useAuthStore } from '../../store/authStore';
@@ -35,18 +37,46 @@ export default function LoginScreen() {
 
     const login = useAuthStore((state) => state.login);
     const setTempAuthData = useAuthStore((state) => state.setTempAuthData);
+    const isBiometricEnabled = useAuthStore((state) => state.isBiometricEnabled);
+    const setBiometricEnabled = useAuthStore((state) => state.setBiometricEnabled);
+    const saveCredentials = useAuthStore((state) => state.saveCredentials);
+    const getCredentials = useAuthStore((state) => state.getCredentials);
+
     const router = useRouter();
     const colorScheme = useColorScheme() ?? 'dark';
     const isDark = colorScheme === 'dark';
 
+    const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+
+    useEffect(() => {
+        checkBiometrics();
+    }, []);
+
+    const checkBiometrics = async () => {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        setIsBiometricSupported(hasHardware && isEnrolled);
+    };
+
+    const hasAutoPrompted = useRef(false);
+
     useFocusEffect(
         useCallback(() => {
-            // Con edgeToEdgeEnabled: true en app.json, setPosition y setBackgroundColor ya no son necesarios
-            // y producen advertencias. Solo nos aseguramos de que el estilo de los botones sea el correcto.
             if (Platform.OS === 'android') {
                 NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
             }
-        }, [isDark])
+
+            // Auto-trigger biometric login if enabled
+            if (isBiometricEnabled && isBiometricSupported && !hasAutoPrompted.current) {
+                hasAutoPrompted.current = true;
+                handleBiometricLogin();
+            }
+
+            return () => {
+                // Reset flag when screen loses focus
+                hasAutoPrompted.current = false;
+            };
+        }, [isDark, isBiometricEnabled, isBiometricSupported])
     );
 
     const toggleTheme = () => {
@@ -102,20 +132,59 @@ export default function LoginScreen() {
 
     const handleLogin = async () => {
         if (!username || !password) {
+            // Si la huella está habilitada y los campos están vacíos, re-intentar huella
+            if (isBiometricEnabled && isBiometricSupported) {
+                await handleBiometricLogin();
+                return;
+            }
             setError('Por favor ingresa tu usuario y contraseña');
             return;
         }
+        await performLogin(username.trim(), password);
+    };
+
+    const performLogin = async (u: string, p: string) => {
         setError('');
         setLoading(true);
 
         try {
-            const res = await login(username.trim(), password);
+            const res = await login(u, p);
             if (res.requiereCodigo) {
-                setTempAuthData({ username: username.trim(), password, userTmp: res.user });
+                setTempAuthData({ username: u, password: p, userTmp: res.user });
                 router.push('/(auth)/verify-code');
             } else {
-                // Login exitoso sin código → ir al index que redirige según rol
-                router.replace('/');
+                if (res.asistenciaRegistrada) {
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Asistencia Registrada',
+                        text2: 'Tu asistencia ha sido registrada automáticamente',
+                    });
+                }
+
+                // Si el login fue manual y las biometrías están soportadas pero no habilitadas,
+                // preguntar al usuario si desea habilitarlas.
+                if (isBiometricSupported && !isBiometricEnabled) {
+                    showAlert(
+                        'Acceso Biométrico',
+                        '¿Te gustaría habilitar el inicio de sesión con huella dactilar para la próxima vez?',
+                        'info',
+                        async () => {
+                            await saveCredentials(u, p);
+                            await setBiometricEnabled(true);
+                            router.replace('/');
+                        },
+                        true
+                    );
+                    // No redirigimos inmediatamente para dejar que responda el alert
+                    // Pero si el alert se cierra sin aceptar, necesitamos ir al index.
+                    // En este caso, el alert tiene el control.
+                } else {
+                    // Si ya está habilitado, actualizamos las credenciales guardadas por si cambiaron
+                    if (isBiometricEnabled) {
+                        await saveCredentials(u, p);
+                    }
+                    router.replace('/');
+                }
             }
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');
@@ -123,6 +192,40 @@ export default function LoginScreen() {
             setLoading(false);
         }
     };
+
+    const handleBiometricLogin = async () => {
+        if (!isBiometricEnabled || isPrompting) {
+            if (!isBiometricEnabled) {
+                showAlert('Atención', 'Debes iniciar sesión manualmente y habilitar la opción de huella dactilar primero.', 'warning');
+            }
+            return;
+        }
+
+        setIsPrompting(true);
+        try {
+            const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: 'Inicia sesión con tu huella dactilar',
+                fallbackLabel: 'Usar contraseña',
+                disableDeviceFallback: false,
+                cancelLabel: 'Cancelar',
+            });
+
+            if (result.success) {
+                const creds = await getCredentials();
+                if (creds) {
+                    setUsername(creds.username);
+                    setPassword(creds.password);
+                    await performLogin(creds.username, creds.password);
+                } else {
+                    showAlert('Error', 'No se encontraron credenciales guardadas. Inicia sesión manualmente.', 'danger');
+                }
+            }
+        } finally {
+            setIsPrompting(false);
+        }
+    };
+
+    const [isPrompting, setIsPrompting] = useState(false);
 
     return (
         <View style={styles.container}>
@@ -145,7 +248,16 @@ export default function LoginScreen() {
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={false}
                     >
-                        <AnimatedScreen delay={100}>
+                        <Pressable 
+                            style={{ flex: 1 }} 
+                            onPress={() => {
+                                // Si se cerró el modal, tocar el fondo lo vuelve a abrir
+                                if (isBiometricEnabled && !username && !password) {
+                                    handleBiometricLogin();
+                                }
+                            }}
+                        >
+                            <AnimatedScreen delay={100}>
                             <StatusBar style={isDark ? 'light' : 'dark'} translucent backgroundColor="transparent" />
 
                             {/* Logo */}
@@ -228,27 +340,30 @@ export default function LoginScreen() {
                                 </View>
 
                                 {/* Login Button */}
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.loginButton,
-                                        {
-                                            backgroundColor: isDark ? '#FFFFFF' : '#000000',
-                                            borderColor: isDark ? '#FFFFFF' : '#000000',
-                                        },
-                                        loading && { opacity: 0.5 },
-                                        pressed && !loading && { opacity: 0.8 },
-                                    ]}
-                                    onPress={handleLogin}
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
-                                    ) : (
-                                        <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                                            Iniciar Sesión
-                                        </Text>
-                                    )}
-                                </Pressable>
+                                <View style={styles.actionRow}>
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.loginButton,
+                                            {
+                                                backgroundColor: isDark ? '#FFFFFF' : '#000000',
+                                                borderColor: isDark ? '#FFFFFF' : '#000000',
+                                                flex: 1,
+                                            },
+                                            loading && { opacity: 0.5 },
+                                            pressed && !loading && { opacity: 0.8 },
+                                        ]}
+                                        onPress={handleLogin}
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+                                        ) : (
+                                            <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+                                                Iniciar Sesión
+                                            </Text>
+                                        )}
+                                    </Pressable>
+                                </View>
 
                                 {/* Theme Toggle */}
                                 <Pressable
@@ -272,7 +387,8 @@ export default function LoginScreen() {
                                     </Text>
                                 </Pressable>
                             </View>
-                        </AnimatedScreen>
+                            </AnimatedScreen>
+                        </Pressable>
                     </ScrollView>
                 </KeyboardAvoidingView>
             </ImageBackground>
@@ -421,12 +537,31 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 35,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
         elevation: 8,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 35,
+        gap: 12,
+    },
+    biometricButton: {
+        height: 60,
+        width: 60,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 2,
     },
     loginButtonText: {
         fontSize: 18,

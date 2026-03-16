@@ -26,8 +26,8 @@ import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelect
 import { PremiumAlert } from '../../../components/PremiumAlert';
 
 interface Client {
-    id: number;
-    id_cliente?: number;
+    id: string;
+    id_cliente?: string;
     name: string;
     nombre?: string;
     lastName: string;
@@ -47,7 +47,7 @@ export default function ProductosScreen() {
     const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
-    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
     const [clientModalVisible, setClientModalVisible] = useState(false);
     const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ export default function ProductosScreen() {
     } = useCartStore();
 
     // Modal state
-    const [activeConfigItem, setActiveConfigItem] = useState<{ productId: number, type: 'hostess' | 'room' } | null>(null);
+    const [activeConfigItem, setActiveConfigItem] = useState<{ productId: string, type: 'hostess' | 'room' } | null>(null);
 
     const bg = isDark ? '#0F0D2E' : '#FFFFFF';
     const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';

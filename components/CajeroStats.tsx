@@ -33,6 +33,8 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
                 minWidth: isTablet ? '48%' : '47%',
                 padding: isTablet ? 24 : 12,
                 borderRadius: isTablet ? 24 : 18,
+                borderWidth: isDark ? 1 : 0,
+                borderColor: isDark ? `${color}40` : 'transparent',
             }
         ]}
     >
@@ -63,7 +65,7 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
@@ -78,19 +80,19 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
             label: 'Ventas Hoy',
             value: `$${(stats?.total_ventas || 0).toLocaleString()}`,
             icon: 'cart' as const,
-            color: rotateColor(accentColor, 120)
+            color: accentColor
         },
         {
             label: 'Servicios',
             value: `$${(stats?.total_servicios || 0).toLocaleString()}`,
             icon: 'bed' as const,
-            color: rotateColor(accentColor, 45)
+            color: accentColor
         },
         {
             label: 'Ingresos Totales',
             value: `$${(stats?.total_ingresos || 0).toLocaleString()}`,
             icon: 'cash' as const,
-            color: rotateColor(accentColor, 210)
+            color: accentColor
         }
     ];
 

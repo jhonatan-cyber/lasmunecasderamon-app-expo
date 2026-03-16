@@ -1,19 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Appearance, useColorScheme, View } from 'react-native';
+import { Alert, Appearance, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumTabBar } from '../../../../components/PremiumTabBar';
 import ProfileEditModal from '../../../../components/ProfileEditModal';
+import { RegistroAsistenciaModal } from '../../../../components/RegistroAsistenciaModal';
 import { useAuthStore } from '../../../../store/authStore';
+import { useAccentColor } from '../../../../hooks/useAccentColor';
 
 export default function GarzonTabsLayout() {
     const logout = useAuthStore((state) => state.logout);
-    const colorScheme = useColorScheme() ?? 'dark';
-    const isDark = colorScheme === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
     const [profileModalVisible, setProfileModalVisible] = useState(false);
+    const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
+    const bgColor = isDark ? '#000000' : '#F3F4F6';
+    const activeColor = accentColor;
+    const inactiveColor = isDark ? '#4B5563' : '#9CA3AF';
     const handleLogout = () => {
         Alert.alert('Cerrar sesión', '¿Estás seguro que deseas salir?', [
             { text: 'Cancelar', style: 'cancel' },
@@ -25,12 +30,10 @@ export default function GarzonTabsLayout() {
         Appearance.setColorScheme(isDark ? 'light' : 'dark');
     };
 
-    const bgColor = isDark ? '#0F0D2E' : '#F3F4F6';
-
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
             <Tabs
-                tabBar={(props) => <PremiumTabBar {...props} />}
+                tabBar={(props: any) => <PremiumTabBar {...props} />}
                 screenOptions={{
                     headerShown: false
                 }}>
@@ -39,6 +42,7 @@ export default function GarzonTabsLayout() {
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="calendar" size={size} color={color} />
                     ),
+                    headerShown: false,
                 }} />
                 <Tabs.Screen name="anticipos" options={{
                     title: 'Anticipos',
@@ -70,6 +74,12 @@ export default function GarzonTabsLayout() {
             <ProfileEditModal
                 visible={profileModalVisible}
                 onClose={() => setProfileModalVisible(false)}
+            />
+
+            <RegistroAsistenciaModal
+                visible={showAsistenciaModal}
+                onClose={() => setShowAsistenciaModal(false)}
+                onRegistered={() => setShowAsistenciaModal(false)}
             />
         </View>
     );

@@ -12,25 +12,12 @@ import EventSource from "react-native-sse";
 import { apiClient } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
-// Helper para parsear fechas del backend de forma segura y evitar conflictos de zona horaria (UTC vs Local)
-const parseDateSafe = (dateStr: any) => {
-    if (!dateStr) return new Date();
-    if (typeof dateStr !== 'string') return new Date(dateStr);
-    if (dateStr.includes('Z') || dateStr.includes('+')) return new Date(dateStr);
-    try {
-        const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
-        const date = new Date(cleanDate);
-        if (isNaN(date.getTime())) return new Date(dateStr);
-        return date;
-    } catch (e) {
-        return new Date(dateStr);
-    }
-};
+import { parseDateSafe, calculateRemainingTime, formatTime } from "../utils/timeUtils";
 
 export interface Timer {
   id: string;
-  servicioId: number;
-  roomId: number;
+  servicioId: string;
+  roomId: string;
   roomName: string;
   duration: number; // en minutos
   remainingTime: number; // en segundos
@@ -48,7 +35,7 @@ export interface Timer {
   metodo_pago?: string;
   waiter_name?: string;
   habitacion_comision?: number;
-  anfitrionas_ids?: number[];
+  anfitrionas_ids?: string[];
   created_at?: string;
   estado?: number;
   lastAnnouncedMinute?: number;
@@ -78,26 +65,6 @@ const announceVoice = async (message: string) => {
   } catch (error) {
     console.error("[TimerContext] Error en voice synthesis:", error);
   }
-};
-
-export const calculateRemainingTime = (
-  timer: Timer,
-  offset: number = 0,
-): number => {
-  if (timer.isPaused) {
-    return timer.remainingTime;
-  }
-
-  const now = new Date(Date.now() + offset);
-  // Si por desfase horario el startTime quedara en el futuro, evitamos sumar tiempo extra
-  const elapsedSeconds = Math.max(
-    0,
-    Math.floor((now.getTime() - timer.startTime.getTime()) / 1000),
-  );
-  const totalDurationSeconds = timer.duration * 60;
-  const remaining = totalDurationSeconds - elapsedSeconds;
-
-  return Math.max(0, remaining);
 };
 
 export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({

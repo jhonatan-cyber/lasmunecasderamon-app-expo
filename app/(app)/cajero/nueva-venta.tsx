@@ -52,9 +52,9 @@ type VentaState = {
     modalCategoria: any;
     modalProducts: any[];
     modalLoading: boolean;
-    modalQuantities: { [key: number]: number };
-    modalHostessSelections: { [key: number]: number[] };
-    hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
+    modalQuantities: { [key: string]: number };
+    modalHostessSelections: { [key: string]: string[] };
+    hostessSelectionTarget: { productId: string; isChampagne: boolean; max: number; product?: any } | null;
     hostessSubModalVisible: boolean;
     hostessModalVisible: boolean;
     roomModalVisible: boolean;
@@ -76,8 +76,8 @@ type VentaAction =
     | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
     | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
     | { type: 'SET_MODAL_LOADING'; payload: boolean }
-    | { type: 'SET_MODAL_QUANTITY'; productId: number; quantity: number }
-    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: number[] }
+    | { type: 'SET_MODAL_QUANTITY'; productId: string; quantity: number }
+    | { type: 'SET_MODAL_HOSTESSES'; productId: string; hostesses: string[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
     | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
     | { type: 'SET_SUBMITTING'; payload: boolean };
@@ -183,11 +183,11 @@ export default function NuevaVentaScreen() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const spacing = isTablet ? 24 : 16;
     const borderRadius = isTablet ? 28 : 24;
@@ -281,7 +281,7 @@ export default function NuevaVentaScreen() {
         // Las anfitrionas acompañan el producto pero NO multiplican la cantidad
         const itemHostesses = hostesses.length > 0 ? hostesses : [];
         const hostessNames = hostesses.length > 0
-            ? hostesses.map((hId: number) => anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
+            ? hostesses.map((hId: string) => anfitrionas.find((a: any) => String(a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
             : null;
 
         const existingItemIndex = newCart.findIndex((item) => {
@@ -622,7 +622,7 @@ export default function NuevaVentaScreen() {
                 max={1}
                 onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
                 onToggle={(id) => {
-                    const cl = clientes.find(c => (c.id_cliente || c.id) === id);
+                    const cl = clientes.find(c => String(c.id_cliente || c.id) === String(id));
                     dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl });
                     dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
                 }}
@@ -631,8 +631,8 @@ export default function NuevaVentaScreen() {
             <HostessSelectModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
                 hostesses={anfitrionas.map(a => ({
-                    id: a.id_usuario || a.id,
-                    id_usuario: a.id_usuario || a.id,
+                    id: String(a.id_usuario || a.id),
+                    id_usuario: String(a.id_usuario || a.id),
                     nick: a.nick,
                     status: a.estado_servicio || 1
                 }))}
@@ -642,7 +642,7 @@ export default function NuevaVentaScreen() {
                     if (!hostessSelectionTarget) return;
                     const pid = hostessSelectionTarget.productId;
                     const currentSelected = modalHostessSelections[pid] || [];
-                    let newSelected;
+                    let newSelected: string[];
 
                     if (currentSelected.includes(id)) {
                         newSelected = currentSelected.filter(x => x !== id);

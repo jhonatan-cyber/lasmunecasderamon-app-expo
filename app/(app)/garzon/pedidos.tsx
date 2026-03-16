@@ -25,7 +25,7 @@ import { PremiumHeader } from '../../../components/PremiumHeader';
 const { width } = Dimensions.get('window');
 
 interface Category {
-    id: number;
+    id: string;
     name: string;
     description: string;
     status: number;
@@ -44,11 +44,11 @@ export default function PedidosScreen() {
     const [error, setError] = useState('');
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const fetchCategories = useCallback(async (isManual = false) => {
         try {

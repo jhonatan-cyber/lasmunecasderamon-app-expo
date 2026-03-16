@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { apiClient, setUnauthorizedHandler } from '../api/client';
@@ -29,7 +30,7 @@ const TokenStorage = {
 };
 
 export interface User {
-    id: number;
+    id: string;
     name: string;
     lastName: string;
     email: string;
@@ -40,6 +41,8 @@ export interface User {
     address?: string;
     estado_civil?: string;
     nick?: string;
+    qr_token?: string;
+    two_factor_enabled?: boolean;
 }
 
 interface AuthState {
@@ -47,13 +50,24 @@ interface AuthState {
     token: string | null;
     isLoading: boolean;
     sessionExpired: boolean;
-    login: (username: string, password: string, codigo?: string) => Promise<{ requiereCodigo?: boolean, user?: User }>;
+    login: (username: string, password: string, codigo?: string) => Promise<{ requiereCodigo?: boolean, user?: User, asistenciaRegistrada?: boolean }>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearSessionExpired: () => void;
     tempAuthData: { username: string; password: string; userTmp?: any } | null;
     setTempAuthData: (data: { username: string; password: string; userTmp?: any } | null) => void;
     updateProfile: (partialUser: Partial<User>) => Promise<void>;
+    isBiometricEnabled: boolean;
+    setBiometricEnabled: (enabled: boolean) => Promise<void>;
+    saveCredentials: (username: string, password: string) => Promise<void>;
+    getCredentials: () => Promise<{ username: string; password: string } | null>;
+    removeCredentials: () => Promise<void>;
+    biometricType: 'fingerprint' | 'facial' | 'iris' | null;
+    isBiometricAvailable: boolean;
+    checkBiometricAvailability: () => Promise<void>;
+    authenticateWithBiometric: () => Promise<boolean>;
+    enable2FA: (password: string) => Promise<boolean>;
+    disable2FA: (password: string) => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => {
@@ -69,11 +83,107 @@ export const useAuthStore = create<AuthState>((set, get) => {
         token: null,
         isLoading: true,
         sessionExpired: false,
+        isBiometricEnabled: false,
+        biometricType: null,
+        isBiometricAvailable: false,
 
         clearSessionExpired: () => set({ sessionExpired: false }),
 
         tempAuthData: null,
         setTempAuthData: (data) => set({ tempAuthData: data }),
+
+        checkBiometricAvailability: async () => {
+            try {
+                const compatible = await LocalAuthentication.hasHardwareAsync();
+                const enrolled = await LocalAuthentication.isEnrolledAsync();
+                const isAvailable = compatible && enrolled;
+                
+                let biometricType: 'fingerprint' | 'facial' | 'iris' | null = null;
+                
+                if (isAvailable) {
+                    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+                    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+                        biometricType = 'facial';
+                    } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+                        biometricType = 'fingerprint';
+                    } else if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
+                        biometricType = 'iris';
+                    }
+                }
+                
+                set({ isBiometricAvailable: isAvailable, biometricType });
+            } catch (error) {
+                console.error('Biometric check failed:', error);
+                set({ isBiometricAvailable: false, biometricType: null });
+            }
+        },
+
+        authenticateWithBiometric: async () => {
+            try {
+                const result = await LocalAuthentication.authenticateAsync({
+                    promptMessage: 'Autentícate para acceder',
+                    cancelLabel: 'Cancelar',
+                    disableDeviceFallback: false,
+                    fallbackLabel: 'Usar contraseña',
+                });
+                
+                return result.success;
+            } catch (error) {
+                console.error('Biometric auth failed:', error);
+                return false;
+            }
+        },
+
+        enable2FA: async (password: string) => {
+            try {
+                const user = get().user;
+                if (!user) return false;
+
+                const response = await apiClient('/auth/2fa/enable', {
+                    method: 'POST',
+                    body: JSON.stringify({ password }),
+                });
+
+                if (response.success) {
+                    set({ 
+                        user: { ...user, two_factor_enabled: true },
+                        isBiometricEnabled: true 
+                    });
+                    await AsyncStorage.setItem('biometricEnabled', 'true');
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Enable 2FA failed:', error);
+                return false;
+            }
+        },
+
+        disable2FA: async (password: string) => {
+            try {
+                const user = get().user;
+                if (!user) return false;
+
+                const response = await apiClient('/auth/2fa/disable', {
+                    method: 'POST',
+                    body: JSON.stringify({ password }),
+                });
+
+                if (response.success) {
+                    set({ 
+                        user: { ...user, two_factor_enabled: false },
+                        isBiometricEnabled: false 
+                    });
+                    await AsyncStorage.setItem('biometricEnabled', 'false');
+                    await SecureStore.deleteItemAsync('user_credentials');
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Disable 2FA failed:', error);
+                return false;
+            }
+        },
 
         login: async (username, password, codigo) => {
             try {
@@ -106,7 +216,26 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 await AsyncStorage.setItem('user', JSON.stringify(user));
 
                 set({ user, token, tempAuthData: null });
-                return { requiereCodigo: false };
+
+                let asistenciaRegistrada = false;
+                if (user.qr_token && (user.role?.toLowerCase() === 'cajero' || user.role?.toLowerCase() === 'cajera')) {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    if (hour >= 21 && hour < 23) {
+                        try {
+                            await apiClient('/asistencia/registrar', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ qr_token: user.qr_token }),
+                            });
+                            asistenciaRegistrada = true;
+                        } catch (e) {
+                            console.log('Auto-assist registration skipped:', e);
+                        }
+                    }
+                }
+
+                return { requiereCodigo: false, asistenciaRegistrada };
             } catch (error: any) {
                 throw new Error(error.message);
             }
@@ -125,7 +254,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         checkAuth: async () => {
             try {
-
                 const withTimeout = (promise: Promise<any>, timeoutMs: number) => {
                     let timeoutHandle: any;
                     const timeoutPromise = new Promise((_, reject) => {
@@ -145,11 +273,37 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 if (token && userStr) {
                     set({ token, user: JSON.parse(userStr) });
                 }
+
+                const biometricEnabled = await AsyncStorage.getItem('biometricEnabled');
+                set({ isBiometricEnabled: biometricEnabled === 'true' });
+                
+                await get().checkBiometricAvailability();
             } catch (e) {
                 console.log("Error in checkAuth:", e);
             } finally {
                 set({ isLoading: false });
             }
+        },
+
+        setBiometricEnabled: async (enabled) => {
+            await AsyncStorage.setItem('biometricEnabled', enabled.toString());
+            set({ isBiometricEnabled: enabled });
+            if (!enabled) {
+                await SecureStore.deleteItemAsync('user_credentials');
+            }
+        },
+
+        saveCredentials: async (username, password) => {
+            await SecureStore.setItemAsync('user_credentials', JSON.stringify({ username, password }));
+        },
+
+        getCredentials: async () => {
+            const credentials = await SecureStore.getItemAsync('user_credentials');
+            return credentials ? JSON.parse(credentials) : null;
+        },
+
+        removeCredentials: async () => {
+            await SecureStore.deleteItemAsync('user_credentials');
         },
 
         updateProfile: async (partialUser) => {

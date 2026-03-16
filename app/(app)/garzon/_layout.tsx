@@ -1,14 +1,15 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import React from 'react';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 
 export default function GarzonLayout() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { isDark } = useAccentColor();
 
     return (
         <Stack screenOptions={{
-            headerStyle: { backgroundColor: isDark ? '#0F0D2E' : '#FFFFFF' },
+            headerStyle: { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
             headerTintColor: isDark ? '#FFFFFF' : '#000000',
-            headerTitleStyle: { fontWeight: '900' },
+            headerTitleStyle: { fontWeight: '700' },
         }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="pedidos" options={{ headerShown: false }} />

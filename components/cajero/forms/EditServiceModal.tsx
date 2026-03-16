@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -55,18 +55,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const borderColor = isDark ? '#374151' : '#E5E7EB';
     const accentColor = '#E11D48';
 
-    useEffect(() => {
-        if (visible && timer) {
-            setPrecioServicio('0');
-            setTiempo('30');
-            setMetodoPago('efectivo');
-            setAnfitrionasSeleccionadas(timer.anfitrionas_ids || []);
-            fetchAnfitrionas();
-            fetchHabitacionSinComision();
-        }
-    }, [visible, timer]);
-
-    const fetchHabitacionSinComision = async () => {
+    const fetchHabitacionSinComision = useCallback(async () => {
         try {
             const res = await apiClient('/rooms');
             console.log('[EditServiceModal] Respuesta habitaciones:', JSON.stringify(res, null, 2));
@@ -115,9 +104,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             console.error('[EditServiceModal] Error fetching habitación sin comisión:', error);
             setPrecioHabitacionSinComision(0);
         }
-    };
+    }, []);
 
-    const fetchAnfitrionas = async () => {
+    const fetchAnfitrionas = useCallback(async () => {
         setLoadingAnfitrionas(true);
         try {
             // Obtener anfitrionas disponibles
@@ -149,14 +138,26 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         } finally {
             setLoadingAnfitrionas(false);
         }
-    };
+    }, [timer?.servicioId]);
 
-    const toggleAnfitriona = (id: number) => {
+    useEffect(() => {
+        if (visible && timer) {
+            setPrecioServicio('0');
+            setTiempo('30');
+            setMetodoPago('efectivo');
+            setAnfitrionasSeleccionadas((timer.anfitrionas_ids || []).map(id => Number(id)));
+            fetchAnfitrionas();
+            fetchHabitacionSinComision();
+        }
+    }, [visible, timer, fetchAnfitrionas, fetchHabitacionSinComision]);
+
+    const toggleAnfitriona = (id: string | number) => {
+        const numId = Number(id);
         setAnfitrionasSeleccionadas(prev => {
-            if (prev.includes(id)) {
-                return prev.filter(anf => anf !== id);
+            if (prev.includes(numId)) {
+                return prev.filter(anf => anf !== numId);
             } else {
-                return [...prev, id];
+                return [...prev, numId];
             }
         });
     };
@@ -437,7 +438,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                         nick: anf.nick,
                         status: anf.status || 0
                     }))}
-                    selectedIds={anfitrionasSeleccionadas}
+                    selectedIds={anfitrionasSeleccionadas.map(id => String(id))}
                     title="Seleccionar Anfitrionas"
                 />
             </View>

@@ -114,11 +114,11 @@ export default function SolicitudesScreen() {
     const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30); // Default to 30 mins
     const [submittingCheckout, setSubmittingCheckout] = useState(false);
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     // Alert state
     const [alertConfig, setAlertConfig] = useState<{
@@ -148,9 +148,10 @@ export default function SolicitudesScreen() {
 
     const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
-            const [resSolicitudes, resOrders, resStats, resAnfitrionas] = await Promise.all([
+            const [resSolicitudes, resOrders, resAnticipos, resStats, resAnfitrionas] = await Promise.all([
                 apiClient('/solicitudes-servicios?estado=pendiente').catch(() => ({ success: false, data: [] })),
                 apiClient('/orders').catch(() => ({ success: false, data: [] })),
+                apiClient('/anticipos').catch(() => ({ success: false, data: [] })),
                 apiClient('/caja/stats').catch(() => null),
                 apiClient('/users?anfitrionas=1').catch(() => ({ success: false, data: [] }))
             ]);
@@ -190,6 +191,20 @@ export default function SolicitudesScreen() {
                 combined = [...combined, ...arr];
             }
 
+            if (resAnticipos.success) {
+                // Solo mostrar anticipos aprobados pero no pagados (estado 1)
+                // Opcionalmente mostrar los pendientes (estado 2) para que el cajero sepa que vienen
+                const arr = (resAnticipos.data || [])
+                    .filter((a: any) => a.estado === 1 || a.estado === 2)
+                    .map((a: any) => ({
+                        ...a,
+                        tipoItem: 'anticipo',
+                        id_unificado: `anticipo_${a.id_anticipo}`,
+                        fecha_orden: parseDateSafe(a.fecha_crea).getTime()
+                    }));
+                combined = [...combined, ...arr];
+            }
+
             combined.sort((a, b) => b.fecha_orden - a.fecha_orden);
             setSolicitudes(combined);
 
@@ -219,7 +234,7 @@ export default function SolicitudesScreen() {
 
     useEffect(() => {
         if (openId && queryType && solicitudes.length > 0 && openId !== processedOpenId) {
-            const id = Number(openId);
+            const id = openId as string;
             const found = solicitudes.find(s => 
                 (queryType === 'new_order' && s.tipoItem === 'pedido' && s.id_pedido === id) ||
                 (queryType === 'new_service_request' && s.tipoItem === 'solicitud' && s.id_solicitud === id)
@@ -253,50 +268,13 @@ export default function SolicitudesScreen() {
         return () => subscription.remove();
     }, [fetchSolicitudes]);
 
-    useEffect(() => {
-        const user = useAuthStore.getState().user;
-        if (!user?.id) return;
-
-        const sseUrl = `${API_URL}/notifications/sse`;
-        let es: EventSource | null = null;
-
-        try {
-            es = new EventSource(sseUrl);
-            es.addEventListener('message', (event: any) => {
-                if (!event.data) return;
-                try {
-                    const payload = JSON.parse(event.data);
-                    if (['new_order', 'order_deleted', 'new_service_request', 'service_request_deleted'].includes(payload.type)) {
-                        fetchSolicitudes();
-                        if (payload.type === 'new_order' || payload.type === 'new_service_request') {
-                            const id = payload.data.id || payload.data.id_solicitud;
-                            if (id) {
-                                setTimeout(() => {
-                                    setProcessedOpenId(null);
-                                    router.setParams({ openId: String(id), type: payload.type });
-                                }, 500);
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.error('[Solicitudes] SSE parse error:', err);
-                }
-            });
-        } catch (err) {
-            console.warn('[Solicitudes] SSE init error:', err);
-        }
-
-        return () => {
-            if (es) es.close();
-        };
-    }, [fetchSolicitudes]);
 
     const onRefresh = () => {
         setRefreshing(true);
         fetchSolicitudes(true);
     };
 
-    const handleAprobar = async (id: number, tipo: string, itemInfo?: any) => {
+    const handleAprobar = async (id: string, tipo: string, itemInfo?: any) => {
         if (!cajaAbierta) {
             showToast('Caja Cerrada', 'No puedes aprobar servicios ni pedidos porque no hay una caja abierta.', 'error');
             return;
@@ -327,6 +305,38 @@ export default function SolicitudesScreen() {
             } finally {
                 setLoadingDetails(false);
             }
+            return;
+        }
+
+        if (tipo === 'anticipo') {
+            setAlertConfig({
+                visible: true,
+                title: 'Pagar Anticipo',
+                message: `¿Confirmas que has entregado el efectivo de $${itemInfo.monto.toLocaleString()} a ${itemInfo.usuario}?`,
+                type: 'success',
+                onConfirm: async () => {
+                    setAlertConfig(prev => ({ ...prev, visible: false }));
+                    try {
+                        const res = await apiClient(`/anticipos`, {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                id_anticipo: id,
+                                estado: 0 // Pagado
+                            })
+                        });
+
+                        if (res.success) {
+                            showToast('Éxito', `Anticipo de ${itemInfo.usuario} marcado como pagado.`, 'success');
+                            DeviceEventEmitter.emit('refresh_requests');
+                            fetchSolicitudes();
+                        } else {
+                            showToast('Error', res.message || 'No se pudo procesar el pago.', 'error');
+                        }
+                    } catch (err: any) {
+                        showToast('Error', err.message || 'Error del servidor', 'error');
+                    }
+                }
+            });
             return;
         }
 
@@ -383,10 +393,10 @@ export default function SolicitudesScreen() {
             const sub_total = pedidoDetails.reduce((acc, obj) => acc + ((obj.precio || 0) * (obj.cantidad || 0)), 0);
             const propina = agregarPropina ? sub_total * 0.10 : 0;
 
-            let usuariosIds: number[] = [];
+            let usuariosIds: string[] = [];
             const anfs = pedido?.anfitrionas_con_ids || [];
             if (Array.isArray(anfs)) {
-                usuariosIds = anfs.map((a: any) => a.usuario_id).filter((id: any) => id && !isNaN(id));
+                usuariosIds = anfs.map((a: any) => a.usuario_id).filter((id: any) => id);
             }
 
             const roomId = pedidoDetails.find(d => d.room_id)?.room_id || null;
@@ -443,7 +453,7 @@ export default function SolicitudesScreen() {
         }
     };
 
-    const handleRechazar = async (id: number, tipo: string) => {
+    const handleRechazar = async (id: string, tipo: string) => {
         if (!cajaAbierta) {
             showToast('Caja Cerrada', 'No puedes rechazar servicios ni pedidos porque no hay una caja abierta.', 'error');
             return;
@@ -488,24 +498,29 @@ export default function SolicitudesScreen() {
 
     const renderItem = ({ item }: { item: any }) => {
         const isSolicitud = item.tipoItem === 'solicitud';
-        const iconName = isSolicitud ? 'receipt' : 'beer';
-        const color = isSolicitud ? accentColor : '#F59E0B';
-        const bedText = isSolicitud ? `Hab: ${item.habitacion_nombre || 'N/A'}` : `Mesa/Sala`;
-        const personText = isSolicitud ? `Gz: ${item.solicitado_por_nombre || 'Desconocido'}` : `Gz: ${item.garzon || 'Desconocido'}`;
-        const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
-        const localTimeDate = new Date(recordTime.getTime() - serverOffset);
-        const timeText = localTimeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isAnticipo = item.tipoItem === 'anticipo';
+        const iconName = isSolicitud ? 'receipt' : isAnticipo ? 'cash' : 'beer';
+        const color = isSolicitud ? accentColor : isAnticipo ? '#10B981' : '#F59E0B';
+        const bedText = isSolicitud ? `Hab: ${item.habitacion_nombre || 'N/A'}` : isAnticipo ? 'Anticipo' : `Mesa/Sala`;
+        const personText = isSolicitud ? `Gz: ${item.solicitado_por_nombre || 'Desconocido'}` : isAnticipo ? `De: ${item.usuario}` : `Gz: ${item.garzon || 'Desconocido'}`;
+        const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : isAnticipo ? item.fecha_crea : item.fecha_crea);
+        
+        const timeText = new Date(recordTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
         
         const nowServerMs = Date.now() + serverOffset;
         const minutesElapsed = Math.floor((nowServerMs - recordTime.getTime()) / 60000);
         
-        const isUrgent = minutesElapsed >= 5;
-        const itemId = isSolicitud ? item.id_solicitud : item.id_pedido;
+        const isUrgent = minutesElapsed >= 5 && !isAnticipo;
+        const itemId = isSolicitud ? item.id_solicitud : isAnticipo ? item.id_anticipo : item.id_pedido;
 
         const handleCardPress = () => {
             if (isSolicitud) {
                 setSelectedService(item);
                 setServiceModalVisible(true);
+            } else if (isAnticipo) {
+                if (item.estado === 1) {
+                    handleAprobar(itemId, 'anticipo', item);
+                }
             } else {
                 handleAprobar(itemId, 'pedido', item);
             }
@@ -537,10 +552,10 @@ export default function SolicitudesScreen() {
                         </View>
                         <Text style={[styles.codigo, { color: textPrimary }]}>{item.codigo}</Text>
                         <View style={[styles.typeBadge, { backgroundColor: `${color}20` }]}>
-                            <Text style={[styles.typeText, { color }]}>{isSolicitud ? 'Servicio' : 'Trago'}</Text>
+                            <Text style={[styles.typeText, { color }]}>{isSolicitud ? 'Servicio' : isAnticipo ? 'Anticipo' : 'Trago'}</Text>
                         </View>
                     </View>
-                    <Text style={styles.precio}>${Math.floor(item.total || 0).toLocaleString('de-DE')}</Text>
+                    <Text style={styles.precio}>${Math.floor(item.monto || item.total || 0).toLocaleString('de-DE')}</Text>
                 </View>
 
                 <View style={styles.cardBody}>
@@ -561,26 +576,49 @@ export default function SolicitudesScreen() {
                 </View>
 
                 <View style={[styles.cardFooter, !cajaAbierta && { opacity: 0.5 }]}>
-                    <Pressable
-                        style={[styles.btnAction, { backgroundColor: '#EF444420' }]}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            handleRechazar(itemId, item.tipoItem);
-                        }}
-                        disabled={!cajaAbierta}
-                    >
-                        <Text style={[styles.btnActionText, { color: '#EF4444' }]}>Rechazar</Text>
-                    </Pressable>
-                    <Pressable
-                        style={[styles.btnAction, { backgroundColor: '#10B981', flex: 1.5 }]}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            handleAprobar(itemId, item.tipoItem, item);
-                        }}
-                        disabled={!cajaAbierta}
-                    >
-                        <Text style={[styles.btnActionText, { color: '#FFFFFF' }]}>Aprobar</Text>
-                    </Pressable>
+                    {isAnticipo ? (
+                        <>
+                            {item.estado === 2 ? (
+                                <View style={[styles.btnAction, { backgroundColor: '#3B82F620', flex: 1 }]}>
+                                    <Text style={[styles.btnActionText, { color: '#3B82F6' }]}>Esp. Admin</Text>
+                                </View>
+                            ) : (
+                                <Pressable
+                                    style={[styles.btnAction, { backgroundColor: '#10B981', flex: 1 }]}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleAprobar(itemId, 'anticipo', item);
+                                    }}
+                                    disabled={!cajaAbierta}
+                                >
+                                    <Text style={[styles.btnActionText, { color: '#FFFFFF' }]}>Entregar Efectivo</Text>
+                                </Pressable>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <Pressable
+                                style={[styles.btnAction, { backgroundColor: '#EF444420' }]}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleRechazar(itemId, item.tipoItem);
+                                }}
+                                disabled={!cajaAbierta}
+                            >
+                                <Text style={[styles.btnActionText, { color: '#EF4444' }]}>Rechazar</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.btnAction, { backgroundColor: '#10B981', flex: 1.5 }]}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleAprobar(itemId, item.tipoItem, item);
+                                }}
+                                disabled={!cajaAbierta}
+                            >
+                                <Text style={[styles.btnActionText, { color: '#FFFFFF' }]}>Aprobar</Text>
+                            </Pressable>
+                        </>
+                    )}
                 </View>
             </Pressable>
         );
@@ -827,7 +865,7 @@ export default function SolicitudesScreen() {
                                             const displayAnfs = (Array.isArray(selectedService.anfitrionas_con_nicks) && selectedService.anfitrionas_con_nicks.length > 0)
                                                 ? selectedService.anfitrionas_con_nicks
                                                 : anfsIds.map((id: any) => {
-                                                        const found = allHostesses.find(h => (h.id_usuario || h.id) === Number(id));
+                                                        const found = allHostesses.find(h => String(h.id_usuario || h.id) === String(id));
                                                         return found ? found : { id, nick: `ID: ${id}`, nombre: 'Anfitriona', apellido: '' };
                                                     });
 

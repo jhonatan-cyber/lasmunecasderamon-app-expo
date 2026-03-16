@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+const FlashList = ShopifyFlashList as any;
+import { MotiView } from 'moti';
 import {
   DeviceEventEmitter,
-  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -21,10 +23,10 @@ import { PremiumHeader } from "../../../components/PremiumHeader";
 import { EditServiceModal } from "../../../components/cajero/forms/EditServiceModal";
 import { Skeleton } from "../../../components/ui/Skeleton";
 import {
-  calculateRemainingTime,
   Timer,
   useTimer,
 } from "../../../context/TimerContext";
+import { calculateRemainingTime, formatTime } from "../../../utils/timeUtils";
 import { useAccentColor } from "../../../hooks/useAccentColor";
 
 // --- Helper for safe number conversion ---
@@ -100,126 +102,133 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   const formatDateTime = (dateStr?: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
   };
 
   return (
-    <Pressable
-      onPress={() => onPress && onPress(item)}
-      style={({ pressed }) => [styles.card, { backgroundColor: theme.card, borderColor: isOverdue ? theme.danger : theme.border, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+    <MotiView
+      from={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'timing', duration: 500 }}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.roomBadge}>
-          <View style={[styles.iconBox, { backgroundColor: theme.accent + "15" }]}>
-            <Ionicons name="bed" size={18} color={theme.accent} />
-          </View>
-          <View>
-            <Text style={[styles.roomName, { color: theme.text }]}>{item.roomName || "Habitación"}</Text>
-            <Text style={[styles.serviceCode, { color: theme.textMuted }]}>#{item.servicioCode || "S/N"} • {formatDateTime(item.created_at)}</Text>
-          </View>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusColor + "10" }]}>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          <Text style={[styles.statusLabel, { color: statusColor }]}>{statusText}</Text>
-        </View>
-      </View>
-
-      <View style={styles.detailsList}>
-        <View style={styles.detailItem}>
-          <Ionicons name="people" size={14} color={theme.textMuted} />
-          <Text style={[styles.detailText, { color: theme.text }]}>
-            <Text style={styles.bold}>Anfitrionas: </Text>
-            {item.anfitrionas || "No asignadas"}
-          </Text>
-        </View>
-        <View style={styles.detailItem}>
-          <Ionicons name="person" size={14} color={theme.textMuted} />
-          <Text style={[styles.detailText, { color: theme.text }]}>
-            <Text style={styles.bold}>Cliente: </Text>
-            {item.clienteNombre || "Sin registrar"}
-          </Text>
-        </View>
-        <View style={styles.detailItem}>
-          <Ionicons name="create-outline" size={14} color={theme.textMuted} />
-          <Text style={[styles.detailText, { color: theme.text }]}>
-            <Text style={styles.bold}>Registrado por: </Text>
-            {item.waiter_name || "Admin"}
-          </Text>
-        </View>
-      </View>
-
-      {activeTab === "activos" && item.estado !== 3 && (
-        <View style={[styles.timerHero, { backgroundColor: isOverdue ? theme.danger + "15" : isCritical ? theme.warning + "15" : theme.bg }]}>
-          <Ionicons name="time" size={24} color={isOverdue ? theme.danger : isCritical ? theme.warning : theme.accent} />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={[styles.timerLabel, { color: theme.textMuted }]}>TIEMPO RESTANTE</Text>
-            <Text style={[styles.timerValue, { color: isOverdue ? theme.danger : theme.text }]}>{formatTime(remaining)}</Text>
-          </View>
-          <View style={{ flex: 1 }} />
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.timerTotalLabel, { color: theme.textMuted }]}>TOTAL {item.duration} MIN</Text>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.financeBox}>
-        <View style={styles.paymentMethodBadge}>
-          <Ionicons name="card-outline" size={12} color={theme.textMuted} />
-          <Text style={[styles.paymentMethodText, { color: theme.textMuted }]}>
-            {item.metodo_pago?.toUpperCase() || "EFECTIVO"}
-          </Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[styles.totalLabel, { color: theme.textMuted }]}>TOTAL COBRADO</Text>
-          <Text style={[styles.totalPrice, { color: theme.text }]}>${total.toLocaleString()}</Text>
-          {activeTab === "finalizados" && (
-            <View style={[
-              styles.statusBadge,
-              {
-                backgroundColor: item.pago_estado === 0 ? theme.success + '15' : theme.danger + '15',
-                marginTop: 4,
-                borderColor: item.pago_estado === 0 ? theme.success : theme.danger,
-                borderWidth: 1
-              }
-            ]}>
-              <Text style={[
-                styles.statusLabel,
-                { color: item.pago_estado === 0 ? theme.success : theme.danger, fontSize: 8 }
-              ]}>
-                {item.pago_estado === 0 ? 'COBRADO ✓' : 'POR COBRAR ⚠'}
-              </Text>
+      <Pressable
+        onPress={() => onPress && onPress(item)}
+        style={({ pressed }) => [styles.card, { backgroundColor: theme.card, borderColor: isOverdue ? theme.danger : theme.border, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.roomBadge}>
+            <View style={[styles.iconBox, { backgroundColor: theme.accent + "15" }]}>
+              <Ionicons name="bed" size={18} color={theme.accent} />
             </View>
-          )}
+            <View>
+              <Text style={[styles.roomName, { color: theme.text }]}>{item.roomName || "Habitación"}</Text>
+              <Text style={[styles.serviceCode, { color: theme.textMuted }]}>#{item.servicioCode || "S/N"} • {formatDateTime(item.created_at)}</Text>
+            </View>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + "10" }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+            <Text style={[styles.statusLabel, { color: statusColor }]}>{statusText}</Text>
+          </View>
         </View>
-      </View>
 
-      {activeTab === "activos" && (
-        <View style={styles.actionsBox}>
-          {(item.precio_servicio ?? 0) === 0 && (
+        <View style={styles.detailsList}>
+          <View style={styles.detailItem}>
+            <Ionicons name="people" size={14} color={theme.textMuted} />
+            <Text style={[styles.detailText, { color: theme.text }]}>
+              <Text style={styles.bold}>Anfitrionas: </Text>
+              {item.anfitrionas || "No asignadas"}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Ionicons name="person" size={14} color={theme.textMuted} />
+            <Text style={[styles.detailText, { color: theme.text }]}>
+              <Text style={styles.bold}>Cliente: </Text>
+              {item.clienteNombre || "Sin registrar"}
+            </Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Ionicons name="create-outline" size={14} color={theme.textMuted} />
+            <Text style={[styles.detailText, { color: theme.text }]}>
+              <Text style={styles.bold}>Registrado por: </Text>
+              {item.waiter_name || "Admin"}
+            </Text>
+          </View>
+        </View>
+
+        {activeTab === "activos" && item.estado !== 3 && (
+          <View style={[styles.timerHero, { backgroundColor: isOverdue ? theme.danger + "15" : isCritical ? theme.warning + "15" : theme.bg }]}>
+            <Ionicons name="time" size={24} color={isOverdue ? theme.danger : isCritical ? theme.warning : theme.accent} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={[styles.timerLabel, { color: theme.textMuted }]}>TIEMPO RESTANTE</Text>
+              <Text style={[styles.timerValue, { color: isOverdue ? theme.danger : theme.text }]}>{formatTime(remaining)}</Text>
+            </View>
+            <View style={{ flex: 1 }} />
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.timerTotalLabel, { color: theme.textMuted }]}>TOTAL {item.duration} MIN</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.financeBox}>
+          <View style={styles.paymentMethodBadge}>
+            <Ionicons name="card-outline" size={12} color={theme.textMuted} />
+            <Text style={[styles.paymentMethodText, { color: theme.textMuted }]}>
+              {item.metodo_pago?.toUpperCase() || "EFECTIVO"}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.totalLabel, { color: theme.textMuted }]}>TOTAL COBRADO</Text>
+            <Text style={[styles.totalPrice, { color: theme.text }]}>${total.toLocaleString()}</Text>
+            {activeTab === "finalizados" && (
+              <View style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: item.pago_estado === 0 ? theme.success + '15' : theme.danger + '15',
+                  marginTop: 4,
+                  borderColor: item.pago_estado === 0 ? theme.success : theme.danger,
+                  borderWidth: 1
+                }
+              ]}>
+                <Text style={[
+                  styles.statusLabel,
+                  { color: item.pago_estado === 0 ? theme.success : theme.danger, fontSize: 8 }
+                ]}>
+                  {item.pago_estado === 0 ? 'COBRADO ✓' : 'POR COBRAR ⚠'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {activeTab === "activos" && (
+          <View style={styles.actionsBox}>
+            {(item.precio_servicio ?? 0) === 0 && (
+              <Pressable
+                style={[styles.editActionBtn, { backgroundColor: theme.warning }]}
+                onPress={() => onEditar && onEditar(item)}
+                accessibilityLabel="Editar servicio"
+                accessibilityRole="button"
+              >
+                <Ionicons name="create" size={16} color="#FFF" />
+                <Text style={styles.btnText}>EDITAR</Text>
+              </Pressable>
+            )}
             <Pressable
-              style={[styles.editActionBtn, { backgroundColor: theme.warning }]}
-              onPress={() => onEditar && onEditar(item)}
-              accessibilityLabel="Editar servicio"
+              style={[styles.finishActionBtn, { backgroundColor: theme.danger }]}
+              onPress={() => onFinalizar(item)}
+              accessibilityLabel="Finalizar servicio"
               accessibilityRole="button"
             >
-              <Ionicons name="create" size={16} color="#FFF" />
-              <Text style={styles.btnText}>EDITAR</Text>
+              <Ionicons name="stop" size={16} color="#FFF" />
+              <Text style={styles.btnText}>FINALIZAR</Text>
             </Pressable>
-          )}
-          <Pressable
-            style={[styles.finishActionBtn, { backgroundColor: theme.danger }]}
-            onPress={() => onFinalizar(item)}
-            accessibilityLabel="Finalizar servicio"
-            accessibilityRole="button"
-          >
-            <Ionicons name="stop" size={16} color="#FFF" />
-            <Text style={styles.btnText}>FINALIZAR</Text>
-          </Pressable>
-        </View>
-      )}
-    </Pressable>
+          </View>
+        )}
+      </Pressable>
+    </MotiView>
   );
 });
+ServiceCard.displayName = "ServiceCard";
 
 const ServiceSkeleton = ({ theme }: { theme: any }) => (
   <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -374,18 +383,18 @@ export default function ServiciosActivosScreen() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig } = state;
 
-  const theme = {
-    bg: isDark ? "#0F0D2E" : "#F8FAFC",
-    card: isDark ? "#1E1B4B" : "#FFFFFF",
+  const theme = useMemo(() => ({
+    bg: isDark ? "#000000" : "#F8FAFC",
+    card: isDark ? "#111111" : "#FFFFFF",
     text: isDark ? "#F9FAFB" : "#0F172A",
     textMuted: isDark ? "#9CA3AF" : "#64748B",
-    border: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
+    border: isDark ? `${accentColor}40` : "#E2E8F0",
     accent: accentColor,
     success: "#10B981",
     danger: "#EF4444",
     warning: "#F59E0B",
     info: "#3B82F6",
-  };
+  }), [isDark, accentColor]);
 
   const activeServicios = useMemo(() => {
     return timers.filter(t => {
@@ -584,21 +593,21 @@ export default function ServiciosActivosScreen() {
 
       {activeTab === "activos" ? (
         (loadingTimers || loadingActivos) ? (
-          <FlatList
-            data={[1, 2, 3, 4]}
+          <FlashList
+            data={[1, 2, 3, 4] as any}
             renderItem={() => <ServiceSkeleton theme={theme} />}
-            keyExtractor={(item) => `skeleton-${item}`}
+            keyExtractor={(item: any) => `skeleton-${item}`}
             numColumns={numColumns}
-            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            estimatedItemSize={200}
             contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
           />
         ) : (
-          <FlatList
+          <FlashList
             data={activeServicios}
             renderItem={renderItem}
-            keyExtractor={(item) => `active-${item.id}`}
+            keyExtractor={(item: any) => `active-${item.id}`}
             numColumns={numColumns}
-            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            estimatedItemSize={250}
             contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
             ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios activos</Text>}
@@ -606,21 +615,21 @@ export default function ServiciosActivosScreen() {
         )
       ) : (
         loadingFinalizados ? (
-          <FlatList
-            data={[1, 2, 3, 4]}
+          <FlashList
+            data={[1, 2, 3, 4] as any}
             renderItem={() => <ServiceSkeleton theme={theme} />}
-            keyExtractor={(item) => `skeleton-fin-${item}`}
+            keyExtractor={(item: any) => `skeleton-fin-${item}`}
             numColumns={numColumns}
-            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            estimatedItemSize={200}
             contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
           />
         ) : (
-          <FlatList
+          <FlashList
             data={finalizados}
             renderItem={renderItem}
-            keyExtractor={(item) => `finalizado-${item.id}`}
+            keyExtractor={(item: any) => `finalizado-${item.id}`}
             numColumns={numColumns}
-            columnWrapperStyle={numColumns > 1 ? { gap: 16, marginHorizontal: 16 } : undefined}
+            estimatedItemSize={250}
             contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
             ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios finalizados</Text>}
@@ -686,7 +695,7 @@ export default function ServiciosActivosScreen() {
                             <View style={styles.gridItem}>
                               <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HORA</Text>
                               <Text style={[styles.gridValue, { color: theme.text }]}>
-                                {localDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                {localDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                               </Text>
                             </View>
                           </>

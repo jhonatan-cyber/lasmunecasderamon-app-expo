@@ -9,7 +9,15 @@ import { apiClient } from "../api/client";
 export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
-  if (Platform.OS === "web") {
+  // En Expo Go (appOwnership === 'expo') las push remotas ya no están soportadas.
+  const isExpoGo = Constants.appOwnership === "expo";
+
+  if (Platform.OS === "web" || isExpoGo) {
+    if (isExpoGo) {
+      console.log(
+        "expo-notifications: push remotas no están soportadas en Expo Go. Usa un development build."
+      );
+    }
     return null;
   }
 

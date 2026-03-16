@@ -13,8 +13,8 @@ import {
 import { useAccentColor } from "../../../hooks/useAccentColor";
 
 interface Room {
-  id: number | string;
-  id_habitacion?: number | string;
+  id: string;
+  id_habitacion?: string;
   nombre: string;
   precio: number;
   tiempo: number;
@@ -26,7 +26,7 @@ interface RoomSelectModalProps {
   onClose: () => void;
   onSelect: (room: Room) => void;
   rooms: Room[];
-  selectedRoomId?: number | string;
+  selectedRoomId?: string;
 }
 
 export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
@@ -59,8 +59,8 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             data={rooms}
             keyExtractor={(item) => (item.id_habitacion || item.id).toString()}
             renderItem={({ item }) => {
-              const itemId = item.id_habitacion || item.id;
-              const isSelected = selectedRoomId === itemId;
+              const itemId = String(item.id_habitacion || item.id);
+              const isSelected = String(selectedRoomId) === itemId;
               return (
                 <TouchableOpacity
                   style={[

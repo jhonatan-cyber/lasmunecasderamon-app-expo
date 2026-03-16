@@ -4,20 +4,22 @@ import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAccentColor } from '../hooks/useAccentColor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, gradientColors, isDark } = useAccentColor();
     const insets = useSafeAreaInsets();
     const indicatorPosition = useSharedValue(0);
-    const bgColor = isDark ? '#0F172A' : '#FFFFFF';
-    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
-    const activeTintColor = accentColor;
-    const inactiveTintColor = isDark ? '#9CA3AF' : '#6B7280';
+    
+    // Si el navbar es de color, los iconos deben ser blancos
+    const activeTintColor = '#FFFFFF';
+    const inactiveTintColor = 'rgba(255, 255, 255, 0.6)';
+    const borderColor = 'rgba(255, 255, 255, 0.1)';
 
-    const visibleRoutes = state.routes.filter(r => {
+    const visibleRoutes = state.routes.filter((r: any) => {
         const options = descriptors[r.key].options as any;
         return options.href !== null;
     });
@@ -26,7 +28,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
     const tabWidth = SCREEN_WIDTH / numTabs;
 
     const activeRouteKey = state.routes[state.index].key;
-    const visualIndex = visibleRoutes.findIndex(r => r.key === activeRouteKey);
+    const visualIndex = visibleRoutes.findIndex((r: any) => r.key === activeRouteKey);
 
     useEffect(() => {
         const targetPos = visualIndex >= 0 ? visualIndex * tabWidth : 0;
@@ -41,7 +43,10 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
     }));
 
     return (
-        <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, backgroundColor: bgColor, borderTopColor: borderColor }]}>
+        <LinearGradient
+            colors={gradientColors as any}
+            style={[styles.tabBarContainer, { paddingBottom: insets.bottom, borderTopColor: borderColor }]}
+        >
             {/* Indicador Animado de Fondo */}
             <Animated.View style={[
                 styles.indicator,
@@ -50,7 +55,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
             ]}>
             </Animated.View>
 
-            {state.routes.map((route, index) => {
+            {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
 
                 if ((options as any).href === null) return null;
@@ -87,8 +92,8 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
                         style={styles.tabItem}
                     >
                         <View style={[
-                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: `${accentColor}15` }] : null,
-                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: `${accentColor}15` }] : null,
+                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: 'rgba(255,255,255,0.15)' }] : null,
+                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: 'rgba(255,255,255,0.15)' }] : null,
                             isCenter ? styles.centerTab : null
                         ]}>
                             {options.tabBarIcon && options.tabBarIcon({
@@ -107,7 +112,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarPr
                     </Pressable>
                 );
             })}
-        </View>
+        </LinearGradient>
     );
 };
 

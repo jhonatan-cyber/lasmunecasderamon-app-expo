@@ -46,10 +46,10 @@ export function PremiumLiquidationCard({
 }: PremiumLiquidationCardProps) {
     const { accentColor, isDark } = useAccentColor();
 
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0, 0, 0, 0.05)';
 
     const totalCalculated = useMemo(() => {
         return events.reduce((sum, e) => {
@@ -171,7 +171,7 @@ export function PremiumLiquidationCard({
                     accessibilityRole="button"
                 >
                     <Ionicons name="document-text-outline" size={20} color="#FFF" />
-                    <Text style={styles.exportBtnText}>Liquidación</Text>
+                    <Text style={styles.exportBtnText}>Reportes</Text>
                 </Pressable>
             </View>
         </View>

@@ -28,7 +28,7 @@ export default function CajeroTabsLayout() {
     return (
         <>
             <Tabs
-                tabBar={(props) => <PremiumTabBar {...props} />}
+                tabBar={(props: any) => <PremiumTabBar {...props} />}
                 screenOptions={{
                     headerShown: false,
                 }}>

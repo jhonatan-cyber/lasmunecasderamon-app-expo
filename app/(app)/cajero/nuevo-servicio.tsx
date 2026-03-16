@@ -140,11 +140,11 @@ export default function NuevoServicioScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
-  const bg = isDark ? "#0F0D2E" : "#F3F4F6";
-  const cardBg = isDark ? "#1E1B4B" : "#FFFFFF";
+  const bg = isDark ? "#000000" : "#F3F4F6";
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
-  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "#E5E7EB";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+  const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.1)";
 
   const fetchInitialData = useCallback(async () => {
     dispatch({ type: 'SET_LOADING_INITIAL', payload: true });

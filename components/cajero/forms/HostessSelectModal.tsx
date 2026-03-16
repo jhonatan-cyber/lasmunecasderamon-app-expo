@@ -26,9 +26,9 @@ interface HostessSelectModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm?: () => void;
-  onToggle: (id: number) => void;
+  onToggle: (id: string) => void;
   hostesses: Hostess[];
-  selectedIds: number[];
+  selectedIds: string[];
   max?: number;
   title?: string;
 }
@@ -77,7 +77,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
             data={hostesses}
             keyExtractor={(item) => (item.id_usuario || item.id).toString()}
             renderItem={({ item }) => {
-              const id = Number(item.id_usuario || item.id);
+              const id = String(item.id_usuario || item.id);
               const isSelected = selectedIds.includes(id);
               const isBusy = (item.estado_servicio || item.status) === 2;
               const isMaxReached = max !== undefined && selectedIds.length >= max;

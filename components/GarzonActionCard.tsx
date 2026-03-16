@@ -26,7 +26,7 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
     const padding = isTablet ? 24 : 16;
 
     // Premium Floating Design
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
@@ -43,6 +43,8 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
                     shadowColor: color,
                     shadowOpacity: isDark ? 0.3 : 0.15,
                     opacity: disabled ? 0.6 : 1,
+                    borderWidth: isDark ? 1 : 0,
+                    borderColor: isDark ? `${color}40` : 'transparent',
                 }
             ]}
         >

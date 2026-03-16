@@ -16,7 +16,7 @@ import {
     Text,
     TextInput,
     useWindowDimensions,
-    View
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient, BASE_URL } from '../api/client';
@@ -139,22 +139,39 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
         dispatch({ type: 'SET_ALERT_CONFIG', payload: { ...alertConfig, visible: false } });
     }, [alertConfig]);
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+
+    const fetchProfile = useCallback(async () => {
+        try {
+            const res = await apiClient('/users/profile');
+            if (res.success && res.user) {
+                await useAuthStore.getState().updateProfile(res.user);
+                dispatch({ type: 'SET_USER_DATA', payload: res.user });
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        } finally {
+            dispatch({ type: 'SET_PAGE_LOADING', payload: false });
+        }
+    }, []);
 
     useEffect(() => {
         if (user) {
-            const t = setTimeout(() => {
-                dispatch({ type: 'SET_USER_DATA', payload: user });
-            }, 600);
-            return () => clearTimeout(t);
+            dispatch({ type: 'SET_USER_DATA', payload: user });
+            fetchProfile();
+
+            // Sola lectura y cambiar: 
+            // Podríamos habilitar un intervalo para refrescar si el usuario se queda aquí mucho tiempo
+            const interval = setInterval(fetchProfile, 30000); // 30s polling for security refresh
+            return () => clearInterval(interval);
         } else {
             dispatch({ type: 'SET_PAGE_LOADING', payload: false });
         }
-    }, [user?.id]);
+    }, [user?.id, fetchProfile]);
 
     const takePhoto = useCallback(async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -314,18 +331,22 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
                             <View style={{ flexDirection: 'row', gap: 12, paddingRight: 20 }}>
                                 {THEME_OPTIONS.map((theme) => {
-                                    const isSelected = accentColor === theme.color;
+                                    const isSelected = accentColor.toLowerCase() === theme.color.toLowerCase();
                                     return (
                                         <Pressable
                                             key={theme.color}
-                                            onPress={() => setAccentColor(user?.id || 0, theme.color)}
+                                            onPress={() => {
+                                                if (user?.id) {
+                                                    setAccentColor(user.id, theme.color);
+                                                }
+                                            }}
                                             style={[
                                                 styles.colorCircle,
                                                 { backgroundColor: theme.color },
-                                                isSelected && { borderWidth: 3, borderColor: textPrimary, transform: [{ scale: 1.1 }] }
+                                                isSelected && { borderWidth: 3, borderColor: textPrimary, transform: [{ scale: 1.15 }] }
                                             ]}
                                         >
-                                            {isSelected && <Ionicons name="checkmark" size={20} color="#FFF" />}
+                                            {isSelected && <Ionicons name="checkmark" size={24} color="#FFF" />}
                                         </Pressable>
                                     );
                                 })}
@@ -373,7 +394,6 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = '👤', onLogout, 
                             />
                         </View>
                     </View>
-
                     <View style={styles.inputGroup}>
                         <Text style={[styles.inputLabel, { color: textSecondary }]}>Estado Civil</Text>
                         <Pressable

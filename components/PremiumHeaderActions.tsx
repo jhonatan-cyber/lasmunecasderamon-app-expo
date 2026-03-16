@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Appearance, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 interface PremiumHeaderActionsProps {
     hasNewAlert?: boolean;
@@ -11,6 +12,8 @@ interface PremiumHeaderActionsProps {
     showAlert: (title: string, message: string, type: 'info' | 'success' | 'warning' | 'danger', onConfirm?: () => void, showCancel?: boolean) => void;
     profilePath: string;
     showNotifications?: boolean;
+    onQRScannerPress?: () => void;
+    onPersonalPress?: () => void;
 }
 
 export const PremiumHeaderActions = ({
@@ -20,9 +23,11 @@ export const PremiumHeaderActions = ({
     onNotificationPress,
     showAlert,
     profilePath,
-    showNotifications = true
+    showNotifications = true,
+    onQRScannerPress,
+    onPersonalPress
 }: PremiumHeaderActionsProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const logout = useAuthStore(state => state.logout);
     const user = useAuthStore(state => state.user);
     const router = useRouter();
@@ -33,7 +38,8 @@ export const PremiumHeaderActions = ({
 
     // Forzar siempre blanco para el header premium
     const iconColor = '#FFFFFF';
-    const btnBg = 'rgba(255,255,255,0.15)';
+    const btnBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)';
+    const btnBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
 
     const toggleTheme = () => {
         Appearance.setColorScheme(isDark ? 'light' : 'dark');
@@ -56,6 +62,22 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
+            {onQRScannerPress && (
+                <Pressable
+                    onPress={onQRScannerPress}
+                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                >
+                    <Ionicons name="qr-code" size={20} color={iconColor} />
+                </Pressable>
+            )}
+            {onPersonalPress && (
+                <Pressable
+                    onPress={onPersonalPress}
+                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                >
+                    <Ionicons name="people" size={20} color={iconColor} />
+                </Pressable>
+            )}
             {showNotifications && !isRestrictedRole && (
                 <Pressable
                     onPress={() => {
@@ -66,7 +88,7 @@ export const PremiumHeaderActions = ({
                         if (setHasNewAlert) setHasNewAlert(false);
                         showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
                     }}
-                    style={[styles.iconButton, { backgroundColor: btnBg }]}
+                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
                 >
                     <Ionicons name="notifications-outline" size={20} color={iconColor} />
                     {showDot && (
@@ -78,19 +100,19 @@ export const PremiumHeaderActions = ({
             )}
             <Pressable
                 onPress={() => router.push(profilePath as any)}
-                style={[styles.iconButton, { backgroundColor: btnBg }]}
+                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
             >
                 <Ionicons name="settings-outline" size={20} color={iconColor} />
             </Pressable>
             <Pressable
                 onPress={toggleTheme}
-                style={[styles.iconButton, { backgroundColor: btnBg }]}
+                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
             >
                 <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={iconColor} />
             </Pressable>
             <Pressable
                 onPress={handleLogout}
-                style={[styles.iconButton, { backgroundColor: btnBg }]}
+                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
             >
                 <Ionicons name="log-out-outline" size={20} color={iconColor} />
             </Pressable>
@@ -102,6 +124,7 @@ const styles = StyleSheet.create({
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
+        alignItems: 'center',
         gap: 12,
         marginBottom: 20,
     },

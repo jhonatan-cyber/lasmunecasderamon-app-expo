@@ -64,12 +64,13 @@ export default function AdministrativoScreen() {
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
     const dataRef = useRef<string>('');
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -120,10 +121,42 @@ export default function AdministrativoScreen() {
         if (selectedDates.length === 0) return [];
         return recentActivity.filter(e => {
             const d = new Date(e.date);
-            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
             return selectedDates.includes(dateStr);
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [selectedDates, recentActivity]);
+
+    const typeLabels: Record<string, string> = {
+        comision: "Comisión",
+        asistencia: "Asistencia",
+        anticipo: "Anticipo",
+        propina: "Propina",
+        venta: "Venta",
+        servicio: "Servicio",
+        gratificacion: "Gratificación"
+    };
+
+    const getEventLabel = (item: any) => {
+        if (!item) return "";
+        if (item.type === 'comision') {
+            if (item.subType === 'venta') return "Comisión de Venta";
+            if (item.subType === 'servicio') return "Comisión de Servicio";
+            return "Comisión";
+        }
+        if (item.type === 'propina') {
+            if (item.subType === 'venta') return "Propina de Venta";
+            return "Propina";
+        }
+        return typeLabels[item.type] || item.type.toUpperCase();
+    };
+
+    const getStatusLabel = (status: any) => {
+        if (typeof status === 'string') return status.toUpperCase();
+        if (status === 1) return 'PENDIENTE';
+        if (status === 2) return 'CONFIRMADO';
+        if (status === 3) return 'RECHAZADO';
+        return 'COMPLETADO';
+    };
 
     if (loading) {
         return (
@@ -340,22 +373,39 @@ export default function AdministrativoScreen() {
                                 const iconColor = isAnticipo ? '#EF4444' : '#10B981';
 
                                 return (
-                                    <View style={[styles.eventItem, { backgroundColor: cardBg, borderColor }]}>
+                                    <Pressable 
+                                        onPress={() => setSelectedEvent(item)}
+                                        style={({ pressed }) => [
+                                            styles.eventItem, 
+                                            { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.7 : 1 }
+                                        ]}
+                                    >
                                         <View style={[styles.iconBox, { backgroundColor: `${iconColor}20` }]}>
                                             <Ionicons name={iconName as any} size={18} color={iconColor} />
                                         </View>
                                         <View style={styles.eventInfo}>
                                             <Text style={[styles.eventTitle, { color: textPrimary }]}>
-                                                {item.type.toUpperCase()} {item.codigo}
+                                                {getEventLabel(item)} {item.codigo && item.codigo !== 'TIPS' ? `- ${item.codigo}` : ''}
                                             </Text>
                                             <Text style={[styles.eventTime, { color: textSecondary }]}>
-                                                {new Date(item.date).toLocaleDateString()}
+                                                {new Date(item.date).toLocaleDateString("es-ES", {
+                                                    day: "numeric",
+                                                    month: "long",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit"
+                                                })}
                                             </Text>
                                         </View>
-                                        <Text style={[styles.eventPrice, { color: isAnticipo ? '#EF4444' : '#10B981' }]}>
-                                            {isAnticipo ? '-' : '+'}${item.amount.toLocaleString()}
-                                        </Text>
-                                    </View>
+                                        <View style={{ alignItems: 'flex-end' }}>
+                                            <Text style={[styles.eventPrice, { color: isAnticipo ? '#EF4444' : '#10B981' }]}>
+                                                {isAnticipo ? '-' : '+'}${item.amount.toLocaleString()}
+                                            </Text>
+                                            <Text style={[styles.statusMiniText, { color: textSecondary }]}>
+                                                {getStatusLabel(item.estado)}
+                                            </Text>
+                                        </View>
+                                    </Pressable>
                                 );
                             }}
                             contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
@@ -378,6 +428,93 @@ export default function AdministrativoScreen() {
                             </Pressable>
                         </View>
 
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal de Detalle de Transacción */}
+            <Modal
+                visible={!!selectedEvent}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setSelectedEvent(null)}
+            >
+                <View style={styles.modalOverlayCenter}>
+                    <View style={[styles.detailCard, { backgroundColor: cardBg }]}>
+                        <View style={styles.detailHeader}>
+                            <View style={[styles.detailIconBox, { backgroundColor: `${(selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981")}20` }]}>
+                                <Ionicons 
+                                    name={
+                                        selectedEvent?.type === "venta"
+                                        ? "cart"
+                                        : selectedEvent?.type === "propina"
+                                            ? "heart"
+                                            : selectedEvent?.type === "comision"
+                                                ? "star"
+                                                : selectedEvent?.type === "asistencia"
+                                                    ? "calendar"
+                                                    : "cash"
+                                    } 
+                                    size={32} 
+                                    color={selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981"} 
+                                />
+                            </View>
+                            <Pressable 
+                                onPress={() => setSelectedEvent(null)}
+                                style={styles.detailCloseBtn}
+                            >
+                                <Ionicons name="close" size={24} color={textPrimary} />
+                            </Pressable>
+                        </View>
+
+                        <View style={styles.detailBody}>
+                            <Text style={[styles.detailType, { color: textSecondary }]}>
+                                {getEventLabel(selectedEvent).toUpperCase()}
+                            </Text>
+                            <Text style={[styles.detailAmount, { color: selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981" }]}>
+                                {selectedEvent?.type === 'anticipo' ? "-" : "+"}${selectedEvent?.amount.toLocaleString()}
+                            </Text>
+
+                            <View style={[styles.divider, { backgroundColor: borderColor }]} />
+
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Fecha y Hora</Text>
+                                <Text style={[styles.detailValue, { color: textPrimary }]}>
+                                    {selectedEvent ? new Date(selectedEvent.date).toLocaleString('es-ES', {
+                                        day: '2-digit', month: 'long', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                    }) : ''}
+                                </Text>
+                            </View>
+
+                            {selectedEvent?.codigo && selectedEvent.codigo !== 'TIPS' && (
+                                <View style={styles.detailRow}>
+                                    <Text style={[styles.detailLabel, { color: textSecondary }]}>Código de Operación</Text>
+                                    <Text style={[styles.detailValue, { color: textPrimary }]}>{selectedEvent.codigo}</Text>
+                                </View>
+                            )}
+
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
+                                <View style={[styles.statusBadgeDetail, { backgroundColor: `${(selectedEvent?.estado === 3 ? "#EF4444" : "#10B981")}20` }]}>
+                                    <Text style={[styles.statusTextDetail, { color: (selectedEvent?.estado === 3) ? "#EF4444" : "#10B981" }]}>
+                                        {selectedEvent ? getStatusLabel(selectedEvent.estado) : ''}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>ID Interno</Text>
+                                <Text style={[styles.detailValue, { color: textPrimary }]}>#{selectedEvent?.id}</Text>
+                            </View>
+                        </View>
+
+                        <Pressable 
+                            onPress={() => setSelectedEvent(null)}
+                            style={[styles.confirmBtn, { backgroundColor: accentColor }]}
+                        >
+                            <Text style={styles.confirmBtnText}>Entendido</Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
@@ -434,4 +571,105 @@ const styles = StyleSheet.create({
     modalFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
     closeFooterBtn: { height: 52, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#E11D48' },
     closeFooterBtnText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
+    modalOverlayCenter: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.7)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20
+    },
+    detailCard: {
+        width: '100%',
+        borderRadius: 32,
+        padding: 24,
+        elevation: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+    },
+    detailHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 20
+    },
+    detailIconBox: {
+        width: 64,
+        height: 64,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    detailCloseBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.05)'
+    },
+    detailBody: {
+        alignItems: 'center',
+        marginBottom: 30
+    },
+    detailType: {
+        fontSize: 13,
+        fontWeight: '800',
+        letterSpacing: 2,
+        marginBottom: 8
+    },
+    detailAmount: {
+        fontSize: 42,
+        fontWeight: '900',
+        letterSpacing: -1
+    },
+    divider: {
+        width: '100%',
+        height: 1,
+        marginVertical: 25,
+        opacity: 0.5
+    },
+    detailRow: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16
+    },
+    detailLabel: {
+        fontSize: 13,
+        fontWeight: '600'
+    },
+    detailValue: {
+        fontSize: 14,
+        fontWeight: '700'
+    },
+    statusBadgeDetail: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 99,
+    },
+    statusTextDetail: {
+        fontSize: 11,
+        fontWeight: '800'
+    },
+    confirmBtn: {
+        width: '100%',
+        height: 56,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 4
+    },
+    confirmBtnText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '800'
+    },
+    statusMiniText: {
+        fontSize: 10,
+        fontWeight: '700',
+        marginTop: 4
+    }
 });

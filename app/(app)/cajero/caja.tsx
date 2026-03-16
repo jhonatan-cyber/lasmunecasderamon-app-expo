@@ -163,11 +163,11 @@ export default function CajaScreen() {
     const { loading, refreshing, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#0F0D2E' : '#F1F5F9';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F1F5F9';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+    const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
@@ -302,7 +302,7 @@ export default function CajaScreen() {
                             </Text>
                             <Text style={[styles.headerSubtitle, { color: headerSubColor }, isTablet && { fontSize: 17 }]}>
                                 {cajaAbierta && cajaInfo?.fecha_apertura
-                                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+                                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
                                     : 'Turno no iniciado'}
                             </Text>
                         </View>
@@ -376,7 +376,7 @@ export default function CajaScreen() {
                             <View style={[styles.openedInfo, { borderTopColor: borderColor }]}>
                                 <Ionicons name="time-outline" size={13} color={textSecondary} />
                                 <Text style={[styles.openedText, { color: textSecondary }]}>
-                                    Apertura: {new Date(cajaInfo.fecha_apertura).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    Apertura: {new Date(cajaInfo.fecha_apertura).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                                 </Text>
                             </View>
                         )}

@@ -1,30 +1,37 @@
+import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { useAuthStore } from '../store/authStore';
-import { useThemeStore } from '../store/themeStore';
+import { THEME_OPTIONS, useThemeStore } from '../store/themeStore';
 
 export function useAccentColor() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const user = useAuthStore(state => state.user);
-    const { getColor, getGradient } = useThemeStore();
+    const userId = user?.id;
 
-    const accentColor = getColor(user?.id);
-    const gradientColors = getGradient(user?.id, isDark);
+    // Suscripción directa al color del usuario en el store para máxima reactividad
+    const accentColor = useThemeStore(state => {
+        if (userId === undefined || userId === null) return '#E11D48';
+        return state.userColors[String(userId)] || '#E11D48';
+    });
 
-    // Si estamos en Light Mode, el gradiente del header por defecto era ['#2D2870', '#1E1B4B', '#0F0D2E']
-    // Si estamos en Dark Mode, era ['#FFFFFF', '#F1F5F9']
-    // El usuario pidió que el gradiente TAMBIÉN cambie.
+    // Colores derivados con useMemo para eficiencia
+    const gradientColors = useMemo(() => {
+        const theme = THEME_OPTIONS.find(t => t.color.toLowerCase() === accentColor.toLowerCase()) || THEME_OPTIONS[0];
+        return theme.gradient;
+    }, [accentColor]);
 
-    // Si el color es el default (#E11D48), mantenemos los gradientes originales si queremos, 
-    // pero el usuario dijo "que el gradiente también cambie".
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
-    // Podemos retornar también variaciones para fondos, bordes, etc.
     return {
         accentColor,
         gradientColors,
         isDark,
-        // Helper para bordes sutiles con el color de acento
+        bg,
+        cardBg,
+        borderColor,
         accentBorder: `${accentColor}30`,
-        // Helper para fondos muy sutiles
         accentBg: `${accentColor}15`,
     };
 }

@@ -5,9 +5,9 @@ interface CartState {
     cart: CartItem[];
     tipEnabled: boolean;
     addToCart: (product: Product) => void;
-    removeFromCart: (productId: number) => void;
-    updateItemHostesses: (productId: number, hostessIds: number[]) => void;
-    updateItemRoom: (productId: number, roomId: number | null) => void;
+    removeFromCart: (productId: string) => void;
+    updateItemHostesses: (productId: string, hostessIds: string[]) => void;
+    updateItemRoom: (productId: string, roomId: string | null) => void;
     setTipEnabled: (enabled: boolean) => void;
     clearCart: () => void;
     getTotal: () => number;

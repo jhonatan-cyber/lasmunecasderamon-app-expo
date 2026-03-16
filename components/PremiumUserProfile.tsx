@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '../api/client';
+import { AttendanceCodeDisplay } from './AttendanceCodeDisplay';
 
 interface PremiumUserProfileProps {
     user: any;
@@ -46,9 +47,12 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
                 )}
             </View>
             <View style={styles.headerInfo}>
-                <Text style={[styles.username, { color: textPrimary }]}>
-                    {user?.name || user?.nick || user?.username || 'Usuario'}
-                </Text>
+                <View style={styles.nameHeaderContainer}>
+                    <Text style={[styles.username, { color: textPrimary }]}>
+                        {user?.name || user?.nick || user?.username || 'Usuario'}
+                    </Text>
+                    <AttendanceCodeDisplay />
+                </View>
                 <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, true) }]} />
                     <Text style={[styles.statusText, { color: textSecondary }]}>
@@ -92,6 +96,13 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '900',
         letterSpacing: -0.5,
+    },
+    nameHeaderContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        flexWrap: 'wrap',
+        gap: 8,
     },
     statusRow: {
         flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { Redirect, Stack, usePathname } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Modal,
     StyleSheet,
@@ -7,6 +7,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RegistroAsistenciaModal } from '../../components/RegistroAsistenciaModal';
 import { StaffCallOverlay } from '../../components/StaffCallOverlay';
 import { useNotificationHandler } from '../../hooks/useNotificationHandler';
 import { useAuthStore } from '../../store/authStore';
@@ -18,6 +20,37 @@ export default function AppLayout() {
     const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
     const logout = useAuthStore((state) => state.logout);
     const pathname = usePathname();
+    
+    const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
+
+    const isStaffMember = user?.role && 
+        (user.role.toLowerCase().includes('garzon') || 
+         user.role.toLowerCase().includes('anfitriona'));
+
+    // Solo mostrar modal al hacer login (cuando user.id cambia)
+    useEffect(() => {
+        if (user && isStaffMember) {
+            const checkAndShowModal = async () => {
+                try {
+                    const modalShownKey = 'asistenciaModalShown';
+                    const lastShown = await AsyncStorage.getItem(modalShownKey);
+                    const today = new Date().toDateString();
+                    
+                    if (lastShown !== today) {
+                        setShowAsistenciaModal(true);
+                        await AsyncStorage.setItem(modalShownKey, today);
+                    }
+                } catch (e) {
+                    setShowAsistenciaModal(true);
+                }
+            };
+            checkAndShowModal();
+        }
+    }, [user?.id]);
+
+    const handleAsistenciaRegistered = () => {
+        setShowAsistenciaModal(false);
+    };
 
     // Inicializar el manejador central de notificaciones (Navegación, TTS, Haptics)
     useNotificationHandler();
@@ -77,6 +110,13 @@ export default function AppLayout() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Modal de Registro de Asistencia para Garzones/Anfitrionas */}
+            <RegistroAsistenciaModal
+                visible={showAsistenciaModal}
+                onClose={() => setShowAsistenciaModal(false)}
+                onRegistered={handleAsistenciaRegistered}
+            />
         </>
     );
 }

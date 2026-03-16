@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 interface CategoryCardProps {
     item: {
-        id: number;
+        id: string;
         name: string;
         description: string;
         total_products: number;
@@ -14,12 +15,12 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark } = useAccentColor();
 
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     return (
         <Pressable
@@ -31,8 +32,8 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
             onPress={onPress}
         >
             <View style={styles.categoryContent}>
-                <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? '#E11D4820' : '#10B98120' }]}>
-                    <Ionicons name="wine" size={30} color={index % 2 === 0 ? '#E11D48' : '#10B981'} />
+                <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? `${accentColor}20` : '#10B98120' }]}>
+                    <Ionicons name="wine" size={30} color={index % 2 === 0 ? accentColor : '#10B981'} />
                 </View>
 
                 <View style={styles.categoryInfo}>
@@ -43,8 +44,8 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
                 </View>
 
                 <View style={styles.categoryRight}>
-                    <View style={[styles.productsBadge, { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                        <Text style={[styles.productsCount, { color: '#E11D48' }]}>
+                    <View style={[styles.productsBadge, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
+                        <Text style={[styles.productsCount, { color: accentColor }]}>
                             {item.total_products}
                         </Text>
                     </View>

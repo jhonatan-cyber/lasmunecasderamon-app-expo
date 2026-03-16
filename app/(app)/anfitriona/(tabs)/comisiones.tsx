@@ -111,7 +111,10 @@ export default function ComisionesScreen() {
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
-            return `${date.getDate()} ${date.toLocaleDateString('es-ES', { month: 'short' })} ${date.getFullYear()}`;
+            const day = date.getUTCDate();
+            const month = date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' });
+            const year = date.getUTCFullYear();
+            return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
     };
 
@@ -120,7 +123,7 @@ export default function ComisionesScreen() {
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return '';
-            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
         } catch { return ''; }
     };
 

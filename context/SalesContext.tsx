@@ -4,12 +4,12 @@ import { API_URL } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
 export interface Venta {
-  id?: number;
-  id_venta: number;
+  id?: string;
+  id_venta: string;
   codigo: string;
   cliente_nombre: string;
   habitacion_nombre: string;
-  habitacion_id: number;
+  habitacion_id: string;
   total: number;
   estado: number;
   metodo_pago: string;
