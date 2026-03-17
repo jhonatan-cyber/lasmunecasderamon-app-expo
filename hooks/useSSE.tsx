@@ -38,7 +38,7 @@ export const useSSE = (enabled: boolean = true): UseSSEReturn => {
             const eventSource = new EventSource(sseUrl);
             
             eventSource.onopen = () => {
-                console.log('[SSE] Connected');
+              
                 setIsConnected(true);
             };
 
@@ -52,18 +52,18 @@ export const useSSE = (enabled: boolean = true): UseSSEReturn => {
                     };
                     setLastEvent(sseEvent);
                 } catch (e) {
-                    console.log('[SSE] Non-JSON message:', event.data);
+                    
                 }
             };
 
             eventSource.onerror = (error) => {
-                console.log('[SSE] Error:', error);
+             
                 setIsConnected(false);
                 eventSource.close();
                 
                 if (enabled) {
                     reconnectTimeoutRef.current = setTimeout(() => {
-                        console.log('[SSE] Reconnecting...');
+                      
                         connect();
                     }, 5000);
                 }
@@ -71,7 +71,7 @@ export const useSSE = (enabled: boolean = true): UseSSEReturn => {
 
             eventSourceRef.current = eventSource;
         } catch (error) {
-            console.error('[SSE] Connection failed:', error);
+            
         }
     }, [enabled]);
 

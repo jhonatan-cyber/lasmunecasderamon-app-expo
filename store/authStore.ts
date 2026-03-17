@@ -113,7 +113,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 
                 set({ isBiometricAvailable: isAvailable, biometricType });
             } catch (error) {
-                console.error('Biometric check failed:', error);
+              
                 set({ isBiometricAvailable: false, biometricType: null });
             }
         },
@@ -129,7 +129,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 
                 return result.success;
             } catch (error) {
-                console.error('Biometric auth failed:', error);
+              
                 return false;
             }
         },
@@ -154,7 +154,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 }
                 return false;
             } catch (error) {
-                console.error('Enable 2FA failed:', error);
+              
                 return false;
             }
         },
@@ -180,7 +180,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 }
                 return false;
             } catch (error) {
-                console.error('Disable 2FA failed:', error);
+               
                 return false;
             }
         },

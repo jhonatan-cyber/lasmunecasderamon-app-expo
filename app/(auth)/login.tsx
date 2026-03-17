@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -99,13 +99,13 @@ export default function LoginScreen() {
 
     const handleResetPassword = async () => {
         if (!username.trim()) {
-            showAlert('Atención', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
+            showAlert('AtenciÃ³n', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
             return;
         }
 
         showAlert(
-            'Resetear Contraseña',
-            `¿Estás seguro que deseas resetear la contraseña de @${username}? La nueva contraseña será tu número de RUN.`,
+            'Resetear ContraseÃ±a',
+            `Â¿EstÃ¡s seguro que deseas resetear la contraseÃ±a de @${username}? La nueva contraseÃ±a serÃ¡ tu nÃºmero de RUN.`,
             'info',
             async () => {
                 setLoading(true);
@@ -116,12 +116,12 @@ export default function LoginScreen() {
                     });
 
                     if (res.success) {
-                        showAlert('Éxito', 'Tu contraseña ha sido reseteada. Revisa tu WhatsApp para ver los detalles.', 'success');
+                        showAlert('Ã‰xito', 'Tu contraseÃ±a ha sido reseteada. Revisa tu WhatsApp para ver los detalles.', 'success');
                     } else {
                         throw new Error(res.message);
                     }
                 } catch (err: any) {
-                    showAlert('Error', err.message || 'No se pudo resetear la contraseña', 'danger');
+                    showAlert('Error', err.message || 'No se pudo resetear la contraseÃ±a', 'danger');
                 } finally {
                     setLoading(false);
                 }
@@ -132,12 +132,12 @@ export default function LoginScreen() {
 
     const handleLogin = async () => {
         if (!username || !password) {
-            // Si la huella está habilitada y los campos están vacíos, re-intentar huella
+            // Si la huella estÃ¡ habilitada y los campos estÃ¡n vacÃ­os, re-intentar huella
             if (isBiometricEnabled && isBiometricSupported) {
                 await handleBiometricLogin();
                 return;
             }
-            setError('Por favor ingresa tu usuario y contraseña');
+            setError('Por favor ingresa tu usuario y contraseÃ±a');
             return;
         }
         await performLogin(username.trim(), password);
@@ -157,16 +157,16 @@ export default function LoginScreen() {
                     Toast.show({
                         type: 'success',
                         text1: 'Asistencia Registrada',
-                        text2: 'Tu asistencia ha sido registrada automáticamente',
+                        text2: 'Tu asistencia ha sido registrada automÃ¡ticamente',
                     });
                 }
 
-                // Si el login fue manual y las biometrías están soportadas pero no habilitadas,
+                // Si el login fue manual y las biometrÃ­as estÃ¡n soportadas pero no habilitadas,
                 // preguntar al usuario si desea habilitarlas.
                 if (isBiometricSupported && !isBiometricEnabled) {
                     showAlert(
-                        'Acceso Biométrico',
-                        '¿Te gustaría habilitar el inicio de sesión con huella dactilar para la próxima vez?',
+                        'Acceso BiomÃ©trico',
+                        'Â¿Te gustarÃ­a habilitar el inicio de sesiÃ³n con huella dactilar para la prÃ³xima vez?',
                         'info',
                         async () => {
                             await saveCredentials(u, p);
@@ -179,7 +179,7 @@ export default function LoginScreen() {
                     // Pero si el alert se cierra sin aceptar, necesitamos ir al index.
                     // En este caso, el alert tiene el control.
                 } else {
-                    // Si ya está habilitado, actualizamos las credenciales guardadas por si cambiaron
+                    // Si ya estÃ¡ habilitado, actualizamos las credenciales guardadas por si cambiaron
                     if (isBiometricEnabled) {
                         await saveCredentials(u, p);
                     }
@@ -187,7 +187,7 @@ export default function LoginScreen() {
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Error al iniciar sesión');
+            setError(err.message || 'Error al iniciar sesiÃ³n');
         } finally {
             setLoading(false);
         }
@@ -196,7 +196,7 @@ export default function LoginScreen() {
     const handleBiometricLogin = async () => {
         if (!isBiometricEnabled || isPrompting) {
             if (!isBiometricEnabled) {
-                showAlert('Atención', 'Debes iniciar sesión manualmente y habilitar la opción de huella dactilar primero.', 'warning');
+                showAlert('AtenciÃ³n', 'Debes iniciar sesiÃ³n manualmente y habilitar la opciÃ³n de huella dactilar primero.', 'warning');
             }
             return;
         }
@@ -204,8 +204,8 @@ export default function LoginScreen() {
         setIsPrompting(true);
         try {
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Inicia sesión con tu huella dactilar',
-                fallbackLabel: 'Usar contraseña',
+                promptMessage: 'Inicia sesiÃ³n con tu huella dactilar',
+                fallbackLabel: 'Usar contraseÃ±a',
                 disableDeviceFallback: false,
                 cancelLabel: 'Cancelar',
             });
@@ -217,7 +217,7 @@ export default function LoginScreen() {
                     setPassword(creds.password);
                     await performLogin(creds.username, creds.password);
                 } else {
-                    showAlert('Error', 'No se encontraron credenciales guardadas. Inicia sesión manualmente.', 'danger');
+                    showAlert('Error', 'No se encontraron credenciales guardadas. Inicia sesiÃ³n manualmente.', 'danger');
                 }
             }
         } finally {
@@ -251,7 +251,7 @@ export default function LoginScreen() {
                         <Pressable 
                             style={{ flex: 1 }} 
                             onPress={() => {
-                                // Si se cerró el modal, tocar el fondo lo vuelve a abrir
+                                // Si se cerrÃ³ el modal, tocar el fondo lo vuelve a abrir
                                 if (isBiometricEnabled && !username && !password) {
                                     handleBiometricLogin();
                                 }
@@ -272,7 +272,7 @@ export default function LoginScreen() {
                             {/* Title */}
                             <View style={styles.headerTextContainer}>
                                 <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                                    Iniciar Sesión
+                                    Iniciar SesiÃ³n
                                 </Text>
                                 <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
                                     Ingresa tus credenciales para continuar
@@ -292,12 +292,12 @@ export default function LoginScreen() {
                                     style={[
                                         styles.input,
                                         {
-                                            backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+                                            backgroundColor: isDark ? '#111111' : '#F3F4F6',
                                             color: isDark ? '#FFFFFF' : '#000000',
                                             borderColor: isDark ? '#374151' : '#E5E7EB',
                                         },
                                     ]}
-                                    placeholder="pepe (se completará automáticamente)"
+                                    placeholder="pepe (se completarÃ¡ automÃ¡ticamente)"
                                     placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                                     autoCapitalize="none"
                                     value={username}
@@ -306,19 +306,19 @@ export default function LoginScreen() {
                                     onSubmitEditing={() => passwordRef.current?.focus()}
                                 />
 
-                                <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>Contraseña</Text>
+                                <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>ContraseÃ±a</Text>
                                 <View style={styles.passwordContainer}>
                                     <TextInput
                                         style={[
                                             styles.input,
                                             {
-                                                backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+                                                backgroundColor: isDark ? '#111111' : '#F3F4F6',
                                                 color: isDark ? '#FFFFFF' : '#000000',
                                                 borderColor: isDark ? '#374151' : '#E5E7EB',
                                                 width: '100%',
                                             },
                                         ]}
-                                        placeholder="Ingresa tu contraseña"
+                                        placeholder="Ingresa tu contraseÃ±a"
                                         placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                                         secureTextEntry={!showPassword}
                                         value={password}
@@ -359,7 +359,7 @@ export default function LoginScreen() {
                                             <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
                                         ) : (
                                             <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                                                Iniciar Sesión
+                                                Iniciar SesiÃ³n
                                             </Text>
                                         )}
                                     </Pressable>
@@ -383,7 +383,7 @@ export default function LoginScreen() {
                                     style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
                                 >
                                     <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                                        ¿Olvidaste tu contraseña?
+                                        Â¿Olvidaste tu contraseÃ±a?
                                     </Text>
                                 </Pressable>
                             </View>
@@ -401,7 +401,7 @@ export default function LoginScreen() {
                 onRequestClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
+                    <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
                         <View style={[styles.alertIconHeader, {
                             backgroundColor: alertConfig.type === 'danger' ? '#EF444420' :
                                 alertConfig.type === 'success' ? '#10B98120' :

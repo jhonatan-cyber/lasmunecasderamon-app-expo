@@ -7,7 +7,6 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useColorScheme,
     View,
 } from 'react-native';
 import { useAccentColor } from '../../../hooks/useAccentColor';
@@ -38,11 +37,9 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
     selectedIds,
     max,
 }) => {
-    const { accentColor, isDark } = useAccentColor();
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+    const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
     const primaryColor = accentColor;
 
     return (
@@ -76,21 +73,31 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
 
                             return (
                                 <TouchableOpacity
-                                    style={[styles.listItem, { borderBottomColor: borderColor }]}
+                                    style={[
+                                        styles.listItem,
+                                        {
+                                            borderColor: isSelected ? primaryColor : borderColor,
+                                            backgroundColor: isSelected ? `${primaryColor}15` : 'transparent',
+                                        },
+                                    ]}
                                     onPress={() => onToggle(id)}
                                 >
+                                    <Ionicons
+                                        name="person-outline"
+                                        size={20}
+                                        color={isSelected ? primaryColor : textSecondary}
+                                        style={{ marginRight: 12 }}
+                                    />
                                     <Text style={[styles.listItemTitle, { color: textPrimary, flex: 1 }]}>
                                         {fullName}
                                     </Text>
-                                    <View
-                                        style={[
-                                            styles.checkbox,
-                                            {
-                                                borderColor: isSelected ? primaryColor : borderColor,
-                                                backgroundColor: isSelected ? primaryColor : 'transparent',
-                                            },
-                                        ]}
-                                    >
+                                    <View style={[
+                                        styles.checkbox,
+                                        {
+                                            borderColor: isSelected ? primaryColor : borderColor,
+                                            backgroundColor: isSelected ? primaryColor : 'transparent',
+                                        },
+                                    ]}>
                                         {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
                                     </View>
                                 </TouchableOpacity>
@@ -139,8 +146,11 @@ const styles = StyleSheet.create({
     listItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 18,
-        borderBottomWidth: 1,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        borderWidth: 1.5,
+        borderRadius: 16,
+        marginBottom: 10,
     },
     listItemTitle: {
         fontSize: 16,
@@ -157,7 +167,6 @@ const styles = StyleSheet.create({
     modalActionBtn: {
         height: 50,
         borderRadius: 16,
-        backgroundColor: '#E11D48',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,

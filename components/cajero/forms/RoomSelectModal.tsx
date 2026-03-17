@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
 import { useAccentColor } from "../../../hooks/useAccentColor";
@@ -36,11 +35,9 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   rooms,
   selectedRoomId,
 }) => {
-  const { accentColor, isDark } = useAccentColor();
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
   const textPrimary = isDark ? "#FFFFFF" : "#000000";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E7EB";
   const primaryColor = accentColor;
 
   return (
@@ -66,69 +63,48 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                   style={[
                     styles.listItem,
                     {
-                      borderBottomColor: borderColor,
+                      borderColor: isSelected ? primaryColor : borderColor,
+                      backgroundColor: isSelected ? `${primaryColor}15` : 'transparent',
                       opacity: item.estado === 1 ? 1 : 0.6,
                     },
                   ]}
-                  onPress={() => {
-                    if (item.estado === 1) {
-                      onSelect(item);
-                    } else {
-                      // Optional: show a toast or alert
-                    }
-                  }}
+                  onPress={() => { if (item.estado === 1) onSelect(item); }}
                 >
-                  <View
-                    style={[
-                      styles.roomIcon,
-                      {
-                        backgroundColor:
-                          item.estado === 1 ? "#10B98120" : "#EF444420",
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name="business"
-                      size={24}
-                      color={item.estado === 1 ? "#10B981" : "#EF4444"}
-                    />
+                  <View style={[styles.roomIcon, { backgroundColor: item.estado === 1 ? "#10B98120" : "#EF444420" }]}>
+                    <Ionicons name="business" size={24} color={item.estado === 1 ? "#10B981" : "#EF4444"} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text
-                      style={[styles.listItemTitle, { color: textPrimary }]}
-                    >
+                    <Text style={[styles.listItemTitle, { color: textPrimary }]}>
                       {item.nombre}
                     </Text>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${(item.precio || 0).toLocaleString()} •{" "}
-                        {item.tiempo || 0} min
+                        ${(item.precio || 0).toLocaleString()} • {item.tiempo || 0} min
                       </Text>
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: item.estado === 1 ? "#10B981" : "#EF4444",
-                          marginLeft: 8,
-                          fontWeight: "bold",
-                        }}
-                      >
+                      <Text style={{ fontSize: 11, color: item.estado === 1 ? "#10B981" : "#EF4444", marginLeft: 8, fontWeight: "bold" }}>
                         {item.estado === 1 ? "● DISPONIBLE" : "● OCUPADA"}
                       </Text>
                     </View>
                   </View>
-                  {isSelected && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={24}
-                      color={primaryColor}
-                    />
-                  )}
+                  <View style={[
+                    styles.checkbox,
+                    {
+                      borderColor: isSelected ? primaryColor : borderColor,
+                      backgroundColor: isSelected ? primaryColor : 'transparent',
+                    },
+                  ]}>
+                    {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                  </View>
                 </TouchableOpacity>
               );
             }}
           />
+          <Pressable
+            style={[styles.modalActionBtn, { backgroundColor: primaryColor }]}
+            onPress={onClose}
+          >
+            <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -160,10 +136,33 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    marginBottom: 10,
   },
   listItemTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalActionBtn: {
+    height: 50,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  modalActionBtnText: {
+    color: "#FFF",
     fontSize: 16,
     fontWeight: "800",
   },

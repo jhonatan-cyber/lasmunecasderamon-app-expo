@@ -48,9 +48,6 @@ export const useCartStore = create<CartState>((set, get) => ({
                 updated[idx] = {
                     ...updated[idx],
                     quantity: updated[idx].quantity - 1,
-                    selectedHostesses: !isChampagne(updated[idx].product)
-                        ? updated[idx].selectedHostesses.slice(0, updated[idx].quantity - 1)
-                        : updated[idx].selectedHostesses,
                 };
             } else {
                 updated.splice(idx, 1);

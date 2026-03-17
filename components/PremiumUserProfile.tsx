@@ -32,6 +32,17 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
     const textSecondary = 'rgba(255,255,255,0.7)';
     const cardBg = 'rgba(255,255,255,0.1)';
 
+    const lastName =
+        user?.lastName ||
+        user?.last_name ||
+        user?.apellido ||
+        '';
+
+    const baseName = user?.name || user?.nick || user?.username || 'Usuario';
+    const displayName = user?.name ? [user?.name, lastName].filter(Boolean).join(' ') : baseName;
+    const nick = user?.nick || user?.username || '';
+    const showNick = Boolean(nick) && nick !== user?.name;
+
     return (
         <View style={styles.headerUser}>
             <View style={[styles.avatarContainer, { borderColor: getStatusColor(userStatus, true) }]}>
@@ -48,11 +59,16 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
             </View>
             <View style={styles.headerInfo}>
                 <View style={styles.nameHeaderContainer}>
-                    <Text style={[styles.username, { color: textPrimary }]}>
-                        {user?.name || user?.nick || user?.username || 'Usuario'}
+                    <Text style={[styles.username, styles.usernameText, { color: textPrimary }]} numberOfLines={1}>
+                        {displayName}
                     </Text>
                     <AttendanceCodeDisplay />
                 </View>
+                {showNick && (
+                    <Text style={[styles.nickText, { color: textSecondary }]} numberOfLines={1}>
+                        @{nick}
+                    </Text>
+                )}
                 <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, true) }]} />
                     <Text style={[styles.statusText, { color: textSecondary }]}>
@@ -100,9 +116,20 @@ const styles = StyleSheet.create({
     nameHeaderContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        flexWrap: 'wrap',
-        gap: 8,
+        justifyContent: 'space-between',
+        flexWrap: 'nowrap',
+        minWidth: 0,
+    },
+    usernameText: {
+        flexShrink: 1,
+        paddingRight: 12,
+        minWidth: 0,
+    },
+    nickText: {
+        marginTop: 2,
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: 0.2,
     },
     statusRow: {
         flexDirection: 'row',

@@ -89,7 +89,11 @@ const delay = (ms: number): Promise<void> => {
  * En producción, esto podría enviarse a un servicio de logging externo
  */
 const logApiCall = (endpoint: string, attempt: number, maxRetries: number, status?: number, error?: any, durationMs?: number) => {
-    const timestamp = new Date().toISOString();
+    const now = new Date();
+    const timestamp = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().replace('Z', '') + 
+        (now.getTimezoneOffset() <= 0 ? '+' : '-') + 
+        String(Math.floor(Math.abs(now.getTimezoneOffset()) / 60)).padStart(2, '0') + ':' + 
+        String(Math.abs(now.getTimezoneOffset()) % 60).padStart(2, '0');
     const logEntry = {
         timestamp,
         endpoint,

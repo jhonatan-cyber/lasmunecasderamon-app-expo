@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 import { AnimatedButton } from './AnimatedButton';
 import { getStatusColor, getStatusLabel } from './PremiumUserProfile';
 
@@ -9,10 +10,8 @@ interface HostessStatusPickerProps {
 }
 
 export const HostessStatusPicker = ({ userStatus, onStatusChange }: HostessStatusPickerProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
-    const cardBg = isDark ? '#1F2937' : '#F3F4F6';
+    const { isDark, cardBg, borderColor } = useAccentColor();
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
 
     return (
         <View style={styles.statusControlGrid}>

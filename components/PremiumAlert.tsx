@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Modal, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -25,7 +26,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     confirmText = 'Aceptar',
     cancelText = 'Cancelar'
 }) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { isDark, cardBg } = useAccentColor();
     const { width } = Dimensions.get('window');
     const isTablet = width >= 768;
 
@@ -62,7 +63,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             onRequestClose={onCancel ?? onConfirm}
         >
             <View style={styles.modalOverlay}>
-                <View style={[styles.alertCard, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', width: alertWidth, padding }]}>
+                <View style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}>
 
                     {/* Botón cerrar ✕ — esquina superior derecha */}
                     <Pressable

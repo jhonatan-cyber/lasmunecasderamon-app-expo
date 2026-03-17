@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { EventDetailModal } from '../../../components/EventDetailModal';
 import { PremiumCalendar } from '../../../components/PremiumCalendar';
 import { PremiumLiquidationCard } from '../../../components/PremiumLiquidationCard';
 import { useAccentColor } from '../../../hooks/useAccentColor';
@@ -33,7 +34,7 @@ interface Event {
     estado: number;
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
 }) => {
@@ -46,7 +47,7 @@ const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
             ])
         ).start();
     }, []);
-    return <Animated.View style={[{ width, height, borderRadius, backgroundColor: '#1F2937', opacity: anim }, style]} />;
+    return <Animated.View style={[{ width, height, borderRadius, backgroundColor: '#111111', opacity: anim }, style]} />;
 };
 
 
@@ -65,6 +66,8 @@ export default function AdministrativoScreen() {
     const dataRef = useRef<string>('');
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [eventDetail, setEventDetail] = useState<any>(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
 
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#111111' : '#FFFFFF';
@@ -87,7 +90,7 @@ export default function AdministrativoScreen() {
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
@@ -127,27 +130,44 @@ export default function AdministrativoScreen() {
     }, [selectedDates, recentActivity]);
 
     const typeLabels: Record<string, string> = {
-        comision: "Comisión",
+        comision: "ComisiÃ³n",
         asistencia: "Asistencia",
         anticipo: "Anticipo",
         propina: "Propina",
         venta: "Venta",
         servicio: "Servicio",
-        gratificacion: "Gratificación"
+        gratificacion: "GratificaciÃ³n"
     };
 
     const getEventLabel = (item: any) => {
         if (!item) return "";
         if (item.type === 'comision') {
-            if (item.subType === 'venta') return "Comisión de Venta";
-            if (item.subType === 'servicio') return "Comisión de Servicio";
-            return "Comisión";
+            if (item.subType === 'venta') return "ComisiÃ³n de Venta";
+            if (item.subType === 'servicio') return "ComisiÃ³n de Servicio";
+            return "ComisiÃ³n";
         }
         if (item.type === 'propina') {
             if (item.subType === 'venta') return "Propina de Venta";
             return "Propina";
         }
         return typeLabels[item.type] || item.type.toUpperCase();
+    };
+
+    const handleSelectEvent = async (item: any) => {
+        setEventDetail(null);
+        setLoadingDetail(false);
+        setSelectedEvent(item);
+        if (['comision', 'propina', 'asistencia', 'anticipo'].includes(item.type)) {
+            setLoadingDetail(true);
+            try {
+                const res = await apiClient(`/events/detail/${item.id}?type=${item.type}`);
+                if (res.success && res.data) setEventDetail(res.data);
+            } catch (e) {
+                console.error('detail fetch error', e);
+            } finally {
+                setLoadingDetail(false);
+            }
+        }
     };
 
     const getStatusLabel = (status: any) => {
@@ -164,7 +184,7 @@ export default function AdministrativoScreen() {
                 <Stack.Screen options={{ headerShown: false }} />
                 <StatusBar style={isDark ? 'dark' : 'light'} />
 
-                {/* Header skeleton — mismo gradiente */}
+                {/* Header skeleton â€” mismo gradiente */}
                 <LinearGradient
                     colors={gradientColors as any}
                     style={[styles.header, {
@@ -197,7 +217,7 @@ export default function AdministrativoScreen() {
                     <View style={{ padding: 20, gap: 20 }}>
 
                         {/* Liquidation card skeleton */}
-                        <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
+                        <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#111111' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 }}>
                                 <SkeletonBox width={56} height={56} borderRadius={16} />
                                 <View style={{ gap: 8, flex: 1 }}>
@@ -216,7 +236,7 @@ export default function AdministrativoScreen() {
                         </View>
 
                         {/* Calendar skeleton */}
-                        <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
+                        <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#111111' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
                             {/* Month header */}
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                 <SkeletonBox width={130} height={16} borderRadius={8} />
@@ -231,7 +251,7 @@ export default function AdministrativoScreen() {
                                     <SkeletonBox key={i} width={28} height={12} borderRadius={6} />
                                 ))}
                             </View>
-                            {/* Day grid — 5 rows */}
+                            {/* Day grid â€” 5 rows */}
                             {[1, 2, 3, 4, 5].map(row => (
                                 <View key={row} style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 }}>
                                     {[1, 2, 3, 4, 5, 6, 7].map(col => (
@@ -245,7 +265,7 @@ export default function AdministrativoScreen() {
                         <View style={{ gap: 12 }}>
                             {[1, 2, 3].map(i => (
                                 <View key={i} style={[styles.skeletonCard, {
-                                    backgroundColor: isDark ? '#1F2937' : '#FFF',
+                                    backgroundColor: isDark ? '#111111' : '#FFF',
                                     borderColor: isDark ? '#374151' : '#E2E8F0',
                                     flexDirection: 'row', alignItems: 'center', gap: 14
                                 }]}>
@@ -270,7 +290,7 @@ export default function AdministrativoScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Header — mismo patrón que cuentas/ventas/servicios */}
+            {/* Header â€” mismo patrÃ³n que cuentas/ventas/servicios */}
             <LinearGradient
                 colors={gradientColors as any}
                 style={[
@@ -327,8 +347,8 @@ export default function AdministrativoScreen() {
                 </View>
 
                 {selectedDates.length > 0 && (
-                    <View style={[styles.selectionFloat, { backgroundColor: isDark ? '#1F2937' : '#374151' }]}>
-                        <Text style={[styles.selectionText, { color: '#FFF' }]}>{selectedDates.length} días seleccionados</Text>
+                    <View style={[styles.selectionFloat, { backgroundColor: cardBg, borderWidth: 1, borderColor }]}>
+                        <Text style={[styles.selectionText, { color: textPrimary }]}>{selectedDates.length} {selectedDates.length === 1 ? 'día' : 'días'} seleccionados</Text>
                         <View style={styles.selectionActions}>
                             <Pressable onPress={() => setSelectedDates([])} style={styles.clearBtn}><Text style={styles.clearBtnText}>Borrar</Text></Pressable>
                             <Pressable onPress={() => setIsModalVisible(true)} style={[styles.viewBtn, { backgroundColor: accentColor }]}><Text style={styles.viewBtnText}>Detalles</Text></Pressable>
@@ -374,7 +394,7 @@ export default function AdministrativoScreen() {
 
                                 return (
                                     <Pressable 
-                                        onPress={() => setSelectedEvent(item)}
+                                        onPress={() => handleSelectEvent(item)}
                                         style={({ pressed }) => [
                                             styles.eventItem, 
                                             { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.7 : 1 }
@@ -417,7 +437,7 @@ export default function AdministrativoScreen() {
                             }
                         />
 
-                        {/* Botón cerrar fijo al fondo */}
+                        {/* BotÃ³n cerrar fijo al fondo */}
                         <View style={[styles.modalFooter, { backgroundColor: bg, borderTopColor: isDark ? '#374151' : '#E5E7EB' }]}>
                             <Pressable
                                 style={[styles.closeFooterBtn, { backgroundColor: accentColor }]}
@@ -431,93 +451,15 @@ export default function AdministrativoScreen() {
                     </View>
                 </View>
             </Modal>
-
-            {/* Modal de Detalle de Transacción */}
-            <Modal
+            <EventDetailModal
                 visible={!!selectedEvent}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setSelectedEvent(null)}
-            >
-                <View style={styles.modalOverlayCenter}>
-                    <View style={[styles.detailCard, { backgroundColor: cardBg }]}>
-                        <View style={styles.detailHeader}>
-                            <View style={[styles.detailIconBox, { backgroundColor: `${(selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981")}20` }]}>
-                                <Ionicons 
-                                    name={
-                                        selectedEvent?.type === "venta"
-                                        ? "cart"
-                                        : selectedEvent?.type === "propina"
-                                            ? "heart"
-                                            : selectedEvent?.type === "comision"
-                                                ? "star"
-                                                : selectedEvent?.type === "asistencia"
-                                                    ? "calendar"
-                                                    : "cash"
-                                    } 
-                                    size={32} 
-                                    color={selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981"} 
-                                />
-                            </View>
-                            <Pressable 
-                                onPress={() => setSelectedEvent(null)}
-                                style={styles.detailCloseBtn}
-                            >
-                                <Ionicons name="close" size={24} color={textPrimary} />
-                            </Pressable>
-                        </View>
-
-                        <View style={styles.detailBody}>
-                            <Text style={[styles.detailType, { color: textSecondary }]}>
-                                {getEventLabel(selectedEvent).toUpperCase()}
-                            </Text>
-                            <Text style={[styles.detailAmount, { color: selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981" }]}>
-                                {selectedEvent?.type === 'anticipo' ? "-" : "+"}${selectedEvent?.amount.toLocaleString()}
-                            </Text>
-
-                            <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-                            <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Fecha y Hora</Text>
-                                <Text style={[styles.detailValue, { color: textPrimary }]}>
-                                    {selectedEvent ? new Date(selectedEvent.date).toLocaleString('es-ES', {
-                                        day: '2-digit', month: 'long', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit'
-                                    }) : ''}
-                                </Text>
-                            </View>
-
-                            {selectedEvent?.codigo && selectedEvent.codigo !== 'TIPS' && (
-                                <View style={styles.detailRow}>
-                                    <Text style={[styles.detailLabel, { color: textSecondary }]}>Código de Operación</Text>
-                                    <Text style={[styles.detailValue, { color: textPrimary }]}>{selectedEvent.codigo}</Text>
-                                </View>
-                            )}
-
-                            <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
-                                <View style={[styles.statusBadgeDetail, { backgroundColor: `${(selectedEvent?.estado === 3 ? "#EF4444" : "#10B981")}20` }]}>
-                                    <Text style={[styles.statusTextDetail, { color: (selectedEvent?.estado === 3) ? "#EF4444" : "#10B981" }]}>
-                                        {selectedEvent ? getStatusLabel(selectedEvent.estado) : ''}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: textSecondary }]}>ID Interno</Text>
-                                <Text style={[styles.detailValue, { color: textPrimary }]}>#{selectedEvent?.id}</Text>
-                            </View>
-                        </View>
-
-                        <Pressable 
-                            onPress={() => setSelectedEvent(null)}
-                            style={[styles.confirmBtn, { backgroundColor: accentColor }]}
-                        >
-                            <Text style={styles.confirmBtnText}>Entendido</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+                event={selectedEvent}
+                eventDetail={eventDetail}
+                loadingDetail={loadingDetail}
+                onClose={() => { setSelectedEvent(null); setEventDetail(null); }}
+                getEventLabel={getEventLabel}
+                getStatusLabel={getStatusLabel}
+            />
         </View>
     );
 }
@@ -526,7 +468,7 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     skeletonCard: { borderRadius: 20, borderWidth: 1, padding: 16 },
-    // Header — mismo patrón que cuentas/ventas/servicios
+    // Header â€” mismo patrÃ³n que cuentas/ventas/servicios
     header: { paddingHorizontal: 16 },
     headerTop: { flexDirection: 'row', alignItems: 'center' },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
@@ -569,7 +511,7 @@ const styles = StyleSheet.create({
     emptyEvents: { alignItems: 'center', paddingVertical: 48, gap: 12 },
     emptyEventsText: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
     modalFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
-    closeFooterBtn: { height: 52, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#E11D48' },
+    closeFooterBtn: { height: 52, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     closeFooterBtnText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
     modalOverlayCenter: {
         flex: 1,
@@ -579,6 +521,7 @@ const styles = StyleSheet.create({
         padding: 20
     },
     detailCard: {
+    maxHeight: '85%',
         width: '100%',
         borderRadius: 32,
         padding: 24,

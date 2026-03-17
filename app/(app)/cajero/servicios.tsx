@@ -122,7 +122,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
             </View>
             <View>
               <Text style={[styles.roomName, { color: theme.text }]}>{item.roomName || "Habitación"}</Text>
-              <Text style={[styles.serviceCode, { color: theme.textMuted }]}>#{item.servicioCode || "S/N"} • {formatDateTime(item.created_at)}</Text>
+              <Text style={[styles.serviceCode, { color: theme.textMuted }]}>Codigo : #{item.servicioCode || "S/N"} • {formatDateTime(item.created_at)}</Text>
             </View>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "10" }]}>

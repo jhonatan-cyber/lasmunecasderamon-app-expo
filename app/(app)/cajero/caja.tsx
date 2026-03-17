@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
     Animated,
+    DeviceEventEmitter,
     Easing,
     KeyboardAvoidingView,
     Modal,
@@ -26,7 +27,7 @@ import { useAccentColor } from '../../../hooks/useAccentColor';
 import { useAuthStore } from '../../../store/authStore';
 import { Skeleton } from '../../../components/ui/Skeleton';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type CajaState = {
     loading: boolean;
     refreshing: boolean;
@@ -83,7 +84,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
     Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
     <View style={{ gap: 16, padding: 16 }}>
         {/* Status card skeleton */}
@@ -121,7 +122,7 @@ const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string
     </View>
 );
 
-// ─── Stat Card ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Stat Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MetricCard = ({
     label, value, icon, color, bgColor, isDark, cardBg, borderColor
 }: {
@@ -139,7 +140,7 @@ const MetricCard = ({
     </View>
 );
 
-// ─── Row Item ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Row Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor }: {
     label: string; value: number; accent?: string;
     textPrimary: string; textSecondary: string; borderColor: string;
@@ -152,7 +153,7 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
     </View>
 );
 
-// ─── Main Screen ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CajaScreen() {
     const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
@@ -203,8 +204,8 @@ export default function CajaScreen() {
                 });
             }
         } catch {
-            if (isManual) showToast('Error', 'No se pudo actualizar la información');
-            else showToast('Error', 'No se pudo cargar la información de la caja');
+            if (isManual) showToast('Error', 'No se pudo actualizar la informaciÃ³n');
+            else showToast('Error', 'No se pudo cargar la informaciÃ³n de la caja');
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -230,7 +231,7 @@ export default function CajaScreen() {
             numericMonto = stats?.balance_total || 0;
         } else {
             const cleanMonto = monto.replace(/\./g, '');
-            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
+            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto vÃ¡lido'); return; }
             numericMonto = Number(cleanMonto);
         }
 
@@ -239,18 +240,33 @@ export default function CajaScreen() {
         try {
             if (modalType === 'abrir') {
                 const res = await apiClient('/cashregister', { method: 'POST', body: JSON.stringify({ monto_apertura: numericMonto, usuario_id_apertura: user?.id || 1 }) });
-                if (res.success) { showToast('Turno Iniciado', 'Caja abierta correctamente', 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                if (res.success) {
+                    showToast('Turno Iniciado', 'Caja abierta correctamente', 'success');
+                    dispatch({ type: 'CLOSE_MODAL' });
+                    fetchData();
+                    DeviceEventEmitter.emit('refresh_requests');
+                }
                 else showToast('Error', res.message || 'Error al abrir caja');
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister/retiro', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
-                if (res.success) { showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                if (res.success) {
+                    showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
+                    dispatch({ type: 'CLOSE_MODAL' });
+                    fetchData();
+                    DeviceEventEmitter.emit('refresh_requests');
+                }
                 else showToast('Error', res.message || 'Error al retirar efectivo');
             } else {
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister', { method: 'PATCH', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto_cierre: numericMonto, usuario_id_cierre: user?.id || 1 }) });
-                if (res.success) { showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success'); dispatch({ type: 'CLOSE_MODAL' }); fetchData(); }
+                if (res.success) {
+                    showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
+                    dispatch({ type: 'CLOSE_MODAL' });
+                    fetchData();
+                    DeviceEventEmitter.emit('refresh_requests');
+                }
                 else showToast('Error', res.message || 'Error al cerrar caja');
             }
         } catch (e: any) {
@@ -274,7 +290,7 @@ export default function CajaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'dark' : 'light'} />
 
-            {/* ── Header ── */}
+            {/* â”€â”€ Header â”€â”€ */}
             <LinearGradient
                 colors={gradientColors as any}
                 style={[
@@ -328,7 +344,7 @@ export default function CajaScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* ── Status Card ── */}
+                    {/* â”€â”€ Status Card â”€â”€ */}
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
                             {/* Status Pill */}
@@ -361,7 +377,7 @@ export default function CajaScreen() {
                                     </>
                                 ) : (
                                     <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }]}
+                                        style={[styles.actionBtn, { backgroundColor: `20`, borderColor: `40` }]}
                                         onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
                                         accessibilityLabel="Abrir caja"
                                     >
@@ -384,7 +400,7 @@ export default function CajaScreen() {
 
                     {cajaAbierta && stats && (
                         <>
-                            {/* ── 2-col Metric Cards ── */}
+                            {/* â”€â”€ 2-col Metric Cards â”€â”€ */}
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
@@ -408,7 +424,7 @@ export default function CajaScreen() {
                                 />
                             </View>
 
-                            {/* ── Breakdown Card ── */}
+                            {/* â”€â”€ Breakdown Card â”€â”€ */}
                             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                                 <View style={styles.breakdownHeader}>
                                     <Ionicons name="bar-chart-outline" size={16} color={accentColor} />
@@ -436,7 +452,7 @@ export default function CajaScreen() {
 
                     {!cajaAbierta && (
                         <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
-                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#1F2937' : '#F1F5F9' }]}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
@@ -444,7 +460,7 @@ export default function CajaScreen() {
                                 Abre la caja para comenzar a registrar movimientos del turno
                             </Text>
                             <Pressable
-                                style={styles.emptyOpenBtn}
+                                style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
                                 onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
                             >
                                 <Ionicons name="power-outline" size={18} color="#FFF" />
@@ -455,7 +471,7 @@ export default function CajaScreen() {
                 </ScrollView>
             )}
 
-            {/* ── Modal ── */}
+            {/* â”€â”€ Modal â”€â”€ */}
             <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
                     <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>
@@ -472,7 +488,7 @@ export default function CajaScreen() {
 
                             {/* Detalles del dinero al cerrar */}
                             {modalType === 'cerrar' && stats && (
-                                <View style={[styles.modalBreakdown, { backgroundColor: isDark ? '#1F293750' : '#F3F4F6', borderColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                                <View style={[styles.modalBreakdown, { backgroundColor: isDark ? '#11111150' : '#F3F4F6', borderColor: isDark ? '#374151' : '#E5E7EB' }]}>
                                     <View style={styles.breakdownItem}>
                                         <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Monto Apertura (Base)</Text>
                                         <Text style={[styles.breakdownItemValue, { color: textPrimary }]}>${(stats.monto_apertura || 0).toLocaleString()}</Text>
@@ -552,7 +568,7 @@ export default function CajaScreen() {
                             {/* Actions */}
                             <View style={styles.modalActions}>
                                 <Pressable
-                                    style={[styles.modalBtn, { backgroundColor: isDark ? '#1F2937' : '#F1F5F9' }]}
+                                    style={[styles.modalBtn, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}
                                     onPress={() => dispatch({ type: 'CLOSE_MODAL' })}
                                     disabled={submitting}
                                 >
@@ -574,11 +590,11 @@ export default function CajaScreen() {
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const styles = StyleSheet.create({
     container: { flex: 1 },
 
-    // Header — mismo patrón que cuentas/ventas/servicios
+    // Header â€” mismo patrÃ³n que cuentas/ventas/servicios
     header: { paddingHorizontal: 16 },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
@@ -637,7 +653,7 @@ const styles = StyleSheet.create({
     emptySubtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center', marginBottom: 24, maxWidth: 260, lineHeight: 20 },
     emptyOpenBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#10B981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14
+        paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14
     },
     emptyOpenBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
 

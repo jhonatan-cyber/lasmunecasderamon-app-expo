@@ -221,7 +221,8 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             <QRScannerModal
                 visible={showScanner}
                 onClose={() => setShowScanner(false)}
-                onScanSuccess={() => {
+                onScanned={async (data) => {
+                    await handleQRScanned(data);
                     setShowScanner(false);
                     onRegistered();
                 }}

@@ -30,11 +30,9 @@ export const CartList: React.FC<CartListProps> = ({
     title = '3. Carrito',
     hideQuantityControls = false
 }) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
 
     const groupedItems = React.useMemo(() => {
         const ObjectGroups: Record<number, any> = {};

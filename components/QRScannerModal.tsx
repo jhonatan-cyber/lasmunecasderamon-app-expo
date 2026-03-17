@@ -5,6 +5,7 @@ import { MotiView } from 'moti';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Linking,
     Modal,
     Pressable,
     StyleSheet,
@@ -13,7 +14,6 @@ import {
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../api/client';
 
 const ZOOM_NORMAL = 0;
 const ZOOM_MACRO = 0.15;
@@ -21,11 +21,11 @@ const ZOOM_MACRO = 0.15;
 export const QRScannerModal = ({
     visible,
     onClose,
-    onScanSuccess
+    onScanned
 }: {
     visible: boolean;
     onClose: () => void;
-    onScanSuccess?: () => void;
+    onScanned: (data: string) => Promise<void> | void;
 }) => {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanning, setScanning] = useState(false);
@@ -46,6 +46,8 @@ export const QRScannerModal = ({
             timer = setTimeout(() => setCameraActive(true), 300);
         } else {
             setCameraActive(false);
+            setScanning(false);
+            setLoading(false);
         }
         return () => clearTimeout(timer);
     }, [visible]);
@@ -54,6 +56,7 @@ export const QRScannerModal = ({
     if (!permission) return <View />;
 
     if (!permission.granted) {
+        const canAskAgain = permission.canAskAgain ?? true;
         return (
             <Modal visible={visible} animationType="slide" transparent>
                 <View style={styles.container}>
@@ -63,9 +66,31 @@ export const QRScannerModal = ({
                         <Text style={styles.message}>
                             Necesitamos acceso a tu cámara para escanear el código QR de asistencia.
                         </Text>
-                        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-                            <Text style={styles.btnText}>Conceder Permiso</Text>
-                        </TouchableOpacity>
+                        {canAskAgain ? (
+                            <TouchableOpacity style={styles.btn} onPress={requestPermission}>
+                                <Text style={styles.btnText}>Conceder Permiso</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <>
+                                <Text style={styles.message}>
+                                    El permiso fue denegado. Actívalo desde Ajustes para poder escanear.
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.btn}
+                                    onPress={() => {
+                                        Linking.openSettings().catch(() => {
+                                            Toast.show({
+                                                type: 'error',
+                                                text1: 'No se pudo abrir Ajustes',
+                                                text2: 'Abre Ajustes manualmente y habilita la cámara para esta app.'
+                                            });
+                                        });
+                                    }}
+                                >
+                                    <Text style={styles.btnText}>Abrir Ajustes</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
                             <Text style={styles.closeText}>Cerrar</Text>
                         </TouchableOpacity>
@@ -85,30 +110,13 @@ export const QRScannerModal = ({
         }
 
         try {
-            const res = await apiClient('/asistencia/registrar', {
-                method: 'POST',
-                body: JSON.stringify({ qr_data: data })
-            });
-
-            if (res.success) {
-                if (res.alreadyRegistered) {
-                    Toast.show({
-                        type: 'info',
-                        text1: 'Asistencia duplicada',
-                        text2: res.message || 'Ya se registró asistencia hoy.'
-                    });
-                } else {
-                    Toast.show({
-                        type: 'success',
-                        text1: '¡Asistencia Registrada!',
-                        text2: res.message || 'Tu asistencia ha sido marcada correctamente.'
-                    });
-                }
-                onScanSuccess?.();
-                onClose();
-            } else {
-                throw new Error(res.message || 'Código QR inválido o expirado.');
+            const trimmed = (data ?? '').trim();
+            if (!trimmed) {
+                throw new Error('QR vacío o ilegible.');
             }
+            // Cerrar apenas se detecta un QR válido (UX más fluida)
+            onClose();
+            await onScanned(trimmed);
         } catch (error: any) {
             Toast.show({
                 type: 'error',

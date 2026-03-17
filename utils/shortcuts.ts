@@ -88,13 +88,13 @@ export const executeShortcut = async (shortcutId: string): Promise<void> => {
 export const createAndroidShortcut = async (shortcutId: string): Promise<void> => {
     if (Platform.OS !== 'android') return;
     
-    console.log(`Creating Android shortcut for: ${shortcutId}`);
+   
 };
 
 export const setupSiriShortcuts = async (): Promise<void> => {
     if (Platform.OS !== 'ios') return;
     
-    console.log('Setting up Siri Shortcuts');
+   
 };
 
 export const addSiriShortcut = async (
@@ -103,7 +103,7 @@ export const addSiriShortcut = async (
 ): Promise<boolean> => {
     if (Platform.OS !== 'ios') return false;
     
-    console.log(`Adding Siri shortcut: "${phrase}" -> ${shortcutId}`);
+   
     return true;
 };
 
@@ -119,7 +119,7 @@ export const triggerShortcut = async (shortcutId: string): Promise<boolean> => {
         await executeShortcut(shortcutId);
         return true;
     } catch (error) {
-        console.error('Error triggering shortcut:', error);
+       
         return false;
     }
 };

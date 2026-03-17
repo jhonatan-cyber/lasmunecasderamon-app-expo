@@ -208,7 +208,7 @@ export default function PropinasScreen() {
                                 {item.codigo_venta ? (
                                     <View style={[styles.ventaBadge, { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' }]}>
                                         <Ionicons name="receipt-outline" size={12} color={isDark ? '#93C5FD' : '#1E40AF'} />
-                                        <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>{item.codigo_venta}</Text>
+                                        <Text style={[styles.ventaText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>Codigo : {item.codigo_venta}</Text>
                                     </View>
                                 ) : null}
                                 <View style={[
@@ -363,7 +363,7 @@ export default function PropinasScreen() {
                             <View>
                                 <Text style={[styles.modalTitle, { color: textPrimary }]}>Detalle de Propina</Text>
                                 <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                                    Venta: {selectedPropina?.codigo_venta || '---'}
+                                    Codigo : {selectedPropina?.codigo_venta || '---'}
                                 </Text>
                             </View>
                             <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
 import { useAccentColor } from "../../../hooks/useAccentColor";
@@ -43,12 +42,10 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   max,
   title = "Seleccionar Anfitrionas",
 }) => {
-  const { accentColor, isDark } = useAccentColor();
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
+  const { accentColor, isDark, cardBg } = useAccentColor();
   const textPrimary = isDark ? "#FFFFFF" : "#000000";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? "#374151" : "#E5E7EB";
-  const primaryColor = accentColor;
+  const subtleBorder = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -73,6 +70,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
           </View>
+
           <FlatList
             data={hostesses}
             keyExtractor={(item) => (item.id_usuario || item.id).toString()}
@@ -85,25 +83,28 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
 
               return (
                 <TouchableOpacity
-                  accessibilityLabel={`${item.nick}, ${isSelected ? 'seleccionada' : 'no seleccionada'}, ${isBusy ? 'ocupada' : 'disponible'}`}
+                  accessibilityLabel={`${item.nick}, ${isSelected ? "seleccionada" : "no seleccionada"}, ${isBusy ? "ocupada" : "disponible"}`}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isSelected, disabled: isDisabled }}
-                  style={[styles.listItem, { borderBottomColor: borderColor, opacity: isDisabled ? 0.4 : 1 }]}
-                  onPress={() => {
-                    if (!isDisabled) onToggle(id);
-                  }}
+                  style={[
+                    styles.listItem,
+                    {
+                      borderColor: isSelected ? accentColor : subtleBorder,
+                      backgroundColor: isSelected ? `${accentColor}18` : "transparent",
+                      opacity: isDisabled ? 0.4 : 1,
+                    },
+                  ]}
+                  onPress={() => { if (!isDisabled) onToggle(id); }}
                   disabled={isDisabled}
                 >
-                  <View
-                    style={[
-                      styles.avatar,
-                      { backgroundColor: isBusy ? "#EF4444" : primaryColor },
-                    ]}
-                  >
+                  <View style={[
+                    styles.avatar,
+                    { backgroundColor: isBusy ? "#EF4444" : accentColor },
+                  ]}>
                     {item.foto ? (
-                      <Image 
-                        source={{ uri: item.foto.startsWith('http') ? item.foto : `https://lasmunecasderamon.com/api/uploads/${item.foto}` }} 
-                        style={styles.avatarImage} 
+                      <Image
+                        source={{ uri: item.foto.startsWith("http") ? item.foto : `https://lasmunecasderamon.com/api/uploads/${item.foto}` }}
+                        style={styles.avatarImage}
                       />
                     ) : (
                       <Text style={styles.avatarText}>
@@ -111,42 +112,32 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                       </Text>
                     )}
                   </View>
+
                   <View style={{ flex: 1, marginLeft: 16 }}>
-                    <Text
-                      style={[styles.listItemTitle, { color: textPrimary }]}
-                    >
+                    <Text style={[styles.listItemTitle, { color: textPrimary }]}>
                       {item.nick}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: isBusy ? "#EF4444" : "#10B981",
-                        fontWeight: "bold",
-                      }}
-                    >
+                    <Text style={{ fontSize: 12, color: isBusy ? "#EF4444" : "#10B981", fontWeight: "bold" }}>
                       {isBusy ? "● OCUPADA" : "● DISPONIBLE"}
                     </Text>
                   </View>
-                  <View
-                    style={[
-                      styles.checkbox,
-                      {
-                        borderColor: isSelected ? primaryColor : borderColor,
-                        backgroundColor: isSelected ? primaryColor : "transparent",
-                        borderWidth: isSelected ? 0 : 2
-                      },
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={24} color="#FFF" />
-                    )}
+
+                  <View style={[
+                    styles.checkbox,
+                    {
+                      borderColor: isSelected ? accentColor : subtleBorder,
+                      backgroundColor: isSelected ? accentColor : "transparent",
+                    },
+                  ]}>
+                    {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
                   </View>
                 </TouchableOpacity>
               );
             }}
           />
-          <Pressable 
-            style={[styles.modalActionBtn, { backgroundColor: primaryColor }]} 
+
+          <Pressable
+            style={[styles.modalActionBtn, { backgroundColor: accentColor }]}
             onPress={onConfirm || onClose}
           >
             <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
@@ -187,8 +178,11 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    marginBottom: 10,
   },
   avatar: {
     width: 44,
@@ -212,20 +206,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
   },
   modalActionBtn: {
-    height: 54,
-    borderRadius: 18,
+    height: 50,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   modalActionBtnText: {
     color: "#FFF",

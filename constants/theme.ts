@@ -40,7 +40,7 @@ export const Colors = {
     textMuted: '#6B7280',
     background: '#000000',
     backgroundSecondary: '#111827',
-    card: '#1F2937',
+    card: '#111111',
     cardSecondary: '#374151',
     border: '#374151',
     borderLight: '#4B5563',

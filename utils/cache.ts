@@ -48,7 +48,7 @@ class AppCache {
 
             return item.data;
         } catch (error) {
-            console.error('Cache get error:', error);
+           
             return null;
         }
     }

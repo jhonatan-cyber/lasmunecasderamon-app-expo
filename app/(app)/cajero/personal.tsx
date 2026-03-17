@@ -333,7 +333,7 @@ export default function PersonalScreen() {
                                         <View style={[styles.qrWrapper, { borderColor: accentColor }]}>
                                             <QRCode
                                                 value={selectedUser.qr_token || ''}
-                                                size={width - 160}
+                                                size={Math.max(220, width - 64)}
                                                 backgroundColor="white"
                                                 color={accentColor}
                                                 ecl="H"
@@ -522,15 +522,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 0,
     },
     modalDismiss: {
         ...StyleSheet.absoluteFillObject,
     },
     modalContent: {
         width: '100%',
-        maxWidth: 360,
-        borderRadius: 28,
+        maxWidth: '100%',
+        borderRadius: 0,
         overflow: 'hidden',
     },
     closeBtnAbsolute: {
@@ -598,7 +598,8 @@ const styles = StyleSheet.create({
     },
     qrContainer: {
         alignItems: 'center',
-        padding: 24,
+        paddingVertical: 24,
+        paddingHorizontal: 20,
     },
     qrGlow: {
         position: 'absolute',
@@ -611,8 +612,9 @@ const styles = StyleSheet.create({
     },
     qrWrapper: {
         backgroundColor: 'white',
-        padding: 16,
-        borderRadius: 24,
+        width: '100%',
+        padding: 12,
+        borderRadius: 22,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 8 },

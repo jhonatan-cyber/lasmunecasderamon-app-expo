@@ -38,7 +38,7 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setVentas(data.data);
       }
     } catch (error) {
-      console.error("[SalesContext] Error fetching ventas:", error);
+  
     } finally {
       setLoading(false);
     }

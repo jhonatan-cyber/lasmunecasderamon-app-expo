@@ -20,7 +20,7 @@ class ReportService {
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
         } catch (error) {
-            console.error('Error exporting sales report:', error);
+          
             return null;
         }
     }
@@ -31,7 +31,7 @@ class ReportService {
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
         } catch (error) {
-            console.error('Error exporting attendance report:', error);
+          
             return null;
         }
     }
@@ -42,7 +42,7 @@ class ReportService {
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
         } catch (error) {
-            console.error('Error exporting services report:', error);
+           
             return null;
         }
     }
@@ -69,7 +69,7 @@ class ReportService {
             
             return uri;
         } catch (error) {
-            console.error('Error exporting to CSV:', error);
+        
             return null;
         }
     }
@@ -87,7 +87,7 @@ class ReportService {
             }
             return false;
         } catch (error) {
-            console.error('Error sharing report:', error);
+            
             return false;
         }
     }

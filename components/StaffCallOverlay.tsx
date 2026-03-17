@@ -6,13 +6,13 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import EventSource from 'react-native-sse';
 import Toast from 'react-native-toast-message';
 import { API_URL, apiClient } from '../api/client';
+import { useAccentColor } from '../hooks/useAccentColor';
 import { useAuthStore } from '../store/authStore';
 import { triggerNotificationEffects } from '../utils/pushNotifications';
 
@@ -35,7 +35,7 @@ export function StaffCallOverlay() {
     const user = useAuthStore((state) => state.user);
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
     const [accepting, setAccepting] = useState<number | null>(null);
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { isDark, cardBg } = useAccentColor();
     const sseRef = useRef<EventSource | null>(null);
 
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
@@ -172,7 +172,7 @@ export function StaffCallOverlay() {
                     style={[
                         styles.card,
                         {
-                            backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                            backgroundColor: cardBg,
                             borderColor: '#E11D48',
                             zIndex: 1000 - index
                         }
@@ -200,7 +200,7 @@ export function StaffCallOverlay() {
                         style={({ pressed }) => [
                             styles.btn,
                             {
-                                backgroundColor: '#E11D48',
+                                backgroundColor: accentColor,
                                 opacity: (pressed || accepting === call.id) ? 0.7 : 1
                             }
                         ]}
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: '#E11D4820',
+        backgroundColor: `20`,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,

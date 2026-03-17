@@ -15,13 +15,11 @@ interface PremiumCalendarProps {
 }
 
 export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: PremiumCalendarProps) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
     const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();

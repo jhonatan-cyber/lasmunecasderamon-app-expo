@@ -446,7 +446,30 @@ export default function CajeroHomeScreen() {
       <QRScannerModal
         visible={isQRScannerVisible}
         onClose={() => dispatch({ type: "SET_QR_VISIBLE", payload: false })}
-        onScanSuccess={() => {
+        onScanned={async (qrData) => {
+          const res = await apiClient("/asistencia/registrar", {
+            method: "POST",
+            body: JSON.stringify({ qr_data: qrData }),
+          });
+
+          if (!res?.success) {
+            throw new Error(res?.message || "Código QR inválido o expirado.");
+          }
+
+          if (res.alreadyRegistered) {
+            Toast.show({
+              type: "info",
+              text1: "Asistencia duplicada",
+              text2: res.message || "Ya se registró asistencia hoy.",
+            });
+          } else {
+            Toast.show({
+              type: "success",
+              text1: "¡Asistencia Registrada!",
+              text2: res.message || "Tu asistencia ha sido marcada correctamente.",
+            });
+          }
+
           fetchData(false);
         }}
       />

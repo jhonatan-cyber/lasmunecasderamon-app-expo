@@ -402,7 +402,7 @@ export default function AgregarCuentaScreen() {
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
-                <View style={[styles.infoBanner, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor }]}>
+                <View style={[styles.infoBanner, { backgroundColor: cardBg, borderColor }]}>
                     <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={{ marginRight: 10 }} />
                     <View style={{ flex: 1 }}>
                         <Text style={{ color: textPrimary, fontSize: 13, fontWeight: "600" }}>Estás agregando a la cuenta {cuentaOriginal?.codigo}</Text>
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
     modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
-    confirmModalBtn: { height: 50, borderRadius: 16, backgroundColor: '#E11D48', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
     tiempoChip: {
         flexDirection: 'row', alignItems: 'center', gap: 12,

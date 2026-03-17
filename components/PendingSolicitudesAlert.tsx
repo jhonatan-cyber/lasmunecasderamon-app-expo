@@ -8,11 +8,11 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { apiClient } from '../api/client';
+import { useAccentColor } from '../hooks/useAccentColor';
 import { useAuthStore } from '../store/authStore';
 
 export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boolean }) {
@@ -20,7 +20,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     const router = useRouter();
     const [pendingCount, setPendingCount] = useState(0);
     const [loading, setLoading] = useState(false);
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark, cardBg } = useAccentColor();
     
     const shake = useSharedValue(0);
 
@@ -97,7 +97,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
             exiting={FadeOutDown}
             style={[
                 isInline ? styles.inlineContainer : styles.container, 
-                { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor: isDark ? '#E11D48' : '#E11D48' },
+                { backgroundColor: cardBg, borderColor: accentColor },
                 shakeStyle
             ]}
         >
@@ -110,7 +110,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                     loop: true,
                     repeatReverse: false,
                 }}
-                style={[StyleSheet.absoluteFill, { backgroundColor: '#E11D48', borderRadius: 24 }]}
+                style={[StyleSheet.absoluteFill, { backgroundColor: accentColor, borderRadius: 24 }]}
             />
             
             <Pressable 
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 16,
-        backgroundColor: '#E11D4820',
+        backgroundColor: `20`,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,

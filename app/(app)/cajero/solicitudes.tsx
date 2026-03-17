@@ -440,8 +440,11 @@ export default function SolicitudesScreen() {
             if (updateRes.success) {
                 showToast('Éxito', 'Pedido pagado correctamente', 'success');
                 setCheckoutModalVisible(false);
-                DeviceEventEmitter.emit('refresh_requests');
-                fetchSolicitudes();
+                setSolicitudes(prev => prev.filter(s => s.id_unificado !== `pedido_${selectedPedido.id_pedido}`));
+                setTimeout(() => {
+                    DeviceEventEmitter.emit('refresh_requests');
+                    fetchSolicitudes();
+                }, 300);
                 setTimeout(() => router.replace('/cajero' as any), 500);
             } else {
                 showToast('Advertencia', 'Venta lista pero falló al cerrar el proceso.', 'error');
@@ -550,7 +553,7 @@ export default function SolicitudesScreen() {
                         <View style={[styles.iconBox, { backgroundColor: `${color}20` }]}>
                             <Ionicons name={iconName} size={16} color={color} />
                         </View>
-                        <Text style={[styles.codigo, { color: textPrimary }]}>{item.codigo}</Text>
+                        <Text style={[styles.codigo, { color: textPrimary }]}>Codigo : {item.codigo}</Text>
                         <View style={[styles.typeBadge, { backgroundColor: `${color}20` }]}>
                             <Text style={[styles.typeText, { color }]}>{isSolicitud ? 'Servicio' : isAnticipo ? 'Anticipo' : 'Trago'}</Text>
                         </View>
@@ -570,7 +573,7 @@ export default function SolicitudesScreen() {
                     <View style={[styles.infoRow, { marginTop: 4 }]}>
                         <Ionicons name="time" size={16} color={isUrgent ? '#EF4444' : textSecondary} />
                         <Text style={[styles.infoText, { color: isUrgent ? '#EF4444' : textSecondary, fontWeight: isUrgent ? '800' : '400' }]}>
-                            {timeText} ({minutesElapsed} min)
+                            {timeText}{(isSolicitud && item.habitacion_nombre) ? ` (${minutesElapsed} min)` : ''}
                         </Text>
                     </View>
                 </View>
@@ -584,7 +587,7 @@ export default function SolicitudesScreen() {
                                 </View>
                             ) : (
                                 <Pressable
-                                    style={[styles.btnAction, { backgroundColor: '#10B981', flex: 1 }]}
+                                    style={[styles.btnAction, { backgroundColor: accentColor, flex: 1 }]}
                                     onPress={(e) => {
                                         e.stopPropagation();
                                         handleAprobar(itemId, 'anticipo', item);
@@ -608,7 +611,7 @@ export default function SolicitudesScreen() {
                                 <Text style={[styles.btnActionText, { color: '#EF4444' }]}>Rechazar</Text>
                             </Pressable>
                             <Pressable
-                                style={[styles.btnAction, { backgroundColor: '#10B981', flex: 1.5 }]}
+                                style={[styles.btnAction, { backgroundColor: accentColor, flex: 1.5 }]}
                                 onPress={(e) => {
                                     e.stopPropagation();
                                     handleAprobar(itemId, item.tipoItem, item);
@@ -666,7 +669,7 @@ export default function SolicitudesScreen() {
                     <MotiView
                         from={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        style={[styles.urgencyBar]}
+                        style={[styles.urgencyBar, { backgroundColor: accentColor }]}
                     >
                         <Ionicons name="warning" size={20} color="#FFFFFF" />
                         <Text style={styles.urgencyBarText}>
@@ -714,7 +717,7 @@ export default function SolicitudesScreen() {
                                     </View>
                                     <View>
                                         <Text style={[styles.modalTitleText, { color: textPrimary }]}>Cerrar Pedido</Text>
-                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>{selectedPedido.codigo}</Text>
+                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Codigo : {selectedPedido.codigo}</Text>
                                     </View>
                                 </View>
 
@@ -723,16 +726,39 @@ export default function SolicitudesScreen() {
                                         <Text style={[styles.sectionTitle, { color: textPrimary }]}>Resumen del Pedido</Text>
                                     </View>
 
+                                    {pedidoDetails.length > 0 && (
+                                        <View style={[styles.orderMetaRow, { borderColor }]}>
+                                            <View style={styles.orderMetaItem}>
+                                                <Ionicons name="person-outline" size={14} color={textSecondary} />
+                                                <Text style={[styles.orderMetaLabel, { color: textSecondary }]}>Garzón</Text>
+                                                <Text style={[styles.orderMetaValue, { color: textPrimary }]}>{pedidoDetails[0]?.garzon || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.orderMetaDivider, { backgroundColor: borderColor }]} />
+                                            <View style={styles.orderMetaItem}>
+                                                <Ionicons name="people-outline" size={14} color={textSecondary} />
+                                                <Text style={[styles.orderMetaLabel, { color: textSecondary }]}>Cliente</Text>
+                                                <Text style={[styles.orderMetaValue, { color: textPrimary }]}>{pedidoDetails[0]?.cliente || 'Cliente sin registrar'}</Text>
+                                            </View>
+                                            <View style={[styles.orderMetaDivider, { backgroundColor: borderColor }]} />
+                                            <View style={styles.orderMetaItem}>
+                                                <Ionicons name="bed-outline" size={14} color={textSecondary} />
+                                                <Text style={[styles.orderMetaLabel, { color: textSecondary }]}>Lugar</Text>
+                                                <Text style={[styles.orderMetaValue, { color: textPrimary }]}>{pedidoDetails[0]?.room_name || 'Mesa/Salón'}</Text>
+                                            </View>
+                                        </View>
+                                    )}
+
                                     <View style={[styles.receiptContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor }]}>
                                         {loadingDetails ? (
                                             <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 20 }} />
                                         ) : pedidoDetails.map((item: any, idx: number) => (
                                             <View key={idx} style={styles.productDetailRow}>
-                                                <View style={[styles.productQuantityBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
-                                                    <Text style={[styles.productQuantity, { color: textPrimary }]}>{item.cantidad}x</Text>
+                                                <View style={styles.productQuantityCol}>
+                                                    <Text style={[styles.productQuantityLabel, { color: textSecondary }]}>Cant.</Text>
+                                                    <Text style={[styles.productQuantity, { color: textPrimary }]}>{item.cantidad}</Text>
                                                 </View>
                                                 <View style={styles.productInfoCol}>
-                                                    <Text style={[styles.productName, { color: textPrimary }]}>{item.nombre_producto || 'Producto'}</Text>
+                                                    <Text style={[styles.productName, { color: textPrimary }]}>{item.nombre_producto || item.producto || 'Producto'}</Text>
                                                     <Text style={[styles.productPrice, { color: textSecondary }]}>${(item.precio || 0).toLocaleString()}</Text>
                                                 </View>
                                                 <Text style={[styles.productSubtotal, { color: textPrimary }]}>${((item.precio || 0) * (item.cantidad || 0)).toLocaleString()}</Text>
@@ -833,7 +859,7 @@ export default function SolicitudesScreen() {
                                     </View>
                                     <View>
                                         <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Servicio</Text>
-                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedService.codigo || '#' + selectedService.id_solicitud}</Text>
+                                        <Text style={[styles.modalSubText, { color: textSecondary }]}>Codigo : {selectedService.codigo || '#' + selectedService.id_solicitud}</Text>
                                     </View>
                                 </View>
 
@@ -946,7 +972,7 @@ export default function SolicitudesScreen() {
                                         <Text style={[styles.modalBtnActionText, { color: textSecondary }]}>Cerrar</Text>
                                     </Pressable>
                                     <Pressable
-                                        style={[styles.modalBtnAction, { backgroundColor: '#10B981' }]}
+                                        style={[styles.modalBtnAction, { backgroundColor: accentColor }]}
                                         onPress={() => {
                                             setServiceModalVisible(false);
                                             handleAprobar(selectedService.id_solicitud, 'solicitud');
@@ -1037,7 +1063,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#E11D48',
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 16,
@@ -1063,8 +1088,14 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 16, fontWeight: '700' },
     receiptContainer: { borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1 },
     productDetailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-    productQuantityBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    productQuantity: { fontSize: 13, fontWeight: '800' },
+    productQuantityCol: { width: 44, alignItems: 'center', marginRight: 12 },
+    productQuantityLabel: { fontSize: 10, fontWeight: '600', marginBottom: 2 },
+    productQuantity: { fontSize: 16, fontWeight: '900' },
+    orderMetaRow: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, marginBottom: 16, overflow: 'hidden' },
+    orderMetaItem: { flex: 1, padding: 12, alignItems: 'center', gap: 2 },
+    orderMetaDivider: { width: 1 },
+    orderMetaLabel: { fontSize: 10, fontWeight: '600' },
+    orderMetaValue: { fontSize: 13, fontWeight: '800', textAlign: 'center' },
     productInfoCol: { flex: 1, justifyContent: 'center', paddingRight: 8 },
     productName: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
     productPrice: { fontSize: 12, fontWeight: '600' },

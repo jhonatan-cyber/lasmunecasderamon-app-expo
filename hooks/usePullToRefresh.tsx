@@ -20,7 +20,7 @@ interface UsePullToRefreshOptions {
 interface UsePullToRefreshReturn {
     refreshing: boolean;
     triggerRefresh: () => void;
-    RefreshControlComponent: React.FC<RefreshControlProps>;
+    RefreshControlComponent: React.FC<Partial<RefreshControlProps>>;
 }
 
 export const usePullToRefresh = ({
@@ -44,7 +44,7 @@ export const usePullToRefresh = ({
         }
     }, [onRefresh, refreshing]);
 
-    const RefreshControlComponent: React.FC<RefreshControlProps> = (props) => (
+    const RefreshControlComponent: React.FC<Partial<RefreshControlProps>> = (props) => (
         <RefreshControl
             {...props}
             refreshing={refreshing}

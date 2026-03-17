@@ -498,9 +498,7 @@ export default function VentasScreen() {
           {/* Left Info Section */}
           <View style={styles.cardLeftContent}>
             <View style={styles.cardTopActions}>
-              <Text style={[styles.cardCode, { color: textPrimary }]}>
-                {item.codigo}
-              </Text>
+              <Text style={[styles.cardCode, { color: textPrimary }]}>Codigo : {item.codigo}</Text>
               <View
                 style={[
                   styles.statusBadgeSmall,
@@ -738,7 +736,7 @@ export default function VentasScreen() {
                   )
                 }
                 style={[
-                  styles.plusBtn,
+                  styles.plusBtn, { backgroundColor: accentColor },
                   { backgroundColor: isDark ? '#111827' : accentColor, shadowColor: accentColor }
                 ]}
                 accessibilityRole="button"
@@ -903,7 +901,7 @@ export default function VentasScreen() {
                       <Text
                         style={[styles.modalSubText, { color: textSecondary }]}
                       >
-                        Código: {selectedVenta.codigo}
+                        Codigo : {selectedVenta.codigo}
                       </Text>
                     </View>
                     <Pressable
@@ -1377,7 +1375,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#E11D48",
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#E11D48",

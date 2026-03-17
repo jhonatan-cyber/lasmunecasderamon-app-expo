@@ -13,11 +13,7 @@ export async function registerForPushNotificationsAsync(): Promise<
   const isExpoGo = Constants.appOwnership === "expo";
 
   if (Platform.OS === "web" || isExpoGo) {
-    if (isExpoGo) {
-      console.log(
-        "expo-notifications: push remotas no están soportadas en Expo Go. Usa un development build."
-      );
-    }
+   
     return null;
   }
 
@@ -42,10 +38,7 @@ export async function registerForPushNotificationsAsync(): Promise<
       Constants.easConfig?.projectId;
 
     if (!projectId) {
-      console.error('❌ Error: No se encontró "projectId" en app.json');
-      console.warn(
-        "Para usar notificaciones push de Expo, debes:\n1. Iniciar sesión en expo: npx expo login\n2. Inicializar el proyecto EAS: npx eas project:init\n3. Esto agregará un projectId a tu app.json",
-      );
+      
       return null;
     }
 
@@ -84,7 +77,7 @@ async function saveTokenToServer(token: string) {
     });
 
     if (response.success) {
-      console.log("✅ Push token registrado en el servidor");
+      
     } else {
       console.error("❌ Error registrando push token:", response.message);
     }

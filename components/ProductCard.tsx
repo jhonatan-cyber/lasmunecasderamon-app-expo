@@ -94,7 +94,7 @@ export const ProductCard = ({
                     )}
                     <Pressable
                         onPress={() => onAdd(product)}
-                        style={({ pressed }) => [styles.qtyBtn, { backgroundColor: '#10B981', opacity: pressed ? 0.8 : 1 }]}
+                        style={({ pressed }) => [styles.qtyBtn, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}
                     >
                         <Ionicons name="add" size={18} color="#FFF" />
                     </Pressable>

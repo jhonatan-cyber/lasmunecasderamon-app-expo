@@ -20,11 +20,11 @@ export const openWhatsApp = async ({ phoneNumber, message }: WhatsAppOptions): P
             await Linking.openURL(url);
             return true;
         } else {
-            console.log('WhatsApp not available');
+ 
             return false;
         }
     } catch (error) {
-        console.error('Error opening WhatsApp:', error);
+     
         return false;
     }
 };
@@ -60,7 +60,7 @@ export const shareReportViaWhatsApp = async (
         }
         return false;
     } catch (error) {
-        console.error('Error sharing report:', error);
+   
         return false;
     }
 };

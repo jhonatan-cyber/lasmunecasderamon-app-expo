@@ -46,7 +46,7 @@ class OfflineSyncManager {
 
     addListener(callback: () => void) {
         this.listeners.add(callback);
-        return () => this.listeners.delete(callback);
+        return () => { this.listeners.delete(callback); };
     }
 
     private notifyListeners() {

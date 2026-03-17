@@ -77,7 +77,7 @@ export default function PedidosScreen() {
                 });
             }
         } catch (err: any) {
-            console.error('Error fetching categories:', err);
+           
             setError(err.message || 'Error de conexión');
             if (isManual) {
                 Toast.show({

@@ -8,11 +8,11 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '../../../api/client';
+import { useAccentColor } from '../../../hooks/useAccentColor';
 import { Timer } from '../../../context/TimerContext';
 import { HostessSelectModal } from './HostessSelectModal';
 import { PaymentMethod, PaymentMethodSelect } from './PaymentMethodSelect';
@@ -38,7 +38,11 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     timer,
     onSuccess,
 }) => {
-    const isDark = useColorScheme() === 'dark';
+    const { isDark, cardBg, borderColor, accentColor: accent } = useAccentColor();
+    const accentColor = accent;
+    const bg = isDark ? '#111827' : '#FFFFFF';
+    const textPrimary = isDark ? '#FFFFFF' : '#111827';
+    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const [loading, setLoading] = useState(false);
     const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
     const [tiempo, setTiempo] = useState<string>('30');
@@ -48,12 +52,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const [anfitrionasSeleccionadas, setAnfitrionasSeleccionadas] = useState<number[]>([]);
     const [showHostessModal, setShowHostessModal] = useState(false);
     const [precioHabitacionSinComision, setPrecioHabitacionSinComision] = useState<number>(0);
-
-    const bg = isDark ? '#111827' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
-    const accentColor = '#E11D48';
 
     const fetchHabitacionSinComision = useCallback(async () => {
         try {
@@ -343,7 +341,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
                         {/* Resumen de Precios */}
                         {anfitrionasSeleccionadas.length > 0 && (
-                            <View style={[styles.summaryBox, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderColor }]}>
+                            <View style={[styles.summaryBox, { backgroundColor: cardBg, borderColor }]}>
                                 <Text style={[styles.summaryTitle, { color: textPrimary }]}>RESUMEN</Text>
 
                                 <View style={styles.summaryRow}>
@@ -414,7 +412,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                             <Text style={[styles.btnText, { color: textSecondary }]}>CANCELAR</Text>
                         </Pressable>
                         <Pressable
-                            style={[styles.btn, styles.saveBtn, { backgroundColor: '#E11D48' }]}
+                            style={[styles.btn, styles.saveBtn, { backgroundColor: accentColor }]}
                             onPress={handleSave}
                             disabled={loading}
                         >

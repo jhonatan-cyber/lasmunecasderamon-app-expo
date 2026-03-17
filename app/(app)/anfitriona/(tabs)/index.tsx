@@ -32,6 +32,7 @@ import { AnimatedButton } from "../../../../components/AnimatedButton";
 import { AnimatedScreen } from "../../../../components/AnimatedScreen";
 import { DonutChart } from "../../../../components/DonutChart";
 import { PremiumAlert } from "../../../../components/PremiumAlert";
+import { EventDetailModal } from '../../../../components/EventDetailModal';
 import { PremiumCalendar } from "../../../../components/PremiumCalendar";
 import { PremiumHeaderActions } from "../../../../components/PremiumHeaderActions";
 import { PremiumLiquidationCard } from "../../../../components/PremiumLiquidationCard";
@@ -172,6 +173,8 @@ export default function AnfitrionaHomeScreen() {
     initialAnfitrionaState,
   );
   const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
+  const [eventDetail, setEventDetail] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const {
     loading,
     refreshing,
@@ -249,7 +252,7 @@ export default function AnfitrionaHomeScreen() {
       if (isManual) {
         Toast.show({
           type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Éxito" : "Información",
+          text1: hasChanges ? "Ã‰xito" : "InformaciÃ³n",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
           visibilityTime: 3000,
         });
@@ -298,6 +301,13 @@ export default function AnfitrionaHomeScreen() {
     return () => sub.remove();
   }, [fetchData]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("refresh_requests", () => {
+      fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
+
 
   const dailyGrowth = useMemo(() => {
     if (!stats?.weeklyIncome || stats.weeklyIncome.length < 2) return 0;
@@ -321,27 +331,44 @@ export default function AnfitrionaHomeScreen() {
   }, [selectedDates, events]);
 
   const typeLabels: Record<string, string> = {
-    comision: "Comisión",
+    comision: "ComisiÃ³n",
     asistencia: "Asistencia",
     anticipo: "Anticipo",
     propina: "Propina",
     venta: "Venta",
     servicio: "Servicio",
-    gratificacion: "Gratificación"
+    gratificacion: "GratificaciÃ³n"
   };
 
   const getEventLabel = (item: any) => {
     if (!item) return "";
     if (item.type === 'comision') {
-      if (item.subType === 'venta') return "Comisión de Venta";
-      if (item.subType === 'servicio') return "Comisión de Servicio";
-      return "Comisión";
+      if (item.subType === 'venta') return "ComisiÃ³n de Venta";
+      if (item.subType === 'servicio') return "ComisiÃ³n de Servicio";
+      return "ComisiÃ³n";
     }
     if (item.type === 'propina') {
       if (item.subType === 'venta') return "Propina de Venta";
       return "Propina";
     }
     return typeLabels[item.type] || item.type.toUpperCase();
+  };
+
+  const handleSelectEvent = async (item: any) => {
+      setEventDetail(null);
+      setLoadingDetail(false);
+      dispatch({ type: "SET_SELECTED_EVENT", payload: item });
+      if (['comision', 'propina', 'asistencia', 'anticipo'].includes(item.type)) {
+          setLoadingDetail(true);
+          try {
+            const res = await apiClient(`/events/detail/${item.id}?type=${item.type}`);
+              if (res.success && res.data) setEventDetail(res.data);
+          } catch (e) {
+              console.error('detail fetch error', e);
+          } finally {
+              setLoadingDetail(false);
+          }
+      }
   };
 
   const getStatusLabel = (status: any) => {
@@ -360,7 +387,7 @@ export default function AnfitrionaHomeScreen() {
         method: "POST",
         body: JSON.stringify({
           type,
-          message: `Solicitud de ${type} en habitación ${activeService?.habitacion}`,
+          message: `Solicitud de ${type} en habitaciÃ³n ${activeService?.habitacion}`,
           servicioId: activeService?.id_servicio,
           roomName: activeService?.habitacion,
         }),
@@ -369,7 +396,7 @@ export default function AnfitrionaHomeScreen() {
         Toast.show({
           type: "success",
           text1: "Solicitud enviada",
-          text2: `${type} notificado con éxito`,
+          text2: `${type} notificado con Ã©xito`,
         });
       }
     } catch (err) {
@@ -450,7 +477,7 @@ export default function AnfitrionaHomeScreen() {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                       showAlert(
                         "Solicitud de Personal",
-                        "¿Deseas enviar una notificación de llamado a los garzones y cajera?",
+                        "Â¿Deseas enviar una notificaciÃ³n de llamado a los garzones y cajera?",
                         "warning",
                         async () => {
                           try {
@@ -460,7 +487,7 @@ export default function AnfitrionaHomeScreen() {
                                 method: "POST",
                                 body: JSON.stringify({
                                   type: "Llamado General",
-                                  message: "Anfitriona solicita atención",
+                                  message: "Anfitriona solicita atenciÃ³n",
                                   servicioId: activeService?.id_servicio,
                                   roomName: activeService?.habitacion,
                                 }),
@@ -515,7 +542,7 @@ export default function AnfitrionaHomeScreen() {
                         SERVICIO EN CURSO
                       </RNText>
                       <RNText style={styles.activeServiceRoom}>
-                        HABITACIÓN {activeService.habitacion}
+                        HABITACIÃ“N {activeService.habitacion}
                       </RNText>
                     </View>
                     <View style={styles.activeServiceTimer}>
@@ -578,10 +605,10 @@ export default function AnfitrionaHomeScreen() {
                       : 0;
 
                   showAlert(
-                    "Proyección de Meta",
+                    "ProyecciÃ³n de Meta",
                     missing > 0
-                      ? `Te faltan $${missing.toLocaleString()} para tu meta. Necesitas aprox. $${dailyNeeded.toLocaleString()} por día.`
-                      : "¡Felicidades! Has superado tu meta semanal.",
+                      ? `Te faltan $${missing.toLocaleString()} para tu meta. Necesitas aprox. $${dailyNeeded.toLocaleString()} por dÃ­a.`
+                      : "Â¡Felicidades! Has superado tu meta semanal.",
                     "info",
                   );
                 }}
@@ -714,11 +741,11 @@ export default function AnfitrionaHomeScreen() {
           animate={{ translateY: 0, opacity: 1 }}
           style={[
             styles.selectionFloat,
-            { backgroundColor: isDark ? "#1F2937" : "#374151" },
+            { backgroundColor: cardBg, borderWidth: 1, borderColor },
           ]}
         >
-          <RNText style={[styles.selectionText, { color: "#FFF" }]}>
-            {selectedDates.length} días seleccionados
+          <RNText style={[styles.selectionText, { color: textPrimary }]}>
+            {selectedDates.length} {selectedDates.length === 1 ? 'día' : 'días'} seleccionados
           </RNText>
           <View style={styles.selectionActions}>
             <Pressable
@@ -763,7 +790,7 @@ export default function AnfitrionaHomeScreen() {
                 <RNText
                   style={[styles.modalSubtitle, { color: textSecondary }]}
                 >
-                  {selectedDates.length} días seleccionados
+                  {selectedDates.length} {selectedDates.length === 1 ? 'día seleccionado' : 'días seleccionados'}
                 </RNText>
               </View>
               <Pressable
@@ -794,7 +821,7 @@ export default function AnfitrionaHomeScreen() {
 
                 return (
                   <Pressable
-                    onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: item })}
+                    onPress={() => handleSelectEvent(item)}
                     style={({ pressed }) => [
                       styles.eventItem,
                       { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.7 : 1 },
@@ -851,99 +878,21 @@ export default function AnfitrionaHomeScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Modal de Detalle de Transacción */}
-      <Modal
-        visible={!!selectedEvent}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-      >
-        <View style={styles.modalOverlayCenter}>
-          <View style={[styles.detailCard, { backgroundColor: cardBg }]}>
-            <View style={styles.detailHeader}>
-              <View style={[styles.detailIconBox, { backgroundColor: `${(selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981")}20` }]}>
-                <Ionicons 
-                  name={
-                    selectedEvent?.type === "venta"
-                    ? "cart"
-                    : selectedEvent?.type === "propina"
-                      ? "heart"
-                      : selectedEvent?.type === "comision"
-                        ? "star"
-                        : selectedEvent?.type === "servicio"
-                          ? "time"
-                          : "cash"
-                  } 
-                  size={32} 
-                  color={selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981"} 
-                />
-              </View>
-              <Pressable 
-                onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-                style={styles.detailCloseBtn}
-              >
-                <Ionicons name="close" size={24} color={textPrimary} />
-              </Pressable>
-            </View>
-
-            <View style={styles.detailBody}>
-              <RNText style={[styles.detailType, { color: textSecondary }]}>
-                {getEventLabel(selectedEvent).toUpperCase()}
-              </RNText>
-              <RNText style={[styles.detailAmount, { color: selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981" }]}>
-                {selectedEvent?.type === 'anticipo' ? "-" : "+"}${selectedEvent?.amount.toLocaleString()}
-              </RNText>
-
-              <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>Fecha y Hora</RNText>
-                <RNText style={[styles.detailValue, { color: textPrimary }]}>
-                  {selectedEvent ? new Date(selectedEvent.date).toLocaleString('es-ES', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }) : ''}
-                </RNText>
-              </View>
-
-              {selectedEvent?.codigo && selectedEvent.codigo !== 'TIPS' && (
-                <View style={styles.detailRow}>
-                  <RNText style={[styles.detailLabel, { color: textSecondary }]}>Código de Operación</RNText>
-                  <RNText style={[styles.detailValue, { color: textPrimary }]}>{selectedEvent.codigo}</RNText>
-                </View>
-              )}
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>Estado</RNText>
-                <View style={[styles.statusBadgeDetail, { backgroundColor: `${(selectedEvent?.estado === 3 ? "#EF4444" : "#10B981")}20` }]}>
-                  <RNText style={[styles.statusTextDetail, { color: (selectedEvent?.estado === 3) ? "#EF4444" : "#10B981" }]}>
-                    {selectedEvent ? getStatusLabel(selectedEvent.estado) : ''}
-                  </RNText>
-                </View>
-              </View>
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>ID Interno</RNText>
-                <RNText style={[styles.detailValue, { color: textPrimary }]}>#{selectedEvent?.id}</RNText>
-              </View>
-            </View>
-
-            <Pressable 
-              onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-              style={[styles.confirmBtn, { backgroundColor: accentColor }]}
-            >
-              <RNText style={styles.confirmBtnText}>Entendido</RNText>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <EventDetailModal
+          visible={!!selectedEvent}
+          event={selectedEvent}
+          eventDetail={eventDetail}
+          loadingDetail={loadingDetail}
+          onClose={() => { dispatch({ type: "SET_SELECTED_EVENT", payload: null }); setEventDetail(null); }}
+          getEventLabel={getEventLabel}
+          getStatusLabel={getStatusLabel}
+      />
 
       <QRScannerModal
         visible={isQRScannerVisible}
         onClose={() => dispatch({ type: "SET_QR_VISIBLE", payload: false })}
-        onScanSuccess={() => {
-          fetchData(false); // Actualizar dashboard tras el registro sin mostrar toast duplicado
+        onScanned={async () => {
+          fetchData(false);
         }}
       />
 
@@ -1171,6 +1120,7 @@ const styles = StyleSheet.create({
     padding: 20
   },
   detailCard: {
+    maxHeight: '85%',
     width: '100%',
     borderRadius: 32,
     padding: 24,

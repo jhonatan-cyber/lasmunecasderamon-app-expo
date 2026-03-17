@@ -623,7 +623,7 @@ export default function CuentasScreen() {
                 style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
               >
                 <Text style={[styles.cardCode, { color: textPrimary }]}>
-                  {item.codigo}
+                  Codigo : {item.codigo}
                 </Text>
               </View>
               <View
@@ -673,7 +673,7 @@ export default function CuentasScreen() {
                 <View
                   style={[
                     styles.cardInfoIconBox,
-                    { backgroundColor: "#10B98112" },
+                    { backgroundColor: `${accentColor}12` },
                   ]}
                 >
                   <Ionicons name="business" size={13} color="#10B981" />
@@ -777,7 +777,7 @@ export default function CuentasScreen() {
                   <Pressable
                     style={({ pressed }) => [
                       styles.cardActionBtn,
-                      styles.cardActionBtnCobrar,
+                      styles.cardActionBtnCobrar, { backgroundColor: accentColor },
                       {
                         backgroundColor: accentColor,
                         shadowColor: accentColor,
@@ -873,7 +873,7 @@ export default function CuentasScreen() {
               <Pressable
                 onPress={() => router.push("/cajero/nueva-cuenta")}
                 style={[
-                  styles.plusBtn,
+                  styles.plusBtn, { backgroundColor: accentColor },
                   {
                     backgroundColor: isDark ? "#111827" : accentColor,
                     shadowColor: accentColor,
@@ -1076,7 +1076,7 @@ export default function CuentasScreen() {
                       <Text
                         style={[styles.modalSubText, { color: textSecondary }]}
                       >
-                        Código: {selectedCuenta.codigo}
+                        Codigo : {selectedCuenta.codigo}
                       </Text>
                     </View>
                     <Pressable
@@ -1683,7 +1683,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#E11D48",
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#E11D48",
@@ -1850,7 +1849,6 @@ const styles = StyleSheet.create({
   cardActionBtnAddText: { color: "#3B82F6", fontSize: 13, fontWeight: "800" },
   cardActionBtnCobrar: {
     paddingHorizontal: 16,
-    backgroundColor: "#10B981",
     elevation: 2,
     shadowColor: "#10B981",
     shadowOpacity: 0.3,
@@ -1909,7 +1907,7 @@ const styles = StyleSheet.create({
   },
   addBtn: { backgroundColor: "#3B82F6" },
   addBtnText: { color: "#FFF", fontSize: 13, fontWeight: "800" },
-  finishBtn: { backgroundColor: "#10B981" },
+  finishBtn: {},
   finishBtnText: { color: "#FFF", fontSize: 13, fontWeight: "800" },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
 

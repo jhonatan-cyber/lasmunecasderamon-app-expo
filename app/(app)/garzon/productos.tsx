@@ -1,6 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import {useAccentColor} from '../../../hooks/useAccentColor';
+import {useLocalSearchParams, useRouter} from 'expo-router';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -12,18 +13,17 @@ import {
     StyleSheet,
     Switch,
     Text,
-    useColorScheme,
     View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { Anfitriona, CartItem, Product, ProductCard, Room } from '../../../components/ProductCard';
-import { useAuthStore } from '../../../store/authStore';
-import { useCartStore } from '../../../store/cartStore';
-import { PremiumHeader } from '../../../components/PremiumHeader';
-import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
-import { PremiumAlert } from '../../../components/PremiumAlert';
+import {apiClient} from '../../../api/client';
+import {Anfitriona, CartItem, Product, ProductCard, Room} from '../../../components/ProductCard';
+import {useAuthStore} from '../../../store/authStore';
+import {useCartStore} from '../../../store/cartStore';
+import {PremiumHeader} from '../../../components/PremiumHeader';
+import {ClientSelectModal} from '../../../components/cajero/forms/ClientSelectModal';
+import {PremiumAlert} from '../../../components/PremiumAlert';
 
 interface Client {
     id: string;
@@ -37,7 +37,7 @@ interface Client {
 
 
 export default function ProductosScreen() {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { accentColor, isDark, bg, cardBg, borderColor } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
@@ -74,11 +74,8 @@ export default function ProductosScreen() {
     // Modal state
     const [activeConfigItem, setActiveConfigItem] = useState<{ productId: string, type: 'hostess' | 'room' } | null>(null);
 
-    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
-    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -224,7 +221,7 @@ export default function ProductosScreen() {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: err.message || 'Error de conexión',
+                text2: err.message || 'Error de conexiÃƒÂ³n',
             });
         } finally {
             setSubmitting(false);
@@ -299,7 +296,7 @@ export default function ProductosScreen() {
                             style={[styles.selectField, { backgroundColor: cardBg, borderColor }]}
                         >
                             <View style={styles.selectFieldContent}>
-                                <Ionicons name="person-outline" size={20} color={selectedClientId ? '#10B981' : textSecondary} />
+                                <Ionicons name="person-outline" size={20} color={selectedClientId ? accentColor : textSecondary} />
                                 <Text style={[styles.selectFieldText, { color: selectedClientId ? textPrimary : textSecondary }]}>
                                     {selectedClientId 
                                         ? (() => {
@@ -344,19 +341,19 @@ export default function ProductosScreen() {
             />
 
             {cart.length > 0 && (
-                <View style={[styles.cartBar, { backgroundColor: isDark ? '#1E1B4B' : '#FFFFFF', borderTopColor: borderColor, paddingBottom: 16 + insets.bottom }]}>
+                <View style={[styles.cartBar, { backgroundColor: cardBg, borderTopColor: borderColor, paddingBottom: 16 + insets.bottom }]}>
                     <View style={styles.cartTopRow}>
                         <View style={styles.tipControl}>
                             <Text style={[styles.tipText, { color: textSecondary }]}>Propina (10%)</Text>
                             <Switch
                                 value={tipEnabled}
                                 onValueChange={setTipEnabled}
-                                trackColor={{ false: '#374151', true: '#10B981' }}
+                                trackColor={{ false: '#374151', true: accentColor }}
                                 thumbColor="#FFF"
                             />
                         </View>
                         {tipEnabled && (
-                            <Text style={[styles.tipAmount, { color: '#10B981' }]}>
+                            <Text style={[styles.tipAmount, { color: accentColor }]}>
                                 +${tipAmount.toLocaleString()}
                             </Text>
                         )}
@@ -370,7 +367,7 @@ export default function ProductosScreen() {
                         <Pressable
                             onPress={submitOrder}
                             disabled={submitting}
-                            style={({ pressed }) => [styles.submitBtn, submitting && { opacity: 0.5 }, pressed && { opacity: 0.8 }]}
+                            style={({ pressed }) => [styles.submitBtn, { backgroundColor: accentColor }, submitting && { opacity: 0.5 }, pressed && { opacity: 0.8 }]}
                         >
                             {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitText}>Enviar Pedido</Text>}
                         </Pressable>
@@ -381,7 +378,7 @@ export default function ProductosScreen() {
             {/* Config Modals */}
             <Modal visible={!!activeConfigItem} transparent animationType="slide">
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: isDark ? '#1E1B4B' : '#FFFFFF', paddingBottom: insets.bottom }]}>
+                    <View style={[styles.modalContent, { backgroundColor: cardBg, paddingBottom: insets.bottom }]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>
                                 {activeConfigItem?.type === 'hostess'
@@ -414,10 +411,10 @@ export default function ProductosScreen() {
                                                     });
                                                 }
                                             }}
-                                            style={[styles.modalItem, isSelected && { backgroundColor: isDark ? '#065F46' : '#D1FAE5' }]}
+                                            style={[styles.modalItem, { borderColor: isSelected ? accentColor : borderColor, backgroundColor: isSelected ? `${accentColor}15` : 'transparent' }]}
                                         >
                                             <Text style={[styles.modalItemText, { color: textPrimary }]}>{a.nick || a.name}</Text>
-                                            {isSelected && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+                                            {isSelected && <Ionicons name="checkmark" size={16} color={accentColor} />}
                                         </Pressable>
                                     );
                                 })
@@ -425,7 +422,7 @@ export default function ProductosScreen() {
                                 <>
                                     <Pressable
                                         onPress={() => { updateItemRoom(activeConfigItem!.productId, null); setActiveConfigItem(null); }}
-                                        style={[styles.modalItem, !currentConfigItem?.selectedRoom && { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}
+                                        style={[styles.modalItem, { borderColor: !currentConfigItem?.selectedRoom ? accentColor : borderColor, backgroundColor: !currentConfigItem?.selectedRoom ? `${accentColor}15` : 'transparent' }]}
                                     >
                                         <Text style={[styles.modalItemText, { color: textPrimary }]}>Sin Habitación</Text>
                                     </Pressable>
@@ -433,17 +430,17 @@ export default function ProductosScreen() {
                                         <Pressable
                                             key={r.id}
                                             onPress={() => { updateItemRoom(activeConfigItem!.productId, r.id); setActiveConfigItem(null); }}
-                                            style={[styles.modalItem, currentConfigItem?.selectedRoom === r.id && { backgroundColor: isDark ? '#065F46' : '#D1FAE5' }]}
+                                            style={[styles.modalItem, { borderColor: currentConfigItem?.selectedRoom === r.id ? accentColor : borderColor, backgroundColor: currentConfigItem?.selectedRoom === r.id ? `${accentColor}15` : 'transparent' }]}
                                         >
                                             <Text style={[styles.modalItemText, { color: textPrimary }]}>{r.name}</Text>
-                                            {currentConfigItem?.selectedRoom === r.id && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+                                            {currentConfigItem?.selectedRoom === r.id && <Ionicons name="checkmark" size={16} color={accentColor} />}
                                         </Pressable>
                                     ))}
                                 </>
                             )}
                         </ScrollView>
 
-                        <Pressable onPress={() => setActiveConfigItem(null)} style={styles.doneBtn}>
+                        <Pressable onPress={() => setActiveConfigItem(null)} style={[styles.doneBtn, { backgroundColor: accentColor }]}>
                             <Text style={styles.doneBtnText}>Listo</Text>
                         </Pressable>
                     </View>
@@ -489,16 +486,16 @@ const styles = StyleSheet.create({
     cartMainRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cartLabel: { fontSize: 12, fontWeight: '600' },
     cartTotal: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-    submitBtn: { backgroundColor: '#10B981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 9999 },
+    submitBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 9999 },
     submitText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#374151' },
     modalTitle: { fontSize: 18, fontWeight: '800' },
     modalList: { padding: 16 },
-    modalItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 8 },
+    modalItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 8, borderWidth: 1.5 },
     modalItemText: { fontSize: 16, fontWeight: '600' },
-    doneBtn: { margin: 20, backgroundColor: '#10B981', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+    doneBtn: { margin: 20, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
     doneBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
     emptyCartBtn: {
         width: 40,

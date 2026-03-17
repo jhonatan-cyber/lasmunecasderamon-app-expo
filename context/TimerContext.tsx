@@ -63,7 +63,7 @@ const announceVoice = async (message: string) => {
       });
     }
   } catch (error) {
-    console.error("[TimerContext] Error en voice synthesis:", error);
+
   }
 };
 
@@ -187,8 +187,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           payload.data?.habitacion_numero ||
           payload.data?.habitacion_id ||
           'asignada';
-
-        console.log(`[TimerContext] Emitiendo refresh_sales para habitación: ${roomNameForEvent}`);
 
         const targetTipo = payload.data.tipoTransaccion || 'servicio';
 

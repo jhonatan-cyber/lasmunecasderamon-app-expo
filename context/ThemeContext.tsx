@@ -81,7 +81,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     setAccentColorState(savedAccent);
                 }
             } catch (e) {
-                console.log('Error loading theme:', e);
+              
             }
         };
         
@@ -93,7 +93,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         try {
             await AsyncStorage.setItem('app-theme', newTheme);
         } catch (e) {
-            console.log('Error saving theme:', e);
+            
         }
     };
 

@@ -43,7 +43,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         trigger: null,
       });
     } catch (err) {
-      console.warn("[Notifications] Error:", err);
+      
     }
   }, []);
 
@@ -53,7 +53,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const lowerRole = roleName?.toLowerCase();
     const isCajeroOrAdmin = lowerRole === "cajero" || lowerRole === "administrador";
 
-    console.log(`[SSE] Evento '${payload.type}' recibido para rol: ${lowerRole}`);
+
 
     switch (payload.type) {
       case "new_order":
@@ -138,7 +138,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       es = new EventSource(sseUrl);
       eventSourceRef.current = es;
 
-      es.addEventListener("open", () => console.log("[SSE] Conexión abierta"));
+   
       es.addEventListener("message", (event: any) => {
         if (!event.data) return;
         try {
@@ -146,12 +146,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           DeviceEventEmitter.emit("sse_event", payload);
           handleServerEvent(payload);
         } catch (err) {
-          console.error("[SSE] Parse error:", err);
+  
         }
       });
-      es.addEventListener("error", (event: any) => console.error("[SSE] Error:", event));
+
     } catch (err) {
-      console.error("[SSE] Init error:", err);
+ 
     }
 
     return () => {

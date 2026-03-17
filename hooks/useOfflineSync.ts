@@ -7,7 +7,7 @@ interface UseOfflineSyncReturn {
     isSyncing: boolean;
     lastSync: number | null;
     syncNow: () => Promise<void>;
-    addOfflineListener: () => () => void;
+    addOfflineListener: (callback: () => void) => () => void;
 }
 
 export const useOfflineSync = (): UseOfflineSyncReturn => {
@@ -73,7 +73,7 @@ export const useOfflineAwareQuery = <T>(
 
     const query = async (): Promise<T | null> => {
         if (!isOnline) {
-            console.log('Offline - skipping fetch for:', queryKey);
+  
             return null;
         }
 

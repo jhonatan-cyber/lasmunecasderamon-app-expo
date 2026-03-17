@@ -51,7 +51,6 @@ export const openDeepLink = async (url: string): Promise<boolean> => {
         }
         return false;
     } catch (error) {
-        console.error('Error opening deep link:', error);
         return false;
     }
 };
@@ -59,7 +58,7 @@ export const openDeepLink = async (url: string): Promise<boolean> => {
 export const handleDeepLink = (url: string): { screen: string; params?: Record<string, string> } | null => {
     try {
         const parsed = Linking.parse(url);
-        const path = parsed.pathname || '';
+        const path = parsed.path || '';
         
         for (const [screen, screenPath] of Object.entries(deepLinks.screens)) {
             if (path.startsWith(screenPath) || path === screenPath.replace('/', '')) {

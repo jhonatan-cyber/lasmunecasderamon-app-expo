@@ -1,7 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '../hooks/useAccentColor';
 import { DonutChart } from './DonutChart';
 
 interface GarzonStatsProps {
@@ -10,11 +11,9 @@ interface GarzonStatsProps {
 }
 
 export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { isDark, cardBg, borderColor } = useAccentColor();
     const textPrimary = isDark ? '#FFFFFF' : '#000000';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-    const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
     return (
         <View style={styles.container}>

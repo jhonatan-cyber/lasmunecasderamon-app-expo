@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   Dimensions,
   FlatList,
   Modal,
@@ -30,6 +31,7 @@ import { AnimatedScreen } from "../../../../components/AnimatedScreen";
 import { GarzonActionCard } from "../../../../components/GarzonActionCard";
 import { GarzonStats } from "../../../../components/GarzonStats";
 import { PremiumAlert } from "../../../../components/PremiumAlert";
+import { EventDetailModal } from '../../../../components/EventDetailModal';
 import { PremiumCalendar } from "../../../../components/PremiumCalendar";
 import { PremiumHeaderActions } from "../../../../components/PremiumHeaderActions";
 import { PremiumLiquidationCard } from "../../../../components/PremiumLiquidationCard";
@@ -124,6 +126,8 @@ export default function GarzonHomeScreen() {
 
   const [state, dispatch] = useReducer(garzonReducer, initialGarzonState);
   const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
+  const [eventDetail, setEventDetail] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const {
     loading,
     refreshing,
@@ -200,7 +204,7 @@ export default function GarzonHomeScreen() {
       if (isManual) {
         Toast.show({
           type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Éxito" : "Información",
+          text1: hasChanges ? "Ã‰xito" : "InformaciÃ³n",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
           visibilityTime: 3000,
         });
@@ -224,6 +228,13 @@ export default function GarzonHomeScreen() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("refresh_requests", () => {
+      fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
+
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });
     fetchData(true);
@@ -241,27 +252,44 @@ export default function GarzonHomeScreen() {
   }, [selectedDates, recentActivity]);
 
   const typeLabels: Record<string, string> = {
-    comision: "Comisión",
+    comision: "ComisiÃ³n",
     asistencia: "Asistencia",
     anticipo: "Anticipo",
     propina: "Propina",
     venta: "Venta",
     servicio: "Servicio",
-    gratificacion: "Gratificación"
+    gratificacion: "GratificaciÃ³n"
   };
 
   const getEventLabel = (item: any) => {
     if (!item) return "";
     if (item.type === 'comision') {
-      if (item.subType === 'venta') return "Comisión de Venta";
-      if (item.subType === 'servicio') return "Comisión de Servicio";
-      return "Comisión";
+      if (item.subType === 'venta') return "ComisiÃ³n de Venta";
+      if (item.subType === 'servicio') return "ComisiÃ³n de Servicio";
+      return "ComisiÃ³n";
     }
     if (item.type === 'propina') {
       if (item.subType === 'venta') return "Propina de Venta";
       return "Propina";
     }
     return typeLabels[item.type] || item.type.toUpperCase();
+  };
+
+  const handleSelectEvent = async (item: any) => {
+      setEventDetail(null);
+      setLoadingDetail(false);
+      dispatch({ type: "SET_SELECTED_EVENT", payload: item });
+      if (['comision', 'propina', 'asistencia', 'anticipo'].includes(item.type)) {
+          setLoadingDetail(true);
+          try {
+            const res = await apiClient(`/events/detail/${item.id}?type=${item.type}`);
+              if (res.success && res.data) setEventDetail(res.data);
+          } catch (e) {
+              console.error('detail fetch error', e);
+          } finally {
+              setLoadingDetail(false);
+          }
+      }
   };
 
   const getStatusLabel = (status: any) => {
@@ -376,14 +404,12 @@ export default function GarzonHomeScreen() {
               style={[
                 styles.selectionFloat,
                 {
-                  backgroundColor: isDark ? "#1E1B4B" : "#374151",
-                  borderColor: isDark ? "rgba(255,255,255,0.1)" : "transparent",
-                  borderWidth: isDark ? 1 : 0,
+                  backgroundColor: isDark ? "#111111" : "#FFFFFF",
                 },
               ]}
             >
               <RNText style={[styles.selectionText, { color: "#FFF" }]}>
-                {selectedDates.length} días seleccionados
+              {selectedDates.length} {selectedDates.length === 1 ? 'día' : 'días'} seleccionados
               </RNText>
               <View style={styles.selectionActions}>
                 <Pressable
@@ -391,7 +417,7 @@ export default function GarzonHomeScreen() {
                     dispatch({ type: "UPDATE_SELECTED_DATES", payload: [] })
                   }
                   style={styles.clearBtn}
-                  accessibilityLabel="Borrar selección"
+                  accessibilityLabel="Borrar selecciÃ³n"
                   accessibilityRole="button"
                 >
                   <RNText style={styles.clearBtnText}>Borrar</RNText>
@@ -453,7 +479,7 @@ export default function GarzonHomeScreen() {
                 const iconColor = isAnticipo ? "#EF4444" : "#10B981";
                 return (
                   <Pressable
-                    onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: item })}
+                    onPress={() => handleSelectEvent(item)}
                     style={({ pressed }) => [
                       styles.eventItem,
                       { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.7 : 1 },
@@ -510,83 +536,15 @@ export default function GarzonHomeScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Modal de Detalle de Transacción */}
-      <Modal
-        visible={!!selectedEvent}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-      >
-        <View style={styles.modalOverlayCenter}>
-          <View style={[styles.detailCard, { backgroundColor: cardBg }]}>
-            <View style={styles.detailHeader}>
-              <View style={[styles.detailIconBox, { backgroundColor: `${(selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981")}20` }]}>
-                <Ionicons 
-                  name={selectedEvent?.type === 'asistencia' ? 'calendar' : selectedEvent?.type === 'anticipo' ? 'cash' : 'wallet-outline'} 
-                  size={32} 
-                  color={selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981"} 
-                />
-              </View>
-              <Pressable 
-                onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-                style={styles.detailCloseBtn}
-              >
-                <Ionicons name="close" size={24} color={textPrimary} />
-              </Pressable>
-            </View>
-
-            <View style={styles.detailBody}>
-              <RNText style={[styles.detailType, { color: textSecondary }]}>
-                {getEventLabel(selectedEvent).toUpperCase()}
-              </RNText>
-              <RNText style={[styles.detailAmount, { color: selectedEvent?.type === 'anticipo' ? "#EF4444" : "#10B981" }]}>
-                {selectedEvent?.type === 'anticipo' ? "-" : "+"}${selectedEvent?.amount.toLocaleString()}
-              </RNText>
-
-              <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>Fecha y Hora</RNText>
-                <RNText style={[styles.detailValue, { color: textPrimary }]}>
-                  {selectedEvent ? new Date(selectedEvent.date).toLocaleString('es-ES', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  }) : ''}
-                </RNText>
-              </View>
-
-              {selectedEvent?.codigo && selectedEvent.codigo !== 'TIPS' && (
-                <View style={styles.detailRow}>
-                  <RNText style={[styles.detailLabel, { color: textSecondary }]}>Código de Operación</RNText>
-                  <RNText style={[styles.detailValue, { color: textPrimary }]}>{selectedEvent.codigo}</RNText>
-                </View>
-              )}
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>Estado</RNText>
-                <View style={[styles.statusBadgeDetail, { backgroundColor: `${(selectedEvent?.estado === 3 ? "#EF4444" : "#10B981")}20` }]}>
-                  <RNText style={[styles.statusTextDetail, { color: (selectedEvent?.estado === 3) ? "#EF4444" : "#10B981" }]}>
-                    {selectedEvent ? getStatusLabel(selectedEvent.estado) : ''}
-                  </RNText>
-                </View>
-              </View>
-
-              <View style={styles.detailRow}>
-                <RNText style={[styles.detailLabel, { color: textSecondary }]}>ID Interno</RNText>
-                <RNText style={[styles.detailValue, { color: textPrimary }]}>#{selectedEvent?.id}</RNText>
-              </View>
-            </View>
-
-            <Pressable 
-              onPress={() => dispatch({ type: "SET_SELECTED_EVENT", payload: null })}
-              style={[styles.confirmBtn, { backgroundColor: accentColor }]}
-            >
-              <RNText style={styles.confirmBtnText}>Entendido</RNText>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <EventDetailModal
+          visible={!!selectedEvent}
+          event={selectedEvent}
+          eventDetail={eventDetail}
+          loadingDetail={loadingDetail}
+          onClose={() => { dispatch({ type: "SET_SELECTED_EVENT", payload: null }); setEventDetail(null); }}
+          getEventLabel={getEventLabel}
+          getStatusLabel={getStatusLabel}
+      />
 
       <PremiumAlert
         visible={alertConfig.visible}
@@ -612,7 +570,7 @@ export default function GarzonHomeScreen() {
       <QRScannerModal
         visible={isQRScannerVisible}
         onClose={() => dispatch({ type: "SET_QR_VISIBLE", payload: false })}
-        onScanSuccess={() => {
+        onScanned={async () => {
           fetchData(false);
         }}
       />
@@ -658,7 +616,7 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 20,
     right: 20,
-    backgroundColor: "#1F2937",
+    backgroundColor: "#111111",
     padding: 16,
     borderRadius: 20,
     flexDirection: "row",
@@ -671,7 +629,6 @@ const styles = StyleSheet.create({
   clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   clearBtnText: { color: "#EF4444", fontWeight: "800" },
   viewBtn: {
-    backgroundColor: "#E11D48",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -774,6 +731,7 @@ const styles = StyleSheet.create({
     padding: 20
   },
   detailCard: {
+    maxHeight: '85%',
     width: '100%',
     borderRadius: 32,
     padding: 24,
