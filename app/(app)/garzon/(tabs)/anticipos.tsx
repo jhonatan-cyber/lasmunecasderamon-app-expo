@@ -1,1 +1,2 @@
-export { default } from '../../../../components/AnticiposScreen';
+export { default } from '@/components/screens/AnticiposScreen';
+

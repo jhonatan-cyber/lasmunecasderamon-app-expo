@@ -1,35 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Appearance, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PremiumTabBar } from '../../../../components/PremiumTabBar';
-import ProfileEditModal from '../../../../components/ProfileEditModal';
-import { RegistroAsistenciaModal } from '../../../../components/RegistroAsistenciaModal';
-import { useAuthStore } from '../../../../store/authStore';
-import { useAccentColor } from '../../../../hooks/useAccentColor';
+import { View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { PremiumTabBar } from '@/components/ui/PremiumTabBar';
+import ProfileEditModal from '@/components/shared/ProfileEditModal';
+import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
 
 export default function AnfitrionaTabsLayout() {
-    const logout = useAuthStore((state) => state.logout);
-    const { accentColor, isDark } = useAccentColor();
-    const insets = useSafeAreaInsets();
+    const { isDark } = useAccentColor();
     const [profileModalVisible, setProfileModalVisible] = useState(false);
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
     const bgColor = isDark ? '#000000' : '#F3F4F6';
-    const activeColor = accentColor;
-    const inactiveColor = isDark ? '#4B5563' : '#9CA3AF';
-
-    const handleLogout = () => {
-        Alert.alert('Cerrar sesión', '¿Estás seguro que deseas salir?', [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Salir', style: 'destructive', onPress: logout },
-        ]);
-    };
-
-    const toggleTheme = () => {
-        Appearance.setColorScheme(isDark ? 'light' : 'dark');
-    };
 
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
@@ -85,5 +68,3 @@ export default function AnfitrionaTabsLayout() {
         </View>
     );
 }
-
-

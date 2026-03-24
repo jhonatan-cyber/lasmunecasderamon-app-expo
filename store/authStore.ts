@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
-import { apiClient, setUnauthorizedHandler } from '../api/client';
+import { apiClient, setUnauthorizedHandler, setTokenInMemory } from '@/api/client';
 
 const TokenStorage = {
     save: async (token: string) => {
@@ -50,7 +50,7 @@ interface AuthState {
     token: string | null;
     isLoading: boolean;
     sessionExpired: boolean;
-    login: (username: string, password: string, codigo?: string) => Promise<{ requiereCodigo?: boolean, user?: User, asistenciaRegistrada?: boolean }>;
+    login: (username: string, password: string, codigo?: string, qr_token?: string) => Promise<{ requiereCodigo?: boolean, user?: User, asistenciaRegistrada?: boolean }>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearSessionExpired: () => void;
@@ -97,9 +97,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const compatible = await LocalAuthentication.hasHardwareAsync();
                 const enrolled = await LocalAuthentication.isEnrolledAsync();
                 const isAvailable = compatible && enrolled;
-                
+
                 let biometricType: 'fingerprint' | 'facial' | 'iris' | null = null;
-                
+
                 if (isAvailable) {
                     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
                     if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
@@ -110,10 +110,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         biometricType = 'iris';
                     }
                 }
-                
+
                 set({ isBiometricAvailable: isAvailable, biometricType });
             } catch (error) {
-              
+
                 set({ isBiometricAvailable: false, biometricType: null });
             }
         },
@@ -126,10 +126,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     disableDeviceFallback: false,
                     fallbackLabel: 'Usar contraseña',
                 });
-                
+
                 return result.success;
             } catch (error) {
-              
+
                 return false;
             }
         },
@@ -145,16 +145,16 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 });
 
                 if (response.success) {
-                    set({ 
+                    set({
                         user: { ...user, two_factor_enabled: true },
-                        isBiometricEnabled: true 
+                        isBiometricEnabled: true
                     });
                     await AsyncStorage.setItem('biometricEnabled', 'true');
                     return true;
                 }
                 return false;
             } catch (error) {
-              
+
                 return false;
             }
         },
@@ -170,9 +170,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 });
 
                 if (response.success) {
-                    set({ 
+                    set({
                         user: { ...user, two_factor_enabled: false },
-                        isBiometricEnabled: false 
+                        isBiometricEnabled: false
                     });
                     await AsyncStorage.setItem('biometricEnabled', 'false');
                     await SecureStore.deleteItemAsync('user_credentials');
@@ -180,19 +180,26 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 }
                 return false;
             } catch (error) {
-               
+
                 return false;
             }
         },
 
-        login: async (username, password, codigo) => {
+        login: async (username, password, codigo, qr_token) => {
             try {
-                let emailToSend = username.trim();
-                if (!emailToSend.includes('@')) {
-                    emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+                const payload: any = {};
+
+                if (qr_token) {
+                    payload.qr_token = qr_token;
+                } else {
+                    let emailToSend = username.trim();
+                    if (!emailToSend.includes('@')) {
+                        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
+                    }
+                    payload.email = emailToSend;
+                    payload.password = password;
                 }
 
-                const payload: any = { email: emailToSend, password };
                 if (codigo) {
                     payload.codigo = codigo;
                 }
@@ -214,7 +221,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const { token, user } = response;
                 await TokenStorage.save(token);
                 await AsyncStorage.setItem('user', JSON.stringify(user));
-
+                
+                setTokenInMemory(token);
                 set({ user, token, tempAuthData: null });
 
                 let asistenciaRegistrada = false;
@@ -249,6 +257,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             }
             await TokenStorage.remove();
             await AsyncStorage.removeItem('user');
+            setTokenInMemory(null);
             set({ user: null, token: null, sessionExpired: false });
         },
 
@@ -271,12 +280,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const token = await withTimeout(TokenStorage.get(), 2000).catch(() => null);
                 const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
                 if (token && userStr) {
+                    setTokenInMemory(token);
                     set({ token, user: JSON.parse(userStr) });
                 }
 
                 const biometricEnabled = await AsyncStorage.getItem('biometricEnabled');
                 set({ isBiometricEnabled: biometricEnabled === 'true' });
-                
+
                 await get().checkBiometricAvailability();
             } catch (e) {
                 console.log("Error in checkAuth:", e);
@@ -309,10 +319,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
         updateProfile: async (partialUser) => {
             const currentUser = get().user;
             if (currentUser) {
-                const updatedUser = { ...currentUser, ...partialUser };
-                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-                set({ user: updatedUser });
+                // Verificar si hay cambios reales para evitar re-renders innecesarios
+                const hasChanges = Object.keys(partialUser).some(
+                    (key) => (partialUser as any)[key] !== (currentUser as any)[key]
+                );
+                
+                if (hasChanges) {
+                    const updatedUser = { ...currentUser, ...partialUser };
+                    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+                    set({ user: updatedUser });
+                }
             }
         }
     };
 });
+

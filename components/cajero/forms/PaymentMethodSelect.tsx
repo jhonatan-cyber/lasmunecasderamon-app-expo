@@ -6,18 +6,24 @@ import {
     Text,
     View
 } from 'react-native';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
-export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia';
+export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
 
 interface PaymentMethodSelectProps {
     selectedMethod: PaymentMethod;
     onSelect: (method: PaymentMethod) => void;
+    showPrepago?: boolean;
+    showMixto?: boolean;
+    disabled?: boolean;
 }
 
 export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     selectedMethod,
     onSelect,
+    showPrepago = false,
+    showMixto = false,
+    disabled = false,
 }) => {
     const { accentColor, isDark } = useAccentColor();
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
@@ -29,8 +35,16 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
         { id: 'transferencia', icon: 'swap-horizontal', label: 'Transferencia' },
     ];
 
+    if (showPrepago) {
+        methods.push({ id: 'prepago', icon: 'wallet', label: 'Prepago' });
+    }
+
+    if (showMixto) {
+        methods.push({ id: 'mixto', icon: 'shuffle', label: 'Mixto' });
+    }
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, disabled && { opacity: 0.6 }]} pointerEvents={disabled ? 'none' : 'auto'}>
             <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
             <View style={styles.row}>
                 {methods.map((method) => {
@@ -47,6 +61,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 isSelected && { borderColor: accentColor },
                             ]}
                             onPress={() => onSelect(method.id)}
+                            disabled={disabled}
                         >
                             <Ionicons
                                 name={method.icon}
@@ -99,3 +114,5 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
 });
+
+

@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Index() {
     const user = useAuthStore((state) => state.user);
@@ -21,3 +21,4 @@ export default function Index() {
 
     return <Redirect href="/(app)/garzon/(tabs)" />;
 }
+

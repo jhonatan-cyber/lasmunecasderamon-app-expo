@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface Category {
     id?: number;
@@ -56,3 +56,5 @@ const styles = StyleSheet.create({
     catIconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
     catSmallName: { fontSize: 12, fontWeight: '800', textAlign: 'center' },
 });
+
+

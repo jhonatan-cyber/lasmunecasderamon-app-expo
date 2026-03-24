@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export default function GarzonLayout() {
     const { isDark } = useAccentColor();
@@ -19,3 +19,4 @@ export default function GarzonLayout() {
         </Stack>
     );
 }
+

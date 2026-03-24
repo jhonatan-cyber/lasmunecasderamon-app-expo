@@ -22,9 +22,9 @@ export const THEME_OPTIONS = [
 
 interface ThemeState {
     userColors: Record<string, string>; // userId -> hex color
-    getColor: (userId?: number) => string;
-    getGradient: (userId?: number, isDark?: boolean) => string[];
-    setAccentColor: (userId: number, color: string) => void;
+    getColor: (userId?: string | number) => string;
+    getGradient: (userId?: string | number, isDark?: boolean) => string[];
+    setAccentColor: (userId: string | number, color: string) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(

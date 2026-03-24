@@ -1,49 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-const FlashList = ShopifyFlashList as any;
+import { Stack, useFocusEffect, useRouter } from "expo-router";
+import React, { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { MotiView } from 'moti';
 import {
   DeviceEventEmitter,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { apiClient } from "../../../api/client";
-import { PremiumAlert } from "../../../components/PremiumAlert";
-import { PremiumHeader } from "../../../components/PremiumHeader";
-import { EditServiceModal } from "../../../components/cajero/forms/EditServiceModal";
-import { Skeleton } from "../../../components/ui/Skeleton";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { apiClient, BASE_URL } from '@/api/client';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { EditServiceModal } from '@/components/cajero/forms/EditServiceModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import {
   Timer,
   useTimer,
-} from "../../../context/TimerContext";
-import { calculateRemainingTime, formatTime } from "../../../utils/timeUtils";
-import { useAccentColor } from "../../../hooks/useAccentColor";
+} from '@/context/TimerContext';
+import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
+import { useAccentColor } from '@/hooks/useAccentColor';
+
+const FlashList = ShopifyFlashList as any;
 
 // --- Helper for safe number conversion ---
-// Helper para parsear fechas del backend de forma segura y evitar conflictos de zona horaria (UTC vs Local)
-const parseDateSafe = (dateStr: any) => {
-    if (!dateStr) return new Date();
-    if (typeof dateStr !== 'string') return new Date(dateStr);
-    if (dateStr.includes('Z') || dateStr.includes('+')) return new Date(dateStr);
-    try {
-        const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
-        const date = new Date(cleanDate);
-        if (isNaN(date.getTime())) return new Date(dateStr);
-        return date;
-    } catch (e) {
-        return new Date(dateStr);
-    }
-};
 
 const safeNumber = (val: any) => {
   if (typeof val === "number") return val;
@@ -73,12 +62,18 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   const [remaining, setRemaining] = useState(() => calculateRemainingTime(item, serverOffset));
 
   useEffect(() => {
-    if (!item.isActive || item.isPaused) return;
+    // Actualizar inmediatamente al cambiar el item o el offset
+    setRemaining(calculateRemainingTime(item, serverOffset));
+    
+    // Si no está activo o está pausado, no corremos el intervalo
+    if (activeTab === "finalizados" || item.isPaused || item.estado === 3) return;
+
     const interval = setInterval(() => {
       setRemaining(calculateRemainingTime(item, serverOffset));
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [item, serverOffset]);
+  }, [item, serverOffset, item.isPaused, item.estado, activeTab]);
 
   const formatTime = (secs: number) => {
     const absSecs = Math.max(0, Math.abs(secs));
@@ -91,7 +86,6 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   const isOverdue = remaining <= 0;
   const total = safeNumber(item.total);
 
-  // Status mapping logic from original
   let statusText = activeTab === "finalizados" ? "FINALIZADO" : isOverdue ? "TIEMPO AGOTADO" : "EN PROCESO";
   let statusColor = isOverdue ? theme.danger : theme.success;
 
@@ -101,8 +95,15 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 
   const formatDateTime = (dateStr?: string) => {
     if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+    const date = parseDateSafe(dateStr);
+    return date.toLocaleString("es-ES", { 
+      day: "2-digit", 
+      month: "2-digit", 
+      year: "numeric",
+      hour: "2-digit", 
+      minute: "2-digit",
+      hour12: true
+    }).replace(/,/g, '');
   };
 
   return (
@@ -122,7 +123,8 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
             </View>
             <View>
               <Text style={[styles.roomName, { color: theme.text }]}>{item.roomName || "Habitación"}</Text>
-              <Text style={[styles.serviceCode, { color: theme.textMuted }]}>Codigo : #{item.servicioCode || "S/N"} • {formatDateTime(item.created_at)}</Text>
+              <Text style={[styles.serviceCode, { color: theme.textMuted }]}>Codigo : #{item.servicioCode || "S/N"}</Text>
+              <Text style={[styles.serviceCode, { color: theme.textMuted, fontSize: 10, marginTop: 2 }]}>{formatDateTime(item.created_at)}</Text>
             </View>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "10" }]}>
@@ -193,7 +195,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
                   styles.statusLabel,
                   { color: item.pago_estado === 0 ? theme.success : theme.danger, fontSize: 8 }
                 ]}>
-                  {item.pago_estado === 0 ? 'COBRADO ✓' : 'POR COBRAR ⚠'}
+                  {item.pago_estado === 0 ? 'PAGADO \u2713' : 'POR PAGAR \u26A0'}
                 </Text>
               </View>
             )}
@@ -202,7 +204,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 
         {activeTab === "activos" && (
           <View style={styles.actionsBox}>
-            {(item.precio_servicio ?? 0) === 0 && (
+            {(Number(item.precio_servicio) || 0) <= 0 && (
               <Pressable
                 style={[styles.editActionBtn, { backgroundColor: theme.warning }]}
                 onPress={() => onEditar && onEditar(item)}
@@ -321,8 +323,8 @@ function reducer(state: ScreenState, action: Action): ScreenState {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 20, paddingBottom: 100 },
-  card: { flex: 1, borderRadius: 24, padding: 16, borderWidth: 1, marginBottom: 16 },
+  list: { padding: 12, paddingBottom: 100 },
+  card: { flex: 1, borderRadius: 24, padding: 16, borderWidth: 1, marginBottom: 16, marginHorizontal: 8 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   roomBadge: { flexDirection: "row", alignItems: "center", gap: 10 },
   iconBox: { width: 34, height: 34, borderRadius: 10, justifyContent: "center", alignItems: "center" },
@@ -354,34 +356,73 @@ const styles = StyleSheet.create({
   detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   modalTitleText: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-  modalSubText: { fontSize: 12, fontWeight: '600', marginTop: 4 },
-  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(156, 163, 175, 0.1)', justifyContent: 'center', alignItems: 'center' },
-  detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  gridItem: { width: '47%', padding: 12, borderRadius: 16, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center' },
-  gridLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
-  gridValue: { fontSize: 13, fontWeight: '700' },
-  summarySection: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 20 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: 13, fontWeight: '600' },
-  summaryVal: { fontSize: 14, fontWeight: '700' },
-  totalLabelFinal: { fontSize: 14, fontWeight: '900' },
-  totalValFinal: { fontSize: 22, fontWeight: '900' },
-  modalCloseBtn: { height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
+  modalSubText: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(156, 163, 175, 0.1)', justifyContent: 'center', alignItems: 'center' },
+  detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 24 },
+  gridItem: { width: '47%', padding: 14, borderRadius: 18, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center' },
+  gridLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6 },
+  gridValue: { fontSize: 15, fontWeight: '700' },
+  infoVal: { fontSize: 13, fontWeight: '700' },
+  backBtnRight: {
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      height: 38, 
+      borderRadius: 12, 
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      paddingHorizontal: 12,
+      gap: 6
+  },
+  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  summarySection: { padding: 24, borderRadius: 28, borderWidth: 1, marginBottom: 24 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
+  summaryLabel: { fontSize: 15, fontWeight: '600' },
+  summaryVal: { fontSize: 16, fontWeight: '700' },
+  totalLabelFinal: { fontSize: 16, fontWeight: '900' },
+  totalValFinal: { fontSize: 26, fontWeight: '900' },
+  modalCloseBtn: { height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  modalCloseBtnText: { color: '#FFF', fontSize: 18, fontWeight: '900' },
+  badgeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  hostessBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
+  hostessBadgeText: { fontSize: 13, fontWeight: '800' },
+  avatarMini: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  avatarSquare: { width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
+  fab: { 
+    position: 'absolute', 
+    bottom: 30, 
+    right: 20, 
+    flexDirection: 'row',
+    alignItems: 'center', 
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 20, 
+    elevation: 8, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 10,
+    gap: 8
+  },
+  fabText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 14,
+    letterSpacing: 1
+  },
 });
+
 export default function ServiciosActivosScreen() {
   const { accentColor, isDark } = useAccentColor();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const numColumns = isTablet ? 2 : 1;
-  const { timers, loading: loadingTimers, refreshTimers, serverOffset } = useTimer();
-  const dataRef = useRef<string>("");
+  const { timers, refreshTimers, serverOffset } = useTimer();
   const isFocused = useRef(true);
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig } = state;
+  const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig, selectedServiceDetail, detailModalVisible } = state;
 
   const theme = useMemo(() => ({
     bg: isDark ? "#000000" : "#F8FAFC",
@@ -397,65 +438,50 @@ export default function ServiciosActivosScreen() {
   }), [isDark, accentColor]);
 
   const activeServicios = useMemo(() => {
-    return timers.filter(t => {
-      if (t.tipoTransaccion !== 'servicio') return false;
-      if (!t.isActive) return false;
-      const remaining = calculateRemainingTime(t, serverOffset);
-      if (remaining <= 0) return false;
-      return true;
-    });
-  }, [timers, serverOffset]);
+    return timers.filter(t => t.tipoTransaccion === 'servicio');
+  }, [timers]);
 
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
     try {
-      const statusRes = await apiClient("/cashregister/status").catch((e) => { console.error("❌ Error fetch status caja:", e); return null; });
-      const openCajaId = statusRes?.data?.cajaInfo?.id_caja || statusRes?.data?.openCaja?.id_caja;
-
-      console.log("ℹ️ [Servicios] Buscando finalizados. Caja detectada:", openCajaId);
-
-      const endpoint = openCajaId
-        ? `/servicios?all=true&caja_id=${openCajaId}&limit=50`
-        : `/servicios?all=true&limit=50`;
-
-      const res = await apiClient(endpoint);
-      console.log("ℹ️ [Servicios] Resultado API:", res.success, "cant:", res.data?.length);
-
+      // Usamos el endpoint existente con el parámetro all=true
+      const res = await apiClient("/servicios?all=true&limit=100");
       if (res.success && Array.isArray(res.data)) {
-        const serialized = JSON.stringify(res.data);
-        const hasChanges = dataRef.current !== serialized;
-        dataRef.current = serialized;
-
-        const mapped: Timer[] = res.data.map((s: any) => ({
-          id: String(s.id_servicio),
-          servicioId: s.id_servicio,
-          roomId: s.habitacion_id,
-          roomName: s.habitacion_numero || `Habitación ${s.habitacion_id}`,
-          duration: safeNumber(s.tiempo),
+        const mapped = res.data.map((sAny: any) => ({
+          id: String(sAny.id_servicio),
+          servicioId: String(sAny.id_servicio),
+          roomName: sAny.habitacion_numero || "Habitación",
+          duration: Number(sAny.tiempo || 0),
           remainingTime: 0,
           isActive: false,
           isPaused: false,
-          startTime: parseDateSafe(s.fecha_crea),
-          servicioCode: s.codigo,
-          clienteNombre: s.cliente_nombre,
-          anfitrionas: s.anfitrionas_nombres,
-          total: safeNumber(s.total),
-          metodo_pago: s.metodo_pago,
-          waiter_name: s.usuario_nick || "Admin",
-          created_at: s.fecha_crea,
-          habitacion_comision: safeNumber(s.habitacion_comision),
-          precio_habitacion: safeNumber(s.precio_habitacion),
-          precio_servicio: safeNumber(s.precio_servicio),
-          iva: safeNumber(s.iva),
-          pago_estado: s.pago_estado,
-          estado: s.estado,
+          startTime: parseDateSafe(sAny.fecha_crea),
+          servicioCode: sAny.codigo,
+          clienteNombre: sAny.cliente_nombre,
+          tipoTransaccion: "servicio",
+          anfitrionas: sAny.anfitrionas_nombres,
+          anfitrionas_fotos: sAny.anfitrionas_fotos ? sAny.anfitrionas_fotos.split(',') : [],
+          total: Number(sAny.total || 0),
+          metodo_pago: sAny.metodo_pago,
+          waiter_name: sAny.usuario_nick || `${sAny.creator_nombre} ${sAny.creator_apellido}`.trim(),
+          waiter_foto: sAny.creator_foto,
+          solicitante_name: sAny.solicitante_name,
+          solicitante_foto: sAny.solicitante_foto,
+          created_at: sAny.fecha_crea,
+          estado: sAny.estado,
+          pago_estado: sAny.pago_estado,
+          comision_individual: Number(sAny.comision_individual || 0),
+          total_usuarios: Number(sAny.total_usuarios || 0),
+          precio_habitacion: Number(sAny.precio_habitacion || 0),
+          precio_servicio: Number(sAny.precio_servicio || 0),
+          iva: Number(sAny.iva || 0),
+          sub_total: Number(sAny.sub_total || 0),
         }));
         dispatch({ type: 'SET_FINALIZADOS', payload: mapped });
-        if (isManual) Toast.show({ type: hasChanges ? "success" : "info", text1: hasChanges ? "Éxito" : "Sin cambios" });
+        if (isManual) Toast.show({ type: "success", text1: "Actualizado" });
       }
     } catch (error) {
-      console.error("❌ ERROR en fetchFinalizados:", error);
-      if (isManual) Toast.show({ type: "error", text1: "Error", text2: "No se pudo actualizar" });
+      console.error("fetchFinalizados error:", error);
     } finally {
       dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: false });
     }
@@ -480,50 +506,13 @@ export default function ServiciosActivosScreen() {
     }, [activeTab, fetchFinalizados, refreshTimers])
   );
 
-  const prevOverdueCount = useRef(0);
-  const prevTimersLength = useRef(timers.length);
-
-  // Cuando un timer es removido (ej. al finalizar), actualizamos la vista de finalizados en background
   useEffect(() => {
-    if (timers.length < prevTimersLength.current) {
-      fetchFinalizados();
-    }
-    prevTimersLength.current = timers.length;
-  }, [timers.length, fetchFinalizados]);
-
-  // Cuando un timer está overdue (tiempo agotado), actualizamos finalizados
-  useEffect(() => {
-    const currentOverdueCount = timers.filter(t => {
-      if (t.tipoTransaccion !== 'servicio') return false;
-      const remaining = calculateRemainingTime(t, serverOffset);
-      return remaining <= 0;
-    }).length;
-
-    if (currentOverdueCount > prevOverdueCount.current && activeTab === 'activos') {
-      fetchFinalizados();
-    }
-    prevOverdueCount.current = currentOverdueCount;
-  }, [timers, serverOffset, activeTab, fetchFinalizados]);
-
-  useEffect(() => {
-    const sub = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
-      console.log("ℹ [Servicios] Refresh event received.", data);
-      // Actualizamos listas silenciosamente
+    const sub = DeviceEventEmitter.addListener("refresh_sales", () => {
       refreshTimers();
-      fetchFinalizados();
+      if (activeTab === "finalizados") fetchFinalizados();
     });
-
-    const subClose = DeviceEventEmitter.addListener("timer_alert_closed", () => {
-      // Si el GlobalTimerAlert se cierra, refrescamos también.
-      refreshTimers();
-      fetchFinalizados();
-    });
-
-    return () => {
-      sub.remove();
-      subClose.remove();
-    };
-  }, [refreshTimers, fetchFinalizados]);
+    return () => sub.remove();
+  }, [refreshTimers, fetchFinalizados, activeTab]);
 
   const onRefresh = useCallback(async () => {
     dispatch({ type: 'SET_REFRESHING', payload: true });
@@ -531,6 +520,15 @@ export default function ServiciosActivosScreen() {
     else await fetchFinalizados(true);
     dispatch({ type: 'SET_REFRESHING', payload: false });
   }, [activeTab, refreshTimers, fetchFinalizados]);
+
+  const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
+    Toast.show({
+      type,
+      text1: title,
+      text2: message,
+      visibilityTime: 4000
+    });
+  };
 
   const onFinalizar = useCallback((timer: Timer) => {
     dispatch({
@@ -541,19 +539,23 @@ export default function ServiciosActivosScreen() {
         type: "danger",
         onConfirm: async () => {
           try {
-            const res = await apiClient(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
-            if (res.success) {
+            if (!timer.servicioId || timer.servicioId === 'NaN' || timer.servicioId === '0') {
+              showToast("Error", "ID de servicio inválido", "error");
               dispatch({ type: 'CLOSE_ALERT' });
-              Toast.show({ type: "success", text1: "Servicio Finalizado", text2: "El servicio ha finalizado con éxito." });
+              return;
+            }
+            const res = await apiClient(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
+            dispatch({ type: 'CLOSE_ALERT' });
+            if (res.success) {
+              Toast.show({ type: "success", text1: "Servicio Finalizado" });
               refreshTimers();
               fetchFinalizados();
             } else {
-              dispatch({ type: 'CLOSE_ALERT' });
-              Toast.show({ type: "error", text1: "Error", text2: res.message || "No se pudo finalizar" });
+              Toast.show({ type: "error", text1: "Error", text2: res.message });
             }
-          } catch (e) {
+          } catch (err: any) {
             dispatch({ type: 'CLOSE_ALERT' });
-            Toast.show({ type: "error", text1: "Error", text2: "Error de conexión" });
+            Toast.show({ type: "error", text1: "Error", text2: err.message || "Error al finalizar" });
           }
         }
       }
@@ -578,11 +580,18 @@ export default function ServiciosActivosScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Stack.Screen options={{ headerShown: false }} />
       <PremiumHeader
         title="Servicios"
-        onBack={() => router.replace("/cajero")}
-        showAddButton
-        onAdd={() => router.push("/cajero/nuevo-servicio")}
+        rightComponent={
+          <Pressable
+            onPress={() => router.replace("/cajero")}
+            style={styles.backBtnRight}
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextRight}>Atrás</Text>
+          </Pressable>
+        }
         tabs={[
           { id: "activos", label: "Activos" },
           { id: "finalizados", label: "Finalizados" },
@@ -591,203 +600,197 @@ export default function ServiciosActivosScreen() {
         onTabChange={(tabId: string) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId as any })}
       />
 
-      {activeTab === "activos" ? (
-        (loadingTimers || loadingActivos) ? (
-          <FlashList
-            data={[1, 2, 3, 4] as any}
-            renderItem={() => <ServiceSkeleton theme={theme} />}
-            keyExtractor={(item: any) => `skeleton-${item}`}
-            numColumns={numColumns}
-            estimatedItemSize={200}
-            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
-          />
-        ) : (
-          <FlashList
-            data={activeServicios}
-            renderItem={renderItem}
-            keyExtractor={(item: any) => `active-${item.id}`}
-            numColumns={numColumns}
-            estimatedItemSize={250}
-            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
-            ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios activos</Text>}
-          />
-        )
-      ) : (
-        loadingFinalizados ? (
-          <FlashList
-            data={[1, 2, 3, 4] as any}
-            renderItem={() => <ServiceSkeleton theme={theme} />}
-            keyExtractor={(item: any) => `skeleton-fin-${item}`}
-            numColumns={numColumns}
-            estimatedItemSize={200}
-            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
-          />
-        ) : (
-          <FlashList
-            data={finalizados}
-            renderItem={renderItem}
-            keyExtractor={(item: any) => `finalizado-${item.id}`}
-            numColumns={numColumns}
-            estimatedItemSize={250}
-            contentContainerStyle={[styles.list, numColumns > 1 && { paddingHorizontal: 0 }]}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
-            ListEmptyComponent={<Text style={{ textAlign: 'center', color: theme.textMuted, marginTop: 40 }}>No hay servicios finalizados</Text>}
-          />
-        )
+      <View style={{ flex: 1 }}>
+        <FlashList
+          data={activeTab === "activos" ? activeServicios : finalizados}
+          renderItem={renderItem}
+          keyExtractor={(item: any) => item.id}
+          numColumns={numColumns}
+          estimatedItemSize={200}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} colors={[accentColor]} />
+          }
+          ListEmptyComponent={
+            !(loadingActivos || loadingFinalizados) ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
+                <Ionicons name="documents-outline" size={48} color={theme.textMuted} />
+                <Text style={{ color: theme.textMuted, marginTop: 10 }}>No hay servicios que mostrar</Text>
+              </View>
+            ) : null
+          }
+        />
+      </View>
+
+      {!editModalVisible && !detailModalVisible && !alertConfig.visible && (
+        <Pressable
+          style={[styles.fab, { backgroundColor: accentColor, bottom: Math.max(80, insets.bottom + 65) }]}
+          onPress={() => router.push('/cajero/nuevo-servicio')}
+        >
+          <Ionicons name="add" size={32} color="#FFFFFF" />
+          <Text style={styles.fabText}>NUEVO SERVICIO</Text>
+        </Pressable>
       )}
+
+      <EditServiceModal
+        visible={editModalVisible}
+        timer={selectedTimer}
+        onClose={() => dispatch({ type: 'SET_EDIT_MODAL', visible: false })}
+        onSuccess={() => {
+          refreshTimers();
+          fetchFinalizados();
+        }}
+      />
 
       <PremiumAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}
-        onConfirm={alertConfig.onConfirm}
-        onCancel={alertConfig.onCancel || (() => dispatch({ type: 'CLOSE_ALERT' }))}
         showCancel={alertConfig.showCancel}
-        confirmText={alertConfig.confirmText || "Confirmar"}
+        onConfirm={alertConfig.onConfirm || (() => dispatch({ type: 'CLOSE_ALERT' }))}
+        onCancel={() => dispatch({ type: 'CLOSE_ALERT' })}
       />
 
-      {selectedTimer && (
-        <EditServiceModal
-          visible={editModalVisible}
-          onClose={() => dispatch({ type: 'SET_EDIT_MODAL', visible: false })}
-          onSuccess={() => { dispatch({ type: 'SET_EDIT_MODAL', visible: false }); refreshTimers(); fetchFinalizados(); }}
-          timer={selectedTimer}
-        />
-      )}
-
-      {/* Detail Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={state.detailModalVisible}
-        onRequestClose={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
-      >
-        <View style={state.detailModalVisible ? styles.modalOverlay : { display: 'none' }}>
+      {/* Detalle Modal Simple */}
+      <Modal visible={detailModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
           <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {state.selectedServiceDetail && (
-              <>
-                <View style={styles.modalHeader}>
-                  <View>
-                    <Text style={[styles.modalTitleText, { color: theme.text }]}>Detalles de Servicio</Text>
-                    <Text style={[styles.modalSubText, { color: theme.textMuted }]}>Código: {state.selectedServiceDetail.servicioCode}</Text>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={[styles.modalTitleText, { color: theme.text }]}>Detalle del Servicio</Text>
+                <Text style={[styles.modalSubText, { color: theme.textMuted }]}>#{selectedServiceDetail?.servicioCode || "S/N"}</Text>
+              </View>
+              <Pressable style={styles.closeBtn} onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.detailsGrid}>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
+                  <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.roomName}</Text>
+                </View>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>TIEMPO TOTAL</Text>
+                  <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.duration} min</Text>
+                </View>
+                <View style={[styles.gridItem, { width: '100%' }]}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONAS</Text>
+                  <View style={styles.badgeContainer}>
+                    {selectedServiceDetail?.anfitrionas?.split(', ').map((name: string, idx: number) => {
+                      const colors = ['#F59E0B', '#A855F7', '#3B82F6', '#EC4899', '#06B6D4', '#10B981'];
+                      const color = colors[idx % colors.length];
+                      const foto = selectedServiceDetail?.anfitrionas_fotos?.[idx];
+                      return (
+                        <View key={`${name}-${idx}`} style={[styles.hostessBadge, { backgroundColor: color + '15', borderColor: color + '40' }]}>
+                          {foto && (
+                            <Image 
+                              source={{ uri: foto.startsWith('http') ? foto : `${BASE_URL}/img/users/${foto}` }} 
+                              style={styles.avatarMini} 
+                            />
+                          )}
+                          <Text style={[styles.hostessBadgeText, { color }]}>{name.trim().toUpperCase()}</Text>
+                        </View>
+                      );
+                    })}
                   </View>
-                  <Pressable onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })} style={styles.closeBtn}>
-                    <Ionicons name="close" size={24} color={theme.textMuted} />
-                  </Pressable>
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                  <View style={styles.detailsGrid}>
-                      {/* Aplicamos el offset para mostrar la hora local correcta (Local = Server - Offset) */}
-                      {(() => {
-                        const date = parseDateSafe(state.selectedServiceDetail.created_at);
-                        const localDate = new Date(date.getTime() - serverOffset);
-                        return (
-                          <>
-                            <View style={styles.gridItem}>
-                              <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA</Text>
-                              <Text style={[styles.gridValue, { color: theme.text }]}>
-                                {localDate.toLocaleDateString('es-ES')}
-                              </Text>
-                            </View>
-                            <View style={styles.gridItem}>
-                              <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HORA</Text>
-                              <Text style={[styles.gridValue, { color: theme.text }]}>
-                                {localDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
-                              </Text>
-                            </View>
-                          </>
-                        );
-                      })()}
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>CLIENTE</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.clienteNombre || "Sin cliente"}</Text>
-                    </View>
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>TIEMPO</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.duration} min</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.detailsGrid}>
-                    <View style={[styles.gridItem, { width: '100%' }]}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONA(S) ASIGNADA(S)</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.anfitrionas}</Text>
-                    </View>
-                    <View style={[styles.gridItem, { width: '100%' }]}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.roomName}</Text>
-                    </View>
-
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>MÉTODO DE PAGO</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>
-                        {state.selectedServiceDetail.metodo_pago ? state.selectedServiceDetail.metodo_pago.toUpperCase() : "EFECTIVO"}
-                      </Text>
-                    </View>
-                    <View style={styles.gridItem}>
-                      <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ATENDIDO POR</Text>
-                      <Text style={[styles.gridValue, { color: theme.text }]}>{state.selectedServiceDetail.waiter_name}</Text>
-                    </View>
-                  </View>
-
-                  <View style={[styles.summarySection, { backgroundColor: isDark ? '#111827' : '#F9FAFB', borderColor: theme.border }]}>
-                    <View style={styles.summaryRow}>
-                      <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Habitación</Text>
-                      <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.precio_habitacion || 0).toLocaleString()}</Text>
-                    </View>
-                    <View style={[styles.summaryRow, { marginTop: 4 }]}>
-                      <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio del Servicio</Text>
-                      <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.precio_servicio || 0).toLocaleString()}</Text>
-                    </View>
-                    {(state.selectedServiceDetail.iva || 0) > 0 && (
-                      <View style={[styles.summaryRow, { marginTop: 4 }]}>
-                        <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>IVA (Gestión Tarjeta)</Text>
-                        <Text style={[styles.summaryVal, { color: theme.text }]}>${(state.selectedServiceDetail.iva || 0).toLocaleString()}</Text>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>PROCESADO POR</Text>
+                  <View style={styles.userRow}>
+                    {selectedServiceDetail?.waiter_foto ? (
+                      <Image 
+                        source={{ uri: selectedServiceDetail.waiter_foto.startsWith('http') ? selectedServiceDetail.waiter_foto : `${BASE_URL}/img/users/${selectedServiceDetail.waiter_foto}` }} 
+                        style={styles.avatarSquare} 
+                      />
+                    ) : (
+                      <View style={[styles.avatarSquare, { justifyContent: 'center', alignItems: 'center' }]}>
+                         <Ionicons name="person" size={16} color={theme.textMuted} />
                       </View>
                     )}
+                    <Text style={[styles.gridValue, { color: theme.text, flex: 1 }]}>{selectedServiceDetail?.waiter_name || "Admin"}</Text>
+                  </View>
+                </View>
 
-                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
-                      <Text style={[styles.totalLabelFinal, { color: theme.text }]}>TOTAL COBRADO</Text>
-                      <Text style={[styles.totalValFinal, { color: theme.accent }]}>${(state.selectedServiceDetail.total || 0).toLocaleString()}</Text>
-                    </View>
-
-                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
-                      <Text style={[styles.totalLabelFinal, { color: theme.text }]}>ESTADO COMISIONES</Text>
-                      <Text style={[styles.totalValFinal, { color: state.selectedServiceDetail.pago_estado === 0 ? theme.success : theme.danger, fontSize: 16 }]}>
-                        {state.selectedServiceDetail.pago_estado === 0 ? 'LIQUIDADAS / PAGADAS ✓' : 'PENDIENTES DE PAGO ⚠'}
-                      </Text>
-                    </View>
-
-                    {state.selectedServiceDetail.anfitrionas && (
-                      <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 12 }]}>
-                        <Text style={[styles.totalLabelFinal, { color: theme.text }]}>COMISIÓN P/ ANFITRIONA</Text>
-                        <Text style={[styles.totalValFinal, { color: theme.success, fontSize: 18 }]}>
-                          {(() => {
-                            const numAnfs = String(state.selectedServiceDetail.anfitrionas).split(', ').length || 1;
-                            const comisionHab = state.selectedServiceDetail.habitacion_comision || 0;
-                            const precServ = state.selectedServiceDetail.precio_servicio || 0;
-                            
-                            // Si la habitación tiene comisión, la dividimos. Si no, usamos el precio del servicio dividido.
-                            const totalComision = comisionHab > 0 ? (comisionHab / numAnfs) : (precServ / numAnfs);
-                            return `$${Math.floor(totalComision).toLocaleString()}`;
-                          })()}
-                        </Text>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>SOLICITADO POR</Text>
+                  <View style={styles.userRow}>
+                    {selectedServiceDetail?.solicitante_foto ? (
+                      <Image 
+                        source={{ uri: selectedServiceDetail.solicitante_foto.startsWith('http') ? selectedServiceDetail.solicitante_foto : `${BASE_URL}/img/users/${selectedServiceDetail.solicitante_foto}` }} 
+                        style={styles.avatarSquare} 
+                      />
+                    ) : (
+                      <View style={[styles.avatarSquare, { justifyContent: 'center', alignItems: 'center' }]}>
+                         <Ionicons name="hand-right" size={16} color={theme.textMuted} />
                       </View>
                     )}
+                    <Text style={[styles.gridValue, { color: theme.text, flex: 1 }]}>{selectedServiceDetail?.solicitante_name || "Cajero (Manual)"}</Text>
                   </View>
-                </ScrollView>
+                </View>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>METODO PAGO</Text>
+                  <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.metodo_pago?.toUpperCase()}</Text>
+                </View>
+                <View style={styles.gridItem}>
+                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA / HORA</Text>
+                  <Text style={[styles.gridValue, { color: theme.text }]}>
+                    {selectedServiceDetail?.created_at ? parseDateSafe(selectedServiceDetail.created_at).toLocaleString("es-ES", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).replace(/,/g, '') : "-"}
+                  </Text>
+                </View>
+              </View>
 
-                <Pressable
-                  style={[styles.modalCloseBtn, { backgroundColor: theme.accent }]}
-                  onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
-                >
-                  <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
-                </Pressable>
-              </>
-            )}
+              <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Servicio</Text>
+                  <Text style={[styles.summaryVal, { color: theme.text }]}>${(selectedServiceDetail?.precio_servicio || 0).toLocaleString()}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Habitación</Text>
+                  <Text style={[styles.summaryVal, { color: theme.text }]}>${(selectedServiceDetail?.precio_habitacion || 0).toLocaleString()}</Text>
+                </View>
+                {selectedServiceDetail?.iva > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>IVA (Tarjeta)</Text>
+                    <Text style={[styles.summaryVal, { color: theme.text }]}>${selectedServiceDetail?.iva.toLocaleString()}</Text>
+                  </View>
+                )}
+                
+                <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
+                   <Text style={[styles.totalLabelFinal, { color: theme.text }]}>TOTAL FINAL</Text>
+                   <Text style={[styles.totalValFinal, { color: theme.accent }]}>${safeNumber(selectedServiceDetail?.total).toLocaleString()}</Text>
+                </View>
+
+                {/* Sección de Comisiones */}
+                <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
+                  <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>
+                  <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
+                    ${((selectedServiceDetail?.comision_individual || 0) * (selectedServiceDetail?.total_usuarios || 0)).toLocaleString()}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
+                  <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
+                    ${(selectedServiceDetail?.comision_individual || 0).toLocaleString()} c/u
+                  </Text>
+                </View>
+                <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
+                  <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
+                    * La comisión total se divide entre las anfitrionas que participaron en el servico.
+                  </Text>
+                </View>
+              </View>
+
+              <Pressable 
+                style={[styles.modalCloseBtn, { backgroundColor: theme.accent }]} 
+                onPress={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
+              >
+                <Text style={styles.modalCloseBtnText}>Cerrar</Text>
+              </Pressable>
+            </ScrollView>
           </View>
         </View>
       </Modal>

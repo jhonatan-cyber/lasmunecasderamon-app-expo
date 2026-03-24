@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CartItem, Product } from '../components/ProductCard';
+import { CartItem, Product } from '@/components/shared/ProductCard';
 
 interface CartState {
     cart: CartItem[];
@@ -89,3 +89,4 @@ export const useCartStore = create<CartState>((set, get) => ({
         return get().getSubtotal() + get().getTipAmount();
     },
 }));
+

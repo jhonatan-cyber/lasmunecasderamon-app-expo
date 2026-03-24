@@ -1,4 +1,4 @@
-import { PremiumProfileView } from '../../../components/PremiumProfileView';
+import { PremiumProfileView } from '@/components/shared/PremiumProfileView';
 
 export default function CajeroPerfilScreen() {
     return (
@@ -8,3 +8,4 @@ export default function CajeroPerfilScreen() {
         />
     );
 }
+

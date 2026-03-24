@@ -1,8 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { useAuthStore } from '../store/authStore';
-import { triggerNotificationEffects } from '../utils/pushNotifications';
+import { useAuthStore } from '@/store/authStore';
+import { triggerNotificationEffects } from '@/services/pushNotifications';
 
 /**
  * Hook centralizado para manejar notificaciones entrantes y navegación (Deep Linking)
@@ -77,3 +77,5 @@ export function useNotificationHandler() {
         }
     };
 }
+
+

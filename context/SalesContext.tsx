@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
-import { API_URL } from "../api/client";
-import { useAuthStore } from "../store/authStore";
+import { API_URL } from "@/api/client";
+import { useAuthStore } from "@/store/authStore";
 
 export interface Venta {
   id?: string;
@@ -76,3 +76,4 @@ export const useSales = () => {
   }
   return context;
 };
+

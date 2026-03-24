@@ -5,28 +5,27 @@ import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { apiClient } from "../../../api/client";
-import { PremiumHeader } from "../../../components/PremiumHeader";
-import { ClientSelectModal } from "../../../components/cajero/forms/ClientSelectModal";
-import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
+import { apiClient } from "@/api/client";
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
+import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
 import {
   PaymentMethod,
   PaymentMethodSelect,
-} from "../../../components/cajero/forms/PaymentMethodSelect";
-import { RoomSelectModal } from "../../../components/cajero/forms/RoomSelectModal";
-import { Skeleton } from "../../../components/ui/Skeleton";
-import { useAccentColor } from "../../../hooks/useAccentColor";
+} from "@/components/cajero/forms/PaymentMethodSelect";
+import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { useAccentColor } from "@/hooks/useAccentColor";
 
 type ServiceState = {
   loadingInitial: boolean;
@@ -34,27 +33,35 @@ type ServiceState = {
   habitaciones: any[];
   clientes: any[];
   cajaAbierta: boolean | null;
-  selectedHostesses: number[];
-  selectedClients: number[];
+  selectedHostesses: (number | string)[];
+  selectedClients: (number | string)[];
   selectedHabitacion: any;
   precioServicio: string;
   metodoPago: PaymentMethod;
+  metodoPagoAdicional: PaymentMethod | "";
   submitting: boolean;
   hostessModalVisible: boolean;
   roomModalVisible: boolean;
   clientModalVisible: boolean;
+  balanceModalVisible: boolean;
+  balanceAmount: string;
+  balanceSubmitting: boolean;
 };
 
 type ServiceAction =
   | { type: 'SET_LOADING_INITIAL'; payload: boolean }
   | { type: 'SET_INITIAL_DATA'; payload: { anfitrionas: any[], habitaciones: any[], clientes: any[], cajaAbierta: boolean } }
-  | { type: 'SET_SELECTED_HOSTESSES'; payload: number[] }
-  | { type: 'SET_SELECTED_CLIENTS'; payload: number[] }
+  | { type: 'SET_SELECTED_HOSTESSES'; payload: (number | string)[] }
+  | { type: 'SET_SELECTED_CLIENTS'; payload: (number | string)[] }
   | { type: 'SET_SELECTED_HABITACION'; payload: any }
   | { type: 'SET_PRECIO_SERVICIO'; payload: string }
   | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
+  | { type: 'SET_METODO_PAGO_ADICIONAL'; payload: PaymentMethod | "" }
   | { type: 'SET_SUBMITTING'; payload: boolean }
-  | { type: 'SET_MODAL_VISIBLE'; modal: 'hostess' | 'room' | 'client'; visible: boolean };
+  | { type: 'SET_MODAL_VISIBLE'; modal: 'hostess' | 'room' | 'client' | 'balance'; visible: boolean }
+  | { type: 'SET_BALANCE_AMOUNT'; payload: string }
+  | { type: 'SET_BALANCE_SUBMITTING'; payload: boolean }
+  | { type: 'UPDATE_CLIENT_SALDO'; payload: { id: string | number, saldo: number } };
 
 const initialServiceState: ServiceState = {
   loadingInitial: true,
@@ -67,10 +74,14 @@ const initialServiceState: ServiceState = {
   selectedHabitacion: null,
   precioServicio: "0",
   metodoPago: "efectivo",
+  metodoPagoAdicional: "",
   submitting: false,
   hostessModalVisible: false,
   roomModalVisible: false,
   clientModalVisible: false,
+  balanceModalVisible: false,
+  balanceAmount: "",
+  balanceSubmitting: false,
 };
 
 function serviceReducer(state: ServiceState, action: ServiceAction): ServiceState {
@@ -82,12 +93,25 @@ function serviceReducer(state: ServiceState, action: ServiceAction): ServiceStat
     case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
     case 'SET_PRECIO_SERVICIO': return { ...state, precioServicio: action.payload };
     case 'SET_METODO_PAGO': return { ...state, metodoPago: action.payload };
+    case 'SET_METODO_PAGO_ADICIONAL': return { ...state, metodoPagoAdicional: action.payload };
     case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
     case 'SET_MODAL_VISIBLE':
       if (action.modal === 'hostess') return { ...state, hostessModalVisible: action.visible };
       if (action.modal === 'room') return { ...state, roomModalVisible: action.visible };
       if (action.modal === 'client') return { ...state, clientModalVisible: action.visible };
+      if (action.modal === 'balance') return { ...state, balanceModalVisible: action.visible };
       return state;
+    case 'SET_BALANCE_AMOUNT': return { ...state, balanceAmount: action.payload };
+    case 'SET_BALANCE_SUBMITTING': return { ...state, balanceSubmitting: action.payload };
+    case 'UPDATE_CLIENT_SALDO':
+      return {
+        ...state,
+        clientes: state.clientes.map(c => 
+          String(c.id_cliente || c.id) === String(action.payload.id) 
+            ? { ...c, saldo: action.payload.saldo } 
+            : c
+        )
+      };
     default: return state;
   }
 }
@@ -117,7 +141,6 @@ const generateCode = () => {
 export default function NuevoServicioScreen() {
   const { accentColor, isDark } = useAccentColor();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const [state, dispatch] = useReducer(serviceReducer, initialServiceState);
   const {
@@ -131,14 +154,15 @@ export default function NuevoServicioScreen() {
     selectedHabitacion,
     precioServicio,
     metodoPago,
+    metodoPagoAdicional,
     submitting,
     hostessModalVisible,
     roomModalVisible,
     clientModalVisible,
+    balanceModalVisible,
+    balanceAmount,
+    balanceSubmitting,
   } = state;
-
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
 
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#111111" : "#FFFFFF";
@@ -165,13 +189,28 @@ export default function NuevoServicioScreen() {
         fetchedClients = clientsRes.data || [];
       }
 
+      // Deduplicate data by ID
+      const deduplicate = (arr: any[], idKey: string) => {
+        const seen = new Set();
+        return arr.filter(item => {
+          const id = item[idKey] || item.id;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+      };
+
+      const rawAnfitrionas = anfitrionasRes.success ? anfitrionasRes.data : [];
+      const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
+      const rawClientes = fetchedClients;
+
       dispatch({
         type: 'SET_INITIAL_DATA',
         payload: {
           cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-          anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
-          habitaciones: roomsRes.success ? roomsRes.data : [],
-          clientes: fetchedClients,
+          anfitrionas: deduplicate(rawAnfitrionas, 'id_usuario'),
+          habitaciones: deduplicate(rawHabitaciones, 'id_habitacion'),
+          clientes: deduplicate(rawClientes, 'id_cliente'),
         }
       });
 
@@ -258,31 +297,98 @@ export default function NuevoServicioScreen() {
     metodoPago,
   ]);
 
-  const toggleHostess = (hostessId: number) => {
-    const next = selectedHostesses.includes(hostessId)
-      ? selectedHostesses.filter((id) => id !== hostessId)
-      : selectedHostesses.length < maxHostesses
-        ? [...selectedHostesses, hostessId]
-        : (showToast("Límite", `Máximo ${maxHostesses} anfitrionas`), selectedHostesses);
+  const toggleHostess = (hostessId: string | number) => {
+    const isSelected = selectedHostesses.some(id => String(id) === String(hostessId));
+    let next;
+    
+    if (isSelected) {
+      next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
+    } else {
+      if (selectedHostesses.length >= maxHostesses) {
+        showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
+        return;
+      }
+      next = [...selectedHostesses, hostessId];
+    }
 
-    dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: next });
+    // Double check uniqueness
+    const uniqueNext = Array.from(new Set(next.map(id => String(id))))
+      .map(idStr => next.find(id => String(id) === idStr));
+
+    dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: uniqueNext as (string | number)[] });
   };
 
-  const toggleClient = (clientId: number) => {
-    const next = selectedClients.includes(clientId)
-      ? selectedClients.filter((id) => id !== clientId)
-      : selectedClients.length < maxClients
-        ? [...selectedClients, clientId]
-        : (showToast("Límite", `Máximo ${maxClients} clientes`), selectedClients);
+  const toggleClient = (clientId: string | number) => {
+    const isSelected = selectedClients.some(id => String(id) === String(clientId));
+    let next;
 
-    dispatch({ type: 'SET_SELECTED_CLIENTS', payload: next });
+    if (isSelected) {
+      next = selectedClients.filter((id) => String(id) !== String(clientId));
+    } else {
+      if (selectedClients.length >= maxClients) {
+        showToast("Límite", `Máximo ${maxClients} clientes`);
+        return;
+      }
+      next = [...selectedClients, clientId];
+    }
+
+    // Double check uniqueness
+    const uniqueNext = Array.from(new Set(next.map(id => String(id))))
+      .map(idStr => next.find(id => String(id) === idStr));
+
+    dispatch({ type: 'SET_SELECTED_CLIENTS', payload: uniqueNext as (string | number)[] });
   };
+
+  
+  const handleLoadBalance = async () => {
+    const clientId = selectedClients.length > 0 ? selectedClients[0] : null;
+    if (!clientId || !balanceAmount) return;
+
+    dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: true });
+    try {
+      const amount = parseInt(balanceAmount.replace(/\./g, ''));
+      const res = await apiClient("/clients/prepago", {
+        method: "POST",
+        body: JSON.stringify({
+          cliente_id: clientId,
+          monto: amount,
+          tipo: 'CARGA'
+        })
+      });
+
+      if (res.success) {
+        showToast("Éxito", "Saldo cargado correctamente", "success");
+        dispatch({ type: 'UPDATE_CLIENT_SALDO', payload: { id: clientId, saldo: res.data.nuevo_saldo } });
+        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false });
+        dispatch({ type: 'SET_BALANCE_AMOUNT', payload: "" });
+      } else {
+        showToast("Error", res.message || "No se pudo cargar el saldo");
+      }
+    } catch (error) {
+      showToast("Error", "Error al procesar la carga de saldo");
+    } finally {
+      dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: false });
+    }
+  };
+
+  const selectedClientData = useMemo(() => {
+    if (selectedClients.length === 0) return null;
+    return clientes.find(c => String(c.id_cliente || c.id) === String(selectedClients[0]));
+  }, [selectedClients, clientes]);
 
   const handleSubmit = useCallback(async () => {
     if (!cajaAbierta) {
       showToast("Caja Cerrada", "Abre una caja primero.");
       return;
     }
+    if (metodoPago === 'prepago') {
+      const saldo = Number(selectedClientData?.saldo || 0);
+      if (saldo < totals.total && !metodoPagoAdicional) {
+        showToast("Saldo Insuficiente", "El saldo del cliente no cubre el total. Selecciona un método adicional.", "error");
+        return;
+      }
+    }
+
     if (!selectedHabitacion) {
       showToast("Falta Datos", "Selecciona una habitación.");
       return;
@@ -307,8 +413,17 @@ export default function NuevoServicioScreen() {
         total: totals.total,
         tiempo: selectedHabitacion.tiempo || 0,
         metodo_pago: metodoPago,
+        metodo_pago_adicional: (metodoPago === 'prepago' && (Number(selectedClientData?.saldo || 0) < totals.total)) 
+          ? metodoPagoAdicional || undefined 
+          : undefined,
         usuarios: selectedHostesses,
       };
+
+      // Log anfitrionas data as requested
+      const anfitrionasDataRes = await apiClient("/anfitrionas");
+      if (anfitrionasDataRes.success) {
+        console.log('Anfitrionas fetched:', anfitrionasDataRes.data.length, 'entries. First one foto:', anfitrionasDataRes.data[0]?.foto);
+      }
 
       const res = await apiClient("/servicios", {
         method: "POST",
@@ -330,7 +445,16 @@ export default function NuevoServicioScreen() {
 
   const NuevoServicioSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <PremiumHeader title="Nuevo Servicio" subtitle="Cargando información..." />
+      <PremiumHeader 
+        title="Nuevo Servicio" 
+        subtitle="Cargando información..." 
+        rightComponent={
+          <View style={[styles.backBtnRight, { opacity: 0.5 }]}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextRight}>Atrás</Text>
+          </View>
+        }
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
           <Skeleton width={180} height={15} style={{ marginBottom: 20 }} />
@@ -364,12 +488,20 @@ export default function NuevoServicioScreen() {
       style={[styles.container, { backgroundColor: bg }]}
     >
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style={isDark ? 'dark' : 'light'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <PremiumHeader
         title="Nuevo Servicio"
-        subtitle="Asignación de habitación y anfitrionas"
-        onBack={() => router.replace("/cajero/servicios")}
+        subtitle="Agendar servicio temporal"
+        rightComponent={
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backBtnRight}
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextRight}>Atrás</Text>
+          </Pressable>
+        }
       />
 
       <ScrollView
@@ -417,7 +549,7 @@ export default function NuevoServicioScreen() {
                   ? selectedHostesses
                     .map(
                       (id) =>
-                        anfitrionas.find((a) => (a.id_usuario || a.id) === id)
+                        anfitrionas.find((a) => String(a.id_usuario || a.id) === String(id))
                           ?.nick,
                     )
                     .join(", ")
@@ -443,7 +575,7 @@ export default function NuevoServicioScreen() {
                   ? selectedClients
                     .map((id) => {
                       const cl = clientes.find(
-                        (c) => (c.id_cliente || c.id) === id,
+                        (c) => String(c.id_cliente || c.id) === String(id),
                       );
                       return cl
                         ? `${cl.nombre || cl.name || ""} ${cl.apellido || cl.last_name || ""}`.trim()
@@ -456,37 +588,75 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          <View style={{ marginTop: 20 }}>
-            <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>
-              PRECIO DE SERVICIO
-            </Text>
-            <View style={[styles.inputWrapper, { borderColor }]}>
-              <Ionicons name="cash-outline" size={20} color={textSecondary} />
-              <TextInput
-                style={[styles.textInput, { color: textPrimary }]}
-                placeholder="0"
-                placeholderTextColor={textSecondary}
-                keyboardType="numeric"
-                value={precioServicio}
-                onChangeText={(val) => {
-                  const clean = val.replace(/[^0-9]/g, "");
-                  dispatch({
-                    type: 'SET_PRECIO_SERVICIO',
-                    payload: clean === ""
-                      ? "0"
-                      : parseInt(clean)
-                        .toLocaleString("es-CL")
-                        .replace(/,/g, "."),
-                  });
-                }}
+          {!hasAnfitrionaComision && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>
+                PRECIO DE SERVICIO
+              </Text>
+              <View style={[styles.inputWrapper, { borderColor }]}>
+                <Ionicons name="cash-outline" size={20} color={textSecondary} />
+                <TextInput
+                  style={[styles.textInput, { color: textPrimary }]}
+                  placeholder="0"
+                  placeholderTextColor={textSecondary}
+                  keyboardType="numeric"
+                  value={precioServicio}
+                  onChangeText={(val) => {
+                    const clean = val.replace(/[^0-9]/g, "");
+                    dispatch({
+                      type: 'SET_PRECIO_SERVICIO',
+                      payload: clean === ""
+                        ? "0"
+                        : parseInt(clean)
+                          .toLocaleString("es-CL")
+                          .replace(/,/g, "."),
+                    });
+                  }}
+                />
+              </View>
+            </View>
+          )}
+
+          
+          {selectedClientData && (
+            <View style={{ marginBottom: 15, padding: 12, backgroundColor: `${accentColor}10`, borderRadius: 12, borderWidth: 1, borderColor: `${accentColor}30` }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Saldo Prepago Cliente</Text>
+                  <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '900', marginTop: 2 }}>
+                    ${(selectedClientData.saldo || 0).toLocaleString()}
+                  </Text>
+                </View>
+                <Pressable 
+                  onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: true })}
+                  style={{ backgroundColor: accentColor, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>CARGAR</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          <PaymentMethodSelect
+            showPrepago={!!selectedClientData}
+            selectedMethod={metodoPago}
+            onSelect={(val) => {
+              dispatch({ type: 'SET_METODO_PAGO', payload: val });
+              if (val !== 'prepago') dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: "" });
+            }}
+          />
+
+          {metodoPago === 'prepago' && selectedClientData && Number(selectedClientData.saldo || 0) < totals.total && (
+            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' }}>
+                Faltan ${(totals.total - Number(selectedClientData.saldo || 0)).toLocaleString()} - Completar con:
+              </Text>
+              <PaymentMethodSelect
+                showPrepago={false}
+                selectedMethod={metodoPagoAdicional as any}
+                onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: val })}
               />
             </View>
-          </View>
-
-          <PaymentMethodSelect
-            selectedMethod={metodoPago}
-            onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })}
-          />
+          )}
         </View>
 
         <View
@@ -559,12 +729,6 @@ export default function NuevoServicioScreen() {
               <ActivityIndicator size="small" color="#FFF" />
             ) : (
               <>
-                <Ionicons
-                  name="rocket"
-                  size={24}
-                  color="#FFF"
-                  style={{ marginRight: 8 }}
-                />
                 <Text style={styles.submitBtnText}>Generar Servicio</Text>
               </>
             )}
@@ -585,6 +749,9 @@ export default function NuevoServicioScreen() {
         onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
         onSelect={(room) => {
           dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
+          if ((room.comision_anfitriona ?? 0) > 0) {
+            dispatch({ type: 'SET_PRECIO_SERVICIO', payload: "0" });
+          }
           dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
         }}
       />
@@ -606,6 +773,57 @@ export default function NuevoServicioScreen() {
         onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
         onToggle={toggleClient}
       />
+    
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={balanceModalVisible}
+        onRequestClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false })}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor, padding: 24, height: 'auto' }]}>
+            <Text style={[styles.modalTitleText, { color: textPrimary, marginBottom: 8 }]}>Cargar Saldo Prepago</Text>
+            <Text style={{ color: textSecondary, marginBottom: 20 }}>Ingresa el monto a cargar para {selectedClientData?.nombre} {selectedClientData?.apellido}</Text>
+            
+            <View style={[styles.inputWrapper, { borderColor, marginBottom: 20 }]}>
+              <Ionicons name="cash-outline" size={20} color={textSecondary} />
+              <TextInput
+                style={[styles.textInput, { color: textPrimary }]}
+                placeholder="Monto"
+                placeholderTextColor={textSecondary}
+                keyboardType="numeric"
+                value={balanceAmount}
+                onChangeText={(val) => {
+                  const clean = val.replace(/[^0-9]/g, "");
+                  dispatch({ 
+                    type: 'SET_BALANCE_AMOUNT', 
+                    payload: clean === "" ? "" : parseInt(clean).toLocaleString("es-CL").replace(/,/g, ".") 
+                  });
+                }}
+                autoFocus
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable 
+                onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false })}
+                style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: isDark ? '#374151' : '#F3F4F6', justifyContent: 'center', alignItems: 'center' }}
+              >
+                <Text style={{ color: textPrimary, fontWeight: 'bold' }}>Cancelar</Text>
+              </Pressable>
+              
+              <Pressable 
+                onPress={handleLoadBalance}
+                disabled={balanceSubmitting || !balanceAmount}
+                style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: accentColor, justifyContent: 'center', alignItems: 'center', opacity: (balanceSubmitting || !balanceAmount) ? 0.7 : 1 }}
+              >
+                {balanceSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cargar Saldo</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 }
@@ -693,4 +911,29 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   submitBtnText: { color: "#FFF", fontSize: 17, fontWeight: "900" },
+  backBtnRight: {
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      height: 38, 
+      borderRadius: 12, 
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      paddingHorizontal: 12,
+      gap: 6
+  },
+  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  detailModal: { borderRadius: 24, padding: 24, width: '100%', maxWidth: 400, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
+  modalTitleText: { fontSize: 22, fontWeight: '900', marginBottom: 8 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalSubtitle: { fontSize: 14, fontWeight: '500', textAlign: 'center', marginBottom: 20 },
+  modalIconBox: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 16 },
+  modalBody: { width: '100%' },
+  closeBtn: { padding: 8 },
+  modalBreakdown: { borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1 },
+  breakdownItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  breakdownItemLabel: { fontSize: 13, fontWeight: '600' },
+  breakdownItemValue: { fontSize: 13, fontWeight: '800' },
 });
+
+
+

@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-const FlashList = ShopifyFlashList as any;
 import {
     ActivityIndicator,
+    DeviceEventEmitter,
     Dimensions,
     Image,
     Modal,
@@ -18,14 +18,18 @@ import {
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Toast from 'react-native-toast-message';
-import { apiClient, BASE_URL } from '../../../api/client';
-import { PremiumHeader } from '../../../components/PremiumHeader';
-import { SkeletonLoader } from '../../../components/SkeletonLoader';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { apiClient, BASE_URL } from '@/api/client';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+
+const FlashList = ShopifyFlashList as any;
 
 const { width } = Dimensions.get('window');
-const CARD_MARGIN = 12;
-const CARD_WIDTH = width - (CARD_MARGIN * 2) - 24;
+const GRID_PADDING = 16;
+const GRID_GAP = 12;
+const NUM_COLUMNS = 2;
+const CARD_WIDTH = (width - (GRID_PADDING * 2) - GRID_GAP) / NUM_COLUMNS;
 
 interface User {
     id: number;
@@ -47,6 +51,7 @@ export default function PersonalScreen() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
     const dataRef = useRef<string>('');
 
     const bg = isDark ? '#000000' : '#F3F4F6';
@@ -59,13 +64,15 @@ export default function PersonalScreen() {
         try {
             const data = await apiClient('/users');
             if (data.success) {
-                // Filtrar personal activo y no administradores
+                // Filtrar personal activo y que sean solo Garzones o Anfitrionas
                 const allUsers = data.data || [];
-                const staff = allUsers.filter((u: User) => 
-                    u.status === 1 && 
-                    u.role?.toLowerCase() !== 'administrador' && 
-                    u.role?.toLowerCase() !== 'admin'
-                );
+                const staff = allUsers.filter((u: User) => {
+                    if (u.status !== 1) return false;
+                    const r = u.role?.toLowerCase() || '';
+                    return r.includes('garzon') || 
+                           r.includes('garzón') || 
+                           r.includes('anfitriona');
+                });
                 
                 const serialized = JSON.stringify(staff);
                 if (dataRef.current !== serialized) {
@@ -146,23 +153,48 @@ export default function PersonalScreen() {
         u.nick?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Polling del usuario seleccionado para actualizar el QR si cambia en el servidor
     useEffect(() => {
         if (!selectedUser) return;
-        const interval = setInterval(async () => {
+        
+        const fetchUserData = async () => {
             try {
                 const data = await apiClient(`/users/${selectedUser.id}`);
                 if (data.success && data.user && data.user.qr_token !== selectedUser.qr_token) {
                     setSelectedUser(data.user);
-                    // Actualizar también en la lista principal
                     setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
                 }
             } catch (e) {
                 console.error('Error polling user QR:', e);
             }
-        }, 15000);
+        };
+
+        fetchUserData();
+
+        const interval = setInterval(fetchUserData, 10000);
         return () => clearInterval(interval);
-    }, [selectedUser?.id, selectedUser?.qr_token]);
+    }, [selectedUser?.id]);
+
+    useEffect(() => {
+        if (!selectedUser) return;
+        const fetch = async () => {
+            try {
+                const res = await apiClient('/codigo/actual');
+                if (res.success) setCodigoAsistencia(res.codigo);
+            } catch {}
+        };
+        fetch();
+        const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+            if (payload.type === 'code_changed' && payload.data?.codigo) {
+                setCodigoAsistencia(payload.data.codigo);
+            }
+        });
+
+        const interval = setInterval(fetch, 5000);
+        return () => {
+            clearInterval(interval);
+            sub.remove();
+        };
+    }, [selectedUser === null]);
 
 
     const renderUser = useCallback(({ item, index }: { item: User; index: number }) => {
@@ -170,9 +202,9 @@ export default function PersonalScreen() {
 
         return (
             <MotiView
-                from={{ opacity: 0, translateX: -20 }}
-                animate={{ opacity: 1, translateX: 0 }}
-                transition={{ delay: index * 50 }}
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 40 }}
                 style={[styles.cardContainer, { width: CARD_WIDTH }]}
             >
                 <Pressable 
@@ -180,45 +212,42 @@ export default function PersonalScreen() {
                     style={({ pressed }) => [
                         styles.card, 
                         { backgroundColor: cardBg, borderColor },
-                        pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+                        pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }
                     ]}
                 >
-                    <View style={styles.rowContent}>
-                        <View style={styles.imageContainer}>
+                    <View style={styles.gridContent}>
+                        <View style={styles.imageWrapper}>
                             {photoUrl ? (
                                 <Image 
                                     source={{ uri: photoUrl }} 
-                                    style={styles.avatar}
+                                    style={styles.avatarLarge}
                                     resizeMode="cover"
                                 />
                             ) : (
-                                <View style={[styles.avatarPlaceholder, { backgroundColor: accentBg }]}>
-                                    <Text style={[styles.placeholderText, { color: accentColor }]}>
+                                <View style={[styles.avatarPlaceholderLarge, { backgroundColor: accentBg }]}>
+                                    <Text style={[styles.placeholderTextLarge, { color: accentColor }]}>
                                         {item.name?.[0]}{item.lastName?.[0]}
                                     </Text>
                                 </View>
                             )}
+                            <View style={[styles.roleLabel, { backgroundColor: accentColor }]}>
+                                <Text style={styles.roleLabelText}>{item.role}</Text>
+                            </View>
                         </View>
                         
-                        <View style={styles.cardInfo}>
-                            <View style={styles.nameRow}>
-                                <Text style={[styles.userName, { color: textPrimary }]} numberOfLines={1}>
-                                    {item.name}
-                                </Text>
-                                <Text style={[styles.userLastName, { color: textPrimary }]} numberOfLines={1}>
-                                    {item.lastName}
-                                </Text>
-                            </View>
-                            <Text style={[styles.userNick, { color: textSecondary }]}>
+                        <View style={styles.gridInfo}>
+                            <Text style={[styles.gridUserName, { color: textPrimary }]} numberOfLines={1}>
+                                {item.name}
+                            </Text>
+                            <Text style={[styles.gridUserNick, { color: textSecondary }]} numberOfLines={1}>
                                 @{item.nick}
                             </Text>
-                            <View style={styles.roleBadgeRow}>
-                                <View style={styles.roleBadge}>
-                                    <Text style={styles.roleText}>{item.role}</Text>
-                                </View>
-                            </View>
                         </View>
-                        <Ionicons name="chevron-forward" size={24} color={textSecondary} />
+                        
+                        <View style={[styles.qrButtonMini, { backgroundColor: `${accentColor}10` }]}>
+                            <Ionicons name="qr-code" size={16} color={accentColor} />
+                            <Text style={[styles.qrButtonMiniText, { color: accentColor }]}>Ver QR / Código</Text>
+                        </View>
                     </View>
                 </Pressable>
             </MotiView>
@@ -229,9 +258,15 @@ export default function PersonalScreen() {
         return (
             <View style={[styles.container, { backgroundColor: bg }]}>
                 <PremiumHeader title="Personal" subtitle="Lista de trabajadores" onBack={() => router.back()} />
-                <View style={styles.skeletonContainer}>
-                    {[1, 2, 3, 4].map(i => (
-                        <SkeletonLoader key={i} width={CARD_WIDTH} height={84} borderRadius={16} style={{ margin: CARD_MARGIN / 2 }} />
+                <View style={styles.skeletonGrid}>
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <SkeletonLoader 
+                            key={i} 
+                            width={CARD_WIDTH - 8} 
+                            height={160} 
+                            borderRadius={20} 
+                            style={{ margin: 4 }} 
+                        />
                     ))}
                 </View>
             </View>
@@ -264,8 +299,9 @@ export default function PersonalScreen() {
                 data={filteredUsers}
                 keyExtractor={(item: any) => item.id.toString()}
                 renderItem={renderUser}
-                estimatedItemSize={80}
-                contentContainerStyle={styles.listContent}
+                estimatedItemSize={180}
+                numColumns={NUM_COLUMNS}
+                contentContainerStyle={styles.listContentGrid}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
@@ -330,20 +366,18 @@ export default function PersonalScreen() {
 
                                     <View style={styles.qrContainer}>
                                         <View style={[styles.qrGlow, { backgroundColor: accentColor }]} />
-                                        <View style={[styles.qrWrapper, { borderColor: accentColor }]}>
-                                            <QRCode
-                                                value={selectedUser.qr_token || ''}
-                                                size={Math.max(220, width - 64)}
-                                                backgroundColor="white"
-                                                color={accentColor}
-                                                ecl="H"
-                                                logo={selectedUser.foto ? { uri: `${BASE_URL}/img/users/${selectedUser.foto}` } : undefined}
-                                                logoSize={50}
-                                                logoBorderRadius={25}
-                                                logoBackgroundColor="white"
-                                                logoMargin={4}
-                                            />
-                                        </View>
+                                        <QRCode
+                                            value={selectedUser.qr_token || ''}
+                                            size={width - 48}
+                                            backgroundColor="white"
+                                            color={accentColor}
+                                            ecl="H"
+                                            logo={selectedUser.foto ? { uri: `${BASE_URL}/img/users/${selectedUser.foto}` } : undefined}
+                                            logoSize={50}
+                                            logoBorderRadius={25}
+                                            logoBackgroundColor="white"
+                                            logoMargin={4}
+                                        />
                                         
                                         <View style={styles.qrFooter}>
                                             <Ionicons name="shield-checkmark" size={14} color={accentColor} />
@@ -351,6 +385,13 @@ export default function PersonalScreen() {
                                                 Token de seguridad personal único
                                             </Text>
                                         </View>
+
+                                        {codigoAsistencia ? (
+                                            <View style={[styles.codigoBadge, { borderColor: accentColor }]}>
+                                                <Text style={[styles.codigoLabel, { color: textSecondary }]}>Código: </Text>
+                                                <Text style={[styles.codigoValue, { color: accentColor }]}>{codigoAsistencia}</Text>
+                                            </View>
+                                        ) : null}
                                     </View>
 
                                     <View style={styles.modalActions}>
@@ -405,7 +446,12 @@ export default function PersonalScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    skeletonContainer: { padding: 12 },
+    skeletonGrid: { 
+        padding: 12, 
+        flexDirection: 'row', 
+        flexWrap: 'wrap', 
+        justifyContent: 'space-between' 
+    },
     searchBarContainer: { padding: 16 },
     searchBar: {
         flexDirection: 'row',
@@ -421,91 +467,91 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '500',
     },
-    listContent: {
-        paddingHorizontal: 12,
+    listContentGrid: {
+        paddingHorizontal: GRID_PADDING,
         paddingBottom: 100,
     },
     cardContainer: {
-        padding: CARD_MARGIN / 2,
+        padding: GRID_GAP / 2,
     },
     card: {
-        borderRadius: 16,
+        borderRadius: 20,
         overflow: 'hidden',
         borderWidth: 1,
-        elevation: 3,
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
     },
-    rowContent: {
-        flexDirection: 'row',
+    gridContent: {
         alignItems: 'center',
         padding: 12,
+        paddingTop: 16,
     },
-    imageContainer: {
-        width: 60,
-        height: 60,
+    imageWrapper: {
+        width: 80,
+        height: 80,
         position: 'relative',
+        marginBottom: 12,
     },
-    avatar: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+    avatarLarge: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.2)',
     },
-    avatarPlaceholder: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+    avatarPlaceholderLarge: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    placeholderText: {
-        fontSize: 18,
+    placeholderTextLarge: {
+        fontSize: 24,
         fontWeight: 'bold',
     },
-    roleBadgeRow: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
-    roleBadge: {
-        backgroundColor: 'rgba(0,0,0,0.6)',
+    roleLabel: {
+        position: 'absolute',
+        bottom: -4,
         paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingVertical: 2,
+        borderRadius: 10,
+        transform: [{ scale: 0.8 }],
     },
-    qrButtonText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: '900',
-        letterSpacing: 0.5,
-    },
-    roleText: {
+    roleLabelText: {
         color: 'white',
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'bold',
         textTransform: 'uppercase',
     },
-    cardInfo: {
-        flex: 1,
-        marginLeft: 12,
+    gridInfo: {
+        alignItems: 'center',
+        marginBottom: 12,
     },
-    nameRow: {
+    gridUserName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    gridUserNick: {
+        fontSize: 12,
+        marginTop: 2,
+        opacity: 0.7,
+    },
+    qrButtonMini: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
     },
-    userName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 4,
-    },
-    userLastName: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    userNick: {
-        fontSize: 13,
-        marginTop: 2,
+    qrButtonMiniText: {
+        fontSize: 10,
+        fontWeight: '900',
     },
     emptyContainer: {
         alignItems: 'center',
@@ -548,17 +594,17 @@ const styles = StyleSheet.create({
     modalBody: {},
     modalUserHeader: {
         alignItems: 'center',
-        paddingVertical: 24,
+        paddingVertical: 14,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
     },
     modalAvatarLargeWrapper: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         borderWidth: 3,
         padding: 3,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     modalAvatarLarge: {
         width: '100%',
@@ -598,7 +644,7 @@ const styles = StyleSheet.create({
     },
     qrContainer: {
         alignItems: 'center',
-        paddingVertical: 24,
+        paddingVertical: 12,
         paddingHorizontal: 20,
     },
     qrGlow: {
@@ -609,18 +655,6 @@ const styles = StyleSheet.create({
         borderRadius: 100,
         opacity: 0.1,
         transform: [{ translateY: -50 }],
-    },
-    qrWrapper: {
-        backgroundColor: 'white',
-        width: '100%',
-        padding: 12,
-        borderRadius: 22,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 24,
-        elevation: 8,
     },
     qrHint: {
         marginTop: 20,
@@ -694,5 +728,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 6,
         marginTop: 20,
+    },
+    codigoBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 10,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        backgroundColor: 'rgba(0,0,0,0.04)',
+    },
+    codigoLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    codigoValue: {
+        fontSize: 28,
+        fontWeight: '900',
+        fontFamily: 'monospace',
+        letterSpacing: 4,
     },
 });

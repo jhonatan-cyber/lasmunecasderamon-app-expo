@@ -1,4 +1,4 @@
-import { PremiumProfileView } from '../../../components/PremiumProfileView';
+import { PremiumProfileView } from '@/components/shared/PremiumProfileView';
 
 export default function GarzonPerfilScreen() {
     return (
@@ -9,3 +9,4 @@ export default function GarzonPerfilScreen() {
         />
     );
 }
+

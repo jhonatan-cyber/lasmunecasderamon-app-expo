@@ -1,34 +1,26 @@
-/**
- * Utilidades compartidas para manejo de tiempos y temporizadores.
- */
-
-/**
- * Parsea una fecha del backend de forma segura y maneja desfases de zona horaria.
- * Asume UTC si no hay indicador de zona horaria.
- */
-export const parseDateSafe = (dateStr: any): Date => {
+export const parseDateSafe = (dateStr: string | number | Date | null | undefined): Date => {
   if (!dateStr) return new Date();
+  if (dateStr instanceof Date) return dateStr;
+  if (typeof dateStr === 'number') return new Date(dateStr);
+
   if (typeof dateStr !== 'string') return new Date(dateStr);
-  
+
   if (dateStr.includes('Z') || dateStr.includes('+')) return new Date(dateStr);
-  
+
   try {
-    const utcDateStr = dateStr.includes('T') ? dateStr + 'Z' : dateStr.replace(' ', 'T') + 'Z';
-    const date = new Date(utcDateStr);
-    if (!isNaN(date.getTime())) return date;
+    // Si no tiene T, asumimos que viene en formato YYYY-MM-DD HH:MM:SS
+    // No añadimos 'Z' porque el servidor ahora envía la hora local del negocio (-04:00)
+    // y queremos que el dispositivo la trate como su hora local (asumiendo que están en la misma zona).
+    const cleanDateStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+    const date = new Date(cleanDateStr);
     
-    const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
-    const fallbackDate = new Date(cleanDate);
-    if (isNaN(fallbackDate.getTime())) return new Date(dateStr);
-    return fallbackDate;
-  } catch (e) {
+    if (!isNaN(date.getTime())) return date;
+    return new Date(dateStr);
+  } catch {
     return new Date(dateStr);
   }
 };
 
-/**
- * Calcula el tiempo restante de un temporizador en segundos.
- */
 export const calculateRemainingTime = (
   timer: { startTime: Date | string; duration: number; isPaused: boolean; remainingTime: number },
   serverOffset: number = 0
@@ -39,17 +31,14 @@ export const calculateRemainingTime = (
 
   const start = typeof timer.startTime === 'string' ? parseDateSafe(timer.startTime) : timer.startTime;
   const now = new Date(Date.now() + serverOffset);
-  
+
   const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
-  const totalDurationSeconds = timer.duration * 60;
+  const totalDurationSeconds = (Number(timer.duration) || 0) * 60;
   const remaining = totalDurationSeconds - elapsedSeconds;
 
-  return Math.max(0, remaining);
+  return isNaN(remaining) ? 0 : Math.max(0, remaining);
 };
 
-/**
- * Formatea segundos en formato MM:SS
- */
 export const formatTime = (seconds: number): string => {
   const absSeconds = Math.abs(seconds);
   const minutes = Math.floor(absSeconds / 60);

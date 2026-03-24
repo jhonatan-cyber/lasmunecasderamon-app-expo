@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { offlineSync, isOnline, getPendingCount, triggerSync } from '../utils/offlineSync';
+import { offlineSync, isOnline, getPendingCount, triggerSync } from '@/services/offlineSync';
 
 interface UseOfflineSyncReturn {
     isOnline: boolean;
@@ -89,3 +89,5 @@ export const useOfflineAwareQuery = <T>(
 
     return query;
 };
+
+

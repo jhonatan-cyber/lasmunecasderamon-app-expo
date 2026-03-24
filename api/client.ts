@@ -43,7 +43,17 @@ export class RetryExhaustedError extends Error {
 // Callback que se invoca cuando el servidor retorna 401.
 // Se registra desde el authStore para evitar dependencia circular.
 // Por defecto no hace nada (solo lanza el error tipado).
+// Cache el token en memoria para evitar accesos repetidos al disco (SecureStore) que son lentos
+let tokenInMemory: string | null = null;
 let onUnauthorized: (() => void) | null = null;
+
+export function setTokenInMemory(token: string | null) {
+    tokenInMemory = token;
+}
+
+export function getTokenInMemory(): string | null {
+    return tokenInMemory;
+}
 
 export function setUnauthorizedHandler(handler: () => void) {
     onUnauthorized = handler;
@@ -149,45 +159,56 @@ const getBaseUrl = () => {
 export const BASE_URL = getBaseUrl();
 export const API_URL = `${BASE_URL}/api`;
 
-export const apiClient = async (endpoint: string, options: RequestInit & { timeout?: number; retries?: number } = {}) => {
+export const apiClient = async <T = any>(endpoint: string, options: RequestInit & { timeout?: number; retries?: number } = {}): Promise<T> => {
     const defaultRetries = __DEV__ ? 5 : 3;
     const { timeout: customTimeout, retries: maxRetries = defaultRetries, ...fetchOptions } = options;
-    options = fetchOptions;
     const url = `${API_URL}${endpoint}`;
 
-    // Set default headers
-    const headers = new Headers(options.headers || {});
+    const headers = new Headers(fetchOptions.headers || {});
 
-    // Only set application/json if not already set and not FormData
-    if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+    if (!headers.has('Content-Type') && !(fetchOptions.body instanceof FormData)) {
         headers.set('Content-Type', 'application/json');
     }
 
-    // Add auth token if available
-    try {
-        let token: string | null = null;
-        if (Platform.OS === 'web') {
-            token = await localStorage.getItem('token'); // Web fallback
-        } else {
-            token = await SecureStore.getItemAsync('token');
-        }
+    // Usar el token en memoria si existe, sino buscarlo en disco UNA SOLA VEZ
+    if (!tokenInMemory) {
+        try {
+            if (Platform.OS === 'web') {
+                tokenInMemory = await localStorage.getItem('token');
+            } else {
+                tokenInMemory = await SecureStore.getItemAsync('token');
+            }
+        } catch (e) {}
+    }
 
-        if (token) {
-            headers.set('Authorization', `Bearer ${token}`);
+    if (tokenInMemory) {
+        headers.set('Authorization', `Bearer ${tokenInMemory}`);
+    }
+
+    // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos
+    let finalBody = fetchOptions.body;
+    if (['POST', 'PUT', 'PATCH'].includes(options.method?.toUpperCase() || '') && typeof fetchOptions.body === 'string') {
+        try {
+            const bodyObj = JSON.parse(fetchOptions.body);
+            // Solo inyectamos si es un objeto y no tiene ya una fecha seteada explícitamente
+            if (typeof bodyObj === 'object' && bodyObj !== null && !bodyObj.device_date) {
+                bodyObj.device_date = new Date().toISOString();
+                finalBody = JSON.stringify(bodyObj);
+            }
+        } catch (e) {
+            // Si no es JSON, lo dejamos como está
         }
-    } catch (e) {
-        // Ignore storage errors
     }
 
     const config: RequestInit = {
-        ...options,
+        ...fetchOptions,
+        body: finalBody,
         headers,
     };
 
     let lastError: any = null;
     const startTime = Date.now();
     
-    // Try the request with retries
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), customTimeout ?? 60000);
@@ -200,66 +221,44 @@ export const apiClient = async (endpoint: string, options: RequestInit & { timeo
             const data = await response.json().catch(() => ({}));
 
             if (response.status === 401) {
-                // Notificar al store (sin importarlo directamente → evita dependencia circular)
                 onUnauthorized?.();
                 logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
                 throw new UnauthorizedError(data.error || data.message || 'Sesión inválida o expirada');
             }
 
             if (!response.ok) {
-                // Si no deberíamos reintentar o es el último intento, lanzar el error
                 if (!shouldRetry(null, response.status) || attempt === maxRetries) {
                     logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
                     throw new Error(data.error || data.message || 'Error en la petición API');
                 }
-                // Si deberíamos reintentar, continuar al siguiente intento
                 lastError = new Error(data.error || data.message || 'Error en la petición API');
                 logApiCall(endpoint, attempt, maxRetries, response.status, lastError, durationMs);
-                // Esperar antes del reintento (backoff exponencial)
                 if (attempt < maxRetries) {
                     await delay(Math.min(1000 * 2 ** attempt, 10000));
                     continue;
                 }
             }
 
-            // Éxito, retornar los datos
             logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
-            return data;
+            return data as T;
         } catch (err: any) {
             clearTimeout(timeoutId);
             const durationMs = Date.now() - startTime;
             lastError = err;
             
-            // Si no deberíamos reintentar o es el último intento, lanzar el error
             if (!shouldRetry(err) || attempt === maxRetries) {
                 logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
-                if (err?.name === 'AbortError') {
-                    throw new TimeoutError();
-                }
-                // Handle network errors (DNS failures, offline, etc.)
-                if (!err.type || err.type === 'fetch-failed') {
-                    throw new NetworkError();
-                }
+                if (err?.name === 'AbortError') throw new TimeoutError();
+                if (!err.type || err.type === 'fetch-failed') throw new NetworkError();
                 throw err;
             }
             
             logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
-            // Esperar antes del reintento (backoff exponencial)
             if (attempt < maxRetries) {
                 await delay(Math.min(1000 * 2 ** attempt, 10000));
             }
         }
     }
     
-    // Si llegamos aquí, se agotaron los reintentos
-    const durationMs = Date.now() - startTime; // startTime from last attempt
-    logApiCall(endpoint, maxRetries, maxRetries, undefined, lastError, durationMs);
-    if (lastError?.name === 'AbortError') {
-        throw new TimeoutError();
-    }
-    // Handle network errors (DNS failures, offline, etc.)
-    if (!lastError.type || lastError.type === 'fetch-failed') {
-        throw new NetworkError();
-    }
-    throw new RetryExhaustedError();
+    throw lastError || new RetryExhaustedError();
 };

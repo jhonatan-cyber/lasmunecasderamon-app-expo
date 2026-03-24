@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface TipCheckboxProps {
     enabled: boolean;
@@ -61,3 +61,5 @@ const styles = StyleSheet.create({
         fontWeight: '800'
     }
 });
+
+

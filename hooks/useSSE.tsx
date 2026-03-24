@@ -1,4 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import EventSource from 'react-native-sse';
 
 export type SSEEventType = 
     | 'notification'
@@ -24,25 +26,34 @@ interface UseSSEReturn {
 export const useSSE = (enabled: boolean = true): UseSSEReturn => {
     const [isConnected, setIsConnected] = useState(false);
     const [lastEvent, setLastEvent] = useState<SSEEvent | null>(null);
-    const eventSourceRef = useRef<EventSource | null>(null);
+    const eventSourceRef = useRef<EventSource<any> | null>(null);
     const reconnectTimeoutRef = useRef<any>(null);
+    const token = useAuthStore((state: { token: string | null }) => state.token);
 
     const connect = useCallback(() => {
         if (eventSourceRef.current) {
             eventSourceRef.current.close();
+            eventSourceRef.current = null;
         }
 
-        const sseUrl = '/api/sse/connect';
+        if (!token) {
+            console.log('[SSE] No token available, skipping connection');
+            return;
+        }
+
+        const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://xn--lasmuecasderamon-bub.com';
+        const sseUrl = `${baseUrl}/api/sse/connect?token=${token}`;
 
         try {
-            const eventSource = new EventSource(sseUrl);
+            console.log('[SSE] Connecting to:', sseUrl);
+            const eventSource = new EventSource<any>(sseUrl);
             
-            eventSource.onopen = () => {
-              
+            eventSource.addEventListener('open', () => {
+                console.log('[SSE] Connection opened');
                 setIsConnected(true);
-            };
+            });
 
-            eventSource.onmessage = (event) => {
+            eventSource.addEventListener('message', (event: any) => {
                 try {
                     const data = JSON.parse(event.data);
                     const sseEvent: SSEEvent = {
@@ -52,35 +63,39 @@ export const useSSE = (enabled: boolean = true): UseSSEReturn => {
                     };
                     setLastEvent(sseEvent);
                 } catch (e) {
-                    
+                    console.error('[SSE] Parse error:', e);
                 }
-            };
+            });
 
-            eventSource.onerror = (error) => {
-             
+            eventSource.addEventListener('error', (error: any) => {
+                console.log('[SSE] Connection error:', error);
                 setIsConnected(false);
                 eventSource.close();
+                eventSourceRef.current = null;
                 
                 if (enabled) {
+                    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
                     reconnectTimeoutRef.current = setTimeout(() => {
-                      
+                        console.log('[SSE] Retrying connection...');
                         connect();
                     }, 5000);
                 }
-            };
+            });
 
             eventSourceRef.current = eventSource;
         } catch (error) {
-            
+            console.error('[SSE] Fatal error:', error);
         }
-    }, [enabled]);
+    }, [enabled, token]);
 
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = null;
         }
         
         if (eventSourceRef.current) {
+            console.log('[SSE] Closing connection cleanup');
             eventSourceRef.current.close();
             eventSourceRef.current = null;
         }
@@ -90,18 +105,20 @@ export const useSSE = (enabled: boolean = true): UseSSEReturn => {
 
     const reconnect = useCallback(() => {
         disconnect();
-        setTimeout(connect, 100);
+        setTimeout(connect, 200);
     }, [disconnect, connect]);
 
     useEffect(() => {
-        if (enabled) {
+        if (enabled && token) {
             connect();
+        } else {
+            disconnect();
         }
 
         return () => {
             disconnect();
         };
-    }, [enabled, connect, disconnect]);
+    }, [enabled, token, connect, disconnect]);
 
     return { isConnected, lastEvent, reconnect, disconnect };
 };
@@ -157,10 +174,10 @@ export const subscribeToEvents = async (
     eventTypes: string[],
     callback: (event: SSEEvent) => void
 ): Promise<() => void> => {
-    const eventSource = new EventSource('/api/sse/connect');
+    const eventSource = new EventSource<any>('@/api/sse/connect');
     
     eventTypes.forEach(type => {
-        eventSource.addEventListener(type, (event) => {
+        eventSource.addEventListener(type, (event: any) => {
             try {
                 const data = JSON.parse(event.data);
                 callback({
@@ -178,3 +195,4 @@ export const subscribeToEvents = async (
         eventSource.close();
     };
 };
+

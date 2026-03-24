@@ -1,50 +1,39 @@
-# Welcome to your Expo app 👋
+# Las Munecas de Ramon App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicacion `Expo Router` para operacion interna, con soporte `android`, `ios` y `web`.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Inicio rapido
 
 ```bash
-npm run reset-project
+corepack pnpm install
+corepack pnpm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Comandos utiles:
 
-## Learn more
+```bash
+corepack pnpm android
+corepack pnpm ios
+corepack pnpm web
+corepack pnpm lint
+corepack pnpm typecheck
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Calidad
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `lint`: revisa hooks, imports, codigo muerto y errores de integracion.
+- `typecheck`: valida tipos antes de publicar builds o updates OTA.
+- Antes de publicar una update, correr ambos comandos y probar el login mas una ruta principal por rol.
 
-## Join the community
+## Build y release
 
-Join our community of developers creating universal apps.
+- `eas.json` define los perfiles de compilacion.
+- `.github/workflows/deploy.yml` publica updates OTA desde `master`.
+- `app.json` concentra iconos, deep links, permisos y configuracion de Expo.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Flujo recomendado de verificacion
+
+1. Confirmar bootstrap de auth y splash screen.
+2. Revisar navegacion principal por rol.
+3. Validar exportacion PDF y componentes premium.
+4. Probar `web` para detectar regresiones de layout o assets.

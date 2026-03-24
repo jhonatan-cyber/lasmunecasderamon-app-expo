@@ -18,12 +18,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { EventDetailModal } from '../../../components/EventDetailModal';
-import { PremiumCalendar } from '../../../components/PremiumCalendar';
-import { PremiumLiquidationCard } from '../../../components/PremiumLiquidationCard';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { useAuthStore } from '../../../store/authStore';
+import { apiClient } from '@/api/client';
+// Componentes locales refactoreados
+import { EventDetailModal } from '@/components/shared/EventDetailModal';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
+import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { useAuthStore } from '@/store/authStore';
 
 interface Event {
     type: 'venta' | 'propina' | 'asistencia' | 'anticipo' | 'comision' | 'servicio';
@@ -32,9 +35,10 @@ interface Event {
     date: string;
     amount: number;
     estado: number;
+    subType?: string;
 }
 
-// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skeleton ───────────────────────────────────────────────────────────────────────────────
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
 }) => {
@@ -46,10 +50,9 @@ const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
                 Animated.timing(anim, { toValue: 0.3, duration: 750, easing: Easing.ease, useNativeDriver: true }),
             ])
         ).start();
-    }, []);
+    }, [anim]);
     return <Animated.View style={[{ width, height, borderRadius, backgroundColor: '#111111', opacity: anim }, style]} />;
 };
-
 
 export default function AdministrativoScreen() {
     const { accentColor, gradientColors, isDark } = useAccentColor();
@@ -90,7 +93,7 @@ export default function AdministrativoScreen() {
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
+                    text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
@@ -130,21 +133,21 @@ export default function AdministrativoScreen() {
     }, [selectedDates, recentActivity]);
 
     const typeLabels: Record<string, string> = {
-        comision: "ComisiÃ³n",
+        comision: "Comisión",
         asistencia: "Asistencia",
         anticipo: "Anticipo",
         propina: "Propina",
         venta: "Venta",
         servicio: "Servicio",
-        gratificacion: "GratificaciÃ³n"
+        gratificacion: "Gratificación"
     };
 
     const getEventLabel = (item: any) => {
         if (!item) return "";
         if (item.type === 'comision') {
-            if (item.subType === 'venta') return "ComisiÃ³n de Venta";
-            if (item.subType === 'servicio') return "ComisiÃ³n de Servicio";
-            return "ComisiÃ³n";
+            if (item.subType === 'venta') return "Comisión de Venta";
+            if (item.subType === 'servicio') return "Comisión de Servicio";
+            return "Comisión";
         }
         if (item.type === 'propina') {
             if (item.subType === 'venta') return "Propina de Venta";
@@ -182,41 +185,15 @@ export default function AdministrativoScreen() {
         return (
             <View style={{ flex: 1, backgroundColor: bg }}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <StatusBar style={isDark ? 'dark' : 'light'} />
+                <StatusBar style={isDark ? 'light' : 'dark'} />
 
-                {/* Header skeleton â€” mismo gradiente */}
-                <LinearGradient
-                    colors={gradientColors as any}
-                    style={[styles.header, {
-                        paddingTop: insets.top + (isTablet ? 20 : 10),
-                        paddingBottom: 25,
-                        borderBottomLeftRadius: 32,
-                        borderBottomRightRadius: 32,
-                    }]}
-                >
-                    <View style={styles.headerTop}>
-                        <View style={[styles.backBtn, { backgroundColor: 'rgba(155,155,155,0.15)' }]} />
-                        <View style={{ flex: 1, marginLeft: 10, gap: 8 }}>
-                            <SkeletonBox
-                                width={200}
-                                height={22}
-                                borderRadius={8}
-                                style={{ backgroundColor: isDark ? '#D1D5DB' : 'rgba(255,255,255,0.25)' }}
-                            />
-                            <SkeletonBox
-                                width={130}
-                                height={14}
-                                borderRadius={6}
-                                style={{ backgroundColor: isDark ? '#9CA3AF' : 'rgba(255,255,255,0.18)' }}
-                            />
-                        </View>
-                    </View>
-                </LinearGradient>
+                <PremiumHeader
+                    title="Resumen Administrativo"
+                    subtitle="Actividad y eventos"
+                />
 
                 <ScrollView style={{ flex: 1 }} scrollEnabled={false}>
                     <View style={{ padding: 20, gap: 20 }}>
-
-                        {/* Liquidation card skeleton */}
                         <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#111111' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 }}>
                                 <SkeletonBox width={56} height={56} borderRadius={16} />
@@ -225,60 +202,7 @@ export default function AdministrativoScreen() {
                                     <SkeletonBox width="40%" height={28} borderRadius={8} />
                                 </View>
                             </View>
-                            <View style={{ gap: 12 }}>
-                                {[1, 2, 3].map(i => (
-                                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <SkeletonBox width={110} height={12} borderRadius={6} />
-                                        <SkeletonBox width={70} height={12} borderRadius={6} />
-                                    </View>
-                                ))}
-                            </View>
                         </View>
-
-                        {/* Calendar skeleton */}
-                        <View style={[styles.skeletonCard, { backgroundColor: isDark ? '#111111' : '#FFF', borderColor: isDark ? '#374151' : '#E2E8F0' }]}>
-                            {/* Month header */}
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                <SkeletonBox width={130} height={16} borderRadius={8} />
-                                <View style={{ flexDirection: 'row', gap: 12 }}>
-                                    <SkeletonBox width={32} height={32} borderRadius={16} />
-                                    <SkeletonBox width={32} height={32} borderRadius={16} />
-                                </View>
-                            </View>
-                            {/* Day names */}
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 }}>
-                                {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                    <SkeletonBox key={i} width={28} height={12} borderRadius={6} />
-                                ))}
-                            </View>
-                            {/* Day grid â€” 5 rows */}
-                            {[1, 2, 3, 4, 5].map(row => (
-                                <View key={row} style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 }}>
-                                    {[1, 2, 3, 4, 5, 6, 7].map(col => (
-                                        <SkeletonBox key={col} width={36} height={36} borderRadius={10} />
-                                    ))}
-                                </View>
-                            ))}
-                        </View>
-
-                        {/* Recent activity rows */}
-                        <View style={{ gap: 12 }}>
-                            {[1, 2, 3].map(i => (
-                                <View key={i} style={[styles.skeletonCard, {
-                                    backgroundColor: isDark ? '#111111' : '#FFF',
-                                    borderColor: isDark ? '#374151' : '#E2E8F0',
-                                    flexDirection: 'row', alignItems: 'center', gap: 14
-                                }]}>
-                                    <SkeletonBox width={44} height={44} borderRadius={14} />
-                                    <View style={{ flex: 1, gap: 8 }}>
-                                        <SkeletonBox width="55%" height={13} borderRadius={6} />
-                                        <SkeletonBox width="35%" height={11} borderRadius={6} />
-                                    </View>
-                                    <SkeletonBox width={60} height={14} borderRadius={6} />
-                                </View>
-                            ))}
-                        </View>
-
                     </View>
                 </ScrollView>
             </View>
@@ -290,37 +214,21 @@ export default function AdministrativoScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Header â€” mismo patrÃ³n que cuentas/ventas/servicios */}
-            <LinearGradient
-                colors={gradientColors as any}
-                style={[
-                    styles.header,
-                    {
-                        paddingTop: insets.top + (isTablet ? 20 : 10),
-                        paddingBottom: 25,
-                        borderBottomLeftRadius: 32,
-                        borderBottomRightRadius: 32,
-                    },
-                ]}
-            >
-                <View style={styles.headerTop}>
-                    <Pressable
-                        onPress={() => router.back()}
-                        style={styles.backBtn}
-                        accessibilityLabel="Volver"
-                    >
-                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color="#FFFFFF" />
-                    </Pressable>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}>
-                            Resumen Administrativo
-                        </Text>
-                        <Text style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>
-                            Actividad y eventos
-                        </Text>
+            <PremiumHeader
+                title="Resumen Administrativo"
+                subtitle="Actividad y eventos"
+                rightComponent={
+                    <View style={styles.headerActions}>
+                        <Pressable
+                            onPress={() => router.back()}
+                            style={styles.backBtnRight}
+                        >
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text style={styles.backTextHeader}>Atrás</Text>
+                        </Pressable>
                     </View>
-                </View>
-            </LinearGradient>
+                }
+            />
 
             <ScrollView
                 style={styles.container}
@@ -331,8 +239,6 @@ export default function AdministrativoScreen() {
                     <PremiumLiquidationCard
                         user={user}
                         events={recentActivity}
-                        title="Mis Ingresos"
-                        totalLabel="Total Acumulado"
                     />
                 </View>
 
@@ -437,7 +343,7 @@ export default function AdministrativoScreen() {
                             }
                         />
 
-                        {/* BotÃ³n cerrar fijo al fondo */}
+                        {/* Botón cerrar fijo al fondo */}
                         <View style={[styles.modalFooter, { backgroundColor: bg, borderTopColor: isDark ? '#374151' : '#E5E7EB' }]}>
                             <Pressable
                                 style={[styles.closeFooterBtn, { backgroundColor: accentColor }]}
@@ -465,15 +371,21 @@ export default function AdministrativoScreen() {
 }
 
 const styles = StyleSheet.create({
+    backBtnRight: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 38, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     skeletonCard: { borderRadius: 20, borderWidth: 1, padding: 16 },
-    // Header â€” mismo patrÃ³n que cuentas/ventas/servicios
-    header: { paddingHorizontal: 16 },
-    headerTop: { flexDirection: 'row', alignItems: 'center' },
-    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
-    headerTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+
     selectionFloat: {
         position: 'absolute',
         bottom: 30,
@@ -513,103 +425,6 @@ const styles = StyleSheet.create({
     modalFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
     closeFooterBtn: { height: 52, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     closeFooterBtnText: { fontSize: 16, fontWeight: '800', color: '#FFF' },
-    modalOverlayCenter: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.7)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20
-    },
-    detailCard: {
-    maxHeight: '85%',
-        width: '100%',
-        borderRadius: 32,
-        padding: 24,
-        elevation: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-    },
-    detailHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 20
-    },
-    detailIconBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    detailCloseBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.05)'
-    },
-    detailBody: {
-        alignItems: 'center',
-        marginBottom: 30
-    },
-    detailType: {
-        fontSize: 13,
-        fontWeight: '800',
-        letterSpacing: 2,
-        marginBottom: 8
-    },
-    detailAmount: {
-        fontSize: 42,
-        fontWeight: '900',
-        letterSpacing: -1
-    },
-    divider: {
-        width: '100%',
-        height: 1,
-        marginVertical: 25,
-        opacity: 0.5
-    },
-    detailRow: {
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16
-    },
-    detailLabel: {
-        fontSize: 13,
-        fontWeight: '600'
-    },
-    detailValue: {
-        fontSize: 14,
-        fontWeight: '700'
-    },
-    statusBadgeDetail: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 99,
-    },
-    statusTextDetail: {
-        fontSize: 11,
-        fontWeight: '800'
-    },
-    confirmBtn: {
-        width: '100%',
-        height: 56,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 4
-    },
-    confirmBtnText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '800'
-    },
     statusMiniText: {
         fontSize: 10,
         fontWeight: '700',

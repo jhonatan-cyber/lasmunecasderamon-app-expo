@@ -13,19 +13,17 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    useColorScheme,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { useAuthStore } from '../../../store/authStore';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { PremiumHeader } from '../../../components/PremiumHeader';
-import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
-import { HostessSelectModal } from '../../../components/cajero/forms/HostessSelectModal';
-import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
-import { Skeleton } from '../../../components/ui/Skeleton';
+import { apiClient } from '@/api/client';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
+import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
+import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface Room {
     id: number;
@@ -58,13 +56,13 @@ interface Client {
     nombre?: string;
     lastName: string;
     apellido?: string;
+    saldo?: number;
 }
 
 export default function ServiciosScreen() {
     const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const user = useAuthStore((state) => state.user);
     const primaryColor = accentColor;
 
     // Data states
@@ -78,20 +76,16 @@ export default function ServiciosScreen() {
 
     // Form states
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-    const [selectedHostesses, setSelectedHostesses] = useState<number[]>([]);
-    const [selectedClients, setSelectedClients] = useState<number[]>([]);
+    const [selectedHostesses, setSelectedHostesses] = useState<(number | string)[]>([]);
+    const [selectedClients, setSelectedClients] = useState<(number | string)[]>([]);
     const [servicePrice, setServicePrice] = useState<string>('');
-    const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | ''>('');
+    const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | ''>('');
     const [iva, setIva] = useState<string>('0');
     const [roomModalVisible, setRoomModalVisible] = useState(false);
     const [hostessModalVisible, setHostessModalVisible] = useState(false);
     const [clientModalVisible, setClientModalVisible] = useState(false);
 
-    const bg = isDark ? '#0F0D2E' : '#FFFFFF';
-    const cardBg = isDark ? '#1E1B4B' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB';
+    const { bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     // Fetch data
     const fetchData = useCallback(async (isRefreshing = false) => {
@@ -99,7 +93,7 @@ export default function ServiciosScreen() {
             if (!isRefreshing) setLoading(true);
             const [roomRes, anfRes, clientRes] = await Promise.allSettled([
                 apiClient('/rooms'),
-                apiClient('/anfitrionas/disponibles'),
+                apiClient('/users?anfitrionas=1'),
                 apiClient('/clients'),
             ]);
 
@@ -107,19 +101,32 @@ export default function ServiciosScreen() {
             const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
             const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
 
-            const newData = { rooms: roomData?.data, anfitrionas: anfData?.data, clients: clientData?.data || clientData };
+            const deduplicate = (arr: any[], idKey: string) => {
+                if (!Array.isArray(arr)) return [];
+                const seen = new Set();
+                return arr.filter(item => {
+                    const id = item[idKey] || item.id;
+                    if (seen.has(id)) return false;
+                    seen.add(id);
+                    return true;
+                });
+            };
+
+            const rawAnf = anfData?.data || [];
+            const rawClients = Array.isArray(clientData) ? clientData : (clientData?.data || []);
+            const newData = { rooms: roomData?.data, anfitrionas: rawAnf, clients: rawClients };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (roomData?.success) setRooms(roomData.data || []);
-            if (anfData?.success) setAnfitrionas(anfData.data || []);
-
-            if (Array.isArray(clientData)) {
-                setClients(clientData);
-            } else if (clientData?.success) {
-                setClients(clientData.data || []);
-            }
+            setRooms(roomData?.data || []);
+            
+            // Unir las nuevas con las que ya tengamos seleccionadas para no perder sus datos (nicks, etc)
+            setAnfitrionas(prev => {
+                const combined = [...(rawAnf || []), ...(prev || [])];
+                return deduplicate(combined, 'id_usuario');
+            });
+            setClients(deduplicate(rawClients, 'id_cliente'));
 
             if (isRefreshing) {
                 Toast.show({
@@ -151,6 +158,54 @@ export default function ServiciosScreen() {
         fetchData(true);
     };
 
+    const toggleHostess = (hostessId: string | number) => {
+        const isSelected = selectedHostesses.some(id => String(id) === String(hostessId));
+        let next;
+        
+        if (isSelected) {
+            next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
+        } else {
+            if (selectedHostesses.length >= maxHostesses) {
+                Toast.show({
+                    type: 'info',
+                    text1: 'Límite alcanzado',
+                    text2: `Máximo ${maxHostesses} anfitrionas permitidas`
+                });
+                return;
+            }
+            next = [...selectedHostesses, hostessId];
+        }
+
+        const uniqueNext = Array.from(new Set(next.map(id => String(id))))
+            .map(idStr => next.find(id => String(id) === idStr) || idStr);
+
+        setSelectedHostesses(uniqueNext as any);
+    };
+
+    const toggleClient = (clientId: string | number) => {
+        const isSelected = selectedClients.some(id => String(id) === String(clientId));
+        let next;
+
+        if (isSelected) {
+            next = selectedClients.filter((id) => String(id) !== String(clientId));
+        } else {
+            if (selectedClients.length >= maxClients) {
+                Toast.show({
+                    type: 'info',
+                    text1: 'Límite alcanzado',
+                    text2: `Máximo ${maxClients} clientes permitidos`
+                });
+                return;
+            }
+            next = [...selectedClients, clientId];
+        }
+
+        const uniqueNext = Array.from(new Set(next.map(id => String(id))))
+            .map(idStr => next.find(id => String(id) === idStr) || idStr);
+
+        setSelectedClients(uniqueNext as any);
+    };
+
     // Helpers from web logic
     const hasComision = useMemo(() => {
         return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
@@ -177,6 +232,23 @@ export default function ServiciosScreen() {
         const effectiveHostesses = Math.max(1, selectedHostesses.length);
         return 4 - effectiveHostesses;
     }, [hasComision, selectedHostesses.length]);
+
+    const activeClientWithBalance = useMemo(() => {
+        if (selectedClients.length === 0) return null;
+        const mainClientId = selectedClients[0];
+        const client = clients.find(c => String(c.id_cliente || c.id) === String(mainClientId));
+        return (client && (client.saldo || 0) > 0) ? client : null;
+    }, [selectedClients, clients]);
+
+    const hasPrepago = !!activeClientWithBalance;
+
+    useEffect(() => {
+        if (hasPrepago) {
+            setPaymentMethod('prepago');
+        } else if (paymentMethod === 'prepago') {
+            setPaymentMethod('');
+        }
+    }, [hasPrepago]);
 
     // Calculation logic (simplified version of web version)
     const totals = useMemo(() => {
@@ -222,7 +294,7 @@ export default function ServiciosScreen() {
             : comisionTotal;
 
         return { subtotal, totalHabitacion, total, iva: currentIva, comisionPorAnfitriona };
-    }, [servicePrice, selectedRoom, selectedHostesses.length, selectedClients.length, paymentMethod]);
+    }, [servicePrice, selectedRoom, selectedHostesses.length, selectedClients.length, paymentMethod, hasComision]);
 
     useEffect(() => {
         setIva(totals.iva.toString());
@@ -342,7 +414,12 @@ export default function ServiciosScreen() {
                 <PremiumHeader 
                     title="Servicios"
                     subtitle="Registrar nuevo servicio en habitación"
-                    onBack={() => router.back()}
+                    rightComponent={
+                        <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text style={styles.backTextHeader}>Atrás</Text>
+                        </Pressable>
+                    }
                 />
 
                 <View style={{ padding: 20 }}>
@@ -407,7 +484,9 @@ export default function ServiciosScreen() {
                             <Text style={[styles.selectFieldText, { color: selectedHostesses.length > 0 ? textPrimary : textSecondary }]} numberOfLines={1}>
                                 {selectedHostesses.length > 0 
                                     ? selectedHostesses.map(id => {
-                                        const anf = anfitrionas.find(a => (a.id_usuario || a.id) === id);
+                                        const anf = anfitrionas.find(a => 
+                                            String(a.id_usuario || a.id) === String(id)
+                                        );
                                         return anf?.nick || anf?.nombre || anf?.name || '';
                                     }).filter(Boolean).join(', ')
                                     : 'Seleccionar anfitrionas...'}
@@ -421,19 +500,7 @@ export default function ServiciosScreen() {
                     visible={hostessModalVisible}
                     onClose={() => setHostessModalVisible(false)}
                     onConfirm={() => setHostessModalVisible(false)}
-                    onToggle={(id) => {
-                        if (selectedHostesses.includes(id)) {
-                            setSelectedHostesses(prev => prev.filter(i => i !== id));
-                        } else if (selectedHostesses.length < maxHostesses) {
-                            setSelectedHostesses(prev => [...prev, id]);
-                        } else {
-                            Toast.show({
-                                type: 'info',
-                                text1: 'Límite alcanzado',
-                                text2: `Máximo ${maxHostesses} anfitrionas permitidas`
-                            });
-                        }
-                    }}
+                    onToggle={toggleHostess}
                     hostesses={anfitrionas as any}
                     selectedIds={selectedHostesses}
                     max={maxHostesses}
@@ -453,7 +520,10 @@ export default function ServiciosScreen() {
                             <Text style={[styles.selectFieldText, { color: selectedClients.length > 0 ? textPrimary : textSecondary }]} numberOfLines={1}>
                                 {selectedClients.length > 0 
                                     ? selectedClients.map(id => {
-                                        const cli = clients.find(c => (c.id_cliente || c.id) === id);
+                                        const cli = clients.find(c => 
+                                            String(c.id_cliente) === String(id) || 
+                                            String(c.id) === String(id)
+                                        );
                                         return `${cli?.nombre || cli?.name || ''} ${cli?.apellido || cli?.lastName || ''}`.trim();
                                     }).filter(Boolean).join(', ')
                                     : 'Seleccionar clientes...'}
@@ -466,19 +536,7 @@ export default function ServiciosScreen() {
                 <ClientSelectModal 
                     visible={clientModalVisible}
                     onClose={() => setClientModalVisible(false)}
-                    onToggle={(id) => {
-                        if (selectedClients.includes(id)) {
-                            setSelectedClients(prev => prev.filter(i => i !== id));
-                        } else if (selectedClients.length < maxClients) {
-                            setSelectedClients(prev => [...prev, id]);
-                        } else {
-                            Toast.show({
-                                type: 'info',
-                                text1: 'Límite alcanzado',
-                                text2: `Máximo ${maxClients} clientes permitidos`
-                            });
-                        }
-                    }}
+                    onToggle={toggleClient}
                     clients={clients as any}
                     selectedIds={selectedClients}
                     max={maxClients}
@@ -505,24 +563,44 @@ export default function ServiciosScreen() {
                         </View>
                     )}
 
-                    <Text style={[styles.sectionLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
-                    <View style={styles.methodContainer}>
-                        {['efectivo', 'tarjeta', 'transferencia'].map((m) => (
-                            <Pressable
-                                key={m}
-                                onPress={() => setPaymentMethod(m as any)}
-                                style={[
-                                    styles.methodBtn,
-                                    { backgroundColor: cardBg, borderColor: paymentMethod === m ? primaryColor : borderColor },
-                                    paymentMethod === m && { borderWidth: 2 }
-                                ]}
-                            >
-                                <Text style={[styles.methodText, { color: paymentMethod === m ? primaryColor : textPrimary }]}>
-                                    {m.charAt(0).toUpperCase() + m.slice(1)}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
+                    {!hasPrepago && (
+                        <>
+                            <Text style={[styles.sectionLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
+                            <View style={styles.methodContainer}>
+                                {['efectivo', 'tarjeta', 'transferencia'].map((m) => (
+                                    <Pressable
+                                        key={m}
+                                        onPress={() => setPaymentMethod(m as any)}
+                                        style={[
+                                            styles.methodBtn,
+                                            { backgroundColor: cardBg, borderColor: paymentMethod === m ? primaryColor : borderColor },
+                                            paymentMethod === m && { borderWidth: 2 }
+                                        ]}
+                                    >
+                                        <Text style={[styles.methodText, { color: paymentMethod === m ? primaryColor : textPrimary }]}>
+                                            {m.charAt(0).toUpperCase() + m.slice(1)}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        </>
+                    )}
+
+                    {hasPrepago && (
+                        <View style={{ backgroundColor: '#10B98115', padding: 15, borderRadius: 20, borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#10B981' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                <Ionicons name="wallet" size={20} color="#10B981" />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 14 }}>
+                                        PAGO AUTOMÁTICO CON SALDO
+                                    </Text>
+                                    <Text style={{ color: '#10B981', fontWeight: '800', fontSize: 12 }}>
+                                        Saldo disponible: ${(activeClientWithBalance?.saldo || 0).toLocaleString()}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
 
                     {paymentMethod === 'tarjeta' && !hasComision && (
                         <View style={styles.inputGroup}>
@@ -582,8 +660,7 @@ export default function ServiciosScreen() {
                         <ActivityIndicator color="#FFF" />
                     ) : (
                         <>
-                            <Ionicons name="flash" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                            <Text style={styles.submitText}>ENVIAR SOLICITUD</Text>
+                            <Text style={styles.submitText}>SOLICITAR SERVICIO</Text>
                         </>
                     )}
                 </Pressable>
@@ -596,8 +673,19 @@ export default function ServiciosScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    header: { 
+        paddingHorizontal: 20,
+    },
+    backBtnRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     title: { fontSize: 22, fontWeight: '900', flex: 1 },
     selectField: {
         height: 56,
@@ -613,39 +701,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
+        flex: 1
     },
     selectFieldText: {
         fontSize: 16,
         fontWeight: '700',
     },
     sectionLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1, marginTop: 24, marginBottom: 12 },
-    horizontalSelect: { marginBottom: 10 },
-    roomCard: { width: 120, height: 140, borderRadius: 20, padding: 15, marginRight: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    roomEmoji: { fontSize: 28, marginBottom: 8 },
-    roomName: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
-    roomPrice: { fontSize: 13, fontWeight: '800', marginTop: 4 },
-    roomTime: { fontSize: 11, marginTop: 2 },
-    hostessCard: { width: 100, height: 110, borderRadius: 20, padding: 12, marginRight: 10, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(139, 92, 246, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    hostessNick: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
-    clientCard: { width: 120, height: 70, borderRadius: 16, padding: 12, marginRight: 10, borderWidth: 1, justifyContent: 'center' },
-    clientName: { fontSize: 13, fontWeight: '700' },
-    clientLastName: { fontSize: 11, marginTop: 2 },
-    formSection: { marginTop: 10 },
-    inputGroup: { marginBottom: 20 },
-    inputLabel: { fontSize: 12, fontWeight: '800', marginBottom: 8 },
-    inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, height: 56, borderWidth: 1 },
+    formSection: { gap: 10 },
+    inputGroup: { gap: 8 },
+    inputLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+    inputWrapper: { height: 56, borderRadius: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
     input: { flex: 1, fontSize: 18, fontWeight: '700' },
-    methodContainer: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    methodBtn: { flex: 1, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
-    methodText: { fontSize: 13, fontWeight: '700' },
-    summaryCard: { borderRadius: 20, padding: 20, marginTop: 10, borderWidth: 1 },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    summaryLabel: { fontSize: 13, fontWeight: '600' },
-    summaryValue: { fontSize: 13, fontWeight: '700' },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-    totalLabel: { fontSize: 16, fontWeight: '900', letterSpacing: -0.5 },
-    totalAmount: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-    submitBtn: { flexDirection: 'row', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginTop: 30 },
-    submitText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 1 },
+    methodContainer: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+    methodBtn: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+    methodText: { fontSize: 12, fontWeight: '800' },
+    summaryCard: { padding: 20, borderRadius: 24, borderWidth: 1, marginVertical: 20, gap: 10 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    summaryLabel: { fontSize: 14, fontWeight: '600' },
+    summaryValue: { fontSize: 14, fontWeight: '700' },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 15, borderTopWidth: 1 },
+    totalLabel: { fontSize: 18, fontWeight: '900' },
+    totalAmount: { fontSize: 24, fontWeight: '900' },
+    submitBtn: { height: 64, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+    submitText: { color: '#FFF', fontSize: 16, fontWeight: '900', letterSpacing: 1 }
 });

@@ -17,17 +17,15 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { PremiumHeader } from '../../../components/PremiumHeader';
-import { CartList } from "../../../components/cajero/forms/CartList";
-import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
-import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
-import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
-import { Skeleton } from '../../../components/ui/Skeleton';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { useAuthStore } from '../../../store/authStore';
+import { apiClient } from '@/api/client';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { CartList } from "@/components/cajero/forms/CartList";
+import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
+import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
+import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type CuentaState = {
     loadingInitial: boolean;
@@ -45,7 +43,7 @@ type CuentaState = {
     modalProducts: any[];
     modalLoading: boolean;
     modalQuantities: { [key: number]: number };
-    modalHostessSelections: { [key: number]: number[] };
+    modalHostessSelections: { [key: number]: (string | number)[] };
     hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
     hostessSubModalVisible: boolean;
     hostessModalVisible: boolean;
@@ -68,7 +66,7 @@ type CuentaAction =
     | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
     | { type: 'SET_MODAL_LOADING'; payload: boolean }
     | { type: 'SET_MODAL_QUANTITY'; productId: number; quantity: number }
-    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: number[] }
+    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: (string | number)[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
     | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
     | { type: 'SET_SELECTED_TIME'; payload: number }
@@ -161,8 +159,6 @@ const getHostessLimit = (prod: any, qty: number) => {
 export default function NuevaCuentaScreen() {
     const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
-    const user = useAuthStore((state) => state.user);
 
     const [state, dispatch] = useReducer(cuentaReducer, initialCuentaState);
     const {
@@ -170,7 +166,7 @@ export default function NuevaCuentaScreen() {
         cart, selectedCliente, selectedHabitacion, categories, modalOpen, modalCategoria,
         modalProducts, modalLoading, modalQuantities, modalHostessSelections, hostessSelectionTarget,
         hostessSubModalVisible, roomModalVisible, clientModalVisible,
-        activeCartIdx, submitting
+        submitting
     } = state;
 
     const { width } = useWindowDimensions();
@@ -229,7 +225,7 @@ export default function NuevaCuentaScreen() {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
-    }, [user?.id]);
+    }, []);
 
     useEffect(() => {
         fetchInitialData();
@@ -268,7 +264,7 @@ export default function NuevaCuentaScreen() {
         const newCart = [...cart];
 
         const hostessNames = selectedHostesses.length > 0
-            ? selectedHostesses.map((hId: number) => anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
+            ? selectedHostesses.map((hId: number | string) => anfitrionas.find((a: any) => String(a.id_usuario || a.id) === String(hId))?.nick || '').filter(Boolean).join(', ')
             : null;
 
         const existingItemIndex = newCart.findIndex((item) => {
@@ -372,7 +368,16 @@ export default function NuevaCuentaScreen() {
 
     const NuevaCuentaSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
-            <PremiumHeader title="Nueva Cuenta" subtitle="Cargando información..." />
+            <PremiumHeader
+                title="Nueva Cuenta"
+                subtitle="Cargando información..."
+                rightComponent={
+                    <View style={[styles.backBtnRight, { opacity: 0.5 }]}>
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Text style={styles.backTextRight}>Atrás</Text>
+                    </View>
+                }
+            />
             <ScrollView contentContainerStyle={dynamicStyles.scrollContent}>
                 <View style={styles.browserContainer}>
                     <Skeleton width={200} height={20} style={{ marginBottom: 16 }} />
@@ -412,12 +417,20 @@ export default function NuevaCuentaScreen() {
             style={[styles.container, { backgroundColor: bg }]}
         >
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar style={isDark ? 'dark' : 'light'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
             <PremiumHeader
                 title="Nueva Cuenta"
                 subtitle="Aperturar cuenta"
-                onBack={() => router.back()}
+                rightComponent={
+                    <Pressable
+                        onPress={() => router.back()}
+                        style={styles.backBtnRight}
+                    >
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Text style={styles.backTextRight}>Atrás</Text>
+                    </Pressable>
+                }
             />
 
             <ScrollView
@@ -428,7 +441,7 @@ export default function NuevaCuentaScreen() {
                 <View style={styles.browserContainer}>
                     <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-                        {categories.map((cat, idx) => (
+                        {categories.map((cat) => (
                             <Pressable
                                 key={cat.id}
                                 style={[styles.categorySmallCard, { backgroundColor: cardBg, borderColor }]}
@@ -477,29 +490,31 @@ export default function NuevaCuentaScreen() {
                             <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>CLIENTE</Text>
                             <Text style={[styles.selectorText, { color: textPrimary }]}>
                                 {selectedCliente
-                                    ? ((selectedCliente.nombre || selectedCliente.name || '') + ' ' + (selectedCliente.apellido || selectedCliente.last_name || '')).trim() || 'Cliente Seleccionado'
+                                    ? ((selectedCliente.nombre || selectedCliente.name || '') + ' ' + (selectedCliente.apellido || selectedCliente.lastName || selectedCliente.last_name || '')).trim() || 'Cliente Seleccionado'
                                     : 'Seleccionar Cliente'}
                             </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color={textSecondary} />
                     </Pressable>
 
-                    <Pressable
-                        style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
-                        onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
-                        accessibilityLabel="Seleccionar habitación"
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="business" size={20} color="#10B981" />
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>HABITACIÓN / ÁREA</Text>
-                            <Text style={[styles.selectorText, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación (Opcional)'}</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                    </Pressable>
+                    {totals.totalComision > 0 && (
+                        <Pressable
+                            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
+                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
+                            accessibilityLabel="Seleccionar habitación"
+                            accessibilityRole="button"
+                        >
+                            <Ionicons name="business" size={20} color="#10B981" />
+                            <View style={{ flex: 1, marginLeft: 10 }}>
+                                <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>HABITACIÓN / ÁREA</Text>
+                                <Text style={[styles.selectorText, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación (Opcional)'}</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+                        </Pressable>
+                    )}
 
-                    {/* Selector de tiempo si la habitación no tiene costo/comisión */}
-                    {selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0) && (
+                    {/* Selector de tiempo si hay comision y habitacion seleccionada sin costo fijo */}
+                    {totals.totalComision > 0 && selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0) && (
                         <Pressable
                             style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2, backgroundColor: isDark ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.05)' }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: true })}
@@ -527,7 +542,7 @@ export default function NuevaCuentaScreen() {
                     </View>
 
                     <Pressable
-                        style={[styles.submitBtn, { backgroundColor: accentColor, shadowColor: accentColor }, submitting && { opacity: 0.7 }]}
+                        style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor, shadowColor: accentColor }, submitting && { opacity: 0.7 }]}
                         onPress={handleSubmit}
                         disabled={submitting}
                         accessibilityLabel="Registrar cuenta"
@@ -634,11 +649,11 @@ export default function NuevaCuentaScreen() {
             <ClientSelectModal
                 visible={clientModalVisible}
                 clients={clientes}
-                selectedIds={selectedCliente ? [Number(selectedCliente.id_cliente || selectedCliente.id)] : []}
+                selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
                 max={1}
                 onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
                 onToggle={(id) => {
-                    const client = clientes.find(c => Number(c.id_cliente || c.id) === id);
+                    const client = clientes.find(c => String(c.id_cliente || c.id) === String(id));
                     if (client) {
                         dispatch({ type: 'SET_SELECTED_CLIENTE', payload: client });
                         dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
@@ -673,14 +688,15 @@ export default function NuevaCuentaScreen() {
                     const currentSelected = modalHostessSelections[pid] || [];
                     let newSelected;
 
-                    if (currentSelected.includes(id)) {
-                        newSelected = currentSelected.filter(x => x !== id);
+                    const strId = String(id);
+                    if (currentSelected.some(x => String(x) === strId)) {
+                        newSelected = currentSelected.filter(x => String(x) !== strId);
                     } else {
                         if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
                             showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
                             return;
                         }
-                        newSelected = [...currentSelected, id];
+                        newSelected = [...currentSelected, strId];
                     }
                     dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
                 }}
@@ -741,6 +757,20 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
     backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
+    backBtnRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 4
+    },
+    backTextRight: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700'
+    },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
     section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
@@ -778,7 +808,7 @@ const styles = StyleSheet.create({
     },
     submitBtnText: { color: '#FFF', fontSize: 17, fontWeight: '900', letterSpacing: 0.5 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContentWide: { width: '95%', alignSelf: 'center', borderRadius: 32, padding: 20, height: '80%' },
+    modalContentWide: { width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 20, height: '85%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
     modalProductsList: { padding: 16 },
@@ -802,7 +832,10 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 }
     },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '70%', width: '100%' },
+    modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '85%', width: '100%' },
     listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1 },
     listItemTitle: { fontSize: 16, fontWeight: '700' },
 });
+
+
+

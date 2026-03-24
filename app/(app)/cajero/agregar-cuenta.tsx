@@ -14,16 +14,16 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    useColorScheme,
     useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { CartList } from "../../../components/cajero/forms/CartList";
-import { HostessSelectModal } from "../../../components/cajero/forms/HostessSelectModal";
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { apiClient } from '@/api/client';
+import { CartList } from "@/components/cajero/forms/CartList";
+import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type CuentaState = {
     loadingInitial: boolean;
@@ -36,7 +36,7 @@ type CuentaState = {
     modalProducts: any[];
     modalLoading: boolean;
     modalQuantities: { [key: number]: number };
-    modalHostessSelections: { [key: number]: number[] };
+    modalHostessSelections: { [key: number]: (string | number)[] };
     hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
     hostessSubModalVisible: boolean;
     submitting: boolean;
@@ -54,7 +54,7 @@ type CuentaAction =
     | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
     | { type: 'SET_MODAL_LOADING'; payload: boolean }
     | { type: 'SET_MODAL_QUANTITY'; productId: number; quantity: number }
-    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: number[] }
+    | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: (string | number)[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
     | { type: 'SET_SUBMITTING'; payload: boolean }
     | { type: 'SET_EXTRA_TIEMPO'; payload: number }
@@ -144,7 +144,7 @@ export default function AgregarCuentaScreen() {
         if (params.cuenta && typeof params.cuenta === 'string') {
             try {
                 return JSON.parse(params.cuenta);
-            } catch (e) {
+            } catch {
                 return null;
             }
         }
@@ -159,7 +159,6 @@ export default function AgregarCuentaScreen() {
     } = state;
 
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
-    // IDs de anfitrionas ya asignadas a la cuenta (para pre-selección)
     const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
     const { width } = useWindowDimensions();
@@ -188,11 +187,9 @@ export default function AgregarCuentaScreen() {
                 apiClient('/users?anfitrionas=1'),
                 apiClient('/categories'),
             ];
-            // También fetched el detalle completo de la cuenta para obtener los usuarios asignados
             if (cuentaOriginal?.id_cuenta) {
                 requests.push(apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`));
             }
-
             const [anfitrionasRes, categoriesRes, cuentaDetalleRes] = await Promise.all(requests);
 
             dispatch({
@@ -202,7 +199,6 @@ export default function AgregarCuentaScreen() {
                     cuentaDetalle: cuentaDetalleRes || null,
                 }
             });
-
         } catch (error) {
             console.error('Error fetching initial data:', error);
             showToast('Error', 'No se pudo cargar la información necesaria.');
@@ -218,7 +214,7 @@ export default function AgregarCuentaScreen() {
             showToast('Error', 'No se recibió la información de la cuenta');
             router.back();
         }
-    }, [fetchInitialData, cuentaOriginal]);
+    }, [fetchInitialData, cuentaOriginal, router]);
 
     const onRefresh = useCallback(() => {
         dispatch({ type: 'SET_REFRESHING', payload: true });
@@ -246,16 +242,12 @@ export default function AgregarCuentaScreen() {
         const id = prod.id || prod.id_producto;
         const totalQty = modalQuantities[id] || 1;
         const selectedHostesses = modalHostessSelections[id] || [];
-
         const price = prod.precio ?? prod.price ?? 0;
         const comm = prod.comision ?? prod.commission ?? 0;
-
         const newCart = [...cart];
-
         const hostessNames = selectedHostesses.length > 0
-            ? selectedHostesses.map((hId: number) => anfitrionas.find((a: any) => (a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
+            ? selectedHostesses.map((hId: number | string) => anfitrionas.find((a: any) => String(a.id_usuario || a.id) === String(hId))?.nick || '').filter(Boolean).join(', ')
             : null;
-
         const existingItemIndex = newCart.findIndex((item) => {
             const itemId = item.id_producto || item.id;
             const currentH = item.selectedHostesses || [];
@@ -263,7 +255,6 @@ export default function AgregarCuentaScreen() {
             const sortedNew = [...selectedHostesses].sort().join(',');
             return itemId === id && sortedCurrent === sortedNew;
         });
-
         if (existingItemIndex >= 0) {
             newCart[existingItemIndex].cantidad += totalQty;
             newCart[existingItemIndex].subtotal = price * newCart[existingItemIndex].cantidad;
@@ -280,7 +271,6 @@ export default function AgregarCuentaScreen() {
                 isChampagne: isChampagneProduct(prod),
             });
         }
-
         dispatch({ type: 'SET_CART', payload: newCart });
         showToast('Agregado', `${prod.nombre || prod.name} sumado a la cuenta`, 'success');
     }, [cart, modalQuantities, modalHostessSelections, anfitrionas]);
@@ -295,16 +285,12 @@ export default function AgregarCuentaScreen() {
             showToast('Error', 'No has agregado nuevos productos.');
             return;
         }
-
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
-            // Unir anfitrionas de la cuenta original (desde detalle completo) con las nuevas
-            // Usamos cuentaDetalle porque cuentaOriginal (del listado) no trae el array de usuarios
             const originalUserIds = (cuentaDetalle?.usuarios || [])
                 .map((u: any) => u.usuario_id || u.id_usuario)
                 .filter(Boolean) as number[];
             const mergedHostessIds = new Set<number>(originalUserIds);
-
             cart.forEach(item => {
                 if (item.selectedHostesses && Array.isArray(item.selectedHostesses)) {
                     item.selectedHostesses.forEach((hId: number) => {
@@ -312,7 +298,6 @@ export default function AgregarCuentaScreen() {
                     });
                 }
             });
-
             const cuentaData: any = {
                 detalles: cart.map((item) => ({
                     producto_id: item.id_producto || item.id,
@@ -325,17 +310,13 @@ export default function AgregarCuentaScreen() {
                 })),
                 usuarios: Array.from(mergedHostessIds)
             };
-
-            // Si hay tiempo extra y la cuenta tiene habitación, adjuntarlo
             if (extraTiempo > 0 && hasRoom) {
                 cuentaData.extraTiempo = extraTiempo;
             }
-
             const res = await apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`, {
                 method: 'PUT',
                 body: JSON.stringify(cuentaData),
             });
-
             if (res.success) {
                 showToast('Éxito', 'Productos agregados correctamente', 'success');
                 setTimeout(() => router.back(), 1500);
@@ -364,53 +345,43 @@ export default function AgregarCuentaScreen() {
             style={[styles.container, { backgroundColor: bg }]}
         >
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar style={isDark ? 'dark' : 'light'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header premium con gradiente */}
-            <LinearGradient
-                colors={gradientColors as any}
-                style={[
-                    styles.header,
-                    {
-                        paddingTop: insets.top + (isTablet ? 20 : 10),
-                        paddingBottom: 25,
-                        borderBottomLeftRadius: 32,
-                        borderBottomRightRadius: 32,
-                    },
-                ]}
-            >
-                <View style={styles.headerTop}>
+            <PremiumHeader 
+                title="Agregar Productos"
+                subtitle={`Cuenta ${cuentaOriginal?.codigo}`}
+                rightComponent={
                     <Pressable
                         onPress={() => router.back()}
-                        style={styles.backBtn}
+                        style={styles.backBtnRight}
+                        accessibilityLabel="Volver"
                     >
-                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#111827" : "#FFFFFF"} />
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Text style={styles.backTextRight}>ATRÁS</Text>
                     </Pressable>
-                    <View style={{ flex: 1, marginLeft: 15 }}>
-                        <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
-                            Agregar Productos
-                        </Text>
-                        <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
-                            Cuenta {cuentaOriginal?.codigo}
-                        </Text>
-                    </View>
-                </View>
-            </LinearGradient>
+                }
+            />
 
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
-                <View style={[styles.infoBanner, { backgroundColor: cardBg, borderColor }]}>
-                    <Ionicons name="information-circle-outline" size={24} color="#3B82F6" style={{ marginRight: 10 }} />
+                <View style={[styles.infoBanner, { backgroundColor: isDark ? `${accentColor}10` : '#F0F9FF', borderColor: `${accentColor}30`, padding: 18, borderRadius: 24 }]}>
+                    <View style={[styles.catIconBox, { backgroundColor: `${accentColor}20`, marginRight: 15, width: 44, height: 44, borderRadius: 14 }]}>
+                        <Ionicons name="information-circle" size={24} color={accentColor} />
+                    </View>
                     <View style={{ flex: 1 }}>
-                        <Text style={{ color: textPrimary, fontSize: 13, fontWeight: "600" }}>Estás agregando a la cuenta {cuentaOriginal?.codigo}</Text>
-                        <Text style={{ color: textSecondary, fontSize: 12 }}>Cliente: {cuentaOriginal?.cliente_nombre || 'Sin cliente'}</Text>
+                        <Text style={{ color: textPrimary, fontSize: 15, fontWeight: "800", letterSpacing: -0.3 }}>
+                            Agregando a la cuenta {cuentaOriginal?.codigo}
+                        </Text>
+                        <Text style={{ color: textSecondary, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
+                            Cliente: <Text style={{ color: textPrimary, fontWeight: '700' }}>{cuentaOriginal?.cliente_nombre || 'Sin cliente'}</Text>
+                        </Text>
                     </View>
                 </View>
 
-                {/* Selector de tiempo extra (solo si tiene habitación) */}
                 {hasRoom && (
                     <Pressable
                         style={[styles.tiempoChip, { backgroundColor: extraTiempo > 0 ? '#3B82F610' : cardBg, borderColor: extraTiempo > 0 ? '#3B82F6' : borderColor }]}
@@ -500,18 +471,11 @@ export default function AgregarCuentaScreen() {
                     <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>{modalCategoria?.name || 'Productos'}</Text>
-                            <Pressable
-                                onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                                accessibilityLabel="Cerrar modal"
-                                accessibilityRole="button"
-                            >
+                            <Pressable onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}>
                                 <Ionicons name="close" size={26} color={textPrimary} />
                             </Pressable>
                         </View>
-
-                        {modalLoading ? (
-                            <ActivityIndicator color={accentColor} size="large" />
-                        ) : (
+                        {modalLoading ? <ActivityIndicator color={accentColor} size="large" /> : (
                             <FlatList
                                 data={modalProducts}
                                 keyExtractor={(item) => (item.id || item.id_producto).toString()}
@@ -522,82 +486,44 @@ export default function AgregarCuentaScreen() {
                                             <Text style={[styles.modalProductPrice, { color: '#10B981' }]}>${(item.precio ?? item.price ?? 0).toLocaleString()}</Text>
                                         </View>
                                         <View style={styles.modalQuantityActions}>
-                                            <Pressable
-                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
-                                                onPress={() => {
-                                                    const id = item.id || item.id_producto;
-                                                    const qty = Math.max(1, (modalQuantities[id] || 1) - 1);
-                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                                }}
-                                            >
-                                                <Ionicons name="remove" size={16} color={textPrimary} />
-                                            </Pressable>
-                                            <Text style={[styles.modalQtyText, { color: textPrimary }]}>
-                                                {modalQuantities[item.id || item.id_producto] || 1}
-                                            </Text>
-                                            <Pressable
-                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
-                                                onPress={() => {
-                                                    const id = item.id || item.id_producto;
-                                                    const qty = (modalQuantities[id] || 1) + 1;
-                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                                }}
-                                            >
-                                                <Ionicons name="add" size={16} color={textPrimary} />
-                                            </Pressable>
-                                        </View>
-                                        <Pressable
-                                            style={[styles.modalAddBtn, { backgroundColor: accentColor }]}
-                                            onPress={() => {
+                                            <Pressable style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]} onPress={() => {
                                                 const id = item.id || item.id_producto;
-                                                const hasComm = Number(item.comision || item.commission || 0) > 0;
-
-                                                if (hasComm) {
-                                                    const max = getHostessLimit(item, modalQuantities[id] || 1);
-
-                                                    // Pre-seleccionar anfitrionas de la cuenta si el producto aún no tiene selección
-                                                    const currentSelections = modalHostessSelections[id] || [];
-                                                    if (currentSelections.length === 0 && accountHostessIds.length > 0) {
-                                                        const preSelected = accountHostessIds.slice(0, max);
-                                                        dispatch({ type: 'SET_MODAL_HOSTESSES', productId: id, hostesses: preSelected });
-                                                    }
-
-                                                    dispatch({
-                                                        type: 'SET_HOSTESS_TARGET',
-                                                        target: {
-                                                            productId: id,
-                                                            product: item,
-                                                            max,
-                                                            isChampagne: isChampagneProduct(item)
-                                                        }
-                                                    });
-                                                } else {
-                                                    addProductToCart(item);
+                                                const qty = Math.max(1, (modalQuantities[id] || 1) - 1);
+                                                dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
+                                            }}><Ionicons name="remove" size={16} color={textPrimary} /></Pressable>
+                                            <Text style={[styles.modalQtyText, { color: textPrimary }]}>{modalQuantities[item.id || item.id_producto] || 1}</Text>
+                                            <Pressable style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]} onPress={() => {
+                                                const id = item.id || item.id_producto;
+                                                const qty = (modalQuantities[id] || 1) + 1;
+                                                dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
+                                            }}><Ionicons name="add" size={16} color={textPrimary} /></Pressable>
+                                        </View>
+                                        <Pressable style={[styles.modalAddBtn, { backgroundColor: accentColor }]} onPress={() => {
+                                            const id = item.id || item.id_producto;
+                                            const hasComm = Number(item.comision || item.commission || 0) > 0;
+                                            if (hasComm) {
+                                                const max = getHostessLimit(item, modalQuantities[id] || 1);
+                                                const currentSelections = modalHostessSelections[id] || [];
+                                                if (currentSelections.length === 0 && accountHostessIds.length > 0) {
+                                                    const preSelected = accountHostessIds.slice(0, max);
+                                                    dispatch({ type: 'SET_MODAL_HOSTESSES', productId: id, hostesses: preSelected });
                                                 }
-                                            }}
-                                            accessibilityLabel={`Añadir ${item.nombre}`}
-                                            accessibilityRole="button"
-                                        >
-                                            <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
-                                        </Pressable>
+                                                dispatch({ type: 'SET_HOSTESS_TARGET', target: { productId: id, product: item, max, isChampagne: isChampagneProduct(item) } });
+                                            } else {
+                                                addProductToCart(item);
+                                            }
+                                        }}><Ionicons name="cart-outline" size={20} color="#FFFFFF" /></Pressable>
                                     </View>
                                 )}
                             />
                         )}
-
-                        <Pressable
-                            style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
-                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                            accessibilityLabel="Confirmar selección de productos"
-                            accessibilityRole="button"
-                        >
+                        <Pressable style={[styles.confirmModalBtn, { backgroundColor: accentColor }]} onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}>
                             <Text style={styles.confirmModalBtnText}>Confirmar</Text>
                         </Pressable>
                     </View>
                 </View>
             </Modal>
 
-            {/* Modal selección de tiempo extra */}
             <Modal visible={timeModalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContentWide, { backgroundColor: cardBg, height: 'auto', maxHeight: '60%' }]}>
@@ -607,32 +533,13 @@ export default function AgregarCuentaScreen() {
                                 <Ionicons name="close" size={26} color={textPrimary} />
                             </Pressable>
                         </View>
-                        <Text style={{ color: textSecondary, fontSize: 13, marginBottom: 16, fontWeight: '600' }}>
-                            Selecciona cuántos minutos agregar a la habitación
-                        </Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            {/* Opción sin tiempo extra */}
-                            <Pressable
-                                style={[styles.timeOption, { borderColor: extraTiempo === 0 ? '#3B82F6' : borderColor, backgroundColor: extraTiempo === 0 ? '#3B82F610' : 'transparent' }]}
-                                onPress={() => {
-                                    dispatch({ type: 'SET_EXTRA_TIEMPO', payload: 0 });
-                                    dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false });
-                                }}
-                            >
+                            <Pressable style={[styles.timeOption, { borderColor: extraTiempo === 0 ? '#3B82F6' : borderColor }]} onPress={() => { dispatch({ type: 'SET_EXTRA_TIEMPO', payload: 0 }); dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false }); }}>
                                 <Text style={[styles.timeOptionText, { color: extraTiempo === 0 ? '#3B82F6' : textPrimary }]}>Sin tiempo extra</Text>
-                                {extraTiempo === 0 && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
                             </Pressable>
-                            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map((t) => (
-                                <Pressable
-                                    key={t}
-                                    style={[styles.timeOption, { borderColor: extraTiempo === t ? '#3B82F6' : borderColor, backgroundColor: extraTiempo === t ? '#3B82F610' : 'transparent' }]}
-                                    onPress={() => {
-                                        dispatch({ type: 'SET_EXTRA_TIEMPO', payload: t });
-                                        dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false });
-                                    }}
-                                >
+                            {[5, 10, 15, 20, 25, 30, 45, 60].map((t) => (
+                                <Pressable key={t} style={[styles.timeOption, { borderColor: extraTiempo === t ? '#3B82F6' : borderColor }]} onPress={() => { dispatch({ type: 'SET_EXTRA_TIEMPO', payload: t }); dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false }); }}>
                                     <Text style={[styles.timeOptionText, { color: extraTiempo === t ? '#3B82F6' : textPrimary }]}>+ {t} minutos</Text>
-                                    {extraTiempo === t && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
                                 </Pressable>
                             ))}
                         </ScrollView>
@@ -655,30 +562,22 @@ export default function AgregarCuentaScreen() {
                     const pid = hostessSelectionTarget.productId;
                     const currentSelected = modalHostessSelections[pid] || [];
                     let newSelected;
-
-                    if (currentSelected.includes(id)) {
-                        newSelected = currentSelected.filter(x => x !== id);
+                    const strId = String(id);
+                    if (currentSelected.some(x => String(x) === strId)) {
+                        newSelected = currentSelected.filter(x => String(x) !== strId);
                     } else {
-                        if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
-                            showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
-                            return;
-                        }
-                        newSelected = [...currentSelected, id];
+                        if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) return;
+                        newSelected = [...currentSelected, strId];
                     }
                     dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
                 }}
-                onClose={() => {
-                    dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
-                }}
+                onClose={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
                 onConfirm={() => {
                     if (hostessSelectionTarget) {
                         const pid = hostessSelectionTarget.productId;
                         const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0;
                         const currentSelected = modalHostessSelections[pid] || [];
-                        if (hasComm && currentSelected.length === 0) {
-                            showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
-                            return;
-                        }
+                        if (hasComm && currentSelected.length === 0) return;
                         addProductToCart(hostessSelectionTarget.product);
                         dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
                     }
@@ -694,7 +593,7 @@ const styles = StyleSheet.create({
     headerTop: { flexDirection: 'row', alignItems: 'center' },
     headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
     headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
-    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
+    backBtn: { height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
     infoBanner: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 20 },
@@ -715,7 +614,7 @@ const styles = StyleSheet.create({
     submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContentWide: { width: '95%', alignSelf: 'center', borderRadius: 32, padding: 20, height: '80%' },
+    modalContentWide: { width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 20, height: '85%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
     modalProductRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
@@ -727,15 +626,21 @@ const styles = StyleSheet.create({
     modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
     confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-    tiempoChip: {
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20,
-    },
+    tiempoChip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20 },
     tiempoChipLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
     tiempoChipValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
-    timeOption: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8,
+    backBtnRight: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 38, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
     },
+    backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+    timeOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
     timeOptionText: { fontSize: 15, fontWeight: '700' },
 });
+
+

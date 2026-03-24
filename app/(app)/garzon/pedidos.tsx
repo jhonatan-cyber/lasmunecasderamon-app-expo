@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Dimensions,
     FlatList,
     Platform,
@@ -14,13 +13,13 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
-import { Skeleton } from '../../../components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { CategoryCard } from '../../../components/CategoryCard';
-import { PremiumHeader } from '../../../components/PremiumHeader';
+import { apiClient } from '@/api/client';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { CategoryCard } from '@/components/shared/CategoryCard';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -34,21 +33,15 @@ interface Category {
 }
 
 export default function PedidosScreen() {
-    const { accentColor, gradientColors } = useAccentColor();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
+    const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const isDark = (useColorScheme() ?? 'dark') === 'dark';
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const dataRef = useRef<string>('');
-
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const fetchCategories = useCallback(async (isManual = false) => {
         try {
@@ -77,7 +70,6 @@ export default function PedidosScreen() {
                 });
             }
         } catch (err: any) {
-           
             setError(err.message || 'Error de conexión');
             if (isManual) {
                 Toast.show({
@@ -130,7 +122,7 @@ export default function PedidosScreen() {
                      <Skeleton width={44} height={44} borderRadius={22} />
                 </View>
                 <View style={{ paddingHorizontal: 20 }}>
-                    <Skeleton width="60%" height={24} />
+                     <Skeleton width="60%" height={24} />
                 </View>
             </LinearGradient>
 
@@ -149,7 +141,12 @@ export default function PedidosScreen() {
             <PremiumHeader 
                 title="Categorías"
                 subtitle="Selecciona una para ver los productos"
-                onBack={() => router.back()}
+                rightComponent={
+                    <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Text style={styles.backTextHeader}>Atrás</Text>
+                    </Pressable>
+                }
             />
 
             {error ? (
@@ -187,6 +184,16 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 16, fontSize: 16, fontWeight: '600', letterSpacing: -0.5 },
+    backBtnRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     header: { paddingHorizontal: 20, paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
     topBanner: {
         paddingHorizontal: 20,

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
-import { useTimer } from "../../context/TimerContext";
-import { PremiumAlert } from "../PremiumAlert";
+import { useTimer } from "@/context/TimerContext";
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 
 export function GlobalTimerAlert() {
     const [alertConfig, setAlertConfig] = useState<{
@@ -59,3 +59,5 @@ export function GlobalTimerAlert() {
         />
     );
 }
+
+

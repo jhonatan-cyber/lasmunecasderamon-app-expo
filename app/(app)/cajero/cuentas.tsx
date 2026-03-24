@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Stack,
@@ -14,10 +15,6 @@ import React, {
   useReducer,
   useRef,
 } from "react";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-
-// Cast para evitar errores de tipos en React 19 con FlashList
-const FlashList = ShopifyFlashList as any;
 import { MotiView } from "moti";
 import {
   ActivityIndicator,
@@ -28,23 +25,31 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
+  Image,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
-import { apiClient } from "../../../api/client";
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumFAB } from '@/components/ui/PremiumFAB';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { apiClient, BASE_URL } from '@/api/client';
 import {
   PaymentMethod,
   PaymentMethodSelect,
-} from "../../../components/cajero/forms/PaymentMethodSelect";
-import { TipCheckbox } from "../../../components/cajero/forms/TipCheckbox";
-import { PremiumAlert } from "../../../components/PremiumAlert";
-import { Skeleton } from "../../../components/ui/Skeleton";
-import { Timer, useTimer } from "../../../context/TimerContext";
-import { calculateRemainingTime, formatTime } from "../../../utils/timeUtils";
-import { useAccentColor } from "../../../hooks/useAccentColor";
-import { rotateColor } from "../../../utils/colors";
+} from '@/components/cajero/forms/PaymentMethodSelect';
+import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Timer, useTimer } from '@/context/TimerContext';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { rotateColor } from '@/utils/colors';
+import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
+
+// Cast para evitar errores de tipos en React 19 con FlashList
+const FlashList = ShopifyFlashList as any;
 
 type CuentasState = {
   loading: boolean;
@@ -57,6 +62,7 @@ type CuentasState = {
   actionSheetVisible: boolean;
   activeCuenta: any;
   activeTab: "historial" | "pendientes";
+  search: string;
   cobroModalVisible: boolean;
   cobroMetodoPago: PaymentMethod;
   cobroEnableTip: boolean;
@@ -76,6 +82,7 @@ type CuentasAction =
   | { type: "SET_REFRESHING"; payload: boolean }
   | { type: "SET_DATA"; payload: any }
   | { type: "SET_ACTIVE_TAB"; payload: "historial" | "pendientes" }
+  | { type: "SET_SEARCH"; payload: string }
   | { type: "SET_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_LOADING_DETAIL"; payload: boolean }
   | { type: "SET_SELECTED_CUENTA"; payload: any }
@@ -88,7 +95,7 @@ type CuentasAction =
   | { type: "SET_ALERT"; payload: CuentasState["alertConfig"] };
 
 const statusColors: Record<number, string> = {
-  1: "#F59E0B", // Pendiente
+  1: "#fa2828ff", // Pendiente
   0: "#10B981", // Cobrado
 };
 
@@ -119,13 +126,7 @@ const CuentaTimer = React.memo(
         setRemaining(calculateRemainingTime(timer, serverOffset));
       }, 1000);
       return () => clearInterval(interval);
-    }, [
-      timer.startTime,
-      timer.duration,
-      timer.isPaused,
-      timer.remainingTime,
-      serverOffset,
-    ]);
+    }, [timer, serverOffset]);
 
     const isOverdue = remaining <= 0;
     const m = Math.floor(Math.abs(remaining) / 60);
@@ -137,11 +138,10 @@ const CuentaTimer = React.memo(
         style={{
           fontWeight: "900",
           color: isOverdue ? "#EF4444" : accentColor,
-          fontSize: 13,
-          flex: 1,
+          fontSize: 24,
         }}
       >
-        {isOverdue ? "TIEMPO AGOTADO" : formatted}
+        {isOverdue ? "AGOTADO" : formatted}
       </Text>
     );
   },
@@ -161,6 +161,7 @@ const initialCuentasState = (
   actionSheetVisible: false,
   activeCuenta: null,
   activeTab: tab,
+  search: "",
   cobroModalVisible: false,
   cobroMetodoPago: "efectivo",
   cobroEnableTip: false,
@@ -181,6 +182,8 @@ function cuentasReducer(
       return { ...state, ...action.payload };
     case "SET_ACTIVE_TAB":
       return { ...state, activeTab: action.payload };
+    case "SET_SEARCH":
+      return { ...state, search: action.payload };
     case "SET_MODAL_VISIBLE":
       return { ...state, modalVisible: action.payload };
     case "SET_LOADING_DETAIL":
@@ -222,7 +225,7 @@ const showToast = (
 };
 
 export default function CuentasScreen() {
-  const { accentColor, gradientColors, isDark } = useAccentColor();
+  const { accentColor, gradientColors, isDark, accentBg, accentBorder } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -238,7 +241,6 @@ export default function CuentasScreen() {
     ),
   );
   const { timers, serverOffset, refreshTimers } = useTimer();
-  const { accentBg, accentBorder } = useAccentColor();
   const {
     loading,
     refreshing,
@@ -251,6 +253,7 @@ export default function CuentasScreen() {
     activeCuenta,
     activeTab,
     alertConfig,
+    search,
     cobroModalVisible,
     cobroMetodoPago,
     cobroEnableTip,
@@ -383,6 +386,14 @@ export default function CuentasScreen() {
   const handleConfirmarCobro = async () => {
     if (!selectedCuenta) return;
 
+    if (cobroMetodoPago === 'prepago') {
+      const saldo = Number(selectedCuenta.cliente_saldo || 0);
+      if (saldo < cobroTotals.total) {
+        showToast("Saldo Insuficiente", "El saldo del cliente es menor al total de la cuenta", "error");
+        return;
+      }
+    }
+
     dispatch({ type: "SET_COBRO_SUBMITTING", payload: true });
     try {
       const payload = {
@@ -408,7 +419,7 @@ export default function CuentasScreen() {
       } else {
         showToast("Error", res.message || "Error al cobrar");
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Error de conexión al procesar el cobro");
     } finally {
       dispatch({ type: "SET_COBRO_SUBMITTING", payload: false });
@@ -428,7 +439,7 @@ export default function CuentasScreen() {
         showToast("Error", "No se pudo obtener el detalle de la cuenta");
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Error de conexión al cargar detalles");
       dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
     } finally {
@@ -572,12 +583,7 @@ export default function CuentasScreen() {
           ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0)
           : 0);
 
-      // Dinamismo: Rotar el color basado en el ID para que no todos sean iguales
-      const idStr = String(item.id_cuenta);
-      const hash = idStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const itemAccent = rotateColor(accentColor, (hash % 10) * 36);
-      const statusColor =
-        item.estado === 1 ? itemAccent : statusColors[item.estado] || "#6B7280";
+      const statusColor = statusColors[item.estado] || "#6B7280";
 
       const isPending = item.estado === 1;
       const hasTimer = isPending && item.tiempo > 0 && item.habitacion_id;
@@ -588,24 +594,27 @@ export default function CuentasScreen() {
               String(t.servicioId) === String(item.id_cuenta),
           )
         : null;
-      const hora = new Date(item.fecha_crea).toLocaleTimeString("es-CL", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "UTC",
-      });
+
+      const isOverdue = hasTimer && timer ? calculateRemainingTime(timer, serverOffset) <= 0 : false;
+
+      const formatDateTime = (dateStr?: string) => {
+        if (!dateStr) return "";
+        const date = parseDateSafe(dateStr);
+        return date.toLocaleString("es-ES", {
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit", hour12: true
+        }).replace(/,/g, '');
+      };
+
+      const statusText = statusLabels[item.estado] || "Desconocido";
 
       return (
         <MotiView
-          from={{ opacity: 0, translateY: 15 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 350 }}
+          from={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "timing", duration: 500 }}
         >
           <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              { backgroundColor: cardBg, borderColor },
-              pressed && { opacity: 0.94, transform: [{ scale: 0.985 }] },
-            ]}
             onPress={() =>
               dispatch({
                 type: "SET_ACTION_SHEET",
@@ -613,185 +622,142 @@ export default function CuentasScreen() {
                 cuenta: item,
               })
             }
+            style={({ pressed }) => [{
+              flex: 1, borderRadius: 24, padding: 16, borderWidth: 1,
+              marginBottom: 16, marginHorizontal: 8,
+              backgroundColor: cardBg,
+              borderColor: isOverdue ? '#EF4444' : borderColor,
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            }]}
           >
-            {/* Accent bar top */}
-            <View
-              style={[styles.cardAccentBar, { backgroundColor: statusColor }]}
-            />
-            <View style={styles.cardHeader}>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <Text style={[styles.cardCode, { color: textPrimary }]}>
-                  Codigo : {item.codigo}
-                </Text>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: accentColor + '15' }}>
+                  <Ionicons name="receipt" size={18} color={accentColor} />
+                </View>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: '900', letterSpacing: -0.5, color: textPrimary }}>
+                    {item.habitacion_nombre || item.habitacion_numero || "Barra / General"}
+                  </Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textSecondary }}>
+                    Codigo : #{item.codigo}
+                  </Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: textSecondary, marginTop: 2 }}>
+                    {formatDateTime(item.fecha_crea)}
+                  </Text>
+                </View>
               </View>
-              <View
-                style={[
-                  styles.statusChip,
-                  {
-                    backgroundColor: `${statusColor}18`,
-                    borderColor: `${statusColor}40`,
-                  },
-                ]}
-              >
-                <View
-                  style={[styles.statusDot, { backgroundColor: statusColor }]}
-                />
-                <Text style={[styles.statusChipText, { color: statusColor }]}>
-                  {statusLabels[item.estado] || "Desconocido"}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, gap: 4, backgroundColor: statusColor + '10' }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusColor }} />
+                <Text style={{ fontSize: 10, fontWeight: '900', color: statusColor }}>{statusText}</Text>
               </View>
             </View>
 
-            {/* Info grid */}
-            <View style={styles.cardInfoGrid}>
-              <View style={styles.cardInfoCell}>
-                <View
-                  style={[
-                    styles.cardInfoIconBox,
-                    { backgroundColor: accentBg },
-                  ]}
-                >
-                  <Ionicons name="person" size={13} color={accentColor} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[styles.cardInfoLabel, { color: textSecondary }]}
-                  >
-                    CLIENTE
-                  </Text>
-                  <Text
-                    style={[styles.cardInfoValue, { color: textPrimary }]}
-                    numberOfLines={1}
-                  >
-                    {item.cliente_nombre || "Sin cliente"}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.cardInfoCell}>
-                <View
-                  style={[
-                    styles.cardInfoIconBox,
-                    { backgroundColor: `${accentColor}12` },
-                  ]}
-                >
-                  <Ionicons name="business" size={13} color="#10B981" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[styles.cardInfoLabel, { color: textSecondary }]}
-                  >
-                    HABITACIÓN
-                  </Text>
-                  <Text
-                    style={[styles.cardInfoValue, { color: textPrimary }]}
-                    numberOfLines={1}
-                  >
-                    {item.habitacion_nombre ||
-                      item.habitacion_numero ||
-                      "Barra / General"}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Timer row (if active) */}
-            {hasTimer && (
-              <View
-                style={[
-                  styles.cardTimerRow,
-                  {
-                    backgroundColor: timer ? accentBg : `${textSecondary}08`,
-                    borderColor: timer ? accentBorder : borderColor,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="stopwatch"
-                  size={14}
-                  color={timer ? accentColor : textSecondary}
-                />
-                {timer ? (
-                  <CuentaTimer
-                    timer={timer}
-                    serverOffset={serverOffset}
-                    accentColor={accentColor}
-                  />
-                ) : (
-                  <Text
-                    style={[
-                      styles.cardTimerSync,
-                      { color: textSecondary, flex: 1 },
-                    ]}
-                  >
-                    Sincronizando...
-                  </Text>
-                )}
-                <Text style={[styles.cardTimerTotal, { color: textSecondary }]}>
-                  / {item.tiempo} min
+            {/* Details List */}
+            <View style={{ gap: 8, marginBottom: 16, paddingHorizontal: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="person" size={14} color={textSecondary} />
+                <Text style={{ fontSize: 12, flex: 1, color: textPrimary }}>
+                  <Text style={{ fontWeight: '800' }}>Cliente: </Text>
+                  {item.cliente_nombre || "Sin registrar"}
                 </Text>
               </View>
-            )}
-
-            {/* Footer row */}
-            <View style={styles.cardFooter}>
-              <View>
-                <Text style={[styles.cardTotalBig, { color: textPrimary }]}>
-                  ${item.total.toLocaleString()}
-                </Text>
-                <Text style={[styles.cardSubCount, { color: textSecondary }]}>
-                  {productCount} producto{productCount !== 1 ? "s" : ""} ·{" "}
-                  {hora}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="cube" size={14} color={textSecondary} />
+                <Text style={{ fontSize: 12, flex: 1, color: textPrimary }}>
+                  <Text style={{ fontWeight: '800' }}>Productos: </Text>
+                  {productCount} item{productCount !== 1 ? "s" : ""}
                 </Text>
               </View>
-              {isPending && (
-                <View style={styles.cardActions}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.cardActionBtn,
-                      styles.cardActionBtnAdd,
-                      {
-                        backgroundColor: `${accentColor}10`,
-                        borderColor: `${accentColor}30`,
-                      },
-                      pressed && { opacity: 0.75 },
-                    ]}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/cajero/agregar-cuenta",
-                        params: { cuenta: JSON.stringify(item) },
-                      })
-                    }
-                  >
-                    <Ionicons name="add" size={15} color={accentColor} />
-                    <Text
-                      style={[
-                        styles.cardActionBtnAddText,
-                        { color: accentColor },
-                      ]}
-                    >
-                      Agregar
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.cardActionBtn,
-                      styles.cardActionBtnCobrar, { backgroundColor: accentColor },
-                      {
-                        backgroundColor: accentColor,
-                        shadowColor: accentColor,
-                      },
-                      pressed && { opacity: 0.75 },
-                    ]}
-                    onPress={() => handleCobrarCuenta(item)}
-                  >
-                    <Ionicons name="cash-outline" size={14} color="#FFF" />
-                    <Text style={styles.cardActionBtnCobrarText}>Cobrar</Text>
-                  </Pressable>
+              {item.creador_nombre && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="create-outline" size={14} color={textSecondary} />
+                  <Text style={{ fontSize: 12, flex: 1, color: textPrimary }}>
+                    <Text style={{ fontWeight: '800' }}>Registrado por: </Text>
+                    {item.creador_nombre}
+                  </Text>
                 </View>
               )}
             </View>
+
+            {/* Timer Hero */}
+            {hasTimer && (
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 12,
+                backgroundColor: isOverdue ? '#EF444415' : `${accentColor}08`,
+              }}>
+                <Ionicons name="time" size={24} color={isOverdue ? '#EF4444' : accentColor} />
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: textSecondary }}>TIEMPO RESTANTE</Text>
+                  {timer ? (
+                    <CuentaTimer timer={timer} serverOffset={serverOffset} accentColor={accentColor} />
+                  ) : (
+                    <Text style={{ fontSize: 24, fontWeight: '900', color: textSecondary }}>--:--</Text>
+                  )}
+                </View>
+                <View style={{ flex: 1 }} />
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: textSecondary }}>TOTAL {item.tiempo} MIN</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Finance Box */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(156, 163, 175, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+                <Ionicons name="card-outline" size={12} color={textSecondary} />
+                <Text style={{ fontSize: 10, fontWeight: '800', color: textSecondary }}>
+                  {isPending ? "POR COBRAR" : "COBRADO"}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: textSecondary }}>TOTAL</Text>
+                <Text style={{ fontSize: 20, fontWeight: '900', color: textPrimary }}>${item.total.toLocaleString()}</Text>
+              </View>
+            </View>
+
+            {/* Actions Box */}
+            {isPending && (
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+                <Pressable
+                  style={({ pressed }) => [{
+                    flex: 1, height: 44, borderRadius: 12,
+                    justifyContent: 'center', alignItems: 'center',
+                    flexDirection: 'row', gap: 6,
+                    backgroundColor: `${accentColor}10`,
+                    borderWidth: 1, borderColor: `${accentColor}30`,
+                    opacity: pressed ? 0.7 : 1,
+                  }]}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(app)/cajero/agregar-cuenta",
+                      params: { cuenta: JSON.stringify(item) },
+                    })
+                  }
+                >
+                  <Ionicons name="add" size={16} color={accentColor} />
+                  <Text style={{ color: accentColor, fontWeight: '900', fontSize: 13 }}>AGREGAR</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [{
+                    flex: 1, height: 44, borderRadius: 12,
+                    justifyContent: 'center', alignItems: 'center',
+                    flexDirection: 'row', gap: 6,
+                    backgroundColor: accentColor,
+                    elevation: 2,
+                    shadowColor: accentColor, shadowOpacity: 0.3,
+                    shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+                    opacity: pressed ? 0.7 : 1,
+                  }]}
+                  onPress={() => handleCobrarCuenta(item)}
+                >
+                  <Ionicons name="cash-outline" size={16} color="#FFF" />
+                  <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 13 }}>COBRAR</Text>
+                </Pressable>
+              </View>
+            )}
           </Pressable>
         </MotiView>
       );
@@ -804,163 +770,121 @@ export default function CuentasScreen() {
       handleCobrarCuenta,
       timers,
       serverOffset,
+      accentColor,
+      router,
     ],
   );
+
+
+
+  const filteredCuentas = useMemo(() => {
+    let list = activeTab === "historial" ? cuentas : cuentas.filter((c) => c.estado === 1);
+    if (search.trim()) {
+        const query = search.toLowerCase();
+        list = list.filter(c => 
+            (c.codigo && c.codigo.toLowerCase().includes(query)) ||
+            (c.cliente_nombre && c.cliente_nombre.toLowerCase().includes(query)) ||
+            (c.habitacion_nombre && c.habitacion_nombre.toLowerCase().includes(query))
+        );
+    }
+    return list;
+  }, [cuentas, activeTab, search]);
 
   if (loading && !refreshing && cuentas.length === 0)
     return <CuentasSkeleton />;
 
-  const filteredCuentas =
-    activeTab === "historial" ? cuentas : cuentas.filter((c) => c.estado === 1);
-
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style={isDark ? "dark" : "light"} />
-      <LinearGradient
-        colors={gradientColors as any}
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + (isTablet ? 20 : 10),
-            paddingBottom: 25,
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
-          },
-        ]}
-      >
-        <View style={styles.headerTop}>
-          <Pressable
-            onPress={() => router.replace("/cajero/(tabs)" as any)}
-            style={styles.backBtn}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={isTablet ? 30 : 24}
-              color={isDark ? "#111827" : "#FFFFFF"}
-            />
-          </Pressable>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginLeft: 10,
-            }}
-          >
-            <View>
-              <Text
-                style={[
-                  styles.headerTitle,
-                  { color: isDark ? "#111827" : "#FFFFFF" },
-                  isTablet && { fontSize: 28 },
-                ]}
-              >
-                Cuentas
-              </Text>
-              <Text
-                style={[
-                  styles.headerSubtitle,
-                  { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" },
-                  isTablet && { fontSize: 17 },
-                ]}
-              >
-                Historial y Cobros
-              </Text>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={() => router.push("/cajero/nueva-cuenta")}
-                style={[
-                  styles.plusBtn, { backgroundColor: accentColor },
-                  {
-                    backgroundColor: isDark ? "#111827" : accentColor,
-                    shadowColor: accentColor,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="add"
-                  size={isTablet ? 24 : 20}
-                  color="#FFFFFF"
-                />
-                <Text
-                  style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}
-                >
-                  Nuevo
-                </Text>
+      <StatusBar style={isDark ? "light" : "dark"} />
+
+      <PremiumHeader
+        title="Cuentas"
+        subtitle={activeTab === "historial" ? "Historial de transacciones" : "Cuentas por cobrar"}
+        rightComponent={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+              <TouchableOpacity onPress={() => fetchCuentas(true)} style={styles.backBtnRight}>
+                  <Ionicons name="refresh" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                  <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                  <Text style={styles.backTextHeader}>Atrás</Text>
               </Pressable>
-            </View>
           </View>
-        </View>
-        <View
-          style={[
-            styles.tabContainer,
-            {
-              borderColor: isDark
-                ? "rgba(0,0,0,0.05)"
-                : "rgba(255,255,255,0.1)",
-              backgroundColor: isDark
-                ? "rgba(0,0,0,0.03)"
-                : "rgba(255,255,255,0.1)",
-              height: isTablet ? 56 : 48,
-            },
-          ]}
-        >
-          <Pressable
-            style={[
-              styles.tab,
-              activeTab === "historial" && { backgroundColor: accentColor },
-            ]}
-            onPress={() =>
-              dispatch({ type: "SET_ACTIVE_TAB", payload: "historial" })
-            }
-          >
-            <Text
+        }
+      />
+
+      <View style={styles.content}>
+        <View style={[styles.searchOuter, { backgroundColor: isDark ? "#111111" : "#FFFFFF" }]}>
+            <View style={[styles.searchContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }]}>
+                <Ionicons name="search" size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                <TextInput
+                    style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#111827" }]}
+                    placeholder="Buscar por código o cliente..."
+                    placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
+                    value={search}
+                    onChangeText={(t) => dispatch({ type: "SET_SEARCH", payload: t })}
+                />
+                {search.length > 0 && (
+                    <Pressable onPress={() => dispatch({ type: "SET_SEARCH", payload: "" })}>
+                        <Ionicons name="close-circle" size={18} color={isDark ? "#4B5563" : "#9CA3AF"} />
+                    </Pressable>
+                )}
+            </View>
+
+            <View style={styles.summaryContainer}>
+                <View style={[styles.summaryPill, { backgroundColor: `${accentColor}10` }]}>
+                      <Ionicons name="wallet-outline" size={14} color={accentColor} />
+                      <Text style={styles.summaryLabel}>POR COBRAR</Text>
+                      <Text style={[styles.summaryValue, { color: accentColor }]}>
+                        ${(resumen?.total_por_cobrar || 0).toLocaleString()}
+                      </Text>
+                </View>
+                <View style={[styles.summaryPill, { backgroundColor: '#10B98110' }]}>
+                      <Ionicons name="checkmark-circle-outline" size={14} color="#10B981" />
+                      <Text style={styles.summaryLabel}>PRODUCTOS</Text>
+                      <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+                        {resumen?.total_cuentas || 0}
+                      </Text>
+                </View>
+            </View>
+
+            <View 
               style={[
-                styles.tabText,
-                isTablet && { fontSize: 16 },
-                activeTab === "historial"
-                  ? { color: "#FFF" }
-                  : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
+                styles.tabContainer, 
+                { 
+                  backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)",
+                  marginTop: 15,
+                  padding: 4,
+                  borderRadius: 14,
+                  borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                  borderWidth: 1
+                }
               ]}
             >
-              Todas
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.tab,
-              activeTab === "pendientes" && { backgroundColor: accentColor },
-            ]}
-            onPress={() =>
-              dispatch({ type: "SET_ACTIVE_TAB", payload: "pendientes" })
-            }
-          >
-            <View style={styles.tabWithBadge}>
-              <Text
-                style={[
-                  styles.tabText,
-                  isTablet && { fontSize: 16 },
-                  activeTab === "pendientes"
-                    ? { color: "#FFF" }
-                    : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
-                ]}
-              >
-                Pendientes
-              </Text>
-              {cuentas.filter((c) => c.estado === 1).length > 0 && (
-                <View style={styles.tabBadge}>
-                  <Text style={styles.tabBadgeText}>
-                    {cuentas.filter((c) => c.estado === 1).length}
-                  </Text>
-                </View>
-              )}
+                <Pressable
+                  style={[styles.tab, activeTab === "historial" && { backgroundColor: accentColor }]}
+                  onPress={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "historial" })}
+                >
+                  <Text style={[styles.tabText, activeTab === "historial" ? { color: "#FFF" } : { color: textSecondary }]}>Todas</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.tab, activeTab === "pendientes" && { backgroundColor: accentColor }]}
+                  onPress={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "pendientes" })}
+                >
+                  <View style={styles.tabWithBadge}>
+                    <Text style={[styles.tabText, activeTab === "pendientes" ? { color: "#FFF" } : { color: textSecondary }]}>Pendientes</Text>
+                    {cuentas.filter((c) => c.estado === 1).length > 0 && (
+                      <View style={[styles.tabBadge, activeTab === 'pendientes' ? { backgroundColor: '#FFF' } : { backgroundColor: accentColor }]}>
+                        <Text style={[styles.tabBadgeText, activeTab === 'pendientes' ? { color: accentColor } : { color: '#FFF' }]}>
+                          {cuentas.filter((c) => c.estado === 1).length}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
             </View>
-          </Pressable>
         </View>
-      </LinearGradient>
 
       <FlashList
         data={filteredCuentas}
@@ -993,56 +917,16 @@ export default function CuentasScreen() {
             </Text>
           </View>
         }
-        ListHeaderComponent={
-          resumen && resumen.total_por_cobrar > 0 ? (
-            <View
-              style={[
-                styles.resumenCard,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.05)"
-                    : accentColor,
-                  shadowColor: accentColor,
-                  borderColor: accentBorder,
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <LinearGradient
-                  colors={[`${accentColor}40`, `${accentColor}10`]}
-                  style={styles.resumenIconBox}
-                >
-                  <Ionicons
-                    name="wallet-outline"
-                    size={32}
-                    color={isDark ? accentColor : "#FFF"}
-                  />
-                </LinearGradient>
-                <View style={{ marginLeft: 16 }}>
-                  <Text
-                    style={[
-                      styles.resumenLabel,
-                      {
-                        color: isDark ? textSecondary : "rgba(255,255,255,0.8)",
-                      },
-                    ]}
-                  >
-                    TOTAL POR COBRAR
-                  </Text>
-                  <Text
-                    style={[
-                      styles.resumenValue,
-                      { color: isDark ? "#FFF" : "#FFF" },
-                    ]}
-                  >
-                    ${(resumen.total_por_cobrar || 0).toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ) : null
-        }
+
+      />
+
+      </View>
+
+      <PremiumFAB
+          label="nueva cuenta"
+          icon="add"
+          onPress={() => router.push('/cajero/nueva-cuenta')}
+          visible={!modalVisible && !actionSheetVisible && !cobroModalVisible}
       />
 
       {/* Detail Modal */}
@@ -1066,303 +950,237 @@ export default function CuentasScreen() {
             ) : (
               selectedCuenta && (
                 <>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text
-                        style={[styles.modalTitleText, { color: textPrimary }]}
+                    <View style={styles.modalHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.modalTitleText, { color: textPrimary }]}>
+                          Detalle de Cuenta
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors[selectedCuenta.estado] || '#6B7280' }} />
+                          <Text style={[styles.modalSubText, { color: textSecondary, fontWeight: '800' }]}>
+                            {statusLabels[selectedCuenta.estado] || "Desconocido"} • #{selectedCuenta.codigo}
+                          </Text>
+                        </View>
+                      </View>
+                      <Pressable 
+                        onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", payload: false })}
+                        style={{ padding: 8 }}
                       >
-                        Detalle de Cuenta
-                      </Text>
-                      <Text
-                        style={[styles.modalSubText, { color: textSecondary }]}
-                      >
-                        Codigo : {selectedCuenta.codigo}
-                      </Text>
+                        <Ionicons name="close-circle" size={32} color={textSecondary} />
+                      </Pressable>
                     </View>
-                    <Pressable
-                      onPress={() =>
-                        dispatch({ type: "SET_MODAL_VISIBLE", payload: false })
-                      }
-                      style={styles.closeBtn}
-                    >
-                      <Ionicons name="close" size={24} color={textSecondary} />
-                    </Pressable>
-                  </View>
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                  >
-                    <View style={styles.detailsGrid}>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          FECHA DE CUENTA
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {new Date(
-                            selectedCuenta.fecha_crea,
-                          ).toLocaleDateString("es-CL", { timeZone: "UTC" })}
-                        </Text>
-                      </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          CLIENTE
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {selectedCuenta.cliente_nombre ||
-                            "Sin cliente registrado"}
-                        </Text>
-                      </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          HABITACIÓN
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {selectedCuenta.habitacion_numero || "SALÓN"}
-                        </Text>
-                      </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          TOTAL COMISIÓN
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: accentColor }]}
-                        >
-                          $
-                          {(
-                            selectedCuenta.total_comision || 0
-                          ).toLocaleString()}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.hostessSection}>
-                      <Text
-                        style={[styles.sectionTitle, { color: textSecondary }]}
-                      >
-                        ANFITRIONA(S) ASIGNADA(S)
-                      </Text>
-                      <View style={styles.hostessBadges}>
-                        {allHostesses.length > 0 ? (
-                          allHostesses.map((u: any, idx: number) => (
-                            <View
-                              key={idx}
-                              style={[
-                                styles.hostessBadgeDetail,
-                                { backgroundColor: `${accentColor}15` },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.hostessTextDetail,
-                                  { color: accentColor },
-                                ]}
-                              >
-                                {u.nick || "Anfitriona"}
+
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+                      <View style={[styles.infoGrid, { marginTop: 10 }]}>
+                        <View style={styles.gridItem}>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>CLIENTE</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <Ionicons name="person" size={16} color={accentColor} />
+                            <Text style={[styles.gridValue, { color: textPrimary, fontSize: 15, fontWeight: '800' }]}>
+                              {selectedCuenta.cliente_nombre || "Sin registrar"}
+                            </Text>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.gridItem}>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>FECHA Y HORA</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <Ionicons name="calendar" size={16} color={accentColor} />
+                            <Text style={[styles.gridValue, { color: textPrimary, fontWeight: '700' }]}>
+                              {selectedCuenta.fecha_crea ? (() => {
+                                const d = parseDateSafe(selectedCuenta.fecha_crea);
+                                return d.toLocaleString("es-ES", {
+                                  day: "2-digit", month: "2-digit", year: "numeric",
+                                  hour: "2-digit", minute: "2-digit", hour12: true
+                                }).replace(/,/g, '');
+                              })() : "-"}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.gridItem}>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN / SECTOR</Text>
+                          <Text style={[styles.gridValue, { color: textPrimary }]}>
+                            {selectedCuenta.habitacion_numero || "Barra / General"}
+                          </Text>
+                        </View>
+
+                        <View style={styles.gridItem}>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>REGISTRADO POR</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            {selectedCuenta.foto_cajero ? (
+                              <Image 
+                                source={{ uri: `${BASE_URL}/img/users/${selectedCuenta.foto_cajero}` }} 
+                                style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#E5E7EB' }}
+                              />
+                            ) : (
+                              <Ionicons name="person-circle" size={24} color={textSecondary} />
+                            )}
+                            <Text style={[styles.gridValue, { color: textPrimary }]}>
+                              {selectedCuenta.nombre_cajero || "Sistema"}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {selectedCuenta.nombre_cobrador && (
+                          <View style={styles.gridItem}>
+                            <Text style={[styles.gridLabel, { color: "#10B981" }]}>COBRADO POR</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                              {selectedCuenta.foto_cobrador ? (
+                                <Image 
+                                  source={{ uri: `${BASE_URL}/img/users/${selectedCuenta.foto_cobrador}` }} 
+                                  style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#E5E7EB', borderWidth: 1, borderColor: '#10B981' }}
+                                />
+                              ) : (
+                                <Ionicons name="person-circle" size={24} color="#10B981" />
+                              )}
+                              <Text style={[styles.gridValue, { color: "#10B981", fontWeight: '800' }]}>
+                                {selectedCuenta.nombre_cobrador}
                               </Text>
                             </View>
-                          ))
-                        ) : (
-                          <View
-                            style={[
-                              styles.hostessBadgeDetail,
-                              { backgroundColor: "#37415120" },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.hostessTextDetail,
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Venta directa en barra
-                            </Text>
                           </View>
                         )}
                       </View>
-                    </View>
-                    <View
-                      style={[
-                        styles.tableContainer,
-                        {
-                          backgroundColor: isDark ? "#111827" : "#F9FAFB",
-                          borderColor,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.tableHeaderRow,
-                          { borderBottomColor: borderColor },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            { flex: 1.3, color: textSecondary },
-                          ]}
-                        >
-                          Producto
+
+                      <View style={{ marginTop: 25, paddingHorizontal: 4 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '900', color: textSecondary, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                          Detalle de Consumo
                         </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            { flex: 1.1, color: textSecondary },
-                          ]}
-                        >
-                          Anfitriona
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 0.5,
-                              color: textSecondary,
-                              textAlign: "center",
-                            },
-                          ]}
-                        >
-                          Cant.
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 0.8,
-                              color: textSecondary,
-                              textAlign: "right",
-                            },
-                          ]}
-                        >
-                          Com.
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 1.0,
-                              color: textSecondary,
-                              textAlign: "right",
-                            },
-                          ]}
-                        >
-                          Precio
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 1.0,
-                              color: textSecondary,
-                              textAlign: "right",
-                            },
-                          ]}
-                        >
-                          Total
+                        
+                        {(() => {
+                          const details = selectedCuenta.detalles || [];
+                          const grouped = details.reduce((acc: any[], current: any) => {
+                            const key = `${current.producto}-${current.hostess_nick || 'SIN ANFITRIONA'}-${current.added_by || 'S'}`;
+                            const existingIndex = acc.findIndex(item => item.groupKey === key);
+                            if (existingIndex > -1) {
+                              acc[existingIndex].cantidad += current.cantidad;
+                              acc[existingIndex].sub_total += current.sub_total;
+                              acc[existingIndex].comision += (current.comision || 0);
+                            } else {
+                              acc.push({ ...current, groupKey: key });
+                            }
+                            return acc;
+                          }, []);
+
+                          if (grouped.length === 0) {
+                            return (
+                              <View style={{ padding: 40, alignItems: 'center', backgroundColor: isDark ? '#111' : '#F5F5F5', borderRadius: 24, borderStyle: 'dashed', borderWidth: 1, borderColor }}>
+                                <Ionicons name="cart-outline" size={32} color={textSecondary} />
+                                <Text style={{ color: textSecondary, fontWeight: '700', marginTop: 10 }}>Sin consumos</Text>
+                              </View>
+                            );
+                          }
+
+                          return (
+                            <View style={{ gap: 14 }}>
+                              {grouped.map((det: any, index: number) => (
+                                <View 
+                                  key={index}
+                                  style={{
+                                    backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+                                    borderRadius: 24,
+                                    padding: 18,
+                                    borderWidth: 1,
+                                    borderColor: borderColor,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 6 },
+                                    shadowOpacity: isDark ? 0.4 : 0.08,
+                                    shadowRadius: 12,
+                                    elevation: 4,
+                                  }}
+                                >
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <View style={{ backgroundColor: accentColor + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: accentColor + '20' }}>
+                                      <Text style={{ fontSize: 13, fontWeight: '900', color: accentColor }}>
+                                        CANT: {det.cantidad}
+                                      </Text>
+                                    </View>
+                                    {det.added_by && (
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: isDark ? '#262626' : '#F3F4F6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 }}>
+                                        {det.added_by_foto ? (
+                                          <Image 
+                                            source={{ uri: `${BASE_URL}/img/users/${det.added_by_foto}` }} 
+                                            style={{ width: 22, height: 22, borderRadius: 11 }}
+                                          />
+                                        ) : (
+                                          <Ionicons name="person-circle" size={18} color={accentColor} />
+                                        )}
+                                        <Text style={{ fontSize: 12, color: textPrimary, fontWeight: '800' }}>
+                                          Vía: {det.added_by}
+                                        </Text>
+                                      </View>
+                                    )}
+                                  </View>
+
+                                  <Text style={{ fontSize: 19, fontWeight: '900', color: textPrimary, marginBottom: 15, letterSpacing: -0.5 }}>
+                                    {det.producto}
+                                  </Text>
+
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 15, borderTopWidth: 1, borderTopColor: borderColor + '40' }}>
+                                    <View style={{ gap: 6 }}>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Anfitriona</Text>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        {det.hostess_foto ? (
+                                          <Image 
+                                            source={{ uri: `${BASE_URL}/img/users/${det.hostess_foto}` }} 
+                                            style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#E5E7EB' }}
+                                          />
+                                        ) : (
+                                          <Ionicons name="woman" size={18} color={accentColor} />
+                                        )}
+                                        <Text style={{ fontSize: 15, fontWeight: '800', color: textPrimary }}>
+                                          {det.hostess_nick || "SIN ANFITRIONA"}
+                                        </Text>
+                                      </View>
+                                    </View>
+
+                                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#F43F5E", textTransform: 'uppercase' }}>Comisión</Text>
+                                      <Text style={{ fontSize: 16, fontWeight: '900', color: "#F43F5E" }}>
+                                        ${Number(det.comision || 0).toLocaleString('es-CL')}
+                                      </Text>
+                                    </View>
+
+                                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#10B981", textTransform: 'uppercase' }}>Subtotal</Text>
+                                      <Text style={{ fontSize: 22, fontWeight: '900', color: "#10B981" }}>
+                                        ${Number(det.sub_total || 0).toLocaleString('es-CL')}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                </View>
+                              ))}
+                            </View>
+                          );
+                        })()}
+                      </View>
+                    </ScrollView>
+
+                    <View style={[styles.summarySection, { borderTopWidth: 1, borderTopColor: borderColor + '40', paddingTop: 15 }]}>
+                      {/* Subtotal Productos */}
+                      <View style={[styles.summaryRow, { marginBottom: 6 }]}>
+                        <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>Subtotal Consumos</Text>
+                        <Text style={[styles.summaryValue, { color: textPrimary, fontWeight: '700' }]}>
+                          ${(selectedCuenta.sub_total || selectedCuenta.total || 0).toLocaleString('es-CL')}
                         </Text>
                       </View>
-                      {selectedCuenta.detalles &&
-                        selectedCuenta.detalles.map((det: any, idx: number) => (
-                          <View
-                            key={idx}
-                            style={[
-                              styles.tableRow,
-                              {
-                                borderBottomColor:
-                                  idx === selectedCuenta.detalles.length - 1
-                                    ? "transparent"
-                                    : borderColor,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.productName,
-                                { flex: 1.3, color: textPrimary },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {det.producto}
-                            </Text>
-                            <Text
-                              style={{
-                                flex: 1.1,
-                                fontSize: 13,
-                                fontWeight: "600",
-                                color: accentColor,
-                              }}
-                              numberOfLines={1}
-                            >
-                              {det.hostess_nick || "-"}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productQty,
-                                {
-                                  flex: 0.5,
-                                  color: textPrimary,
-                                  textAlign: "center",
-                                },
-                              ]}
-                            >
-                              {det.cantidad}
-                            </Text>
-                            <Text
-                              style={{
-                                flex: 0.8,
-                                fontSize: 14,
-                                color: "#10B981",
-                                fontWeight: "700",
-                                textAlign: "right",
-                              }}
-                            >
-                              ${(det.comision || 0).toLocaleString()}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productPrice,
-                                {
-                                  flex: 1.0,
-                                  color: textPrimary,
-                                  textAlign: "right",
-                                },
-                              ]}
-                            >
-                              ${det.precio.toLocaleString()}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productSubtotal,
-                                {
-                                  flex: 1.0,
-                                  color: textPrimary,
-                                  textAlign: "right",
-                                },
-                              ]}
-                            >
-                              ${det.sub_total.toLocaleString()}
-                            </Text>
-                          </View>
-                        ))}
-                    </View>
-                    <View style={styles.summarySection}>
+
+                      {/* Propina (solo si existe y es > 0) */}
+                      {(selectedCuenta.propina > 0) && (
+                        <View style={[styles.summaryRow, { marginBottom: 12 }]}>
+                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>Atención / Propina (+)</Text>
+                          <Text style={[styles.summaryValue, { color: "#10B981", fontWeight: '700' }]}>
+                            ${Number(selectedCuenta.propina).toLocaleString('es-CL')}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* Total Final Destacado */}
                       <View
                         style={[
                           styles.summaryRow,
                           {
-                            marginTop: 8,
+                            marginTop: 4,
                             borderTopWidth: 1,
                             borderTopColor: borderColor,
                             paddingTop: 12,
@@ -1372,32 +1190,32 @@ export default function CuentasScreen() {
                         <Text
                           style={[
                             styles.totalLabelFinal,
-                            { color: textPrimary },
+                            { color: textPrimary, fontSize: 18 }
                           ]}
                         >
-                          TOTAL
+                          TOTAL FINAL
                         </Text>
                         <Text
-                          style={[styles.totalValFinal, { color: accentColor }]}
+                          style={[styles.totalValFinal, { color: accentColor, fontSize: 24, fontWeight: '900' }]}
                         >
-                          ${selectedCuenta.total.toLocaleString()}
+                          ${(Number(selectedCuenta.total || 0)).toLocaleString('es-CL')}
                         </Text>
                       </View>
                     </View>
-                  </ScrollView>
-                  <Pressable
-                    style={[
-                      styles.modalCloseBtn,
-                      { backgroundColor: accentColor },
-                    ]}
-                    onPress={() =>
-                      dispatch({ type: "SET_MODAL_VISIBLE", payload: false })
-                    }
-                  >
-                    <Text style={styles.modalCloseBtnText}>
-                      Cerrar Detalles
-                    </Text>
-                  </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.modalCloseBtn,
+                        { backgroundColor: accentColor, marginTop: 20 },
+                      ]}
+                      onPress={() =>
+                        dispatch({ type: "SET_MODAL_VISIBLE", payload: false })
+                      }
+                    >
+                      <Text style={styles.modalCloseBtnText}>
+                        Cerrar Detalles
+                      </Text>
+                    </Pressable>
                 </>
               )
             )}
@@ -1498,8 +1316,18 @@ export default function CuentasScreen() {
                 </View>
               </View>
 
+              {selectedCuenta?.cliente_id && (
+                <View style={{ marginBottom: 15, padding: 12, backgroundColor: `${accentColor}10`, borderRadius: 12, borderWidth: 1, borderColor: `${accentColor}30` }}>
+                  <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Saldo Prepago Cliente</Text>
+                  <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '900', marginTop: 2 }}>
+                    ${(selectedCuenta.cliente_saldo || 0).toLocaleString()}
+                  </Text>
+                </View>
+              )}
+
               <PaymentMethodSelect
                 selectedMethod={cobroMetodoPago}
+                showPrepago={!!selectedCuenta?.cliente_id}
                 onSelect={(method) =>
                   dispatch({ type: "SET_COBRO_METODO_PAGO", payload: method })
                 }
@@ -1534,7 +1362,7 @@ export default function CuentasScreen() {
               <Pressable
                 style={[
                   styles.cobrarCancelBtn,
-                  { backgroundColor: isDark ? "#374151" : "#F3F4F6" },
+                  { backgroundColor: isDark ? "#1F2937" : "#F3F4F6", borderWidth: 1, borderColor: accentColor },
                 ]}
                 onPress={() =>
                   dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false })
@@ -1618,7 +1446,7 @@ export default function CuentasScreen() {
             <Pressable
               style={[
                 styles.actionCancelBtn,
-                { backgroundColor: isDark ? "#374151" : "#F3F4F6" },
+                { backgroundColor: isDark ? "#1F2937" : "#F3F4F6", borderWidth: 1, borderColor: accentColor },
               ]}
               onPress={() =>
                 dispatch({ type: "SET_ACTION_SHEET", visible: false })
@@ -1646,6 +1474,7 @@ export default function CuentasScreen() {
         confirmText="Confirmar"
         cancelText="Cancelar"
       />
+
     </View>
   );
 }
@@ -1670,30 +1499,65 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   backBtn: {
-    width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(155,155,155,0.1)",
+    backgroundColor: 'rgba(155,155,155,0.1)',
   },
-  plusBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#E11D48",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    gap: 4,
+  backText: {
+    fontWeight: '800',
+    fontSize: 14,
   },
   plusBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
+  backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  content: { flex: 1 },
+  searchOuter: {
+    padding: 16,
+    paddingTop: 10,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    zIndex: 10,
+    marginBottom: 5,
+  },
+  searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      height: 50,
+      borderRadius: 16,
+      gap: 10,
+  },
+  searchInput: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '700',
+  },
+  summaryContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 12,
+      marginTop: 15
+  },
+  summaryPill: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 16,
+      gap: 8,
+      justifyContent: 'center'
+  },
+  summaryLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 0.5, opacity: 0.7 },
+  summaryValue: { fontSize: 14, fontWeight: '900' },
   listContainer: { padding: 16, paddingBottom: 100 },
 
   // Tabs
@@ -1721,25 +1585,7 @@ const styles = StyleSheet.create({
   },
   tabBadgeText: { color: "#E11D48", fontSize: 11, fontWeight: "900" },
 
-  // Resumen
-  resumenCard: {
-    padding: 24,
-    borderRadius: 32,
-    marginBottom: 20,
-    elevation: 10,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-  },
-  resumenLabel: { fontSize: 13, fontWeight: "800", letterSpacing: 1 },
-  resumenValue: { fontSize: 36, fontWeight: "900", marginTop: 4 },
-  resumenIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
 
   // Cards Premium
   card: {
@@ -1964,7 +1810,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  detailsGrid: {
+  infoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 16,
@@ -2116,4 +1962,17 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   cobrarCancelBtnText: { fontSize: 16, fontWeight: "800" },
+  backBtnRight: {
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      height: 38, 
+      borderRadius: 12, 
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      paddingHorizontal: 12,
+      gap: 6
+  },
+  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+
 });
+
+

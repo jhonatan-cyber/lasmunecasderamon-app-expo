@@ -1,9 +1,9 @@
 import { Stack } from 'expo-router';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { GlobalTimerAlert } from '../../../components/cajero/GlobalTimerAlert';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { GlobalTimerAlert } from '@/components/cajero/GlobalTimerAlert';
 
 export default function CajeroLayout() {
-    const { accentColor, isDark } = useAccentColor();
+    const { isDark } = useAccentColor();
 
     return (
         <>
@@ -21,8 +21,11 @@ export default function CajeroLayout() {
                 <Stack.Screen name="solicitudes" options={{ title: 'Solicitudes' }} />
                 <Stack.Screen name="nuevo-servicio" options={{ title: 'Nuevo Servicio', headerShown: false }} />
                 <Stack.Screen name="servicios" options={{ title: 'Servicios Activos', headerShown: false }} />
+                <Stack.Screen name="clientes" options={{ title: 'Clientes', headerShown: false }} />
             </Stack>
             <GlobalTimerAlert />
         </>
     );
 }
+
+

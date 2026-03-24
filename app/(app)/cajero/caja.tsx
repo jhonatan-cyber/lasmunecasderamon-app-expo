@@ -4,9 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import {
-    Animated,
     DeviceEventEmitter,
-    Easing,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -16,18 +14,18 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    useColorScheme,
     useWindowDimensions,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { useAuthStore } from '../../../store/authStore';
-import { Skeleton } from '../../../components/ui/Skeleton';
+import { apiClient } from '@/api/client';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { useAuthStore } from '@/store/authStore';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ──────────────────────────────────────────────────────────────────
 type CajaState = {
     loading: boolean;
     refreshing: boolean;
@@ -84,7 +82,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
     Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
-// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skeleton ─────────────────────────────────────────────────────────────
 const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
     <View style={{ gap: 16, padding: 16 }}>
         {/* Status card skeleton */}
@@ -122,7 +120,7 @@ const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string
     </View>
 );
 
-// â”€â”€â”€ Stat Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Stat Card ─────────────────────────────────────────────────────────────
 const MetricCard = ({
     label, value, icon, color, bgColor, isDark, cardBg, borderColor
 }: {
@@ -140,7 +138,7 @@ const MetricCard = ({
     </View>
 );
 
-// â”€â”€â”€ Row Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Row Item ───────────────────────────────────────────────────────────────
 const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor }: {
     label: string; value: number; accent?: string;
     textPrimary: string; textSecondary: string; borderColor: string;
@@ -153,7 +151,7 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
     </View>
 );
 
-// â”€â”€â”€ Main Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function CajaScreen() {
     const { accentColor, gradientColors, isDark } = useAccentColor();
     const router = useRouter();
@@ -204,13 +202,13 @@ export default function CajaScreen() {
                 });
             }
         } catch {
-            if (isManual) showToast('Error', 'No se pudo actualizar la informaciÃ³n');
-            else showToast('Error', 'No se pudo cargar la informaciÃ³n de la caja');
+            if (isManual) showToast('Error', 'No se pudo actualizar la información');
+            else showToast('Error', 'No se pudo cargar la información de la caja');
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
-    }, [user?.id]);
+    }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -231,7 +229,7 @@ export default function CajaScreen() {
             numericMonto = stats?.balance_total || 0;
         } else {
             const cleanMonto = monto.replace(/\./g, '');
-            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto vÃ¡lido'); return; }
+            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
             numericMonto = Number(cleanMonto);
         }
 
@@ -249,7 +247,7 @@ export default function CajaScreen() {
                 else showToast('Error', res.message || 'Error al abrir caja');
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister/retiro', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
@@ -259,7 +257,7 @@ export default function CajaScreen() {
                 }
                 else showToast('Error', res.message || 'Error al retirar efectivo');
             } else {
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister', { method: 'PATCH', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto_cierre: numericMonto, usuario_id_cierre: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
@@ -290,48 +288,31 @@ export default function CajaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'dark' : 'light'} />
 
-            {/* â”€â”€ Header â”€â”€ */}
-            <LinearGradient
-                colors={gradientColors as any}
-                style={[
-                    styles.header,
-                    {
-                        paddingTop: insets.top + (isTablet ? 20 : 10),
-                        paddingBottom: 25,
-                        borderBottomLeftRadius: 32,
-                        borderBottomRightRadius: 32,
-                    },
-                ]}
-            >
-                <View style={styles.headerTop}>
-                    <Pressable
-                        onPress={() => router.replace('/cajero/(tabs)' as any)}
-                        style={styles.backBtn}
-                        accessibilityLabel="Volver"
-                    >
-                        <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={headerTextColor} />
-                    </Pressable>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 10 }}>
-                        <View>
-                            <Text style={[styles.headerTitle, { color: headerTextColor }, isTablet && { fontSize: 28 }]}>
-                                Caja
-                            </Text>
-                            <Text style={[styles.headerSubtitle, { color: headerSubColor }, isTablet && { fontSize: 17 }]}>
-                                {cajaAbierta && cajaInfo?.fecha_apertura
-                                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
-                                    : 'Turno no iniciado'}
-                            </Text>
-                        </View>
+            <PremiumHeader
+                title="Caja"
+                subtitle={cajaAbierta && cajaInfo?.fecha_apertura
+                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
+                    : 'Turno no iniciado'}
+                rightComponent={
+                    <View style={styles.headerActions}>
                         <Pressable
-                            style={styles.backBtn}
+                            style={styles.backBtnRight}
                             onPress={onRefresh}
                             accessibilityLabel="Actualizar caja"
                         >
-                            <Ionicons name="refresh-outline" size={isTablet ? 26 : 22} color={headerTextColor} />
+                            <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+                        </Pressable>
+                        <Pressable
+                            onPress={() => router.replace('@/components/cajero/(tabs)' as any)}
+                            style={styles.backBtnRight}
+                            accessibilityLabel="Volver"
+                        >
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text style={styles.backTextRight}>Atrás</Text>
                         </Pressable>
                     </View>
-                </View>
-            </LinearGradient>
+                }
+            />
 
             {loading ? (
                 <ScrollView style={{ flex: 1 }}>
@@ -344,7 +325,7 @@ export default function CajaScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* â”€â”€ Status Card â”€â”€ */}
+                    {/* ── Status Card ── */}
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
                             {/* Status Pill */}
@@ -377,7 +358,7 @@ export default function CajaScreen() {
                                     </>
                                 ) : (
                                     <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: `20`, borderColor: `40` }]}
+                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }]}
                                         onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
                                         accessibilityLabel="Abrir caja"
                                     >
@@ -400,16 +381,16 @@ export default function CajaScreen() {
 
                     {cajaAbierta && stats && (
                         <>
-                            {/* â”€â”€ 2-col Metric Cards â”€â”€ */}
+                            {/* ── 2-col Metric Cards ── */}
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
-                                    icon="trending-up-outline" color={accentColor} bgColor={`${accentColor}18`}
+                                    icon="wallet-outline" color={accentColor} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
-                                    label="Efectivo en Caja" value={stats.total_efectivo || 0}
-                                    icon="cash-outline" color="#10B981" bgColor="#10B98118"
+                                    label="IVA" value={stats.total_iva || 0}
+                                    icon="document-text-outline" color="#10B981" bgColor="#10B98118"
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
@@ -424,20 +405,24 @@ export default function CajaScreen() {
                                 />
                             </View>
 
-                            {/* â”€â”€ Breakdown Card â”€â”€ */}
+                            {/* ── Breakdown Card ── */}
                             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                                 <View style={styles.breakdownHeader}>
                                     <Ionicons name="bar-chart-outline" size={16} color={accentColor} />
                                     <Text style={[styles.breakdownTitle, { color: textPrimary }]}>Desglose del Turno</Text>
                                 </View>
 
-                                <StatRow label="Ventas" value={stats.total_ventas || 0} accent="#10B981" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Efectivo en Caja" value={stats.efectivo_en_caja || 0} accent="#10B981" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Tarjetas" value={stats.total_tarjeta || 0} accent="#3B82F6" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Transferencias" value={stats.total_transferencia || 0} accent="#6366F1" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Monto Apertura" value={stats.monto_apertura || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Servicios" value={stats.total_servicios || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
-                                <StatRow label="IVA" value={stats.total_iva || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Ventas" value={stats.total_ventas || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Anticipos" value={stats.total_anticipo || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Devoluciones" value={stats.total_devoluciones || 0} accent="#EF4444" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="IVA" value={stats.total_iva || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Propinas" value={stats.total_propina || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Comisiones" value={stats.total_comisiones || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
 
                                 {/* Divider + total */}
                                 <View style={[styles.totalRow, { borderTopColor: borderColor }]}>
@@ -471,7 +456,7 @@ export default function CajaScreen() {
                 </ScrollView>
             )}
 
-            {/* â”€â”€ Modal â”€â”€ */}
+            {/* ── Modal ── */}
             <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
                     <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>
@@ -590,16 +575,22 @@ export default function CajaScreen() {
     );
 }
 
-// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: { flex: 1 },
 
-    // Header â€” mismo patrÃ³n que cuentas/ventas/servicios
-    header: { paddingHorizontal: 16 },
-    headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
-    headerTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+    backBtnRight: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 38, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+
 
     // Scroll
     scroll: { padding: 16, gap: 12, paddingBottom: 40 },
@@ -703,3 +694,4 @@ const styles = StyleSheet.create({
         fontWeight: '700'
     },
 });
+

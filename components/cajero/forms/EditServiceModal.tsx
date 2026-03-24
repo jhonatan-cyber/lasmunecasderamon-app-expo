@@ -11,11 +11,12 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { Timer } from '../../../context/TimerContext';
-import { HostessSelectModal } from './HostessSelectModal';
-import { PaymentMethod, PaymentMethodSelect } from './PaymentMethodSelect';
+import { apiClient } from '@/api/client';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { Timer } from '@/context/TimerContext';
+import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
+import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { TimeSelector } from '@/components/ui/TimeSelector';
 
 interface Anfitriona {
     id_usuario: number;
@@ -45,11 +46,11 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const [loading, setLoading] = useState(false);
     const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
-    const [tiempo, setTiempo] = useState<string>('30');
+    const [tiempo, setTiempo] = useState<number>(30);
     const [precioServicio, setPrecioServicio] = useState<string>('0');
     const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
     const [anfitrionasDisponibles, setAnfitrionasDisponibles] = useState<Anfitriona[]>([]);
-    const [anfitrionasSeleccionadas, setAnfitrionasSeleccionadas] = useState<number[]>([]);
+    const [anfitrionasSeleccionadas, setAnfitrionasSeleccionadas] = useState<(string | number)[]>([]);
     const [showHostessModal, setShowHostessModal] = useState(false);
     const [precioHabitacionSinComision, setPrecioHabitacionSinComision] = useState<number>(0);
 
@@ -61,7 +62,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             if (res.success && Array.isArray(res.data)) {
                 console.log('[EditServiceModal] Total habitaciones:', res.data.length);
 
-                // Log de todas las habitaciones para debug
                 res.data.forEach((h: any, index: number) => {
                     console.log(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
@@ -71,35 +71,22 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     });
                 });
 
-                // Buscar habitación sin comisión que tenga precio y tiempo
                 const habitacionSinComision = res.data.find((h: any) => {
                     const precio = h.precio || h.price || 0;
                     const tiempo = h.tiempo || h.time || 0;
                     const comision = h.comision_anfitriona || 0;
-
                     const cumple = comision === 0 && precio > 0 && tiempo > 0;
-
-                    console.log(`[EditServiceModal] Evaluando ${h.nombre || h.name}:`, {
-                        precio,
-                        tiempo,
-                        comision,
-                        cumple
-                    });
-
                     return cumple;
                 });
 
                 if (habitacionSinComision) {
                     const precio = habitacionSinComision.precio || habitacionSinComision.price || 0;
                     setPrecioHabitacionSinComision(precio);
-                    console.log('[EditServiceModal] ✅ Precio habitación sin comisión encontrado:', precio);
                 } else {
-                    console.warn('[EditServiceModal] ❌ No se encontró habitación sin comisión con precio y tiempo');
                     setPrecioHabitacionSinComision(0);
                 }
             }
         } catch (error) {
-            console.error('[EditServiceModal] Error fetching habitación sin comisión:', error);
             setPrecioHabitacionSinComision(0);
         }
     }, []);
@@ -107,19 +94,14 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const fetchAnfitrionas = useCallback(async () => {
         setLoadingAnfitrionas(true);
         try {
-            // Obtener anfitrionas disponibles
             const disponiblesRes = await apiClient('/anfitrionas/disponibles');
-
-            // Obtener anfitrionas del servicio actual
             const servicioRes = await apiClient(`/servicios/${timer?.servicioId}`);
-
             let todasAnfitrionas: Anfitriona[] = [];
 
             if (disponiblesRes.success && Array.isArray(disponiblesRes.data)) {
                 todasAnfitrionas = [...disponiblesRes.data];
             }
 
-            // Agregar las anfitrionas del servicio actual si no están en disponibles
             if (servicioRes.success && servicioRes.data?.usuarios) {
                 const anfitrionasServicio = servicioRes.data.usuarios;
                 anfitrionasServicio.forEach((anf: Anfitriona) => {
@@ -131,7 +113,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
             setAnfitrionasDisponibles(todasAnfitrionas);
         } catch (error) {
-            console.error('[EditServiceModal] Error fetching anfitrionas:', error);
             Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
         } finally {
             setLoadingAnfitrionas(false);
@@ -141,35 +122,45 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     useEffect(() => {
         if (visible && timer) {
             setPrecioServicio('0');
-            setTiempo('30');
+            setTiempo(30);
             setMetodoPago('efectivo');
-            setAnfitrionasSeleccionadas((timer.anfitrionas_ids || []).map(id => Number(id)));
+            
+            // Prioridad a anfitrionas_ids (array), fallback a split de anfitrionas (string)
+            let ids: string[] = [];
+            if (timer.anfitrionas_ids && Array.isArray(timer.anfitrionas_ids)) {
+                ids = timer.anfitrionas_ids.map(id => String(id));
+            } else if (timer.anfitrionas && typeof timer.anfitrionas === 'string') {
+                // Si solo tenemos el string, intentamos buscar las disponibles que coincidan con el nick
+                // Pero es mejor confiar en los IDs si existen.
+            }
+            
+            setAnfitrionasSeleccionadas(ids);
             fetchAnfitrionas();
             fetchHabitacionSinComision();
         }
-    }, [visible, timer, fetchAnfitrionas, fetchHabitacionSinComision]);
+    }, [visible, timer?.servicioId, fetchAnfitrionas, fetchHabitacionSinComision]);
 
     const toggleAnfitriona = (id: string | number) => {
-        const numId = Number(id);
         setAnfitrionasSeleccionadas(prev => {
-            if (prev.includes(numId)) {
-                return prev.filter(anf => anf !== numId);
+            const isSelected = prev.some(sid => String(sid) === String(id));
+            if (isSelected) {
+                return prev.filter(sid => String(sid) !== String(id));
             } else {
-                return [...prev, numId];
+                return [...prev, id];
             }
         });
     };
 
     const getSelectedHostessNames = () => {
         return anfitrionasDisponibles
-            .filter(anf => anfitrionasSeleccionadas.includes(anf.id_usuario))
+            .filter(anf => anfitrionasSeleccionadas.some(sid => String(sid) === String(anf.id_usuario)))
             .map(anf => anf.nick)
             .join(', ') || 'Ninguna seleccionada';
     };
 
     const handleSave = async () => {
         if (!timer) return;
-        const timeVal = parseInt(tiempo);
+        const timeVal = tiempo;
         if (!timeVal || timeVal <= 0) {
             Toast.show({ type: 'error', text1: 'Error', text2: 'El tiempo debe ser mayor a 0' });
             return;
@@ -183,15 +174,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         setLoading(true);
         try {
             const numericPrecio = parseInt(precioServicio.replace(/\./g, '')) || 0;
-
-            // Replicar lógica de la web: subtotal = precioBase * #anfitrionas
             const numAnfitrionas = anfitrionasSeleccionadas.length;
             const subTotalServicio = numericPrecio * numAnfitrionas;
-
-            // Precio de habitación multiplicado por número de anfitrionas
             const precioHabitacionTotal = precioHabitacionSinComision * numAnfitrionas;
-
-            // IVA del 20% si es tarjeta (SOLO sobre el precio del servicio)
             let calculatedIva = 0;
             if (metodoPago === 'tarjeta') {
                 calculatedIva = Math.floor(subTotalServicio * 0.20);
@@ -199,7 +184,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
             let totalGeneral = subTotalServicio + precioHabitacionTotal + calculatedIva;
 
-            // Redondeo si es tarjeta
             if (metodoPago === 'tarjeta') {
                 const totalRedondeado = Math.ceil(totalGeneral / 5000) * 5000;
                 const excedente = totalRedondeado - totalGeneral;
@@ -209,9 +193,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
             const payload = {
                 servicio_original_id: timer.servicioId,
-                cliente_id: null, // Opcional en el backend temporal
+                cliente_id: timer.cliente_id || null,
                 habitacion_id: timer.roomId,
-                precio_habitacion: precioHabitacionTotal, // Precio multiplicado por anfitrionas
+                precio_habitacion: precioHabitacionTotal,
                 precio_servicio: numericPrecio,
                 iva: calculatedIva,
                 sub_total: subTotalServicio + precioHabitacionTotal,
@@ -220,14 +204,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 metodo_pago: metodoPago,
                 usuarios: anfitrionasSeleccionadas
             };
-
-            console.log('[EditServiceModal] Payload:', {
-                ...payload,
-                numAnfitrionas,
-                precioHabitacionUnitario: precioHabitacionSinComision,
-                precioHabitacionTotal
-            });
-
             const res = await apiClient('/servicios/temporal', {
                 method: 'POST',
                 body: JSON.stringify(payload)
@@ -249,7 +225,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 });
             }
         } catch (error) {
-            console.error('[EditServiceModal] Error:', error);
             Toast.show({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
         } finally {
             setLoading(false);
@@ -277,6 +252,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     <ScrollView style={styles.content}>
                         <View style={styles.infoBox}>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>Habitación: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.roomName}</Text></Text>
+                            <Text style={[styles.infoLabel, { color: textSecondary }]}>Cliente: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.clienteNombre}</Text></Text>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>Anfitrionas actuales: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.anfitrionas}</Text></Text>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>
                                 Precio habitación: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>
@@ -301,20 +277,11 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                             </Pressable>
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: textSecondary }]}>TIEMPO (MINUTOS)</Text>
-                            <View style={[styles.inputWrapper, { borderColor }]}>
-                                <Ionicons name="time-outline" size={20} color={textSecondary} />
-                                <TextInput
-                                    style={[styles.input, { color: textPrimary }]}
-                                    value={tiempo}
-                                    onChangeText={setTiempo}
-                                    keyboardType="numeric"
-                                    placeholder="30"
-                                    placeholderTextColor={textSecondary}
-                                />
-                            </View>
-                        </View>
+                        <TimeSelector
+                            value={tiempo}
+                            onChange={setTiempo}
+                            label="TIEMPO (MINUTOS)"
+                        />
 
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: textSecondary }]}>PRECIO SERVICIO (POR ANFITRIONA)</Text>
@@ -383,8 +350,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                                                 iva = Math.floor(totalServicio * 0.20);
                                             }
                                             let total = totalServicio + totalHabitacion + iva;
-
-                                            // Redondeo si es tarjeta
                                             if (metodoPago === 'tarjeta') {
                                                 total = Math.ceil(total / 5000) * 5000;
                                             }
@@ -594,3 +559,8 @@ const styles = StyleSheet.create({
         fontWeight: '900',
     },
 });
+
+
+
+
+

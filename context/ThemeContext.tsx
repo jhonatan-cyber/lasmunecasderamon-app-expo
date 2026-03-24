@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useColorScheme as useRNColorScheme, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { THEME_OPTIONS, useThemeStore } from '../store/themeStore';
+import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
 
 interface ThemeColors {
     background: string;
@@ -142,3 +142,4 @@ export const useTheme = (): ThemeContextType => {
 export const useColorScheme = () => {
     return useTheme();
 };
+

@@ -1,30 +1,36 @@
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-const FlashList = ShopifyFlashList as any;
 import { MotiView } from "moti";
 import {
   DeviceEventEmitter,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { apiClient } from "../../../api/client";
-import { PremiumAlert } from "../../../components/PremiumAlert";
-import { useTimer } from "../../../context/TimerContext";
-import { calculateRemainingTime, formatTime } from "../../../utils/timeUtils";
-import { useAccentColor } from "../../../hooks/useAccentColor";
-import { rotateColor } from "../../../utils/colors";
+import { apiClient, BASE_URL } from '@/api/client';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumFAB } from '@/components/ui/PremiumFAB';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useTimer } from '@/context/TimerContext';
+import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { rotateColor } from '@/utils/colors';
+
+const FlashList = ShopifyFlashList as any;
 
 // Utils for status colors and labels
 const statusColors: Record<number, string> = {
@@ -47,7 +53,41 @@ const payMethodIcons: Record<string, any> = {
   transferencia: "swap-horizontal-outline",
 };
 
-import { Skeleton } from "../../../components/ui/Skeleton";
+// Componente aislado para el temporizador — tiene su propio tick interno
+function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimary }: {
+  timer: any; serverOffset: number; accentColor: string; textSecondary: string; textPrimary: string;
+}) {
+  const [remaining, setRemaining] = useState(() => calculateRemainingTime(timer, serverOffset));
+
+  useEffect(() => {
+    setRemaining(calculateRemainingTime(timer, serverOffset));
+    if (timer.isPaused) return;
+    const interval = setInterval(() => {
+      setRemaining(calculateRemainingTime(timer, serverOffset));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timer, serverOffset]);
+
+  const fmt = (secs: number) => {
+    const absSecs = isNaN(secs) ? 0 : Math.max(0, Math.floor(Math.abs(secs)));
+    const m = Math.floor(absSecs / 60);
+    const s = absSecs % 60;
+    return `${secs < 0 ? "-" : ""}${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <View style={[
+      styles.timerPill,
+      { backgroundColor: remaining < 60 ? '#EF444420' : `${accentColor}20`, borderColor: remaining < 60 ? '#EF444440' : `${accentColor}40` }
+    ]}>
+      <Ionicons name="time" size={16} color={remaining < 60 ? '#EF4444' : accentColor} />
+      <View>
+        <Text style={[styles.timerLabel, { color: textSecondary }]}>RESTANTE</Text>
+        <Text style={[styles.timerValue, { color: remaining < 60 ? '#EF4444' : textPrimary }]}>{fmt(remaining)}</Text>
+      </View>
+    </View>
+  );
+}
 
 // Persistencia de estado de carga para evitar skeleton en re-navegación
 let initialVentasLoaded = false;
@@ -82,8 +122,6 @@ export default function VentasScreen() {
   const [activeTab, setActiveTab] = useState<"historial" | "proceso">(
     (params.tab as any) === "proceso" ? "proceso" : "historial",
   );
-  const [, setTick] = useState(0);
-
   // Alert state
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -313,45 +351,16 @@ export default function VentasScreen() {
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
       console.log("[DEBUG] Event refresh_sales received, updating list...", data);
-
-      // Si es automático, mostrar el modal de aviso
-      if (data?.automatic && data?.roomName) {
-        // Evitar duplicados para el mismo ID de servicio en esta pantalla
-        if (data.servicioId && lastNotifiedId.current === data.servicioId) {
-          console.log("[DEBUG] Duplicate event ignored in Ventas for ID:", data.servicioId);
-          return;
-        }
-        lastNotifiedId.current = data.servicioId || null;
-
-        // Mostrar el modal (Avisar al usuario)
-        setAlertConfig({
-          visible: true,
-          title: "Tiempo Agotado",
-          message: `El tiempo de la habitación ${data.roomName} ha terminado. La habitación ha sido liberada.`,
-          type: "success",
-          showCancel: false,
-          confirmText: "Aceptar",
-          onConfirm: () => {
-            setAlertConfig(prev => ({ ...prev, visible: false }));
-            fetchVentas();
-            refreshTimers();
-          }
-        });
-      } else {
-        fetchVentas();
-        refreshTimers();
-      }
+      
+      // La notificación global (modal) ya la maneja GlobalTimerAlert.tsx
+      // Aquí solo refrescamos la lista.
+      fetchVentas();
+      refreshTimers();
     });
     return () => subscription.remove();
   }, [fetchVentas, refreshTimers]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((t) => t + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
+  // tick eliminado — TimerPill maneja su propio intervalo
   const onRefresh = () => {
     setRefreshing(true);
     fetchVentas(true);
@@ -375,7 +384,7 @@ export default function VentasScreen() {
         showToast("Error", "No se pudo obtener el detalle de la venta");
         setModalVisible(false);
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Error de conexión al cargar detalles");
       setModalVisible(false);
     } finally {
@@ -409,7 +418,7 @@ export default function VentasScreen() {
               res.message || res.error || "No se pudo finalizar la venta",
             );
           }
-        } catch (error) {
+        } catch {
           setAlertConfig(prev => ({ ...prev, visible: false }));
           showToast("Error", "Error al procesar la finalización de la venta");
         }
@@ -446,7 +455,7 @@ export default function VentasScreen() {
           res.message || res.error || "No se pudo solicitar la anulación",
         );
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Error al procesar la solicitud de anulación");
     }
   };
@@ -463,24 +472,16 @@ export default function VentasScreen() {
     // Check if this sale has an active timer (matching room or service ID)
     const activeTimer = timers.find(
       (t) =>
-        (t.servicioId && t.servicioId === item.id_venta) ||
-        (t.roomId && t.roomId === item.habitacion_id && item.estado === 2),
+        (t.servicioId && String(t.servicioId) === String(item.id_venta)) ||
+        (t.roomId && String(t.roomId) === String(item.habitacion_id) && item.estado === 2),
     );
-
-    const remaining = activeTimer
-      ? calculateRemainingTime(activeTimer, serverOffset)
-      : 0;
-    const formatTime = (secs: number) => {
-      const m = Math.floor(secs / 60);
-      const s = secs % 60;
-      return `${m}:${s.toString().padStart(2, "0")}`;
-    };
 
     return (
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'timing', duration: 400 }}
+        style={{ marginHorizontal: 8 }}
       >
         <Pressable
           style={({ pressed }) => [
@@ -585,47 +586,26 @@ export default function VentasScreen() {
                     { color: textSecondary, fontSize: 12 },
                   ]}
                 >
-                  {new Date(item.fecha_crea).toLocaleString("es-CL", {
+                  {parseDateSafe(item.fecha_crea).toLocaleString("es-CL", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
-                    timeZone: 'UTC'
+                    
                   })}
                 </Text>
               </View>
             </View>
 
             {activeTimer && (
-              <View
-                style={[
-                  styles.timerPill,
-                  {
-                    backgroundColor: remaining < 60 ? "#EF444420" : `${accentColor}20`,
-                    borderColor: remaining < 60 ? "#EF444440" : `${accentColor}40`,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="time"
-                  size={16}
-                  color={remaining < 60 ? "#EF4444" : accentColor}
-                />
-                <View>
-                  <Text style={[styles.timerLabel, { color: textSecondary }]}>
-                    RESTANTE
-                  </Text>
-                  <Text
-                    style={[
-                      styles.timerValue,
-                      { color: remaining < 60 ? "#EF4444" : textPrimary },
-                    ]}
-                  >
-                    {formatTime(remaining)}
-                  </Text>
-                </View>
-              </View>
+              <TimerPill
+                timer={activeTimer}
+                serverOffset={serverOffset}
+                accentColor={accentColor}
+                textSecondary={textSecondary}
+                textPrimary={textPrimary}
+              />
             )}
           </View>
 
@@ -658,7 +638,7 @@ export default function VentasScreen() {
 
             <View style={{ alignItems: "flex-end" }}>
               <Text style={[styles.cardTotalBig, { color: textPrimary }]}>
-                ${item.total.toLocaleString()}
+                ${item.total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
               </Text>
               <View style={styles.subInfoRow}>
                 <Text style={[styles.cardSubCount, { color: textSecondary }]}>
@@ -670,7 +650,7 @@ export default function VentasScreen() {
                       •
                     </Text>
                     <Text style={styles.cardPropinaGreen}>
-                      +${item.propina.toLocaleString()}
+                      +${item.propina.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
                     </Text>
                   </>
                 )}
@@ -689,76 +669,36 @@ export default function VentasScreen() {
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={isDark ? 'dark' : 'light'} />
-      {/* Header con gradiente igual al Dashboard */}
-      <LinearGradient
-        colors={gradientColors as any}
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + (isTablet ? 20 : 10),
-            paddingBottom: 25,
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
-          },
-        ]}
-      >
-        <View style={styles.headerTop}>
-          <Pressable
-            onPress={() => router.replace("/cajero/(tabs)" as any)}
-            style={styles.backBtn}
-          >
-            <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={isDark ? "#111827" : "#FFFFFF"} />
-          </Pressable>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginLeft: 10,
-            }}
-          >
-            <View>
-              <Text style={[styles.headerTitle, { color: isDark ? "#111827" : "#FFFFFF" }, isTablet && { fontSize: 28 }]}>
-                Ventas
-              </Text>
-              <Text style={[styles.headerSubtitle, { color: isDark ? "#6B7280" : "rgba(255,255,255,0.8)" }, isTablet && { fontSize: 17 }]}>
-                Historial de transacciones
-              </Text>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={() =>
-                  router.push(
-                    activeTab === "historial"
-                      ? "/cajero/nueva-venta"
-                      : "/cajero/nuevo-servicio",
-                  )
-                }
-                style={[
-                  styles.plusBtn, { backgroundColor: accentColor },
-                  { backgroundColor: isDark ? '#111827' : accentColor, shadowColor: accentColor }
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  activeTab === "historial" ? "Nueva Venta" : "Nuevo Servicio"
-                }
-              >
-                <Ionicons name="add" size={isTablet ? 24 : 20} color="#FFFFFF" />
-                <Text style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}>Nuevo</Text>
+      <PremiumHeader
+        title="Ventas"
+        subtitle={activeTab === "historial" ? "Historial de transacciones" : "Ventas activas en tiempo real"}
+        rightComponent={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+              <TouchableOpacity onPress={() => fetchVentas(true)} style={styles.backBtnRight}>
+                  <Ionicons name="refresh" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
+                  <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                  <Text style={styles.backTextRight}>Atrás</Text>
               </Pressable>
-            </View>
           </View>
-        </View>
-        <View style={[styles.tabContainer, {
-          borderColor: isDark ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
-          backgroundColor: isDark ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.1)',
-          height: isTablet ? 56 : 48
-        }]}>
+        }
+      />
+
+      <View style={[styles.tabContainer, {
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+          height: isTablet ? 56 : 48,
+          marginHorizontal: 16,
+          marginTop: 15,
+          gap: 12
+      }]}>
           <Pressable
             style={[
               styles.tab,
-              activeTab === "historial" && { backgroundColor: accentColor },
+              activeTab === "historial" 
+                ? { backgroundColor: accentColor }
+                : { borderWidth: 1, borderColor: accentColor + '30' },
             ]}
             onPress={() => {
               if (activeTab !== "historial") {
@@ -774,7 +714,7 @@ export default function VentasScreen() {
                 isTablet && { fontSize: 16 },
                 activeTab === "historial"
                   ? { color: "#FFF" }
-                  : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
+                  : { color: isDark ? "#9CA3AF" : "#64748B" },
               ]}
             >
               Listado de Ventas
@@ -783,7 +723,9 @@ export default function VentasScreen() {
           <Pressable
             style={[
               styles.tab,
-              activeTab === "proceso" && { backgroundColor: accentColor },
+              activeTab === "proceso" 
+                ? { backgroundColor: accentColor }
+                : { borderWidth: 1, borderColor: accentColor + '30' },
             ]}
             onPress={() => {
               if (activeTab !== "proceso") {
@@ -800,7 +742,7 @@ export default function VentasScreen() {
                   isTablet && { fontSize: 16 },
                   activeTab === "proceso"
                     ? { color: "#FFF" }
-                    : { color: isDark ? "#6B7280" : "rgba(255,255,255,0.7)" },
+                    : { color: isDark ? "#9CA3AF" : "#64748B" },
                 ]}
               >
                 Ventas con Habitación
@@ -816,7 +758,6 @@ export default function VentasScreen() {
             </View>
           </Pressable>
         </View>
-      </LinearGradient>
       {/* Main Content */}
       <FlashList
         data={
@@ -843,7 +784,7 @@ export default function VentasScreen() {
             <View style={styles.resumenRow}>
               <View>
                 <Text style={[styles.resumenLabel, { color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }]}>TOTAL VENTAS HOY</Text>
-                <Text style={[styles.resumenValue, { color: '#FFFFFF' }]}>${(resumen.total_hoy || 0).toLocaleString()}</Text>
+                <Text style={[styles.resumenValue, { color: '#FFFFFF' }]}>${(resumen.resumen_general?.total_ventas_monto || resumen.total_hoy || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}</Text>
               </View>
               <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: 12, borderRadius: 16 }}>
                 <Ionicons name="stats-chart" size={32} color="#FFFFFF" />
@@ -872,7 +813,7 @@ export default function VentasScreen() {
         }
       />
 
-      {/* Detail Modal */}
+      {/* Detail Modal Refactored Premium */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -880,354 +821,231 @@ export default function VentasScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.detailModal,
-              { backgroundColor: cardBg, borderColor },
-            ]}
-          >
+          <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
             {loadingDetail ? (
               <DetailSkeleton />
             ) : (
               selectedVenta && (
-                <>
+                <View style={{ flex: 1 }}>
                   <View style={styles.modalHeader}>
-                    <View>
-                      <Text
-                        style={[styles.modalTitleText, { color: textPrimary }]}
-                      >
-                        Detalle de Venta
-                      </Text>
-                      <Text
-                        style={[styles.modalSubText, { color: textSecondary }]}
-                      >
-                        Codigo : {selectedVenta.codigo}
-                      </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
+                      <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
                     </View>
-                    <Pressable
-                      onPress={() => setModalVisible(false)}
-                      style={styles.closeBtn}
-                    >
-                      <Ionicons name="close" size={24} color={textSecondary} />
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={{ backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: (statusColors[selectedVenta.estado] || accentColor) + '30' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: statusColors[selectedVenta.estado] || accentColor }}>{(statusLabels[selectedVenta.estado] || 'VENTA').toUpperCase()}</Text>
+                      </View>
+                      <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                        <Ionicons name="close" size={24} color={textSecondary} />
+                      </Pressable>
+                    </View>
                   </View>
 
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                  >
-                    {/* Top Info Grid */}
-                    <View style={styles.detailsGrid}>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          FECHA DE VENTA
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {new Date(
-                            selectedVenta.fecha_crea,
-                          ).toLocaleDateString("es-CL")}
-                        </Text>
-                      </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          CLIENTE
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {selectedVenta.cliente_nombre ||
-                            "Sin cliente registrado"}
-                        </Text>
-                      </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          MÉTODO DE PAGO
-                        </Text>
-                        <View
-                          style={[
-                            styles.methodBadgeDetail,
-                            {
-                              backgroundColor: isDark ? "#37415120" : "#F3F4F6",
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.methodTextDetail,
-                              { color: textPrimary },
-                            ]}
-                          >
-                            {selectedVenta.metodo_pago.toUpperCase()}
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+                    {/* Origen de la venta */}
+                    <View style={[styles.origenSection, { backgroundColor: isDark ? '#1a1a2e' : '#F8FAFC', borderColor }]}>
+                      <View style={styles.origenRow}>
+                        <View style={[styles.origenIconBox, { backgroundColor: selectedVenta.pedido_id ? `${accentColor}20` : '#10B98120' }]}>
+                          <Ionicons
+                            name={selectedVenta.pedido_id ? 'receipt-outline' : 'storefront-outline'}
+                            size={20}
+                            color={selectedVenta.pedido_id ? accentColor : '#10B981'}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.origenType, { color: selectedVenta.pedido_id ? accentColor : '#10B981' }]}>
+                            {selectedVenta.pedido_id ? 'VENTA DESDE PEDIDO' : 'VENTA DIRECTA EN BARRA'}
                           </Text>
+                          {selectedVenta.pedido_id ? (
+                            <View style={styles.origenPersonas}>
+                              <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
+                                Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || '—'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
+                              </Text>
+                              <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
+                                Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                              </Text>
+                            </View>
+                          ) : (
+                            <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
+                              Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                            </Text>
+                          )}
                         </View>
                       </View>
-                      <View style={styles.gridItem}>
-                        <Text
-                          style={[styles.gridLabel, { color: textSecondary }]}
-                        >
-                          {selectedVenta.garzon_nombre ? "GARZÓN / CAJERO" : "CAJERO"}
-                        </Text>
-                        <Text
-                          style={[styles.gridValue, { color: textPrimary }]}
-                        >
-                          {selectedVenta.garzon_nombre
-                            ? `${selectedVenta.garzon_nombre} / ${selectedVenta.cajero_nombre || selectedVenta.cajero_nick || "Cajero"}`
-                            : (selectedVenta.cajero_nombre || selectedVenta.cajero_nick || "Cajero")
-                          }
-                        </Text>
+
+                      {selectedVenta.habitacion_id && (
+                        <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
+                          <Ionicons name="bed-outline" size={16} color={accentColor} />
+                          <Text style={[styles.origenPersonaLabel, { color: textSecondary, flex: 1 }]}>
+                            Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_numero || '—'}</Text>
+                          </Text>
+                          {selectedVenta.tiempo ? (
+                            <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
+                              <Ionicons name="time-outline" size={12} color={accentColor} />
+                              <Text style={[styles.tiempoText, { color: accentColor }]}>{selectedVenta.tiempo} min</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Top Info Header */}
+                    <View style={{ marginBottom: 25, paddingHorizontal: 4 }}>
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
+                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Fecha y Hora</Text>
+                          <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>
+                            {parseDateSafe(selectedVenta.fecha_crea).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
+                           <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Método Pago</Text>
+                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                             <Ionicons name={payMethodIcons[selectedVenta.metodo_pago] || "wallet"} size={16} color={accentColor} />
+                             <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>{String(selectedVenta.metodo_pago || 'EFECTIVO').toUpperCase()}</Text>
+                           </View>
+                        </View>
                       </View>
                     </View>
 
-                    {/* Hostess Section */}
-                    <View style={styles.hostessSection}>
-                      <Text
-                        style={[styles.sectionTitle, { color: textSecondary }]}
-                      >
-                        ANFITRIONA(S) ASIGNADA(S)
-                      </Text>
-                      <View style={styles.hostessBadges}>
-                        {selectedVenta.usuarios &&
-                          selectedVenta.usuarios.length > 0 ? (
-                          selectedVenta.usuarios.map((u: any, idx: number) => (
-                            <View
-                              key={idx}
-                              style={[
-                                styles.hostessBadgeDetail,
-                                { backgroundColor: `${accentColor}15` },
-                              ]}
-                            >
-                              <Text style={[styles.hostessTextDetail, { color: accentColor }]}>
-                                {u.nick || "User"}
-                              </Text>
-                            </View>
-                          ))
-                        ) : (
-                          <View
-                            style={[
-                              styles.hostessBadgeDetail,
-                              { backgroundColor: "#37415120" },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.hostessTextDetail,
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Venta directa en barra
-                            </Text>
+                    {/* Cliente Section */}
+                    <View style={{ marginBottom: 25 }}>
+                      <View style={{ flex: 1, gap: 10 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>Cliente</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: borderColor }}>
+                          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDark ? '#333' : '#DDD', justifyContent: 'center', alignItems: 'center' }}>
+                            <Ionicons name="person-outline" size={18} color={textPrimary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }} numberOfLines={1}>{selectedVenta.cliente_nombre || "Sin Cliente"}</Text>
+                            <Text style={{ fontSize: 10, color: textSecondary }}>{selectedVenta.habitacion_nombre || "General"}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Distributions Bio */}
+                    {(selectedVenta.comisiones_detalle?.length > 0 || selectedVenta.propinas_detalle?.length > 0) && (
+                      <View style={{ marginBottom: 25, gap: 12 }}>
+                        {selectedVenta.comisiones_detalle?.length > 0 && (
+                          <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
+                            <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Comisiones</Text>
+                            {selectedVenta.comisiones_detalle.map((c: any, idx: number) => (
+                              <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.comisiones_detalle.length - 1 ? 0 : 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                  {c.foto ? (
+                                    <Image source={{ uri: `${BASE_URL}/img/users/${c.foto}` }} style={{ width: 28, height: 28, borderRadius: 14 }} />
+                                  ) : (
+                                    <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: accentColor + '15', justifyContent: 'center', alignItems: 'center' }}>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: accentColor }}>{c.nick?.[0]?.toUpperCase()}</Text>
+                                    </View>
+                                  )}
+                                  <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>@{c.nick}</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, fontWeight: '900', color: accentColor }}>${Number(c.monto).toLocaleString('es-CL')}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                        {selectedVenta.propinas_detalle?.length > 0 && (
+                          <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
+                            <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Propinas</Text>
+                            {selectedVenta.propinas_detalle.map((p: any, idx: number) => (
+                              <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.propinas_detalle.length - 1 ? 0 : 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                  {p.foto ? (
+                                    <Image source={{ uri: `${BASE_URL}/img/users/${p.foto}` }} style={{ width: 28, height: 28, borderRadius: 14 }} />
+                                  ) : (
+                                    <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#10B98115', justifyContent: 'center', alignItems: 'center' }}>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: '#10B981' }}>{p.nick?.[0]?.toUpperCase()}</Text>
+                                    </View>
+                                  )}
+                                  <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>@{p.nick}</Text>
+                                </View>
+                                <Text style={{ fontSize: 15, fontWeight: '900', color: '#10B981' }}>${Number(p.monto).toLocaleString('es-CL')}</Text>
+                              </View>
+                            ))}
                           </View>
                         )}
                       </View>
-                    </View>
+                    )}
 
-                    {/* Product Table */}
-                    <View
-                      style={[
-                        styles.tableContainer,
-                        {
-                          backgroundColor: isDark ? "#111827" : "#F9FAFB",
-                          borderColor,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.tableHeaderRow,
-                          { borderBottomColor: borderColor },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            { flex: 2, color: textSecondary },
-                          ]}
-                        >
-                          Producto
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 1,
-                              color: textSecondary,
-                              textAlign: "center",
-                            },
-                          ]}
-                        >
-                          Cant.
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 1.2,
-                              color: textSecondary,
-                              textAlign: "right",
-                            },
-                          ]}
-                        >
-                          Precio
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableHead,
-                            {
-                              flex: 1.2,
-                              color: textSecondary,
-                              textAlign: "right",
-                            },
-                          ]}
-                        >
-                          Sub Total
-                        </Text>
-                      </View>
+                    {/* Grouped Product Cards */}
+                    <View style={{ marginTop: 5, paddingHorizontal: 4 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '900', color: textSecondary, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                        Listado de Productos
+                      </Text>
+                      
+                      {(() => {
+                        const dets = selectedVenta.detalles || [];
+                        const grouped = dets.reduce((acc: any[], cur: any) => {
+                          const hNick = cur.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
+                          const key = `${cur.producto_nombre}-${hNick}`;
+                          const idx = acc.findIndex(i => {
+                             const ihNick = i.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
+                             return `${i.producto_nombre}-${ihNick}` === key;
+                          });
+                          if (idx > -1) {
+                            acc[idx].cantidad += cur.cantidad;
+                            acc[idx].sub_total += cur.sub_total;
+                            acc[idx].comision += (cur.comision || 0);
+                          } else acc.push({ ...cur });
+                          return acc;
+                        }, []);
 
-                      {selectedVenta.detalles &&
-                        selectedVenta.detalles.map((det: any, idx: number) => (
-                          <View
-                            key={idx}
-                            style={[
-                              styles.tableRow,
-                              {
-                                borderBottomColor:
-                                  idx === selectedVenta.detalles.length - 1
-                                    ? "transparent"
-                                    : borderColor,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.productName,
-                                { flex: 2, color: textPrimary },
-                              ]}
-                            >
-                              {det.producto_nombre}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productQty,
-                                {
-                                  flex: 1,
-                                  color: textPrimary,
-                                  textAlign: "center",
-                                },
-                              ]}
-                            >
-                              {det.cantidad}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productPrice,
-                                {
-                                  flex: 1.2,
-                                  color: textPrimary,
-                                  textAlign: "right",
-                                },
-                              ]}
-                            >
-                              ${det.precio.toLocaleString()}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.productSubtotal,
-                                {
-                                  flex: 1.2,
-                                  color: textPrimary,
-                                  textAlign: "right",
-                                },
-                              ]}
-                            >
-                              ${det.sub_total.toLocaleString()}
-                            </Text>
+                        return grouped.map((det: any, idx: number) => (
+                          <View key={idx} style={{ backgroundColor: cardBg, borderRadius: 20, padding: 16, borderWidth: 1, borderColor, marginBottom: 12 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                              <View style={{ backgroundColor: accentColor + '10', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+                                <Text style={{ fontSize: 11, fontWeight: '900', color: accentColor }}>CANT: {det.cantidad}</Text>
+                              </View>
+                              <Text style={{ fontSize: 14, fontWeight: '800', color: textSecondary }}>${Number(det.precio).toLocaleString('es-CL')} c/u</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                              {det.producto_foto ? (
+                                <Image source={{ uri: `${BASE_URL}/img/products/${det.producto_foto}` }} style={{ width: 40, height: 40, borderRadius: 10 }} />
+                              ) : (
+                                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: isDark ? '#333' : '#EEE', justifyContent: 'center', alignItems: 'center' }}>
+                                   <Ionicons name="cube-outline" size={20} color={textSecondary} />
+                                </View>
+                              )}
+                              <Text style={{ fontSize: 16, fontWeight: '800', color: textPrimary, flex: 1 }}>{det.producto_nombre}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', borderTopWidth: 1, borderTopColor: borderColor + '40', paddingTop: 12 }}>
+                               <View style={{ alignItems: 'flex-end' }}>
+                                  <Text style={{ fontSize: 18, fontWeight: '900', color: textPrimary }}>${Number(det.sub_total).toLocaleString('es-CL')}</Text>
+                               </View>
+                            </View>
                           </View>
-                        ))}
+                        ));
+                      })()}
                     </View>
 
-                    {/* Summary Totals */}
-                    <View style={styles.summarySection}>
-                      <View style={styles.summaryRow}>
-                        <Text
-                          style={[
-                            styles.summaryLabel,
-                            { color: textSecondary },
-                          ]}
-                        >
-                          Subtotal
-                        </Text>
-                        <Text
-                          style={[styles.summaryVal, { color: textPrimary }]}
-                        >
-                          $
-                          {(
-                            selectedVenta.total - (selectedVenta.propina || 0)
-                          ).toLocaleString()}
-                        </Text>
-                      </View>
-                      {selectedVenta.propina > 0 && (
-                        <View style={styles.summaryRow}>
-                          <Text
-                            style={[
-                              styles.summaryLabel,
-                              { color: textSecondary },
-                            ]}
-                          >
-                            Propina
-                          </Text>
-                          <Text
-                            style={[styles.summaryVal, { color: statusColors[1] }]}
-                          >
-                            ${selectedVenta.propina.toLocaleString()}
-                          </Text>
-                        </View>
-                      )}
-                      <View
-                        style={[
-                          styles.summaryRow,
-                          {
-                            marginTop: 8,
-                            borderTopWidth: 1,
-                            borderTopColor: borderColor,
-                            paddingTop: 12,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.totalLabelFinal,
-                            { color: textPrimary },
-                          ]}
-                        >
-                          TOTAL
-                        </Text>
-                        <Text style={[styles.totalValFinal, { color: accentColor }]}>
-                          ${selectedVenta.total.toLocaleString()}
-                        </Text>
-                      </View>
+                    {/* Summary Totals Detail */}
+                    <View style={{ marginTop: 20, backgroundColor: isDark ? '#111' : '#F9F9F9', padding: 20, borderRadius: 24, borderWidth: 1, borderColor }}>
+                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <Text style={{ color: textSecondary, fontWeight: '700' }}>Subtotal</Text>
+                          <Text style={{ color: textPrimary, fontWeight: '800' }}>${(selectedVenta.total - (selectedVenta.propina || 0)).toLocaleString('es-CL')}</Text>
+                       </View>
+                       {selectedVenta.propina > 0 && (
+                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: textSecondary, fontWeight: '700' }}>Propina</Text>
+                            <Text style={{ color: '#10B981', fontWeight: '800' }}>+${Number(selectedVenta.propina).toLocaleString('es-CL')}</Text>
+                         </View>
+                       )}
+                       <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 10 }} />
+                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 16, fontWeight: '900', color: textPrimary }}>TOTAL</Text>
+                          <Text style={{ fontSize: 24, fontWeight: '900', color: accentColor }}>${Number(selectedVenta.total).toLocaleString('es-CL')}</Text>
+                       </View>
                     </View>
                   </ScrollView>
 
-                  <Pressable
-                    style={[
-                      styles.modalCloseBtn,
-                      { backgroundColor: accentColor },
-                    ]}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.modalCloseBtnText}>
-                      Cerrar Detalles
-                    </Text>
+                  <Pressable style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} onPress={() => setModalVisible(false)}>
+                    <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
                   </Pressable>
-                </>
+                </View>
               )
             )}
           </View>
@@ -1235,83 +1053,41 @@ export default function VentasScreen() {
       </Modal>
 
       {/* Action Sheet Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={actionSheetVisible}
-        onRequestClose={() => setActionSheetVisible(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setActionSheetVisible(false)}
-        >
-          <View style={[styles.actionSheet, { backgroundColor: cardBg }]}>
+      <Modal animationType="fade" transparent={true} visible={actionSheetVisible} onRequestClose={() => setActionSheetVisible(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setActionSheetVisible(false)}>
+          <View style={[styles.actionSheet, { backgroundColor: cardBg, borderColor: `${accentColor}40`, borderWidth: 1, borderBottomWidth: 0 }]}>
             <View style={styles.actionSheetHeader}>
-              <View style={styles.actionSheetHandle} />
-              <Text style={[styles.actionSheetTitle, { color: textPrimary }]}>
-                Opciones de Venta
-              </Text>
-              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>
-                Código: {activeVenta?.codigo}
-              </Text>
+              <View style={[styles.actionSheetHandle, { backgroundColor: `${accentColor}60` }]} />
+              <Text style={[styles.actionSheetTitle, { color: textPrimary }]}>Opciones de Venta</Text>
+              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>Código: {activeVenta?.codigo}</Text>
             </View>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionItem,
-                pressed && styles.actionItemPressed,
-              ]}
-              onPress={() => activeVenta && handleVerDetalles(activeVenta.id_venta)}
-            >
-              <View
-                style={[
-                  styles.actionIconBox,
-                  { backgroundColor: `${accentColor}15` },
-                ]}
-              >
+            <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={() => activeVenta && handleVerDetalles(activeVenta.id_venta)}>
+              <View style={[styles.actionIconBox, { backgroundColor: accentColor + '15' }]}>
                 <Ionicons name="eye-outline" size={24} color={accentColor} />
               </View>
-              <Text style={[styles.actionText, { color: textPrimary }]}>
-                Ver Detalles
-              </Text>
+              <Text style={[styles.actionText, { color: textPrimary }]}>Ver Detalles</Text>
             </Pressable>
-
             {activeVenta?.estado !== 0 && activeVenta?.estado !== 3 && (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionItem,
-                  pressed && styles.actionItemPressed,
-                ]}
-                onPress={handleAnularVenta}
-              >
-                <View
-                  style={[
-                    styles.actionIconBox,
-                    { backgroundColor: "#EF444415" },
-                  ]}
-                >
+              <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={handleAnularVenta}>
+                <View style={[styles.actionIconBox, { backgroundColor: "#EF444415" }]}>
                   <Ionicons name="trash-outline" size={22} color="#EF4444" />
                 </View>
-                <Text style={[styles.actionText, { color: "#EF4444" }]}>
-                  Solicitar Anulación
-                </Text>
+                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar Anulación</Text>
               </Pressable>
             )}
-
-            <Pressable
-              style={[
-                styles.actionCancelBtn,
-                { backgroundColor: isDark ? "#374151" : "#F3F4F6" },
-              ]}
-              onPress={() => setActionSheetVisible(false)}
-            >
-              <Text style={[styles.actionCancelText, { color: textPrimary }]}>
-                Cancelar
-              </Text>
+            <Pressable style={[styles.actionCancelBtn, { backgroundColor: accentColor + '15', borderWidth: 1, borderColor: accentColor + '40' }]} onPress={() => setActionSheetVisible(false)}>
+              <Text style={[styles.actionCancelText, { color: accentColor }]}>Cancelar</Text>
             </Pressable>
           </View>
         </Pressable>
       </Modal>
+
+      <PremiumFAB
+          label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
+          icon={activeTab === "historial" ? "cart-outline" : "add"}
+          onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
+          visible={!modalVisible && !actionSheetVisible && !alertConfig.visible}
+      />
 
       <PremiumAlert
         visible={alertConfig.visible}
@@ -1362,13 +1138,27 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(155,155,155,0.1)",
   },
   backBtn: {
-    width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: 'rgba(155,155,155,0.1)',
   },
+  backText: {
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  backBtnRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    gap: 6
+  },
+  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+
   plusBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1387,7 +1177,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  listContainer: { padding: 16, paddingBottom: 100 },
+  listContainer: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 100 },
 
   // Resumen Card
   resumenCard: {
@@ -1451,7 +1241,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderLeftWidth: 6,
-    marginBottom: 14,
+    marginBottom: 22,
     elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -1570,6 +1360,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  origenSection: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 20,
+  },
+  origenRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  origenIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  origenType: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  origenPersonas: { gap: 3 },
+  origenPersonaLabel: { fontSize: 13, fontWeight: '500' },
+  origenPersonaValue: { fontWeight: '700' },
+  habitacionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  tiempoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  tiempoText: { fontSize: 12, fontWeight: '800' },
+
   // Modal Reference Layout
   detailsGrid: {
     flexDirection: "row",
@@ -1596,6 +1432,58 @@ const styles = StyleSheet.create({
   },
   methodTextDetail: { fontSize: 13, fontWeight: "800" },
 
+  distribucionSection: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+  },
+  distribucionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  distribucionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  distribucionAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  distribucionAvatarText: {
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  distribucionNick: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  distribucionMonto: {
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  totalBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  totalBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
   hostessSection: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 11,
@@ -1706,7 +1594,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(0,0,0,0.1)",
     marginBottom: 15,
   },
   actionSheetTitle: { fontSize: 20, fontWeight: "900" },
@@ -1810,3 +1697,4 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+

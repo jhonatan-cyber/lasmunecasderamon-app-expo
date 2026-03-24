@@ -1,10 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import {useAccentColor} from '../../../hooks/useAccentColor';
+import {useAccentColor} from '@/hooks/useAccentColor';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     Pressable,
@@ -17,13 +16,13 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import {apiClient} from '../../../api/client';
-import {Anfitriona, CartItem, Product, ProductCard, Room} from '../../../components/ProductCard';
-import {useAuthStore} from '../../../store/authStore';
-import {useCartStore} from '../../../store/cartStore';
-import {PremiumHeader} from '../../../components/PremiumHeader';
-import {ClientSelectModal} from '../../../components/cajero/forms/ClientSelectModal';
-import {PremiumAlert} from '../../../components/PremiumAlert';
+import {apiClient} from '@/api/client';
+import {Anfitriona, CartItem, Product, ProductCard, Room} from '@/components/shared/ProductCard';
+import {useAuthStore} from '@/store/authStore';
+import {useCartStore} from '@/store/cartStore';
+import {PremiumHeader} from '@/components/ui/PremiumHeader';
+import {ClientSelectModal} from '@/components/cajero/forms/ClientSelectModal';
+import {PremiumAlert} from '@/components/ui/PremiumAlert';
 
 interface Client {
     id: string;
@@ -34,10 +33,8 @@ interface Client {
     apellido?: string;
 }
 
-
-
 export default function ProductosScreen() {
-    const { accentColor, isDark, bg, cardBg, borderColor } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
@@ -50,9 +47,9 @@ export default function ProductosScreen() {
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
     const [clientModalVisible, setClientModalVisible] = useState(false);
     const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState('');
+    const [, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const dataRef = useRef<string>('');
 
@@ -73,9 +70,6 @@ export default function ProductosScreen() {
 
     // Modal state
     const [activeConfigItem, setActiveConfigItem] = useState<{ productId: string, type: 'hostess' | 'room' } | null>(null);
-
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -141,10 +135,6 @@ export default function ProductosScreen() {
         setRefreshing(true);
         fetchData(true);
     }, [fetchData]);
-
-    const hasCommission = (product: Product) => (product.commission || 0) > 0;
-
-    const canSelectRoom = (product: Product) => product.price >= 30000 && hasCommission(product);
 
     const cartSubtotal = getSubtotal();
     const tipAmount = getTipAmount();
@@ -221,7 +211,7 @@ export default function ProductosScreen() {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: err.message || 'Error de conexiÃƒÂ³n',
+                text2: err.message || 'Error de conexión',
             });
         } finally {
             setSubmitting(false);
@@ -266,15 +256,22 @@ export default function ProductosScreen() {
             <PremiumHeader 
                 title={decodeURIComponent(categoryName || 'Productos')}
                 subtitle="Selecciona productos para tu orden"
-                onBack={() => router.back()}
-                rightComponent={cart.length > 0 ? (
-                    <Pressable 
-                        onPress={() => setClearCartAlertVisible(true)}
-                        style={styles.emptyCartBtn}
-                    >
-                        <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
-                    </Pressable>
-                ) : null}
+                rightComponent={
+                    <View style={styles.headerActions}>
+                        {cart.length > 0 && (
+                            <Pressable 
+                                onPress={() => setClearCartAlertVisible(true)}
+                                style={styles.emptyCartBtn}
+                            >
+                                <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+                            </Pressable>
+                        )}
+                        <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text style={styles.backTextHeader}>Atrás</Text>
+                        </Pressable>
+                    </View>
+                }
             />
 
             <FlatList
@@ -320,7 +317,7 @@ export default function ProductosScreen() {
                 clients={clients as any}
                 selectedIds={selectedClientId ? [selectedClientId] : []}
                 onToggle={(id) => {
-                    setSelectedClientId(selectedClientId === id ? null : id);
+                    setSelectedClientId(selectedClientId === String(id) ? null : String(id));
                     setClientModalVisible(false);
                 }}
             />
@@ -453,6 +450,21 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     listContent: { padding: 16, paddingBottom: 120 },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12
+    },
+    backBtnRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     sectionTitle: { fontSize: 13, fontWeight: '600' },
     sectionLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 10, marginBottom: 10 },
     selectField: {
@@ -506,3 +518,4 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     }
 });
+

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useAccentColor } from '../../../hooks/useAccentColor';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface CartItem {
     id?: number;
@@ -137,3 +137,5 @@ const styles = StyleSheet.create({
     subItemsContainer: { paddingLeft: 8, marginTop: 4, borderLeftWidth: 2, borderLeftColor: 'rgba(155,155,155,0.2)' },
     subItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }
 });
+
+

@@ -1,5 +1,5 @@
 import { useWindowDimensions } from 'react-native';
-import { BREAKPOINTS, BreakpointKey } from '../constants/dimensions';
+import { BREAKPOINTS, BreakpointKey } from '@/constants/dimensions';
 
 interface ResponsiveValues<T> {
   phone: T;
@@ -42,3 +42,4 @@ export function useScaleFactor(): number {
   const BASE_WIDTH = 375;
   return width / BASE_WIDTH;
 }
+

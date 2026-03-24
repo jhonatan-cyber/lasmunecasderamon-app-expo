@@ -1,7 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
+import React, { 
+    useCallback, 
+    useEffect, 
+    useMemo, 
+    useReducer, 
+} from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -13,25 +15,27 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
-    useWindowDimensions,
-    View
+    View,
+    useWindowDimensions
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../api/client';
-import { PremiumHeader } from '../../../components/PremiumHeader';
-import { CartList } from '../../../components/cajero/forms/CartList';
-import { CategorySelector } from '../../../components/cajero/forms/CategorySelector';
-import { ClientSelectModal } from '../../../components/cajero/forms/ClientSelectModal';
-import { HostessSelectModal } from '../../../components/cajero/forms/HostessSelectModal';
-import { PaymentMethod, PaymentMethodSelect } from '../../../components/cajero/forms/PaymentMethodSelect';
-import { RoomSelectModal } from '../../../components/cajero/forms/RoomSelectModal';
-import { TipCheckbox } from '../../../components/cajero/forms/TipCheckbox';
-import { Skeleton } from '../../../components/ui/Skeleton';
-import { useSales } from '../../../context/SalesContext';
-import { useAccentColor } from '../../../hooks/useAccentColor';
-import { useAuthStore } from '../../../store/authStore';
+import { apiClient } from '@/api/client';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { CartList } from '@/components/cajero/forms/CartList';
+import { CategorySelector } from '@/components/cajero/forms/CategorySelector';
+import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
+import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
+import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
+import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useSales } from '@/context/SalesContext';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type VentaState = {
     loadingInitial: boolean;
@@ -61,6 +65,12 @@ type VentaState = {
     clientModalVisible: boolean;
     activeCartIdx: number | null;
     submitting: boolean;
+    loadModalVisible: boolean;
+    loadingAmount: string;
+    loadingTargetClient: any | null;
+    loadSubmitting: boolean;
+    loadMetodoPago: PaymentMethod;
+    metodoPagoAdicional: PaymentMethod;
 };
 
 type VentaAction =
@@ -80,7 +90,12 @@ type VentaAction =
     | { type: 'SET_MODAL_HOSTESSES'; productId: string; hostesses: string[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
     | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
-    | { type: 'SET_SUBMITTING'; payload: boolean };
+    | { type: 'SET_SUBMITTING'; payload: boolean }
+    | { type: 'SET_LOAD_MODAL'; visible: boolean; client?: any }
+    | { type: 'SET_LOAD_AMOUNT'; payload: string }
+    | { type: 'SET_LOAD_SUBMITTING'; payload: boolean }
+    | { type: 'SET_LOAD_METODO_PAGO'; payload: PaymentMethod }
+    | { type: 'SET_METODO_PAGO_ADICIONAL'; payload: PaymentMethod };
 
 const initialVentaState: VentaState = {
     loadingInitial: true,
@@ -110,6 +125,12 @@ const initialVentaState: VentaState = {
     clientModalVisible: false,
     activeCartIdx: null,
     submitting: false,
+    loadModalVisible: false,
+    loadingAmount: '',
+    loadingTargetClient: null,
+    loadSubmitting: false,
+    loadMetodoPago: 'efectivo',
+    metodoPagoAdicional: 'efectivo',
 };
 
 function ventaReducer(state: VentaState, action: VentaAction): VentaState {
@@ -118,9 +139,23 @@ function ventaReducer(state: VentaState, action: VentaAction): VentaState {
         case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
         case 'SET_INITIAL_DATA': return { ...state, ...action.payload };
         case 'SET_CART': return { ...state, cart: action.payload };
-        case 'SET_SELECTED_CLIENTE': return { ...state, selectedCliente: action.payload };
+        case 'SET_SELECTED_CLIENTE': 
+            const client = action.payload;
+            const hasSaldo = (client?.saldo || 0) > 0;
+            return { 
+                ...state, 
+                selectedCliente: client,
+                metodoPago: hasSaldo ? 'prepago' : state.metodoPago,
+                metodoPagoAdicional: 'efectivo'
+            };
         case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
-        case 'SET_METODO_PAGO': return { ...state, metodoPago: action.payload };
+        case 'SET_METODO_PAGO': 
+            // Si el cliente tiene saldo, no dejar cambiar el método primario ('prepago')
+            if ((state.selectedCliente?.saldo || 0) > 0 && action.payload !== 'prepago') {
+                return state;
+            }
+            return { ...state, metodoPago: action.payload };
+        case 'SET_METODO_PAGO_ADICIONAL': return { ...state, metodoPagoAdicional: action.payload };
         case 'SET_ENABLE_TIP': return { ...state, enableTip: action.payload };
         case 'SET_SELECTED_TIME': return { ...state, selectedTime: action.payload };
         case 'SET_MODAL_VISIBLE':
@@ -136,6 +171,10 @@ function ventaReducer(state: VentaState, action: VentaAction): VentaState {
             return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
         case 'SET_ACTIVE_CART_IDX': return { ...state, activeCartIdx: action.payload };
         case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+        case 'SET_LOAD_MODAL': return { ...state, loadModalVisible: action.visible, loadingTargetClient: action.client || null, loadingAmount: '' };
+        case 'SET_LOAD_AMOUNT': return { ...state, loadingAmount: action.payload };
+        case 'SET_LOAD_SUBMITTING': return { ...state, loadSubmitting: action.payload };
+        case 'SET_LOAD_METODO_PAGO': return { ...state, loadMetodoPago: action.payload };
         default: return state;
     }
 }
@@ -166,10 +205,8 @@ const getHostessLimit = (prod: any) => {
 };
 
 export default function NuevaVentaScreen() {
-    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
-    const user = useAuthStore((state) => state.user);
     const { refreshVentas } = useSales();
 
     const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
@@ -177,7 +214,8 @@ export default function NuevaVentaScreen() {
         loadingInitial, refreshing, anfitrionas, habitaciones, clientes, cajaAbierta,
         cart, selectedCliente, selectedHabitacion, metodoPago, enableTip, selectedTime, timeModalVisible,
         categories, modalOpen, modalCategoria, modalProducts, modalLoading,
-        modalQuantities, modalHostessSelections, hostessSelectionTarget, hostessSubModalVisible, roomModalVisible, clientModalVisible, submitting
+        modalQuantities, modalHostessSelections, hostessSelectionTarget, hostessSubModalVisible, roomModalVisible, clientModalVisible, submitting,
+        loadModalVisible, loadingAmount, loadingTargetClient, loadSubmitting, loadMetodoPago, metodoPagoAdicional
     } = state;
 
     const { width } = useWindowDimensions();
@@ -191,8 +229,6 @@ export default function NuevaVentaScreen() {
 
     const spacing = isTablet ? 24 : 16;
     const borderRadius = isTablet ? 28 : 24;
-    const fontSize = isTablet ? 18 : 14;
-
     const dynamicStyles = {
         scrollContent: { padding: spacing, paddingBottom: 100 },
         section: { padding: spacing, borderRadius: borderRadius, marginBottom: spacing },
@@ -250,6 +286,49 @@ export default function NuevaVentaScreen() {
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData]);
+
+    
+    const handleLoadPrepago = async () => {
+        if (!loadingTargetClient || !loadingAmount || isNaN(Number(loadingAmount)) || Number(loadingAmount) <= 0) {
+            showToast('Error', 'Ingrese un monto válido');
+            return;
+        }
+
+        dispatch({ type: 'SET_LOAD_SUBMITTING', payload: true });
+        try {
+            const res = await apiClient('/clients/prepago', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cliente_id: loadingTargetClient.id_cliente || loadingTargetClient.id,
+                    monto: Number(loadingAmount),
+                    tipo: 'CARGA',
+                    metodo_pago: loadMetodoPago,
+                    motivo: 'Carga de saldo prepago (App)'
+                })
+            });
+
+            if (res.success) {
+                showToast('Éxito', 'Saldo cargado correctamente', 'success');
+                dispatch({ type: 'SET_LOAD_MODAL', visible: false });
+                
+                // Actualizar clientes para reflejar el nuevo saldo
+                fetchInitialData(true);
+                
+                // Si el cliente cargado es el seleccionado, actualizarlo también
+                if (selectedCliente && (String(selectedCliente.id_cliente || selectedCliente.id) === String(loadingTargetClient.id_cliente || loadingTargetClient.id))) {
+                    dispatch({ type: 'SET_SELECTED_CLIENTE', payload: { ...selectedCliente, saldo: (Number(selectedCliente.saldo || 0) + Number(loadingAmount)) } });
+                }
+            } else {
+                showToast('Error', res.message || 'Error al cargar saldo');
+            }
+        } catch (error) {
+            console.error('Error loading balance:', error);
+            showToast('Error', 'Error de conexión');
+        } finally {
+            dispatch({ type: 'SET_LOAD_SUBMITTING', payload: false });
+        }
+    };
+
 
     const onRefresh = useCallback(() => {
         dispatch({ type: 'SET_REFRESHING', payload: true });
@@ -328,13 +407,32 @@ export default function NuevaVentaScreen() {
 
     // Calcular si hay algún producto que tenga comisión para habilitar o no la selección de habitación
     const hasCommissionItem = useMemo(() => {
-        return cart.some(item => Number(item.commission || item.comision || 0) > 0);
+        return cart.some(item => Number(item.commission || item.comision || 0) > 0 || Number(item.precio || item.price || 0) >= 30000);
     }, [cart]);
+
+    // Calcular distribución de pagos si se usa prepago
+    const mixedPaymentDetails = useMemo(() => {
+        if (metodoPago !== 'prepago' || !selectedCliente) {
+            return { isMixed: false, prepago: 0, adicional: totals.total };
+        }
+        const saldo = Number(selectedCliente.saldo || 0);
+        const prepago = Math.min(totals.total, saldo);
+        const adicional = Math.max(0, totals.total - saldo);
+        return { isMixed: adicional > 0, prepago, adicional };
+    }, [selectedCliente, totals.total, metodoPago]);
 
     const handleSubmit = useCallback(async () => {
         // null = estado desconocido (error de red), se permite intentar — el backend valida
         if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
         if (cart.length === 0) return showToast('Error', 'Carrito vacío');
+
+        // Validar prepago
+        if (metodoPago === 'prepago') {
+            if (!selectedCliente) {
+                return showToast('Error', 'Seleccione un cliente para pagar con prepago');
+            }
+            // Ya no bloqueamos si es menor, el remanente se paga con el método adicional
+        }
 
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
@@ -350,6 +448,9 @@ export default function NuevaVentaScreen() {
                 cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
                 habitacion_id: hasCommissionItem ? (selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null) : null,
                 metodo_pago: metodoPago,
+                metodo_pago_adicional: mixedPaymentDetails.isMixed ? metodoPagoAdicional : null,
+                monto_prepago: mixedPaymentDetails.prepago,
+                monto_adicional: mixedPaymentDetails.adicional,
                 propina: totals.tip,
                 sub_total: totals.subtotal,
                 total: totals.total,
@@ -369,11 +470,20 @@ export default function NuevaVentaScreen() {
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas]);
+    }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas, hasCommissionItem]);
 
     const NuevaVentaSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
-            <PremiumHeader title="Nueva Venta" subtitle="Cargando información..." />
+            <PremiumHeader 
+                title="Nueva Venta" 
+                subtitle="Cargando información..." 
+                rightComponent={
+                    <View style={styles.backBtnRight}>
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ opacity: 0.5 }} />
+                        <Text style={[styles.backTextRight, { opacity: 0.5 }]}>Atrás</Text>
+                    </View>
+                }
+            />
             <View style={{ padding: spacing }}>
                 <View style={{ marginBottom: 25 }}>
                     <Skeleton width={180} height={20} style={{ marginBottom: 15 }} />
@@ -401,12 +511,17 @@ export default function NuevaVentaScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar style={isDark ? 'dark' : 'light'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
             <PremiumHeader
                 title="Nueva Venta"
                 subtitle="Registrar productos y servicios"
-                onBack={() => router.back()}
+                rightComponent={
+                    <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Text style={styles.backTextRight}>Atrás</Text>
+                    </Pressable>
+                }
             />
 
             <ScrollView contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}>
@@ -446,9 +561,72 @@ export default function NuevaVentaScreen() {
                         accessibilityRole="button"
                     >
                         <Ionicons name="person" size={20} color={accentColor} />
-                        <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedCliente?.nombre || 'Seleccionar Cliente'}</Text>
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                            <Text style={[styles.selectorText, { color: textPrimary }]}>
+                                {selectedCliente 
+                                    ? ((selectedCliente.nombre || selectedCliente.name || '') + ' ' + (selectedCliente.apellido || selectedCliente.lastName || selectedCliente.last_name || '')).trim() || 'Cliente Seleccionado' 
+                                    : 'Seleccionar Cliente'}
+                            </Text>
+                            {selectedCliente && (
+                                <View>
+                                    <Text style={{ fontSize: 13, color: accentColor, fontWeight: '700', marginTop: 2 }}>
+                                        Saldo Prepago: ${Number(selectedCliente.saldo || 0).toLocaleString()}
+                                    </Text>
+                                    {selectedCliente.metodo_pago && (
+                                        <Text style={{ fontSize: 12, color: textSecondary, fontWeight: '600', marginTop: 1 }}>
+                                            Cargado con: {selectedCliente.metodo_pago.toUpperCase()}
+                                        </Text>
+                                    )}
+                                </View>
+                            )}
+                        </View>
                     </Pressable>
-                    <PaymentMethodSelect selectedMethod={metodoPago} onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })} />
+                    <PaymentMethodSelect 
+                        selectedMethod={metodoPago} 
+                        onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })} 
+                        showPrepago={!!selectedCliente}
+                        disabled={(selectedCliente?.saldo || 0) > 0}
+                    />
+                    
+                    {mixedPaymentDetails.isMixed && (
+                        <View style={{ marginTop: 15, padding: 15, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: accentColor }}>
+                            <Text style={{ color: textPrimary, fontWeight: '800', marginBottom: 10 }}>PAGO MIXTO REQUERIDO</Text>
+                            <View style={styles.summaryRow}>
+                                <Text style={{ color: textSecondary, fontSize: 13 }}>Saldo Prepago usado:</Text>
+                                <Text style={{ color: '#10B981', fontWeight: '700' }}>-${mixedPaymentDetails.prepago.toLocaleString()}</Text>
+                            </View>
+                            <View style={[styles.summaryRow, { marginTop: 4 }]}>
+                                <Text style={{ color: textSecondary, fontSize: 13 }}>Restante a pagar:</Text>
+                                <Text style={{ color: textPrimary, fontWeight: '700' }}>${mixedPaymentDetails.adicional.toLocaleString()}</Text>
+                            </View>
+                            
+                            <View style={{ marginTop: 10 }}>
+                                <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: 12, marginBottom: 8 }]}>MÉTODO PARA EL RESTANTE</Text>
+                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                    {['efectivo', 'tarjeta', 'transferencia'].map((m) => {
+                                        const isSelected = metodoPagoAdicional === m;
+                                        return (
+                                            <Pressable
+                                                key={m}
+                                                onPress={() => dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: m as any })}
+                                                style={{
+                                                    flex: 1,
+                                                    paddingVertical: 10,
+                                                    borderRadius: 12,
+                                                    borderWidth: 1,
+                                                    borderColor: isSelected ? accentColor : borderColor,
+                                                    backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
+                                                    alignItems: 'center'
+                                                }}
+                                            >
+                                                <Text style={{ color: isSelected ? accentColor : textSecondary, fontSize: 10, fontWeight: '800' }}>{m.toUpperCase()}</Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 <CartList
@@ -536,7 +714,7 @@ export default function NuevaVentaScreen() {
                                             style={[styles.addBtn, { backgroundColor: accentColor }]}
                                             onPress={() => {
                                                 const id = item.id || item.id_producto;
-                                                const hasComm = Number(item.comision || item.commission || 0) > 0;
+                                                const hasComm = Number(item.comision || item.commission || 0) > 0 || Number(item.precio || item.price || 0) >= 30000;
 
                                                 if (hasComm) {
                                                     dispatch({
@@ -618,9 +796,10 @@ export default function NuevaVentaScreen() {
             <ClientSelectModal
                 visible={clientModalVisible}
                 clients={clientes}
-                selectedIds={selectedCliente ? [selectedCliente.id || selectedCliente.id_cliente] : []}
+                selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
                 max={1}
                 onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
+                onLoadBalance={(client) => dispatch({ type: 'SET_LOAD_MODAL', visible: true, client })}
                 onToggle={(id) => {
                     const cl = clientes.find(c => String(c.id_cliente || c.id) === String(id));
                     dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl });
@@ -643,15 +822,16 @@ export default function NuevaVentaScreen() {
                     const pid = hostessSelectionTarget.productId;
                     const currentSelected = modalHostessSelections[pid] || [];
                     let newSelected: string[];
+                    const stringId = String(id);
 
-                    if (currentSelected.includes(id)) {
-                        newSelected = currentSelected.filter(x => x !== id);
+                    if (currentSelected.includes(stringId)) {
+                        newSelected = currentSelected.filter(x => x !== stringId);
                     } else {
                         if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
                             showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
                             return;
                         }
-                        newSelected = [...currentSelected, id];
+                        newSelected = [...currentSelected, stringId];
                     }
                     dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
                 }}
@@ -661,7 +841,7 @@ export default function NuevaVentaScreen() {
                 onConfirm={() => {
                     if (hostessSelectionTarget) {
                         const pid = hostessSelectionTarget.productId;
-                        const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0;
+                        const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0 || Number(hostessSelectionTarget.product.precio || hostessSelectionTarget.product.price || 0) >= 30000;
                         const currentSelected = modalHostessSelections[pid] || [];
                         if (hasComm && currentSelected.length === 0) {
                             showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
@@ -672,6 +852,75 @@ export default function NuevaVentaScreen() {
                     }
                 }}
             />
+        
+            {/* Modal para Cargar Prepago */}
+            <Modal visible={loadModalVisible} animationType="fade" transparent>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: cardBg, height: 'auto', paddingBottom: 40 }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalTitle, { color: textPrimary }]}>Cargar Saldo</Text>
+                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
+                                    {loadingTargetClient?.nombre || loadingTargetClient?.name}
+                                </Text>
+                            </View>
+                            <Pressable onPress={() => dispatch({ type: 'SET_LOAD_MODAL', visible: false })}>
+                                <Ionicons name="close" size={24} color={textPrimary} />
+                            </Pressable>
+                        </View>
+                        
+                        <View style={{ gap: 15 }}>
+                            <View>
+                                <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '800', marginBottom: 8 }}>MONTO A CARGAR</Text>
+                                <TextInput
+                                    style={{
+                                        borderWidth: 1,
+                                        borderColor: borderColor,
+                                        borderRadius: 12,
+                                        padding: 15,
+                                        color: textPrimary,
+                                        fontSize: 18,
+                                        fontWeight: '700',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'
+                                    }}
+                                    placeholder="0"
+                                    placeholderTextColor={textSecondary}
+                                    keyboardType="numeric"
+                                    value={loadingAmount}
+                                    onChangeText={(val) => dispatch({ type: 'SET_LOAD_AMOUNT', payload: val })}
+                                    autoFocus
+                                />
+                            </View>
+
+                            <PaymentMethodSelect 
+                                selectedMethod={loadMetodoPago} 
+                                onSelect={(val) => dispatch({ type: 'SET_LOAD_METODO_PAGO', payload: val as PaymentMethod })} 
+                                showPrepago={false}
+                            />
+
+                            <TouchableOpacity
+                                style={{ 
+                                    backgroundColor: accentColor, 
+                                    height: 56, 
+                                    borderRadius: 16, 
+                                    justifyContent: 'center', 
+                                    alignItems: 'center',
+                                    marginTop: 10,
+                                    opacity: loadSubmitting ? 0.7 : 1
+                                }}
+                                onPress={handleLoadPrepago}
+                                disabled={loadSubmitting}
+                            >
+                                {loadSubmitting ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '900' }}>CONFIRMAR CARGA</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -713,6 +962,7 @@ const styles = StyleSheet.create({
     modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
+    modalSubtitle: { fontSize: 14, fontWeight: '600', opacity: 0.7 },
     productItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
     productName: { fontSize: 16, fontWeight: '800' },
     productPrice: { fontSize: 14, fontWeight: '900', marginTop: 4, color: '#10B981' },
@@ -722,4 +972,17 @@ const styles = StyleSheet.create({
     addBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
     confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+    backBtnRight: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 38, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
 });
+
+
+

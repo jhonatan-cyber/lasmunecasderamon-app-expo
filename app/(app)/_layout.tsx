@@ -1,4 +1,4 @@
-import { Redirect, Stack, usePathname } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     Modal,
@@ -8,19 +8,17 @@ import {
     View
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RegistroAsistenciaModal } from '../../components/RegistroAsistenciaModal';
-import { StaffCallOverlay } from '../../components/StaffCallOverlay';
-import { useNotificationHandler } from '../../hooks/useNotificationHandler';
-import { useAuthStore } from '../../store/authStore';
-import { configureNotifications } from '../../utils/pushNotifications';
+import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
+import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
+import { useNotificationHandler } from '@/hooks/useNotificationHandler';
+import { useAuthStore } from '@/store/authStore';
+import { configureNotifications } from '@/services/pushNotifications';
 
 export default function AppLayout() {
     const user = useAuthStore((state) => state.user);
     const sessionExpired = useAuthStore((state) => state.sessionExpired);
     const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
     const logout = useAuthStore((state) => state.logout);
-    const pathname = usePathname();
-    
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
     const isStaffMember = user?.role && 
@@ -40,13 +38,13 @@ export default function AppLayout() {
                         setShowAsistenciaModal(true);
                         await AsyncStorage.setItem(modalShownKey, today);
                     }
-                } catch (e) {
+                } catch {
                     setShowAsistenciaModal(true);
                 }
             };
             checkAndShowModal();
         }
-    }, [user?.id]);
+    }, [user, isStaffMember]);
 
     const handleAsistenciaRegistered = () => {
         setShowAsistenciaModal(false);
@@ -60,7 +58,7 @@ export default function AppLayout() {
             // Configurar comportamiento global (banners, sonidos)
             configureNotifications();
         }
-    }, [user?.id]);
+    }, [user]);
 
     if (!user) {
         return <Redirect href="/(auth)/login" />;
@@ -70,9 +68,6 @@ export default function AppLayout() {
         clearSessionExpired();
         await logout();
     };
-
-    const isCajeroHome = pathname === '/cajero' || pathname.includes('/cajero/(tabs)');
-    const isSolicitudesPage = pathname.includes('/cajero/solicitudes');
 
     return (
         <>
@@ -190,3 +185,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 });
+
+
+

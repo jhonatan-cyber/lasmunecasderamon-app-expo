@@ -14,8 +14,8 @@ import {
     useColorScheme,
     View
 } from 'react-native';
-import { Colors } from '../../constants/theme';
-import { useAuthStore } from '../../store/authStore';
+import { Colors } from '@/constants/theme';
+import { useAuthStore } from '@/store/authStore';
 
 export default function VerifyCodeScreen() {
     const [code, setCode] = useState(['', '', '', '']);
@@ -30,7 +30,7 @@ export default function VerifyCodeScreen() {
     const theme = Colors[colorScheme];
 
     // Create refs array for the 4 inputs
-    const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null]);
+    const inputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
 
     const handleCodeChange = (text: string, index: number) => {
         setError(''); // clear error when typing
@@ -234,3 +234,4 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 });
+

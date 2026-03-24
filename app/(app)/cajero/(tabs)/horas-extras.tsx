@@ -11,10 +11,12 @@ import {
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '../../../../api/client';
-import { PremiumHeader } from '../../../../components/PremiumHeader';
-import { SkeletonLoader as Skeleton } from '../../../../components/SkeletonLoader';
-import { useAccentColor } from '../../../../hooks/useAccentColor';
+import { apiClient } from '@/api/client';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { rotateColor } from "@/utils/colors";
+import { parseDateSafe } from "@/utils/timeUtils";
 
 interface HoraExtra {
     id_hora_extra: number;
@@ -28,7 +30,7 @@ interface HoraExtra {
 }
 
 export default function HorasExtrasScreen() {
-    const { accentColor, accentBg, accentBorder, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const [horasExtras, setHorasExtras] = useState<HoraExtra[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -36,11 +38,11 @@ export default function HorasExtrasScreen() {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#0F0D2E' : '#F3F4F6';
-    const cardBg = isDark ? '#1E1B4B' : '#FFFFFF';
+    const bg = isDark ? '#000000' : '#F3F4F6';
+    const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -101,10 +103,10 @@ export default function HorasExtrasScreen() {
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
         try {
-            const date = new Date(dateStr);
+            const date = parseDateSafe(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
             const day = date.getUTCDate();
-            const month = date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' });
+            const month = date.toLocaleDateString('es-ES', { month: 'short' });
             const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
@@ -121,9 +123,11 @@ export default function HorasExtrasScreen() {
 
     const renderItem = ({ item, index }: { item: HoraExtra; index: number }) => {
         const isPendiente = item.estado === 1;
+        const itemAccent = rotateColor(accentColor, (item.id_hora_extra % 10) * 36);
+
         return (
             <MotiView
-                from={{ opacity: 0, translateY: 20 }}
+                from={{ opacity: 0, translateY: 30 }}
                 animate={{ opacity: 1, translateY: 0 }}
                 transition={{ type: 'spring', delay: index * 100 }}
             >
@@ -164,7 +168,7 @@ export default function HorasExtrasScreen() {
                             </View>
                             <View style={styles.amountItem}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: accentColor, fontWeight: '800' }]}>${(item.total || 0).toLocaleString()}</Text>
+                                <Text style={[styles.amountValue, { color: isPendiente ? itemAccent : accentColor }]}>${(item.total || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
@@ -315,3 +319,5 @@ const styles = StyleSheet.create({
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });
+
+

@@ -1,21 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  FlatList,
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAccentColor } from "../../../hooks/useAccentColor";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { BASE_URL } from "@/api/client";
 
 interface Hostess {
   id: number | string;
   id_usuario?: number | string;
   nick: string;
+  nombre?: string;
+  name?: string;
   foto?: string;
   status?: number;
   estado_servicio?: number;
@@ -25,9 +28,9 @@ interface HostessSelectModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm?: () => void;
-  onToggle: (id: string) => void;
+  onToggle: (id: string | number) => void;
   hostesses: Hostess[];
-  selectedIds: string[];
+  selectedIds: (string | number)[];
   max?: number;
   title?: string;
 }
@@ -42,10 +45,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   max,
   title = "Seleccionar Anfitrionas",
 }) => {
-  const { accentColor, isDark, cardBg } = useAccentColor();
-  const textPrimary = isDark ? "#FFFFFF" : "#000000";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const subtleBorder = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
+  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor: subtleBorder } = useAccentColor();
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -71,76 +71,65 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
             </Pressable>
           </View>
 
-          <FlatList
-            data={hostesses}
-            keyExtractor={(item) => (item.id_usuario || item.id).toString()}
-            renderItem={({ item }) => {
-              const id = String(item.id_usuario || item.id);
-              const isSelected = selectedIds.includes(id);
-              const isBusy = (item.estado_servicio || item.status) === 2;
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            {hostesses.map((item) => {
+              const rawId = item.id_usuario || item.id || 0;
+              const isSelected = selectedIds.some(sid => String(sid) === String(rawId));
               const isMaxReached = max !== undefined && selectedIds.length >= max;
-              const isDisabled = isBusy || (isMaxReached && !isSelected);
+              const isOccupied = Number(item.estado_servicio) === 1;
+              const isDisabled = (isMaxReached && !isSelected) || isOccupied;
 
+              const roomInfo = (item as any).habitacion_nombre || (item as any).habitacion || (item as any).room || "";
+  
               return (
-                <TouchableOpacity
-                  accessibilityLabel={`${item.nick}, ${isSelected ? "seleccionada" : "no seleccionada"}, ${isBusy ? "ocupada" : "disponible"}`}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isSelected, disabled: isDisabled }}
-                  style={[
-                    styles.listItem,
-                    {
-                      borderColor: isSelected ? accentColor : subtleBorder,
-                      backgroundColor: isSelected ? `${accentColor}18` : "transparent",
-                      opacity: isDisabled ? 0.4 : 1,
-                    },
-                  ]}
-                  onPress={() => { if (!isDisabled) onToggle(id); }}
+                <Pressable
+                  key={rawId.toString()}
+                  onPress={() => !isOccupied && onToggle(rawId as number | string)}
                   disabled={isDisabled}
+                  style={[
+                    styles.modalItem,
+                    { 
+                      borderColor: isSelected ? accentColor : isOccupied ? '#EF444450' : subtleBorder, 
+                      backgroundColor: isSelected ? `${accentColor}15` : isOccupied ? '#EF444408' : 'transparent',
+                      opacity: (isMaxReached && !isSelected) ? 0.5 : 1
+                    }
+                  ]}
                 >
-                  <View style={[
-                    styles.avatar,
-                    { backgroundColor: isBusy ? "#EF4444" : accentColor },
-                  ]}>
-                    {item.foto ? (
-                      <Image
-                        source={{ uri: item.foto.startsWith("http") ? item.foto : `https://lasmunecasderamon.com/api/uploads/${item.foto}` }}
-                        style={styles.avatarImage}
-                      />
-                    ) : (
-                      <Text style={styles.avatarText}>
-                        {(item.nick || "A")[0].toUpperCase()}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
+                    <View style={[styles.avatarMini, { backgroundColor: isOccupied ? '#EF444420' : `${accentColor}20` }]}>
+                      {item.foto ? (
+                        <Image source={{ uri: `${BASE_URL}/img/users/${item.foto}` }} style={styles.avatarImage} />
+                      ) : (
+                        <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={[styles.avatarText, { color: isOccupied ? '#EF4444' : accentColor }]}>
+                            {(item.nick?.[0] || item.nombre?.[0] || 'A').toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.modalItemText, { color: isOccupied ? '#EF4444' : textPrimary }]}>
+                        {item.nick || item.nombre || item.name || "Anfitriona"}
                       </Text>
-                    )}
+                      {isOccupied && (
+                        <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800', marginTop: 2 }}>
+                          OCUPADA EN SERVICIO {roomInfo ? `(${roomInfo})` : ''}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-
-                  <View style={{ flex: 1, marginLeft: 16 }}>
-                    <Text style={[styles.listItemTitle, { color: textPrimary }]}>
-                      {item.nick}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: isBusy ? "#EF4444" : "#10B981", fontWeight: "bold" }}>
-                      {isBusy ? "● OCUPADA" : "● DISPONIBLE"}
-                    </Text>
-                  </View>
-
-                  <View style={[
-                    styles.checkbox,
-                    {
-                      borderColor: isSelected ? accentColor : subtleBorder,
-                      backgroundColor: isSelected ? accentColor : "transparent",
-                    },
-                  ]}>
-                    {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                  </View>
-                </TouchableOpacity>
+                  {isSelected && <Ionicons name="checkmark-circle" size={24} color={accentColor} />}
+                  {isOccupied && <Ionicons name="lock-closed" size={18} color="#EF4444" />}
+                </Pressable>
               );
-            }}
-          />
+            })}
+          </ScrollView>
 
           <Pressable
             style={[styles.modalActionBtn, { backgroundColor: accentColor }]}
             onPress={onConfirm || onClose}
           >
-            <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
+            <Text style={styles.modalActionBtnText}>Listo</Text>
           </Pressable>
         </View>
       </View>
@@ -155,10 +144,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
+    width: "100%",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
-    height: "80%",
+    height: "85%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -175,47 +165,22 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 2,
   },
-  listItem: {
+  modalItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: 1.5,
+    justifyContent: "space-between",
+    padding: 16,
     borderRadius: 16,
+    borderWidth: 1.5,
     marginBottom: 10,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "#FFF",
-    fontWeight: "900",
-    fontSize: 18,
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 22,
-  },
-  listItemTitle: {
+  modalItemText: {
     fontSize: 16,
-    fontWeight: "800",
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
+    fontWeight: "700",
   },
   modalActionBtn: {
-    height: 50,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
@@ -223,6 +188,26 @@ const styles = StyleSheet.create({
   modalActionBtnText: {
     color: "#FFF",
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  avatarMini: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
+
+

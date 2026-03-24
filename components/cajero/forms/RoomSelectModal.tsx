@@ -9,15 +9,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAccentColor } from "../../../hooks/useAccentColor";
+import { useAccentColor } from "@/hooks/useAccentColor";
 
-interface Room {
-  id: string;
-  id_habitacion?: string;
+export interface Room {
+  id: string | number;
+  id_habitacion?: string | number;
   nombre: string;
   precio: number;
   tiempo: number;
   estado: number;
+  comision_anfitriona?: number;
 }
 
 interface RoomSelectModalProps {
@@ -25,7 +26,7 @@ interface RoomSelectModalProps {
   onClose: () => void;
   onSelect: (room: Room) => void;
   rooms: Room[];
-  selectedRoomId?: string;
+  selectedRoomId?: string | number;
 }
 
 export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
@@ -35,10 +36,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   rooms,
   selectedRoomId,
 }) => {
-  const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
-  const textPrimary = isDark ? "#FFFFFF" : "#000000";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const primaryColor = accentColor;
+  const { accentColor: primaryColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -54,27 +52,29 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
           </View>
           <FlatList
             data={rooms}
+            extraData={selectedRoomId}
             keyExtractor={(item) => (item.id_habitacion || item.id).toString()}
             renderItem={({ item }) => {
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
               return (
-                <TouchableOpacity
+                <Pressable
+                  onPress={() => { if (item.estado === 1) onSelect(item); }}
                   style={[
-                    styles.listItem,
+                    styles.modalItem,
                     {
                       borderColor: isSelected ? primaryColor : borderColor,
                       backgroundColor: isSelected ? `${primaryColor}15` : 'transparent',
                       opacity: item.estado === 1 ? 1 : 0.6,
+                      borderWidth: isSelected ? 2 : 1.5,
                     },
                   ]}
-                  onPress={() => { if (item.estado === 1) onSelect(item); }}
                 >
                   <View style={[styles.roomIcon, { backgroundColor: item.estado === 1 ? "#10B98120" : "#EF444420" }]}>
                     <Ionicons name="business" size={24} color={item.estado === 1 ? "#10B981" : "#EF4444"} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={[styles.listItemTitle, { color: textPrimary }]}>
+                    <Text style={[styles.modalItemText, { color: textPrimary }]}>
                       {item.nombre}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -82,20 +82,12 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                         ${(item.precio || 0).toLocaleString()} • {item.tiempo || 0} min
                       </Text>
                       <Text style={{ fontSize: 11, color: item.estado === 1 ? "#10B981" : "#EF4444", marginLeft: 8, fontWeight: "bold" }}>
-                        {item.estado === 1 ? "● DISPONIBLE" : "● OCUPADA"}
+                        {item.estado === 1 ? "● LIBRE" : "● OCUPADA"}
                       </Text>
                     </View>
                   </View>
-                  <View style={[
-                    styles.checkbox,
-                    {
-                      borderColor: isSelected ? primaryColor : borderColor,
-                      backgroundColor: isSelected ? primaryColor : 'transparent',
-                    },
-                  ]}>
-                    {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                  </View>
-                </TouchableOpacity>
+                  {isSelected && <Ionicons name="checkmark" size={18} color={primaryColor} />}
+                </Pressable>
               );
             }}
           />
@@ -103,7 +95,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             style={[styles.modalActionBtn, { backgroundColor: primaryColor }]}
             onPress={onClose}
           >
-            <Text style={styles.modalActionBtnText}>Confirmar Selección</Text>
+            <Text style={styles.modalActionBtnText}>Listo</Text>
           </Pressable>
         </View>
       </View>
@@ -118,10 +110,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
+    width: "100%",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
-    height: "80%",
+    height: "85%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -133,30 +126,22 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
   },
-  listItem: {
+  modalItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: 1.5,
+    justifyContent: "space-between",
+    padding: 16,
     borderRadius: 16,
+    borderWidth: 1.5,
     marginBottom: 10,
   },
-  listItemTitle: {
+  modalItemText: {
     fontSize: 16,
     fontWeight: "800",
   },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   modalActionBtn: {
-    height: 50,
-    borderRadius: 16,
+    height: 54,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
@@ -164,7 +149,8 @@ const styles = StyleSheet.create({
   modalActionBtnText: {
     color: "#FFF",
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
+    letterSpacing: 1,
   },
   roomIcon: {
     width: 44,
@@ -174,3 +160,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+

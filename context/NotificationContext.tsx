@@ -1,11 +1,13 @@
 import * as Notifications from "expo-notifications";
 import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
+import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
 import Toast from "react-native-toast-message";
-import { API_URL } from "../api/client";
-import { useAuthStore } from "../store/authStore";
-import { toastConfig } from "../utils/toast-config";
+import { API_URL } from "@/api/client";
+import * as Haptics from 'expo-haptics';
+import { useAuthStore } from "@/store/authStore";
+import { toastConfig } from "@/utils/toast-config";
 
 // Configuración de notificaciones en el nivel superior (fuera del componente)
 Notifications.setNotificationHandler({
@@ -20,6 +22,7 @@ Notifications.setNotificationHandler({
 
 interface NotificationContextType {
   showLocalNotification: (title: string, body: string) => Promise<void>;
+  isConnected: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -30,7 +33,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const user = useAuthStore((state) => state.user);
+  const router = useRouter();
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [isConnected, setIsConnected] = React.useState(false);
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
     try {
@@ -51,7 +56,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     // Detección robusta del nombre del rol
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
     const lowerRole = roleName?.toLowerCase();
-    const isCajeroOrAdmin = lowerRole === "cajero" || lowerRole === "administrador";
+    const isCajeroOrAdmin = ["cajero", "cajera", "administrador", "administradora"].includes(lowerRole);
+
+    console.log(`[NotificationContext] 👤 Rol detectado: ${roleName} (${lowerRole}), ¿Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
 
 
@@ -60,17 +67,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "new_service_request":
         if (isCajeroOrAdmin) {
           const isOrder = payload.type === "new_order";
+          const id = isOrder ? payload.data.id : payload.data.id_solicitud || payload.data.id;
+          
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Toast.show({
             type: "order",
             text1: isOrder ? "🔔 ¡Nuevo Pedido!" : "🛎️ Solicitud de Servicio",
             text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripción"}`,
             visibilityTime: 6000,
+            onPress: () => {
+              if (id) {
+                router.push({
+                  pathname: "/(app)/cajero/solicitudes",
+                  params: { openId: id, type: payload.type }
+                } as any);
+                Toast.hide();
+              }
+            }
           });
+
           showLocalNotification(
             isOrder ? "Nuevo Pedido" : "Solicitud de Servicio",
             isOrder ? `Pedido: ${payload.data.codigo}` : payload.data.descripcion
           );
-          DeviceEventEmitter.emit("refresh_requests");
+          DeviceEventEmitter.emit("refresh_requests", payload);
         }
         break;
 
@@ -80,11 +100,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "timer_paused":
       case "timer_updated":
       case "room_occupied":
-        // NOTA: No emitimos refresh_sales aquí para evitar duplicación, 
-        // ya que TimerContext.tsx se encarga de emitir refresh_sales con los metadatos necesarios
-        // para mostrar los modales de notificación al cajero.
-
-        // Mantener lógica de avisos visuales sutiles (Toasts)
+     
         if (payload.type === "timer_started") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
@@ -119,6 +135,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "order_updated":
       case "service_request_approved":
       case "service_request_rejected":
+      case "room_occupied":
         if (isCajeroOrAdmin) {
           DeviceEventEmitter.emit("refresh_requests");
         }
@@ -126,44 +143,72 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       case "ping":
         break;
+
+      default:
+        console.log('[NotificationContext] ℹ️ Evento SSE no manejado específicamente:', payload.type);
     }
-  }, [showLocalNotification, user]);
+  }, [showLocalNotification, user?.id, user?.role]);
 
   useEffect(() => {
     if (!user?.id) return;
 
     const sseUrl = `${API_URL}/notifications/sse`;
+    console.log('[NotificationContext] 🚀 Intentando conectar SSE a:', sseUrl);
     let es: EventSource | null = null;
     try {
       es = new EventSource(sseUrl);
       eventSourceRef.current = es;
 
-   
       es.addEventListener("message", (event: any) => {
-        if (!event.data) return;
+        if (!event.data) {
+          console.log('[NotificationContext] ⚠️ Evento SSE vacío');
+          return;
+        }
         try {
           const payload = JSON.parse(event.data);
-          DeviceEventEmitter.emit("sse_event", payload);
+          console.log('[NotificationContext] 🔔 Evento SSE recibido:', payload.type, payload.data?.id || '');
+          
+          // No emitimos eventos de control para evitar bucles de refresco en dashboards
+          if (payload.type !== 'connected' && payload.type !== 'ping') {
+             DeviceEventEmitter.emit("sse_event", payload);
+          }
           handleServerEvent(payload);
         } catch (err) {
-  
+          console.error('[NotificationContext] ❌ Error parseando datos SSE:', err);
         }
       });
 
+      es.addEventListener("open", () => {
+        console.log('[NotificationContext] ✅ Conexión SSE establecida con éxito');
+        setIsConnected(true);
+        Toast.show({
+            type: "info",
+            text1: "SSE Conectado",
+            text2: "Recibiendo notificaciones en tiempo real",
+            visibilityTime: 2000,
+        });
+      });
+
+      es.addEventListener("error", (err: any) => {
+        console.error('[NotificationContext] ❌ Error de conexión SSE:', JSON.stringify(err));
+        setIsConnected(false);
+      });
+
     } catch (err) {
- 
+       console.error('[NotificationContext] ❌ Error fatal al crear EventSource:', err);
     }
 
     return () => {
       if (es) {
         es.close();
         eventSourceRef.current = null;
+        setIsConnected(false);
       }
     };
   }, [user?.id, handleServerEvent]);
 
   return (
-    <NotificationContext.Provider value={{ showLocalNotification }}>
+    <NotificationContext.Provider value={{ showLocalNotification, isConnected }}>
       {children}
       <Toast config={toastConfig} position="top" topOffset={60} />
     </NotificationContext.Provider>
@@ -177,3 +222,4 @@ export const useNotifications = () => {
   }
   return context;
 };
+

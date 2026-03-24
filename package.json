@@ -8,7 +8,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "smoke:web": "expo export --platform web --output-dir .expo-smoke",
+    "test:e2e:smoke": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -66,10 +69,12 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "fs-extra": "^11.2.0",
+    "http-server": "^14.1.1",
     "typescript": "~5.9.2"
   },
   "private": true,
