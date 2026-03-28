@@ -19,7 +19,7 @@ export default function AsistenciaScreen() {
     const {
         activeTab, setActiveTab,
         asistencias, gratificaciones,
-        loading, refreshing, error,
+        loading, refreshing,
         filter, setFilter,
         onRefresh
     } = useAsistencia();
@@ -29,6 +29,16 @@ export default function AsistenciaScreen() {
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
+
+    const normalizeEstado = (estado: number | string | null | undefined) => {
+        if (estado === 1 || estado === '1' || estado === 'pendiente' || estado === 'por_cobrar' || estado === 'por cobrar') {
+            return 'pendiente';
+        }
+        if (estado === 0 || estado === '0' || estado === 'pagado' || estado === 'cobrado' || estado === 'cobrada') {
+            return 'pagado';
+        }
+        return String(estado ?? '');
+    };
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
@@ -43,13 +53,17 @@ export default function AsistenciaScreen() {
     };
 
     const currentData = activeTab === 'asistencias' ? asistencias : gratificaciones;
-    const filteredData = currentData.filter((a: any) => {
-        if (filter === 'pendiente') return a.estado === 1;
-        if (filter === 'pagado') return a.estado === 0;
-        return true;
-    });
+    const filteredData = activeTab === 'asistencias'
+        ? currentData.filter((a: any) => {
+            const estado = normalizeEstado(a.estado);
+            if (filter === 'pendiente') return estado === 'pendiente';
+            if (filter === 'pagado') return estado === 'pagado';
+            return true;
+        })
+        : currentData;
 
-    const pendientes = currentData.filter((a: any) => a.estado === 1);
+    const pendientes = currentData.filter((a: any) => normalizeEstado(a.estado) === 'pendiente');
+    const pagados = currentData.filter((a: any) => normalizeEstado(a.estado) === 'pagado');
     const totalSueldo = activeTab === 'asistencias'
         ? pendientes.reduce((sum, a: any) => sum + (a.sueldo || 0), 0)
         : pendientes.reduce((sum, g: any) => sum + (g.monto || 0), 0);
@@ -57,7 +71,9 @@ export default function AsistenciaScreen() {
     const totalACobrar = totalSueldo - totalAporte;
 
     const renderItem = ({ item, index }: { item: any; index: number }) => {
-        const isPendiente = item.estado === 1;
+        const estado = normalizeEstado(item.estado);
+        const isPendiente = estado === 'pendiente';
+        const isPagado = estado === 'pagado';
         const isAsistencia = activeTab === 'asistencias';
         const dateStr = isAsistencia ? item.fecha : item.fecha_hora;
         const timeStr = isAsistencia ? item.hora : (!isAsistencia && item.fecha_hora ? item.fecha_hora.split(' ')[1] : '');
@@ -71,7 +87,7 @@ export default function AsistenciaScreen() {
                         </View>
                         <View style={[styles.statusBadge, { backgroundColor: isPendiente ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') : (isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE') }]}>
                             <Text style={[styles.statusText, { color: isPendiente ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }]}>
-                                {isPendiente ? 'Por cobrar' : 'Cobrado'}
+                                {isPendiente ? 'Por cobrar' : isPagado ? 'Cobrado' : 'Sin estado'}
                             </Text>
                         </View>
                     </View>
@@ -79,7 +95,7 @@ export default function AsistenciaScreen() {
                     <View style={styles.cardBody}>
                         {!isAsistencia && item.descripcion ? (
                             <Text style={{ fontSize: 13, color: textSecondary, marginBottom: 12, backgroundColor: isDark?'#222':'#f9f9f9', padding: 8, borderRadius: 8, fontStyle: 'italic' }}>
-                                "{item.descripcion}"
+                                “{item.descripcion}”
                             </Text>
                         ) : null}
                         <View style={styles.dateRow}>
@@ -117,7 +133,7 @@ export default function AsistenciaScreen() {
                             </View>
                         )}
 
-                        {item.fecha_pago && item.estado === 0 ? (
+                        {item.fecha_pago && isPagado ? (
                             <View style={styles.paymentRow}>
                                 <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                                 <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_pago)}</Text>
@@ -157,29 +173,41 @@ export default function AsistenciaScreen() {
                 </Pressable>
             </View>
 
-            <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor, shadowColor: accentColor }]}>
-                <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL A COBRAR (Pendientes)</Text>
-                <Text style={[styles.summaryAmount, { color: accentColor }]}>${totalACobrar.toLocaleString()}</Text>
+            <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
+                <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+                    {activeTab === 'asistencias' ? 'SITUACIÓN DE ASISTENCIAS' : 'GRATIFICACIONES ENTREGADAS'}
+                </Text>
+                <Text style={[styles.summaryAmount, { color: activeTab === 'asistencias' ? '#F59E0B' : accentColor }]}>
+                    ${activeTab === 'asistencias' ? totalACobrar.toLocaleString() : currentData.reduce((sum: number, item: any) => sum + Number(item.monto || 0), 0).toLocaleString()}
+                </Text>
                 <View style={styles.summaryDetails}>
-                    <Text style={[styles.summaryDetail, { color: textSecondary }]}>{activeTab === 'asistencias' ? 'Sueldo' : 'Monto'}: ${totalSueldo.toLocaleString()}</Text>
-                    {activeTab === 'asistencias' && <View style={{ width: 1, height: 12, backgroundColor: borderColor, alignSelf: 'center' }} />}
-                    {activeTab === 'asistencias' && <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>}
+                    {activeTab === 'asistencias' ? (
+                        <>
+                            <Text style={[styles.summaryDetail, { color: textSecondary }]}>Sueldo: ${totalSueldo.toLocaleString()}</Text>
+                            <View style={{ width: 1, height: 12, backgroundColor: borderColor, alignSelf: 'center' }} />
+                            <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>
+                        </>
+                    ) : (
+                        <Text style={[styles.summaryDetail, { color: textSecondary }]}>Total histórico: ${currentData.reduce((sum: number, item: any) => sum + Number(item.monto || 0), 0).toLocaleString()}</Text>
+                    )}
                 </View>
             </View>
 
-            <View style={styles.filterRow}>
-                {(['all', 'pendiente', 'pagado'] as const).map((f) => (
-                    <Pressable
-                        key={f}
-                        style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor: filter === f ? accentColor : borderColor }]}
-                        onPress={() => setFilter(f)}
-                    >
-                        <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
-                            {f === 'all' ? `Todas (${currentData.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Cobradas (${currentData.length - pendientes.length})`}
-                        </Text>
-                    </Pressable>
-                ))}
-            </View>
+            {activeTab === 'asistencias' && (
+                <View style={styles.filterRow}>
+                    {(['all', 'pendiente', 'pagado'] as const).map((f) => (
+                        <Pressable
+                            key={f}
+                            style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor: filter === f ? accentColor : borderColor }]}
+                            onPress={() => setFilter(f)}
+                        >
+                            <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
+                                {f === 'all' ? `Todas (${currentData.length})` : f === 'pendiente' ? `Pendientes (${pendientes.length})` : `Pagadas (${pagados.length})`}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </View>
+            )}
 
             <FlatList
                 data={filteredData}

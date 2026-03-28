@@ -373,25 +373,27 @@ export default function VentasScreen() {
     refreshTimers();
   };
 
+  const getVentaId = (venta: any) => venta?.id ?? venta?.id_venta ?? null;
+
   const handleOpenActionSheet = (venta: any) => {
     setActiveVenta(venta);
     setActionSheetVisible(true);
   };
 
-  const handleVerDetalles = async (id: number) => {
+  const handleVerDetalles = async (id: number | string) => {
     setActionSheetVisible(false);
     setLoadingDetail(true);
     setModalVisible(true);
     try {
       const res = await apiClient(`/ventas/${id}`);
-      if (res && !res.error) {
-        setSelectedVenta(res);
+      if (res?.success && res.data) {
+        setSelectedVenta(res.data);
       } else {
-        showToast("Error", "No se pudo obtener el detalle de la venta");
+        showToast("Error", res?.message || "No se pudo obtener el detalle de la venta");
         setModalVisible(false);
       }
-    } catch {
-      showToast("Error", "Error de conexión al cargar detalles");
+    } catch (error: any) {
+      showToast("Error", error?.message || "Error al cargar detalles");
       setModalVisible(false);
     } finally {
       setLoadingDetail(false);
@@ -407,7 +409,8 @@ export default function VentasScreen() {
       type: "danger",
       onConfirm: async () => {
         try {
-          const res = await apiClient(`/ventas/${venta.id_venta}`, {
+          const ventaId = getVentaId(venta);
+          const res = await apiClient(`/ventas/${ventaId}`, {
             method: "PUT",
             body: JSON.stringify({ estado: 1 }), // 1 = Completado/Finalizado
           });
@@ -437,8 +440,9 @@ export default function VentasScreen() {
     setActionSheetVisible(false);
 
     try {
+      const ventaId = getVentaId(activeVenta);
       const res = await apiClient(
-        `/ventas/${activeVenta.id_venta}/solicitar-anulacion`,
+        `/ventas/${ventaId}/solicitar-anulacion`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -467,18 +471,22 @@ export default function VentasScreen() {
   };
 
   const renderVentaCard = ({ item }: { item: any }) => {
-    const productCount = item.detalles
-      ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0)
-      : 0;
+const productCount = item.detalles
+  ? item.detalles.reduce((acc, d) => {
+      const cantidad = Number(d?.cantidad);
+      return acc + (isNaN(cantidad) ? 0 : cantidad);
+    }, 0)
+  : 0;
     // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
     // O mejor aún: usar una rotación del color de acento según la posición/ID
-    const itemAccent = rotateColor(accentColor, (item.id_venta % 10) * 36);
+    const ventaId = getVentaId(item);
+    const itemAccent = rotateColor(accentColor, ((Number(ventaId) || 0) % 10) * 36);
     const statusColor = item.estado === 2 ? itemAccent : (statusColors[item.estado] || "#6B7280");
 
     // Check if this sale has an active timer (matching room or service ID)
     const activeTimer = timers.find(
       (t) =>
-        (t.servicioId && String(t.servicioId) === String(item.id_venta)) ||
+        (t.servicioId && String(t.servicioId) === String(ventaId)) ||
         (t.roomId && String(t.roomId) === String(item.habitacion_id) && item.estado === 2),
     );
 
@@ -504,22 +512,9 @@ export default function VentasScreen() {
           <View style={styles.cardMainRow}>
           {/* Left Info Section */}
           <View style={styles.cardLeftContent}>
-            <View style={styles.cardTopActions}>
-              <Text style={[styles.cardCode, { color: textPrimary }]}>Codigo : {item.codigo}</Text>
-              <View
-                style={[
-                  styles.statusBadgeSmall,
-                  { backgroundColor: `${statusColor}15` },
-                ]}
-              >
-                <View
-                  style={[styles.statusDot, { backgroundColor: statusColor }]}
-                />
-                <Text style={[styles.statusTextSmall, { color: statusColor }]}>
-                  {statusLabels[item.estado] || "Desconocido"}
-                </Text>
-              </View>
-            </View>
+           <View style={styles.cardTopActions}>
+               <Text style={[styles.cardCode, { color: textPrimary }]}>Codigo : {item.codigo}</Text>
+             </View>
 
             <View style={styles.cardDetailsList}>
               <View style={styles.detailItemRow}>
@@ -640,6 +635,26 @@ export default function VentasScreen() {
               <Text style={[styles.methodText, { color: textSecondary }]}>
                 {item.metodo_pago?.toUpperCase() || "N/A"}
               </Text>
+            </View>
+            
+            {/* Status Badge below payment method */}
+            <View style={[
+              styles.methodBadgeContainer,
+              { marginTop: 4 }
+            ]}>
+              <View
+                style={[
+                  styles.statusBadgeSmall,
+                  { backgroundColor: `${statusColor}15` },
+                ]}
+              >
+                <View
+                  style={[styles.statusDot, { backgroundColor: statusColor }]}
+                />
+                <Text style={[styles.statusTextSmall, { color: statusColor }]}>
+                  {statusLabels[item.estado] || "Desconocido"}
+                </Text>
+              </View>
             </View>
 
             <View style={{ alignItems: "flex-end" }}>
@@ -777,7 +792,7 @@ export default function VentasScreen() {
                   timers.some(
                     (t) =>
                       t.tipoTransaccion === "venta" &&
-                      (t.servicioId === v.id_venta ||
+                      (t.servicioId === getVentaId(v) ||
                         (t.roomId === v.habitacion_id && v.estado === 2)),
                   ),
               ))
@@ -983,24 +998,24 @@ export default function VentasScreen() {
                         Listado de Productos
                       </Text>
                       
-                      {(() => {
-                        const dets = selectedVenta.detalles || [];
-                        const grouped = dets.reduce((acc: any[], cur: any) => {
-                          const hNick = cur.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
-                          const key = `${cur.producto_nombre}-${hNick}`;
-                          const idx = acc.findIndex(i => {
-                             const ihNick = i.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
-                             return `${i.producto_nombre}-${ihNick}` === key;
-                          });
-                          if (idx > -1) {
-                            acc[idx].cantidad += cur.cantidad;
-                            acc[idx].sub_total += cur.sub_total;
-                            acc[idx].comision += (cur.comision || 0);
-                          } else acc.push({ ...cur });
-                          return acc;
-                        }, []);
-
-                        return grouped.map((det: any, idx: number) => (
+                       {(() => {
+                         const dets = selectedVenta.detalles || [];
+                         const grouped = dets.reduce((acc: any[], cur: any) => {
+                           const hNick = cur.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
+                           const key = `${cur.producto_nombre}-${hNick}`;
+                           const idx = acc.findIndex(i => {
+                              const ihNick = i.hostess_nick || selectedVenta.usuarios_nicks || 'Sin Anfitriona';
+                              return `${i.producto_nombre}-${ihNick}` === key;
+                           });
+                           if (idx > -1) {
+                             acc[idx].cantidad += Number(cur.cantidad) || 0;
+                             acc[idx].sub_total += Number(cur.sub_total) || 0;
+                             acc[idx].comision += Number(cur.comision || 0);
+                           } else acc.push({ ...cur });
+                           return acc;
+                         }, []);
+ 
+                         return grouped.map((det: any, idx: number) => (
                           <View key={idx} style={{ backgroundColor: cardBg, borderRadius: 20, padding: 16, borderWidth: 1, borderColor, marginBottom: 12 }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                               <View style={{ backgroundColor: accentColor + '10', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
@@ -1067,7 +1082,10 @@ export default function VentasScreen() {
               <Text style={[styles.actionSheetTitle, { color: textPrimary }]}>Opciones de Venta</Text>
               <Text style={[styles.actionSheetSub, { color: textSecondary }]}>Código: {activeVenta?.codigo}</Text>
             </View>
-            <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={() => activeVenta && handleVerDetalles(activeVenta.id_venta)}>
+            <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={() => {
+              const ventaId = getVentaId(activeVenta);
+              if (ventaId) handleVerDetalles(ventaId);
+            }}>
               <View style={[styles.actionIconBox, { backgroundColor: accentColor + '15' }]}>
                 <Ionicons name="eye-outline" size={24} color={accentColor} />
               </View>
