@@ -59,7 +59,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
         setLoading(true);
         try {
-            const res = await apiClient('/asistencia/registrar', {
+            const res = await apiClient('/attendance/register', {
                 method: 'POST',
                 body: JSON.stringify({ qr_data: codigo.trim() })
             });
@@ -89,7 +89,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
         setShowScanner(false);
         setLoading(true);
         try {
-            const res = await apiClient('/asistencia/registrar', {
+            const res = await apiClient('/attendance/register', {
                 method: 'POST',
                 body: JSON.stringify({ qr_data: data })
             });

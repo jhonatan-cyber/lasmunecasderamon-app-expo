@@ -12,6 +12,7 @@ export interface DashboardData {
   userStatus: number;
   activeService: any | null;
   pendingCount: number;
+  payoutTotal: number;
 }
 
 const initialStats: DashboardStats = { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 };
@@ -35,6 +36,7 @@ export function useDashboardData(role: UserRole) {
         apiClient("/events/user"),
         apiClient("/auth/me"),
         apiClient("/users/status"),
+        apiClient("/users/me/stats"),
       ];
 
       // Endpoints específicos por rol
@@ -57,21 +59,22 @@ export function useDashboardData(role: UserRole) {
       const eventsRes = results[0];
       const meRes = results[1];
       const statusRes = results[2];
+      const meStatsRes = results[3];
       
       let roleStats = null;
       let extraData: any = {};
 
       if (results[0]?.success) {
         if (role === 'anfitriona') {
-            roleStats = results[3]?.data;
-            const services = results[4];
+            roleStats = results[4]?.data;
+            const services = results[5];
             extraData.activeService = services?.success ? services.data.find((s: any) => s.estado === 2) : null;
         } else if (role === 'garzon') {
-            roleStats = results[3]?.data;
-            extraData.hasOpenCaja = results[4]?.data?.hasOpenCaja ?? true;
+            roleStats = results[4]?.data;
+            extraData.hasOpenCaja = results[5]?.data?.hasOpenCaja ?? true;
         } else if (role === 'cajero') {
-            roleStats = results[3]?.success ? results[3] : null; 
-            extraData.pendingCount = results[4]?.count || 0;
+            roleStats = results[4]?.success ? results[4] : null; 
+            extraData.pendingCount = results[5]?.count || 0;
         }
 
         // side effect: update auth store
@@ -83,6 +86,7 @@ export function useDashboardData(role: UserRole) {
             events: eventsRes?.data || [],
             stats: roleStats || initialStats,
             userStatus: statusRes?.status || meRes?.user?.status || 1,
+            payoutTotal: Number(meStatsRes?.data?.stats?.montoAnticipoMaximo || 0),
             ...extraData
         } as DashboardData;
       }
@@ -127,6 +131,7 @@ export function useDashboardData(role: UserRole) {
     userStatus: data?.userStatus || 1,
     activeService: data?.activeService || null,
     pendingCount: data?.pendingCount || 0,
+    payoutTotal: data?.payoutTotal || 0,
     hasNewAlert,
     selectedDates,
     onRefresh,

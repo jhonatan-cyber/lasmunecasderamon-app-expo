@@ -30,11 +30,13 @@ import { QRScannerModal } from '@/components/shared/QRScannerModal';
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [resetRun, setResetRun] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isPrompting, setIsPrompting] = useState(false);
     const [showQRScanner, setShowQRScanner] = useState(false);
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
 
     const passwordRef = useRef<TextInput>(null);
 
@@ -81,7 +83,7 @@ export default function LoginScreen() {
     };
 
     const handleResetPassword = async () => {
-        if (!username.trim()) {
+        if (!resetRun.trim()) {
             showAlert('Atención', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
             return;
         }
@@ -95,10 +97,12 @@ export default function LoginScreen() {
                 try {
                     const res = await apiClient('/auth/reset-password', {
                         method: 'POST',
-                        body: JSON.stringify({ identifier: username.trim() })
+                        body: JSON.stringify({ run: resetRun.trim() })
                     });
 
                     if (res.success) {
+                        setShowResetPasswordModal(false);
+                        setResetRun('');
                         showAlert('Éxito', 'Tu contraseña ha sido reseteada. Revisa tu WhatsApp para ver los detalles.', 'success');
                     } else {
                         throw new Error(res.message);
@@ -437,7 +441,7 @@ export default function LoginScreen() {
 
                                     {/* Forgot Password */}
                                     <Pressable
-                                        onPress={handleResetPassword}
+                                        onPress={() => setShowResetPasswordModal(true)}
                                         style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
                                     >
                                         <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
@@ -507,6 +511,63 @@ export default function LoginScreen() {
             </Modal>
 
             {/* Selector de QR para Login Rápido */}
+            <Modal
+                transparent
+                visible={showResetPasswordModal}
+                animationType="fade"
+                onRequestClose={() => {
+                    setShowResetPasswordModal(false);
+                    setResetRun('');
+                }}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
+                        <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Resetear Contraseña</Text>
+                        <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                            Ingresa tu RUN para validar el reseteo. La nueva contraseña será ese mismo RUN.
+                        </Text>
+                        <TextInput
+                            style={[
+                                styles.input,
+                                styles.resetInput,
+                                {
+                                    backgroundColor: isDark ? '#111111' : '#F3F4F6',
+                                    color: isDark ? '#FFFFFF' : '#000000',
+                                    borderColor: isDark ? '#374151' : '#E5E7EB',
+                                },
+                            ]}
+                            placeholder="Ingresa tu RUN"
+                            placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                            autoCapitalize="characters"
+                            value={resetRun}
+                            onChangeText={setResetRun}
+                        />
+                        <View style={styles.alertActions}>
+                            <Pressable
+                                onPress={() => {
+                                    setShowResetPasswordModal(false);
+                                    setResetRun('');
+                                }}
+                                style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1 }]}
+                            >
+                                <Text style={[styles.alertBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={handleResetPassword}
+                                style={[styles.alertBtn, { backgroundColor: '#E11D48', flex: 1 }]}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <Text style={[styles.alertBtnText, { color: '#FFF' }]}>Aceptar</Text>
+                                )}
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <QRScannerModal
                 visible={showQRScanner}
                 onClose={() => setShowQRScanner(false)}
@@ -696,6 +757,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '800',
         textAlign: 'center',
+    },
+    resetInput: {
+        width: '100%',
+        marginBottom: 20,
     },
 });
 

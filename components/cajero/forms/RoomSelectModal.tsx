@@ -6,7 +6,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -17,7 +16,8 @@ export interface Room {
   nombre: string;
   precio: number;
   tiempo: number;
-  estado: number;
+  estado?: number;
+  status?: number;
   comision_anfitriona?: number;
 }
 
@@ -36,7 +36,9 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   rooms,
   selectedRoomId,
 }) => {
-  const { accentColor: primaryColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+  const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+
+  const getRoomState = (room: Room) => Number(room.estado ?? room.status ?? 0);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -57,32 +59,53 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             renderItem={({ item }) => {
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
+              const isActive = getRoomState(item) === 1;
+              const roomName = item.nombre || `Habitación ${item.id_habitacion || item.id}`;
+
               return (
                 <Pressable
-                  onPress={() => { if (item.estado === 1) onSelect(item); }}
+                  onPress={() => {
+                    if (isActive) onSelect(item);
+                  }}
                   style={[
                     styles.modalItem,
                     {
                       borderColor: isSelected ? primaryColor : borderColor,
-                      backgroundColor: isSelected ? `${primaryColor}15` : 'transparent',
-                      opacity: item.estado === 1 ? 1 : 0.6,
+                      backgroundColor: isSelected ? `${primaryColor}15` : "transparent",
+                      opacity: isActive ? 1 : 0.6,
                       borderWidth: isSelected ? 2 : 1.5,
                     },
                   ]}
                 >
-                  <View style={[styles.roomIcon, { backgroundColor: item.estado === 1 ? "#10B98120" : "#EF444420" }]}>
-                    <Ionicons name="business" size={24} color={item.estado === 1 ? "#10B981" : "#EF4444"} />
+                  <View
+                    style={[
+                      styles.roomIcon,
+                      { backgroundColor: isActive ? "#10B98120" : "#EF444420" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="business"
+                      size={24}
+                      color={isActive ? "#10B981" : "#EF4444"}
+                    />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={[styles.modalItemText, { color: textPrimary }]}>
-                      {item.nombre}
+                      {roomName}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${(item.precio || 0).toLocaleString()} • {item.tiempo || 0} min
+                        ${(Number(item.precio || 0)).toLocaleString()} • {item.tiempo || 0} min
                       </Text>
-                      <Text style={{ fontSize: 11, color: item.estado === 1 ? "#10B981" : "#EF4444", marginLeft: 8, fontWeight: "bold" }}>
-                        {item.estado === 1 ? "● LIBRE" : "● OCUPADA"}
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: isActive ? "#10B981" : "#EF4444",
+                          marginLeft: 8,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {isActive ? "● LIBRE" : "● OCUPADA"}
                       </Text>
                     </View>
                   </View>
@@ -160,5 +183,3 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-
-

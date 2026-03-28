@@ -60,9 +60,10 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
 
 interface CajeroStatsProps {
     stats: any;
+    fullWidth?: boolean;
 }
 
-export const CajeroStats = ({ stats }: CajeroStatsProps) => {
+export const CajeroStats = ({ stats, fullWidth = false }: CajeroStatsProps) => {
     const { accentColor, isDark } = useAccentColor();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
@@ -95,7 +96,7 @@ export const CajeroStats = ({ stats }: CajeroStatsProps) => {
     ];
 
     return (
-        <View style={[styles.container, isTablet && styles.tabletContainer]}>
+        <View style={[styles.container, isTablet && styles.tabletContainer, fullWidth && styles.fullWidthContainer, fullWidth && isTablet && styles.fullWidthTabletContainer]}>
             <View style={[styles.grid, isTablet && styles.tabletGrid]}>
                 {statItems.map((item, index) => (
                     <StatCard
@@ -122,6 +123,12 @@ const styles = StyleSheet.create({
     },
     tabletContainer: {
         paddingHorizontal: 24,
+    },
+    fullWidthContainer: {
+        paddingHorizontal: 0,
+    },
+    fullWidthTabletContainer: {
+        paddingHorizontal: 0,
     },
     grid: {
         flexDirection: 'row',

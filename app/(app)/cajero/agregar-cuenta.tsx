@@ -184,7 +184,7 @@ export default function AgregarCuentaScreen() {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
             const requests: Promise<any>[] = [
-                apiClient('/users?anfitrionas=1'),
+                apiClient('/anfitrionas'),
                 apiClient('/categories'),
             ];
             if (cuentaOriginal?.id_cuenta) {
@@ -194,7 +194,7 @@ export default function AgregarCuentaScreen() {
 
             dispatch({
                 type: 'SET_INITIAL_DATA', payload: {
-                    anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
+                    anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
                     categories: categoriesRes.success ? (categoriesRes.data || []) : [],
                     cuentaDetalle: cuentaDetalleRes || null,
                 }

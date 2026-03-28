@@ -6,7 +6,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
 import { StaggeredFadeIn } from '@/components/ui/StaggeredFadeIn';
 
-export const CajeroActionGrid = () => {
+export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean }) => {
     const { accentColor } = useAccentColor();
     const router = useRouter();
     const { width } = useWindowDimensions();
@@ -30,11 +30,15 @@ export const CajeroActionGrid = () => {
     }
 
     return (
-        <View style={[styles.container, { paddingHorizontal: spacing }]}>
+        <View style={[styles.container, { paddingHorizontal: fullWidth ? 0 : spacing }]}>
             {rows.map((row, rowIndex) => (
                 <View key={rowIndex} style={[styles.actionGrid, { marginTop: rowIndex > 0 ? spacing / 2 : 0, gap: spacing / 2 }]}>
                     {row.map((action, colIndex) => (
-                        <StaggeredFadeIn key={action.title} index={rowIndex * cols + colIndex} style={{ flex: 1 }}>
+                        <StaggeredFadeIn
+                            key={action.title}
+                            index={rowIndex * cols + colIndex}
+                            style={{ flex: row.length === 1 ? 0 : 1, width: row.length === 1 ? '100%' : undefined }}
+                        >
                             <GarzonActionCard
                                 title={action.title}
                                 description={action.description}

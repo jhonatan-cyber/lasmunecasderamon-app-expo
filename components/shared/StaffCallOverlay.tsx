@@ -16,8 +16,8 @@ import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 
 interface StaffCall {
-    id: number;
-    anfitriona_id: number;
+    id: number | string;
+    anfitriona_id: number | string;
     anfitriona_nombre: string;
     anfitriona_nick: string;
     roomName: string;
@@ -41,28 +41,45 @@ export function StaffCallOverlay() {
     const isStaff = safeRole === 'garzon' || safeRole === 'cajero' || safeRole === 'administrador';
     const isHostess = safeRole === 'anfitriona';
 
+    const mapPendingCall = useCallback((item: any): StaffCall => {
+        let parsedData: any = {};
+        const rawData = item?.data ?? item?.datos;
+
+        if (typeof rawData === 'string') {
+            try {
+                parsedData = JSON.parse(rawData);
+            } catch {
+                parsedData = {};
+            }
+        } else if (rawData && typeof rawData === 'object') {
+            parsedData = rawData;
+        }
+
+        return {
+            id: item.id ?? item.id_notificacion,
+            anfitriona_id: item.anfitriona_id ?? item.usuario_id ?? parsedData.anfitriona_id ?? '',
+            anfitriona_nombre: item.anfitriona_nombre ?? item.titulo ?? 'Anfitriona',
+            anfitriona_nick: item.anfitriona_nick ?? parsedData.anfitriona_nick ?? item.titulo ?? 'Anfitriona',
+            roomName: item.habitacion_nombre ?? parsedData.roomName ?? 'N/A',
+            assistanceType: item.tipo ?? parsedData.type ?? 'Asistencia',
+            message: item.mensaje ?? parsedData.message,
+            timestamp: item.fecha_crea ?? item.timestamp ?? new Date().toISOString(),
+        };
+    }, []);
+
     const fetchPending = useCallback(async () => {
         if (!isStaff) return;
         try {
-            const res = await apiClient('/notifications/assistance');
+            const res = await apiClient('/notifications/pending');
             if (res.success) {
-                // Map API fields to our interface
-                const mapped = res.data.map((item: any) => ({
-                    id: item.id,
-                    anfitriona_id: item.anfitriona_id,
-                    anfitriona_nombre: item.anfitriona_nombre,
-                    anfitriona_nick: item.anfitriona_nick || item.anfitriona_nombre,
-                    roomName: item.habitacion_nombre || 'N/A',
-                    assistanceType: item.tipo,
-                    message: item.mensaje,
-                    timestamp: item.fecha_crea
-                }));
+                const pending = Array.isArray(res.notifications) ? res.notifications : Array.isArray(res.data) ? res.data : [];
+                const mapped = pending.map(mapPendingCall);
                 setPendingCalls(mapped);
             }
         } catch (error) {
             console.error('[StaffCallOverlay] Error fetching pending:', error);
         }
-    }, [isStaff]);
+    }, [isStaff, mapPendingCall]);
 
     useEffect(() => {
         if (!isStaff && !isHostess) {
@@ -88,8 +105,10 @@ export function StaffCallOverlay() {
                 const payload = JSON.parse(event.data);
 
                 // Caso 1: Nuevo llamado (Solo para Staff)
-                if (payload.type === 'staff_call' && isStaff) {
-                    const callData = payload.data;
+                if ((payload.type === 'staff_call' || payload.type === 'assistance_request') && isStaff) {
+                    const callData = payload.type === 'assistance_request'
+                        ? mapPendingCall(payload.data)
+                        : payload.data;
                     setPendingCalls(prev => {
                         // Evitar duplicados
                         if (prev.find(c => c.id === callData.id)) return prev;

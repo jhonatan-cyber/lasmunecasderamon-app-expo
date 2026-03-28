@@ -123,7 +123,7 @@ export default function HorasExtrasScreen() {
 
     const renderItem = ({ item, index }: { item: HoraExtra; index: number }) => {
         const isPendiente = item.estado === 1;
-        const itemAccent = rotateColor(accentColor, (item.id_hora_extra % 10) * 36);
+        const hourLabel = item.hora ? `${item.hora} hrs` : null;
 
         return (
             <MotiView
@@ -133,42 +133,46 @@ export default function HorasExtrasScreen() {
             >
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.cardHeader}>
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
-                        </View>
+                        <Text style={[styles.cardTitle, { color: textPrimary }]}>Hora Extra</Text>
                         <View style={[
                             styles.statusBadge,
-                            { backgroundColor: isPendiente ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') : (isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE') }
+                            {
+                                backgroundColor: isPendiente
+                                    ? (isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2')
+                                    : (isDark ? 'rgba(255,255,255,0.10)' : '#E5E7EB')
+                            }
                         ]}>
                             <Text style={[
                                 styles.statusText,
-                                { color: isPendiente ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }
+                                { color: isPendiente ? '#EF4444' : textPrimary }
                             ]}>
-                                {isPendiente ? 'Por cobrar' : 'Cobrado'}
+                                {isPendiente ? 'Por cobrar' : 'Pagado'}
                             </Text>
                         </View>
                     </View>
 
                     <View style={styles.cardBody}>
                         <View style={styles.dateRow}>
-                            <Ionicons name="calendar-outline" size={16} color={textSecondary} />
-                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                            {item.hora ? (
-                                <>
-                                    <Ionicons name="time-outline" size={16} color={textSecondary} style={{ marginLeft: 12 }} />
-                                    <Text style={[styles.dateText, { color: textSecondary }]}>{item.hora}</Text>
-                                </>
+                            <View style={styles.infoInline}>
+                                <Ionicons name="calendar-outline" size={15} color={textSecondary} />
+                                <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
+                            </View>
+                            {hourLabel ? (
+                                <View style={styles.infoInline}>
+                                    <Ionicons name="time-outline" size={15} color={textSecondary} />
+                                    <Text style={[styles.dateText, { color: textPrimary }]}>{hourLabel}</Text>
+                                </View>
                             ) : null}
                         </View>
 
                         <View style={styles.amountsRow}>
-                            <View style={styles.amountItem}>
+                            <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto/hr</Text>
                                 <Text style={[styles.amountValue, { color: textPrimary }]}>${(item.monto || 0).toLocaleString()}</Text>
                             </View>
-                            <View style={styles.amountItem}>
+                            <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
                                 <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: isPendiente ? itemAccent : accentColor }]}>${(item.total || 0).toLocaleString()}</Text>
+                                <Text style={[styles.amountValue, { color: isPendiente ? '#EF4444' : textPrimary }]}>${(item.total || 0).toLocaleString()}</Text>
                             </View>
                         </View>
 
@@ -297,19 +301,24 @@ const styles = StyleSheet.create({
     filterButton: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: 'center', borderWidth: 1 },
     filterText: { fontSize: 11, fontWeight: '600' },
     listContent: { paddingHorizontal: 16, paddingBottom: 20 },
-    card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    indexBadge: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-    indexText: { fontSize: 14, fontWeight: '700' },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
-    statusText: { fontSize: 12, fontWeight: '600' },
+    card: {
+        borderRadius: 18,
+        padding: 16,
+        marginTop: 12,
+        borderWidth: 1,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 12 },
+    cardTitle: { fontSize: 15, fontWeight: '900', letterSpacing: -0.2, flex: 1 },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
+    statusText: { fontSize: 11, fontWeight: '800' },
     cardBody: {},
-    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-    dateText: { fontSize: 14 },
-    amountsRow: { flexDirection: 'row', justifyContent: 'space-around' },
-    amountItem: { alignItems: 'center' },
-    amountLabel: { fontSize: 11, fontWeight: '600', marginBottom: 2 },
-    amountValue: { fontSize: 18, fontWeight: '700' },
+    dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' },
+    infoInline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    dateText: { fontSize: 13, fontWeight: '700' },
+    amountsRow: { flexDirection: 'row', gap: 10 },
+    amountItem: { flex: 1, alignItems: 'flex-start', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 14 },
+    amountLabel: { fontSize: 11, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase' },
+    amountValue: { fontSize: 18, fontWeight: '900' },
     paymentRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
     paymentText: { fontSize: 12 },
     errorCard: { marginHorizontal: 16, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
@@ -319,5 +328,3 @@ const styles = StyleSheet.create({
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });
-
-

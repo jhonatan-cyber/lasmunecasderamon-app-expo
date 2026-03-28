@@ -5,6 +5,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface CalendarEvent {
     date: string;
+    type?: string;
     [key: string]: any;
 }
 
@@ -23,6 +24,44 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
 
     const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const typeColors: Record<string, string> = {
+        asistencia: '#3B82F6',
+        anticipo: '#EF4444',
+        propina: '#F59E0B',
+        hora_extra: '#8B5CF6',
+        comision: '#10B981',
+        servicio: accentColor,
+        gratificacion: '#EC4899',
+    };
+
+    const getDateKey = useCallback((value: string) => {
+        if (!value) return '';
+        const normalized = value.replace(' ', 'T');
+        const [datePart] = normalized.split('T');
+        if (datePart) return datePart;
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return '';
+        return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    }, []);
+
+    const eventsByDate = useMemo(() => {
+        const map = new Map<string, string[]>();
+
+        events.forEach((event) => {
+            const dateKey = getDateKey(event.date);
+            if (!dateKey) return;
+
+            const type = event.type || 'otro';
+            const currentTypes = map.get(dateKey) || [];
+            if (!currentTypes.includes(type)) {
+                currentTypes.push(type);
+                map.set(dateKey, currentTypes);
+            }
+        });
+
+        return map;
+    }, [events, getDateKey]);
 
     const calendarDays = useMemo(() => {
         const days = [];
@@ -44,12 +83,10 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
         return days;
     }, [currentMonth]);
 
-    const hasEvent = useCallback((day: number, month: number, year: number) => {
-        return events.some(e => {
-            const d = new Date(e.date);
-            return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
-        });
-    }, [events]);
+    const getEventTypes = useCallback((day: number, month: number, year: number) => {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        return eventsByDate.get(dateStr) || [];
+    }, [eventsByDate]);
 
     const isDateSelected = useCallback((day: number, month: number, year: number) => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -97,7 +134,9 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
                 {calendarDays.map((d, i) => {
                     const isSelected = isDateSelected(d.day, d.month, d.year);
                     const isToday = new Date().getDate() === d.day && new Date().getMonth() === d.month && new Date().getFullYear() === d.year;
-                    const hasEvnt = hasEvent(d.day, d.month, d.year);
+                    const eventTypes = getEventTypes(d.day, d.month, d.year);
+                    const hasEvnt = eventTypes.length > 0;
+                    const visibleEventTypes = eventTypes.slice(0, 3);
 
                     return (
                         <Pressable
@@ -110,10 +149,36 @@ export const PremiumCalendar = ({ events, selectedDates, onDateToggle }: Premium
                             <Text style={[styles.dayText, { color: d.current ? textPrimary : textSecondary }, isSelected && { color: '#FFF' }, isToday && !isSelected && { color: accentColor, fontWeight: 'bold' }]}>
                                 {d.day}
                             </Text>
-                            {hasEvnt && <View style={[styles.eventDot, { backgroundColor: isSelected ? '#FFF' : accentColor }]} />}
+                            {hasEvnt && (
+                                <View style={styles.eventDotsRow}>
+                                    {visibleEventTypes.map((type, index) => (
+                                        <View
+                                            key={`${type}-${index}`}
+                                            style={[
+                                                styles.eventDot,
+                                                { backgroundColor: isSelected ? '#FFF' : (typeColors[type] || accentColor) }
+                                            ]}
+                                        />
+                                    ))}
+                                    {eventTypes.length > visibleEventTypes.length && (
+                                        <View style={[styles.eventDot, styles.eventDotMore, { backgroundColor: isSelected ? '#FFF' : textSecondary }]} />
+                                    )}
+                                </View>
+                            )}
                         </Pressable>
                     );
                 })}
+            </View>
+
+            <View style={styles.legend}>
+                {Object.entries(typeColors).map(([type, color]) => (
+                    <View key={type} style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: color }]} />
+                        <Text style={[styles.legendText, { color: textSecondary }]}>
+                            {type === 'hora_extra' ? 'Hora extra' : type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Text>
+                    </View>
+                ))}
             </View>
         </View>
     );
@@ -130,6 +195,12 @@ const styles = StyleSheet.create({
     daysGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around' },
     dayCell: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 12, marginVertical: 4 },
     dayText: { fontSize: 14, fontWeight: '600' },
-    eventDot: { width: 4, height: 4, borderRadius: 2, position: 'absolute', bottom: 6 },
+    eventDotsRow: { position: 'absolute', bottom: 6, flexDirection: 'row', gap: 3 },
+    eventDot: { width: 4, height: 4, borderRadius: 2 },
+    eventDotMore: { opacity: 0.8 },
+    legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    legendDot: { width: 8, height: 8, borderRadius: 4 },
+    legendText: { fontSize: 11, fontWeight: '600' },
 });
 

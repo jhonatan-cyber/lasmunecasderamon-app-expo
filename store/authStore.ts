@@ -204,7 +204,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     payload.codigo = codigo;
                 }
 
-                const response = await apiClient('/login', {
+                const response = await apiClient('/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
@@ -231,7 +231,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     const hour = now.getHours();
                     if (hour >= 21 && hour < 23) {
                         try {
-                            await apiClient('/asistencia/registrar', {
+                            await apiClient('/attendance/register', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ qr_token: user.qr_token }),
@@ -251,7 +251,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         logout: async () => {
             try {
-                await apiClient('/logout', { method: 'POST' });
+                await apiClient('/auth/logout', { method: 'POST' });
             } catch (e) {
                 console.error('API Logout failed:', e);
             }

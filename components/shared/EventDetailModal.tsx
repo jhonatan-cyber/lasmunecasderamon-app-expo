@@ -18,7 +18,7 @@ interface EventDetailModalProps {
     loadingDetail: boolean;
     onClose: () => void;
     getEventLabel: (event: any) => string;
-    getStatusLabel: (status: any) => string;
+    getStatusLabel: (event: any) => string;
 }
 
 export const EventDetailModal: React.FC<EventDetailModalProps> = ({
@@ -37,6 +37,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+    const formatAmount = (value: any) =>
+        Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     const getIconName = (type: string) => {
         switch (type) {
@@ -82,7 +84,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                             {getEventLabel(event).toUpperCase()}
                         </Text>
                         <Text style={[styles.detailAmount, { color: iconColor }]}>
-                            {isAnticipo ? '-' : '+'}${event?.amount.toLocaleString()}
+                            {isAnticipo ? '-' : '+'}${formatAmount(event?.amount)}
                         </Text>
 
                         <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -114,10 +116,10 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                             </View>
                         )}
 
-                        {event?.codigo && event.codigo !== 'TIPS' && (
+                        {(event?.type === 'venta' || event?.type === 'servicio') && event?.codigo && (
                             <View style={styles.detailRow}>
                                 <Text style={[styles.detailLabel, { color: textSecondary }]}>Código</Text>
-                                <Text style={[styles.detailValue, { color: textPrimary }]}>{event.codigo}</Text>
+                                <Text style={[styles.detailValue, { color: textPrimary }]}>{String(event.codigo)}</Text>
                             </View>
                         )}
 
@@ -125,7 +127,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
                             <View style={[styles.statusBadgeDetail, { backgroundColor: `${(event?.estado === 3 ? '#EF4444' : '#10B981')}20` }]}>
                                 <Text style={[styles.statusTextDetail, { color: event?.estado === 3 ? '#EF4444' : '#10B981' }]}>
-                                    {event ? getStatusLabel(event.estado) : ''}
+                                    {event ? getStatusLabel(event) : ''}
                                 </Text>
                             </View>
                         </View>
@@ -144,22 +146,22 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                     <>
                                         <View style={styles.detailRow}>
                                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Sueldo</Text>
-                                            <Text style={[styles.detailValue, { color: textPrimary }]}>${Number(eventDetail.sueldo).toLocaleString()}</Text>
+                                            <Text style={[styles.detailValue, { color: textPrimary }]}>${formatAmount(eventDetail.sueldo)}</Text>
                                         </View>
                                         <View style={styles.detailRow}>
                                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Aporte</Text>
-                                            <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${Number(eventDetail.aporte).toLocaleString()}</Text>
+                                            <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${formatAmount(eventDetail.aporte)}</Text>
                                         </View>
                                         {Number(eventDetail.descuento_total) > 0 && (
                                             <View style={styles.detailRow}>
                                                 <Text style={[styles.detailLabel, { color: textSecondary }]}>Desc. habitación ({eventDetail.semanas_con_descuento} sem.)</Text>
-                                                <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${Number(eventDetail.descuento_total).toLocaleString()}</Text>
+                                                <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${formatAmount(eventDetail.descuento_total)}</Text>
                                             </View>
                                         )}
                                         <View style={[styles.divider, { backgroundColor: borderColor }]} />
                                         <View style={styles.detailRow}>
                                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Neto por asistencia</Text>
-                                            <Text style={[styles.detailValue, { color: '#10B981' }]}>${Number(eventDetail.neto).toLocaleString()}</Text>
+                                            <Text style={[styles.detailValue, { color: '#10B981' }]}>${formatAmount(eventDetail.neto)}</Text>
                                         </View>
                                     </>
                                 )}
@@ -172,7 +174,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                         </View>
                                         <View style={styles.detailRow}>
                                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Monto</Text>
-                                            <Text style={[styles.detailValue, { color: '#EF4444' }]}>${Number(eventDetail.monto).toLocaleString()}</Text>
+                                            <Text style={[styles.detailValue, { color: '#EF4444' }]}>${formatAmount(eventDetail.monto)}</Text>
                                         </View>
                                     </>
                                 )}
@@ -227,7 +229,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                         <View style={styles.detailRow}>
                                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Propina total</Text>
                                             <Text style={[styles.detailValue, { color: '#10B981' }]}>
-                                                ${eventDetail.propinas_detalle.reduce((s: number, p: any) => s + Number(p.monto), 0).toLocaleString()}
+                                                ${formatAmount(eventDetail.propinas_detalle.reduce((s: number, p: any) => s + Number(p.monto), 0))}
                                             </Text>
                                         </View>
                                         <View style={styles.detailRow}>
@@ -245,7 +247,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                         {eventDetail.anfitrionas.map((a: any, i: number) => (
                                             <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
                                                 <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{a.nick || a.nombre}</Text>
-                                                <Text style={[styles.detailValue, { color: '#10B981' }]}>${Number(a.comision || 0).toLocaleString()}</Text>
+                                                <Text style={[styles.detailValue, { color: '#10B981' }]}>${formatAmount(a.comision || 0)}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -257,7 +259,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                         {eventDetail.detalles.map((d: any, i: number) => (
                                             <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
                                                 <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{d.cantidad}x {d.producto_nombre}</Text>
-                                                <Text style={[styles.detailValue, { color: textSecondary }]}>${Number(d.subtotal).toLocaleString()}</Text>
+                                                <Text style={[styles.detailValue, { color: textSecondary }]}>${formatAmount(d.subtotal)}</Text>
                                             </View>
                                         ))}
                                     </View>

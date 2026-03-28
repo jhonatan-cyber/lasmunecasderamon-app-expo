@@ -29,6 +29,7 @@ interface PremiumLiquidationCardProps {
   title?: string;
   subtitle?: string;
   totalLabel?: string;
+  totalAmount?: number;
   onExportSuccess?: () => void;
 }
 
@@ -38,6 +39,7 @@ export function PremiumLiquidationCard({
   title = 'Total a cobrar',
   subtitle = 'Resumen de Actividad',
   totalLabel = 'Total a cobrar',
+  totalAmount,
   onExportSuccess
 }: PremiumLiquidationCardProps) {
   const { accentColor, isDark } = useAccentColor();
@@ -70,6 +72,13 @@ export function PremiumLiquidationCard({
       return sum + amount;
     }, 0);
   }, [events]);
+
+  const totalDisplayed = useMemo(() => {
+    if (typeof totalAmount === 'number' && !Number.isNaN(totalAmount)) {
+      return totalAmount;
+    }
+    return totalCalculated;
+  }, [totalAmount, totalCalculated]);
 
   const handleExportReport = useCallback(async () => {
     try {
@@ -138,7 +147,7 @@ export function PremiumLiquidationCard({
                   .join('')}
                 <tr class="total-row">
                   <td colspan="3" class="total-label">${totalLabel.toUpperCase()}</td>
-                  <td class="total-value" style="text-align: right;">$${totalCalculated.toLocaleString()}</td>
+                  <td class="total-value" style="text-align: right;">$${totalDisplayed.toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
@@ -192,7 +201,7 @@ export function PremiumLiquidationCard({
       console.error('Error generating PDF:', error);
       showAlert('Error', 'No se pudo generar el reporte PDF correctamente.', 'danger');
     }
-  }, [accentColor, events, onExportSuccess, title, totalCalculated, totalLabel, user]);
+  }, [accentColor, events, onExportSuccess, title, totalCalculated, totalDisplayed, totalLabel, user]);
 
   return (
     <View style={styles.container}>
@@ -204,7 +213,7 @@ export function PremiumLiquidationCard({
         <View style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}>
           <Text style={[styles.label, { color: textSecondary }]}>{totalLabel}</Text>
           <Text style={[styles.value, { color: '#10B981' }]}>
-            ${totalCalculated.toLocaleString()}
+            ${totalDisplayed.toLocaleString()}
           </Text>
         </View>
         <Pressable

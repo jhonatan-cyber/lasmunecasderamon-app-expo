@@ -17,6 +17,7 @@ import { Timer } from '@/context/TimerContext';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
 import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import { TimeSelector } from '@/components/ui/TimeSelector';
+import { parseDateSafe } from '@/utils/timeUtils';
 
 interface Anfitriona {
     id_usuario: number;
@@ -175,14 +176,14 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         try {
             const numericPrecio = parseInt(precioServicio.replace(/\./g, '')) || 0;
             const numAnfitrionas = anfitrionasSeleccionadas.length;
-            const subTotalServicio = numericPrecio * numAnfitrionas;
+            const precioServicioTotal = numericPrecio * numAnfitrionas;
             const precioHabitacionTotal = precioHabitacionSinComision * numAnfitrionas;
             let calculatedIva = 0;
             if (metodoPago === 'tarjeta') {
-                calculatedIva = Math.floor(subTotalServicio * 0.20);
+                calculatedIva = Math.floor(precioServicioTotal * 0.20);
             }
 
-            let totalGeneral = subTotalServicio + precioHabitacionTotal + calculatedIva;
+            let totalGeneral = precioServicioTotal + precioHabitacionTotal + calculatedIva;
 
             if (metodoPago === 'tarjeta') {
                 const totalRedondeado = Math.ceil(totalGeneral / 5000) * 5000;
@@ -196,13 +197,14 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 cliente_id: timer.cliente_id || null,
                 habitacion_id: timer.roomId,
                 precio_habitacion: precioHabitacionTotal,
-                precio_servicio: numericPrecio,
+                precio_servicio: precioServicioTotal,
                 iva: calculatedIva,
-                sub_total: subTotalServicio + precioHabitacionTotal,
+                sub_total: precioServicioTotal,
                 total: totalGeneral,
                 tiempo: timeVal,
                 metodo_pago: metodoPago,
-                usuarios: anfitrionasSeleccionadas
+                usuarios: anfitrionasSeleccionadas,
+                fecha_crea: parseDateSafe(new Date()).toISOString()
             };
             const res = await apiClient('/servicios/temporal', {
                 method: 'POST',

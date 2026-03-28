@@ -194,7 +194,7 @@ export default function NuevaCuentaScreen() {
         try {
             const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.all([
                 apiClient('/cashregister/status'),
-                apiClient('/users?anfitrionas=1'),
+                apiClient('/anfitrionas'),
                 apiClient('/rooms'),
                 apiClient('/clients'),
                 apiClient('/categories'),
@@ -202,7 +202,7 @@ export default function NuevaCuentaScreen() {
 
             const fetchedData: any = {
                 cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-                anfitrionas: anfitrionasRes.success ? anfitrionasRes.data : [],
+                anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
                 habitaciones: roomsRes.success ? roomsRes.data : [],
                 categories: categoriesRes.success ? (categoriesRes.data || []) : []
             };

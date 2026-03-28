@@ -48,7 +48,7 @@ export default function ClientesScreen() {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
     const textPrimary = isDark ? "#FFFFFF" : "#111827";
-    const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+    const textSecondary = isDark ? "#FFFFFF" : "#6B7280";
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -313,7 +313,11 @@ export default function ClientesScreen() {
         const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
 
         return (
-            <View style={[styles.clientCard, { backgroundColor: bg, borderColor }]}>
+            <View style={[
+                styles.clientCard,
+                !isTablet && styles.clientCardMobile,
+                { backgroundColor: bg, borderColor }
+            ]}>
                 <View style={styles.cardHeader}>
                     {/* Main Content Area */}
                     <View style={styles.clientInfoMain}>
@@ -342,7 +346,7 @@ export default function ClientesScreen() {
                             <View style={[styles.balancePill, { backgroundColor: item.saldo > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(155,155,155,0.05)', borderColor: item.saldo > 0 ? '#10B98130' : 'transparent' }]}>
                                 <Ionicons name="wallet-outline" size={14} color={item.saldo > 0 ? '#10B981' : textSecondary} />
                                 <View>
-                                    <Text style={styles.pillLabel}>SALDO</Text>
+                                    <Text style={[styles.pillLabel, { color: isDark ? '#FFFFFF' : '#111827' }]}>SALDO</Text>
                                     <Text style={[styles.balanceValue, { color: item.saldo > 0 ? '#10B981' : textPrimary }]}>
                                         ${(Number(item.saldo) || 0).toLocaleString()}
                                     </Text>
@@ -441,14 +445,14 @@ export default function ClientesScreen() {
                     <View style={styles.summaryContainer}>
                         <View style={[styles.summaryPill, { backgroundColor: '#10B98110' }]}>
                              <Ionicons name="wallet-outline" size={14} color="#10B981" />
-                             <Text style={styles.summaryLabel}>TOTAL SALDO</Text>
+                             <Text style={[styles.summaryLabel, { color: isDark ? '#FFFFFF' : '#111827' }]}>TOTAL SALDO</Text>
                              <Text style={[styles.summaryValue, { color: '#10B981' }]}>
                                 ${Number(totals.totalSaldo || 0).toLocaleString()}
                              </Text>
                         </View>
                         <View style={[styles.summaryPill, { backgroundColor: '#EF444410' }]}>
                              <Ionicons name="alert-circle-outline" size={14} color="#EF4444" />
-                             <Text style={styles.summaryLabel}>TOTAL DEUDA</Text>
+                             <Text style={[styles.summaryLabel, { color: isDark ? '#FFFFFF' : '#111827' }]}>TOTAL DEUDA</Text>
                              <Text style={[styles.summaryValue, { color: '#EF4444' }]}>
                                 ${Number(totals.totalDeuda || 0).toLocaleString()}
                              </Text>
@@ -468,7 +472,7 @@ export default function ClientesScreen() {
                         renderItem={renderClientCard}
                         keyExtractor={(item: Client) => String(item.id)}
                         estimatedItemSize={180}
-                        numColumns={2}
+                        numColumns={isTablet ? 2 : 1}
                         contentContainerStyle={styles.listContent}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchClients(true)} tintColor={accentColor} />}
                         ListEmptyComponent={() => (
@@ -979,6 +983,12 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 }, 
         shadowOpacity: 0.05, 
         shadowRadius: 10 
+    },
+    clientCardMobile: {
+        flex: undefined,
+        width: '100%',
+        marginHorizontal: 0,
+        paddingRight: 10,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'stretch', flex: 1 },
     clientInfoMain: { flex: 1, paddingRight: 4 },

@@ -132,10 +132,15 @@ const logApiCall = (endpoint: string, attempt: number, maxRetries: number, statu
 const getBaseUrl = () => {
     // Production URL (Punycode for lasmuñecasderamon.com)
     const PROD_URL = 'https://xn--lasmuecasderamon-bub.com';
+    const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
     // If not in development mode, use production URL
     if (!__DEV__) {
-        return PROD_URL;
+        return envUrl || PROD_URL;
+    }
+
+    if (envUrl) {
+        return envUrl;
     }
 
     // 1. DYNAMIC FOR WEB: Detects the current hostname of the browser
@@ -145,8 +150,21 @@ const getBaseUrl = () => {
     }
 
     // 2. DYNAMIC FOR NATIVE: Asks Expo for the host laptop's IP
-    const debuggerHost = (Constants as any).expoConfig?.hostUri;
-    const localIP = debuggerHost?.split(':')[0];
+    const hostCandidates = [
+        (Constants as any)?.expoConfig?.hostUri,
+        (Constants as any)?.expoGoConfig?.debuggerHost,
+        (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost,
+        (Constants as any)?.manifest?.debuggerHost,
+        (Constants as any)?.manifest?.hostUri,
+        (Constants as any)?.linkingUri,
+    ].filter(Boolean) as string[];
+
+    const extractHost = (value: string) => {
+        const normalized = value.replace(/^[a-zA-Z]+:\/\//, '');
+        return normalized.split('/')[0]?.split(':')[0];
+    };
+
+    const localIP = hostCandidates.map(extractHost).find(Boolean);
 
     if (localIP) {
         return `http://${localIP}:3000`;

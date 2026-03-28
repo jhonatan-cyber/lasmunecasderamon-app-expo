@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '@/api/client';
 import { AttendanceCodeDisplay } from '@/components/anfitriona/AttendanceCodeDisplay';
@@ -10,9 +10,9 @@ interface PremiumUserProfileProps {
 
 export const getStatusColor = (status: number, isDark: boolean = true) => {
     switch (status) {
-        case 1: return '#10B981'; // Disponible
-        case 2: return '#EF4444'; // Ocupado/a
-        case 3: return '#F59E0B'; // Descanso
+        case 1: return '#10B981';
+        case 2: return '#EF4444';
+        case 3: return '#F59E0B';
         default: return isDark ? '#9CA3AF' : '#6B7280';
     }
 };
@@ -27,10 +27,9 @@ export const getStatusLabel = (status: number) => {
 };
 
 export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps) => {
-    // Forzar siempre blanco para el header premium
+    const [imageError, setImageError] = useState(false);
     const textPrimary = '#FFFFFF';
     const textSecondary = 'rgba(255,255,255,0.7)';
-    const cardBg = 'rgba(255,255,255,0.1)';
 
     const lastName =
         user?.lastName ||
@@ -38,35 +37,41 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
         user?.apellido ||
         '';
 
-    const baseName = user?.name || user?.nick || user?.username || 'Usuario';
-    const displayName = user?.name ? [user?.name, lastName].filter(Boolean).join(' ') : baseName;
-    const nick = user?.nick || user?.username || '';
-    const showNick = Boolean(nick) && nick !== user?.name;
+    const fullName = [user?.name, lastName].filter(Boolean).join(' ').trim() || user?.username || 'Usuario';
+    const nick = user?.nick || user?.username || fullName;
+    const showFullName = Boolean(fullName) && fullName !== nick;
+
+    const avatarUri = useMemo(() => {
+        if (imageError) {
+            return `${BASE_URL}/img/users/default.png`;
+        }
+
+        if (user?.foto) {
+            return user.foto.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user.foto}`;
+        }
+
+        return `${BASE_URL}/img/users/default.png`;
+    }, [imageError, user?.foto]);
 
     return (
         <View style={styles.headerUser}>
-            <View style={[styles.avatarContainer, { borderColor: getStatusColor(userStatus, true) }]}>
-                {user?.foto ? (
-                    <Image
-                        source={{ uri: user.foto.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user.foto}` }}
-                        style={styles.avatar}
-                    />
-                ) : (
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: cardBg }]}>
-                        <Text style={styles.avatarEmoji}>👤</Text>
-                    </View>
-                )}
+            <View style={styles.avatarContainer}>
+                <Image
+                    source={{ uri: avatarUri }}
+                    style={styles.avatar}
+                    onError={() => setImageError(true)}
+                />
             </View>
             <View style={styles.headerInfo}>
                 <View style={styles.nameHeaderContainer}>
                     <Text style={[styles.username, styles.usernameText, { color: textPrimary }]} numberOfLines={1}>
-                        {displayName}
+                        @{nick}
                     </Text>
                     <AttendanceCodeDisplay />
                 </View>
-                {showNick && (
+                {showFullName && (
                     <Text style={[styles.nickText, { color: textSecondary }]} numberOfLines={1}>
-                        @{nick}
+                        {fullName}
                     </Text>
                 )}
                 <View style={styles.statusRow}>
@@ -90,20 +95,13 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 24,
+        backgroundColor: 'rgba(255,255,255,0.12)',
         overflow: 'hidden',
-        borderWidth: 2,
     },
     avatar: {
         width: '100%',
         height: '100%',
-    },
-    avatarPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarEmoji: {
-        fontSize: 32,
+        borderRadius: 24,
     },
     headerInfo: {
         flex: 1,
@@ -137,7 +135,8 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     statusDot: {
-        width: 8, height: 8,
+        width: 8,
+        height: 8,
         borderRadius: 4,
         marginRight: 6,
     },
@@ -146,5 +145,3 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 });
-
-

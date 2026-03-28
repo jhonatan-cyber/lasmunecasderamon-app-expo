@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Modal, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { parseDateSafe } from '@/utils/timeUtils';
 
 interface ServiceModalProps {
     visible: boolean;
@@ -50,6 +51,29 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
 }) => {
     if (!selectedService) return null;
 
+    const safeMoney = (value: any) => {
+        if (value === null || value === undefined || value === '') return 0;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        if (typeof value === 'string') {
+            const normalized = value.trim().replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.');
+            const parsed = Number(normalized);
+            if (Number.isFinite(parsed)) return parsed;
+            const fallback = parseFloat(value.replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(fallback) ? fallback : 0;
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const fechaServicio = parseDateSafe(selectedService.fecha_solicitud || selectedService.fecha_crea || selectedService.created_at || selectedService.startTime);
+    const totalBase = safeMoney(selectedService.total) || safeMoney(selectedService.monto);
+    const subtotalServicio = safeMoney(selectedService.precio_servicio) || safeMoney(selectedService.sub_total) || totalBase;
+    const ivaActual = safeMoney(selectedService.iva ?? 0);
+    const subtotalHabitacion = safeMoney(
+        safeMoney(selectedService.precio_habitacion) || safeMoney(selectedService.precioHabitacion) || Math.max(0, totalBase - subtotalServicio - ivaActual)
+    );
+    const subtotalGeneral = subtotalServicio + subtotalHabitacion;
+    const totalFinal = totalBase > 0 ? totalBase : subtotalGeneral + ivaActual;
+
     return (
         <Modal
             animationType="fade"
@@ -76,7 +100,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
 
                         <View style={[styles.infoRow, { marginBottom: 12 }]}>
                             <Ionicons name="bed-outline" size={isTablet ? 24 : 20} color={accentColor} />
-                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Habitación: {selectedService.habitacion_nombre}</Text>
+                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Habitacion: {selectedService.habitacion_nombre || selectedService.habitacion_numero || 'Servicio de barra'}</Text>
                         </View>
                         <View style={[styles.infoRow, { marginBottom: 12 }]}>
                             <Ionicons name="timer-outline" size={isTablet ? 24 : 20} color={accentColor} />
@@ -84,7 +108,13 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                         </View>
                         <View style={[styles.infoRow, { marginBottom: 12 }]}>
                             <Ionicons name="person-outline" size={isTablet ? 24 : 20} color={accentColor} />
-                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado por: {selectedService.solicitado_por_nombre}</Text>
+                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>Solicitado por: {selectedService.solicitado_por_nombre || selectedService.solicitante_name || 'Desconocido'}</Text>
+                        </View>
+                        <View style={[styles.infoRow, { marginBottom: 12 }]}>
+                            <Ionicons name="calendar-outline" size={isTablet ? 24 : 20} color={accentColor} />
+                            <Text style={[styles.infoText, { color: textPrimary, marginLeft: 8, fontSize: isTablet ? 18 : 14 }]}>
+                                Fecha: {fechaServicio ? fechaServicio.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '-'}
+                            </Text>
                         </View>
                         <View style={[styles.infoRow, { marginBottom: 8 }]}>
                             <Ionicons name="people-outline" size={isTablet ? 24 : 20} color={accentColor} />
@@ -216,7 +246,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                         )}
 
                         {selectedClient && (metodoPago === 'prepago' || (!metodoPago && selectedService.metodo_pago === 'prepago')) && (() => {
-                            const subtotal = Math.floor((selectedService.precio_servicio || 0) * (selectedService.anfitrionas_ids?.length || 1)) + Math.floor(selectedService.precio_habitacion || 0) + Math.floor(selectedService.iva || 0);
+                            const subtotal = Math.floor(subtotalGeneral) + Math.floor(ivaActual);
                             const saldo = Number(selectedClient.saldo || 0);
                             const prepago = Math.min(subtotal, saldo);
                             const restante = Math.max(0, subtotal - saldo);
@@ -255,27 +285,27 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                                 <View style={styles.productInfoCol}>
                                     <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>Precio Servicio</Text>
                                 </View>
-                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor((selectedService.precio_servicio || 0) * (selectedService.anfitrionas_ids?.length || 1)).toLocaleString('de-DE')}</Text>
+                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(subtotalServicio).toLocaleString('de-DE')}</Text>
                             </View>
                             <View style={styles.productDetailRow}>
                                 <View style={styles.productInfoCol}>
                                     <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>Precio Habitación</Text>
                                 </View>
-                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.precio_habitacion || 0).toLocaleString('de-DE')}</Text>
+                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(subtotalHabitacion).toLocaleString('de-DE')}</Text>
                             </View>
                             {(selectedService.iva || 0) > 0 && (
                                 <View style={styles.productDetailRow}>
                                     <View style={styles.productInfoCol}>
                                         <Text style={[styles.productName, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>IVA / Ajuste Tarjeta</Text>
                                     </View>
-                                    <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(selectedService.iva || 0).toLocaleString('de-DE')}</Text>
+                                    <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: isTablet ? 18 : 15 }]}>${Math.floor(ivaActual).toLocaleString('de-DE')}</Text>
                                 </View>
                             )}
                             <View style={[styles.productDetailRow, { borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', marginTop: 8, paddingTop: 12 }]}>
                                 <View style={styles.productInfoCol}>
                                     <Text style={[styles.productName, { color: textPrimary, fontWeight: '800', fontSize: isTablet ? 22 : 16 }]}>TOTAL</Text>
                                 </View>
-                                <Text style={[styles.productSubtotal, { color: accentColor, fontSize: isTablet ? 26 : 18, fontWeight: '900' }]}>${Math.floor(selectedService.total || 0).toLocaleString('de-DE')}</Text>
+                                <Text style={[styles.productSubtotal, { color: accentColor, fontSize: isTablet ? 26 : 18, fontWeight: '900' }]}>${Math.floor(totalFinal).toLocaleString('de-DE')}</Text>
                             </View>
                         </View>
                     </ScrollView>

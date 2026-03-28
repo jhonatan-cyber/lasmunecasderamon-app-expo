@@ -242,7 +242,7 @@ export default function NuevaVentaScreen() {
         try {
             const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] = await Promise.allSettled([
                 apiClient('/cashregister/status'),
-                apiClient('/users?anfitrionas=1'),
+                apiClient('/anfitrionas'),
                 apiClient('/rooms'),
                 apiClient('/clients'),
                 apiClient('/categories'),
@@ -257,7 +257,7 @@ export default function NuevaVentaScreen() {
             const fetchedData: any = {
                 // null = desconocido (request falló), true/false = confirmado por el servidor
                 cajaAbierta: cajaRes.status === 'fulfilled' ? (caja?.success && caja?.data?.hasOpenCaja) : null,
-                anfitrionas: anfitrionas?.success ? anfitrionas.data : [],
+                anfitrionas: Array.isArray(anfitrionas) ? anfitrionas : (anfitrionas?.success ? anfitrionas.data : []),
                 habitaciones: rooms?.success ? rooms.data : [],
                 categories: categories?.success ? (categories.data || []) : []
             };

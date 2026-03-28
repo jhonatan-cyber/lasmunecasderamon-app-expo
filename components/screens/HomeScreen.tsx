@@ -61,6 +61,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
     selectedDates,
     activeService,
     pendingCount,
+    payoutTotal,
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
@@ -100,7 +101,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
   const getEventLabel = (item: any) => {
     if (!item) return "";
-    const typeLabels: any = { comision: "Comisión", asistencia: "Asistencia", anticipo: "Anticipo", propina: "Propina", venta: "Venta", servicio: "Servicio", gratificacion: "Gratificación" };
+    const typeLabels: any = { comision: "Comisión", asistencia: "Asistencia", anticipo: "Anticipo", propina: "Propina", venta: "Venta", servicio: "Servicio", gratificacion: "Gratificación", hora_extra: "Hora Extra" };
     if (item.type === 'comision') return item.subType === 'venta' ? "Comisión de Venta" : "Comisión de Servicio";
     if (item.type === 'propina') return item.subType === 'venta' ? "Propina de Venta" : "Propina";
     return typeLabels[item.type] || item.type.toUpperCase();
@@ -173,7 +174,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <AnimatedScreen>
-          <View style={{ padding: 16 }}>
+          <View style={{ padding: role === 'cajero' ? 0 : 16 }}>
             {/* {role === 'cajero' && <PendingSolicitudesAlert isInline />} */}
 
             {role === 'anfitriona' && activeService && (
@@ -209,21 +210,23 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === 'cajero' && (
               <>
-                <CajeroStats stats={stats} />
-                <View style={{ marginTop: 20 }}>
-                  <CajeroActionGrid />
+                <CajeroStats stats={stats} fullWidth />
+                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+                  <CajeroActionGrid fullWidth />
                 </View>
               </>
             )}
 
-            <View style={{ marginTop: 20 }}>
-              <PremiumLiquidationCard user={user} events={events} />
+            <View style={{ marginTop: 20, paddingHorizontal: role === 'cajero' ? 16 : 0 }}>
+              <PremiumLiquidationCard user={user} events={events} totalAmount={payoutTotal} />
             </View>
 
-            <PremiumCalendar events={events} selectedDates={selectedDates} onDateToggle={(d) => {
-              const next = selectedDates.includes(d) ? selectedDates.filter((x: any) => x !== d) : [...selectedDates, d];
-              setSelectedDates(next);
-            }} />
+            {role !== 'cajero' && (
+              <PremiumCalendar events={events} selectedDates={selectedDates} onDateToggle={(d) => {
+                const next = selectedDates.includes(d) ? selectedDates.filter((x: any) => x !== d) : [...selectedDates, d];
+                setSelectedDates(next);
+              }} />
+            )}
           </View>
         </AnimatedScreen>
       </ScrollView>
@@ -258,7 +261,29 @@ export function HomeScreen({ role }: HomeScreenProps) {
         </View>
       </Modal>
 
-      <EventDetailModal visible={!!selectedEvent} event={selectedEvent} eventDetail={eventDetail} loadingDetail={loadingDetail} onClose={() => setSelectedEvent(null)} getEventLabel={getEventLabel} getStatusLabel={(s) => String(s)} />
+      <EventDetailModal
+        visible={!!selectedEvent}
+        event={selectedEvent}
+        eventDetail={eventDetail}
+        loadingDetail={loadingDetail}
+        onClose={() => setSelectedEvent(null)}
+        getEventLabel={getEventLabel}
+        getStatusLabel={(item) => {
+          const status = Number(item?.estado);
+          if (item?.type === 'anticipo') {
+            if (status === 0) return 'Pagado';
+            if (status === 1) return 'Confirmado';
+            if (status === 2) return 'Pendiente';
+            if (status === 3) return 'Rechazado';
+          }
+          if (status === 0) return 'Pagado';
+          if (status === 1) return 'Por cobrar';
+          if (status === 2) return 'Confirmado';
+          if (status === 3) return 'Rechazado';
+          if (status === 4) return 'Completado';
+          return String(item?.estado ?? '');
+        }}
+      />
       <RegistroAsistenciaModal visible={showAsistenciaModal} onClose={() => setShowAsistenciaModal(false)} onRegistered={() => onRefresh()} />
       <PremiumAlert {...alertConfig} onConfirm={() => { alertConfig.onConfirm?.(); setAlertConfig({ ...alertConfig, visible: false }); }} onCancel={() => setAlertConfig({ ...alertConfig, visible: false })} />
     </View>

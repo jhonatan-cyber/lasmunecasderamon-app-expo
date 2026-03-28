@@ -139,7 +139,8 @@ export default function AdministrativoScreen() {
         propina: "Propina",
         venta: "Venta",
         servicio: "Servicio",
-        gratificacion: "Gratificación"
+        gratificacion: "Gratificación",
+        hora_extra: "Hora Extra"
     };
 
     const getEventLabel = (item: any) => {
@@ -173,12 +174,24 @@ export default function AdministrativoScreen() {
         }
     };
 
-    const getStatusLabel = (status: any) => {
-        if (typeof status === 'string') return status.toUpperCase();
-        if (status === 1) return 'PENDIENTE';
-        if (status === 2) return 'CONFIRMADO';
-        if (status === 3) return 'RECHAZADO';
-        return 'COMPLETADO';
+    const getStatusLabel = (item: any) => {
+        if (typeof item?.estado === 'string') return item.estado;
+
+        const status = Number(item?.estado);
+
+        if (item?.type === 'anticipo') {
+            if (status === 0) return 'Pagado';
+            if (status === 1) return 'Confirmado';
+            if (status === 2) return 'Pendiente';
+            if (status === 3) return 'Rechazado';
+        }
+
+        if (status === 0) return 'Pagado';
+        if (status === 1) return 'Por cobrar';
+        if (status === 2) return 'Confirmado';
+        if (status === 3) return 'Rechazado';
+        if (status === 4) return 'Completado';
+        return String(item?.estado ?? '');
     };
 
     if (loading) {

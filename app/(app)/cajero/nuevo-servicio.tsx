@@ -26,6 +26,7 @@ import {
 import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { parseDateSafe } from "@/utils/timeUtils";
 
 type ServiceState = {
   loadingInitial: boolean;
@@ -176,7 +177,7 @@ export default function NuevoServicioScreen() {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all(
         [
           apiClient("/cashregister/status"),
-          apiClient("/users?anfitrionas=1"),
+          apiClient("/anfitrionas"),
           apiClient("/rooms"),
           apiClient("/clients"),
         ],
@@ -200,16 +201,26 @@ export default function NuevoServicioScreen() {
         });
       };
 
-      const rawAnfitrionas = anfitrionasRes.success ? anfitrionasRes.data : [];
+      const rawAnfitrionas = Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []);
       const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
       const rawClientes = fetchedClients;
+      const habitacionesNormalizadas = rawHabitaciones.map((room: any) => ({
+        ...room,
+        estado: room.estado ?? room.status ?? 0,
+        status: room.status ?? room.estado ?? 0,
+        precio: room.precio ?? room.price ?? 0,
+        price: room.price ?? room.precio ?? 0,
+        tiempo: room.tiempo ?? room.time ?? 0,
+        time: room.time ?? room.tiempo ?? 0,
+        nombre: room.nombre ?? room.name ?? `Habitación ${room.numero ?? room.id_habitacion ?? room.id ?? ''}`.trim(),
+      }));
 
       dispatch({
         type: 'SET_INITIAL_DATA',
         payload: {
           cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
           anfitrionas: deduplicate(rawAnfitrionas, 'id_usuario'),
-          habitaciones: deduplicate(rawHabitaciones, 'id_habitacion'),
+          habitaciones: deduplicate(habitacionesNormalizadas, 'id_habitacion'),
           clientes: deduplicate(rawClientes, 'id_cliente'),
         }
       });
@@ -243,37 +254,24 @@ export default function NuevoServicioScreen() {
   const totals = useMemo(() => {
     const numAnfitrionas = selectedHostesses.length || 1;
     const numClientes = selectedClients.length || 1;
-    const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
 
     const multiplicadorTiempo = selectedHabitacion?.tiempo === 60 ? 2 : 1;
+    const multiplicadorServicio = numAnfitrionas;
+    const multiplicadorHabitacion = Math.max(numAnfitrionas, numClientes);
+    const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
 
-    let multiplicadorServicio = numAnfitrionas;
-    let multiplicadorHabitacion = numAnfitrionas;
-
-    if (tieneComision) {
-      multiplicadorServicio = 1;
-      multiplicadorHabitacion = 1;
-    } else if (numClientes > numAnfitrionas) {
-      multiplicadorServicio = numClientes;
-      multiplicadorHabitacion = numClientes;
-    }
-
-    const precioServicioBase = numericPrecioServicio * multiplicadorTiempo;
-    const precioHabitacionBase =
-      (selectedHabitacion?.precio || 0) * multiplicadorTiempo;
-
-    const subTotalServicio = precioServicioBase * multiplicadorServicio;
-    const subTotalHabitacion = precioHabitacionBase * multiplicadorHabitacion;
-    const subTotalGeneral = subTotalServicio + subTotalHabitacion;
+    const precioServicioActual = numericPrecioServicio * multiplicadorTiempo * multiplicadorServicio;
+    const precioHabitacionActual =
+      (selectedHabitacion?.precio || 0) * multiplicadorTiempo * multiplicadorHabitacion;
 
     let calculatedIva = 0;
-    if (metodoPago === "tarjeta" && !tieneComision) {
-      calculatedIva = Math.floor(subTotalServicio * 0.2);
+    if (metodoPago === "tarjeta") {
+      calculatedIva = Math.floor(precioServicioActual * 0.2);
     }
 
-    let currentTotal = subTotalGeneral + calculatedIva;
+    let currentTotal = precioServicioActual + precioHabitacionActual + calculatedIva;
 
-    if (metodoPago === "tarjeta" && !tieneComision) {
+    if (metodoPago === "tarjeta") {
       const totalRedondeado = Math.ceil(currentTotal / 5000) * 5000;
       const excedente = totalRedondeado - currentTotal;
       currentTotal = totalRedondeado;
@@ -281,10 +279,11 @@ export default function NuevoServicioScreen() {
     }
 
     return {
-      subTotal: subTotalGeneral,
+      subTotal: precioServicioActual,
       iva: calculatedIva,
       total: currentTotal,
-      precioHabitacionActual: subTotalHabitacion,
+      precioHabitacionActual,
+      precioServicioActual,
       comisionPorAnfitriona: (tieneComision && selectedHostesses.length > 0) 
         ? Math.floor(selectedHabitacion.comision_anfitriona / selectedHostesses.length) 
         : (selectedHabitacion?.comision_anfitriona || 0),
@@ -407,11 +406,12 @@ export default function NuevoServicioScreen() {
         habitacion_id:
           selectedHabitacion.id_habitacion || selectedHabitacion.id,
         precio_habitacion: totals.precioHabitacionActual,
-        precio_servicio: numericPrecioServicio,
+        precio_servicio: totals.precioServicioActual,
         iva: totals.iva,
         sub_total: totals.subTotal,
         total: totals.total,
         tiempo: selectedHabitacion.tiempo || 0,
+        fecha_crea: parseDateSafe(new Date()).toISOString(),
         metodo_pago: metodoPago,
         metodo_pago_adicional: (metodoPago === 'prepago' && (Number(selectedClientData?.saldo || 0) < totals.total)) 
           ? metodoPagoAdicional || undefined 
@@ -421,8 +421,9 @@ export default function NuevoServicioScreen() {
 
       // Log anfitrionas data as requested
       const anfitrionasDataRes = await apiClient("/anfitrionas");
-      if (anfitrionasDataRes.success) {
-        console.log('Anfitrionas fetched:', anfitrionasDataRes.data.length, 'entries. First one foto:', anfitrionasDataRes.data[0]?.foto);
+      const anfitrionasData = Array.isArray(anfitrionasDataRes) ? anfitrionasDataRes : (anfitrionasDataRes.success ? anfitrionasDataRes.data : []);
+      if (anfitrionasData.length > 0) {
+        console.log('Anfitrionas fetched:', anfitrionasData.length, 'entries. First one foto:', anfitrionasData[0]?.foto);
       }
 
       const res = await apiClient("/servicios", {
@@ -619,7 +620,7 @@ export default function NuevoServicioScreen() {
 
           
           {selectedClientData && (
-            <View style={{ marginBottom: 15, padding: 12, backgroundColor: `${accentColor}10`, borderRadius: 12, borderWidth: 1, borderColor: `${accentColor}30` }}>
+            <View style={{ marginTop: 16, marginBottom: 15, padding: 12, backgroundColor: `${accentColor}10`, borderRadius: 12, borderWidth: 1, borderColor: `${accentColor}30` }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View>
                   <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Saldo Prepago Cliente</Text>
@@ -674,6 +675,14 @@ export default function NuevoServicioScreen() {
             </Text>
             <Text style={[styles.summaryVal, { color: textPrimary }]}>
               ${totals.subTotal.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+              Habitación
+            </Text>
+            <Text style={[styles.summaryVal, { color: textPrimary }]}>
+              ${totals.precioHabitacionActual.toLocaleString()}
             </Text>
           </View>
           {(selectedHabitacion?.comision_anfitriona ?? 0) > 0 && selectedHostesses.length > 0 && (
@@ -738,11 +747,7 @@ export default function NuevoServicioScreen() {
 
       <RoomSelectModal
         visible={roomModalVisible}
-        rooms={habitaciones.filter(
-          (room) =>
-            (room.precio && room.precio > 0) ||
-            (room.tiempo && room.tiempo > 0),
-        )}
+        rooms={habitaciones.filter((room) => Number(room.precio ?? room.price ?? 0) > 0)}
         selectedRoomId={
           selectedHabitacion?.id_habitacion || selectedHabitacion?.id
         }

@@ -42,10 +42,12 @@ export const useSolicitudes = () => {
                 apiClient('/orders').catch(() => ({ success: false, data: [] })),
                 apiClient('/anticipos').catch(() => ({ success: false, data: [] })),
                 apiClient('/caja/stats').catch(() => null),
-                apiClient('/users?anfitrionas=1').catch(() => ({ success: false, data: [] }))
+                apiClient('/anfitrionas').catch(() => ({ success: false, data: [] }))
             ]);
 
-            if (resAnfitrionas.success) {
+            if (Array.isArray(resAnfitrionas)) {
+                setAllHostesses(resAnfitrionas);
+            } else if (resAnfitrionas.success) {
                 setAllHostesses(resAnfitrionas.data || []);
             }
 

@@ -109,6 +109,7 @@ export default function VentasScreen() {
   const [selectedVenta, setSelectedVenta] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const ventasList = Array.isArray(ventas) ? ventas : [];
 
   // Action Sheet state
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -296,13 +297,18 @@ export default function VentasScreen() {
         })),
       ]);
 
-      const newData = { sales: resSales.data, resumen: resResumen.data };
+      const salesPayload = Array.isArray(resSales.data)
+        ? resSales.data
+        : Array.isArray(resSales.data?.data)
+          ? resSales.data.data
+          : [];
+      const newData = { sales: salesPayload, resumen: resResumen.data };
       const serialized = JSON.stringify(newData);
       const hasChanges = dataRef.current !== serialized;
       dataRef.current = serialized;
 
       if (resSales.success) {
-        setVentas(resSales.data || []);
+        setVentas(salesPayload);
       }
       if (resResumen.success) {
         setResumen(resResumen.data);
@@ -764,8 +770,8 @@ export default function VentasScreen() {
           loadingSales
             ? [1, 2, 3, 4] as any
             : (activeTab === "historial"
-              ? ventas
-              : ventas.filter(
+              ? ventasList
+              : ventasList.filter(
                 (v) =>
                   v.estado === 2 ||
                   timers.some(
