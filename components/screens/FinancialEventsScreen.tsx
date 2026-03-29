@@ -165,7 +165,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                 ))}
             </View>
 
-            <FlatList data={filteredData} keyExtractor={(item) => (item.id_comision || item.id_detalle_propina || item.id).toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} />
+            <FlatList data={filteredData} keyExtractor={(item) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} />
 
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <View style={styles.modalOverlay}>

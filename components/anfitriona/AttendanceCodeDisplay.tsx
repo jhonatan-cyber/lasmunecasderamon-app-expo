@@ -16,7 +16,8 @@ export const AttendanceCodeDisplay = () => {
 
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
     const role = roleName.toLowerCase();
-    const canSeeCode = role.includes('administrador') || role.includes('cajero');
+    // Solo mostrar el código QR a administradores (los cajeros tienen el módulo Personal)
+    const canSeeCode = role.includes('administrador');
 
     const fetchCodigo = useCallback(async () => {
         if (!canSeeCode) return;

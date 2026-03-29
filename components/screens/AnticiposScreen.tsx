@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
 import { useState } from 'react';
 import {
     ActivityIndicator,
@@ -13,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { AdvanceCard } from '@/components/ui/AdvanceCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -85,18 +85,6 @@ export default function AnticiposScreen() {
         setModalVisible(true);
     };
 
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return 'Sin fecha';
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? 'Error' : `${date.getUTCDate()} ${date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' })} ${date.getUTCFullYear()}`;
-    };
-
-    const formatTime = (dateStr: string) => {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? '' : date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
-    };
-
     const formatCurrency = (amount: any) => (Number(amount) || 0).toLocaleString('de-DE');
 
     const filteredData = viewMode === 'solicitudes'
@@ -116,57 +104,16 @@ export default function AnticiposScreen() {
     const totalEnCaja = solicitudes.filter((a) => normalizeEstado(a.estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
     const totalPagado = pagos.reduce((sum, a) => sum + Number(a.monto), 0);
 
-    const renderItem = ({ item, index }: { item: Anticipo; index: number }) => {
-        const estado = normalizeEstado(item.estado);
-        const isPendiente = estado === 'pendiente';
-        const isAprobada = estado === 'confirmada';
-        const isRechazada = estado === 'rechazada';
-        const isPagoReal = !!(item as any).id_anticipo;
-        const statusLabel = viewMode === 'solicitudes'
-            ? (isPendiente ? 'Pendiente' : isAprobada ? 'Aprobada' : 'Rechazada')
-            : (isPagoReal ? ((item as any).estado_texto || 'PROCESADO') : isPendiente ? 'Pendiente' : isAprobada ? 'Aprobada' : 'Rechazada');
-        const statusColor = viewMode === 'solicitudes'
-            ? (isPendiente ? '#F59E0B' : isAprobada ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#F87171' : '#B91C1C'))
-            : (isPagoReal ? (isDark ? '#10B981' : '#047857') : isPendiente ? '#F59E0B' : isAprobada ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#F87171' : '#B91C1C'));
-        const statusBackground = viewMode === 'solicitudes'
-            ? (isPendiente ? (isDark ? '#451A03' : '#FEF3C7') : isAprobada ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#7C2D12' : '#FEE2E2'))
-            : (isPagoReal ? (isDark ? '#065F4630' : '#D1FAE5') : isPendiente ? (isDark ? '#451A03' : '#FEF3C7') : isAprobada ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#7C2D12' : '#FEE2E2'));
-
-        return (
-            <MotiView from={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', delay: index * 100 }}>
-                <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
-                        </View>
-                        <View style={[styles.statusBadge, { backgroundColor: statusBackground }]}>
-                            <Text style={[styles.statusText, { color: statusColor }]}>
-                                {statusLabel}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.cardBody}>
-                        <View style={styles.dateRow}>
-                            <Ionicons name="calendar-outline" size={16} color={textSecondary} />
-                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                            <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
-                        </View>
-                        <View style={styles.amountRow}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                            <Text style={[styles.amountValue, { color: isAprobada || isPagoReal ? accentColor : isPendiente ? '#F59E0B' : '#B91C1C' }]}>
-                                ${formatCurrency(item.monto)}
-                            </Text>
-                        </View>
-                        {item.motivo ? <Text style={[styles.motivoText, { color: textSecondary }]}>📝 {item.motivo}</Text> : null}
-                        {item.motivo_rechazo && isRechazada && (
-                            <View style={styles.rejectionBox}><Text style={styles.rejectionText}>Motivo rechazo: {item.motivo_rechazo}</Text></View>
-                        )}
-                    </View>
-                </View>
-            </MotiView>
-        );
-    };
+    const renderItem = ({ item, index }: { item: Anticipo; index: number }) => (
+        <AdvanceCard
+            item={item}
+            index={index}
+            showIndexBadge={true}
+            compactDate={true}
+            viewMode={viewMode}
+            normalizeEstado={normalizeEstado}
+        />
+    );
 
     if (loading) {
         return (
@@ -303,26 +250,6 @@ const styles = StyleSheet.create({
     filterButton: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: 'center', borderWidth: 1 },
     filterText: { fontSize: 11, fontWeight: '600' },
     listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    indexBadge: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-    indexText: { fontSize: 14, fontWeight: '700' },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
-    statusText: { fontSize: 12, fontWeight: '600' },
-    cardBody: {},
-    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-    dateText: { fontSize: 14 },
-    timeText: { fontSize: 13, marginLeft: 6 },
-    amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    amountLabel: { fontSize: 14, fontWeight: '600' },
-    amountValue: { fontSize: 22, fontWeight: '800' },
-    motivoText: { fontSize: 13, marginTop: 8, fontStyle: 'italic' },
-    rejectionBox: { marginTop: 10, padding: 8, backgroundColor: '#FEF2F2', borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#EF4444' },
-    rejectionText: { fontSize: 12, color: '#991B1B' },
-    errorCard: { marginHorizontal: 16, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-    errorText: { color: '#EF4444', fontSize: 14, fontWeight: '500', marginBottom: 10 },
-    retryButton: { backgroundColor: '#EF4444', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 9999 },
-    retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
     fab: { position: 'absolute', bottom: 24, right: 24, width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5 },

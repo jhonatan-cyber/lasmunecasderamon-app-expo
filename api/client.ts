@@ -166,21 +166,31 @@ const getBaseUrl = () => {
 
     const localIP = hostCandidates.map(extractHost).find(Boolean);
 
+    // DEBUG: Si no puede detectar IP, usar localhost
     if (localIP) {
+        console.log('[API] Detected IP:', localIP);
         return `http://${localIP}:3000`;
     }
 
-    // Fallback
-    return PROD_URL;
+    // Fallback a localhost para emulador
+    console.log('[API] Using localhost fallback');
+    return 'http://localhost:3000';
 };
 
 export const BASE_URL = getBaseUrl();
 export const API_URL = `${BASE_URL}/api`;
 
+// Debug: mostrar URL en desarrollo
+if (__DEV__) {
+    console.log('[API] Base URL:', BASE_URL);
+    console.log('[API] Full URL:', API_URL);
+}
+
 export const apiClient = async <T = any>(endpoint: string, options: RequestInit & { timeout?: number; retries?: number } = {}): Promise<T> => {
     const defaultRetries = __DEV__ ? 5 : 3;
     const { timeout: customTimeout, retries: maxRetries = defaultRetries, ...fetchOptions } = options;
     const url = `${API_URL}${endpoint}`;
+    console.log('[API] Full URL:', url);
 
     const headers = new Headers(fetchOptions.headers || {});
 
@@ -201,6 +211,9 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
 
     if (tokenInMemory) {
         headers.set('Authorization', `Bearer ${tokenInMemory}`);
+        console.log('[API] Token present:', tokenInMemory.substring(0, 20) + '...');
+    } else {
+        console.log('[API] NO TOKEN FOUND');
     }
 
     // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos
@@ -247,7 +260,9 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
             if (!response.ok) {
                 if (!shouldRetry(null, response.status) || attempt === maxRetries) {
                     logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
-                    throw new Error(data.error || data.message || 'Error en la petición API');
+                    // Incluir el mensaje del servidor en el error
+                    const serverMessage = data.message || data.error || `Error ${response.status}`;
+                    throw new Error(serverMessage);
                 }
                 lastError = new Error(data.error || data.message || 'Error en la petición API');
                 logApiCall(endpoint, attempt, maxRetries, response.status, lastError, durationMs);

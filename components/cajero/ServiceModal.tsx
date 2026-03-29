@@ -192,7 +192,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                                             <Ionicons name="person" size={18} color={accentColor} />
                                         </View>
                                         <View style={{ marginLeft: 10 }}>
-                                            <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 13 }}>{selectedClient.nombre} {selectedClient.apellido}</Text>
+                                            <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 13 }}>{selectedClient.name} {selectedClient.lastName}</Text>
                                             <Text style={{ color: textSecondary, fontSize: 10 }}>Cliente frecuente</Text>
                                         </View>
                                     </View>

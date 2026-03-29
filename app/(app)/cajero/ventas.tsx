@@ -471,12 +471,7 @@ export default function VentasScreen() {
   };
 
   const renderVentaCard = ({ item }: { item: any }) => {
-const productCount = item.detalles
-  ? item.detalles.reduce((acc, d) => {
-      const cantidad = Number(d?.cantidad);
-      return acc + (isNaN(cantidad) ? 0 : cantidad);
-    }, 0)
-  : 0;
+const productCount = item.item_count || 0;
     // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
     // O mejor aún: usar una rotación del color de acento según la posición/ID
     const ventaId = getVentaId(item);
@@ -538,6 +533,19 @@ const productCount = item.detalles
                 />
                 <Text style={[styles.detailValue, { color: textPrimary }]}>
                   {item.habitacion_nombre || "Barra / General"}
+                </Text>
+              </View>
+
+              {/* Cantidad de productos */}
+              <View style={styles.detailItemRow}>
+                <Ionicons
+                  name="cube-outline"
+                  size={14}
+                  color={textSecondary}
+                  style={styles.rowIcon}
+                />
+                <Text style={[styles.detailValue, { color: textPrimary }]}>
+                  {productCount} {productCount === 1 ? 'producto' : 'productos'}
                 </Text>
               </View>
 

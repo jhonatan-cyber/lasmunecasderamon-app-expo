@@ -44,7 +44,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         
     const personText = isSolicitud 
         ? `Gz: ${item.solicitado_por_nombre || 'Desconocido'}` 
-        : isAnticipo ? `De: ${item.usuario}` : `Gz: ${item.garzon || 'Desconocido'}`;
+        : isAnticipo ? `De: ${item.usuario}` : `Gz: ${item.mesero_nick || item.mesero_nombre || item.garzon || 'Desconocido'}`;
         
     const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
     const timeText = new Date(recordTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
@@ -54,8 +54,11 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
 
     const isUrgent = minutesElapsed >= 5 && !isAnticipo;
     const itemId = isSolicitud ? item.id_solicitud : isAnticipo ? item.id_anticipo : item.id_pedido;
+    const tipoItem = item.tipoItem;
+    console.log('[SolicitudCard] Render - itemId:', itemId, 'id_solicitud:', item.id_solicitud, 'id_anticipo:', item.id_anticipo, 'id_pedido:', item.id_pedido, 'tipoItem:', tipoItem);
 
     const handleCardPress = () => {
+        console.log('[SolicitudCard] itemId:', itemId, 'tipoItem:', item.tipoItem, 'item keys:', Object.keys(item));
         if (isSolicitud) {
             onShowServiceModal(item);
         } else if (isAnticipo) {
@@ -152,7 +155,9 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                             style={[styles.btnAction, { backgroundColor: accentColor, flex: 1.5 }]}
                             onPress={(e) => {
                                 e.stopPropagation();
-                                onAprobar(itemId, item.tipoItem, item);
+                                const idAEnviar = tipoItem === 'solicitud' ? item.id_solicitud : tipoItem === 'anticipo' ? item.id_anticipo : item.id_pedido;
+                                console.log('[SolicitudCard] APROBAR - tipoItem:', tipoItem, 'idCalculado:', idAEnviar, 'id_pedido:', item.id_pedido, 'id_solicitud:', item.id_solicitud);
+                                onAprobar(idAEnviar, tipoItem, item);
                             }}
                             disabled={!cajaAbierta}
                         >

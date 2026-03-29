@@ -143,12 +143,14 @@ export default function SolicitudesScreen() {
     // --- LOGIC HANDLERS ---
 
     const handleAprobar = async (id: string, tipo: string, itemInfo?: any) => {
+        console.log('[handleAprobar] id:', id, 'tipo:', tipo, 'itemInfo:', itemInfo);
         if (!cajaAbierta) {
             showToast('Caja Cerrada', 'No puedes aprobar servicios ni pedidos porque no hay una caja abierta.', 'error');
             return;
         }
 
         if (tipo === 'pedido' && itemInfo) {
+            console.log('[handleAprobar] pedido itemInfo keys:', Object.keys(itemInfo), 'id_pedido:', itemInfo.id_pedido);
             setSelectedPedido(itemInfo);
             setMetodoPago('');
             setMetodoPagoAdicional('');
@@ -159,16 +161,21 @@ export default function SolicitudesScreen() {
 
             try {
                 const res = await apiClient(`/orders/detail?id=${id}`);
+                console.log('[handleAprobar] Order detail:', res.data?.[0]);
                 if (res.success) {
                     setPedidoDetails(res.data);
                     const cId = res.data?.[0]?.cliente_id || itemInfo.id_cliente || itemInfo.cliente_id;
+                    console.log('[handleAprobar] cliente_id:', cId);
                     if (cId) {
                         const cRes = await apiClient(`/clients?id=${cId}`).catch(() => ({ success: false }));
+                        console.log('[handleAprobar] Client response:', cRes.data);
                         if (cRes.success && cRes.data) {
                             setSelectedClient(cRes.data);
+                            console.log('[handleAprobar] Client saldo:', cRes.data.saldo);
                             if (Number(cRes.data.saldo || 0) > 0) setMetodoPago('prepago');
                         }
                     } else {
+                        console.log('[handleAprobar] No cliente_id, cliente no asignado');
                         setSelectedClient(null);
                     }
                     if (res.data?.[0]?.propina > 0) setAgregarPropina(true);
@@ -296,21 +303,65 @@ export default function SolicitudesScreen() {
     const handleCheckoutSubmit = async () => {
         if (!selectedPedido) return;
         setSubmittingCheckout(true);
-        removeSolicitudLocally(selectedPedido.id_pedido, 'pedido');
+        
+        // Construir el payload de la venta usando los detalles del pedido
+        const totalConPropina = selectedPedido.total + (agregarPropina ? (selectedPedido.total * 0.10) : 0);
+        const saldoPrepago = selectedClient ? Number(selectedClient.saldo || 0) : 0;
+        
+        // Calcular monto prepago - solo si hay cliente con saldo
+        let montoPrepago = 0;
+        if (metodoPago === 'prepago' && selectedClient && saldoPrepago > 0) {
+            montoPrepago = Math.min(totalConPropina, saldoPrepago);
+        }
+        
+        const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
+        
+        const payload = {
+            id_pedido: selectedPedido.id_pedido,
+            cliente_id: clienteId,
+            metodo_pago: metodoPago,
+            metodo_pago_adicional: metodoPagoAdicional || undefined,
+            monto_prepago: montoPrepago,
+            duracion_habitacion: selectedMinutesPedido,
+            // Datos requeridos por el schema
+            detalles: pedidoDetails.map((d: any) => ({
+                producto_id: d.producto_id,
+                cantidad: d.cantidad,
+                precio: d.precio,
+                sub_total: d.subtotal_detalle || (d.cantidad * d.precio)
+            })),
+            sub_total: selectedPedido.subtotal,
+            total: selectedPedido.total,
+            ganancia_tipo: 'fijo',
+            ganancia_monto: 0,
+            comision_por_cliente: false,
+            recompensa_binario: false,
+            recompensa_activos: false,
+            recompensa_activos_monto: 0,
+            // Propina calculada
+            ganancia_anfitriona: 0,
+            ganancia_garzon: 0,
+            ganancia_local: 0,
+            ganancia_empresa: 0,
+            total_comision: 0,
+            tiempo: selectedMinutesPedido,
+            usuarios: []
+        };
+        
+        // Agregar propina si aplica
+        if (agregarPropina) {
+            payload.propina = selectedPedido.total * 0.10;
+        }
+        
         try {
             const res = await apiClient(`/sales`, {
                 method: 'POST',
-                body: JSON.stringify({
-                    id_pedido: selectedPedido.id_pedido,
-                    metodo_pago: metodoPago,
-                    metodo_pago_adicional: metodoPagoAdicional || undefined,
-                    propina: agregarPropina,
-                    duracion_habitacion: selectedMinutesPedido
-                })
+                body: JSON.stringify(payload)
             });
 
             if (res.success) {
                 showToast('Éxito', 'Pedido cobrado y cerrado.', 'success');
+                removeSolicitudLocally(selectedPedido.id_pedido, 'pedido');
                 setCheckoutModalVisible(false);
                 DeviceEventEmitter.emit('refresh_requests');
             } else {
@@ -327,6 +378,12 @@ export default function SolicitudesScreen() {
 
     // --- EFFECTS ---
 
+    // Limpiar pendingAutoOpen al montar el componente para evitar auto-open no deseado
+    useEffect(() => {
+        console.log('[useEffect mount] Limpiando pendingAutoOpen');
+        setPendingAutoOpen(null);
+    }, []);
+
     // Now tick for timers
     useEffect(() => {
         const tid = setInterval(() => setNowTick(t => t + 1), 1000);
@@ -335,6 +392,7 @@ export default function SolicitudesScreen() {
 
     // handle query params (Navigation from depth)
     useEffect(() => {
+        console.log('[useEffect queryParams] openId:', openId, 'queryType:', queryType, 'solicitudes.length:', solicitudes.length);
         if (openId && queryType && solicitudes.length > 0) {
             const id = openId as string;
             if (id === processedOpenId) return;
@@ -345,6 +403,7 @@ export default function SolicitudesScreen() {
             );
 
             if (found) {
+                console.log('[useEffect queryParams] found:', found);
                 setProcessedOpenId(id);
                 router.setParams({ openId: undefined, type: undefined });
                 if (queryType === 'new_order') {
@@ -359,22 +418,33 @@ export default function SolicitudesScreen() {
 
     // Handle auto-opening from SSE (via Hook)
     useEffect(() => {
-        if (pendingAutoOpen && solicitudes.length > 0) {
-            const { id, type } = pendingAutoOpen;
-            const found = solicitudes.find(s =>
-                (type === 'pedido' && s.tipoItem === 'pedido' && s.id_pedido === id) ||
-                (type === 'solicitud' && s.tipoItem === 'solicitud' && s.id_solicitud === id)
-            );
+        console.log('[useEffect pendingAutoOpen] pendingAutoOpen:', pendingAutoOpen, 'solicitudes.length:', solicitudes.length, 'typeof id:', typeof pendingAutoOpen?.id);
+        // Solo procesar si hay un ID válido
+        if (!pendingAutoOpen || !pendingAutoOpen.id || pendingAutoOpen.id === 'undefined' || pendingAutoOpen.id === undefined || !solicitudes.length) {
+            console.log('[useEffect pendingAutoOpen] ❌ Returning early - invalid id');
+            return;
+        }
+        
+        const { id, type } = pendingAutoOpen;
+        console.log('[useEffect pendingAutoOpen] id:', id, 'type:', type);
+        const found = solicitudes.find(s =>
+            (type === 'pedido' && s.tipoItem === 'pedido' && s.id_pedido === id) ||
+            (type === 'solicitud' && s.tipoItem === 'solicitud' && s.id_solicitud === id)
+        );
+        console.log('[useEffect pendingAutoOpen] found:', found);
 
-            if (found) {
-                setPendingAutoOpen(null);
-                if (type === 'pedido') {
-                    handleAprobar(id, 'pedido', found);
-                } else {
-                    setSelectedService(found);
-                    setServiceModalVisible(true);
-                }
+        if (found) {
+            setPendingAutoOpen(null);
+            if (type === 'pedido') {
+                handleAprobar(id, 'pedido', found);
+            } else {
+                setSelectedService(found);
+                setServiceModalVisible(true);
             }
+        } else {
+            // Si no se encontró, limpiar el pendingAutoOpen para evitar bucles
+            console.log('[useEffect pendingAutoOpen] no found, clearing...');
+            setPendingAutoOpen(null);
         }
     }, [solicitudes, pendingAutoOpen]);
 

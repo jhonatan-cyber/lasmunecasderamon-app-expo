@@ -102,9 +102,16 @@ export function useDashboardData(role: UserRole) {
     });
     
     const sseSub = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+        console.log('[SSE Event received]:', payload?.type, payload?.data);
         const businessEvents = ["new_order", "new_service_request", "order_updated", "service_request_approved", "room_occupied"];
         if (payload && businessEvents.includes(payload.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
+            
+            // Emitir evento para que las solicitudes se actualicen y abran el modal automáticamente
+            if (payload.type === 'new_order' || payload.type === 'new_service_request') {
+                console.log('[SSE] Emitiendo refresh_requests para:', payload.type, payload.data?.id);
+                DeviceEventEmitter.emit('refresh_requests', payload);
+            }
         }
     });
     

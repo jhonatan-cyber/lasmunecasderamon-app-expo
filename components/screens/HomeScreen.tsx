@@ -149,6 +149,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
           showAlert={showAlert}
           profilePath={`/${role}/perfil`}
           onQRScannerPress={() => setShowAsistenciaModal(true)}
+          onPersonalPress={role === 'cajero' ? () => router.push('/cajero/personal') : undefined}
           notificationCount={role === 'cajero' ? pendingCount : 0}
           onNotificationPress={role === 'cajero' ? () => router.push('/cajero/solicitudes') : undefined}
         />
@@ -284,7 +285,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
           return String(item?.estado ?? '');
         }}
       />
-      <RegistroAsistenciaModal visible={showAsistenciaModal} onClose={() => setShowAsistenciaModal(false)} onRegistered={() => onRefresh()} />
+      <RegistroAsistenciaModal visible={showAsistenciaModal} onClose={() => setShowAsistenciaModal(false)} onRegistered={() => setShowAsistenciaModal(false)} />
       <PremiumAlert {...alertConfig} onConfirm={() => { alertConfig.onConfirm?.(); setAlertConfig({ ...alertConfig, visible: false }); }} onCancel={() => setAlertConfig({ ...alertConfig, visible: false })} />
     </View>
   );

@@ -38,7 +38,7 @@ export const useSolicitudes = () => {
     const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
             const [resSolicitudes, resOrders, resAnticipos, resStats, resAnfitrionas] = await Promise.all([
-                apiClient('/solicitudes-servicios?estado=pendiente').catch(() => ({ success: false, data: [] })),
+                apiClient('/solicitudes-servicios?estado=0').catch(() => ({ success: false, data: [] })),
                 apiClient('/orders').catch(() => ({ success: false, data: [] })),
                 apiClient('/anticipos').catch(() => ({ success: false, data: [] })),
                 apiClient('/caja/stats').catch(() => null),
@@ -75,8 +75,10 @@ export const useSolicitudes = () => {
             if (resOrders.success) {
                 const arr = (resOrders.data || []).map((o: any) => ({
                     ...o,
+                    // El backend devuelve 'id' pero necesitamos 'id_pedido' para el frontend
+                    id_pedido: o.id_pedido || o.id,
                     tipoItem: 'pedido',
-                    id_unificado: `pedido_${o.id_pedido}`,
+                    id_unificado: `pedido_${o.id_pedido || o.id}`,
                     fecha_orden: parseDateSafe(o.fecha_crea).getTime()
                 }));
                 combined = [...combined, ...arr];
@@ -132,13 +134,17 @@ export const useSolicitudes = () => {
 
     useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload?: any) => {
+            console.log('[useSolicitudes] 📡 SSE event received:', payload);
             fetchSolicitudes();
-            if (payload && payload.data && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
+            // Solo configurar auto-open si hay un ID válido
+            if (payload && payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
                 console.log('[useSolicitudes] 🤖 Auto-opening signal received:', payload.type, payload.data.id);
                 setPendingAutoOpen({
                     id: payload.data.id,
                     type: payload.type === 'new_order' ? 'pedido' : 'solicitud'
                 });
+            } else {
+                console.log('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id);
             }
         });
         return () => subscription.remove();

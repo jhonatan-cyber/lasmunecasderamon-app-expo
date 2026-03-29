@@ -30,7 +30,7 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
   const [error, setError] = useState('');
   const dataRef = useRef<string>('');
 
-  const endpoint = type === 'comisiones' ? '/commissions/user' : '/tips/user?tipo=detalle';
+  const endpoint = type === 'comisiones' ? '/commissions/user' : '/tips?tipo=detalle';
 
   const fetchData = useCallback(async (isManual = false) => {
     try {

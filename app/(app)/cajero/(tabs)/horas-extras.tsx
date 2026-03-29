@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import {
     FlatList,
@@ -12,22 +11,11 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
+import { OvertimeCard } from '@/components/ui/OvertimeCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { rotateColor } from "@/utils/colors";
-import { parseDateSafe } from "@/utils/timeUtils";
-
-interface HoraExtra {
-    id_hora_extra: number;
-    fecha_crea: string;
-    fecha_mod: string | null;
-    hora: string;
-    monto: number;
-    total: number;
-    estado: number; // 0=pagado, 1=pendiente
-    fecha_formatted: string;
-}
+import { HoraExtra } from '@/hooks/useHorasExtras';
 
 export default function HorasExtrasScreen() {
     const { accentColor, isDark } = useAccentColor();
@@ -100,18 +88,6 @@ export default function HorasExtrasScreen() {
         fetchData(true);
     }, [fetchData]);
 
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return 'Sin fecha';
-        try {
-            const date = parseDateSafe(dateStr);
-            if (isNaN(date.getTime())) return 'Fecha inválida';
-            const day = date.getUTCDate();
-            const month = date.toLocaleDateString('es-ES', { month: 'short' });
-            const year = date.getUTCFullYear();
-            return `${day} ${month} ${year}`;
-        } catch { return 'Error'; }
-    };
-
     const filteredData = horasExtras.filter((a) => {
         if (filter === 'pendiente') return a.estado === 1;
         if (filter === 'pagado') return a.estado === 0;
@@ -121,72 +97,16 @@ export default function HorasExtrasScreen() {
     const pendientes = horasExtras.filter((a) => a.estado === 1);
     const totalPendiente = pendientes.reduce((sum, a) => sum + (a.total || a.monto || 0), 0);
 
-    const renderItem = ({ item, index }: { item: HoraExtra; index: number }) => {
-        const isPendiente = item.estado === 1;
-        const hourLabel = item.hora ? `${item.hora} hrs` : null;
-
-        return (
-            <MotiView
-                from={{ opacity: 0, translateY: 30 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: index * 100 }}
-            >
-                <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.cardHeader}>
-                        <Text style={[styles.cardTitle, { color: textPrimary }]}>Hora Extra</Text>
-                        <View style={[
-                            styles.statusBadge,
-                            {
-                                backgroundColor: isPendiente
-                                    ? (isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2')
-                                    : (isDark ? 'rgba(255,255,255,0.10)' : '#E5E7EB')
-                            }
-                        ]}>
-                            <Text style={[
-                                styles.statusText,
-                                { color: isPendiente ? '#EF4444' : textPrimary }
-                            ]}>
-                                {isPendiente ? 'Por cobrar' : 'Pagado'}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.cardBody}>
-                        <View style={styles.dateRow}>
-                            <View style={styles.infoInline}>
-                                <Ionicons name="calendar-outline" size={15} color={textSecondary} />
-                                <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                            </View>
-                            {hourLabel ? (
-                                <View style={styles.infoInline}>
-                                    <Ionicons name="time-outline" size={15} color={textSecondary} />
-                                    <Text style={[styles.dateText, { color: textPrimary }]}>{hourLabel}</Text>
-                                </View>
-                            ) : null}
-                        </View>
-
-                        <View style={styles.amountsRow}>
-                            <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
-                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto/hr</Text>
-                                <Text style={[styles.amountValue, { color: textPrimary }]}>${(item.monto || 0).toLocaleString()}</Text>
-                            </View>
-                            <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
-                                <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                                <Text style={[styles.amountValue, { color: isPendiente ? '#EF4444' : textPrimary }]}>${(item.total || 0).toLocaleString()}</Text>
-                            </View>
-                        </View>
-
-                        {item.fecha_mod && item.estado === 0 ? (
-                            <View style={styles.paymentRow}>
-                                <Ionicons name="checkmark-circle" size={14} color={accentColor} />
-                                <Text style={[styles.paymentText, { color: textSecondary }]}>Pagado: {formatDate(item.fecha_mod)}</Text>
-                            </View>
-                        ) : null}
-                    </View>
-                </View>
-            </MotiView>
-        );
-    };
+    const renderItem = ({ item, index }: { item: HoraExtra; index: number }) => (
+        <OvertimeCard
+            item={item}
+            index={index}
+            showIndexBadge={false}
+            usePagadoLabel={true}
+            compactDate={false}
+            showPaymentDate={true}
+        />
+    );
 
     const HorasExtrasSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -286,8 +206,6 @@ export default function HorasExtrasScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loadingText: { marginTop: 12, fontSize: 15 },
     summaryCard: {
         marginHorizontal: 16, marginTop: 16, borderRadius: 24,
         padding: 24, alignItems: 'center', borderWidth: 1,
@@ -301,26 +219,6 @@ const styles = StyleSheet.create({
     filterButton: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: 'center', borderWidth: 1 },
     filterText: { fontSize: 11, fontWeight: '600' },
     listContent: { paddingHorizontal: 16, paddingBottom: 20 },
-    card: {
-        borderRadius: 18,
-        padding: 16,
-        marginTop: 12,
-        borderWidth: 1,
-    },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 12 },
-    cardTitle: { fontSize: 15, fontWeight: '900', letterSpacing: -0.2, flex: 1 },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
-    statusText: { fontSize: 11, fontWeight: '800' },
-    cardBody: {},
-    dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' },
-    infoInline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    dateText: { fontSize: 13, fontWeight: '700' },
-    amountsRow: { flexDirection: 'row', gap: 10 },
-    amountItem: { flex: 1, alignItems: 'flex-start', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 14 },
-    amountLabel: { fontSize: 11, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase' },
-    amountValue: { fontSize: 18, fontWeight: '900' },
-    paymentRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-    paymentText: { fontSize: 12 },
     errorCard: { marginHorizontal: 16, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
     errorText: { color: '#EF4444', fontSize: 14, fontWeight: '500', marginBottom: 10 },
     retryButton: { backgroundColor: '#EF4444', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 9999 },

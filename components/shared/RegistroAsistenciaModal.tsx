@@ -65,12 +65,23 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             });
 
             if (res.success) {
-                Toast.show({
-                    type: 'success',
-                    text1: '¡Asistencia Registrada!',
-                    text2: res.message || 'Tu asistencia ha sido marcada correctamente'
-                });
-                onRegistered();
+                if (res.alreadyRegistered) {
+                    // Ya tiene asistencia registrada hoy - cerrar modales porque el código ya fue usado
+                    Toast.show({
+                        type: 'warning',
+                        text1: '⚠️ Ya tienes asistencia',
+                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                    });
+                    onRegistered(); // Cerrar los modales
+                } else {
+                    // Nueva asistencia registrada
+                    Toast.show({
+                        type: 'success',
+                        text1: '✅ Asistencia Registrada',
+                        text2: res.message || 'Tu asistencia ha sido registrada correctamente'
+                    });
+                    onRegistered();
+                }
             } else {
                 throw new Error(res.message || 'Código inválido');
             }
@@ -94,13 +105,24 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 body: JSON.stringify({ qr_data: data })
             });
 
-            if (res.success) {
-                Toast.show({
-                    type: 'success',
-                    text1: '¡Asistencia Registrada!',
-                    text2: res.message || 'Tu asistencia ha sido marcada correctamente'
-                });
-                onRegistered();
+if (res.success) {
+                if (res.alreadyRegistered) {
+                    // Ya tiene asistencia registrada hoy
+                    Toast.show({
+                        type: 'warning',
+                        text1: '⚠️ Ya tienes asistencia',
+                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                    });
+                    onRegistered(); // Cerrar los modales
+                } else {
+                    // Nueva asistencia registrada
+                    Toast.show({
+                        type: 'success',
+                        text1: '✅ Asistencia Registrada',
+                        text2: res.message || 'Tu asistencia ha sido registrada correctamente'
+                    });
+onRegistered();
+                }
             } else {
                 throw new Error(res.message || 'Código QR inválido');
             }

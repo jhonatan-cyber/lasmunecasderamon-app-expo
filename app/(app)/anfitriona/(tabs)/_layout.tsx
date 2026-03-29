@@ -63,7 +63,7 @@ export default function AnfitrionaTabsLayout() {
             <RegistroAsistenciaModal
                 visible={showAsistenciaModal}
                 onClose={() => setShowAsistenciaModal(false)}
-                onRegistered={() => setShowAsistenciaModal(false)}
+                onRegistered={() => { setShowAsistenciaModal(false); }}
             />
         </View>
     );

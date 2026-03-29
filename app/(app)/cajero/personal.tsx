@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -32,7 +32,7 @@ const NUM_COLUMNS = 2;
 const CARD_WIDTH = (width - (GRID_PADDING * 2) - GRID_GAP) / NUM_COLUMNS;
 
 interface User {
-    id: number;
+    id: string;
     name: string;
     lastName: string;
     nick: string;
@@ -62,15 +62,22 @@ export default function PersonalScreen() {
 
     const fetchUsers = useCallback(async (isManual = false) => {
         try {
-            const data = await apiClient('/users');
+            console.log('[PersonalScreen] Fetching users with status=active...');
+            const data = await apiClient('/users?status=active');
+            console.log('[PersonalScreen] Response:', data);
+            
             if (data.success) {
-                // Filtrar personal activo y que sean solo Garzones o Anfitrionas
+                // Filtrar personal activo (excluir administrador)
                 const allUsers = data.data || [];
                 const staff = allUsers.filter((u: User) => {
-                    if (u.status !== 1) return false;
                     const r = u.role?.toLowerCase() || '';
+                    // Excluir administrador
+                    if (r.includes('administrador') || r.includes('admin')) return false;
+                    // Incluir garzón, mesero, cajero y anfitriona
                     return r.includes('garzon') || 
                            r.includes('garzón') || 
+                           r.includes('mesero') ||
+                           r.includes('cajero') ||
                            r.includes('anfitriona');
                 });
                 
@@ -89,7 +96,7 @@ export default function PersonalScreen() {
                 }
             }
         } catch (error: any) {
-            console.error('[PersonalScreen] Error:', error);
+            console.error('[PersonalScreen] Error fetching users:', error);
             Toast.show({
                 type: 'error',
                 text1: 'Error',
@@ -112,7 +119,7 @@ export default function PersonalScreen() {
         fetchUsers(true);
     };
 
-    const handleGenerateQR = useCallback(async (userId: number) => {
+    const handleGenerateQR = useCallback(async (userId: string) => {
         try {
             setIsGenerating(true);
             const data = await apiClient('/users/generate-qr', {
@@ -159,9 +166,19 @@ export default function PersonalScreen() {
         const fetchUserData = async () => {
             try {
                 const data = await apiClient(`/users/${selectedUser.id}`);
-                if (data.success && data.user && data.user.qr_token !== selectedUser.qr_token) {
-                    setSelectedUser(data.user);
-                    setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
+                if (data.success && data.user) {
+                    // Si el QR cambió (ya fue usado), actualizar y cerrar el modal
+                    if (data.user.qr_token !== selectedUser.qr_token) {
+                        setSelectedUser(data.user);
+                        setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
+                        // Cerrar el modal porque el QR ya fue usado
+                        setSelectedUser(null);
+                        Toast.show({
+                            type: 'info',
+                            text1: '📱 Código QR usado',
+                            text2: 'El usuario ya registró su asistencia'
+                        });
+                    }
                 }
             } catch (e) {
                 console.error('Error polling user QR:', e);
@@ -170,7 +187,7 @@ export default function PersonalScreen() {
 
         fetchUserData();
 
-        const interval = setInterval(fetchUserData, 10000);
+        const interval = setInterval(fetchUserData, 5000); // Polling cada 5 segundos
         return () => clearInterval(interval);
     }, [selectedUser?.id]);
 
@@ -199,6 +216,7 @@ export default function PersonalScreen() {
 
     const renderUser = useCallback(({ item, index }: { item: User; index: number }) => {
         const photoUrl = item.foto ? `${BASE_URL}/img/users/${item.foto}` : null;
+        const hasQR = !!item.qr_token;
 
         return (
             <MotiView
@@ -215,6 +233,13 @@ export default function PersonalScreen() {
                         pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }
                     ]}
                 >
+                    {/* Header con gradiente */}
+                    <View style={[styles.cardHeader, { backgroundColor: accentColor }]}>
+                        <Text style={styles.cardRoleText} numberOfLines={1}>
+                            {item.role?.toUpperCase()}
+                        </Text>
+                    </View>
+
                     <View style={styles.gridContent}>
                         <View style={styles.imageWrapper}>
                             {photoUrl ? (
@@ -230,8 +255,12 @@ export default function PersonalScreen() {
                                     </Text>
                                 </View>
                             )}
-                            <View style={[styles.roleLabel, { backgroundColor: accentColor }]}>
-                                <Text style={styles.roleLabelText}>{item.role}</Text>
+                            {/* Indicador de estado QR */}
+                            <View style={[
+                                styles.qrStatusIndicator, 
+                                { backgroundColor: hasQR ? '#10B981' : '#EF4444' }
+                            ]}>
+                                <Ionicons name={hasQR ? 'checkmark' : 'close'} size={10} color="white" />
                             </View>
                         </View>
                         
@@ -244,9 +273,22 @@ export default function PersonalScreen() {
                             </Text>
                         </View>
                         
-                        <View style={[styles.qrButtonMini, { backgroundColor: `${accentColor}10` }]}>
-                            <Ionicons name="qr-code" size={16} color={accentColor} />
-                            <Text style={[styles.qrButtonMiniText, { color: accentColor }]}>Ver QR / Código</Text>
+                        {/* Badge de estado QR */}
+                        <View style={[
+                            styles.qrStatusBadge, 
+                            { backgroundColor: hasQR ? '#10B98120' : '#EF444420' }
+                        ]}>
+                            <Ionicons 
+                                name={hasQR ? 'qr-code' : 'qr-code-outline'} 
+                                size={14} 
+                                color={hasQR ? '#10B981' : '#EF4444'} 
+                            />
+                            <Text style={[
+                                styles.qrStatusText, 
+                                { color: hasQR ? '#10B981' : '#EF4444' }
+                            ]}>
+                                {hasQR ? 'QR Activo' : 'Sin QR'}
+                            </Text>
                         </View>
                     </View>
                 </Pressable>
@@ -257,7 +299,22 @@ export default function PersonalScreen() {
     if (loading) {
         return (
             <View style={[styles.container, { backgroundColor: bg }]}>
-                <PremiumHeader title="Personal" subtitle="Lista de trabajadores" onBack={() => router.back()} />
+                <Stack.Screen options={{ headerShown: false }} />
+                <PremiumHeader 
+                    title="Personal" 
+                    subtitle="Lista de trabajadores"
+                    rightComponent={
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                            <Pressable onPress={() => fetchUsers(true)} style={styles.backBtnRight}>
+                                <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                            </Pressable>
+                            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                                <Text style={styles.backTextHeader}>Atrás</Text>
+                            </Pressable>
+                        </View>
+                    }
+                />
                 <View style={styles.skeletonGrid}>
                     {[1, 2, 3, 4, 5, 6].map(i => (
                         <SkeletonLoader 
@@ -275,7 +332,22 @@ export default function PersonalScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            <PremiumHeader title="Personal" subtitle="Selecciona un usuario para ver su QR" onBack={() => router.back()} />
+            <Stack.Screen options={{ headerShown: false }} />
+            <PremiumHeader 
+                title="Personal" 
+                subtitle="Selecciona un usuario para ver su QR"
+                rightComponent={
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                        <Pressable onPress={() => fetchUsers(true)} style={styles.backBtnRight}>
+                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                        </Pressable>
+                        <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text style={styles.backTextHeader}>Atrás</Text>
+                        </Pressable>
+                    </View>
+                }
+            />
 
             <View style={styles.searchBarContainer}>
                 <View style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]}>
@@ -484,6 +556,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
     },
+    cardHeader: {
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cardRoleText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
     gridContent: {
         alignItems: 'center',
         padding: 12,
@@ -540,6 +623,31 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 2,
         opacity: 0.7,
+    },
+    qrStatusIndicator: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+    },
+    qrStatusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
+        marginTop: 8,
+    },
+    qrStatusText: {
+        fontSize: 11,
+        fontWeight: '700',
     },
     qrButtonMini: {
         flexDirection: 'row',
@@ -749,5 +857,20 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         fontFamily: 'monospace',
         letterSpacing: 4,
+    },
+    backBtnRight: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        height: 38, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 12,
+        gap: 6
+    },
+    backTextHeader: { 
+        color: '#FFFFFF', 
+        fontWeight: '800', 
+        fontSize: 13, 
+        letterSpacing: 0.5 
     },
 });
