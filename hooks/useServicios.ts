@@ -19,7 +19,8 @@ export interface Servicio {
   anfitriona: string;
   cliente: string;
   estado: number;
-  pago_estado?: number; 
+  pago_estado?: number;
+  habitacion_comision?: number;
 }
 
 export function useServicios() {

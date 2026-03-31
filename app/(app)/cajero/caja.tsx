@@ -303,7 +303,7 @@ export default function CajaScreen() {
                             <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
                         </Pressable>
                         <Pressable
-                            onPress={() => router.replace('@/components/cajero/(tabs)' as any)}
+                            onPress={() => router.replace('/(app)/cajero/(tabs)' as any)}
                             style={styles.backBtnRight}
                             accessibilityLabel="Volver"
                         >

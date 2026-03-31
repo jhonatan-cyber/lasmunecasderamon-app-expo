@@ -5,10 +5,8 @@ import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    Modal,
     Pressable,
     RefreshControl,
-    ScrollView,
     StyleSheet,
     Text,
     View
@@ -17,21 +15,21 @@ import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
+import { TipDetailModal } from '@/components/shared/TipDetailModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from "@/utils/colors";
 import { parseDateSafe } from "@/utils/timeUtils";
 
 interface Propina {
-    id_detalle_propina: number;
-    propina_id: number;
-    usuario_id: number;
+    id_detalle_propina: string;
+    propina_id: string;
+    usuario_id: string;
     monto: number;
     fecha_crea: string;
-    estado: number; // 0=pagado, 1=pendiente
+    estado: number; 
     propina_fecha_crea: string | null;
     codigo_venta: string | null;
-    venta_id?: number;
-    // New fields assumed from request
+    venta_id?: string;
     total_tip_monto?: number;
     total_participants?: number;
 }
@@ -46,7 +44,7 @@ interface SaleDetail {
     detalles: any[];
     garzon_nombre?: string | null;
     cajero_nombre?: string | null;
-    habitacion_numero?: string | null;
+    habitacion_nombre?: string | null;
     tiempo?: number;
     usuarios?: any[];
 }
@@ -138,16 +136,15 @@ export default function PropinasScreen() {
 
         try {
             // 1. Obtener info de la propina "madre" (monto total y repartición)
-            // Este endpoint lo acabamos de crear en el backend
-            const tipRes = await apiClient(`/tips/${item.propina_id}`);
+            const tipRes = await apiClient<{ success: boolean; data: any }>(`/tips/${item.propina_id}`);
             if (tipRes.success) {
                 setParentPropina(tipRes.data);
 
                 // 2. Si tiene vinculada una venta, obtener el detalle completo de la venta
                 if (tipRes.data.venta_id) {
-                    const saleRes = await apiClient(`/ventas/${tipRes.data.venta_id}`);
-                    if (saleRes && !saleRes.error) {
-                        setSaleDetail(saleRes);
+                    const saleRes = await apiClient<{ success: boolean; data: any }>(`/ventas/${tipRes.data.venta_id}`);
+                    if (saleRes && saleRes.success) {
+                        setSaleDetail(saleRes.data);
                     }
                 }
             }
@@ -168,7 +165,7 @@ export default function PropinasScreen() {
             const date = parseDateSafe(dateStr);
             if (isNaN(date.getTime())) return 'Fecha inválida';
             const day = date.getUTCDate();
-            const month = date.toLocaleDateString('es-ES', { month: 'short'});
+            const month = date.toLocaleDateString('es-ES', { month: 'short' });
             const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
@@ -179,7 +176,7 @@ export default function PropinasScreen() {
         try {
             const date = parseDateSafe(dateStr);
             if (isNaN(date.getTime())) return '';
-            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit'});
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         } catch { return ''; }
     };
 
@@ -195,8 +192,9 @@ export default function PropinasScreen() {
 
     const renderItem = ({ item, index }: { item: Propina; index: number }) => {
         const isPendiente = item.estado === 1;
-        // Dinamismo: Rotar el color basado en el ID del detalle
-        const itemAccent = rotateColor(accentColor, (item.id_detalle_propina % 10) * 36);
+        // Dinamismo: Rotar el color basado en el ID del detalle (hacer un resumen numérico si es UUID)
+        const idNum = typeof item.id_detalle_propina === 'string' ? item.id_detalle_propina.split('-').pop()?.substring(0, 2) : item.id_detalle_propina;
+        const itemAccent = rotateColor(accentColor, ((Number(idNum) || index) % 10) * 36);
 
         return (
             <MotiView
@@ -343,7 +341,7 @@ export default function PropinasScreen() {
 
             <FlatList
                 data={filteredData}
-                keyExtractor={(item) => item.id_detalle_propina.toString()}
+                keyExtractor={(item, index) => item.id_detalle_propina?.toString() ?? index.toString()}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
@@ -356,196 +354,14 @@ export default function PropinasScreen() {
                 }
             />
 
-            {/* Detail Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
+            <TipDetailModal
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <View>
-                                <Text style={[styles.modalTitle, { color: textPrimary }]}>Detalle de Propina</Text>
-                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                                    Codigo : {selectedPropina?.codigo_venta || '---'}
-                                </Text>
-                            </View>
-                            <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
-                                <Ionicons name="close" size={24} color={textPrimary} />
-                            </Pressable>
-                        </View>
-
-                        {loadingDetail ? (
-                            <View style={styles.detailLoading}>
-                                <ActivityIndicator size="large" color={accentColor} />
-                                <Text style={{ color: textSecondary, marginTop: 15 }}>Cargando detalles...</Text>
-                            </View>
-                        ) : (
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {/* Resumen propina */}
-                                <View style={[styles.divisionCard, { borderColor, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
-                                    <View style={styles.divisionItem}>
-                                        <Text style={[styles.divisionLabel, { color: textSecondary }]}>Total Propina</Text>
-                                        <Text style={[styles.divisionValue, { color: textPrimary }]}>
-                                            ${(parentPropina?.monto_total || 0).toLocaleString()}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.divisionDivider} />
-                                    <View style={styles.divisionItem}>
-                                        <Text style={[styles.divisionLabel, { color: textSecondary }]}>Participantes</Text>
-                                        <Text style={[styles.divisionValue, { color: accentColor }]}>
-                                            {parentPropina?.conteo_usuarios ?? '---'}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.divisionDivider} />
-                                    <View style={styles.divisionItem}>
-                                        <Text style={[styles.divisionLabel, { color: textSecondary }]}>Mi Parte</Text>
-                                        <Text style={[styles.divisionValue, { color: accentColor }]}>
-                                            ${(selectedPropina?.monto || 0).toLocaleString()}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {/* Participantes */}
-                                {parentPropina?.participantes?.length > 0 && (
-                                    <>
-                                        <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>REPARTICIÓN</Text>
-                                        <View style={[styles.productsList, { borderColor }]}>
-                                            {parentPropina.participantes.map((p: any, idx: number) => (
-                                                <View key={idx} style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: idx === parentPropina.participantes.length - 1 ? 0 : 1 }]}>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={[styles.productNameDetail, { color: textPrimary }]}>{p.nombre}</Text>
-                                                        {p.nick ? <Text style={{ color: textSecondary, fontSize: 12 }}>@{p.nick}</Text> : null}
-                                                    </View>
-                                                    <View style={{ alignItems: 'flex-end' }}>
-                                                        <Text style={[styles.productSubtotal, { color: accentColor }]}>${(p.monto || 0).toLocaleString()}</Text>
-                                                        <View style={[styles.statusBadge, { backgroundColor: p.estado === 1 ? (isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5') : (isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'), marginTop: 4 }]}>
-                                                            <Text style={{ fontSize: 10, fontWeight: '700', color: p.estado === 1 ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }}>
-                                                                {p.estado === 1 ? 'Pendiente' : 'Cobrado'}
-                                                            </Text>
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    </>
-                                )}
-
-                                {/* Info de la venta */}
-                                {saleDetail ? (
-                                    <>
-                                        {/* Origen, habitación y anfitrionas */}
-                                        <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>PERSONAL Y SERVICIO</Text>
-                                        <View style={[styles.productsList, { borderColor }]}>
-                                            {/* Origen */}
-                                            <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                    <Ionicons name="storefront-outline" size={16} color={textSecondary} />
-                                                    <Text style={{ color: textSecondary, fontSize: 13 }}>Origen</Text>
-                                                </View>
-                                                <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>
-                                                    {saleDetail.garzon_nombre ? `Pedido por ${saleDetail.garzon_nombre}` : 'Venta realizada en barra'}
-                                                </Text>
-                                            </View>
-                                            {/* Cajero */}
-                                            {saleDetail.cajero_nombre ? (
-                                                <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                        <Ionicons name="cash-outline" size={16} color={textSecondary} />
-                                                        <Text style={{ color: textSecondary, fontSize: 13 }}>Procesó la venta</Text>
-                                                    </View>
-                                                    <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.cajero_nombre}</Text>
-                                                </View>
-                                            ) : null}
-                                            {/* Habitación */}
-                                            {saleDetail.habitacion_numero ? (
-                                                <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                        <Ionicons name="bed-outline" size={16} color={textSecondary} />
-                                                        <Text style={{ color: textSecondary, fontSize: 13 }}>Habitación</Text>
-                                                    </View>
-                                                    <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.habitacion_numero}</Text>
-                                                </View>
-                                            ) : null}
-                                            {/* Tiempo */}
-                                            {saleDetail.tiempo ? (
-                                                <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: ((saleDetail.usuarios?.filter((u: any) => u.usuario_nombre && u.nick !== undefined).length ?? 0) > 0) ? 1 : 0 }]}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                        <Ionicons name="time-outline" size={16} color={textSecondary} />
-                                                        <Text style={{ color: textSecondary, fontSize: 13 }}>Tiempo</Text>
-                                                    </View>
-                                                    <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.tiempo} min</Text>
-                                                </View>
-                                            ) : null}
-                                            {/* Anfitrionas */}
-                                            {saleDetail.usuarios?.filter((u: any) => u.rol?.toLowerCase() === 'anfitriona').map((u: any, idx: number, arr: any[]) => (
-                                                <View key={idx} style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: idx === arr.length - 1 ? 0 : 1 }]}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                        <Ionicons name="person-circle-outline" size={16} color={textSecondary} />
-                                                        <Text style={{ color: textSecondary, fontSize: 13 }}>Anfitriona</Text>
-                                                    </View>
-                                                    <View style={{ alignItems: 'flex-end' }}>
-                                                        <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{u.usuario_nombre}</Text>
-                                                        {u.nick ? <Text style={{ color: textSecondary, fontSize: 11 }}>@{u.nick}</Text> : null}
-                                                    </View>
-                                                </View>
-                                            ))}
-                                        </View>
-
-                                        {/* Productos */}
-                                        <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>PRODUCTOS</Text>
-                                        <View style={[styles.productsList, { borderColor }]}>
-                                            {saleDetail.detalles?.map((det: any, idx: number) => (
-                                                <View key={idx} style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: idx === saleDetail.detalles.length - 1 ? 0 : 1 }]}>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={[styles.productNameDetail, { color: textPrimary }]}>{det.producto_nombre}</Text>
-                                                        <Text style={{ color: textSecondary, fontSize: 12 }}>{det.cantidad} x ${Number(det.precio ?? det.producto_precio ?? 0).toLocaleString()}</Text>
-                                                    </View>
-                                                    <Text style={[styles.productSubtotal, { color: textPrimary }]}>${Number(det.sub_total ?? det.subtotal ?? 0).toLocaleString()}</Text>
-                                                </View>
-                                            ))}
-                                            <View style={[styles.saleTotalRow, { borderTopColor: borderColor }]}>
-                                                <Text style={[styles.saleTotalLabel, { color: textSecondary }]}>Total Venta</Text>
-                                                <Text style={[styles.saleTotalValue, { color: textPrimary }]}>${Number(saleDetail.total).toLocaleString()}</Text>
-                                            </View>
-                                        </View>
-
-                                        {/* Método pago y fecha */}
-                                        <View style={{ marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: isDark ? '#37415140' : '#F3F4F6', marginBottom: 8 }}>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                                                <Text style={{ color: textSecondary, fontSize: 12 }}>Método de Pago</Text>
-                                                <Text style={{ color: textPrimary, fontSize: 12, fontWeight: '700' }}>{String(saleDetail.metodo_pago ?? '').toUpperCase() || '---'}</Text>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                <Text style={{ color: textSecondary, fontSize: 12 }}>Fecha</Text>
-                                                <Text style={{ color: textPrimary, fontSize: 12 }}>{saleDetail.fecha_crea ? parseDateSafe(saleDetail.fecha_crea).toLocaleString('es-CL', {  }) : '---'}</Text>
-                                            </View>
-                                        </View>
-                                    </>
-                                ) : (
-                                    !loadingDetail && (
-                                        <View style={{ padding: 30, alignItems: 'center' }}>
-                                            <Ionicons name="receipt-outline" size={40} color={textSecondary} />
-                                            <Text style={{ color: textSecondary, marginTop: 10, textAlign: 'center', fontSize: 13 }}>
-                                                Esta propina no tiene venta asociada
-                                            </Text>
-                                        </View>
-                                    )
-                                )}
-                            </ScrollView>
-                        )}
-
-                        <Pressable
-                            onPress={() => setModalVisible(false)}
-                            style={[styles.closeModalBtn, { backgroundColor: accentColor }]}
-                        >
-                            <Text style={styles.closeModalBtnText}>Cerrar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+                onClose={() => setModalVisible(false)}
+                loading={loadingDetail}
+                selectedPropina={selectedPropina}
+                parentPropina={parentPropina}
+                saleDetail={saleDetail}
+            />
         </View>
     );
 }
@@ -624,7 +440,7 @@ const styles = StyleSheet.create({
     divisionValue: { fontSize: 16, fontWeight: '800' },
     divisionDivider: { width: 1, height: '60%', backgroundColor: 'rgba(155,155,155,0.2)' },
 
-    sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1 },
+    sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
     productsList: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
     productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
     productNameDetail: { fontSize: 14, fontWeight: '700' },

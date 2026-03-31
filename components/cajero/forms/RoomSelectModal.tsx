@@ -40,6 +40,12 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
 
   const getRoomState = (room: Room) => Number(room.estado ?? room.status ?? 0);
 
+  // Una habitación está ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
+  const isLibre = (room: Room) => {
+    const estado = Number(room.estado ?? room.status ?? 0);
+    return estado === 1; // Solo libre si estado = 1
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
@@ -59,20 +65,20 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             renderItem={({ item }) => {
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
-              const isActive = getRoomState(item) === 1;
+              const estaLibre = isLibre(item);
               const roomName = item.nombre || `Habitación ${item.id_habitacion || item.id}`;
 
               return (
                 <Pressable
                   onPress={() => {
-                    if (isActive) onSelect(item);
+                    if (estaLibre) onSelect(item);
                   }}
                   style={[
                     styles.modalItem,
                     {
                       borderColor: isSelected ? primaryColor : borderColor,
                       backgroundColor: isSelected ? `${primaryColor}15` : "transparent",
-                      opacity: isActive ? 1 : 0.6,
+                      opacity: estaLibre ? 1 : 0.6,
                       borderWidth: isSelected ? 2 : 1.5,
                     },
                   ]}
@@ -80,13 +86,13 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                   <View
                     style={[
                       styles.roomIcon,
-                      { backgroundColor: isActive ? "#10B98120" : "#EF444420" },
+                      { backgroundColor: estaLibre ? "#10B98120" : "#EF444420" },
                     ]}
                   >
                     <Ionicons
                       name="business"
                       size={24}
-                      color={isActive ? "#10B981" : "#EF4444"}
+                      color={estaLibre ? "#10B981" : "#EF4444"}
                     />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
@@ -100,12 +106,12 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                       <Text
                         style={{
                           fontSize: 11,
-                          color: isActive ? "#10B981" : "#EF4444",
+                          color: estaLibre ? "#10B981" : "#EF4444",
                           marginLeft: 8,
                           fontWeight: "bold",
                         }}
                       >
-                        {isActive ? "● LIBRE" : "● OCUPADA"}
+                        {estaLibre ? "● LIBRE" : "● OCUPADA"}
                       </Text>
                     </View>
                   </View>

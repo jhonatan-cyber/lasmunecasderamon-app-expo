@@ -28,6 +28,13 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { parseDateSafe } from "@/utils/timeUtils";
 
+// Tipo para pagos mixtos
+interface MetodoPagoMonto {
+  metodo: PaymentMethod;
+  monto: number;
+  display: string; // string formateado para el input (ej: "500.000")
+}
+
 type ServiceState = {
   loadingInitial: boolean;
   anfitrionas: any[];
@@ -40,6 +47,8 @@ type ServiceState = {
   precioServicio: string;
   metodoPago: PaymentMethod;
   metodoPagoAdicional: PaymentMethod | "";
+  // Estado para pagos mixtos
+  pagosMixtos: MetodoPagoMonto[];
   submitting: boolean;
   hostessModalVisible: boolean;
   roomModalVisible: boolean;
@@ -58,6 +67,10 @@ type ServiceAction =
   | { type: 'SET_PRECIO_SERVICIO'; payload: string }
   | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
   | { type: 'SET_METODO_PAGO_ADICIONAL'; payload: PaymentMethod | "" }
+  | { type: 'SET_PAGOS_MIXTOS'; payload: MetodoPagoMonto[] }
+  | { type: 'ADD_PAGO_MIXTO'; payload: MetodoPagoMonto }
+  | { type: 'UPDATE_PAGO_MIXTO'; index: number; monto: number; display?: string }
+  | { type: 'REMOVE_PAGO_MIXTO'; index: number }
   | { type: 'SET_SUBMITTING'; payload: boolean }
   | { type: 'SET_MODAL_VISIBLE'; modal: 'hostess' | 'room' | 'client' | 'balance'; visible: boolean }
   | { type: 'SET_BALANCE_AMOUNT'; payload: string }
@@ -76,6 +89,7 @@ const initialServiceState: ServiceState = {
   precioServicio: "0",
   metodoPago: "efectivo",
   metodoPagoAdicional: "",
+  pagosMixtos: [],
   submitting: false,
   hostessModalVisible: false,
   roomModalVisible: false,
@@ -95,6 +109,18 @@ function serviceReducer(state: ServiceState, action: ServiceAction): ServiceStat
     case 'SET_PRECIO_SERVICIO': return { ...state, precioServicio: action.payload };
     case 'SET_METODO_PAGO': return { ...state, metodoPago: action.payload };
     case 'SET_METODO_PAGO_ADICIONAL': return { ...state, metodoPagoAdicional: action.payload };
+    case 'SET_PAGOS_MIXTOS': return { ...state, pagosMixtos: action.payload };
+    case 'ADD_PAGO_MIXTO': return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
+    case 'UPDATE_PAGO_MIXTO': 
+      const updatedPagos = [...state.pagosMixtos];
+      updatedPagos[action.index] = { 
+        ...updatedPagos[action.index], 
+        monto: action.monto,
+        display: action.display ?? (action.monto > 0 ? String(action.monto) : '')
+      };
+      return { ...state, pagosMixtos: updatedPagos };
+    case 'REMOVE_PAGO_MIXTO': 
+      return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
     case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
     case 'SET_MODAL_VISIBLE':
       if (action.modal === 'hostess') return { ...state, hostessModalVisible: action.visible };
@@ -156,6 +182,7 @@ export default function NuevoServicioScreen() {
     precioServicio,
     metodoPago,
     metodoPagoAdicional,
+    pagosMixtos,
     submitting,
     hostessModalVisible,
     roomModalVisible,
@@ -257,8 +284,9 @@ export default function NuevoServicioScreen() {
 
     const multiplicadorTiempo = selectedHabitacion?.tiempo === 60 ? 2 : 1;
     const multiplicadorServicio = numAnfitrionas;
-    const multiplicadorHabitacion = Math.max(numAnfitrionas, numClientes);
+    // Si la habitación tiene comisión, NO se multiplica por anfitrionas
     const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
+    const multiplicadorHabitacion = tieneComision ? 1 : Math.max(numAnfitrionas, numClientes);
 
     const precioServicioActual = numericPrecioServicio * multiplicadorTiempo * multiplicadorServicio;
     const precioHabitacionActual =
@@ -325,7 +353,7 @@ export default function NuevoServicioScreen() {
       next = selectedClients.filter((id) => String(id) !== String(clientId));
     } else {
       if (selectedClients.length >= maxClients) {
-        showToast("Límite", `Máximo ${maxClients} clientes`);
+        showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
         return;
       }
       next = [...selectedClients, clientId];
@@ -336,7 +364,28 @@ export default function NuevoServicioScreen() {
       .map(idStr => next.find(id => String(id) === idStr));
 
     dispatch({ type: 'SET_SELECTED_CLIENTS', payload: uniqueNext as (string | number)[] });
+
+    if (uniqueNext.length === 0) {
+      dispatch({ type: 'SET_METODO_PAGO', payload: 'efectivo' });
+    }
   };
+
+  // Auto-seleccionar prepago si el saldo del cliente cubre el total
+  useEffect(() => {
+    if (!selectedClientData) return;
+    const saldo = Number(selectedClientData.saldo || 0);
+    if (saldo >= totals.total && totals.total > 0) {
+      dispatch({ type: 'SET_METODO_PAGO', payload: 'prepago' });
+    } else if (saldo > 0 && saldo < totals.total) {
+      // Saldo parcial: cambiar a mixto solo si aún no está en mixto
+      // para no sobreescribir los pagos que el usuario ya configuró
+      dispatch({ type: 'SET_METODO_PAGO', payload: 'mixto' });
+      dispatch({
+        type: 'SET_PAGOS_MIXTOS',
+        payload: [{ metodo: 'prepago' as PaymentMethod, monto: saldo, display: saldo > 0 ? saldo.toLocaleString('es-CL') : '' }],
+      });
+    }
+  }, [selectedClientData]); // solo cuando cambia el cliente, no el total
 
   
   const handleLoadBalance = async () => {
@@ -380,9 +429,31 @@ export default function NuevoServicioScreen() {
       showToast("Caja Cerrada", "Abre una caja primero.");
       return;
     }
-    if (metodoPago === 'prepago') {
+    
+    // Validar método mixto (puede ser principal o adicional)
+    const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
+    if (esMixto) {
+      const sumaPagos = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
+      if (Math.abs(sumaPagos - totals.total) > 1) {
+        showToast("Monto Incorrecto", `La suma de los pagos ($${sumaPagos.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`, "error");
+        return;
+      }
+      if (pagosMixtos.length < 2) {
+        showToast("Métodos Insuficientes", "Selecciona al menos 2 métodos de pago para el método mixto", "error");
+        return;
+      }
+    }
+    
+    if (metodoPago === 'prepago' || (metodoPago === 'mixto' && pagosMixtos.some(p => p.metodo === 'prepago'))) {
       const saldo = Number(selectedClientData?.saldo || 0);
-      if (saldo < totals.total && !metodoPagoAdicional) {
+      if (metodoPago === 'mixto') {
+        // Validar que el prepago no exceda el saldo
+        const prepagoMonto = pagosMixtos.find(p => p.metodo === 'prepago')?.monto || 0;
+        if (prepagoMonto > saldo) {
+          showToast("Saldo Insuficiente", "El monto de prepago no puede exceder el saldo del cliente", "error");
+          return;
+        }
+      } else if (saldo < totals.total && !metodoPagoAdicional) {
         showToast("Saldo Insuficiente", "El saldo del cliente no cubre el total. Selecciona un método adicional.", "error");
         return;
       }
@@ -399,25 +470,36 @@ export default function NuevoServicioScreen() {
 
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
-      const payload = {
+      const payload: any = {
         codigo: generateCode(),
         cliente_id: selectedClients.length > 0 ? selectedClients[0] : null,
         clientes: selectedClients,
         habitacion_id:
           selectedHabitacion.id_habitacion || selectedHabitacion.id,
         precio_habitacion: totals.precioHabitacionActual,
-        precio_servicio: totals.precioServicioActual,
+        precio_servicio: numericPrecioServicio,
         iva: totals.iva,
-        sub_total: totals.subTotal,
+        sub_total: hasAnfitrionaComision ? totals.precioHabitacionActual : totals.subTotal,
         total: totals.total,
         tiempo: selectedHabitacion.tiempo || 0,
         fecha_crea: parseDateSafe(new Date()).toISOString(),
         metodo_pago: metodoPago,
-        metodo_pago_adicional: (metodoPago === 'prepago' && (Number(selectedClientData?.saldo || 0) < totals.total)) 
-          ? metodoPagoAdicional || undefined 
-          : undefined,
         usuarios: selectedHostesses,
       };
+
+      // Si es método mixto (principal o adicional), incluir los pagos mixtos
+      const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
+      if (esMixto) {
+        payload.pagos_mixtos = pagosMixtos;
+        // Calcular cuánto se paga con prepago del cliente
+        const prepagoMonto = pagosMixtos.find(p => p.metodo === 'prepago')?.monto || 0;
+        if (prepagoMonto > 0 && metodoPago !== 'mixto') {
+          payload.metodo_pago = 'prepago';
+          payload.monto_prepago = prepagoMonto;
+        }
+      } else if (metodoPago === 'prepago' && (Number(selectedClientData?.saldo || 0) < totals.total)) {
+        payload.metodo_pago_adicional = metodoPagoAdicional || undefined;
+      }
 
       // Log anfitrionas data as requested
       const anfitrionasDataRes = await apiClient("/anfitrionas");
@@ -442,7 +524,7 @@ export default function NuevoServicioScreen() {
     } finally {
       dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
-  }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, router]);
+  }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, selectedClientData, router]);
 
   const NuevoServicioSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
@@ -639,23 +721,146 @@ export default function NuevoServicioScreen() {
           )}
           <PaymentMethodSelect
             showPrepago={!!selectedClientData}
+            showMixto={!!selectedClientData}
             selectedMethod={metodoPago}
+            disabled={selectedClientData && Number(selectedClientData.saldo || 0) >= totals.total && metodoPago !== 'mixto'}
             onSelect={(val) => {
               dispatch({ type: 'SET_METODO_PAGO', payload: val });
-              if (val !== 'prepago') dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: "" });
+              if (val !== 'prepago') {
+                dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: "" });
+                dispatch({ type: 'SET_PAGOS_MIXTOS', payload: [] });
+              }
+              // Si selecciona mixto, inicializar vacío para que agregue manualmente
+              if (val === 'mixto') {
+                const saldo = Number(selectedClientData?.saldo || 0);
+                // Solo agregar prepago si hay saldo, el resto lo agrega el usuario manualmente
+                dispatch({ 
+                  type: 'SET_PAGOS_MIXTOS', 
+                  payload: saldo > 0 
+                    ? [{ metodo: 'prepago' as PaymentMethod, monto: saldo, display: saldo.toLocaleString('es-CL') }]
+                    : []
+                });
+              }
             }}
           />
 
-          {metodoPago === 'prepago' && selectedClientData && Number(selectedClientData.saldo || 0) < totals.total && (
-            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
-              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' }}>
-                Faltan ${(totals.total - Number(selectedClientData.saldo || 0)).toLocaleString()} - Completar con:
-              </Text>
-              <PaymentMethodSelect
-                showPrepago={false}
-                selectedMethod={metodoPagoAdicional as any}
-                onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: val })}
-              />
+          {/* UI de Pagos Mixtos - cuando se selecciona mixto como método principal */}
+          {metodoPago === 'mixto' && (
+            <View style={{ marginTop: 16, padding: 12, backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderRadius: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <Ionicons name="shuffle-outline" size={18} color={accentColor} />
+                <Text style={{ color: textPrimary, fontSize: 13, fontWeight: '800', marginLeft: 8, textTransform: 'uppercase' }}>
+                  Distribución de Pagos (Total: ${totals.total.toLocaleString()})
+                </Text>
+              </View>
+              
+              {pagosMixtos.map((pago, index) => (
+                <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={{ color: textSecondary, fontSize: 12, width: 80, textTransform: 'uppercase' }}>
+                    {pago.metodo}
+                  </Text>
+                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: textSecondary, fontSize: 12, marginRight: 8 }}>$</Text>
+                    <TextInput
+                      style={{ 
+                        flex: 1, 
+                        backgroundColor: cardBg, 
+                        borderRadius: 8, 
+                        paddingHorizontal: 12, 
+                        paddingVertical: 8,
+                        color: textPrimary,
+                        borderWidth: 1,
+                        borderColor: borderColor
+                      }}
+                      value={pago.display}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor={textSecondary}
+                      onChangeText={(text) => {
+                        const clean = text.replace(/\D/g, "");
+                        const monto = clean ? parseInt(clean, 10) : 0;
+                        // guardar el texto crudo mientras tipea para no interrumpir el cursor
+                        dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display: clean });
+                      }}
+                      onBlur={() => {
+                        // al perder foco, formatear con puntos de miles
+                        dispatch({ 
+                          type: 'UPDATE_PAGO_MIXTO', 
+                          index, 
+                          monto: pago.monto,
+                          display: pago.monto > 0 ? pago.monto.toLocaleString('es-CL') : ''
+                        });
+                      }}
+                    />
+                  </View>
+                  <Pressable 
+                    onPress={() => dispatch({ type: 'REMOVE_PAGO_MIXTO', index })}
+                    style={{ marginLeft: 8, padding: 4 }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </Pressable>
+                </View>
+              ))}
+
+              {/* Agregar más métodos de pago */}
+              {(() => {
+                const sumaActual = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
+                const yaCompleto = sumaActual >= totals.total;
+                
+                return (
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={{ color: textSecondary, fontSize: 11, marginBottom: 8, fontWeight: '600' }}>
+                      {yaCompleto ? 'Total completado' : 'Agregar método de pago:'}
+                    </Text>
+                    {!yaCompleto && (
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
+                          // No mostrar si ya está en la lista
+                          if (pagosMixtos.some(p => p.metodo === metodo)) return null;
+                          return (
+                            <Pressable
+                              key={metodo}
+                              onPress={() => {
+                                dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo: metodo as any, monto: 0, display: '' } });
+                              }}
+                              style={{ 
+                                paddingVertical: 8, 
+                                paddingHorizontal: 12, 
+                                borderRadius: 8, 
+                                borderWidth: 1, 
+                                borderColor: accentColor,
+                                backgroundColor: `${accentColor}10`
+                              }}
+                            >
+                              <Text style={{ color: accentColor, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
+                                {metodo}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })()}
+
+              {/* Mostrar suma actual vs total */}
+              <View style={{ marginTop: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: borderColor }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: textSecondary, fontSize: 12 }}>Suma actual:</Text>
+                  <Text style={{ 
+                    color: pagosMixtos.reduce((sum, p) => sum + p.monto, 0) === totals.total ? '#10B981' : '#EF4444',
+                    fontWeight: '700'
+                  }}>
+                    ${pagosMixtos.reduce((sum, p) => sum + p.monto, 0).toLocaleString()}
+                  </Text>
+                </View>
+                {pagosMixtos.reduce((sum, p) => sum + p.monto, 0) !== totals.total && (
+                  <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 4 }}>
+                    * Falta: ${(totals.total - pagosMixtos.reduce((sum, p) => sum + p.monto, 0)).toLocaleString()}
+                  </Text>
+                )}
+              </View>
             </View>
           )}
         </View>
@@ -674,26 +879,41 @@ export default function NuevoServicioScreen() {
               Subtotal
             </Text>
             <Text style={[styles.summaryVal, { color: textPrimary }]}>
-              ${totals.subTotal.toLocaleString()}
+              ${(hasAnfitrionaComision
+                ? totals.precioHabitacionActual
+                : totals.subTotal
+              ).toLocaleString()}
             </Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-              Habitación
-            </Text>
-            <Text style={[styles.summaryVal, { color: textPrimary }]}>
-              ${totals.precioHabitacionActual.toLocaleString()}
-            </Text>
-          </View>
-          {(selectedHabitacion?.comision_anfitriona ?? 0) > 0 && selectedHostesses.length > 0 && (
-            <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: borderColor }]}>
-              <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>
-                Comisión p/Anf
+          {!hasAnfitrionaComision && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+                Habitación
               </Text>
-              <Text style={[styles.summaryVal, { color: '#10B981', fontWeight: '800' }]}>
-                ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
+              <Text style={[styles.summaryVal, { color: textPrimary }]}>
+                ${totals.precioHabitacionActual.toLocaleString()}
               </Text>
             </View>
+          )}
+          {(selectedHabitacion?.comision_anfitriona ?? 0) > 0 && selectedHostesses.length > 0 && (
+            <>
+              <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: borderColor }]}>
+                <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>
+                  Comisión total
+                </Text>
+                <Text style={[styles.summaryVal, { color: '#10B981', fontWeight: '800' }]}>
+                  ${(selectedHabitacion?.comision_anfitriona ?? 0).toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: '#10B981' }]}>
+                  Comisión p/Anf
+                </Text>
+                <Text style={[styles.summaryVal, { color: '#10B981' }]}>
+                  ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
+                </Text>
+              </View>
+            </>
           )}
           {metodoPago === "tarjeta" && (
             <View style={styles.summaryRow}>

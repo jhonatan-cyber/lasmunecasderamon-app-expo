@@ -51,8 +51,10 @@ const safeNumber = (val: any) => {
 
 const formatServiceDetail = (raw: any) => {
   const totalBase = safeNumber(raw?.total ?? raw?.monto ?? 0);
-  const precioServicio = safeNumber(raw?.precio_servicio ?? raw?.precioServicio ?? raw?.sub_total ?? totalBase);
-  const precioHabitacion = safeNumber(raw?.precio_habitacion ?? raw?.precioHabitacion ?? Math.max(0, totalBase - precioServicio - safeNumber(raw?.iva ?? 0)));
+  
+  // El precio_servicio del backend es el valor original del input (no multiplicado)
+  const precioServicio = safeNumber(raw?.precio_servicio ?? raw?.precioServicio ?? 0);
+  const precioHabitacion = safeNumber(raw?.precio_habitacion ?? raw?.precioHabitacion ?? 0);
   const iva = safeNumber(raw?.iva ?? 0);
   const anfitrionasIdsRaw = Array.isArray(raw?.anfitrionas_ids)
     ? raw.anfitrionas_ids
@@ -68,7 +70,13 @@ const formatServiceDetail = (raw: any) => {
     anfitrionasIdsRaw.length,
     anfitrionasNombres.length
   );
-  const comisionIndividual = totalUsuarios > 0 ? precioServicio / totalUsuarios : 0;
+  
+  // La comisión por anfitriona es el precio del input (no dividido)
+  const comisionIndividual = precioServicio;
+  
+  // El total de comisiones = precio input × número de anfitrionas
+  const totalComision = precioServicio * totalUsuarios;
+  
   const roomName = raw?.roomName || raw?.habitacion_nombre || raw?.habitacion_numero || raw?.habitacion || "Servicio de barra";
   const fechaServicio = parseDateSafe(raw?.fecha_crea || raw?.created_at || raw?.startTime);
 
@@ -81,7 +89,7 @@ const formatServiceDetail = (raw: any) => {
     total: safeNumber(raw?.total ?? raw?.monto ?? (precioServicio + precioHabitacion + iva)),
     total_usuarios: totalUsuarios,
     comision_individual: comisionIndividual,
-    total_comision: safeNumber(raw?.total_comision ?? (precioServicio * totalUsuarios)),
+    total_comision: totalComision,
     created_at: fechaServicio.toISOString(),
     fecha_crea: fechaServicio.toISOString(),
     waiter_name: raw?.waiter_name || raw?.usuario_nick || `${raw?.creator_nombre || ""} ${raw?.creator_apellido || ""}`.trim() || "Admin",
@@ -255,7 +263,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 
         {activeTab === "activos" && (
           <View style={styles.actionsBox}>
-            {(Number(item.precio_servicio) || 0) <= 0 && (
+            {Number(item.habitacion_comision || 0) > 0 ? (
               <Pressable
                 style={[styles.editActionBtn, { backgroundColor: theme.warning }]}
                 onPress={() => onEditar && onEditar(item)}
@@ -265,7 +273,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
                 <Ionicons name="create" size={16} color="#FFF" />
                 <Text style={styles.btnText}>EDITAR</Text>
               </Pressable>
-            )}
+            ) : null}
             <Pressable
               style={[styles.finishActionBtn, { backgroundColor: theme.danger }]}
               onPress={() => onFinalizar(item)}
@@ -807,7 +815,7 @@ export default function ServiciosActivosScreen() {
               <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border }]}>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Servicio</Text>
-                  <Text style={[styles.summaryVal, { color: theme.text }]}>${safeNumber(selectedServiceDetail?.precio_servicio).toLocaleString()}</Text>
+                  <Text style={[styles.summaryVal, { color: theme.text }]}>${(safeNumber(selectedServiceDetail?.precio_servicio) * safeNumber(selectedServiceDetail?.total_usuarios)).toLocaleString()}</Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Habitación</Text>

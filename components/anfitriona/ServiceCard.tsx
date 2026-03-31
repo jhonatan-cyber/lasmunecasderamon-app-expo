@@ -10,6 +10,7 @@ interface ServiceCardProps {
     index: number;
     onPress: (item: Servicio) => void;
     onAssistance: (servicioId: number, roomName: string, type: string) => void;
+    onEdit?: (item: Servicio) => void;
 }
 
 export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardProps) => {

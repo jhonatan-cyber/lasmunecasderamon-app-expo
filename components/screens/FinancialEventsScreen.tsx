@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useState, useCallback } from 'react';
 import {
+    ActivityIndicator,
     FlatList,
     Modal,
     Pressable,
@@ -9,14 +10,15 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View,
-    ActivityIndicator
+    View
 } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { TipDetailModal } from '@/components/shared/TipDetailModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useFinancialEvents } from '@/hooks/useFinancialEvents';
 import { apiClient } from '@/api/client';
+import { parseDateSafe } from "@/utils/timeUtils";
 
 
 interface FinancialEventsScreenProps {
@@ -43,14 +45,23 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? 'Error' : `${date.getUTCDate()} ${date.toLocaleDateString('es-ES', { month: 'short', timeZone: 'UTC' })} ${date.getUTCFullYear()}`;
+        try {
+            const date = parseDateSafe(dateStr);
+            if (isNaN(date.getTime())) return 'Fecha inválida';
+            const day = date.getUTCDate();
+            const month = date.toLocaleDateString('es-ES', { month: 'short' });
+            const year = date.getUTCFullYear();
+            return `${day} ${month} ${year}`;
+        } catch { return 'Error'; }
     };
 
     const formatTime = (dateStr: string) => {
         if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? '' : date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+        try {
+            const date = parseDateSafe(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        } catch { return ''; }
     };
 
     const handleItemPress = async (item: any) => {
@@ -67,7 +78,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                     setParentPropina(tipRes.data);
                     if (tipRes.data.venta_id) {
                         const saleRes = await apiClient(`/ventas/${tipRes.data.venta_id}`);
-                        if (saleRes && !saleRes.error) setSaleDetail(saleRes);
+                        if (saleRes && !saleRes.error) setSaleDetail(saleRes.data || saleRes);
                     }
                 }
             } else {
@@ -167,98 +178,134 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
             <FlatList data={filteredData} keyExtractor={(item) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} />
 
-            <Modal visible={modalVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: bg }]}>
-                        <View style={styles.modalHeader}>
-                            <View><Text style={[styles.modalTitle, { color: textPrimary }]}>Detalles</Text><Text style={[styles.modalSubtitle, { color: textSecondary }]}>Código: {selectedItem?.codigo || selectedItem?.codigo_venta || '---'}</Text></View>
-                            <Pressable onPress={() => setModalVisible(false)}><Ionicons name="close" size={28} color={textPrimary} /></Pressable>
+            {type === 'propinas' ? (
+                <TipDetailModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    loading={loadingDetail}
+                    selectedPropina={selectedItem}
+                    parentPropina={parentPropina}
+                    saleDetail={saleDetail}
+                />
+            ) : (
+                <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+                            <View style={styles.modalHeader}>
+                                <View>
+                                    <Text style={[styles.modalTitle, { color: textPrimary }]}>
+                                        Detalles
+                                    </Text>
+                                    <Text style={[styles.modalSubtitle, { color: textSecondary }]}>Código: {selectedItem?.codigo || selectedItem?.codigo_venta || '---'}</Text>
+                                </View>
+                                <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                                    <Ionicons name="close" size={24} color={textPrimary} />
+                                </Pressable>
+                            </View>
+                            <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+                                {loadingDetail ? (
+                                    <View style={styles.detailLoadingBox}>
+                                        <ActivityIndicator size="large" color={accentColor} />
+                                        <Text style={{ color: textSecondary, marginTop: 15 }}>Cargando detalles...</Text>
+                                    </View>
+                                ) : (
+                                    <View style={[styles.infoCard, { borderColor, backgroundColor: cardBg }]}>
+                                        <Text style={[styles.cardTitle, { color: textSecondary }]}>DATOS DE LA COMISIÓN</Text>
+                                        <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Cliente:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.cliente_nombre || 'Particular'}</Text></View>
+                                        <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Lugar:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.habitacion_nombre || 'Barra'}</Text></View>
+                                        {selectedItem?.productos && (
+                                            <View style={{ marginTop: 15 }}>
+                                                <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 5 }}>PRODUCTOS:</Text>
+                                                { (typeof selectedItem.productos === 'string' ? JSON.parse(selectedItem.productos) : selectedItem.productos).map((p: any, i: number) => (
+                                                    <Text key={i} style={{ color: textPrimary, fontSize: 13 }}>• {p.cantidad}x {p.nombre}</Text>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+                            </ScrollView>
+                            <Pressable onPress={() => setModalVisible(false)} style={[styles.closeModalBtn, { backgroundColor: accentColor }]}>
+                                <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 16 }}>Cerrar</Text>
+                            </Pressable>
                         </View>
-                        <ScrollView contentContainerStyle={{ padding: 20 }}>
-                            {loadingDetail ? <ActivityIndicator size="large" color={accentColor} /> : (
-                                <>
-                                    {type === 'propinas' && parentPropina && (
-                                        <View style={[styles.infoCard, { borderColor, backgroundColor: cardBg }]}>
-                                            <Text style={[styles.cardTitle, { color: textSecondary }]}>REPARTO DE PROPINA</Text>
-                                            <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Monto Total:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>${parentPropina.monto_total?.toLocaleString()}</Text></View>
-                                            <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Participantes:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{parentPropina.conteo_usuarios}</Text></View>
-                                            <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 10, marginTop: 10 }]}><Text style={{ color: accentColor, fontWeight: '900' }}>MI PARTE:</Text><Text style={{ color: accentColor, fontWeight: '900', fontSize: 18 }}>${selectedItem?.monto?.toLocaleString()}</Text></View>
-                                        </View>
-                                    )}
- 
-                                    {type === 'comisiones' && (
-                                         <View style={[styles.infoCard, { borderColor, backgroundColor: cardBg }]}>
-                                            <Text style={[styles.cardTitle, { color: textSecondary }]}>DATOS DE LA COMISIÓN</Text>
-                                            <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Cliente:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.cliente_nombre || 'Particular'}</Text></View>
-                                            <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Lugar:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.habitacion_nombre || 'Barra'}</Text></View>
-                                            {selectedItem?.productos && (
-                                                <View style={{ marginTop: 15 }}>
-                                                    <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 5 }}>PRODUCTOS:</Text>
-                                                    { (typeof selectedItem.productos === 'string' ? JSON.parse(selectedItem.productos) : selectedItem.productos).map((p: any, i: number) => (
-                                                        <Text key={i} style={{ color: textPrimary, fontSize: 13 }}>• {p.cantidad}x {p.nombre}</Text>
-                                                    ))}
-                                                </View>
-                                            )}
-                                        </View>
-                                    )}
-
-                                    {saleDetail && (
-                                        <View style={[styles.infoCard, { borderColor, backgroundColor: cardBg, marginTop: 15 }]}>
-                                            <Text style={[styles.cardTitle, { color: textSecondary }]}>DATOS DE VENTA</Text>
-                                            {saleDetail.detalles?.map((d: any, i: number) => (
-                                                <View key={i} style={styles.infoRow}><Text style={{ color: textPrimary, flex: 1 }}>{d.cantidad}x {d.producto_nombre}</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>${d.sub_total?.toLocaleString()}</Text></View>
-                                            ))}
-                                            <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Método:</Text><Text style={{ color: textPrimary }}>{saleDetail.metodo_pago}</Text></View>
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </ScrollView>
-                        <Pressable onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: accentColor }]}><Text style={{ color: '#FFF', fontWeight: '800' }}>Cerrar</Text></Pressable>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 1 },
-    summaryLabel: { fontSize: 12, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
-    summaryAmount: { fontSize: 42, fontWeight: '900', letterSpacing: -1, marginBottom: 12 },
+    summaryCard: {
+        marginHorizontal: 16, marginTop: 16, borderRadius: 24,
+        padding: 24, alignItems: 'center', borderWidth: 1,
+        elevation: 4, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12,
+    },
+    summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8, textTransform: 'uppercase' },
+    summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
     summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
     summaryDetail: { fontSize: 13, fontWeight: '600' },
     filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },
-    filterButton: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
-    filterText: { fontSize: 11, fontWeight: '700' },
+    filterButton: { flex: 1, paddingVertical: 8, borderRadius: 9999, alignItems: 'center', borderWidth: 1 },
+    filterText: { fontSize: 11, fontWeight: '600' },
     listContent: { paddingHorizontal: 16, paddingBottom: 20 },
     card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    indexBadge: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-    indexText: { fontSize: 12, fontWeight: '800' },
-    badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-    badgeText: { fontSize: 11, fontWeight: '800' },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-    statusText: { fontSize: 11, fontWeight: '700' },
+    indexBadge: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+    indexText: { fontSize: 14, fontWeight: '700' },
+    badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
+    badgeText: { fontSize: 11, fontWeight: '600' },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
+    statusText: { fontSize: 12, fontWeight: '600' },
     cardBody: {},
-    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
     dateText: { fontSize: 14 },
-    timeText: { fontSize: 13 },
+    timeText: { fontSize: 13, marginLeft: 6 },
     amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    amountLabel: { fontSize: 13, fontWeight: '600' },
+    amountLabel: { fontSize: 14, fontWeight: '600' },
     amountValue: { fontSize: 24, fontWeight: '900' },
     emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', marginTop: 40 },
     emptyText: { fontSize: 14, marginTop: 15, textAlign: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: { height: '85%', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
-    modalHeader: { padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
-    modalSubtitle: { fontSize: 12, fontWeight: '600' },
+    modalHeader: { padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    modalTitle: { fontSize: 20, fontWeight: '900' },
+    modalSubtitle: { fontSize: 13, fontWeight: '500', marginTop: 2 },
     infoCard: { padding: 16, borderRadius: 20, borderWidth: 1 },
-    cardTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5, marginBottom: 15 },
+    cardTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: 15 },
     infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    closeBtn: { margin: 20, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+    closeBtn: { padding: 4 },
+    closeModalBtn: {
+        height: 54,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 24,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5
+    },
+    
+    // New Styles for Tip Detail (Parity with Cajero)
+    divisionCard: { flexDirection: 'row', padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    divisionItem: { flex: 1, alignItems: 'center' },
+    divisionLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
+    divisionValue: { fontSize: 16, fontWeight: '800' },
+    divisionDivider: { width: 1, height: '60%', backgroundColor: 'rgba(155,155,155,0.2)' },
+    sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
+    productsList: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
+    productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
+    productNameDetail: { fontSize: 14, fontWeight: '700' },
+    productSubtotal: { fontSize: 14, fontWeight: '800' },
+    saleTotalRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderTopWidth: 1 },
+    saleTotalLabel: { fontSize: 13, fontWeight: '800' },
+    saleTotalValue: { fontSize: 16, fontWeight: '900' },
+    statusBadgeSmall: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
+    paymentInfoBox: { marginTop: 15, padding: 12, borderRadius: 12, marginBottom: 8 },
+    detailLoadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
 });
 
 

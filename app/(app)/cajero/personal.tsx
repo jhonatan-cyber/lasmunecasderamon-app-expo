@@ -206,12 +206,10 @@ export default function PersonalScreen() {
             }
         });
 
-        const interval = setInterval(fetch, 5000);
         return () => {
-            clearInterval(interval);
             sub.remove();
         };
-    }, [selectedUser === null]);
+    }, [selectedUser?.id]);
 
 
     const renderUser = useCallback(({ item, index }: { item: User; index: number }) => {

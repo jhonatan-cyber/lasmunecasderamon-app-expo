@@ -16,8 +16,8 @@ export const AttendanceCodeDisplay = () => {
 
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
     const role = roleName.toLowerCase();
-    // Solo mostrar el código QR a administradores (los cajeros tienen el módulo Personal)
-    const canSeeCode = role.includes('administrador');
+    // Mostrar el código QR a administradores y cajeros
+    const canSeeCode = role.includes('administrador') || role.includes('cajero');
 
     const fetchCodigo = useCallback(async () => {
         if (!canSeeCode) return;
@@ -38,10 +38,6 @@ export const AttendanceCodeDisplay = () => {
     useEffect(() => {
         fetchCodigo();
         
-        const interval = setInterval(() => {
-            fetchCodigo();
-        }, 3000);
-
         const subscription = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigo(payload.data.codigo);
@@ -49,10 +45,9 @@ export const AttendanceCodeDisplay = () => {
         });
 
         return () => {
-            clearInterval(interval);
             subscription.remove();
         };
-    }, []);
+    }, [fetchCodigo]);
 
     const { accentColor, isDark } = useAccentColor();
 

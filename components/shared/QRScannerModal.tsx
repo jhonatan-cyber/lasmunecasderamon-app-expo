@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { MotiView } from 'moti';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Linking,
@@ -38,6 +38,7 @@ export const QRScannerModal = ({
     const [cameraActive, setCameraActive] = useState(false);
     const [codigo, setCodigo] = useState<string>('');
     const { accentColor } = useAccentColor();
+    const timerRef = useRef<any>(null);
 
     const fetchCodigo = useCallback(async () => {
         try {
@@ -45,21 +46,21 @@ export const QRScannerModal = ({
             if (res.success) setCodigo(res.codigo);
         } catch {}
     }, []);
+    
     useEffect(() => {
-        let timer: any;
         if (visible) {
             setScanning(false);
             setLoading(false);
             setTorch(false);
             setZoom(ZOOM_NORMAL);
             fetchCodigo();
-            timer = setTimeout(() => setCameraActive(true), 300);
+            timerRef.current = setTimeout(() => setCameraActive(true), 300);
         } else {
             setCameraActive(false);
-            setScanning(false);
-            setLoading(false);
         }
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timerRef.current);
+        };
     }, [visible, fetchCodigo]);
 
     if (!visible) return null;
@@ -113,8 +114,7 @@ export const QRScannerModal = ({
     const handleBarCodeScanned = async ({ data }: { data: string }) => {
         if (scanning || loading) return;
         setScanning(true);
-        setLoading(true);
-
+        
         if (Haptics.notificationAsync) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
@@ -124,17 +124,16 @@ export const QRScannerModal = ({
             if (!trimmed) {
                 throw new Error('QR vacío o ilegible.');
             }
-            onClose();
+            onClose(); // Cerrar modal antes de procesar
             await onScanned(trimmed);
         } catch (error: any) {
+            // Mostrar error y cerrar modal
+            onClose();
             Toast.show({
                 type: 'error',
                 text1: 'Error de Lectura',
                 text2: error.message || 'No se pudo procesar el código QR.'
             });
-            setTimeout(() => setScanning(false), 2000);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -214,6 +213,9 @@ export const QRScannerModal = ({
                                 ? 'Modo macro activo. Aleja el QR unos 10–15 cm.'
                                 : 'Apunta al código QR a unos 15–25 cm de distancia.'}
                         </Text>
+                        <TouchableOpacity style={styles.cerrarBtn} onPress={onClose}>
+                            <Text style={styles.cerrarBtnText}>Cerrar</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -387,6 +389,19 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 15,
         borderRadius: 20,
+    },
+    cerrarBtn: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        paddingVertical: 14,
+        paddingHorizontal: 30,
+        borderRadius: 16,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    cerrarBtnText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });
 

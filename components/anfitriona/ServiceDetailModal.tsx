@@ -8,9 +8,10 @@ interface ServiceDetailModalProps {
     visible: boolean;
     servicio: Servicio | null;
     onClose: () => void;
+    onEdit?: () => void;
 }
 
-export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetailModalProps) => {
+export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: ServiceDetailModalProps) => {
     const { accentColor, isDark } = useAccentColor();
     
     const bg = isDark ? '#000000' : '#F9FAFB';
@@ -20,6 +21,11 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
     const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
 
     if (!servicio) return null;
+
+    // Mostrar botón editar si precio_servicio es 0 Y la habitación tiene comisión mayor a 0
+    const precioServicioInput = Number(servicio.precio_servicio) || 0;
+    const habitacionComision = Number(servicio.habitacion_comision) || 0;
+    const mostrarBotonEditar = precioServicioInput === 0 && habitacionComision > 0;
 
     return (
         <Modal 
@@ -72,12 +78,23 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                         </View>
                     </ScrollView>
                     
-                    <Pressable 
-                        style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} 
-                        onPress={onClose}
-                    >
-                        <Text style={styles.modalCloseBtnText}>Entendido</Text>
-                    </Pressable>
+                    <View style={styles.buttonRow}>
+                        {mostrarBotonEditar && onEdit && (
+                            <Pressable 
+                                style={[styles.modalEditBtn, { backgroundColor: '#3B82F6' }]} 
+                                onPress={onEdit}
+                            >
+                                <Ionicons name="pencil" size={20} color="#FFFFFF" />
+                                <Text style={styles.modalEditBtnText}>Editar</Text>
+                            </Pressable>
+                        )}
+                        <Pressable 
+                            style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} 
+                            onPress={onClose}
+                        >
+                            <Text style={styles.modalCloseBtnText}>Entendido</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -94,7 +111,10 @@ const styles = StyleSheet.create({
     gridItem: { width: "47%", padding: 16, borderRadius: 16 },
     gridLabel: { fontSize: 10, fontWeight: "800", marginBottom: 4 },
     gridValue: { fontSize: 14, fontWeight: "700" },
-    modalCloseBtn: { height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    buttonRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
+    modalEditBtn: { flex: 1, height: 50, borderRadius: 25, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+    modalEditBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+    modalCloseBtn: { flex: 1, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
     modalCloseBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });
 

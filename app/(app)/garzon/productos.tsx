@@ -86,7 +86,9 @@ export default function ProductosScreen() {
             const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
             const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
 
-            const newData = { products: prodData?.data, anfitrionas: anfData?.data, rooms: roomData?.data, clients: clientData?.data || clientData };
+            console.log('Anfitrionas response:', anfData);
+
+            const newData = { products: prodData?.data, anfitrionas: anfData?.data || (Array.isArray(anfData) ? anfData : null), rooms: roomData?.data, clients: clientData?.data || clientData };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
@@ -95,7 +97,11 @@ export default function ProductosScreen() {
                 const active = (prodData.data || []).filter((p: Product) => p.status === 1);
                 setProducts(active);
             }
-            if (anfData?.success) setAnfitrionas(anfData.data || []);
+            if (anfData?.success) {
+                setAnfitrionas(anfData.data || []);
+            } else if (Array.isArray(anfData)) {
+                setAnfitrionas(anfData);
+            }
             if (roomData?.success) setRooms(roomData.data || []);
             
             if (Array.isArray(clientData)) {
@@ -177,7 +183,7 @@ export default function ProductosScreen() {
                 meseroId: user.id,
                 clienteId: selectedClientId,
                 subtotal: cartSubtotal,
-                total: cartSubtotal,
+                total: cartTotal,
                 propina: tipAmount,
                 totalComision,
                 detalles: cart.map(item => ({
@@ -193,6 +199,11 @@ export default function ProductosScreen() {
                 })),
                 usuarios: Array.from(new Set(cart.flatMap(i => i.selectedHostesses))).map(id => ({ usuarioId: id })),
             };
+
+            console.log('[DEBUG] Enviando pedido:', JSON.stringify(orderData, null, 2));
+            console.log('[DEBUG] Cliente ID:', selectedClientId);
+            console.log('[DEBUG] Propina:', tipAmount);
+            console.log('[DEBUG] Total:', cartTotal);
 
             const res = await apiClient('/orders', { method: 'POST', body: JSON.stringify(orderData) });
             if (res.success) {

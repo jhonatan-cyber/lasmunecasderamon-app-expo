@@ -136,7 +136,11 @@ export default function ServiciosScreen() {
             <ServiceDetailModal 
                 visible={modalVisible} 
                 servicio={selectedServicio} 
-                onClose={() => setModalVisible(false)} 
+                onClose={() => setModalVisible(false)}
+                onEdit={() => {
+                    // TODO: Implementar edición del servicio
+                    console.log('Editar servicio:', selectedServicio?.id_servicio);
+                }}
             />
 
             <PremiumAlert 
