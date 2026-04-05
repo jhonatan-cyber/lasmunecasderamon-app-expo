@@ -16,6 +16,7 @@ interface PaymentMethodSelectProps {
     showPrepago?: boolean;
     showMixto?: boolean;
     disabled?: boolean;
+    disabledMethods?: PaymentMethod[];
 }
 
 export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
@@ -24,6 +25,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     showPrepago = false,
     showMixto = false,
     disabled = false,
+    disabledMethods = [],
 }) => {
     const { accentColor, isDark } = useAccentColor();
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
@@ -49,6 +51,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
             <View style={styles.row}>
                 {methods.map((method) => {
                     const isSelected = selectedMethod === method.id;
+                    const isMethodDisabled = disabled || disabledMethods.includes(method.id);
                     return (
                         <Pressable
                             key={method.id}
@@ -59,9 +62,10 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                     backgroundColor: isSelected ? `${accentColor}20` : 'transparent',
                                 },
                                 isSelected && { borderColor: accentColor },
+                                isMethodDisabled && { opacity: 0.35 },
                             ]}
-                            onPress={() => onSelect(method.id)}
-                            disabled={disabled}
+                            onPress={() => !isMethodDisabled && onSelect(method.id)}
+                            disabled={isMethodDisabled}
                         >
                             <Ionicons
                                 name={method.icon}
@@ -73,6 +77,9 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                     styles.methodText,
                                     { color: isSelected ? accentColor : textSecondary },
                                 ]}
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.6}
                             >
                                 {method.label}
                             </Text>
@@ -101,17 +108,19 @@ const styles = StyleSheet.create({
     card: {
         flex: 1,
         paddingVertical: 8,
-        paddingHorizontal: 2,
+        paddingHorizontal: 4,
         borderRadius: 10,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 4,
+        minWidth: 0,
     },
     methodText: {
-        fontSize: 9,
+        fontSize: 8,
         fontWeight: '900',
         textTransform: 'uppercase',
+        textAlign: 'center',
     },
 });
 

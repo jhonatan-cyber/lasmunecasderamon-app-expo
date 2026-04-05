@@ -22,7 +22,7 @@ export function GlobalTimerAlert() {
     useEffect(() => {
         const sub = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
             // Si es automático, mostrar el modal de aviso
-            if (data?.automatic && data?.roomName) {
+            if (data?.automatic && data?.reason === "ended" && data?.roomName) {
                 // Evitar duplicados para el mismo ID de servicio
                 if (data.servicioId && lastNotifiedId.current === data.servicioId) {
                     return;

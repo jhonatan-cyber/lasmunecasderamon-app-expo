@@ -202,13 +202,14 @@ export default function SolicitudesScreen() {
                     setAlertConfig(prev => ({ ...prev, visible: false }));
                     removeSolicitudLocally(id, 'anticipo');
                     try {
-                        const res = await apiClient(`/anticipos`, {
+                        const res = await apiClient(`/anticipos/${id}`, {
                             method: 'PUT',
-                            body: JSON.stringify({ id_anticipo: id, estado: 0 })
+                            body: JSON.stringify({ estado: 0 })
                         });
                         if (res.success) {
-                            showToast('Éxito', `Anticipo pagado.`, 'success');
+                            showToast('Éxito', 'Anticipo entregado y descontado de caja.', 'success');
                             DeviceEventEmitter.emit('refresh_requests');
+                            DeviceEventEmitter.emit('refresh_anticipos');
                         } else {
                             showToast('Error', res.message || 'Error al procesar.', 'error');
                             fetchSolicitudes();
@@ -518,29 +519,36 @@ export default function SolicitudesScreen() {
                 data={solicitudes}
                 keyExtractor={(item: any) => item.id_unificado}
                 renderItem={({ item }: { item: any }) => (
-                    <SolicitudCard 
-                        item={item}
-                        accentColor={accentColor}
-                        textPrimary={textPrimary}
-                        textSecondary={textSecondary}
-                        cardBg={cardBg}
-                        borderColor={borderColor}
-                        serverOffset={serverOffset}
-                        cajaAbierta={cajaAbierta}
-                        onAprobar={handleAprobar}
-                        onRechazar={handleRechazar}
-                        onShowServiceModal={(si) => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setSelectedService(si);
-                            setServiceModalVisible(true);
-                        }}
-                        nowTick={nowTick}
-                    />
+                    <View
+                        style={[
+                            styles.cardWrapper,
+                            numColumns > 1 && styles.cardWrapperGrid,
+                        ]}
+                    >
+                        <SolicitudCard 
+                            item={item}
+                            accentColor={accentColor}
+                            textPrimary={textPrimary}
+                            textSecondary={textSecondary}
+                            cardBg={cardBg}
+                            borderColor={borderColor}
+                            serverOffset={serverOffset}
+                            cajaAbierta={cajaAbierta}
+                            onAprobar={handleAprobar}
+                            onRechazar={handleRechazar}
+                            onShowServiceModal={(si) => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                setSelectedService(si);
+                                setServiceModalVisible(true);
+                            }}
+                            nowTick={nowTick}
+                        />
+                    </View>
                 )}
                 extraData={nowTick}
                 estimatedItemSize={120}
                 numColumns={numColumns}
-                columnWrapperStyle={numColumns > 1 ? { gap: 16 } : undefined}
+                columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
                 contentContainerStyle={styles.listContainer}
                 drawDistance={500}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
@@ -636,6 +644,9 @@ const styles = StyleSheet.create({
     },
     backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     listContainer: { padding: 16, paddingBottom: 100 },
+    cardWrapper: { paddingBottom: 16 },
+    cardWrapperGrid: { flex: 1, paddingHorizontal: 8 },
+    columnWrapper: { marginHorizontal: -8 },
     cardSkeleton: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16 },
     emptyCard: { borderRadius: 24, padding: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginTop: 40, borderStyle: 'dashed' },
     emptyText: { fontSize: 18, fontWeight: '800', marginBottom: 4 },

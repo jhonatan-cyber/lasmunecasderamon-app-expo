@@ -31,6 +31,7 @@ import { CategorySelector } from '@/components/cajero/forms/CategorySelector';
 import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { TimeSelector } from '@/components/ui/TimeSelector';
 import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -48,6 +49,7 @@ type VentaState = {
     selectedCliente: any;
     selectedHabitacion: any;
     metodoPago: PaymentMethod;
+    pagosMixtos: { metodo: PaymentMethod; monto: number; display: string }[];
     enableTip: boolean;
     selectedTime: number;
     timeModalVisible: boolean;
@@ -81,6 +83,10 @@ type VentaAction =
     | { type: 'SET_SELECTED_CLIENTE'; payload: any }
     | { type: 'SET_SELECTED_HABITACION'; payload: any }
     | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
+    | { type: 'SET_PAGOS_MIXTOS'; payload: { metodo: PaymentMethod; monto: number; display: string }[] }
+    | { type: 'ADD_PAGO_MIXTO'; payload: { metodo: PaymentMethod; monto: number; display: string } }
+    | { type: 'UPDATE_PAGO_MIXTO'; index: number; monto: number; display?: string }
+    | { type: 'REMOVE_PAGO_MIXTO'; index: number }
     | { type: 'SET_ENABLE_TIP'; payload: boolean }
     | { type: 'SET_SELECTED_TIME'; payload: number }
     | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
@@ -108,6 +114,7 @@ const initialVentaState: VentaState = {
     selectedCliente: null,
     selectedHabitacion: null,
     metodoPago: 'efectivo',
+    pagosMixtos: [],
     enableTip: false,
     selectedTime: 5,
     timeModalVisible: false,
@@ -145,16 +152,25 @@ function ventaReducer(state: VentaState, action: VentaAction): VentaState {
             return { 
                 ...state, 
                 selectedCliente: client,
-                metodoPago: hasSaldo ? 'prepago' : state.metodoPago,
+                metodoPago: hasSaldo ? 'prepago' : 'efectivo',
+                pagosMixtos: [],
                 metodoPagoAdicional: 'efectivo'
             };
         case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
         case 'SET_METODO_PAGO': 
-            // Si el cliente tiene saldo, no dejar cambiar el método primario ('prepago')
-            if ((state.selectedCliente?.saldo || 0) > 0 && action.payload !== 'prepago') {
-                return state;
-            }
-            return { ...state, metodoPago: action.payload };
+            return { ...state, metodoPago: action.payload, pagosMixtos: action.payload === 'mixto' ? (
+                Number(state.selectedCliente?.saldo || 0) > 0
+                    ? [{ metodo: 'prepago' as PaymentMethod, monto: Number(state.selectedCliente.saldo), display: Number(state.selectedCliente.saldo).toLocaleString('es-CL') }]
+                    : []
+            ) : [] };
+        case 'SET_PAGOS_MIXTOS': return { ...state, pagosMixtos: action.payload };
+        case 'ADD_PAGO_MIXTO': return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
+        case 'UPDATE_PAGO_MIXTO': {
+            const updated = [...state.pagosMixtos];
+            updated[action.index] = { ...updated[action.index], monto: action.monto, display: action.display ?? (action.monto > 0 ? String(action.monto) : '') };
+            return { ...state, pagosMixtos: updated };
+        }
+        case 'REMOVE_PAGO_MIXTO': return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
         case 'SET_METODO_PAGO_ADICIONAL': return { ...state, metodoPagoAdicional: action.payload };
         case 'SET_ENABLE_TIP': return { ...state, enableTip: action.payload };
         case 'SET_SELECTED_TIME': return { ...state, selectedTime: action.payload };
@@ -212,7 +228,7 @@ export default function NuevaVentaScreen() {
     const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
     const {
         loadingInitial, refreshing, anfitrionas, habitaciones, clientes, cajaAbierta,
-        cart, selectedCliente, selectedHabitacion, metodoPago, enableTip, selectedTime, timeModalVisible,
+        cart, selectedCliente, selectedHabitacion, metodoPago, pagosMixtos, enableTip, selectedTime, timeModalVisible,
         categories, modalOpen, modalCategoria, modalProducts, modalLoading,
         modalQuantities, modalHostessSelections, hostessSelectionTarget, hostessSubModalVisible, roomModalVisible, clientModalVisible, submitting,
         loadModalVisible, loadingAmount, loadingTargetClient, loadSubmitting, loadMetodoPago, metodoPagoAdicional
@@ -254,11 +270,18 @@ export default function NuevaVentaScreen() {
             const clients = clientsRes.status === 'fulfilled' ? clientsRes.value : null;
             const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value : null;
 
+            const rawHabitaciones = rooms?.success ? rooms.data : [];
             const fetchedData: any = {
-                // null = desconocido (request falló), true/false = confirmado por el servidor
                 cajaAbierta: cajaRes.status === 'fulfilled' ? (caja?.success && caja?.data?.hasOpenCaja) : null,
                 anfitrionas: Array.isArray(anfitrionas) ? anfitrionas : (anfitrionas?.success ? anfitrionas.data : []),
-                habitaciones: rooms?.success ? rooms.data : [],
+                habitaciones: rawHabitaciones.map((room: any) => ({
+                    ...room,
+                    nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                    precio: room.precio ?? room.price ?? 0,
+                    tiempo: room.tiempo ?? room.time ?? 0,
+                    estado: room.estado ?? room.status ?? 0,
+                    comision_anfitriona: room.comision_anfitriona ?? 0,
+                })),
                 categories: categories?.success ? (categories.data || []) : []
             };
 
@@ -426,12 +449,19 @@ export default function NuevaVentaScreen() {
         if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
         if (cart.length === 0) return showToast('Error', 'Carrito vacío');
 
-        // Validar prepago
-        if (metodoPago === 'prepago') {
-            if (!selectedCliente) {
-                return showToast('Error', 'Seleccione un cliente para pagar con prepago');
+        // Validar mixto
+        if (metodoPago === 'mixto') {
+            const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
+            if (Math.abs(suma - totals.total) > 1) {
+                return showToast('Monto Incorrecto', `La suma ($${suma.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`);
             }
-            // Ya no bloqueamos si es menor, el remanente se paga con el método adicional
+            if (pagosMixtos.length < 2) {
+                return showToast('Métodos Insuficientes', 'Selecciona al menos 2 métodos de pago');
+            }
+        }
+
+        if (metodoPago === 'prepago' && !selectedCliente) {
+            return showToast('Error', 'Seleccione un cliente para pagar con prepago');
         }
 
         dispatch({ type: 'SET_SUBMITTING', payload: true });
@@ -448,13 +478,11 @@ export default function NuevaVentaScreen() {
                 cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
                 habitacion_id: hasCommissionItem ? (selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null) : null,
                 metodo_pago: metodoPago,
-                metodo_pago_adicional: mixedPaymentDetails.isMixed ? metodoPagoAdicional : null,
-                monto_prepago: mixedPaymentDetails.prepago,
-                monto_adicional: mixedPaymentDetails.adicional,
+                pagos_mixtos: metodoPago === 'mixto' ? pagosMixtos : undefined,
                 propina: totals.tip,
                 sub_total: totals.subtotal,
                 total: totals.total,
-                tiempo: selectedHabitacion ? (Number(selectedHabitacion.tiempo || 0) > 0 ? Number(selectedHabitacion.tiempo) : selectedTime) : 0,
+                tiempo: selectedHabitacion ? selectedTime : 0,
                 usuarios: cart.flatMap((item: any) => item.anfitrionas?.map((a: any) => typeof a === 'object' ? (a.id_usuario || a.id) : a) || [])
             };
 
@@ -470,7 +498,7 @@ export default function NuevaVentaScreen() {
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, totals, selectedTime, router, refreshVentas, hasCommissionItem]);
+    }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, pagosMixtos, totals, selectedTime, router, refreshVentas, hasCommissionItem]);
 
     const NuevaVentaSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
@@ -543,16 +571,17 @@ export default function NuevaVentaScreen() {
                             <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación'}</Text>
                         </Pressable>
                     )}
-                    {selectedHabitacion && (Number(selectedHabitacion.tiempo || 0) === 0) && (
-                        <Pressable
-                            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
-                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: true })}
-                            accessibilityLabel="Tiempo de estancia"
-                            accessibilityRole="button"
-                        >
-                            <Ionicons name="time-outline" size={20} color="#10B981" />
-                            <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedTime} minutos</Text>
-                        </Pressable>
+                    {selectedHabitacion && (
+                        <View style={{ marginTop: spacing / 2 }}>
+                            <TimeSelector
+                                value={selectedTime}
+                                onChange={(t) => dispatch({ type: 'SET_SELECTED_TIME', payload: t })}
+                                step={5}
+                                min={5}
+                                max={60}
+                                label="Tiempo (minutos)"
+                            />
+                        </View>
                     )}
                     <Pressable
                         style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: hasCommissionItem ? spacing / 2 : 0 }]}
@@ -585,46 +614,80 @@ export default function NuevaVentaScreen() {
                         selectedMethod={metodoPago} 
                         onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as PaymentMethod })} 
                         showPrepago={!!selectedCliente}
-                        disabled={(selectedCliente?.saldo || 0) > 0}
+                        showMixto={true}
+                        disabled={(selectedCliente?.saldo || 0) > 0 && metodoPago !== 'mixto'}
+                        disabledMethods={selectedCliente && Number(selectedCliente.saldo || 0) <= 0 ? ['prepago'] : []}
                     />
-                    
-                    {mixedPaymentDetails.isMixed && (
-                        <View style={{ marginTop: 15, padding: 15, borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: accentColor }}>
-                            <Text style={{ color: textPrimary, fontWeight: '800', marginBottom: 10 }}>PAGO MIXTO REQUERIDO</Text>
-                            <View style={styles.summaryRow}>
-                                <Text style={{ color: textSecondary, fontSize: 13 }}>Saldo Prepago usado:</Text>
-                                <Text style={{ color: '#10B981', fontWeight: '700' }}>-${mixedPaymentDetails.prepago.toLocaleString()}</Text>
+
+                    {/* UI Pagos Mixtos */}
+                    {metodoPago === 'mixto' && (
+                        <View style={{ marginTop: 16, padding: 12, backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderRadius: 12 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                <Ionicons name="shuffle-outline" size={18} color={accentColor} />
+                                <Text style={{ color: textPrimary, fontSize: 13, fontWeight: '800', marginLeft: 8, textTransform: 'uppercase' }}>
+                                    Distribución de Pagos (Total: ${totals.total.toLocaleString()})
+                                </Text>
                             </View>
-                            <View style={[styles.summaryRow, { marginTop: 4 }]}>
-                                <Text style={{ color: textSecondary, fontSize: 13 }}>Restante a pagar:</Text>
-                                <Text style={{ color: textPrimary, fontWeight: '700' }}>${mixedPaymentDetails.adicional.toLocaleString()}</Text>
-                            </View>
-                            
-                            <View style={{ marginTop: 10 }}>
-                                <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: 12, marginBottom: 8 }]}>MÉTODO PARA EL RESTANTE</Text>
-                                <View style={{ flexDirection: 'row', gap: 10 }}>
-                                    {['efectivo', 'tarjeta', 'transferencia'].map((m) => {
-                                        const isSelected = metodoPagoAdicional === m;
-                                        return (
-                                            <Pressable
-                                                key={m}
-                                                onPress={() => dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: m as any })}
-                                                style={{
-                                                    flex: 1,
-                                                    paddingVertical: 10,
-                                                    borderRadius: 12,
-                                                    borderWidth: 1,
-                                                    borderColor: isSelected ? accentColor : borderColor,
-                                                    backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                <Text style={{ color: isSelected ? accentColor : textSecondary, fontSize: 10, fontWeight: '800' }}>{m.toUpperCase()}</Text>
-                                            </Pressable>
-                                        );
-                                    })}
+
+                            {pagosMixtos.map((pago, index) => (
+                                <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                                    <View style={{ width: 150, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={{ color: textSecondary, fontSize: 10, textTransform: 'uppercase', fontWeight: '700' }}>{pago.metodo}</Text>
+                                    </View>
+                                    <Text style={{ color: textSecondary, fontSize: 12, marginRight: 4 }}>$</Text>
+                                    <TextInput
+                                        style={{ flex: 1, backgroundColor: cardBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, color: textPrimary, borderWidth: 1, borderColor, fontSize: 13 }}
+                                        value={pago.display}
+                                        keyboardType="numeric"
+                                        placeholder="0"
+                                        placeholderTextColor={textSecondary}
+                                        onChangeText={(text) => {
+                                            const clean = text.replace(/\D/g, '');
+                                            const monto = clean ? parseInt(clean, 10) : 0;
+                                            dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display: clean });
+                                        }}
+                                        onBlur={() => {
+                                            dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto: pago.monto, display: pago.monto > 0 ? pago.monto.toLocaleString('es-CL') : '' });
+                                        }}
+                                    />
+                                    <Pressable onPress={() => dispatch({ type: 'REMOVE_PAGO_MIXTO', index })} style={{ marginLeft: 6, padding: 4 }}>
+                                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                                    </Pressable>
                                 </View>
-                            </View>
+                            ))}
+
+                            {(() => {
+                                const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
+                                const completo = suma >= totals.total;
+                                return (
+                                    <View style={{ marginTop: 8 }}>
+                                        {!completo && (
+                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                                                {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
+                                                    if (pagosMixtos.some(p => p.metodo === metodo)) return null;
+                                                    const sinSaldo = metodo === 'prepago' && Number(selectedCliente?.saldo || 0) <= 0;
+                                                    return (
+                                                        <Pressable
+                                                            key={metodo}
+                                                            onPress={() => { if (!sinSaldo) dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo: metodo as PaymentMethod, monto: 0, display: '' } }); }}
+                                                            style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: sinSaldo ? textSecondary : accentColor, backgroundColor: sinSaldo ? 'transparent' : `${accentColor}10`, opacity: sinSaldo ? 0.35 : 1 }}
+                                                        >
+                                                            <Text style={{ color: sinSaldo ? textSecondary : accentColor, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{metodo}</Text>
+                                                        </Pressable>
+                                                    );
+                                                })}
+                                            </View>
+                                        )}
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 1, borderTopColor: borderColor }}>
+                                            <Text style={{ color: textSecondary, fontSize: 12 }}>Suma actual:</Text>
+                                            <Text style={{ color: suma === totals.total ? '#10B981' : '#EF4444', fontWeight: '700' }}>${suma.toLocaleString()}</Text>
+                                        </View>
+                                        {suma !== totals.total && (
+                                            <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 4 }}>* Falta: ${(totals.total - suma).toLocaleString()}</Text>
+                                        )}
+                                    </View>
+                                );
+                            })()}
                         </View>
                     )}
                 </View>
@@ -809,12 +872,16 @@ export default function NuevaVentaScreen() {
 
             <HostessSelectModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
-                hostesses={anfitrionas.map(a => ({
+                hostesses={anfitrionas
+                  .filter((item: any, index: number, self: any[]) => 
+                    index === self.findIndex((t: any) => (t.id_usuario || t.id) === (item.id_usuario || item.id))
+                  )
+                  .map(a => ({
                     id: String(a.id_usuario || a.id),
                     id_usuario: String(a.id_usuario || a.id),
                     nick: a.nick,
-                    status: a.estado_servicio || 1
-                }))}
+                    estado_servicio: a.estado_servicio || 0
+                  }))}
                 selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
                 max={hostessSelectionTarget?.max}
                 onToggle={(id) => {

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -149,9 +149,11 @@ export default function ServiciosScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [fetchData])
+    );
 
     const onRefresh = () => {
         setRefreshing(true);

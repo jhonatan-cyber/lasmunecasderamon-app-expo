@@ -23,6 +23,7 @@ export default function AnticiposScreen() {
     const {
         solicitudes, pagos, loading, refreshing, error,
         montoMaximo, montoAsistencia, montoComisiones, montoPropinas,
+        tieneSolicitudPendiente,
         fetchMaximo, solicitarAnticipo, onRefresh
     } = useAnticipos();
 
@@ -43,7 +44,7 @@ export default function AnticiposScreen() {
     const normalizeEstado = (estado: Anticipo['estado'] | number | string) => {
         if (estado === 2 || estado === '2' || estado === 'pendiente') return 'pendiente';
         if (estado === 1 || estado === '1' || estado === 'confirmada' || estado === 'aprobado' || estado === 'aprobada') return 'confirmada';
-        if (estado === 0 || estado === '0' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
+        if (estado === 3 || estado === '3' || estado === '0' || estado === '0' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
         return String(estado ?? '');
     };
 
@@ -77,9 +78,17 @@ export default function AnticiposScreen() {
     };
 
     const openSolicitarModal = async () => {
-        const data = await fetchMaximo();
-        if (data?.tiene_solicitud_pendiente) {
+        // Cargar datos si no están disponibles
+        if (montoMaximo === 0) {
+            await fetchMaximo();
+        }
+        
+        if (tieneSolicitudPendiente) {
             Toast.show({ type: 'info', text1: 'Solicitud pendiente', text2: 'Ya tienes una solicitud de anticipo en espera' });
+            return;
+        }
+        if (montoMaximo <= 0) {
+            Toast.show({ type: 'warning', text1: 'Sin saldo disponible', text2: 'No tienes monto disponible para solicitar anticipo' });
             return;
         }
         setModalVisible(true);
@@ -97,18 +106,19 @@ export default function AnticiposScreen() {
         })
         : pagos.filter((p) => {
             const estado = normalizeEstado((p as any).estado);
-            return estado === 'confirmada' || estado === 'rechazada';
+            // Historial solo muestra los aprobados (estado = 1)
+            return estado === 'confirmada';
         });
 
     const totalPendiente = solicitudes.filter((a) => normalizeEstado(a.estado) === 'pendiente').reduce((sum, a) => sum + Number(a.monto), 0);
     const totalEnCaja = solicitudes.filter((a) => normalizeEstado(a.estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
-    const totalPagado = pagos.reduce((sum, a) => sum + Number(a.monto), 0);
+    const totalPagado = pagos.filter((p) => normalizeEstado((p as any).estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
 
     const renderItem = ({ item, index }: { item: Anticipo; index: number }) => (
         <AdvanceCard
             item={item}
             index={index}
-            showIndexBadge={true}
+            showIndexBadge={false}
             compactDate={true}
             viewMode={viewMode}
             normalizeEstado={normalizeEstado}
@@ -181,16 +191,25 @@ export default function AnticiposScreen() {
 
             <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
                 <View style={styles.modalOverlay}>
+                    <Pressable style={styles.modalBackdrop} onPress={() => setModalVisible(false)} />
                     <View style={[styles.modalContent, { backgroundColor: bg }]}>
+                        <View style={styles.modalHandle} />
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>Solicitar Anticipo</Text>
-                            <Pressable onPress={() => setModalVisible(false)}>
-                                <Ionicons name="close" size={24} color={textSecondary} />
+                            <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                                <Ionicons name="close" size={22} color={textSecondary} />
                             </Pressable>
                         </View>
                         <View style={[styles.disponibleCard, { backgroundColor: cardBg, borderColor }]}>
-                            <Text style={[styles.disponibleLabel, { color: textSecondary }]}>TOTAL POR COBRAR</Text>
-                            <Text style={[styles.disponibleMonto, { color: accentColor }]}>${formatCurrency(montoMaximo)}</Text>
+                            <View style={styles.disponibleHeader}>
+                                <Text style={[styles.disponibleLabel, { color: textSecondary }]}>TOTAL POR COBRAR</Text>
+                                {tieneSolicitudPendiente && (
+                                    <View style={[styles.pendingBadge, { backgroundColor: isDark ? 'rgba(245,158,11,0.2)' : '#FEF3C7' }]}>
+                                        <Text style={[styles.pendingBadgeText, { color: isDark ? '#FBBF24' : '#B45309' }]}>Pendiente</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={[styles.disponibleMonto, { color: tieneSolicitudPendiente ? '#F59E0B' : accentColor }]}>${formatCurrency(montoMaximo)}</Text>
                             <View style={styles.desgloseRow}>
                                 {[{ label: 'Asistencia', value: montoAsistencia }, { label: 'Comisiones', value: montoComisiones }, { label: 'Propinas', value: montoPropinas }].map(({ label, value }) => (
                                     <View key={label} style={styles.desgloseItem}>
@@ -252,21 +271,27 @@ const styles = StyleSheet.create({
     listContent: { paddingHorizontal: 16, paddingBottom: 100 },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-    fab: { position: 'absolute', bottom: 24, right: 24, width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    modalTitle: { fontSize: 20, fontWeight: '700' },
-    disponibleCard: { borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 },
-    disponibleLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
-    disponibleMonto: { fontSize: 32, fontWeight: '900', marginBottom: 12 },
-    desgloseRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginBottom: 16 },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+    modalContent: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.25, shadowRadius: 16 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(128,128,128,0.2)' },
+    modalTitle: { fontSize: 22, fontWeight: '800' },
+    closeButton: { padding: 8, borderRadius: 20, backgroundColor: 'rgba(128,128,128,0.15)' },
+    disponibleCard: { borderWidth: 1, borderRadius: 20, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    disponibleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    disponibleLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },
+    pendingBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    pendingBadgeText: { fontSize: 10, fontWeight: '800' },
+    disponibleMonto: { fontSize: 36, fontWeight: '900', marginBottom: 16 },
+    desgloseRow: { flexDirection: 'row', justifyContent: 'space-around', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(128,128,128,0.15)' },
     desgloseItem: { alignItems: 'center' },
-    desgloseLabel: { fontSize: 10, fontWeight: '600', marginBottom: 2 },
-    desgloseValue: { fontSize: 14, fontWeight: '700' },
-    input: { borderWidth: 1, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 16 },
+    desgloseLabel: { fontSize: 10, fontWeight: '600', marginBottom: 4 },
+    desgloseValue: { fontSize: 15, fontWeight: '700' },
+    input: { borderWidth: 1.5, borderRadius: 16, padding: 16, fontSize: 16, marginBottom: 16, letterSpacing: 0.5 },
     inputDisabled: { opacity: 0.45 },
     textArea: { height: 80, textAlignVertical: 'top' },
-    submitButton: { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
-    submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+    submitButton: { borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+    submitButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 0.5 },
 });

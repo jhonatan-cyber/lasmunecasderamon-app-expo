@@ -1,5 +1,6 @@
 import { DeviceEventEmitter, Platform } from "react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
@@ -74,11 +75,12 @@ export function useAsistencia() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchAsistencias();
-    fetchGratificaciones();
-    // Suscribirse a eventos si es necesario
-  }, [fetchAsistencias, fetchGratificaciones]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAsistencias();
+      fetchGratificaciones();
+    }, [fetchAsistencias, fetchGratificaciones])
+  );
 
   const onRefresh = useCallback(() => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

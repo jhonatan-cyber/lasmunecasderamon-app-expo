@@ -156,6 +156,51 @@ const getHostessLimit = (prod: any, qty: number) => {
     return qty;
 };
 
+const buildCommissionPreview = (items: any[], hostesses: any[]) => {
+    const totalCommission = items.reduce((acc, item) => acc + (Number(item.comision || 0) * Number(item.cantidad || 0)), 0);
+    const distribution = new Map<string, { id: string; name: string; amount: number }>();
+
+    const addAmount = (hostessId: string | number, amount: number) => {
+        if (!hostessId || amount <= 0) return;
+        const key = String(hostessId);
+        const hostess = hostesses.find((item: any) => String(item.id_usuario || item.id) === key);
+        const current = distribution.get(key);
+        distribution.set(key, {
+            id: key,
+            name: hostess?.nick || `Anfitriona ${key}`,
+            amount: (current?.amount || 0) + amount,
+        });
+    };
+
+    items.forEach((item) => {
+        const selectedHostesses = Array.isArray(item.selectedHostesses) ? item.selectedHostesses.filter(Boolean) : [];
+        const itemCommission = Number(item.comision || 0) * Number(item.cantidad || 0);
+
+        if (itemCommission <= 0 || selectedHostesses.length === 0) return;
+
+        if (item.isChampagne) {
+            const totalRounded = Math.round(itemCommission);
+            const base = Math.floor(totalRounded / selectedHostesses.length);
+            const remainder = totalRounded % selectedHostesses.length;
+
+            selectedHostesses.forEach((hostessId: string | number, index: number) => {
+                addAmount(hostessId, base + (index === 0 ? remainder : 0));
+            });
+            return;
+        }
+
+        selectedHostesses.forEach((hostessId: string | number) => {
+            addAmount(hostessId, itemCommission);
+        });
+    });
+
+    return {
+        totalCommission,
+        assignedCommission: Array.from(distribution.values()).reduce((acc, item) => acc + item.amount, 0),
+        hostessDistribution: Array.from(distribution.values()).sort((a, b) => b.amount - a.amount),
+    };
+};
+
 export default function NuevaCuentaScreen() {
     const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
@@ -200,10 +245,18 @@ export default function NuevaCuentaScreen() {
                 apiClient('/categories'),
             ]);
 
+            const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
             const fetchedData: any = {
                 cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
                 anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
-                habitaciones: roomsRes.success ? roomsRes.data : [],
+                habitaciones: rawHabitaciones.map((room: any) => ({
+                    ...room,
+                    nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                    precio: room.precio ?? room.price ?? 0,
+                    tiempo: room.tiempo ?? room.time ?? 0,
+                    estado: room.estado ?? room.status ?? 0,
+                    comision_anfitriona: room.comision_anfitriona ?? 0,
+                })),
                 categories: categoriesRes.success ? (categoriesRes.data || []) : []
             };
 
@@ -302,6 +355,11 @@ export default function NuevaCuentaScreen() {
         return { subtotal, totalComision, total: subtotal };
     }, [cart]);
 
+    const commissionPreview = useMemo(
+        () => buildCommissionPreview(cart, anfitrionas),
+        [cart, anfitrionas]
+    );
+
     const generateCodigo = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
@@ -327,11 +385,27 @@ export default function NuevaCuentaScreen() {
 
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
+            const selectedRoomId =
+                selectedHabitacion?.id_habitacion ||
+                selectedHabitacion?.id ||
+                null;
+            const selectedRoomTime = Number(
+                selectedHabitacion?.tiempo ??
+                selectedHabitacion?.time ??
+                0
+            );
+            const selectedRoomCommission = Number(selectedHabitacion?.comision_anfitriona || 0);
+
             const cuentaData = {
                 codigo: generateCodigo(),
                 cliente_id: selectedCliente?.id || selectedCliente?.id_cliente,
-                habitacion_id: selectedHabitacion?.id_habitacion || null,
-                tiempo: (selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0)) ? state.selectedTime : (selectedHabitacion?.tiempo || 0),
+                habitacion_id: selectedRoomId,
+                tiempo:
+                    selectedRoomId
+                        ? selectedRoomCommission === 0
+                            ? state.selectedTime
+                            : selectedRoomTime
+                        : 0,
                 total_comision: totals.totalComision,
                 sub_total: totals.subtotal,
                 total: totals.total,
@@ -536,6 +610,38 @@ export default function NuevaCuentaScreen() {
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Consumo Total</Text>
                         <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
                     </View>
+                    {commissionPreview.totalCommission > 0 && (
+                        <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+                            <View style={styles.summaryRow}>
+                                <Text style={[styles.summaryLabel, { color: textSecondary }]}>Comision Productos</Text>
+                                <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${commissionPreview.totalCommission.toLocaleString()}</Text>
+                            </View>
+                            {commissionPreview.hostessDistribution.length > 0 && (
+                                <View style={{ marginTop: 12, gap: 8 }}>
+                                    <Text style={[styles.summaryLabel, { color: textSecondary }]}>Distribucion por anfitriona</Text>
+                                    {commissionPreview.hostessDistribution.map((item) => (
+                                        <View
+                                            key={item.id}
+                                            style={[
+                                                styles.summaryRow,
+                                                {
+                                                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.10)' : '#FFF7ED',
+                                                    borderWidth: 1,
+                                                    borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : '#FED7AA',
+                                                    borderRadius: 14,
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 10,
+                                                }
+                                            ]}
+                                        >
+                                            <Text style={[styles.summaryLabel, { color: textPrimary }]}>{item.name}</Text>
+                                            <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${item.amount.toLocaleString()}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    )}
                     <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
                         <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>TOTAL CUENTA</Text>
                         <Text style={[styles.totalValFinal, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
@@ -674,12 +780,17 @@ export default function NuevaCuentaScreen() {
 
             <HostessSelectModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
-                hostesses={anfitrionas.map((a: any) => ({
+                hostesses={anfitrionas
+                  .filter((item: any, index: number, self: any[]) => 
+                    index === self.findIndex((t: any) => (t.id_usuario || t.id) === (item.id_usuario || item.id))
+                  )
+                  .map((a: any) => ({
                     id: a.id_usuario || a.id,
                     id_usuario: a.id_usuario || a.id,
                     nick: a.nick,
-                    status: a.status || 0
-                }))}
+                    status: a.status || 0,
+                    estado_servicio: a.estado_servicio || 0
+                  }))}
                 selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
                 max={hostessSelectionTarget?.max}
                 onToggle={(id) => {
@@ -714,6 +825,7 @@ export default function NuevaCuentaScreen() {
                         }
                         addProductToCart(hostessSelectionTarget.product);
                         dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
+                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false });
                     }
                 }}
             />

@@ -721,9 +721,10 @@ export default function NuevoServicioScreen() {
           )}
           <PaymentMethodSelect
             showPrepago={!!selectedClientData}
-            showMixto={!!selectedClientData}
+            showMixto={true}
             selectedMethod={metodoPago}
             disabled={selectedClientData && Number(selectedClientData.saldo || 0) >= totals.total && metodoPago !== 'mixto'}
+            disabledMethods={Number(selectedClientData?.saldo || 0) <= 0 ? ['prepago'] : []}
             onSelect={(val) => {
               dispatch({ type: 'SET_METODO_PAGO', payload: val });
               if (val !== 'prepago') {
@@ -756,43 +757,42 @@ export default function NuevoServicioScreen() {
               
               {pagosMixtos.map((pago, index) => (
                 <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <Text style={{ color: textSecondary, fontSize: 12, width: 80, textTransform: 'uppercase' }}>
-                    {pago.metodo}
-                  </Text>
-                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: textSecondary, fontSize: 12, marginRight: 8 }}>$</Text>
-                    <TextInput
-                      style={{ 
-                        flex: 1, 
-                        backgroundColor: cardBg, 
-                        borderRadius: 8, 
-                        paddingHorizontal: 12, 
-                        paddingVertical: 8,
-                        color: textPrimary,
-                        borderWidth: 1,
-                        borderColor: borderColor
-                      }}
-                      value={pago.display}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={textSecondary}
-                      onChangeText={(text) => {
-                        const clean = text.replace(/\D/g, "");
-                        const monto = clean ? parseInt(clean, 10) : 0;
-                        // guardar el texto crudo mientras tipea para no interrumpir el cursor
-                        dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display: clean });
-                      }}
-                      onBlur={() => {
-                        // al perder foco, formatear con puntos de miles
-                        dispatch({ 
-                          type: 'UPDATE_PAGO_MIXTO', 
-                          index, 
-                          monto: pago.monto,
-                          display: pago.monto > 0 ? pago.monto.toLocaleString('es-CL') : ''
-                        });
-                      }}
-                    />
+                  <View style={{ width: 150, flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: textSecondary, fontSize: 10, textTransform: 'uppercase', fontWeight: '700' }}>
+                      {pago.metodo}
+                    </Text>
                   </View>
+                  <Text style={{ color: textSecondary, fontSize: 12, marginRight: 4 }}>$</Text>
+                  <TextInput
+                    style={{ 
+                      flex: 1, 
+                      backgroundColor: cardBg, 
+                      borderRadius: 8, 
+                      paddingHorizontal: 8, 
+                      paddingVertical: 6,
+                      color: textPrimary,
+                      borderWidth: 1,
+                      borderColor: borderColor,
+                      fontSize: 13,
+                    }}
+                    value={pago.display}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={textSecondary}
+                    onChangeText={(text) => {
+                      const clean = text.replace(/\D/g, "");
+                      const monto = clean ? parseInt(clean, 10) : 0;
+                      dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display: clean });
+                    }}
+                    onBlur={() => {
+                      dispatch({ 
+                        type: 'UPDATE_PAGO_MIXTO', 
+                        index, 
+                        monto: pago.monto,
+                        display: pago.monto > 0 ? pago.monto.toLocaleString('es-CL') : ''
+                      });
+                    }}
+                  />
                   <Pressable 
                     onPress={() => dispatch({ type: 'REMOVE_PAGO_MIXTO', index })}
                     style={{ marginLeft: 8, padding: 4 }}
@@ -817,10 +817,12 @@ export default function NuevoServicioScreen() {
                         {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
                           // No mostrar si ya está en la lista
                           if (pagosMixtos.some(p => p.metodo === metodo)) return null;
+                          const sinSaldo = metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
                           return (
                             <Pressable
                               key={metodo}
                               onPress={() => {
+                                if (sinSaldo) return;
                                 dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo: metodo as any, monto: 0, display: '' } });
                               }}
                               style={{ 
@@ -828,11 +830,12 @@ export default function NuevoServicioScreen() {
                                 paddingHorizontal: 12, 
                                 borderRadius: 8, 
                                 borderWidth: 1, 
-                                borderColor: accentColor,
-                                backgroundColor: `${accentColor}10`
+                                borderColor: sinSaldo ? textSecondary : accentColor,
+                                backgroundColor: sinSaldo ? 'transparent' : `${accentColor}10`,
+                                opacity: sinSaldo ? 0.35 : 1,
                               }}
                             >
-                              <Text style={{ color: accentColor, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
+                              <Text style={{ color: sinSaldo ? textSecondary : accentColor, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
                                 {metodo}
                               </Text>
                             </Pressable>
@@ -967,7 +970,11 @@ export default function NuevoServicioScreen() {
 
       <RoomSelectModal
         visible={roomModalVisible}
-        rooms={habitaciones.filter((room) => Number(room.precio ?? room.price ?? 0) > 0)}
+        rooms={habitaciones.filter((room) => 
+            Number(room.precio ?? room.price ?? 0) > 0 ||
+            Number(room.tiempo ?? room.time ?? 0) > 0 ||
+            Number(room.comision_anfitriona ?? 0) > 0
+        )}
         selectedRoomId={
           selectedHabitacion?.id_habitacion || selectedHabitacion?.id
         }

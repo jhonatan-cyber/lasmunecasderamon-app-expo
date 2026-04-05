@@ -65,10 +65,6 @@ export const Colors = {
   },
 };
 
-// Spacing, FontSize, and BorderRadius moved to constants/spacing.ts
-
-// FontSize moved to constants/spacing.ts
-
 export const FontWeight = {
   normal: '400' as const,
   medium: '500' as const,
@@ -77,8 +73,6 @@ export const FontWeight = {
   extrabold: '800' as const,
   black: '900' as const,
 };
-
-// BorderRadius moved to constants/spacing.ts
 
 export const Shadows = {
   sm: {

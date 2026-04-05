@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { DeviceEventEmitter, Platform } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
@@ -28,6 +29,7 @@ export function useAnticipos() {
   const [montoAsistencia, setMontoAsistencia] = useState(0);
   const [montoComisiones, setMontoComisiones] = useState(0);
   const [montoPropinas, setMontoPropinas] = useState(0);
+  const [tieneSolicitudPendiente, setTieneSolicitudPendiente] = useState(false);
 
   const fetchAnticipos = useCallback(async (isManual = false) => {
     try {
@@ -58,6 +60,7 @@ export function useAnticipos() {
         setMontoComisiones(response.data.monto_comisiones || 0);
         setMontoPropinas(response.data.monto_propinas || 0);
         setMontoMaximo(response.data.monto_maximo || 0);
+        setTieneSolicitudPendiente(response.data.tiene_solicitud_pendiente || false);
         return response.data;
       }
     } catch (e) {
@@ -77,16 +80,28 @@ export function useAnticipos() {
         fetchAnticipos();
         return true;
       } else {
-        Toast.show({ type: 'error', text1: 'Error', text2: response.message || 'Error al enviar solicitud' });
+        Toast.show({ type: 'warning', text1: 'Atención', text2: response.message || 'No se pudo enviar la solicitud' });
       }
-    } catch {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Error de conexión' });
+    } catch (error: any) {
+      const mensaje = error?.message || 'Error de conexión';
+      Toast.show({ type: 'error', text1: 'Error', text2: mensaje });
     }
     return false;
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchAnticipos();
+      fetchMaximo();
+    }, [fetchAnticipos, fetchMaximo])
+  );
+
   useEffect(() => {
-    fetchAnticipos();
+    const subscription = DeviceEventEmitter.addListener('refresh_anticipos', () => {
+      fetchAnticipos();
+    });
+
+    return () => subscription.remove();
   }, [fetchAnticipos]);
 
   const onRefresh = useCallback(() => {
@@ -105,6 +120,7 @@ export function useAnticipos() {
     montoAsistencia,
     montoComisiones,
     montoPropinas,
+    tieneSolicitudPendiente,
     fetchAnticipos,
     fetchMaximo,
     solicitarAnticipo,

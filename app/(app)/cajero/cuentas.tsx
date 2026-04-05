@@ -95,13 +95,27 @@ type CuentasAction =
   | { type: "SET_ALERT"; payload: CuentasState["alertConfig"] };
 
 const statusColors: Record<number, string> = {
-  1: "#fa2828ff", // Pendiente
   0: "#10B981", // Cobrado
+  1: "#fa2828ff", // Pendiente / Activo
+  2: "#F59E0B", // Solicitud de anulacion
+  3: "#6B7280", // Anulado
+  4: "#FB923C", // Anulada parcial / saldo pendiente
 };
 
 const statusLabels: Record<number, string> = {
-  1: "Pendiente",
   0: "Cobrado",
+  1: "Pendiente",
+  2: "Solicitud Anul.",
+  3: "Anulado",
+  4: "Anul. Parcial",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  transferencia: "Transferencia",
+  prepago: "Prepago",
+  mixto: "Mixto",
 };
 
 const CuentaTimer = React.memo(
@@ -224,6 +238,17 @@ const showToast = (
   Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
+const formatMontoInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return new Intl.NumberFormat("es-CL").format(Number(digits));
+};
+
+const parseMontoInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits ? Number(digits) : 0;
+};
+
 export default function CuentasScreen() {
   const { accentColor, gradientColors, isDark, accentBg, accentBorder } = useAccentColor();
   const router = useRouter();
@@ -240,6 +265,11 @@ export default function CuentasScreen() {
       (params.tab as any) === "pendientes" ? "pendientes" : "historial",
     ),
   );
+  const [anulacionModalVisible, setAnulacionModalVisible] = React.useState(false);
+  const [anulacionCuenta, setAnulacionCuenta] = React.useState<any>(null);
+  const [anulacionMotivo, setAnulacionMotivo] = React.useState("");
+  const [anulacionMonto, setAnulacionMonto] = React.useState("");
+  const [anulacionSubmitting, setAnulacionSubmitting] = React.useState(false);
   const { timers, serverOffset, refreshTimers } = useTimer();
   const {
     loading,
@@ -259,6 +289,15 @@ export default function CuentasScreen() {
     cobroEnableTip,
     cobroSubmitting,
   } = state;
+
+  const cobroClienteNombreCompleto = useMemo(() => {
+    const nombre = String(selectedCuenta?.cliente_nombre || "").trim();
+    const apellido = String(selectedCuenta?.cliente_apellido || "").trim();
+    return [nombre, apellido].filter(Boolean).join(" ").trim() || "Sin registrar";
+  }, [selectedCuenta?.cliente_apellido, selectedCuenta?.cliente_nombre]);
+
+  const cobroClienteSaldo = Number(selectedCuenta?.cliente_saldo || 0);
+  const showPrepagoCobro = !!selectedCuenta?.cliente_id && cobroClienteSaldo > 0;
 
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#111111" : "#FFFFFF";
@@ -325,6 +364,12 @@ export default function CuentasScreen() {
     return { subtotal, tip, total: subtotal + tip };
   }, [selectedCuenta, cobroEnableTip]);
 
+  useEffect(() => {
+    if (cobroModalVisible && !showPrepagoCobro && cobroMetodoPago === "prepago") {
+      dispatch({ type: "SET_COBRO_METODO_PAGO", payload: "efectivo" });
+    }
+  }, [cobroMetodoPago, cobroModalVisible, showPrepagoCobro]);
+
   // Listado consolidado de anfitrionas (general + por productos)
   const allHostesses = useMemo(() => {
     if (!selectedCuenta) return [];
@@ -383,6 +428,45 @@ export default function CuentasScreen() {
     dispatch({ type: "SET_COBRO_ENABLE_TIP", payload: false });
   }, []);
 
+  const fetchCuentaCompleta = useCallback(async (cuentaId: string | number) => {
+    const timestamp = Date.now();
+    const res = await apiClient(`/cuentas/${cuentaId}?_t=${timestamp}`);
+    if (!res || res.error) {
+      throw new Error(res?.message || "No se pudo obtener el detalle completo de la cuenta");
+    }
+    return res;
+  }, []);
+
+  const registrarVentaDesdeCuenta = async (cuenta: any) => {
+    const ventaPayload = {
+      origen: "cuenta",
+      skip_client_prepago: true,
+      cliente_id: cuenta?.cliente_id != null ? String(cuenta.cliente_id) : null,
+      pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
+      metodo_pago: cobroMetodoPago,
+      propina: cobroTotals.tip,
+      sub_total: Number(cuenta?.sub_total ?? 0),
+      total: Number(cobroTotals.total ?? cuenta?.total ?? 0),
+      total_comision: Number(cuenta?.total_comision ?? 0),
+      codigo: cuenta?.codigo,
+      detalles:
+        cuenta?.detalles?.map((d: any) => ({
+          producto_id: String(d.producto_id ?? d.id_producto),
+          precio: Number(d.precio ?? 0),
+          cantidad: Number(d.cantidad ?? 1),
+          sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
+          comision: Number(d.comision ?? 0),
+          hostess_id: d.hostess_id != null ? String(d.hostess_id) : null,
+        })) || [],
+      usuarios: cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || [],
+    };
+
+    return await apiClient("/sales", {
+      method: "POST",
+      body: JSON.stringify(ventaPayload),
+    });
+  };
+
   const handleConfirmarCobro = async () => {
     if (!selectedCuenta) return;
 
@@ -413,8 +497,18 @@ export default function CuentasScreen() {
       );
 
       if (res.success) {
-        showToast("Éxito", "Cuenta cobrada correctamente", "success");
+        const cuentaCompleta = await fetchCuentaCompleta(selectedCuenta.id_cuenta);
+        const ventaRes = await registrarVentaDesdeCuenta(cuentaCompleta);
+        if (!ventaRes.success) {
+          showToast(
+            "Error",
+            ventaRes.message || "La cuenta se cobro, pero no se pudo registrar la venta",
+            "error"
+          );
+          return;
+        }
         dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false });
+        showToast("Éxito", "Cuenta cobrada correctamente", "success");
         fetchCuentas();
       } else {
         showToast("Error", res.message || "Error al cobrar");
@@ -425,6 +519,92 @@ export default function CuentasScreen() {
       dispatch({ type: "SET_COBRO_SUBMITTING", payload: false });
     }
   };
+
+  const handleFinalizarTemporizador = useCallback((cuenta: any) => {
+    dispatch({
+      type: "SET_ALERT",
+      payload: {
+        visible: true,
+        title: "Finalizar temporizador",
+        message: `Se finalizara el temporizador de la cuenta ${cuenta?.codigo}.`,
+        type: "warning",
+        onConfirm: async () => {
+          try {
+            dispatch({ type: "SET_ALERT_VISIBLE", payload: false });
+            dispatch({ type: "SET_ACTION_SHEET", visible: false });
+            const res = await apiClient(`/cuentas/${cuenta.id_cuenta}/stop`, {
+              method: "PATCH",
+            });
+            if (res.success) {
+              showToast("Exito", "Temporizador finalizado", "success");
+              refreshTimers?.();
+              fetchCuentas();
+            } else {
+              showToast("Error", res.message || "No se pudo finalizar el temporizador");
+            }
+          } catch {
+            showToast("Error", "Error al finalizar el temporizador");
+          }
+        },
+        onCancel: () => dispatch({ type: "SET_ALERT_VISIBLE", payload: false }),
+      },
+    });
+  }, [fetchCuentas, refreshTimers]);
+
+  const handleSolicitarAnulacion = useCallback((cuenta: any) => {
+    dispatch({ type: "SET_ACTION_SHEET", visible: false });
+    setAnulacionCuenta(cuenta);
+    setAnulacionMotivo("");
+    setAnulacionMonto(formatMontoInput(String(Number(cuenta?.total || 0))));
+    setAnulacionModalVisible(true);
+  }, []);
+
+  const handleEnviarSolicitudAnulacion = useCallback(async () => {
+    if (!anulacionCuenta) return;
+
+    const motivo = anulacionMotivo.trim();
+    const monto = parseMontoInput(anulacionMonto);
+    if (!motivo) {
+      showToast("Motivo requerido", "Debes ingresar el motivo de la anulacion");
+      return;
+    }
+    if (!Number.isFinite(monto) || monto <= 0) {
+      showToast("Monto invalido", "Debes ingresar un monto mayor a 0");
+      return;
+    }
+    if (monto > Number(anulacionCuenta.total || 0)) {
+      showToast("Monto invalido", "El monto no puede ser mayor al total de la cuenta");
+      return;
+    }
+
+    try {
+      setAnulacionSubmitting(true);
+      const res = await apiClient("/cuentas/anulacion", {
+        method: "POST",
+        body: JSON.stringify({
+          cuentaId: anulacionCuenta.id_cuenta,
+          clienteNombre: anulacionCuenta.cliente_nombre || "",
+          motivo,
+          monto,
+        }),
+      });
+
+      if (res.success) {
+        setAnulacionModalVisible(false);
+        setAnulacionCuenta(null);
+        setAnulacionMotivo("");
+        setAnulacionMonto("");
+        showToast("Exito", "La anulacion fue solicitada por WhatsApp", "success");
+        fetchCuentas();
+      } else {
+        showToast("Error", res.message || "No se pudo solicitar la anulacion");
+      }
+    } catch {
+      showToast("Error", "Error al solicitar la anulacion");
+    } finally {
+      setAnulacionSubmitting(false);
+    }
+  }, [anulacionCuenta, anulacionMotivo, anulacionMonto, fetchCuentas]);
 
   const handleVerDetalles = async (id: string) => {
     dispatch({ type: "SET_ACTION_SHEET", visible: false });
@@ -582,11 +762,14 @@ export default function CuentasScreen() {
         (item.detalles
           ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0)
           : 0);
+      const statusValue = Number(item.estado);
+      const activeTime = Number(item.tiempo_activo ?? item.tiempo ?? 0);
 
-      const statusColor = statusColors[item.estado] || "#6B7280";
+      const statusColor = statusColors[statusValue] || "#6B7280";
 
-      const isPending = item.estado === 1;
-      const hasTimer = isPending && item.tiempo > 0 && item.habitacion_id;
+      const isPending = statusValue === 1;
+      const isPartialPending = statusValue === 4;
+      const hasTimer = isPending && activeTime > 0 && item.habitacion_id;
       const timer = hasTimer
         ? timers.find(
             (t) =>
@@ -596,6 +779,19 @@ export default function CuentasScreen() {
         : null;
 
       const isOverdue = hasTimer && timer ? calculateRemainingTime(timer, serverOffset) <= 0 : false;
+      const paymentMethodText = item.metodo_pago
+        ? (paymentMethodLabels[String(item.metodo_pago).toLowerCase()] || item.metodo_pago)
+        : null;
+      const financeText =
+        statusValue === 1
+          ? "Por cobrar"
+          : statusValue === 0
+            ? (paymentMethodText || "Cobrado")
+            : statusValue === 2
+              ? "Solicitud de anulacion"
+              : statusValue === 4
+                ? "Saldo pendiente"
+              : "Anulado";
 
       const formatDateTime = (dateStr?: string) => {
         if (!dateStr) return "";
@@ -606,7 +802,7 @@ export default function CuentasScreen() {
         }).replace(/,/g, '');
       };
 
-      const statusText = statusLabels[item.estado] || "Desconocido";
+      const statusText = statusLabels[statusValue] || "Desconocido";
 
       return (
         <MotiView
@@ -699,7 +895,7 @@ export default function CuentasScreen() {
                 </View>
                 <View style={{ flex: 1 }} />
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: textSecondary }}>TOTAL {item.tiempo} MIN</Text>
+                  <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: textSecondary }}>TOTAL {activeTime} MIN</Text>
                 </View>
               </View>
             )}
@@ -709,7 +905,7 @@ export default function CuentasScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(156, 163, 175, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
                 <Ionicons name="card-outline" size={12} color={textSecondary} />
                 <Text style={{ fontSize: 10, fontWeight: '800', color: textSecondary }}>
-                  {isPending ? "POR COBRAR" : "COBRADO"}
+                  {financeText}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -718,9 +914,66 @@ export default function CuentasScreen() {
               </View>
             </View>
 
+            {isPartialPending && (
+              <View
+                style={{
+                  marginTop: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(251, 146, 60, 0.35)" : "#FDBA74",
+                  backgroundColor: isDark ? "rgba(251, 146, 60, 0.12)" : "#FFF7ED",
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: "#F59E0B", fontWeight: '800', fontSize: 12 }}>
+                  SALDO RESTANTE
+                </Text>
+                <Text style={{ color: "#F59E0B", fontWeight: '900', fontSize: 18 }}>
+                  ${Number(item.total || 0).toLocaleString("es-CL")}
+                </Text>
+              </View>
+            )}
+
             {/* Actions Box */}
             {isPending && (
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+              <View style={{ gap: 10, marginTop: 15 }}>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {hasTimer && (
+                    <Pressable
+                      style={({ pressed }) => [{
+                        flex: 1, height: 44, borderRadius: 12,
+                        justifyContent: 'center', alignItems: 'center',
+                        flexDirection: 'row', gap: 6,
+                        backgroundColor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FFF7ED',
+                        borderWidth: 1, borderColor: '#F59E0B55',
+                        opacity: pressed ? 0.7 : 1,
+                      }]}
+                      onPress={() => handleFinalizarTemporizador(item)}
+                    >
+                      <Ionicons name="stop-circle-outline" size={16} color="#F59E0B" />
+                      <Text style={{ color: '#F59E0B', fontWeight: '900', fontSize: 12 }}>FINALIZAR</Text>
+                    </Pressable>
+                  )}
+                  <Pressable
+                    style={({ pressed }) => [{
+                      flex: 1, height: 44, borderRadius: 12,
+                      justifyContent: 'center', alignItems: 'center',
+                      flexDirection: 'row', gap: 6,
+                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.14)' : '#FEF2F2',
+                      borderWidth: 1, borderColor: '#EF444455',
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                    onPress={() => handleSolicitarAnulacion(item)}
+                  >
+                    <Ionicons name="ban-outline" size={16} color="#EF4444" />
+                    <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 12 }}>ANULAR</Text>
+                  </Pressable>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Pressable
                   style={({ pressed }) => [{
                     flex: 1, height: 44, borderRadius: 12,
@@ -756,6 +1009,30 @@ export default function CuentasScreen() {
                   <Ionicons name="cash-outline" size={16} color="#FFF" />
                   <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 13 }}>COBRAR</Text>
                 </Pressable>
+                </View>
+              </View>
+            )}
+
+            {isPartialPending && (
+              <View style={{ gap: 10, marginTop: 15 }}>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Pressable
+                    style={({ pressed }) => [{
+                      flex: 1, height: 44, borderRadius: 12,
+                      justifyContent: 'center', alignItems: 'center',
+                      flexDirection: 'row', gap: 6,
+                      backgroundColor: accentColor,
+                      elevation: 2,
+                      shadowColor: accentColor, shadowOpacity: 0.3,
+                      shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                    onPress={() => handleCobrarCuenta(item)}
+                  >
+                    <Ionicons name="cash-outline" size={16} color="#FFF" />
+                    <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 13 }}>COBRAR SALDO</Text>
+                  </Pressable>
+                </View>
               </View>
             )}
           </Pressable>
@@ -768,9 +1045,12 @@ export default function CuentasScreen() {
       textPrimary,
       textSecondary,
       handleCobrarCuenta,
+      handleFinalizarTemporizador,
+      handleSolicitarAnulacion,
       timers,
       serverOffset,
       accentColor,
+      isDark,
       router,
     ],
   );
@@ -778,7 +1058,7 @@ export default function CuentasScreen() {
 
 
   const filteredCuentas = useMemo(() => {
-    let list = activeTab === "historial" ? cuentas : cuentas.filter((c) => c.estado === 1);
+    let list = activeTab === "historial" ? cuentas : cuentas.filter((c) => Number(c.estado) === 1);
     if (search.trim()) {
         const query = search.toLowerCase();
         list = list.filter(c => 
@@ -874,10 +1154,10 @@ export default function CuentasScreen() {
                 >
                   <View style={styles.tabWithBadge}>
                     <Text style={[styles.tabText, activeTab === "pendientes" ? { color: "#FFF" } : { color: textSecondary }]}>Pendientes</Text>
-                    {cuentas.filter((c) => c.estado === 1).length > 0 && (
+                    {cuentas.filter((c) => Number(c.estado) === 1).length > 0 && (
                       <View style={[styles.tabBadge, activeTab === 'pendientes' ? { backgroundColor: '#FFF' } : { backgroundColor: accentColor }]}>
                         <Text style={[styles.tabBadgeText, activeTab === 'pendientes' ? { color: accentColor } : { color: '#FFF' }]}>
-                          {cuentas.filter((c) => c.estado === 1).length}
+                          {cuentas.filter((c) => Number(c.estado) === 1).length}
                         </Text>
                       </View>
                     )}
@@ -956,9 +1236,9 @@ export default function CuentasScreen() {
                           Detalle de Cuenta
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors[selectedCuenta.estado] || '#6B7280' }} />
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors[Number(selectedCuenta.estado)] || '#6B7280' }} />
                           <Text style={[styles.modalSubText, { color: textSecondary, fontWeight: '800' }]}>
-                            {statusLabels[selectedCuenta.estado] || "Desconocido"} • #{selectedCuenta.codigo}
+                            {statusLabels[Number(selectedCuenta.estado)] || "Desconocido"} • #{selectedCuenta.codigo}
                           </Text>
                         </View>
                       </View>
@@ -1041,6 +1321,235 @@ export default function CuentasScreen() {
                           </View>
                         )}
                       </View>
+
+                      {(() => {
+                        const roomHistory = Array.isArray(selectedCuenta.habitaciones_historial_data)
+                          ? selectedCuenta.habitaciones_historial_data
+                          : [];
+                        const totalRoomTime = Number(selectedCuenta.tiempo_total ?? selectedCuenta.tiempo ?? 0);
+                        const activeRoomTime = Number(selectedCuenta.tiempo_activo ?? 0);
+
+                        if (totalRoomTime <= 0 && roomHistory.length === 0) return null;
+
+                        return (
+                          <View style={{ marginTop: 22, paddingHorizontal: 4 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '900', color: textSecondary, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                              Historial de Habitacion
+                            </Text>
+
+                            <View
+                              style={{
+                                backgroundColor: isDark ? "#171717" : "#F8FAFC",
+                                borderRadius: 22,
+                                padding: 16,
+                                borderWidth: 1,
+                                borderColor,
+                                marginBottom: 14,
+                              }}
+                            >
+                              <Text style={[styles.gridLabel, { color: textSecondary }]}>TIEMPO TOTAL REGISTRADO</Text>
+                              <Text style={[styles.gridValue, { color: textPrimary, fontWeight: '900', marginTop: 4 }]}>
+                                {totalRoomTime} min
+                              </Text>
+                              {activeRoomTime > 0 && (
+                                <Text style={{ color: accentColor, fontSize: 12, fontWeight: '700', marginTop: 4 }}>
+                                  Timer activo: {activeRoomTime} min
+                                </Text>
+                              )}
+                            </View>
+
+                            {roomHistory.length > 0 && (
+                              <View style={{ gap: 10 }}>
+                                {roomHistory.map((entry: any, index: number) => {
+                                  const assignedMinutes = Number(entry.assignedMinutes || 0);
+                                  const consumedMinutes = Number(entry.consumedMinutes || 0);
+                                  const remainingMinutes = Math.max(
+                                    0,
+                                    Number(entry.remainingMinutes ?? assignedMinutes - consumedMinutes)
+                                  );
+
+                                  return (
+                                    <View
+                                      key={`${entry.roomId || 'room'}-${entry.startedAt || index}-${index}`}
+                                      style={{
+                                        backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
+                                        borderRadius: 20,
+                                        padding: 14,
+                                        borderWidth: 1,
+                                        borderColor,
+                                      }}
+                                    >
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                        <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 14 }}>
+                                          {entry.roomName || 'Habitacion'}
+                                        </Text>
+                                        <Text style={{ color: entry.isActive ? accentColor : textSecondary, fontWeight: '800', fontSize: 12 }}>
+                                          {entry.isActive ? 'Activo' : 'Finalizado'}
+                                        </Text>
+                                      </View>
+
+                                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                                        <View style={{ flex: 1, backgroundColor: isDark ? '#262626' : '#F8FAFC', borderRadius: 14, padding: 10 }}>
+                                          <Text style={{ color: textSecondary, fontSize: 10, fontWeight: '900' }}>ASIGNADO</Text>
+                                          <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+                                            {assignedMinutes} min
+                                          </Text>
+                                        </View>
+                                        <View style={{ flex: 1, backgroundColor: isDark ? '#2A2114' : '#FFF7ED', borderRadius: 14, padding: 10 }}>
+                                          <Text style={{ color: isDark ? '#FBBF24' : '#C2410C', fontSize: 10, fontWeight: '900' }}>CONSUMIDO</Text>
+                                          <Text style={{ color: isDark ? '#FBBF24' : '#C2410C', fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+                                            {consumedMinutes} min
+                                          </Text>
+                                        </View>
+                                        <View style={{ flex: 1, backgroundColor: isDark ? '#13261D' : '#ECFDF5', borderRadius: 14, padding: 10 }}>
+                                          <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '900' }}>RESTANTE</Text>
+                                          <Text style={{ color: '#10B981', fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+                                            {remainingMinutes} min
+                                          </Text>
+                                        </View>
+                                      </View>
+
+                                      <Text style={{ color: textSecondary, fontSize: 12 }}>
+                                        Inicio: {entry.startedAt ? parseDateSafe(entry.startedAt).toLocaleString("es-ES", {
+                                          day: "2-digit", month: "2-digit", year: "numeric",
+                                          hour: "2-digit", minute: "2-digit", hour12: true
+                                        }).replace(/,/g, '') : "-"}
+                                      </Text>
+                                      <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>
+                                        Fin: {entry.endedAt ? parseDateSafe(entry.endedAt).toLocaleString("es-ES", {
+                                          day: "2-digit", month: "2-digit", year: "numeric",
+                                          hour: "2-digit", minute: "2-digit", hour12: true
+                                        }).replace(/,/g, '') : "En curso"}
+                                      </Text>
+                                      {entry.carriedFromPrevious && (
+                                        <Text style={{ color: accentColor, fontSize: 12, fontWeight: '700', marginTop: 6 }}>
+                                          Tiempo agregado tras cambio de habitacion
+                                        </Text>
+                                      )}
+                                    </View>
+                                  );
+                                })}
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })()}
+
+                      {(() => {
+                        const resumen = selectedCuenta.resumen_financiero || {};
+                        const solicitudes = Array.isArray(selectedCuenta.solicitudes_anulacion)
+                          ? selectedCuenta.solicitudes_anulacion
+                          : [];
+                        const totalOriginal = Number(resumen.total_original ?? selectedCuenta.total ?? 0);
+                        const totalActual = Number(resumen.total_actual ?? selectedCuenta.total ?? 0);
+                        const totalAnulado = Number(resumen.total_anulado_aprobado ?? 0);
+                        const totalPendiente = Number(resumen.total_anulacion_pendiente ?? 0);
+
+                        return (
+                          <View style={{ marginTop: 22, paddingHorizontal: 4 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '900', color: textSecondary, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                              Resumen financiero
+                            </Text>
+
+                            <View style={{ gap: 10 }}>
+                              <View style={{ flexDirection: 'row', gap: 10 }}>
+                                <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F8FAFC', borderRadius: 20, padding: 14, borderWidth: 1, borderColor }}>
+                                  <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '900' }}>TOTAL ORIGINAL</Text>
+                                  <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '900', marginTop: 6 }}>
+                                    ${totalOriginal.toLocaleString('es-CL')}
+                                  </Text>
+                                </View>
+
+                                <View style={{ flex: 1, backgroundColor: isDark ? '#221417' : '#FFF1F2', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: isDark ? '#3F1D24' : '#FECDD3' }}>
+                                  <Text style={{ color: '#E11D48', fontSize: 11, fontWeight: '900' }}>ANULADO APROBADO</Text>
+                                  <Text style={{ color: '#E11D48', fontSize: 20, fontWeight: '900', marginTop: 6 }}>
+                                    ${totalAnulado.toLocaleString('es-CL')}
+                                  </Text>
+                                  {totalPendiente > 0 && (
+                                    <Text style={{ color: isDark ? '#FBBF24' : '#B45309', fontSize: 11, fontWeight: '700', marginTop: 4 }}>
+                                      Pendiente: ${totalPendiente.toLocaleString('es-CL')}
+                                    </Text>
+                                  )}
+                                </View>
+                              </View>
+
+                              <View style={{ backgroundColor: isDark ? '#13261D' : '#ECFDF5', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: isDark ? '#1F5139' : '#A7F3D0' }}>
+                                <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '900' }}>TOTAL ACTUAL A COBRAR</Text>
+                                <Text style={{ color: '#10B981', fontSize: 24, fontWeight: '900', marginTop: 6 }}>
+                                  ${totalActual.toLocaleString('es-CL')}
+                                </Text>
+                              </View>
+                            </View>
+
+                            {solicitudes.length > 0 && (
+                              <View style={{ marginTop: 14, gap: 10 }}>
+                                <Text style={{ fontSize: 13, fontWeight: '900', color: textSecondary }}>
+                                  Historial de anulacion
+                                </Text>
+                                {solicitudes.map((sol: any, index: number) => {
+                                  const estado = String(sol.estado || '').toLowerCase();
+                                  const chipBg =
+                                    estado === 'aprobado'
+                                      ? (isDark ? '#13261D' : '#ECFDF5')
+                                      : estado === 'rechazado'
+                                        ? (isDark ? '#221417' : '#FFF1F2')
+                                        : (isDark ? '#2A2114' : '#FFF7ED');
+                                  const chipColor =
+                                    estado === 'aprobado'
+                                      ? '#10B981'
+                                      : estado === 'rechazado'
+                                        ? '#E11D48'
+                                        : '#D97706';
+
+                                  return (
+                                    <View
+                                      key={sol.id || index}
+                                      style={{
+                                        backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                        borderRadius: 20,
+                                        padding: 14,
+                                        borderWidth: 1,
+                                        borderColor,
+                                      }}
+                                    >
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                        <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 16 }}>
+                                          ${Number(sol.monto || 0).toLocaleString('es-CL')}
+                                        </Text>
+                                        <View style={{ backgroundColor: chipBg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+                                          <Text style={{ color: chipColor, fontSize: 11, fontWeight: '900', textTransform: 'uppercase' }}>
+                                            {estado || 'pendiente'}
+                                          </Text>
+                                        </View>
+                                      </View>
+
+                                      <Text style={{ color: textSecondary, fontSize: 12 }}>
+                                        Solicitada: {sol.fecha_crea ? parseDateSafe(sol.fecha_crea).toLocaleString("es-ES", {
+                                          day: "2-digit", month: "2-digit", year: "numeric",
+                                          hour: "2-digit", minute: "2-digit", hour12: true
+                                        }).replace(/,/g, '') : "-"}
+                                      </Text>
+                                      {!!sol.fecha_mod && estado !== 'pendiente' && (
+                                        <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>
+                                          Resuelta: {parseDateSafe(sol.fecha_mod).toLocaleString("es-ES", {
+                                            day: "2-digit", month: "2-digit", year: "numeric",
+                                            hour: "2-digit", minute: "2-digit", hour12: true
+                                          }).replace(/,/g, '')}
+                                        </Text>
+                                      )}
+                                      {!!sol.motivo && (
+                                        <Text style={{ color: textPrimary, fontSize: 13, marginTop: 8, lineHeight: 18 }}>
+                                          {sol.motivo}
+                                        </Text>
+                                      )}
+                                    </View>
+                                  );
+                                })}
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })()}
 
                       <View style={{ marginTop: 25, paddingHorizontal: 4 }}>
                         <Text style={{ fontSize: 13, fontWeight: '900', color: textSecondary, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 }}>
@@ -1175,6 +1684,24 @@ export default function CuentasScreen() {
                         </View>
                       )}
 
+                      {Number(selectedCuenta?.resumen_financiero?.total_original ?? 0) > Number(selectedCuenta?.total || 0) && (
+                        <View style={[styles.summaryRow, { marginBottom: 10 }]}>
+                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>Total original</Text>
+                          <Text style={[styles.summaryValue, { color: textPrimary, fontWeight: '700' }]}>
+                            ${Number(selectedCuenta?.resumen_financiero?.total_original || 0).toLocaleString('es-CL')}
+                          </Text>
+                        </View>
+                      )}
+
+                      {Number(selectedCuenta?.resumen_financiero?.total_anulado_aprobado || 0) > 0 && (
+                        <View style={[styles.summaryRow, { marginBottom: 10 }]}>
+                          <Text style={[styles.summaryLabel, { color: "#E11D48", fontSize: 13 }]}>Anulado aprobado</Text>
+                          <Text style={[styles.summaryValue, { color: "#E11D48", fontWeight: '700' }]}>
+                            ${Number(selectedCuenta?.resumen_financiero?.total_anulado_aprobado || 0).toLocaleString('es-CL')}
+                          </Text>
+                        </View>
+                      )}
+
                       {/* Total Final Destacado */}
                       <View
                         style={[
@@ -1193,7 +1720,7 @@ export default function CuentasScreen() {
                             { color: textPrimary, fontSize: 18 }
                           ]}
                         >
-                          TOTAL FINAL
+                          TOTAL ACTUAL
                         </Text>
                         <Text
                           style={[styles.totalValFinal, { color: accentColor, fontSize: 24, fontWeight: '900' }]}
@@ -1251,6 +1778,9 @@ export default function CuentasScreen() {
                 </Text>
                 <Text style={[styles.modalSubText, { color: textSecondary }]}>
                   Resumen de pago para {selectedCuenta?.codigo}
+                </Text>
+                <Text style={[styles.modalSubText, { color: textPrimary, marginTop: 4, fontWeight: "800" }]}>
+                  Cliente: {cobroClienteNombreCompleto}
                 </Text>
               </View>
               <Pressable
@@ -1316,18 +1846,18 @@ export default function CuentasScreen() {
                 </View>
               </View>
 
-              {selectedCuenta?.cliente_id && (
+              {showPrepagoCobro && (
                 <View style={{ marginBottom: 15, padding: 12, backgroundColor: `${accentColor}10`, borderRadius: 12, borderWidth: 1, borderColor: `${accentColor}30` }}>
                   <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Saldo Prepago Cliente</Text>
                   <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '900', marginTop: 2 }}>
-                    ${(selectedCuenta.cliente_saldo || 0).toLocaleString()}
+                    ${cobroClienteSaldo.toLocaleString('es-CL')}
                   </Text>
                 </View>
               )}
 
               <PaymentMethodSelect
                 selectedMethod={cobroMetodoPago}
-                showPrepago={!!selectedCuenta?.cliente_id}
+                showPrepago={showPrepagoCobro}
                 onSelect={(method) =>
                   dispatch({ type: "SET_COBRO_METODO_PAGO", payload: method })
                 }
@@ -1422,7 +1952,52 @@ export default function CuentasScreen() {
                 Ver Detalles / Recibo
               </Text>
             </Pressable>
-            {activeCuenta?.estado === 1 && (
+            {Number(activeCuenta?.estado) === 1 && (
+              <>
+                {timers.find(
+                  (timer) =>
+                    timer.tipoTransaccion === "cuenta" &&
+                    String(timer.servicioId) === String(activeCuenta?.id_cuenta),
+                ) && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.actionItem,
+                      pressed && styles.actionItemPressed,
+                    ]}
+                    onPress={() => handleFinalizarTemporizador(activeCuenta)}
+                  >
+                    <View
+                      style={[
+                        styles.actionIconBox,
+                        { backgroundColor: "rgba(245, 158, 11, 0.15)" },
+                      ]}
+                    >
+                      <Ionicons name="stop-circle-outline" size={22} color="#F59E0B" />
+                    </View>
+                    <Text style={[styles.actionText, { color: "#F59E0B" }]}>
+                      Finalizar Temporizador
+                    </Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionItem,
+                    pressed && styles.actionItemPressed,
+                  ]}
+                  onPress={() => handleSolicitarAnulacion(activeCuenta)}
+                >
+                  <View
+                    style={[
+                      styles.actionIconBox,
+                      { backgroundColor: "rgba(239, 68, 68, 0.15)" },
+                    ]}
+                  >
+                    <Ionicons name="ban-outline" size={22} color="#EF4444" />
+                  </View>
+                  <Text style={[styles.actionText, { color: "#EF4444" }]}>
+                    Solicitar Anulacion
+                  </Text>
+                </Pressable>
               <Pressable
                 style={({ pressed }) => [
                   styles.actionItem,
@@ -1440,6 +2015,28 @@ export default function CuentasScreen() {
                 </View>
                 <Text style={[styles.actionText, { color: accentColor }]}>
                   Cobrar Cuenta
+                </Text>
+              </Pressable>
+              </>
+            )}
+            {Number(activeCuenta?.estado) === 4 && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionItem,
+                  pressed && styles.actionItemPressed,
+                ]}
+                onPress={() => handleCobrarCuenta(activeCuenta)}
+              >
+                <View
+                  style={[
+                    styles.actionIconBox,
+                    { backgroundColor: `${accentColor}15` },
+                  ]}
+                >
+                  <Ionicons name="cash-outline" size={22} color={accentColor} />
+                </View>
+                <Text style={[styles.actionText, { color: accentColor }]}>
+                  Cobrar saldo
                 </Text>
               </Pressable>
             )}
@@ -1474,6 +2071,186 @@ export default function CuentasScreen() {
         confirmText="Confirmar"
         cancelText="Cancelar"
       />
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={anulacionModalVisible}
+        onRequestClose={() => {
+          if (!anulacionSubmitting) {
+            setAnulacionModalVisible(false);
+            setAnulacionCuenta(null);
+            setAnulacionMotivo("");
+            setAnulacionMonto("");
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.detailModal,
+              {
+                backgroundColor: cardBg,
+                borderColor,
+                height: "auto",
+                maxHeight: "80%",
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={[styles.modalTitleText, { color: textPrimary }]}>
+                  Solicitar anulacion
+                </Text>
+                <Text style={[styles.modalSubText, { color: textSecondary }]}>
+                  Cuenta {anulacionCuenta?.codigo}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  if (!anulacionSubmitting) {
+                    setAnulacionModalVisible(false);
+                    setAnulacionCuenta(null);
+                    setAnulacionMotivo("");
+                    setAnulacionMonto("");
+                  }
+                }}
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={24} color={textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              <View
+                style={[
+                  styles.infoBannerCobro,
+                  {
+                    backgroundColor: isDark ? "#111827" : "#F9FAFB",
+                    borderColor,
+                  },
+                ]}
+              >
+                <View style={styles.summaryRowCobro}>
+                  <Text style={[styles.summaryLabelCobro, { color: textSecondary }]}>
+                    Cliente
+                  </Text>
+                  <Text style={[styles.summaryValueCobro, { color: textPrimary, fontSize: 16 }]}>
+                    {anulacionCuenta?.cliente_nombre || "Sin registrar"}
+                  </Text>
+                </View>
+                <View style={[styles.summaryRowCobro, { marginTop: 10 }]}>
+                  <Text style={[styles.summaryLabelCobro, { color: textSecondary }]}>
+                    Monto total de la cuenta
+                  </Text>
+                  <Text style={[styles.summaryValueCobro, { color: accentColor }]}>
+                    ${Number(anulacionCuenta?.total || 0).toLocaleString("es-CL")}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ marginTop: 18, gap: 10 }}>
+                <Text style={{ color: textPrimary, fontWeight: "800", fontSize: 14 }}>
+                  Monto a solicitar
+                </Text>
+                <TextInput
+                  value={anulacionMonto}
+                  onChangeText={(value) => setAnulacionMonto(formatMontoInput(value))}
+                  placeholder="Ingresa el monto"
+                  placeholderTextColor={textSecondary}
+                  keyboardType="number-pad"
+                  editable={!anulacionSubmitting}
+                  style={{
+                    height: 52,
+                    borderRadius: 18,
+                    paddingHorizontal: 16,
+                    borderWidth: 1,
+                    borderColor,
+                    backgroundColor: isDark ? "#111111" : "#FFFFFF",
+                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: "700",
+                  }}
+                />
+                <Text style={{ color: textSecondary, fontSize: 12 }}>
+                  Total de referencia: ${Number(anulacionCuenta?.total || 0).toLocaleString("es-CL")}
+                </Text>
+              </View>
+
+              <View style={{ marginTop: 18, gap: 10 }}>
+                <Text style={{ color: textPrimary, fontWeight: "800", fontSize: 14 }}>
+                  Motivo de anulacion
+                </Text>
+                <TextInput
+                  value={anulacionMotivo}
+                  onChangeText={setAnulacionMotivo}
+                  placeholder="Escribe el motivo de la solicitud"
+                  placeholderTextColor={textSecondary}
+                  multiline
+                  textAlignVertical="top"
+                  editable={!anulacionSubmitting}
+                  style={{
+                    minHeight: 120,
+                    borderRadius: 18,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderWidth: 1,
+                    borderColor,
+                    backgroundColor: isDark ? "#111111" : "#FFFFFF",
+                    color: textPrimary,
+                    fontSize: 15,
+                  }}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+              <Pressable
+                onPress={() => {
+                  if (!anulacionSubmitting) {
+                    setAnulacionModalVisible(false);
+                    setAnulacionCuenta(null);
+                    setAnulacionMotivo("");
+                    setAnulacionMonto("");
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  height: 52,
+                  borderRadius: 16,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "transparent",
+                  borderWidth: 1.5,
+                  borderColor: accentColor,
+                }}
+              >
+                <Text style={{ color: textPrimary, fontWeight: "800" }}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleEnviarSolicitudAnulacion}
+                disabled={anulacionSubmitting}
+                style={{
+                  flex: 1,
+                  height: 52,
+                  borderRadius: 16,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: accentColor,
+                  opacity: anulacionSubmitting ? 0.7 : 1,
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontWeight: "900" }}>
+                  {anulacionSubmitting ? "Enviando..." : "Enviar solicitud"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );

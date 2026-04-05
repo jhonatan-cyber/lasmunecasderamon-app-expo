@@ -89,6 +89,8 @@ export const useSolicitudes = () => {
                     .filter((a: any) => a.estado === 1 || a.estado === 2)
                     .map((a: any) => ({
                         ...a,
+                        codigo: a.codigo || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,
+                        usuario: a.usuario || a.nick || `${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`.trim(),
                         tipoItem: 'anticipo',
                         id_unificado: `anticipo_${a.id_anticipo}`,
                         fecha_orden: parseDateSafe(a.fecha_crea).getTime()

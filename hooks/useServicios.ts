@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Platform } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
@@ -55,9 +56,11 @@ export function useServicios() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const onRefresh = useCallback(() => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

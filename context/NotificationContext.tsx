@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
 import { toastConfig } from "@/utils/toast-config";
 
-// Configuración de notificaciones en el nivel superior (fuera del componente)
+// Configuraci?n de notificaciones en el nivel superior (fuera del componente)
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -53,12 +53,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const handleServerEvent = useCallback((payload: any) => {
-    // Detección robusta del nombre del rol
+    // Detecci?n robusta del nombre del rol
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
     const lowerRole = roleName?.toLowerCase();
+    const isCajero = ["cajero", "cajera"].includes(lowerRole);
     const isCajeroOrAdmin = ["cajero", "cajera", "administrador", "administradora"].includes(lowerRole);
+    const isRequester = String(payload?.data?.usuario_id || "") === String(user?.id || "");
 
-    console.log(`[NotificationContext] 👤 Rol detectado: ${roleName} (${lowerRole}), ¿Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+    console.log(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
 
 
@@ -72,8 +74,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Toast.show({
             type: "order",
-            text1: isOrder ? "🔔 ¡Nuevo Pedido!" : "🛎️ Solicitud de Servicio",
-            text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripción"}`,
+            text1: isOrder ? "?Nuevo Pedido!" : "Solicitud de Servicio",
+            text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripci?n"}`,
             visibilityTime: 6000,
             onPress: () => {
               if (id) {
@@ -94,6 +96,73 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
+      case "new_anticipo_request":
+        if (isCajeroOrAdmin) {
+          const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} solicito un anticipo por $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          Toast.show({
+            type: "info",
+            text1: "Nueva solicitud de anticipo",
+            text2: body,
+            visibilityTime: 5000,
+          });
+          showLocalNotification("Nueva solicitud de anticipo", body);
+          DeviceEventEmitter.emit("refresh_requests", payload);
+        }
+        break;
+
+      case "anticipo_processed": {
+        const approved = payload.data?.status === "approved";
+        const title = approved ? "Anticipo aceptado" : "Anticipo rechazado";
+        const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
+
+        if (isCajero || isRequester) {
+          Haptics.notificationAsync(
+            approved
+              ? Haptics.NotificationFeedbackType.Success
+              : Haptics.NotificationFeedbackType.Warning
+          );
+          Toast.show({
+            type: approved ? "success" : "error",
+            text1: title,
+            text2: body,
+            visibilityTime: 5000,
+          });
+          showLocalNotification(title, body);
+        }
+
+        if (isCajero) {
+          DeviceEventEmitter.emit("refresh_requests", payload);
+        }
+
+        if (isRequester) {
+          DeviceEventEmitter.emit("refresh_anticipos", payload);
+        }
+        break;
+      }
+
+      case "anticipo_delivered":
+        if (isCajero || isRequester) {
+          const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Toast.show({
+            type: "success",
+            text1: "Anticipo entregado",
+            text2: body,
+            visibilityTime: 5000,
+          });
+          showLocalNotification("Anticipo entregado", body);
+        }
+
+        if (isCajero) {
+          DeviceEventEmitter.emit("refresh_requests", payload);
+        }
+
+        if (isRequester) {
+          DeviceEventEmitter.emit("refresh_anticipos", payload);
+        }
+        break;
+
       case "timer_started":
       case "timer_stopped":
       case "timer_resumed":
@@ -105,13 +174,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
             const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "success", text1: "⏱️ Temporizador Iniciado", text2: `Habitación: ${roomLabel}` });
+            // Toast.show({ type: "success", text1: "Temporizador Iniciado", text2: `Habitaci?n: ${roomLabel}` });
           }
         } else if (payload.type === "timer_stopped") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
             const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "error", text1: "🛑 Temporizador Detenido", text2: `Sesión finalizada en ${roomLabel}` });
+            // Toast.show({ type: "error", text1: "Temporizador Detenido", text2: `Sesi?n finalizada en ${roomLabel}` });
           }
         }
         break;
@@ -122,12 +191,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isCajeroOrAdmin) {
           Toast.show({
             type: "success",
-            text1: "💰 Venta Actualizada",
-            text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}`,
+            text1: "Venta Actualizada",
+            text2: `C?digo: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}` ,
             visibilityTime: 4000,
           });
           DeviceEventEmitter.emit("refresh_sales");
-          DeviceEventEmitter.emit("refresh_requests"); // Por si venía de un pedido
+          DeviceEventEmitter.emit("refresh_requests"); // Por si ven?a de un pedido
         }
         break;
 
@@ -135,7 +204,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "order_updated":
       case "service_request_approved":
       case "service_request_rejected":
-      case "room_occupied":
         if (isCajeroOrAdmin) {
           DeviceEventEmitter.emit("refresh_requests");
         }
@@ -144,8 +212,36 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "ping":
         break;
 
+      case "anulacion_processed":
+        if (isCajeroOrAdmin) {
+          const approved = payload.data?.accion === "confirmar";
+          const title = approved ? "Solicitud aprobada" : "Solicitud rechazada";
+          const body = `${payload.data?.codigo || "N/A"} - ${payload.data?.clienteNombre || "Sin cliente"}`;
+          const tipo = payload.data?.tipo;
+
+          Haptics.notificationAsync(
+            approved
+              ? Haptics.NotificationFeedbackType.Success
+              : Haptics.NotificationFeedbackType.Warning
+          );
+          Toast.show({
+            type: approved ? "success" : "error",
+            text1: title,
+            text2: body,
+            visibilityTime: 5000,
+          });
+          showLocalNotification(title, body);
+          DeviceEventEmitter.emit("refresh_requests", payload);
+          if (tipo === "cuenta") {
+            DeviceEventEmitter.emit("refresh_cuentas", payload);
+          } else if (tipo === "venta") {
+            DeviceEventEmitter.emit("refresh_sales", payload);
+          }
+        }
+        break;
+
       default:
-        console.log('[NotificationContext] ℹ️ Evento SSE no manejado específicamente:', payload.type);
+        console.log('[NotificationContext] Evento SSE no manejado espec?ficamente:', payload.type);
     }
   }, [showLocalNotification, user?.id, user?.role]);
 
@@ -153,7 +249,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user?.id) return;
 
     const sseUrl = `${API_URL}/notifications/sse`;
-    console.log('[NotificationContext] 🚀 Intentando conectar SSE a:', sseUrl);
+    console.log('[NotificationContext] Intentando conectar SSE a:', sseUrl);
     let es: EventSource | null = null;
     try {
       es = new EventSource(sseUrl);
@@ -161,12 +257,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       es.addEventListener("message", (event: any) => {
         if (!event.data) {
-          console.log('[NotificationContext] ⚠️ Evento SSE vacío');
+          console.log('[NotificationContext] Evento SSE vac?o');
           return;
         }
         try {
           const payload = JSON.parse(event.data);
-          console.log('[NotificationContext] 🔔 Evento SSE recibido:', payload.type, payload.data?.id || '');
+          console.log('[NotificationContext] Evento SSE recibido:', payload.type, payload.data?.id || '');
           
           // No emitimos eventos de control para evitar bucles de refresco en dashboards
           if (payload.type !== 'connected' && payload.type !== 'ping') {
@@ -174,12 +270,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           handleServerEvent(payload);
         } catch (err) {
-          console.error('[NotificationContext] ❌ Error parseando datos SSE:', err);
+          console.error('[NotificationContext] Error parseando datos SSE:', err);
         }
       });
 
       es.addEventListener("open", () => {
-        console.log('[NotificationContext] ✅ Conexión SSE establecida con éxito');
+        console.log('[NotificationContext] Conexi?n SSE establecida con ?xito');
         setIsConnected(true);
         Toast.show({
             type: "info",
@@ -190,12 +286,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("error", (err: any) => {
-        console.error('[NotificationContext] ❌ Error de conexión SSE:', JSON.stringify(err));
+        console.error('[NotificationContext] Error de conexi?n SSE:', JSON.stringify(err));
         setIsConnected(false);
       });
 
     } catch (err) {
-       console.error('[NotificationContext] ❌ Error fatal al crear EventSource:', err);
+       console.error('[NotificationContext] Error fatal al crear EventSource:', err);
     }
 
     return () => {
@@ -222,4 +318,3 @@ export const useNotifications = () => {
   }
   return context;
 };
-

@@ -58,7 +58,7 @@ interface TimerContextType {
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
-// Función de utilidad para hablar
+// Funci?n de utilidad para hablar
 const announceVoice = async (message: string) => {
   try {
     Speech.speak(message, {
@@ -93,16 +93,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchActiveTimers = useCallback(async () => {
     const nowTs = Date.now();
-    // Evitar llamadas excesivas (mucha frecuencia) — mínimo 2 segundos entre fetch
+    // Evitar llamadas excesivas (mucha frecuencia): m?nimo 2 segundos entre fetch
     if (nowTs - lastFetchTimeRef.current < 2000) {
-      console.log('[TimerContext Mobile] ⏭️ Skipping fetchActiveTimers (debounced)');
+      console.log('[TimerContext Mobile] Skipping fetchActiveTimers (debounced)');
       return;
     }
     lastFetchTimeRef.current = nowTs;
 
     try {
-      console.log('[TimerContext Mobile] 🔄 Calling fetchActiveTimers');
-      // Timeout más largo (20s) para evitar AbortError en red lenta
+      console.log('[TimerContext Mobile] ðŸ”„ Calling fetchActiveTimers');
+      // Timeout m?s largo (20s) para evitar AbortError en red lenta
       const data = await apiClient("/timers/active?source=mobile", { timeout: 20000 });
       if (data.success && Array.isArray(data.data)) {
         if (data.serverTime) {
@@ -153,7 +153,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         setTimers(activeTimers);
       }
     } catch (error) {
-      // Silencioso — programa retry en 5s sin mostrar error al usuario
+      // Silencioso: programa retry en 5s sin mostrar error al usuario
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       retryTimerRef.current = setTimeout(() => {
         fetchActiveTimers();
@@ -237,8 +237,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         DeviceEventEmitter.emit('refresh_sales', {
           roomName: roomNameForEvent,
-          automatic: true,
-          servicioId: targetServicioId
+          automatic: false,
+          reason: 'stopped',
+          servicioId: targetServicioId,
+          tipoTransaccion: targetTipo,
         });
         DeviceEventEmitter.emit('refresh_requests');
         DeviceEventEmitter.emit('refresh_cuentas');
@@ -315,7 +317,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
       case "timers_updated": {
-        console.log('[TimerContext Mobile] 🔔 timers_updated received - syncing list');
+        console.log('[TimerContext Mobile] ðŸ”” timers_updated received - syncing list');
         fetchActiveTimers();
         break;
       }
@@ -337,7 +339,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const remSeconds = calculateRemainingTime(timer, serverOffset);
 
-        // Definimos la marca lógica según los segundos exactos
+        // Definimos la marca l?gica seg?n los segundos exactos
         let targetMinute: number | null = null;
         if (remSeconds > 0) {
             if (remSeconds <= 300 && remSeconds > 60 && timer.lastAnnouncedMinute !== 5) {
@@ -352,7 +354,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (targetMinute !== null) {
           const mensajeStr = targetMinute === 1 ? 'quedan 1 minuto' : `quedan ${targetMinute} minutos`;
-          const mensaje = `Atención: ${mensajeStr} en la ${timer.roomName}`;
+          const mensaje = `Atenci?n: ${mensajeStr} en la ${timer.roomName}`;
           announceVoice(mensaje);
 
           setTimers((prev) =>
@@ -366,7 +368,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           DeviceEventEmitter.emit('refresh_sales', {
             roomName: timer.roomName,
             automatic: true,
-            servicioId: timer.servicioId
+            reason: 'ended',
+            servicioId: timer.servicioId,
+            tipoTransaccion: timer.tipoTransaccion,
           });
 
           setTimers((prev) =>

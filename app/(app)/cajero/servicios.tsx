@@ -70,12 +70,18 @@ const formatServiceDetail = (raw: any) => {
     anfitrionasIdsRaw.length,
     anfitrionasNombres.length
   );
-  
-  // La comisión por anfitriona es el precio del input (no dividido)
-  const comisionIndividual = precioServicio;
-  
-  // El total de comisiones = precio input × número de anfitrionas
-  const totalComision = precioServicio * totalUsuarios;
+
+  const habitacionComision = safeNumber(raw?.habitacion_comision ?? 0);
+  const tieneComisionHabitacion = habitacionComision > 0;
+
+  // Si la habitación tiene comisión fija, se divide entre las anfitrionas
+  // Si no, cada anfitriona recibe el precio del input
+  const comisionIndividual = tieneComisionHabitacion
+    ? Math.floor(habitacionComision / totalUsuarios)
+    : precioServicio;
+  const totalComision = tieneComisionHabitacion
+    ? habitacionComision
+    : precioServicio * totalUsuarios;
   
   const roomName = raw?.roomName || raw?.habitacion_nombre || raw?.habitacion_numero || raw?.habitacion || "Servicio de barra";
   const fechaServicio = parseDateSafe(raw?.fecha_crea || raw?.created_at || raw?.startTime);
@@ -88,6 +94,7 @@ const formatServiceDetail = (raw: any) => {
     iva,
     total: safeNumber(raw?.total ?? raw?.monto ?? (precioServicio + precioHabitacion + iva)),
     total_usuarios: totalUsuarios,
+    habitacion_comision: habitacionComision,
     comision_individual: comisionIndividual,
     total_comision: totalComision,
     created_at: fechaServicio.toISOString(),
@@ -204,7 +211,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
             <Ionicons name="person" size={14} color={theme.textMuted} />
             <Text style={[styles.detailText, { color: theme.text }]}>
               <Text style={styles.bold}>Cliente: </Text>
-              {item.clienteNombre || "Sin registrar"}
+              {(item.clienteNombre && item.clienteNombre !== 'Sin cliente') ? item.clienteNombre : "Sin cliente registrado"}
             </Text>
           </View>
           <View style={styles.detailItem}>
@@ -503,49 +510,80 @@ export default function ServiciosActivosScreen() {
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
     try {
-      // Usamos el endpoint existente con el parámetro all=true
-      const res = await apiClient("/servicios?all=true&limit=100");
-      const rawFinalizados = Array.isArray((res as any)?.data)
-        ? (res as any).data
-        : Array.isArray((res as any)?.data?.data)
-          ? (res as any).data.data
-          : [];
+      // Traer todos los finalizados con paginación
+      let allData: any[] = [];
+      let page = 1;
+      const limit = 200;
+      let hasMore = true;
 
-      if (res.success && Array.isArray(rawFinalizados)) {
-        const mapped = rawFinalizados.map((sAny: any) => ({
-          id: String(sAny.id_servicio),
-          servicioId: String(sAny.id_servicio),
-          roomName: sAny.habitacion_numero || sAny.habitacion_nombre || "Servicio de barra",
-          duration: safeNumber(sAny.tiempo || 0),
-          remainingTime: 0,
-          isActive: false,
-          isPaused: false,
-          startTime: parseDateSafe(sAny.fecha_crea),
-          servicioCode: sAny.codigo,
-          clienteNombre: sAny.cliente_nombre,
-          tipoTransaccion: "servicio",
-          anfitrionas: sAny.anfitrionas_nombres,
-          anfitrionas_fotos: sAny.anfitrionas_fotos ? sAny.anfitrionas_fotos.split(',') : [],
-          total: safeNumber(sAny.total || 0),
-          monto: safeNumber(sAny.monto || 0),
-          metodo_pago: sAny.metodo_pago,
-          waiter_name: sAny.waiter_name || sAny.usuario_nick || `${sAny.creator_nombre || ""} ${sAny.creator_apellido || ""}`.trim(),
-          waiter_foto: sAny.waiter_foto || sAny.creator_foto,
-          solicitante_name: sAny.solicitante_name,
-          solicitante_foto: sAny.solicitante_foto,
-          created_at: sAny.fecha_crea,
-          estado: sAny.estado,
-          pago_estado: sAny.pago_estado,
-          anfitrionas_ids: sAny.anfitrionas_ids,
-          comision_individual: safeNumber(sAny.comision_individual || 0),
-          total_usuarios: safeNumber(sAny.total_usuarios || 0),
-          precio_habitacion: safeNumber(sAny.precio_habitacion ?? Math.max(0, safeNumber(sAny.total || 0) - safeNumber(sAny.sub_total || 0) - safeNumber(sAny.iva || 0))),
-          precio_servicio: safeNumber(sAny.precio_servicio ?? sAny.sub_total ?? sAny.monto ?? 0),
-          iva: safeNumber(sAny.iva || 0),
-          sub_total: safeNumber(sAny.sub_total || 0),
-          created_at: parseDateSafe(sAny.fecha_crea).toISOString(),
-          fecha_crea: parseDateSafe(sAny.fecha_crea).toISOString(),
-        }));
+      while (hasMore) {
+        const res = await apiClient(`/servicios?all=true&limit=${limit}&page=${page}`);
+        const raw = Array.isArray((res as any)?.data?.data)
+          ? (res as any).data.data
+          : Array.isArray((res as any)?.data)
+            ? (res as any).data
+            : [];
+
+        if (!res.success || raw.length === 0) { hasMore = false; break; }
+
+        allData = [...allData, ...raw];
+        const total = (res as any)?.data?.total || 0;
+        hasMore = allData.length < total && raw.length === limit;
+        page++;
+      }
+
+      const rawFinalizados = allData;
+
+      if (Array.isArray(rawFinalizados) && rawFinalizados.length >= 0) {
+        const mapped = rawFinalizados.map((sAny: any) => {
+          const habitacionComision = safeNumber(sAny.habitacion_comision || 0);
+          const comisionIndividual = safeNumber(sAny.comision_individual || 0);
+          const totalUsuarios = Math.max(1, safeNumber(sAny.total_usuarios || 1));
+          
+          // Si hay comisión de habitación, esa es la comisión total
+          // Si no, se usa la comisión individual por las anfitrionas
+          const totalComision = habitacionComision > 0 
+            ? habitacionComision 
+            : comisionIndividual * totalUsuarios;
+          
+          return {
+            id: String(sAny.id || sAny.id_servicio),
+            servicioId: String(sAny.id || sAny.id_servicio),
+            roomName: sAny.habitacion_nombre || sAny.habitacion_numero || "Servicio de barra",
+            duration: safeNumber(sAny.tiempo || 0),
+            remainingTime: 0,
+            isActive: false,
+            isPaused: false,
+            startTime: parseDateSafe(sAny.fecha_crea),
+            servicioCode: sAny.codigo,
+            clienteNombre: sAny.cliente_nombre,
+            tipoTransaccion: "servicio",
+            anfitrionas: sAny.anfitrionas_nombres,
+            anfitrionas_fotos: sAny.anfitrionas_fotos ? sAny.anfitrionas_fotos.split(',') : [],
+            total: safeNumber(sAny.total || 0),
+            monto: safeNumber(sAny.monto || 0),
+            metodo_pago: sAny.metodo_pago,
+            waiter_name: sAny.waiter_name || `${sAny.creator_nombre || ""} ${sAny.creator_apellido || ""}`.trim() || sAny.creator_nick,
+            waiter_foto: sAny.waiter_foto || sAny.creator_foto,
+            solicitante_name: sAny.solicitante_name,
+            solicitante_foto: sAny.solicitante_foto,
+            created_at: parseDateSafe(sAny.fecha_crea).toISOString(),
+            fecha_crea: parseDateSafe(sAny.fecha_crea).toISOString(),
+            estado: sAny.estado,
+            pago_estado: sAny.pago_estado,
+            anfitrionas_ids: sAny.anfitrionas_ids,
+            comision_individual: habitacionComision > 0
+              ? Math.floor(totalComision / totalUsuarios)
+              : comisionIndividual,
+            total_usuarios: totalUsuarios,
+            total_comision: totalComision,
+            habitacion_comision: habitacionComision,
+            precio_habitacion: safeNumber(sAny.precio_habitacion || 0),
+            precio_servicio: safeNumber(sAny.precio_servicio || 0),
+            iva: safeNumber(sAny.iva || 0),
+            sub_total: safeNumber(sAny.sub_total || 0),
+          };
+        });
         dispatch({ type: 'SET_FINALIZADOS', payload: mapped });
         if (isManual) Toast.show({ type: "success", text1: "Actualizado" });
       }
@@ -737,13 +775,25 @@ export default function ServiciosActivosScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.detailsGrid}>
-                <View style={styles.gridItem}>
-                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
-                  <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.roomName || 'Servicio de barra'}</Text>
-                </View>
-                <View style={styles.gridItem}>
-                  <Text style={[styles.gridLabel, { color: theme.textMuted }]}>TIEMPO TOTAL</Text>
-                  <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.duration} min</Text>
+                <View style={[styles.gridItem, { width: '100%', flexDirection: 'row', justifyContent: 'space-between' }]}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]} numberOfLines={1}>{selectedServiceDetail?.roomName || 'S/N'}</Text>
+                  </View>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.gridLabel, { color: theme.textMuted }]}>TIEMPO</Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.duration} min</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.gridLabel, { color: theme.textMuted }]}>CLIENTE</Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]} numberOfLines={1}>
+                      {(selectedServiceDetail?.clienteNombre && selectedServiceDetail.clienteNombre !== 'Sin cliente') 
+                        ? selectedServiceDetail.clienteNombre 
+                        : (selectedServiceDetail?.cliente_nombre && selectedServiceDetail.cliente_nombre !== 'Sin cliente')
+                          ? selectedServiceDetail.cliente_nombre
+                          : 'Sin cliente registrado'}
+                    </Text>
+                  </View>
                 </View>
                 <View style={[styles.gridItem, { width: '100%' }]}>
                   <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONAS</Text>
@@ -784,6 +834,7 @@ export default function ServiciosActivosScreen() {
                   </View>
                 </View>
 
+                {(selectedServiceDetail?.solicitante_name && selectedServiceDetail.solicitante_name !== 'Cajero (Manual)') && (
                 <View style={styles.gridItem}>
                   <Text style={[styles.gridLabel, { color: theme.textMuted }]}>SOLICITADO POR</Text>
                   <View style={styles.userRow}>
@@ -797,9 +848,10 @@ export default function ServiciosActivosScreen() {
                          <Ionicons name="hand-right" size={16} color={theme.textMuted} />
                       </View>
                     )}
-                    <Text style={[styles.gridValue, { color: theme.text, flex: 1 }]}>{selectedServiceDetail?.solicitante_name || "Cajero (Manual)"}</Text>
+                    <Text style={[styles.gridValue, { color: theme.text, flex: 1 }]}>{selectedServiceDetail.solicitante_name}</Text>
                   </View>
                 </View>
+                )}
                 <View style={styles.gridItem}>
                   <Text style={[styles.gridLabel, { color: theme.textMuted }]}>METODO PAGO</Text>
                   <Text style={[styles.gridValue, { color: theme.text }]}>{selectedServiceDetail?.metodo_pago?.toUpperCase()}</Text>
@@ -834,23 +886,49 @@ export default function ServiciosActivosScreen() {
                 </View>
 
                 {/* Sección de Comisiones */}
-                <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
-                  <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>
-                  <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
-                    ${safeNumber(selectedServiceDetail?.total_comision ?? (safeNumber(selectedServiceDetail?.comision_individual) * safeNumber(selectedServiceDetail?.total_usuarios))).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
-                  <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
-                    ${safeNumber(selectedServiceDetail?.comision_individual).toLocaleString()} c/u
-                  </Text>
-                </View>
-                <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
-                  <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
-                    * La comisión total se divide entre las anfitrionas que participaron en el servicio.
-                  </Text>
-                </View>
+                {selectedServiceDetail?.habitacion_comision > 0 ? (
+                  // Si hay comisión de habitación, esa es la comisión total que se divide
+                  <>
+                    <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
+                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Comisión Habitación</Text>
+                      <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
+                        ${safeNumber(selectedServiceDetail?.total_comision).toLocaleString()}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
+                      <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
+                        ${safeNumber(selectedServiceDetail?.comision_individual).toLocaleString()} c/u
+                      </Text>
+                    </View>
+                    <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
+                      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
+                        * La comisión de habitación se divide entre las {selectedServiceDetail?.total_usuarios} anfitrionas.
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  // Si no hay comisión de habitación, mostrar total comisión (precio servicio × anfitrionas)
+                  <>
+                    <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
+                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>
+                      <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
+                        ${safeNumber(selectedServiceDetail?.total_comision ?? (safeNumber(selectedServiceDetail?.comision_individual) * safeNumber(selectedServiceDetail?.total_usuarios))).toLocaleString()}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
+                      <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
+                        ${safeNumber(selectedServiceDetail?.comision_individual).toLocaleString()} c/u
+                      </Text>
+                    </View>
+                    <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
+                      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
+                        * La comisión total se divide entre las anfitrionas que participaron en el servicio.
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
 
               <Pressable 

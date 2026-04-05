@@ -26,8 +26,8 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
 
     const statusMap: Record<number, { bg: string, text: string, label: string }> = {
         0: { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#f87171' : '#991b1b', label: 'Anulado' },
-        1: { bg: isDark ? '#065F46' : '#D1FAE5', text: isDark ? '#6EE7B7' : '#065F46', label: 'Finalizado' },
-        2: { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E', label: 'En proceso' },
+        1: { bg: isDark ? '#1e3a5f' : '#dbeafe', text: isDark ? '#60a5fa' : '#1e40af', label: 'Por Cobrar' },
+        2: { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E', label: 'En Proceso' },
         3: { bg: isDark ? '#475569' : '#E2E8F0', text: isDark ? '#CBD5E1' : '#475569', label: 'Pausado' },
         4: { bg: isDark ? '#1e3a8a' : '#dbeafe', text: isDark ? '#60a5fa' : '#1e40af', label: 'Solicitud Anul.' }
     };

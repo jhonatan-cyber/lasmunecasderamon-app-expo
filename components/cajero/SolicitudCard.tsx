@@ -48,6 +48,9 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         
     const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
     const timeText = new Date(recordTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
+    const responseTime = isAnticipo && item.fecha_mod
+        ? new Date(parseDateSafe(item.fecha_mod)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : null;
 
     const nowServerMs = Date.now() + serverOffset;
     const minutesElapsed = Math.floor((nowServerMs - recordTime.getTime()) / 60000);
@@ -117,6 +120,29 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                         {timeText}{(isSolicitud && item.habitacion_nombre) ? ` (${minutesElapsed} min)` : ''}
                     </Text>
                 </View>
+                {isAnticipo && (
+                    <View
+                        style={[
+                            styles.responseBox,
+                            {
+                                backgroundColor: item.estado === 1 ? '#DCFCE7' : '#DBEAFE',
+                                borderColor: item.estado === 1 ? '#86EFAC' : '#93C5FD'
+                            }
+                        ]}
+                    >
+                        <Text style={[styles.responseTitle, { color: item.estado === 1 ? '#166534' : '#1D4ED8' }]}>
+                            {item.estado === 1 ? 'Aprobado por administrador' : 'Esperando respuesta del administrador'}
+                        </Text>
+                        <Text style={[styles.responseText, { color: item.estado === 1 ? '#166534' : textSecondary }]}>
+                            {item.motivo || 'Sin detalle adicional'}
+                        </Text>
+                        {responseTime && item.estado === 1 ? (
+                            <Text style={[styles.responseMeta, { color: '#166534' }]}>
+                                Respondido a las {responseTime}
+                            </Text>
+                        ) : null}
+                    </View>
+                )}
             </View>
 
             <View style={[styles.cardFooter, !cajaAbierta && { opacity: 0.5 }]}>
@@ -171,8 +197,8 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-    cardUsual: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-    card: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+    cardUsual: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+    card: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
     cardUrgent: { borderColor: '#EF4444', borderWidth: 2, shadowColor: '#EF4444', shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -184,6 +210,10 @@ const styles = StyleSheet.create({
     cardBody: { backgroundColor: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 12, marginBottom: 16 },
     infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     infoText: { fontSize: 13, fontWeight: '600' },
+    responseBox: { marginTop: 12, borderRadius: 12, borderWidth: 1, padding: 10, gap: 4 },
+    responseTitle: { fontSize: 12, fontWeight: '800' },
+    responseText: { fontSize: 12, fontWeight: '600' },
+    responseMeta: { fontSize: 11, fontWeight: '700' },
     cardFooter: { flexDirection: 'row', gap: 10 },
     btnAction: { flex: 1, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     btnActionText: { fontSize: 14, fontWeight: '800' },

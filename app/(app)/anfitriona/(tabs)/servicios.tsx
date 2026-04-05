@@ -20,7 +20,7 @@ export default function ServiciosScreen() {
     const { accentColor, isDark } = useAccentColor();
     const { servicios, loading, refreshing, error, onRefresh, handleAssistance, fetchData } = useServicios();
     
-    const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+    const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado' | 'cobrado'>('all');
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null);
     const [alertConfig, setAlertConfig] = useState({
@@ -56,17 +56,19 @@ export default function ServiciosScreen() {
         }
     };
 
-    const filteredData = servicios.filter((s) => {
+    const filteredData = servicios.filter((s) => s?.id_servicio).filter((s) => {
         const estadoNum = Number(s.estado);
         if (filter === 'pendiente') return [2, 3, 4].includes(estadoNum);
         if (filter === 'pagado') return estadoNum === 1;
+        if (filter === 'cobrado') return estadoNum === 0;
         return true;
     });
 
-    const finalizados = servicios.filter(s => Number(s.estado) === 1);
-    const pendientes = servicios.filter(s => [2, 3, 4].includes(Number(s.estado)));
-    const totalACobrar = finalizados.filter(s => s.pago_estado === 1 || s.pago_estado === undefined).reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
-    const totalEstimado = servicios.reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
+    const finalizados = servicios.filter(s => s?.id_servicio && Number(s.estado) === 1);
+    const cobrados = servicios.filter(s => s?.id_servicio && Number(s.estado) === 0);
+    const pendientes = servicios.filter(s => s?.id_servicio && [2, 3, 4].includes(Number(s.estado)));
+    const totalACobrar = finalizados.reduce((sum, s) => sum + (s.comision_usuario || 0), 0);
+    const totalEstimado = servicios.reduce((sum, s) => sum + (s?.comision_usuario || 0), 0);
 
     const handlePressItem = (item: Servicio) => {
         setSelectedServicio(item);
@@ -94,14 +96,17 @@ export default function ServiciosScreen() {
             </View>
 
             <View style={styles.filterRow}>
-                {(['all', 'pendiente', 'pagado'] as const).map(f => (
+                {(['all', 'pendiente', 'pagado', 'cobrado'] as const).map(f => (
                     <Pressable 
                         key={f} 
                         style={[styles.filterButton, { backgroundColor: filter === f ? accentColor : cardBg, borderColor: filter === f ? accentColor : borderColor }]} 
                         onPress={() => setFilter(f)}
                     >
                         <Text style={[styles.filterText, { color: filter === f ? '#FFFFFF' : textSecondary }]}>
-                            {f === 'all' ? `Todos (${servicios.length})` : f === 'pendiente' ? `En Proceso (${pendientes.length})` : `Finalizados (${finalizados.length})`}
+                            {f === 'all' ? `Todos (${servicios.length})` 
+                            : f === 'pendiente' ? `En Proceso (${pendientes.length})` 
+                            : f === 'pagado' ? `Por Cobrar (${finalizados.length})`
+                            : `Cobrados (${cobrados.length})`}
                         </Text>
                     </Pressable>
                 ))}
@@ -118,7 +123,7 @@ export default function ServiciosScreen() {
 
             <FlatList 
                 data={filteredData} 
-                keyExtractor={item => item.id_servicio.toString()} 
+                keyExtractor={item => item?.id_servicio?.toString() || `fallback-${Math.random()}`} 
                 renderItem={({ item, index }) => (
                     <ServiceCard 
                         item={item} 

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
     ActivityIndicator,
+    DeviceEventEmitter,
     FlatList,
     KeyboardAvoidingView,
     Modal,
@@ -22,15 +23,22 @@ import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
+import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
+import { TimeSelector } from "@/components/ui/TimeSelector";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useTimer } from '@/context/TimerContext';
 
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
     anfitrionas: any[];
+    habitaciones: any[];
     categories: any[];
     cart: any[];
+    selectedHabitacion: any;
+    selectedTime: number;
+    roomModalVisible: boolean;
     modalOpen: boolean;
     modalCategoria: any;
     modalProducts: any[];
@@ -57,6 +65,9 @@ type CuentaAction =
     | { type: 'SET_MODAL_HOSTESSES'; productId: number; hostesses: (string | number)[] }
     | { type: 'SET_HOSTESS_TARGET'; target: any }
     | { type: 'SET_SUBMITTING'; payload: boolean }
+    | { type: 'SET_SELECTED_HABITACION'; payload: any }
+    | { type: 'SET_SELECTED_TIME'; payload: number }
+    | { type: 'SET_ROOM_MODAL_VISIBLE'; payload: boolean }
     | { type: 'SET_EXTRA_TIEMPO'; payload: number }
     | { type: 'SET_TIME_MODAL_VISIBLE'; payload: boolean };
 
@@ -64,8 +75,12 @@ const initialCuentaState: CuentaState = {
     loadingInitial: true,
     refreshing: false,
     anfitrionas: [],
+    habitaciones: [],
     categories: [],
     cart: [],
+    selectedHabitacion: null,
+    selectedTime: 5,
+    roomModalVisible: false,
     modalOpen: false,
     modalCategoria: null,
     modalProducts: [],
@@ -98,6 +113,9 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
         case 'SET_HOSTESS_TARGET':
             return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
         case 'SET_SUBMITTING': return { ...state, submitting: action.payload };
+        case 'SET_SELECTED_HABITACION': return { ...state, selectedHabitacion: action.payload };
+        case 'SET_SELECTED_TIME': return { ...state, selectedTime: action.payload };
+        case 'SET_ROOM_MODAL_VISIBLE': return { ...state, roomModalVisible: action.payload };
         case 'SET_EXTRA_TIEMPO': return { ...state, extraTiempo: action.payload };
         case 'SET_TIME_MODAL_VISIBLE': return { ...state, timeModalVisible: action.payload };
         default: return state;
@@ -124,6 +142,51 @@ const getChampagneLimit = (precio: number) => {
     if (precio >= 160000) return 3;
     if (precio >= 120000) return 2;
     return 1;
+};
+
+const buildCommissionPreview = (items: any[], hostesses: any[]) => {
+    const totalCommission = items.reduce((acc, item) => acc + (Number(item.comision || 0) * Number(item.cantidad || 0)), 0);
+    const distribution = new Map<string, { id: string; name: string; amount: number }>();
+
+    const addAmount = (hostessId: string | number, amount: number) => {
+        if (!hostessId || amount <= 0) return;
+        const key = String(hostessId);
+        const hostess = hostesses.find((item: any) => String(item.id_usuario || item.id) === key);
+        const current = distribution.get(key);
+        distribution.set(key, {
+            id: key,
+            name: hostess?.nick || `Anfitriona ${key}`,
+            amount: (current?.amount || 0) + amount,
+        });
+    };
+
+    items.forEach((item) => {
+        const selectedHostesses = Array.isArray(item.selectedHostesses) ? item.selectedHostesses.filter(Boolean) : [];
+        const itemCommission = Number(item.comision || 0) * Number(item.cantidad || 0);
+
+        if (itemCommission <= 0 || selectedHostesses.length === 0) return;
+
+        if (item.isChampagne) {
+            const totalRounded = Math.round(itemCommission);
+            const base = Math.floor(totalRounded / selectedHostesses.length);
+            const remainder = totalRounded % selectedHostesses.length;
+
+            selectedHostesses.forEach((hostessId: string | number, index: number) => {
+                addAmount(hostessId, base + (index === 0 ? remainder : 0));
+            });
+            return;
+        }
+
+        selectedHostesses.forEach((hostessId: string | number) => {
+            addAmount(hostessId, itemCommission);
+        });
+    });
+
+    return {
+        totalCommission,
+        assignedCommission: Array.from(distribution.values()).reduce((acc, item) => acc + item.amount, 0),
+        hostessDistribution: Array.from(distribution.values()).sort((a, b) => b.amount - a.amount),
+    };
 };
 
 const getHostessLimit = (prod: any, qty: number) => {
@@ -153,16 +216,23 @@ export default function AgregarCuentaScreen() {
 
     const [state, dispatch] = useReducer(cuentaReducer, initialCuentaState);
     const {
-        loadingInitial, refreshing, anfitrionas, categories, modalOpen, modalCategoria,
+        loadingInitial, refreshing, anfitrionas, habitaciones, categories, modalOpen, modalCategoria,
         modalProducts, modalLoading, modalQuantities, modalHostessSelections, hostessSelectionTarget,
-        hostessSubModalVisible, cart, submitting, extraTiempo, timeModalVisible, cuentaDetalle
+        hostessSubModalVisible, cart, submitting, extraTiempo, timeModalVisible, cuentaDetalle,
+        selectedHabitacion, selectedTime, roomModalVisible
     } = state;
 
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
     const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
+    // Mostrar selector de habitación si hay productos con anfitriona asignada en el carrito
+    const showRoomSelector = cart.some(item =>
+        item.selectedHostesses && item.selectedHostesses.length > 0
+    );
+
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
+    const { timers, refreshTimers } = useTimer();
 
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#111111' : '#FFFFFF';
@@ -186,16 +256,25 @@ export default function AgregarCuentaScreen() {
             const requests: Promise<any>[] = [
                 apiClient('/anfitrionas'),
                 apiClient('/categories'),
+                apiClient('/rooms'),
             ];
             if (cuentaOriginal?.id_cuenta) {
                 requests.push(apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`));
             }
-            const [anfitrionasRes, categoriesRes, cuentaDetalleRes] = await Promise.all(requests);
+            const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
+            const rawHabitaciones = roomsRes?.success ? roomsRes.data : [];
             dispatch({
                 type: 'SET_INITIAL_DATA', payload: {
                     anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
                     categories: categoriesRes.success ? (categoriesRes.data || []) : [],
+                    habitaciones: rawHabitaciones.map((room: any) => ({
+                        ...room,
+                        nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                        precio: room.precio ?? room.price ?? 0,
+                        tiempo: room.tiempo ?? room.time ?? 0,
+                        estado: room.estado ?? room.status ?? 0,
+                    })),
                     cuentaDetalle: cuentaDetalleRes || null,
                 }
             });
@@ -280,6 +359,11 @@ export default function AgregarCuentaScreen() {
         return { subtotal, total: subtotal + (cuentaOriginal?.total || 0) };
     }, [cart, cuentaOriginal]);
 
+    const commissionPreview = useMemo(
+        () => buildCommissionPreview(cart, anfitrionas),
+        [cart, anfitrionas]
+    );
+
     const handleSubmit = useCallback(async () => {
         if (cart.length === 0) {
             showToast('Error', 'No has agregado nuevos productos.');
@@ -298,6 +382,24 @@ export default function AgregarCuentaScreen() {
                     });
                 }
             });
+            const hasExistingTimer = timers.some(
+                timer =>
+                    timer.tipoTransaccion === 'cuenta' &&
+                    String(timer.servicioId) === String(cuentaOriginal.id_cuenta)
+            );
+            const currentRoomId =
+                cuentaDetalle?.habitacion_id ||
+                cuentaOriginal?.habitacion_id ||
+                null;
+            const roomIdToUse =
+                selectedHabitacion?.id_habitacion ||
+                selectedHabitacion?.id ||
+                null;
+            const timeToUse = selectedHabitacion ? selectedTime : 0;
+            const isSameRoomSelection =
+                Boolean(roomIdToUse) &&
+                Boolean(currentRoomId) &&
+                String(roomIdToUse) === String(currentRoomId);
             const cuentaData: any = {
                 detalles: cart.map((item) => ({
                     producto_id: item.id_producto || item.id,
@@ -313,12 +415,23 @@ export default function AgregarCuentaScreen() {
             if (extraTiempo > 0 && hasRoom) {
                 cuentaData.extraTiempo = extraTiempo;
             }
+            if (isSameRoomSelection && timeToUse > 0) {
+                cuentaData.extraTiempo = Number(cuentaData.extraTiempo || 0) + timeToUse;
+            } else if (!hasExistingTimer && roomIdToUse && timeToUse > 0) {
+                cuentaData.habitacion_id = roomIdToUse;
+                cuentaData.tiempo = timeToUse;
+            } else if (selectedHabitacion) {
+                cuentaData.habitacion_id = selectedHabitacion.id_habitacion || selectedHabitacion.id;
+                cuentaData.tiempo = selectedTime;
+            }
+            refreshTimers?.();
             const res = await apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`, {
                 method: 'PUT',
                 body: JSON.stringify(cuentaData),
             });
             if (res.success) {
                 showToast('Éxito', 'Productos agregados correctamente', 'success');
+                DeviceEventEmitter.emit('refresh_cuentas');
                 setTimeout(() => router.back(), 1500);
             } else {
                 showToast('Error', res.message || 'No se pudo actualizar la cuenta');
@@ -329,7 +442,7 @@ export default function AgregarCuentaScreen() {
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    }, [cart, cuentaOriginal, router, extraTiempo, hasRoom, cuentaDetalle]);
+    }, [cart, cuentaOriginal, router, extraTiempo, hasRoom, cuentaDetalle, selectedHabitacion, selectedTime, timers, refreshTimers]);
 
     if (loadingInitial) {
         return (
@@ -382,7 +495,7 @@ export default function AgregarCuentaScreen() {
                     </View>
                 </View>
 
-                {hasRoom && (
+                {false && hasRoom && (
                     <Pressable
                         style={[styles.tiempoChip, { backgroundColor: extraTiempo > 0 ? '#3B82F610' : cardBg, borderColor: extraTiempo > 0 ? '#3B82F6' : borderColor }]}
                         onPress={() => dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: true })}
@@ -418,6 +531,37 @@ export default function AgregarCuentaScreen() {
                     </ScrollView>
                 </View>
 
+                {/* Habitación y tiempo para productos con comisión < 160k */}
+                {showRoomSelector && (
+                    <View style={{ marginBottom: spacing }}>
+                        <Pressable
+                            style={[styles.tiempoChip, { backgroundColor: selectedHabitacion ? `${accentColor}10` : cardBg, borderColor: selectedHabitacion ? accentColor : borderColor }]}
+                            onPress={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: true })}
+                        >
+                            <Ionicons name="business" size={18} color={selectedHabitacion ? accentColor : textSecondary} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>HABITACIÓN</Text>
+                                <Text style={[styles.tiempoChipValue, { color: selectedHabitacion ? accentColor : textPrimary }]}>
+                                    {selectedHabitacion?.nombre || 'Seleccionar habitación'}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-down" size={16} color={selectedHabitacion ? accentColor : textSecondary} />
+                        </Pressable>
+                        {selectedHabitacion && (
+                            <View style={{ marginTop: 8 }}>
+                                <TimeSelector
+                                    value={selectedTime}
+                                    onChange={(t) => dispatch({ type: 'SET_SELECTED_TIME', payload: t })}
+                                    step={5}
+                                    min={5}
+                                    max={60}
+                                    label="Tiempo (minutos)"
+                                />
+                            </View>
+                        )}
+                    </View>
+                )}
+
                 {cart.length > 0 ? (
                     <CartList
                         items={cart}
@@ -449,6 +593,38 @@ export default function AgregarCuentaScreen() {
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Nuevos Consumos</Text>
                         <Text style={[styles.summaryVal, { color: '#E11D48' }]}>+ ${totals.subtotal.toLocaleString()}</Text>
                     </View>
+                    {commissionPreview.totalCommission > 0 && (
+                        <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+                            <View style={styles.summaryRow}>
+                                <Text style={[styles.summaryLabel, { color: textSecondary }]}>Comision Nuevos Productos</Text>
+                                <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${commissionPreview.totalCommission.toLocaleString()}</Text>
+                            </View>
+                            {commissionPreview.hostessDistribution.length > 0 && (
+                                <View style={{ marginTop: 12, gap: 8 }}>
+                                    <Text style={[styles.summaryLabel, { color: textSecondary }]}>Distribucion por anfitriona</Text>
+                                    {commissionPreview.hostessDistribution.map((item) => (
+                                        <View
+                                            key={item.id}
+                                            style={[
+                                                styles.summaryRow,
+                                                {
+                                                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.10)' : '#FFF7ED',
+                                                    borderWidth: 1,
+                                                    borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : '#FED7AA',
+                                                    borderRadius: 14,
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 10,
+                                                }
+                                            ]}
+                                        >
+                                            <Text style={[styles.summaryLabel, { color: textPrimary }]}>{item.name}</Text>
+                                            <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${item.amount.toLocaleString()}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    )}
                     <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
                         <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>NUEVO TOTAL</Text>
                         <Text style={[styles.totalValFinal, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
@@ -502,7 +678,11 @@ export default function AgregarCuentaScreen() {
                                             const id = item.id || item.id_producto;
                                             const hasComm = Number(item.comision || item.commission || 0) > 0;
                                             if (hasComm) {
-                                                const max = getHostessLimit(item, modalQuantities[id] || 1);
+                                                const price = item.precio ?? item.price ?? 0;
+                                                // Si precio < 160,000: max anfitrionas = cantidad del producto
+                                                // Si es champagne (precio >= 160,000): usar límite de champagne
+                                                const qty = modalQuantities[id] || 1;
+                                                const max = price < 160000 ? qty : getHostessLimit(item, qty);
                                                 const currentSelections = modalHostessSelections[id] || [];
                                                 if (currentSelections.length === 0 && accountHostessIds.length > 0) {
                                                     const preSelected = accountHostessIds.slice(0, max);
@@ -549,7 +729,9 @@ export default function AgregarCuentaScreen() {
 
             <HostessSelectModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
-                hostesses={anfitrionas.map((a: any) => ({
+                hostesses={Array.from(
+                    new Map(anfitrionas.map((a: any) => [String(a.id_usuario || a.id), a])).values()
+                ).map((a: any) => ({
                     id: a.id_usuario || a.id,
                     id_usuario: a.id_usuario || a.id,
                     nick: a.nick,
@@ -580,7 +762,18 @@ export default function AgregarCuentaScreen() {
                         if (hasComm && currentSelected.length === 0) return;
                         addProductToCart(hostessSelectionTarget.product);
                         dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
+                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false });
                     }
+                }}
+            />
+            <RoomSelectModal
+                visible={roomModalVisible}
+                rooms={habitaciones}
+                selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
+                onClose={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: false })}
+                onSelect={(room) => {
+                    dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
+                    dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: false });
                 }}
             />
         </KeyboardAvoidingView>

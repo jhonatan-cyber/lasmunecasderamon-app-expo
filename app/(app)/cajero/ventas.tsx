@@ -14,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View
@@ -53,7 +54,7 @@ const payMethodIcons: Record<string, any> = {
   transferencia: "swap-horizontal-outline",
 };
 
-// Componente aislado para el temporizador — tiene su propio tick interno
+// Componente aislado para el temporizador: tiene su propio tick interno
 function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimary }: {
   timer: any; serverOffset: number; accentColor: string; textSecondary: string; textPrimary: string;
 }) {
@@ -114,6 +115,10 @@ export default function VentasScreen() {
   // Action Sheet state
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [activeVenta, setActiveVenta] = useState<any>(null);
+  const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
+  const [motivoAnulacion, setMotivoAnulacion] = useState("");
+  const [montoAnulacion, setMontoAnulacion] = useState("");
+  const [anulandoVenta, setAnulandoVenta] = useState(false);
 
   const { timers, serverOffset, refreshTimers } = useTimer();
   const { width } = useWindowDimensions();
@@ -366,7 +371,7 @@ export default function VentasScreen() {
     return () => subscription.remove();
   }, [fetchVentas, refreshTimers]);
 
-  // tick eliminado — TimerPill maneja su propio intervalo
+  // Tick eliminado: TimerPill maneja su propio intervalo
   const onRefresh = () => {
     setRefreshing(true);
     fetchVentas(true);
@@ -374,10 +379,31 @@ export default function VentasScreen() {
   };
 
   const getVentaId = (venta: any) => venta?.id ?? venta?.id_venta ?? null;
+  const formatMontoInput = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("es-CL");
+  };
+  const parseMontoInput = (value: string) => Number(value.replace(/\D/g, "") || 0);
 
   const handleOpenActionSheet = (venta: any) => {
     setActiveVenta(venta);
     setActionSheetVisible(true);
+  };
+
+  const openAnulacionModal = () => {
+    if (!activeVenta) return;
+    setActionSheetVisible(false);
+    setMotivoAnulacion("");
+    setMontoAnulacion(formatMontoInput(String(Math.round(Number(activeVenta.total || 0)))));
+    setAnulacionModalVisible(true);
+  };
+
+  const closeAnulacionModal = () => {
+    if (anulandoVenta) return;
+    setAnulacionModalVisible(false);
+    setMotivoAnulacion("");
+    setMontoAnulacion("");
   };
 
   const handleVerDetalles = async (id: number | string) => {
@@ -437,22 +463,45 @@ export default function VentasScreen() {
 
   const handleAnularVenta = async () => {
     if (!activeVenta) return;
-    setActionSheetVisible(false);
+    const ventaId = getVentaId(activeVenta);
+    const monto = parseMontoInput(montoAnulacion);
+    const motivo = motivoAnulacion.trim();
+
+    if (!ventaId) {
+      showToast("Error", "No se pudo identificar la venta.");
+      return;
+    }
+
+    if (!monto || monto <= 0) {
+      showToast("Error", "Debes ingresar un monto mayor a 0.");
+      return;
+    }
+
+    if (monto > Number(activeVenta.total || 0)) {
+      showToast("Error", "El monto no puede ser mayor al total de la venta.");
+      return;
+    }
+
+    if (!motivo) {
+      showToast("Error", "Debes ingresar el motivo de la anulación.");
+      return;
+    }
 
     try {
-      const ventaId = getVentaId(activeVenta);
+      setAnulandoVenta(true);
       const res = await apiClient(
-        `/ventas/${ventaId}/solicitar-anulacion`,
+        `/ventas/anulacion`,
         {
           method: "POST",
           body: JSON.stringify({
-            estado: 3,
-            motivo: "Solicitado desde el Módulo de Ventas (App)",
+            ventaId,
+            motivo,
+            monto,
           }),
         },
       );
-
       if (res.success || !res.error) {
+        closeAnulacionModal();
         showToast(
           "Solicitud Enviada",
           "La anulación ha sido solicitada al administrador por WhatsApp.",
@@ -467,6 +516,8 @@ export default function VentasScreen() {
       }
     } catch {
       showToast("Error", "Error al procesar la solicitud de anulación");
+    } finally {
+      setAnulandoVenta(false);
     }
   };
 
@@ -481,8 +532,9 @@ const productCount = item.item_count || 0;
     // Check if this sale has an active timer (matching room or service ID)
     const activeTimer = timers.find(
       (t) =>
-        (t.servicioId && String(t.servicioId) === String(ventaId)) ||
-        (t.roomId && String(t.roomId) === String(item.habitacion_id) && item.estado === 2),
+        t.tipoTransaccion === "venta" &&
+        (String(t.servicioId) === String(ventaId) ||
+          (String(t.roomId) === String(item.habitacion_id) && item.estado === 2)),
     );
 
     return (
@@ -676,7 +728,7 @@ const productCount = item.item_count || 0;
                 {item.propina > 0 && (
                   <>
                     <Text style={{ color: textSecondary, marginHorizontal: 4 }}>
-                      •
+                              •
                     </Text>
                     <Text style={styles.cardPropinaGreen}>
                       +${item.propina.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
@@ -708,7 +760,7 @@ const productCount = item.item_count || 0;
               </TouchableOpacity>
               <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
                   <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                  <Text style={styles.backTextRight}>Atrás</Text>
+              <Text style={styles.backTextRight}>Atrás</Text>
               </Pressable>
           </View>
         }
@@ -774,7 +826,7 @@ const productCount = item.item_count || 0;
                     : { color: isDark ? "#9CA3AF" : "#64748B" },
                 ]}
               >
-                Ventas con Habitación
+              Ventas con Habitación
               </Text>
               {timers.filter((t) => t.tipoTransaccion === "venta").length >
                 0 && (
@@ -836,7 +888,7 @@ const productCount = item.item_count || 0;
               No hay ventas registradas
             </Text>
             <Text style={[styles.emptySub, { color: textSecondary }]}>
-              Las ventas aparecerán conforme se procesen los pagos.
+                Las ventas aparecerán conforme se procesen los pagos.
             </Text>
           </View>
         }
@@ -859,7 +911,7 @@ const productCount = item.item_count || 0;
                   <View style={styles.modalHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
-                      <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
+                  <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <View style={{ backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: (statusColors[selectedVenta.estado] || accentColor) + '30' }}>
@@ -889,15 +941,15 @@ const productCount = item.item_count || 0;
                           {selectedVenta.pedido_id ? (
                             <View style={styles.origenPersonas}>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || '—'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
+                                  Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || '—'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
                               </Text>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                               </Text>
                             </View>
                           ) : (
                             <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                              Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                             </Text>
                           )}
                         </View>
@@ -907,7 +959,7 @@ const productCount = item.item_count || 0;
                         <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
                           <Ionicons name="bed-outline" size={16} color={accentColor} />
                           <Text style={[styles.origenPersonaLabel, { color: textSecondary, flex: 1 }]}>
-                            Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_numero || '—'}</Text>
+                                Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || '—'}</Text>
                           </Text>
                           {selectedVenta.tiempo ? (
                             <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
@@ -929,7 +981,7 @@ const productCount = item.item_count || 0;
                           </Text>
                         </View>
                         <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
-                           <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Método Pago</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Método Pago</Text>
                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                              <Ionicons name={payMethodIcons[selectedVenta.metodo_pago] || "wallet"} size={16} color={accentColor} />
                              <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>{String(selectedVenta.metodo_pago || 'EFECTIVO').toUpperCase()}</Text>
@@ -959,7 +1011,12 @@ const productCount = item.item_count || 0;
                       <View style={{ marginBottom: 25, gap: 12 }}>
                         {selectedVenta.comisiones_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
-                            <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Comisiones</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Distribución de Comisiones</Text>
+                              {selectedVenta.total_comision > 0 && (
+                                <Text style={{ fontSize: 14, fontWeight: '900', color: accentColor }}>${Number(selectedVenta.total_comision).toLocaleString('es-CL')} total</Text>
+                              )}
+                            </View>
                             {selectedVenta.comisiones_detalle.map((c: any, idx: number) => (
                               <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.comisiones_detalle.length - 1 ? 0 : 12 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -979,7 +1036,7 @@ const productCount = item.item_count || 0;
                         )}
                         {selectedVenta.propinas_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
-                            <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Propinas</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Propinas</Text>
                             {selectedVenta.propinas_detalle.map((p: any, idx: number) => (
                               <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.propinas_detalle.length - 1 ? 0 : 12 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -1081,6 +1138,118 @@ const productCount = item.item_count || 0;
         </View>
       </Modal>
 
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={anulacionModalVisible}
+        onRequestClose={closeAnulacionModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.anulacionModalCard,
+              {
+                backgroundColor: cardBg,
+                borderColor: `${accentColor}35`,
+              },
+            ]}
+          >
+            <View style={styles.anulacionHeader}>
+              <View style={[styles.anulacionIconBox, { backgroundColor: "#EF444415" }]}>
+                <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+              </View>
+              <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar Anulación</Text>
+              <Text style={[styles.anulacionSubtitle, { color: textSecondary }]}>
+                Completa el monto y el motivo para enviar la solicitud al administrador.
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.anulacionInfoCard,
+                { backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" },
+              ]}
+            >
+              <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
+                Código: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.codigo || "-"}</Text>
+              </Text>
+              <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
+                Cliente: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.cliente_nombre || "Sin cliente"}</Text>
+              </Text>
+              <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
+                Total referencia: <Text style={{ color: accentColor, fontWeight: "900" }}>${Number(activeVenta?.total || 0).toLocaleString("es-CL")}</Text>
+              </Text>
+            </View>
+
+            <View style={styles.anulacionField}>
+              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Monto solicitado *</Text>
+              <TextInput
+                value={montoAnulacion}
+                onChangeText={(value) => setMontoAnulacion(formatMontoInput(value))}
+                placeholder="Ingresa el monto"
+                placeholderTextColor={textSecondary}
+                keyboardType="numeric"
+                editable={!anulandoVenta}
+                style={[
+                  styles.anulacionInput,
+                  {
+                    color: textPrimary,
+                    borderColor,
+                    backgroundColor: isDark ? "#0F0F0F" : "#FFFFFF",
+                  },
+                ]}
+              />
+            </View>
+
+            <View style={styles.anulacionField}>
+              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Motivo de la anulación *</Text>
+              <TextInput
+                value={motivoAnulacion}
+                onChangeText={setMotivoAnulacion}
+                placeholder="Describe el motivo de la anulación"
+                placeholderTextColor={textSecondary}
+                editable={!anulandoVenta}
+                multiline
+                textAlignVertical="top"
+                style={[
+                  styles.anulacionTextarea,
+                  {
+                    color: textPrimary,
+                    borderColor,
+                    backgroundColor: isDark ? "#0F0F0F" : "#FFFFFF",
+                  },
+                ]}
+              />
+            </View>
+
+            <View style={styles.anulacionActions}>
+              <Pressable
+                onPress={closeAnulacionModal}
+                disabled={anulandoVenta}
+                style={[
+                  styles.anulacionSecondaryBtn,
+                  { borderColor: `${accentColor}55`, backgroundColor: accentColor + "10" },
+                ]}
+              >
+                <Text style={[styles.anulacionSecondaryText, { color: accentColor }]}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleAnularVenta}
+                disabled={anulandoVenta}
+                style={[
+                  styles.anulacionPrimaryBtn,
+                  { backgroundColor: accentColor, opacity: anulandoVenta ? 0.7 : 1 },
+                ]}
+              >
+                <Text style={styles.anulacionPrimaryText}>
+                  {anulandoVenta ? "Enviando..." : "Enviar Solicitud"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Action Sheet Modal */}
       <Modal animationType="fade" transparent={true} visible={actionSheetVisible} onRequestClose={() => setActionSheetVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setActionSheetVisible(false)}>
@@ -1100,7 +1269,7 @@ const productCount = item.item_count || 0;
               <Text style={[styles.actionText, { color: textPrimary }]}>Ver Detalles</Text>
             </Pressable>
             {activeVenta?.estado !== 0 && activeVenta?.estado !== 3 && (
-              <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={handleAnularVenta}>
+              <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={openAnulacionModal}>
                 <View style={[styles.actionIconBox, { backgroundColor: "#EF444415" }]}>
                   <Ionicons name="trash-outline" size={22} color="#EF4444" />
                 </View>
@@ -1118,7 +1287,7 @@ const productCount = item.item_count || 0;
           label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
           icon={activeTab === "historial" ? "cart-outline" : "add"}
           onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
-          visible={!modalVisible && !actionSheetVisible && !alertConfig.visible}
+          visible={!modalVisible && !actionSheetVisible && !anulacionModalVisible && !alertConfig.visible}
       />
 
       <PremiumAlert
@@ -1655,6 +1824,96 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   actionCancelText: { fontSize: 16, fontWeight: "800" },
+  anulacionModalCard: {
+    width: "92%",
+    borderRadius: 28,
+    borderWidth: 1,
+    padding: 22,
+    gap: 16,
+  },
+  anulacionHeader: {
+    alignItems: "center",
+    gap: 8,
+  },
+  anulacionIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  anulacionTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  anulacionSubtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  anulacionInfoCard: {
+    borderRadius: 18,
+    padding: 14,
+    gap: 6,
+  },
+  anulacionInfoText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  anulacionField: {
+    gap: 8,
+  },
+  anulacionLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  anulacionInput: {
+    height: 52,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  anulacionTextarea: {
+    minHeight: 110,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  anulacionActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 6,
+  },
+  anulacionSecondaryBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  anulacionSecondaryText: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  anulacionPrimaryBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  anulacionPrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+  },
 
   // Tab Styles
   tabContainer: {
