@@ -114,9 +114,19 @@ export default function PersonalScreen() {
         }, [fetchUsers])
     );
 
-    const onRefresh = () => {
+    const onRefresh = async () => {
         setRefreshing(true);
-        fetchUsers(true);
+        await Promise.all([
+            fetchUsers(true),
+            (async () => {
+                try {
+                    const res = await apiClient('/codigo/actual');
+                    if (res.success) setCodigoAsistencia(res.codigo);
+                } catch (e) {
+                    console.error('[Personal] Error refreshing attendance code:', e);
+                }
+            })()
+        ]);
     };
 
     const handleGenerateQR = useCallback(async (userId: string) => {

@@ -417,8 +417,11 @@ export default function CuentasScreen() {
 
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });
-    fetchCuentas(true);
-  }, [fetchCuentas]);
+    Promise.all([
+      fetchCuentas(true),
+      refreshTimers?.()
+    ]);
+  }, [fetchCuentas, refreshTimers]);
 
   const handleCobrarCuenta = useCallback((cuenta: any) => {
     dispatch({ type: "SET_ACTION_SHEET", visible: false });

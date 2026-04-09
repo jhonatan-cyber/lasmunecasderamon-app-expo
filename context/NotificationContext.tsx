@@ -74,18 +74,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Toast.show({
             type: "order",
-            text1: isOrder ? "?Nuevo Pedido!" : "Solicitud de Servicio",
-            text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripci?n"}`,
+            text1: isOrder ? "¡Nuevo Pedido!" : "Solicitud de Servicio",
+            text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripción"}`,
             visibilityTime: 6000,
-            onPress: () => {
-              if (id) {
-                router.push({
-                  pathname: "/(app)/cajero/solicitudes",
-                  params: { openId: id, type: payload.type }
-                } as any);
-                Toast.hide();
-              }
-            }
           });
 
           showLocalNotification(
@@ -93,6 +84,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             isOrder ? `Pedido: ${payload.data.codigo}` : payload.data.descripcion
           );
           DeviceEventEmitter.emit("refresh_requests", payload);
+
+          // Navegar automáticamente a solicitudes para procesar el pedido/servicio
+          if (id) {
+            router.push({
+              pathname: "/(app)/cajero/solicitudes",
+              params: { openId: String(id), type: payload.type }
+            } as any);
+          }
         }
         break;
 

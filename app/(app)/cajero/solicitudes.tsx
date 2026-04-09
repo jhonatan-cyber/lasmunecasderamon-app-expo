@@ -377,6 +377,65 @@ export default function SolicitudesScreen() {
         }
     };
 
+    const handleAddToCuenta = async () => {
+        if (!selectedPedido || !selectedClient) return;
+        if (!cajaAbierta) {
+            showToast('Caja Cerrada', 'No puedes crear cuentas sin una caja abierta.', 'error');
+            return;
+        }
+
+        setSubmittingCheckout(true);
+
+        try {
+            // Crear cuenta con los productos del pedido
+            const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
+            const habitacionId = pedidoDetails?.[0]?.habitacion_id || null;
+            
+            // Calcular totales
+            const detalles = pedidoDetails.map((d: any) => ({
+                producto_id: d.producto_id,
+                cantidad: d.cantidad,
+                precio: d.precio,
+                sub_total: (d.cantidad * d.precio)
+            }));
+            
+            const subTotal = detalles.reduce((sum: number, d: any) => sum + d.sub_total, 0);
+            const total = subTotal; // Sin comisión para cuenta
+
+            const payload = {
+                codigo: `CUENTA-${Date.now()}`,
+                cliente_id: clienteId,
+                habitacion_id: habitacionId,
+                tiempo: selectedMinutesPedido || 30,
+                metodo_pago: 'efectivo',
+                sub_total: subTotal,
+                total: total,
+                total_comision: 0,
+                detalles: detalles
+            };
+
+            const res = await apiClient('/cuentas', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (res.success) {
+                showToast('Éxito', `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, 'success');
+                removeSolicitudLocally(selectedPedido.id_pedido, 'pedido');
+                setCheckoutModalVisible(false);
+                DeviceEventEmitter.emit('refresh_requests');
+            } else {
+                showToast('Error', res.message || 'Error al crear la cuenta', 'error');
+                fetchSolicitudes();
+            }
+        } catch (err: any) {
+            showToast('Error', err.message || 'Error al procesar', 'error');
+            fetchSolicitudes();
+        } finally {
+            setSubmittingCheckout(false);
+        }
+    };
+
     // --- EFFECTS ---
 
     // Limpiar pendingAutoOpen al montar el componente para evitar auto-open no deseado
@@ -582,6 +641,7 @@ export default function SolicitudesScreen() {
                 setSelectedMinutesPedido={setSelectedMinutesPedido}
                 submittingCheckout={submittingCheckout}
                 onCheckoutSubmit={handleCheckoutSubmit}
+                onAddToCuenta={handleAddToCuenta}
                 isDark={isDark}
                 accentColor={accentColor}
                 accentBg={accentBg}
