@@ -244,7 +244,7 @@ export default function CajaScreen() {
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
-                const res = await apiClient('/cashregister/retiro', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
+                const res = await apiClient('/cashregister/retiros', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
