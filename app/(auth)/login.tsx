@@ -250,7 +250,7 @@ export default function LoginScreen() {
             return () => {
                 hasAutoPrompted.current = false;
             };
-        }, [isDark, isBiometricEnabled, isBiometricSupported, handleBiometricLogin])
+        }, [isDark, isBiometricEnabled, isBiometricSupported])
     );
 
     return (

@@ -1,45 +1,41 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { formatCurrency } from "@/utils/format";
-import {
-  Dimensions,
-  FlatList,
-  Modal,
-  Pressable,
-  RefreshControl,
-  Text as RNText,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
-import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
-import { PremiumAlert } from '@/components/ui/PremiumAlert';
-import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
-import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
+import { apiClient } from "@/api/client";
+import { ActiveServiceCard } from '@/components/anfitriona/ActiveServiceCard';
+import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
+import { CajeroStats } from '@/components/cajero/CajeroStats';
+import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
+import { GarzonStats } from '@/components/garzon/GarzonStats';
+import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
+import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
+import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
+import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
 import { DonutChart } from '@/components/ui/DonutChart';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAuthStore } from "@/store/authStore";
-import { apiClient } from "@/api/client";
-import { AnimatedButton } from '@/components/ui/AnimatedButton';
-import { EventDetailModal } from '@/components/shared/EventDetailModal';
-import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
-import { GarzonStats } from '@/components/garzon/GarzonStats';
-import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
-import { CajeroStats } from '@/components/cajero/CajeroStats';
-import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
-import { PendingSolicitudesAlert } from '@/components/cajero/PendingSolicitudesAlert';
+import { formatCurrency } from "@/utils/format";
+import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { MotiView } from "moti";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+    Modal,
+    Pressable,
+    RefreshControl,
+    Text as RNText,
+    ScrollView,
+    StyleSheet,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { ActiveServiceCard } from '@/components/anfitriona/ActiveServiceCard';
-
-const { width } = Dimensions.get("window");
 
 interface HomeScreenProps {
   role: "anfitriona" | "garzon" | "cajero";
@@ -248,7 +244,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               <RNText style={[styles.modalTitle, { color: textPrimary }]}>Eventos</RNText>
               <Pressable onPress={() => setIsModalVisible(false)}><Ionicons name="close" size={28} color={textPrimary} /></Pressable>
             </View>
-            <FlatList
+            <FlashList<any>
               data={selectedEvents}
               renderItem={({ item }) => (
                 <Pressable onPress={() => handleSelectEvent(item)} style={[styles.eventItem, { backgroundColor: cardBg, borderColor }]}>

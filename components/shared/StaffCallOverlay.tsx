@@ -31,7 +31,7 @@ interface StaffCall {
 export function StaffCallOverlay() {
     const user = useAuthStore((state) => state.user);
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
-    const [accepting, setAccepting] = useState<number | null>(null);
+    const [accepting, setAccepting] = useState<number | string | null>(null);
     const { accentColor, isDark, cardBg } = useAccentColor();
     const sseRef = useRef<EventSource | null>(null);
 
@@ -149,9 +149,9 @@ export function StaffCallOverlay() {
         return () => {
             sse.close();
         };
-    }, [isStaff, isHostess, fetchPending, user?.id, user?.role]);
+    }, [isStaff, isHostess, fetchPending, mapPendingCall, user?.id, user?.role]);
 
-    const handleAccept = async (id: number) => {
+    const handleAccept = async (id: number | string) => {
         setAccepting(id);
         try {
             const res = await apiClient('/notifications/assistance/accept', {

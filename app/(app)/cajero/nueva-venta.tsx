@@ -231,7 +231,7 @@ export default function NuevaVentaScreen() {
         cart, selectedCliente, selectedHabitacion, metodoPago, pagosMixtos, enableTip, selectedTime, timeModalVisible,
         categories, modalOpen, modalCategoria, modalProducts, modalLoading,
         modalQuantities, modalHostessSelections, hostessSelectionTarget, hostessSubModalVisible, roomModalVisible, clientModalVisible, submitting,
-        loadModalVisible, loadingAmount, loadingTargetClient, loadSubmitting, loadMetodoPago, metodoPagoAdicional
+        loadModalVisible, loadingAmount, loadingTargetClient, loadSubmitting, loadMetodoPago
     } = state;
 
     const { width } = useWindowDimensions();
@@ -432,17 +432,6 @@ export default function NuevaVentaScreen() {
     const hasCommissionItem = useMemo(() => {
         return cart.some(item => Number(item.commission || item.comision || 0) > 0 || Number(item.precio || item.price || 0) >= 30000);
     }, [cart]);
-
-    // Calcular distribución de pagos si se usa prepago
-    const mixedPaymentDetails = useMemo(() => {
-        if (metodoPago !== 'prepago' || !selectedCliente) {
-            return { isMixed: false, prepago: 0, adicional: totals.total };
-        }
-        const saldo = Number(selectedCliente.saldo || 0);
-        const prepago = Math.min(totals.total, saldo);
-        const adicional = Math.max(0, totals.total - saldo);
-        return { isMixed: adicional > 0, prepago, adicional };
-    }, [selectedCliente, totals.total, metodoPago]);
 
     const handleSubmit = useCallback(async () => {
         // null = estado desconocido (error de red), se permite intentar — el backend valida

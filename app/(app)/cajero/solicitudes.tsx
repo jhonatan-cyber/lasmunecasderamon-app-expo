@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState, useMemo } from 'react';
 import { MotiView } from 'moti';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     DeviceEventEmitter,
     Pressable,
@@ -16,23 +18,22 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import * as Haptics from 'expo-haptics';
-import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
-
-const FlashList = ShopifyFlashList as any;
+import { MetodoPago } from '../../../types/api';
 
 // API & Utils
 import { apiClient } from '@/api/client';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 // New Refactored Components & Hook
-import { useSolicitudes } from '@/hooks/useSolicitudes';
-import { SolicitudCard } from '@/components/cajero/SolicitudCard';
 import { CheckoutModal } from '@/components/cajero/CheckoutModal';
 import { ServiceModal } from '@/components/cajero/ServiceModal';
+import { SolicitudCard } from '@/components/cajero/SolicitudCard';
+import { useSolicitudes } from '@/hooks/useSolicitudes';
+
+const FlashList = ShopifyFlashList as any;
 
 const SolicitudesSkeleton = ({ bg, cardBg, borderColor, insets, isTablet, gradientColors }: any) => (
     <View style={{ flex: 1, backgroundColor: bg }}>
@@ -111,7 +112,7 @@ export default function SolicitudesScreen() {
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [loadingClient, setLoadingClient] = useState(false);
     const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | ''>('');
-    const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<'efectivo' | 'tarjeta' | 'transferencia' | ''>('');
+    const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<MetodoPago>('');
     const [selectedClient, setSelectedClient] = useState<any>(null);
     const [agregarPropina, setAgregarPropina] = useState(false);
     const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30); 
@@ -142,7 +143,7 @@ export default function SolicitudesScreen() {
 
     // --- LOGIC HANDLERS ---
 
-    const handleAprobar = async (id: string, tipo: string, itemInfo?: any) => {
+    const handleAprobar = useCallback(async (id: string, tipo: string, itemInfo?: any) => {
         console.log('[handleAprobar] id:', id, 'tipo:', tipo, 'itemInfo:', itemInfo);
         if (!cajaAbierta) {
             showToast('Caja Cerrada', 'No puedes aprobar servicios ni pedidos porque no hay una caja abierta.', 'error');
@@ -183,7 +184,7 @@ export default function SolicitudesScreen() {
                     showToast('Error', 'No se pudieron cargar los detalles', 'error');
                     setCheckoutModalVisible(false);
                 }
-            } catch (err) {
+            } catch {
                 showToast('Error', 'No se pudieron cargar los detalles', 'error');
                 setCheckoutModalVisible(false);
             } finally {
@@ -269,7 +270,7 @@ export default function SolicitudesScreen() {
                 });
             }
         }
-    };
+    }, [cajaAbierta, fetchSolicitudes, metodoPago, metodoPagoAdicional, removeSolicitudLocally, serviceModalVisible]);
 
     const handleRechazar = (id: string, tipo: string) => {
         setAlertConfig({
@@ -317,7 +318,36 @@ export default function SolicitudesScreen() {
         
         const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
         
-        const payload = {
+        const payload: {
+            id_pedido: any;
+            cliente_id: any;
+            metodo_pago: typeof metodoPago;
+            metodo_pago_adicional: typeof metodoPagoAdicional | undefined;
+            monto_prepago: number;
+            duracion_habitacion: number;
+            detalles: {
+                producto_id: any;
+                cantidad: any;
+                precio: any;
+                sub_total: number;
+            }[];
+            sub_total: any;
+            total: any;
+            ganancia_tipo: 'fijo';
+            ganancia_monto: number;
+            comision_por_cliente: boolean;
+            recompensa_binario: boolean;
+            recompensa_activos: boolean;
+            recompensa_activos_monto: number;
+            ganancia_anfitriona: number;
+            ganancia_garzon: number;
+            ganancia_local: number;
+            ganancia_empresa: number;
+            total_comision: number;
+            tiempo: number;
+            usuarios: never[];
+            propina?: number;
+        } = {
             id_pedido: selectedPedido.id_pedido,
             cliente_id: clienteId,
             metodo_pago: metodoPago,
@@ -442,7 +472,7 @@ export default function SolicitudesScreen() {
     useEffect(() => {
         console.log('[useEffect mount] Limpiando pendingAutoOpen');
         setPendingAutoOpen(null);
-    }, []);
+    }, [setPendingAutoOpen]);
 
     // Now tick for timers
     useEffect(() => {
@@ -474,7 +504,7 @@ export default function SolicitudesScreen() {
                 }
             }
         }
-    }, [openId, queryType, solicitudes, processedOpenId]);
+    }, [openId, queryType, solicitudes, processedOpenId, handleAprobar, router]);
 
     // Handle auto-opening from SSE (via Hook)
     useEffect(() => {
@@ -506,7 +536,7 @@ export default function SolicitudesScreen() {
             console.log('[useEffect pendingAutoOpen] no found, clearing...');
             setPendingAutoOpen(null);
         }
-    }, [solicitudes, pendingAutoOpen]);
+    }, [solicitudes, pendingAutoOpen, handleAprobar, setPendingAutoOpen]);
 
     // Fetch client when service modal opens
     useEffect(() => {

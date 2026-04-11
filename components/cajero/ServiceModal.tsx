@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, Modal, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { parseDateSafe } from '@/utils/timeUtils';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MetodoPago } from '../../types/api';
 
 interface ServiceModalProps {
     visible: boolean;
@@ -10,10 +11,10 @@ interface ServiceModalProps {
     selectedService: any;
     selectedClient: any;
     loadingClient?: boolean;
-    metodoPago: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | '';
-    setMetodoPago: (m: 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | '') => void;
-    metodoPagoAdicional: 'efectivo' | 'tarjeta' | 'transferencia' | '';
-    setMetodoPagoAdicional: (m: 'efectivo' | 'tarjeta' | 'transferencia' | '') => void;
+    metodoPago: MetodoPago;
+    setMetodoPago: (m: MetodoPago) => void;
+    metodoPagoAdicional: MetodoPago;
+    setMetodoPagoAdicional: (m: MetodoPago) => void;
     allHostesses: any[];
     onAprobar: (id: string, tipo: string) => void;
     isDark: boolean;
@@ -248,7 +249,6 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                         {selectedClient && (metodoPago === 'prepago' || (!metodoPago && selectedService.metodo_pago === 'prepago')) && (() => {
                             const subtotal = Math.floor(subtotalGeneral) + Math.floor(ivaActual);
                             const saldo = Number(selectedClient.saldo || 0);
-                            const prepago = Math.min(subtotal, saldo);
                             const restante = Math.max(0, subtotal - saldo);
                             
                             if (restante > 0) {

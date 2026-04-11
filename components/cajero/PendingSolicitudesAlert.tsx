@@ -45,15 +45,15 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
             const res = await apiClient('/notifications/pending-count');
             if (res.success) {
                 const newCount = res.totalCount || 0;
+                let shouldShake = false;
                 setPendingCount((currentCount) => {
                     if (newCount > currentCount) {
-                        // We'll trigger shake in a useEffect or after state update
+                        shouldShake = true;
                     }
                     return newCount;
                 });
                 
-                // Trigger shake outside the state updater
-                if (newCount > pendingCount) {
+                if (shouldShake) {
                     triggerShake();
                 }
             }

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
@@ -17,7 +16,6 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -153,9 +151,8 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function CajaScreen() {
-    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const user = useAuthStore(state => state.user);
 
     const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
@@ -167,8 +164,7 @@ export default function CajaScreen() {
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
     const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    useWindowDimensions();
 
     const fetchData = useCallback(async (isManual = false) => {
         if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
@@ -279,9 +275,6 @@ export default function CajaScreen() {
         retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline', color: '#F59E0B', btnText: 'Realizar Retiro' },
         cerrar: { title: 'Cierre de Turno', subtitle: 'Confirma el cierre con el monto total calculado', icon: 'lock-closed-outline', color: '#EF4444', btnText: 'Cerrar Caja' },
     }[modalType];
-
-    const headerTextColor = isDark ? '#111827' : '#FFFFFF';
-    const headerSubColor = isDark ? '#4B5563' : 'rgba(255,255,255,0.8)';
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>

@@ -60,7 +60,7 @@ interface Client {
 }
 
 export default function ServiciosScreen() {
-    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const { accentColor, gradientColors } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const primaryColor = accentColor;
@@ -250,7 +250,7 @@ export default function ServiciosScreen() {
         } else if (paymentMethod === 'prepago') {
             setPaymentMethod('');
         }
-    }, [hasPrepago]);
+    }, [hasPrepago, paymentMethod]);
 
     // Calculation logic (simplified version of web version)
     const totals = useMemo(() => {

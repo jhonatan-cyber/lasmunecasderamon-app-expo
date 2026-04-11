@@ -15,7 +15,7 @@ import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Timer } from '@/context/TimerContext';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
-import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { parseDateSafe } from '@/utils/timeUtils';
 
@@ -46,7 +46,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const [loading, setLoading] = useState(false);
-    const [loadingAnfitrionas, setLoadingAnfitrionas] = useState(false);
+    const [, setLoadingAnfitrionas] = useState(false);
     const [tiempo, setTiempo] = useState<number>(30);
     const [precioServicio, setPrecioServicio] = useState<string>('0');
     const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
@@ -87,7 +87,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     setPrecioHabitacionSinComision(0);
                 }
             }
-        } catch (error) {
+        } catch {
             setPrecioHabitacionSinComision(0);
         }
     }, []);
@@ -113,7 +113,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             }
 
             setAnfitrionasDisponibles(todasAnfitrionas);
-        } catch (error) {
+        } catch {
             Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
         } finally {
             setLoadingAnfitrionas(false);
@@ -139,7 +139,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             fetchAnfitrionas();
             fetchHabitacionSinComision();
         }
-    }, [visible, timer?.servicioId, fetchAnfitrionas, fetchHabitacionSinComision]);
+    }, [visible, timer, fetchAnfitrionas, fetchHabitacionSinComision]);
 
     const toggleAnfitriona = (id: string | number) => {
         setAnfitrionasSeleccionadas(prev => {
@@ -226,7 +226,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     text2: res.message || 'No se pudo crear el servicio temporal'
                 });
             }
-        } catch (error) {
+        } catch {
             Toast.show({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
         } finally {
             setLoading(false);

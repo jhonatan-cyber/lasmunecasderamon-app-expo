@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, Modal, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { TimeSelector } from "@/components/ui/TimeSelector";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TimeSelector } from "@/components/ui/TimeSelector";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { MetodoPago } from '../../types/api';
 
 interface CheckoutModalProps {
   visible: boolean;
@@ -11,10 +12,10 @@ interface CheckoutModalProps {
   pedidoDetails: any[];
   loadingDetails: boolean;
   selectedClient: any;
-  metodoPago: "efectivo" | "tarjeta" | "transferencia" | "prepago" | "";
-  setMetodoPago: (m: "efectivo" | "tarjeta" | "transferencia" | "prepago" | "") => void;
-  metodoPagoAdicional: "efectivo" | "tarjeta" | "transferencia" | "";
-  setMetodoPagoAdicional: (m: "efectivo" | "tarjeta" | "transferencia" | "") => void;
+  metodoPago: MetodoPago;
+  setMetodoPago: (m: MetodoPago) => void;
+  metodoPagoAdicional: MetodoPago;
+  setMetodoPagoAdicional: (m: MetodoPago) => void;
   agregarPropina: boolean;
   setAgregarPropina: (v: boolean) => void;
   selectedMinutesPedido: number;

@@ -1,18 +1,19 @@
+import { apiClient } from "@/api/client";
+import { useAuthStore } from "@/store/authStore";
 import * as Speech from "expo-speech";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
 } from "react";
 import { DeviceEventEmitter } from 'react-native';
 import EventSource from "react-native-sse";
-import { apiClient } from "@/api/client";
-import { useAuthStore } from "@/store/authStore";
+import { MetodoPago } from '../types/api';
 
-import { parseDateSafe, calculateRemainingTime, formatTime } from "@/utils/timeUtils";
+import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 
 export interface Timer {
   id: string;
@@ -33,7 +34,7 @@ export interface Timer {
   precio_habitacion?: number;
   iva?: number;
   total?: number;
-  metodo_pago?: string;
+  metodo_pago?: MetodoPago;
   waiter_name?: string;
   waiter_foto?: string;
   solicitante_name?: string;

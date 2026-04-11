@@ -38,7 +38,6 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
 }) => {
   const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
-  const getRoomState = (room: Room) => Number(room.estado ?? room.status ?? 0);
 
   // Una habitación está ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
   const isLibre = (room: Room) => {

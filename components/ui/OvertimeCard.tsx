@@ -35,7 +35,6 @@ export function OvertimeCard({
 }: OvertimeCardProps) {
     const { accentColor, isDark } = useAccentColor();
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -129,15 +129,6 @@ export default function ClientesScreen() {
             return acc;
         }, { totalSaldo: 0, totalDeuda: 0 });
     }, [filteredClients]);
-
-    const handleOpenAdd = () => {
-        setEditingClient(null);
-        setFormName("");
-        setFormLastName("");
-        setFormRun("");
-        setFormPhone("");
-        setClientModalVisible(true);
-    };
 
     const handleOpenEdit = (client: Client) => {
         setEditingClient(client);

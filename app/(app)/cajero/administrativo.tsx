@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,7 +15,6 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 // Componentes locales refactoreados
@@ -24,7 +22,6 @@ import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 
@@ -55,12 +52,10 @@ const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
 };
 
 export default function AdministrativoScreen() {
-    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const user = useAuthStore((state) => state.user);
     const router = useRouter();
-    const insets = useSafeAreaInsets();
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    useWindowDimensions();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);

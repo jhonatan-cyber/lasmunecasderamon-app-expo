@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -45,7 +44,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   max,
   title = "Seleccionar Anfitrionas",
 }) => {
-  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor: subtleBorder } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor: subtleBorder } = useAccentColor();
 
   return (
     <Modal visible={visible} animationType="slide" transparent>

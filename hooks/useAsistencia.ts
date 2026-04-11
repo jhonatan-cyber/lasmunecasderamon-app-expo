@@ -39,7 +39,7 @@ export function useAsistencia() {
   const fetchAsistencias = useCallback(async (isManual = false) => {
     try {
       setError('');
-      const data = await apiClient('/asistencias/user?tipo=detalle');
+      const data = await apiClient('/attendance/user?tipo=detalle');
       if (data.success) {
         const serialized = JSON.stringify(data.data);
         const hasChanges = dataRef.current !== serialized;
@@ -66,7 +66,7 @@ export function useAsistencia() {
 
   const fetchGratificaciones = useCallback(async (isManual = false) => {
     try {
-      const data = await apiClient('/mis-gratificaciones');
+      const data = await apiClient('/gratificaciones/me');
       if (Array.isArray(data)) {
         setGratificaciones(data);
       }

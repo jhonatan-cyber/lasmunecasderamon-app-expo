@@ -42,7 +42,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
     selectedIds,
     max,
 }) => {
-    const { accentColor: primaryColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
     return (
         <Modal visible={visible} animationType="slide" transparent>

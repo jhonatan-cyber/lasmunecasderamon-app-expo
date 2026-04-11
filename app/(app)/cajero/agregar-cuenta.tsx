@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
@@ -18,7 +17,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { CartList } from "@/components/cajero/forms/CartList";
@@ -198,9 +196,8 @@ const getHostessLimit = (prod: any, qty: number) => {
 };
 
 export default function AgregarCuentaScreen() {
-    const { accentColor, gradientColors, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
 
     const cuentaOriginal = useMemo(() => {

@@ -34,7 +34,7 @@ interface Client {
 }
 
 export default function ProductosScreen() {
-    const { accentColor, isDark, bg, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();

@@ -162,7 +162,7 @@ export default function PersonalScreen() {
         } finally {
             setIsGenerating(false);
         }
-    }, [selectedUser?.id]);
+    }, [selectedUser]);
 
     const filteredUsers = users.filter(u => 
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -199,7 +199,7 @@ export default function PersonalScreen() {
 
         const interval = setInterval(fetchUserData, 5000); // Polling cada 5 segundos
         return () => clearInterval(interval);
-    }, [selectedUser?.id]);
+    }, [selectedUser, selectedUser?.id]);
 
     useEffect(() => {
         if (!selectedUser) return;
@@ -219,7 +219,7 @@ export default function PersonalScreen() {
         return () => {
             sub.remove();
         };
-    }, [selectedUser?.id]);
+    }, [selectedUser]);
 
 
     const renderUser = useCallback(({ item, index }: { item: User; index: number }) => {

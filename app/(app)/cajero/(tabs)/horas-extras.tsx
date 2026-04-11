@@ -28,7 +28,6 @@ export default function HorasExtrasScreen() {
 
     const bg = isDark ? '#000000' : '#F3F4F6';
     const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 

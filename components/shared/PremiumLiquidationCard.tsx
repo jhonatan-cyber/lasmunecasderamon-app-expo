@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as MediaLibrary from 'expo-media-library';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 
@@ -201,7 +200,7 @@ export function PremiumLiquidationCard({
       console.error('Error generating PDF:', error);
       showAlert('Error', 'No se pudo generar el reporte PDF correctamente.', 'danger');
     }
-  }, [accentColor, events, onExportSuccess, title, totalCalculated, totalDisplayed, totalLabel, user]);
+  }, [accentColor, events, onExportSuccess, title, totalDisplayed, totalLabel, user]);
 
   return (
     <View style={styles.container}>

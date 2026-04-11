@@ -1,14 +1,15 @@
-import { Slot } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
-import { ActivityIndicator, LogBox, View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DynamicSystemBars } from "@/components/ui/DynamicSystemBars";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SalesProvider } from "@/context/SalesContext";
 import { TimerProvider } from "@/context/TimerContext";
 import { useAuthStore } from "@/store/authStore";
+import * as Sentry from "@sentry/react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Slot } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { ActivityIndicator, LogBox, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 LogBox.ignoreLogs([
   'SafeAreaView has been deprecated',
   'setBackgroundColorAsync is not supported',
@@ -17,6 +18,11 @@ LogBox.ignoreLogs([
   'MediaLibrary.getAssetsAsync',
   'The final value for the useLayoutEffect',
 ]);
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || "https://placeholder@example.ingest.sentry.io/placeholder",
+  tracesSampleRate: 1.0,
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {

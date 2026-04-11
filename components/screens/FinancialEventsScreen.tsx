@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -29,7 +29,7 @@ interface FinancialEventsScreenProps {
 
 export function FinancialEventsScreen({ title, subtitle, type }: FinancialEventsScreenProps) {
     const { accentColor, isDark } = useAccentColor();
-    const { data, loading, refreshing, error, onRefresh } = useFinancialEvents(type as any);
+    const { data, loading, refreshing, onRefresh } = useFinancialEvents(type as any);
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [modalVisible, setModalVisible] = useState(false);

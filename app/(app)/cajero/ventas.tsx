@@ -105,8 +105,6 @@ export default function VentasScreen() {
   const [loadingSales, setLoadingSales] = useState(false);
   const dataRef = useRef<string>("");
   const isFocused = useRef(true);
-  const lastNotifiedId = useRef<number | null>(null);
-
   const [selectedVenta, setSelectedVenta] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);

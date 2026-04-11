@@ -1,6 +1,5 @@
 import { formatCurrency } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import React from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';

@@ -372,8 +372,11 @@ export default function NuevoServicioScreen() {
 
   // Auto-seleccionar prepago si el saldo del cliente cubre el total
   useEffect(() => {
-    if (!selectedClientData) return;
-    const saldo = Number(selectedClientData.saldo || 0);
+    const selectedClient = selectedClients.length === 0
+      ? null
+      : clientes.find(c => String(c.id_cliente || c.id) === String(selectedClients[0]));
+    if (!selectedClient) return;
+    const saldo = Number(selectedClient.saldo || 0);
     if (saldo >= totals.total && totals.total > 0) {
       dispatch({ type: 'SET_METODO_PAGO', payload: 'prepago' });
     } else if (saldo > 0 && saldo < totals.total) {
@@ -385,7 +388,7 @@ export default function NuevoServicioScreen() {
         payload: [{ metodo: 'prepago' as PaymentMethod, monto: saldo, display: saldo > 0 ? saldo.toLocaleString('es-CL') : '' }],
       });
     }
-  }, [selectedClientData]); // solo cuando cambia el cliente, no el total
+  }, [clientes, selectedClients, totals.total]); // recalcula cuando cambia cliente o total
 
   
   const handleLoadBalance = async () => {
@@ -412,7 +415,7 @@ export default function NuevoServicioScreen() {
       } else {
         showToast("Error", res.message || "No se pudo cargar el saldo");
       }
-    } catch (error) {
+    } catch {
       showToast("Error", "Error al procesar la carga de saldo");
     } finally {
       dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: false });
@@ -524,7 +527,7 @@ export default function NuevoServicioScreen() {
     } finally {
       dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
-  }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, selectedClientData, router]);
+  }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, selectedClientData, router, hasAnfitrionaComision]);
 
   const NuevoServicioSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>

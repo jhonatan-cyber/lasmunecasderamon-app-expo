@@ -1,8 +1,13 @@
+import { AdvanceCard } from '@/components/ui/AdvanceCard';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { Anticipo, useAnticipos } from '@/hooks/useAnticipos';
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from "@shopify/flash-list";
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    FlatList,
     Modal,
     Pressable,
     RefreshControl,
@@ -12,16 +17,11 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { AdvanceCard } from '@/components/ui/AdvanceCard';
-import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { useAnticipos, Anticipo } from '@/hooks/useAnticipos';
 
 export default function AnticiposScreen() {
     const { accentColor, isDark } = useAccentColor();
     const {
-        solicitudes, pagos, loading, refreshing, error,
+        solicitudes, pagos, loading, refreshing,
         montoMaximo, montoAsistencia, montoComisiones, montoPropinas,
         tieneSolicitudPendiente,
         fetchMaximo, solicitarAnticipo, onRefresh
@@ -175,7 +175,7 @@ export default function AnticiposScreen() {
                 </View>
             )}
 
-            <FlatList
+            <FlashList
                 data={filteredData}
                 keyExtractor={(item) => (item.id_solicitud || (item as any).id_anticipo).toString()}
                 renderItem={renderItem}

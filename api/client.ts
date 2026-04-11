@@ -1,5 +1,6 @@
+import logger from '@/utils/logger';
+import { TokenStorage } from '@/utils/tokenStorage';
 import Constants from 'expo-constants';
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 export class UnauthorizedError extends Error {
@@ -77,13 +78,7 @@ const delay = (ms: number): Promise<void> => {
 };
 
 const logApiCall = (endpoint: string, attempt: number, maxRetries: number, status?: number, error?: any, durationMs?: number) => {
-    const now = new Date();
-    const timestamp = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().replace('Z', '') + 
-        (now.getTimezoneOffset() <= 0 ? '+' : '-') + 
-        String(Math.floor(Math.abs(now.getTimezoneOffset()) / 60)).padStart(2, '0') + ':' + 
-        String(Math.abs(now.getTimezoneOffset()) % 60).padStart(2, '0');
     const logEntry = {
-        timestamp,
         endpoint,
         url: `${API_URL}${endpoint}`,
         attempt: attempt + 1,
@@ -93,13 +88,13 @@ const logApiCall = (endpoint: string, attempt: number, maxRetries: number, statu
             message: error.message,
             code: error.code,
             name: error.name,
-            type: error.type
+            type: error.type,
+            stack: error.stack,
         } : undefined,
-        durationMs
+        durationMs,
     };
-    
 
-   
+    logger.debug('API call', logEntry);
 };
 
 const getBaseUrl = () => {
@@ -151,16 +146,14 @@ export const API_URL = `${BASE_URL}/api`;
 
 // Debug: mostrar URL en desarrollo
 if (__DEV__) {
-    console.log('[API] Base URL:', BASE_URL);
-    console.log('[API] Full URL:', API_URL);
-}
+        logger.debug('API base URL', { baseUrl: BASE_URL, apiUrl: API_URL });
+    }
 
 export const apiClient = async <T = any>(endpoint: string, options: RequestInit & { timeout?: number; retries?: number } = {}): Promise<T> => {
     const defaultRetries = __DEV__ ? 1 : 3;
     const { timeout: customTimeout, retries: maxRetries = defaultRetries, ...fetchOptions } = options;
     const url = `${API_URL}${endpoint}`;
-    console.log('[API] Full URL:', url);
-
+    logger.debug('API request', { url, endpoint });
     const headers = new Headers(fetchOptions.headers || {});
 
     if (!headers.has('Content-Type') && !(fetchOptions.body instanceof FormData)) {
@@ -169,20 +162,14 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
 
 
     if (!tokenInMemory) {
-        try {
-            if (Platform.OS === 'web') {
-                tokenInMemory = await localStorage.getItem('token');
-            } else {
-                tokenInMemory = await SecureStore.getItemAsync('token');
-            }
-        } catch (e) {}
+        tokenInMemory = await TokenStorage.getToken();
     }
 
     if (tokenInMemory) {
         headers.set('Authorization', `Bearer ${tokenInMemory}`);
-        console.log('[API] Token present:', tokenInMemory.substring(0, 20) + '...');
+        logger.debug('API token loaded', { hasToken: true });
     } else {
-        console.log('[API] NO TOKEN FOUND');
+        logger.debug('API token loaded', { hasToken: false });
     }
 
     // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos

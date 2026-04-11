@@ -42,3 +42,5 @@ export interface DashboardState {
 }
 
 export type UserRole = 'anfitriona' | 'garzon' | 'cajero';
+
+export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | '';

@@ -1,9 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Modal, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
-import { BASE_URL } from '@/api/client';
 
 interface ServiceDetailModalProps {
     visible: boolean;

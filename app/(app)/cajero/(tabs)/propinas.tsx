@@ -3,7 +3,6 @@ import { useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     Pressable,
     RefreshControl,

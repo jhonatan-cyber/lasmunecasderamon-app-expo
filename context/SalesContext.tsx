@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { DeviceEventEmitter } from "react-native";
 import { API_URL } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { DeviceEventEmitter } from "react-native";
+import { MetodoPago } from '../types/api';
 
 export interface Venta {
   id?: string;
@@ -12,7 +13,7 @@ export interface Venta {
   habitacion_id: string;
   total: number;
   estado: number;
-  metodo_pago: string;
+  metodo_pago: MetodoPago;
   created_at: string;
 }
 

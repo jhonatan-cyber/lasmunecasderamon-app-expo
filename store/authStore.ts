@@ -1,33 +1,10 @@
+import { apiClient, setTokenInMemory, setUnauthorizedHandler } from '@/api/client';
+import logger from '@/utils/logger';
+import { TokenStorage } from '@/utils/tokenStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
-import { apiClient, setUnauthorizedHandler, setTokenInMemory } from '@/api/client';
-
-const TokenStorage = {
-    save: async (token: string) => {
-        if (Platform.OS === 'web') {
-            await AsyncStorage.setItem('token', token);
-        } else {
-            await SecureStore.setItemAsync('token', token);
-        }
-    },
-    get: async () => {
-        if (Platform.OS === 'web') {
-            return await AsyncStorage.getItem('token');
-        } else {
-            return await SecureStore.getItemAsync('token');
-        }
-    },
-    remove: async () => {
-        if (Platform.OS === 'web') {
-            await AsyncStorage.removeItem('token');
-        } else {
-            await SecureStore.deleteItemAsync('token');
-        }
-    }
-};
 
 export interface User {
     id: string;
@@ -71,6 +48,8 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => {
+    const unsupportedTwoFactorError = new Error('La configuración de 2FA aún no está disponible en el backend.');
+
 
     setUnauthorizedHandler(() => {
         if (get().user !== null) {
@@ -136,51 +115,24 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         enable2FA: async (password: string) => {
             try {
-                const user = get().user;
-                if (!user) return false;
-
-                const response = await apiClient('/auth/2fa/enable', {
-                    method: 'POST',
-                    body: JSON.stringify({ password }),
+                logger.warn('2FA enable requested but backend support is not available', {
+                    hasPassword: Boolean(password)
                 });
-
-                if (response.success) {
-                    set({
-                        user: { ...user, two_factor_enabled: true },
-                        isBiometricEnabled: true
-                    });
-                    await AsyncStorage.setItem('biometricEnabled', 'true');
-                    return true;
-                }
-                return false;
+                throw unsupportedTwoFactorError;
             } catch (error) {
-
+                logger.warn('2FA enable skipped', { error });
                 return false;
             }
         },
 
         disable2FA: async (password: string) => {
             try {
-                const user = get().user;
-                if (!user) return false;
-
-                const response = await apiClient('/auth/2fa/disable', {
-                    method: 'POST',
-                    body: JSON.stringify({ password }),
+                logger.warn('2FA disable requested but backend support is not available', {
+                    hasPassword: Boolean(password)
                 });
-
-                if (response.success) {
-                    set({
-                        user: { ...user, two_factor_enabled: false },
-                        isBiometricEnabled: false
-                    });
-                    await AsyncStorage.setItem('biometricEnabled', 'false');
-                    await SecureStore.deleteItemAsync('user_credentials');
-                    return true;
-                }
-                return false;
+                throw unsupportedTwoFactorError;
             } catch (error) {
-
+                logger.warn('2FA disable skipped', { error });
                 return false;
             }
         },
@@ -219,7 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 }
 
                 const { token, user } = response;
-                await TokenStorage.save(token);
+                await TokenStorage.saveToken(token);
                 await AsyncStorage.setItem('user', JSON.stringify(user));
                 
                 setTokenInMemory(token);
@@ -238,7 +190,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                             });
                             asistenciaRegistrada = true;
                         } catch (e) {
-                            console.log('Auto-assist registration skipped:', e);
+                            logger.warn('Auto-assist registration skipped', { error: e });
                         }
                     }
                 }
@@ -253,9 +205,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
             try {
                 await apiClient('/auth/logout', { method: 'POST' });
             } catch (e) {
-                console.error('API Logout failed:', e);
+                logger.error('API Logout failed', { error: e });
             }
-            await TokenStorage.remove();
+            await TokenStorage.removeTokens();
             await AsyncStorage.removeItem('user');
             setTokenInMemory(null);
             set({ user: null, token: null, sessionExpired: false });
@@ -277,7 +229,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     ]);
                 };
 
-                const token = await withTimeout(TokenStorage.get(), 2000).catch(() => null);
+                const token = await withTimeout(TokenStorage.getToken(), 2000).catch(() => null);
                 const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
                 if (token && userStr) {
                     setTokenInMemory(token);
@@ -289,7 +241,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
                 await get().checkBiometricAvailability();
             } catch (e) {
-                console.log("Error in checkAuth:", e);
+                logger.error('Error in checkAuth', { error: e });
             } finally {
                 set({ isLoading: false });
             }
@@ -333,4 +285,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
     };
 });
+
+
+
 

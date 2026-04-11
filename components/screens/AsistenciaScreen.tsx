@@ -1,17 +1,17 @@
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { useAsistencia } from '@/hooks/useAsistencia';
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from "@shopify/flash-list";
 import { MotiView } from 'moti';
 import {
-    FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
-import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { useAsistencia } from '@/hooks/useAsistencia';
 
 
 export default function AsistenciaScreen() {
@@ -209,7 +209,7 @@ export default function AsistenciaScreen() {
                 </View>
             )}
 
-            <FlatList
+            <FlashList
                 data={filteredData}
                 keyExtractor={(item: any) => (item.id_asistencia || item.id).toString()}
                 renderItem={renderItem}

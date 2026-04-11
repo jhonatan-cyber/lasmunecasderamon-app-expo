@@ -12,7 +12,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View
 } from "react-native";
@@ -22,7 +21,6 @@ import { apiClient, BASE_URL } from '@/api/client';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { EditServiceModal } from '@/components/cajero/forms/EditServiceModal';
-import { Skeleton } from '@/components/ui/Skeleton';
 import {
   Timer,
   useTimer,
@@ -50,8 +48,6 @@ const safeNumber = (val: any) => {
 };
 
 const formatServiceDetail = (raw: any) => {
-  const totalBase = safeNumber(raw?.total ?? raw?.monto ?? 0);
-  
   // El precio_servicio del backend es el valor original del input (no multiplicado)
   const precioServicio = safeNumber(raw?.precio_servicio ?? raw?.precioServicio ?? 0);
   const precioHabitacion = safeNumber(raw?.precio_habitacion ?? raw?.precioHabitacion ?? 0);
@@ -298,33 +294,6 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 });
 ServiceCard.displayName = "ServiceCard";
 
-const ServiceSkeleton = ({ theme }: { theme: any }) => (
-  <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-    <View style={styles.cardHeader}>
-      <View style={styles.roomBadge}>
-        <Skeleton width={34} height={34} borderRadius={10} />
-        <View style={{ gap: 4 }}>
-          <Skeleton width={120} height={18} />
-          <Skeleton width={100} height={11} />
-        </View>
-      </View>
-      <Skeleton width={80} height={20} borderRadius={16} />
-    </View>
-    <View style={styles.detailsList}>
-      <Skeleton width="90%" height={14} style={{ marginBottom: 4 }} />
-      <Skeleton width="80%" height={14} style={{ marginBottom: 4 }} />
-      <Skeleton width="70%" height={14} />
-    </View>
-    <View style={styles.financeBox}>
-      <Skeleton width={60} height={20} borderRadius={10} />
-      <View style={{ alignItems: 'flex-end', gap: 4 }}>
-        <Skeleton width={80} height={12} />
-        <Skeleton width={100} height={20} />
-      </View>
-    </View>
-  </View>
-);
-
 // --- State Management ---
 type ScreenState = {
   refreshing: boolean;
@@ -549,6 +518,7 @@ export default function ServiciosActivosScreen() {
           return {
             id: String(sAny.id || sAny.id_servicio),
             servicioId: String(sAny.id || sAny.id_servicio),
+            roomId: String(sAny.id_habitacion || sAny.roomId || sAny.habitacion_id || 'barra'),
             roomName: sAny.habitacion_nombre || sAny.habitacion_numero || "Servicio de barra",
             duration: safeNumber(sAny.tiempo || 0),
             remainingTime: 0,
@@ -557,7 +527,7 @@ export default function ServiciosActivosScreen() {
             startTime: parseDateSafe(sAny.fecha_crea),
             servicioCode: sAny.codigo,
             clienteNombre: sAny.cliente_nombre,
-            tipoTransaccion: "servicio",
+            tipoTransaccion: "servicio" as const,
             anfitrionas: sAny.anfitrionas_nombres,
             anfitrionas_fotos: sAny.anfitrionas_fotos ? sAny.anfitrionas_fotos.split(',') : [],
             total: safeNumber(sAny.total || 0),

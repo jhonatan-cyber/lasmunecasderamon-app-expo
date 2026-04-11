@@ -45,7 +45,6 @@ import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Timer, useTimer } from '@/context/TimerContext';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { rotateColor } from '@/utils/colors';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
 
 // Cast para evitar errores de tipos en React 19 con FlashList
@@ -250,7 +249,7 @@ const parseMontoInput = (value: string) => {
 };
 
 export default function CuentasScreen() {
-  const { accentColor, gradientColors, isDark, accentBg, accentBorder } = useAccentColor();
+  const { accentColor, gradientColors, isDark } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -369,37 +368,6 @@ export default function CuentasScreen() {
       dispatch({ type: "SET_COBRO_METODO_PAGO", payload: "efectivo" });
     }
   }, [cobroMetodoPago, cobroModalVisible, showPrepagoCobro]);
-
-  // Listado consolidado de anfitrionas (general + por productos)
-  const allHostesses = useMemo(() => {
-    if (!selectedCuenta) return [];
-    const seen = new Set();
-    const list: any[] = [];
-
-    // 1. Agregar las generales de la cuenta
-    if (selectedCuenta.usuarios) {
-      selectedCuenta.usuarios.forEach((u: any) => {
-        const nick = u.nick || u.usuario_nombre;
-        if (nick && !seen.has(nick)) {
-          seen.add(nick);
-          list.push({ nick });
-        }
-      });
-    }
-
-    // 2. Agregar las asignadas a productos individuales (si faltan)
-    if (selectedCuenta.detalles) {
-      selectedCuenta.detalles.forEach((d: any) => {
-        const nick = d.hostess_nick;
-        if (nick && !seen.has(nick)) {
-          seen.add(nick);
-          list.push({ nick });
-        }
-      });
-    }
-
-    return list;
-  }, [selectedCuenta]);
 
   useFocusEffect(
     useCallback(() => {
@@ -2141,7 +2109,7 @@ export default function CuentasScreen() {
                   <Text style={[styles.summaryLabelCobro, { color: textSecondary }]}>
                     Cliente
                   </Text>
-                  <Text style={[styles.summaryValueCobro, { color: textPrimary, fontSize: 16 }]}>
+                  <Text style={[styles.summaryValCobro, { color: textPrimary, fontSize: 16 }]}>
                     {anulacionCuenta?.cliente_nombre || "Sin registrar"}
                   </Text>
                 </View>
@@ -2149,7 +2117,7 @@ export default function CuentasScreen() {
                   <Text style={[styles.summaryLabelCobro, { color: textSecondary }]}>
                     Monto total de la cuenta
                   </Text>
-                  <Text style={[styles.summaryValueCobro, { color: accentColor }]}>
+                  <Text style={[styles.summaryValCobro, { color: accentColor }]}>
                     ${Number(anulacionCuenta?.total || 0).toLocaleString("es-CL")}
                   </Text>
                 </View>
