@@ -46,13 +46,15 @@ export function AdvanceCard({
     const normalize = normalizeEstado || ((estado: Anticipo['estado'] | number | string) => {
         if (estado === 2 || estado === '2' || estado === 'pendiente') return 'pendiente';
         if (estado === 1 || estado === '1' || estado === 'confirmada' || estado === 'aprobado' || estado === 'aprobada') return 'confirmada';
-        if (estado === 0 || estado === '0' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
+        if (estado === 0 || estado === '0' || estado === 'pagada' || estado === 'pagado' || estado === 'entregada' || estado === 'entregado') return 'pagada';
+        if (estado === 3 || estado === '3' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
         return String(estado ?? '');
     });
 
     const estado = normalize(item.estado);
     const isPendiente = estado === 'pendiente';
     const isAprobada = estado === 'confirmada';
+    const isPagada = estado === 'pagada';
     const isRechazada = estado === 'rechazada';
 
     // Status colors
@@ -64,11 +66,11 @@ export function AdvanceCard({
                 label: 'Pendiente'
             };
         }
-        if (isAprobada) {
+        if (isAprobada || isPagada) {
             return {
                 backgroundColor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
                 color: isDark ? '#6EE7B7' : '#065F46',
-                label: viewMode === 'solicitudes' ? 'Aprobada' : 'Cobrado'
+                label: isPagada ? 'Cobrado' : viewMode === 'solicitudes' ? 'Aprobada' : 'Cobrado'
             };
         }
         // Rechazada

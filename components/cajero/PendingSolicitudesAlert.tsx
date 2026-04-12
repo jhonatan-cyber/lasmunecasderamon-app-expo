@@ -44,7 +44,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
         try {
             const res = await apiClient('/notifications/pending-count');
             if (res.success) {
-                const newCount = res.totalCount || 0;
+                const newCount = res.count || 0;
                 let shouldShake = false;
                 setPendingCount((currentCount) => {
                     if (newCount > currentCount) {

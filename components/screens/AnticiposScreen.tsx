@@ -44,7 +44,8 @@ export default function AnticiposScreen() {
     const normalizeEstado = (estado: Anticipo['estado'] | number | string) => {
         if (estado === 2 || estado === '2' || estado === 'pendiente') return 'pendiente';
         if (estado === 1 || estado === '1' || estado === 'confirmada' || estado === 'aprobado' || estado === 'aprobada') return 'confirmada';
-        if (estado === 3 || estado === '3' || estado === '0' || estado === '0' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
+        if (estado === 0 || estado === '0' || estado === 'pagada' || estado === 'pagado' || estado === 'entregada' || estado === 'entregado') return 'pagada';
+        if (estado === 3 || estado === '3' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
         return String(estado ?? '');
     };
 
@@ -106,13 +107,12 @@ export default function AnticiposScreen() {
         })
         : pagos.filter((p) => {
             const estado = normalizeEstado((p as any).estado);
-            // Historial solo muestra los aprobados (estado = 1)
-            return estado === 'confirmada';
+            return estado === 'pagada';
         });
 
     const totalPendiente = solicitudes.filter((a) => normalizeEstado(a.estado) === 'pendiente').reduce((sum, a) => sum + Number(a.monto), 0);
     const totalEnCaja = solicitudes.filter((a) => normalizeEstado(a.estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
-    const totalPagado = pagos.filter((p) => normalizeEstado((p as any).estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
+    const totalPagado = pagos.filter((p) => normalizeEstado((p as any).estado) === 'pagada').reduce((sum, a) => sum + Number(a.monto), 0);
 
     const renderItem = ({ item, index }: { item: Anticipo; index: number }) => (
         <AdvanceCard
