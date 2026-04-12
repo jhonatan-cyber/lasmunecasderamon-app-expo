@@ -71,9 +71,12 @@ export async function registerForPushNotificationsAsync(): Promise<
 
 async function saveTokenToServer(token: string) {
   try {
-    const response = await apiClient("/notifications/register-token", {
+    const response = await apiClient("/notifications", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({
+        token,
+        deviceType: Platform.OS,
+      }),
     });
 
     if (response.success) {

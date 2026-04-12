@@ -193,9 +193,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             }
 
             const payload = {
-                servicio_original_id: timer.servicioId,
-                cliente_id: timer.cliente_id || null,
-                habitacion_id: timer.roomId,
+                servicio_original_id: String(timer.servicioId),
+                cliente_id: timer.cliente_id ? String(timer.cliente_id) : null,
+                habitacion_id: String(timer.roomId),
                 precio_habitacion: precioHabitacionTotal,
                 precio_servicio: precioServicioTotal,
                 iva: calculatedIva,
@@ -203,7 +203,8 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 total: totalGeneral,
                 tiempo: timeVal,
                 metodo_pago: metodoPago,
-                usuarios: anfitrionasSeleccionadas,
+                usuarios: anfitrionasSeleccionadas.map(id => String(id)),
+                clientes: timer.cliente_id ? [String(timer.cliente_id)] : [],
                 fecha_crea: parseDateSafe(new Date()).toISOString()
             };
             const res = await apiClient('/servicios/temporal', {
