@@ -194,20 +194,35 @@ export default function SolicitudesScreen() {
         }
 
         if (tipo === 'anticipo') {
+            const anticipoEstado = Number(itemInfo?.estado);
+            const requiereAprobacion = anticipoEstado === 2;
             setAlertConfig({
                 visible: true,
-                title: 'Pagar Anticipo',
+                title: requiereAprobacion ? 'Aprobar y Pagar Anticipo' : 'Pagar Anticipo',
                 message: `¿Confirmas que has entregado el efectivo de $${itemInfo.monto.toLocaleString()} a ${itemInfo.usuario}?`,
                 type: 'success',
                 onConfirm: async () => {
                     setAlertConfig(prev => ({ ...prev, visible: false }));
-                    removeSolicitudLocally(id, 'anticipo');
                     try {
+                        if (requiereAprobacion) {
+                            const approveRes = await apiClient(`/anticipos/${id}`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ estado: 1 })
+                            });
+
+                            if (!approveRes.success) {
+                                showToast('Error', approveRes.message || 'No se pudo aprobar el anticipo.', 'error');
+                                fetchSolicitudes();
+                                return;
+                            }
+                        }
+
                         const res = await apiClient(`/anticipos/${id}`, {
                             method: 'PUT',
                             body: JSON.stringify({ estado: 0 })
                         });
                         if (res.success) {
+                            removeSolicitudLocally(id, 'anticipo');
                             showToast('Éxito', 'Anticipo entregado y descontado de caja.', 'success');
                             DeviceEventEmitter.emit('refresh_requests');
                             DeviceEventEmitter.emit('refresh_anticipos');

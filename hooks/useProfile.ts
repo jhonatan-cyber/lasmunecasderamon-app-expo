@@ -34,14 +34,15 @@ export function useProfile() {
   const fetchProfile = useCallback(async () => {
     try {
       const res = await apiClient('/users/profile');
-      if (res.success && res.user) {
-        await updateProfile(res.user);
+      const profile = res?.data;
+      if (res.success && profile) {
+        await updateProfile(profile);
         setFormData(prev => ({
           ...prev,
-          nick: res.user.nick || prev.nick,
-          phone: res.user.phone || prev.phone,
-          address: res.user.address || prev.address,
-          estadoCivil: res.user.estado_civil || prev.estadoCivil,
+          nick: profile.nick || prev.nick,
+          phone: profile.telefono || profile.phone || prev.phone,
+          address: profile.direccion || profile.address || prev.address,
+          estadoCivil: profile.estado_civil || prev.estadoCivil,
         }));
       }
     } catch (error) {
@@ -100,10 +101,11 @@ export function useProfile() {
     setSaving(true);
     try {
       const form = new FormData();
+      form.append('id', String(user?.id || ''));
       form.append('nick', formData.nick);
-      form.append('telefono', formData.phone);
-      form.append('direccion', formData.address);
-      form.append('estado_civil', formData.estadoCivil);
+      form.append('phone', formData.phone);
+      form.append('address', formData.address);
+      form.append('maritalStatus', formData.estadoCivil);
 
       if (formData.password.trim()) {
         if (formData.password.length < 4) throw new Error('La contraseña debe tener al menos 4 caracteres');
@@ -122,19 +124,20 @@ export function useProfile() {
         });
       }
 
-      const res = await apiClient('/users/profile', {
+      const res = await apiClient('/users', {
         method: 'PUT',
         body: form,
       });
 
       if (res.success) {
+        const updatedData = res.data || {};
         const updatedUser = {
           ...user,
-          nick: formData.nick,
-          phone: formData.phone,
-          address: formData.address,
-          estado_civil: formData.estadoCivil,
-          ...(res.user?.foto ? { foto: res.user.foto } : {}),
+          nick: updatedData.nick || formData.nick,
+          phone: updatedData.phone || formData.phone,
+          address: updatedData.address || formData.address,
+          estado_civil: updatedData.maritalStatus || formData.estadoCivil,
+          ...(updatedData.foto ? { foto: updatedData.foto } : {}),
         };
         await updateProfile(updatedUser as any);
         return { success: true, message: 'Perfil actualizado correctamente' };
