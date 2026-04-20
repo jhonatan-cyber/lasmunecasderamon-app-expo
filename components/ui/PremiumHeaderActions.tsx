@@ -35,6 +35,7 @@ export const PremiumHeaderActions = ({
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
     const role = roleName.toLowerCase();
     const isRestrictedRole = role.includes('garzon') || role.includes('anfitriona');
+    const isCajeroRole = role.includes('cajero');
 
     // Forzar siempre blanco para el header premium
     const iconColor = '#FFFFFF';
@@ -62,7 +63,7 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
-            {onQRScannerPress && (
+            {onQRScannerPress && !isCajeroRole && (
                 <Pressable
                     onPress={onQRScannerPress}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}

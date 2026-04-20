@@ -17,11 +17,12 @@ export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean })
     const actions = [
         { title: "VENTAS", description: "Realizar nueva venta", icon: "cart" as const, color: accentColor, route: '/cajero/ventas' },
         { title: "CUENTAS", description: "Cuentas pendientes", icon: "receipt" as const, color: accentColor, route: '/cajero/cuentas' },
-        { title: "SERVICIOS", description: "Gestión de privados", icon: "bed" as const, color: accentColor, route: '/cajero/servicios' },
+        { title: "SERVICIOS", description: "Gesti?n de privados", icon: "bed" as const, color: accentColor, route: '/cajero/servicios' },
         { title: "CAJA", description: "Control de cajas", icon: "cash" as const, color: accentColor, route: '/cajero/caja' },
         { title: "PEDIDOS", description: "Solicitudes pendientes", icon: "notifications" as const, color: accentColor, route: '/cajero/solicitudes' },
-        { title: "CLIENTES", description: "Gestión de prepago", icon: "person" as const, color: accentColor, route: '/cajero/clientes' },
-        { title: "PERSONAL", description: "Liquidación y Asistencia", icon: "people" as const, color: accentColor, route: '/cajero/administrativo' },
+        { title: "CLIENTES", description: "Gesti?n de prepago", icon: "person" as const, color: accentColor, route: '/cajero/clientes' },
+        { title: "PERSONAL", description: "Liquidaci?n y Asistencia", icon: "people" as const, color: accentColor, route: '/cajero/administrativo' },
+        { title: "GRATIFICACIONES", description: "Solicitar y revisar gratificaciones", icon: "gift" as const, color: accentColor, route: '/cajero/gratificaciones' },
     ];
 
     const rows = [];

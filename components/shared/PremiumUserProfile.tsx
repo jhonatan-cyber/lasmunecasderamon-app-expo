@@ -6,6 +6,7 @@ import { AttendanceCodeDisplay } from '@/components/anfitriona/AttendanceCodeDis
 interface PremiumUserProfileProps {
     user: any;
     userStatus: number;
+    role?: 'anfitriona' | 'garzon' | 'cajero' | string;
 }
 
 export const getStatusColor = (status: number, isDark: boolean = true) => {
@@ -26,7 +27,20 @@ export const getStatusLabel = (status: number) => {
     }
 };
 
-export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps) => {
+const getRoleLabel = (role?: string) => {
+    switch (role) {
+        case 'anfitriona':
+            return 'Anfitriona';
+        case 'garzon':
+            return 'Garz?n';
+        case 'cajero':
+            return 'Cajero';
+        default:
+            return role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+    }
+};
+
+export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfileProps) => {
     const [imageError, setImageError] = useState(false);
     const textPrimary = '#FFFFFF';
     const textSecondary = 'rgba(255,255,255,0.7)';
@@ -40,6 +54,8 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
     const fullName = [user?.name, lastName].filter(Boolean).join(' ').trim() || user?.username || 'Usuario';
     const nick = user?.nick || user?.username || fullName;
     const showFullName = Boolean(fullName) && fullName !== nick;
+
+    const roleLabel = getRoleLabel(role || user?.role);
 
     const avatarUri = useMemo(() => {
         if (imageError) {
@@ -76,8 +92,9 @@ export const PremiumUserProfile = ({ user, userStatus }: PremiumUserProfileProps
                 )}
                 <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, true) }]} />
-                    <Text style={[styles.statusText, { color: textSecondary }]}>
+                    <Text style={[styles.statusText, { color: textSecondary }]} numberOfLines={1}>
                         {getStatusLabel(userStatus)}
+                        {roleLabel ? ` ? ${roleLabel}` : ''}
                     </Text>
                 </View>
             </View>

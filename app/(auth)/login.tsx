@@ -336,14 +336,14 @@ export default function LoginScreen() {
                                         <TextInput
                                             style={[
                                                 styles.input,
+                                                styles.passwordInput,
                                                 {
                                                     backgroundColor: isDark ? '#111111' : '#F3F4F6',
                                                     color: isDark ? '#FFFFFF' : '#000000',
                                                     borderColor: isDark ? '#374151' : '#E5E7EB',
-                                                    width: '100%',
                                                 },
                                             ]}
-                                            placeholder="Ingresa tu contraseña"
+                                            placeholder="Ingresa tu contrase?a"
                                             placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                                             secureTextEntry={!showPassword}
                                             value={password}
@@ -353,14 +353,28 @@ export default function LoginScreen() {
                                             onSubmitEditing={handleLogin}
                                         />
                                         <Pressable
-                                            style={styles.eyeIcon}
+                                            style={[
+                                                styles.eyeButton,
+                                                {
+                                                    backgroundColor: isDark ? '#1F2937' : '#E5E7EB',
+                                                    borderColor: isDark ? '#374151' : '#D1D5DB',
+                                                },
+                                            ]}
                                             onPress={() => setShowPassword(!showPassword)}
                                         >
                                             <Ionicons
                                                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                                size={22}
-                                                color={isDark ? '#9CA3AF' : '#6B7280'}
+                                                size={20}
+                                                color={isDark ? '#FFFFFF' : '#111827'}
                                             />
+                                            <Text
+                                                style={[
+                                                    styles.eyeButtonText,
+                                                    { color: isDark ? '#FFFFFF' : '#111827' },
+                                                ]}
+                                            >
+                                                {showPassword ? 'Ocultar' : 'Ver'}
+                                            </Text>
                                         </Pressable>
                                     </View>
 
@@ -639,13 +653,22 @@ const styles = StyleSheet.create({
         position: 'relative',
         height: 60,
     },
-    eyeIcon: {
-        position: 'absolute',
-        right: 20,
-        height: '100%',
+    eyeButton: {
+        marginLeft: 12,
+        minWidth: 72,
+        height: 60,
+        borderRadius: 18,
+        borderWidth: 1.5,
         justifyContent: 'center',
-        paddingHorizontal: 10,
-        zIndex: 10,
+        alignItems: 'center',
+        gap: 2,
+    },
+    eyeButtonText: {
+        fontSize: 11,
+        fontWeight: '800',
+    },
+    passwordInput: {
+        flex: 1,
     },
     errorContainer: {
         padding: 12,

@@ -149,7 +149,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
           notificationCount={role === 'cajero' ? pendingCount : 0}
           onNotificationPress={role === 'cajero' ? () => router.push('/cajero/solicitudes') : undefined}
         />
-        <PremiumUserProfile user={user} userStatus={userStatus} />
+        <PremiumUserProfile user={user} userStatus={userStatus} role={role} />
 
         {role === 'anfitriona' && !activeService && (
           <MotiView from={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} style={{ marginTop: 15, alignItems: 'center' }}>
