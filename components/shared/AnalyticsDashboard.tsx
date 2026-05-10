@@ -5,6 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { DonutChart } from '@/components/ui/DonutChart';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
+import { Ionicons } from '@expo/vector-icons';
+import { formatCurrency } from '@/utils/format';
 
 const { width } = Dimensions.get('window');
 
@@ -17,17 +21,36 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, color }) => {
-    const { colors } = useTheme();
+    const { colors, theme } = useTheme();
+    const isDark = theme === 'dark';
 
     return (
-        <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-            <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-                <Text style={[styles.icon, { color }]}>{icon}</Text>
-            </View>
-            <Text style={[styles.statTitle, { color: colors.textSecondary }]}>{title}</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-            {subtitle ? <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
-        </View>
+        <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 500 }}
+            style={styles.statCardContainer}
+        >
+            <LinearGradient
+                colors={isDark ? ['#1E293B', '#0F172A'] : ['#FFFFFF', '#F8FAFC']}
+                style={[styles.statCard, { borderColor: isDark ? '#334155' : '#E2E8F0', borderWidth: 1 }]}
+            >
+                <View style={styles.statCardHeader}>
+                    <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
+                        <Ionicons name={icon as any} size={20} color={color} />
+                    </View>
+                    {subtitle ? (
+                        <View style={styles.trendBadge}>
+                            <Text style={[styles.statSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+                        </View>
+                    ) : null}
+                </View>
+                <View style={styles.statContent}>
+                    <Text style={[styles.statTitle, { color: colors.textSecondary }]}>{title}</Text>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+                </View>
+            </LinearGradient>
+        </MotiView>
     );
 };
 
@@ -37,23 +60,27 @@ interface MiniChartProps {
     height?: number;
 }
 
-const MiniChart: React.FC<MiniChartProps> = ({ data, color, height = 80 }) => {
+const MiniChart: React.FC<MiniChartProps> = ({ data, color, height = 120 }) => {
     const maxValue = Math.max(...data.map(d => d.value), 1);
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
     return (
         <View style={[styles.miniChartContainer, { height }]}>
             {data.map((item, index) => (
-                <View key={index} style={styles.barContainer}>
-                    <View
-                        style={[
-                            styles.bar,
-                            {
-                                height: `${(item.value / maxValue) * 100}%`,
-                                backgroundColor: color
-                            }
-                        ]}
-                    />
-                    <Text style={styles.barLabel}>{item.label}</Text>
+                <View key={index} style={styles.barWrapper}>
+                    <MotiView
+                        from={{ height: 0, opacity: 0 }}
+                        animate={{ height: `${(item.value / maxValue) * 100}%`, opacity: 1 }}
+                        transition={{ type: 'timing', duration: 1000, delay: index * 100 }}
+                        style={styles.barContainer}
+                    >
+                        <LinearGradient
+                            colors={[color, color + '80']}
+                            style={styles.barGradient}
+                        />
+                    </MotiView>
+                    <Text style={[styles.barLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>{item.label}</Text>
                 </View>
             ))}
         </View>
@@ -88,14 +115,6 @@ export const AnalyticsDashboard: React.FC = () => {
     const totalStatuses = statusItems.reduce((sum, item) => sum + item.value, 0);
     const completedPercent = Math.round((statusItems[2].value / Math.max(totalStatuses, 1)) * 100);
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('es-PE', {
-            style: 'currency',
-            currency: 'PEN',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value);
-    };
 
     if (statsLoading || salesLoading) {
         return (
@@ -126,29 +145,29 @@ export const AnalyticsDashboard: React.FC = () => {
                 <StatCard
                     title="Ventas Hoy"
                     value={formatCurrency(stats.salesToday || 0)}
-                    subtitle={`${stats.salesCountToday || 0} transacciones`}
-                    icon="$"
+                    subtitle={`+${stats.salesCountToday || 0} hoy`}
+                    icon="cash-outline"
                     color="#10B981"
                 />
                 <StatCard
-                    title="Servicios Activos"
+                    title="Servicios"
                     value={stats.activeServices || 0}
-                    subtitle={`${stats.completedServicesToday || 0} completados`}
-                    icon="S"
+                    subtitle={`${stats.completedServicesToday || 0} hechos`}
+                    icon="construct-outline"
                     color="#3B82F6"
                 />
                 <StatCard
-                    title="Usuarios Activos"
+                    title="Usuarios"
                     value={stats.activeUsers || 0}
-                    subtitle="Conectados ahora"
-                    icon="U"
+                    subtitle="En línea"
+                    icon="people-outline"
                     color="#8B5CF6"
                 />
                 <StatCard
                     title="Propinas"
                     value={formatCurrency(stats.tipsToday || 0)}
-                    subtitle="Hoy"
-                    icon="T"
+                    subtitle="Extra hoy"
+                    icon="heart-outline"
                     color="#F59E0B"
                 />
             </View>
@@ -221,145 +240,186 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        padding: 16,
-        paddingTop: 8,
+        padding: 24,
+        paddingTop: 16,
     },
     headerSkeleton: {
-        padding: 16,
+        padding: 24,
     },
     title: {
-        fontSize: 24,
-        fontWeight: '700',
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 14,
         marginTop: 4,
+        opacity: 0.8,
     },
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         paddingHorizontal: 16,
         gap: 12,
-    },
-    statCard: {
-        width: '47%',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 4,
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
         marginBottom: 8,
     },
-    icon: {
-        fontSize: 20,
-        fontWeight: '700',
+    statCardContainer: {
+        width: '47%',
+    },
+    statCard: {
+        padding: 16,
+        borderRadius: 20,
+        height: 130,
+        justifyContent: 'space-between',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    statCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    iconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    trendBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+        backgroundColor: 'transparent',
+    },
+    statContent: {
+        marginTop: 8,
     },
     statTitle: {
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '600',
+        opacity: 0.7,
     },
     statValue: {
-        fontSize: 20,
-        fontWeight: '700',
-        marginTop: 4,
+        fontSize: 22,
+        fontWeight: '800',
+        marginTop: 2,
+        letterSpacing: -0.5,
     },
     statSubtitle: {
-        fontSize: 11,
-        marginTop: 2,
+        fontSize: 10,
+        fontWeight: '700',
     },
     chartCard: {
         margin: 16,
-        padding: 16,
-        borderRadius: 16,
+        padding: 20,
+        borderRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+        elevation: 2,
     },
     chartTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 16,
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 20,
+        letterSpacing: -0.5,
     },
     chartRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        justifyContent: 'space-between',
+        gap: 20,
     },
     miniChartContainer: {
         flexDirection: 'row',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
-        paddingTop: 8,
+        paddingTop: 10,
+        paddingBottom: 20,
     },
-    barContainer: {
+    barWrapper: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        marginHorizontal: 2,
+        marginHorizontal: 4,
     },
-    bar: {
-        width: '60%',
-        borderTopLeftRadius: 4,
-        borderTopRightRadius: 4,
-        minHeight: 4,
+    barContainer: {
+        width: '80%',
+        borderRadius: 6,
+        overflow: 'hidden',
+        justifyContent: 'flex-end',
+    },
+    barGradient: {
+        flex: 1,
+        borderRadius: 6,
     },
     barLabel: {
         fontSize: 10,
-        marginTop: 6,
-        color: '#64748B',
+        fontWeight: '600',
+        marginTop: 8,
     },
     statusLegend: {
-        gap: 8,
-        width: '100%',
-        marginTop: 16,
+        gap: 12,
+        flex: 1,
     },
     legendItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
     },
     legendDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: 12,
+        height: 12,
+        borderRadius: 4,
     },
     legendText: {
-        fontSize: 13,
-        fontWeight: '500',
+        fontSize: 14,
+        fontWeight: '600',
     },
     topProductItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
     },
     productRank: {
         width: 32,
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '800',
+        opacity: 0.5,
     },
     productName: {
         flex: 1,
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: 15,
+        fontWeight: '600',
     },
     productQty: {
-        fontSize: 12,
+        fontSize: 13,
+        fontWeight: '700',
     },
     infoCard: {
         margin: 16,
         marginTop: 0,
-        padding: 16,
-        borderRadius: 16,
+        padding: 20,
+        borderRadius: 24,
+        borderStyle: 'dashed',
+        borderWidth: 1,
+        borderColor: 'rgba(148, 163, 184, 0.3)',
     },
     infoTitle: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
         marginBottom: 8,
     },
     infoText: {
         fontSize: 14,
-        lineHeight: 20,
+        lineHeight: 22,
+        opacity: 0.8,
     },
 });
 
