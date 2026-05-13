@@ -422,11 +422,24 @@ export default function NuevaVentaScreen() {
         dispatch({ type: 'SET_CART', payload: newCart });
     }, [cart]);
 
-    const totals = useMemo(() => {
-        const subtotal = cart.reduce((acc, item) => acc + (item.precio || item.price || 0) * (item.quantity || 1), 0);
-        const tip = enableTip ? subtotal * 0.1 : 0;
-        return { subtotal, tip, total: subtotal + tip };
-    }, [cart, enableTip]);
+  const totals = useMemo(() => {
+    const subtotal = cart.reduce((acc, item) => acc + (item.precio || item.price || 0) * (item.quantity || 1), 0);
+    const tip = enableTip ? subtotal * 0.1 : 0;
+    return { subtotal, tip, total: subtotal + tip };
+  }, [cart, enableTip]);
+  const commissionTotal = useMemo(
+    () =>
+      cart.reduce(
+        (acc, item) =>
+          acc +
+          Number(item.comision || item.commission || 0) *
+            Number(item.quantity || item.cantidad || 1),
+        0,
+      ),
+    [cart],
+  );
+  const showCardCommissionNote = metodoPago === "tarjeta" && commissionTotal > 0;
+  const suggestedInvoiceAmount = Math.max(0, totals.total - commissionTotal);
 
     // Calcular si hay algún producto que tenga comisión para habilitar o no la selección de habitación
     const hasCommissionItem = useMemo(() => {
@@ -702,6 +715,17 @@ export default function NuevaVentaScreen() {
                         <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
                         <Text style={[styles.totalValue, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
                     </View>
+
+                    {showCardCommissionNote && (
+                        <View style={[styles.cardNoteBox, { backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A" }]}>
+                            <Text style={[styles.cardNoteTitle, { color: isDark ? "#FCD34D" : "#92400E" }]}>
+                                Nota de facturación para tarjeta
+                            </Text>
+                            <Text style={[styles.cardNoteText, { color: isDark ? "#FDE68A" : "#78350F" }]}>
+                                Facturá/registrá la venta por ${suggestedInvoiceAmount.toLocaleString()} y la propina por ${commissionTotal.toLocaleString()}.
+                            </Text>
+                        </View>
+                    )}
                     <Pressable
                         style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false) && { opacity: 0.7 }]}
                         onPress={handleSubmit}
@@ -1010,8 +1034,26 @@ const styles = StyleSheet.create({
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summaryLabel: { fontSize: 14, fontWeight: '600' },
     summaryVal: { fontSize: 15, fontWeight: '800' },
-    totalLabel: { fontSize: 18, fontWeight: '900' },
-    totalValue: { fontSize: 26, fontWeight: '900' },
+  totalLabel: { fontSize: 18, fontWeight: '900' },
+  totalValue: { fontSize: 26, fontWeight: '900' },
+  cardNoteBox: {
+    marginTop: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  cardNoteTitle: {
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  cardNoteText: {
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
     submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
     submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

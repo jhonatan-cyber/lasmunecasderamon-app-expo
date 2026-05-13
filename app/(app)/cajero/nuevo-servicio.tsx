@@ -323,6 +323,12 @@ export default function NuevoServicioScreen() {
     selectedHabitacion,
     metodoPago,
   ]);
+  const desgloseTarjeta = useMemo(() => {
+    const redondearMiles = (monto: number) => Math.round(monto / 1000) * 1000;
+    const venta = redondearMiles(totals.total * 0.51);
+    const propina = redondearMiles(Math.max(0, totals.total * 0.49));
+    return { venta, propina };
+  }, [totals.total]);
 
   const toggleHostess = (hostessId: string | number) => {
     const isSelected = selectedHostesses.some(id => String(id) === String(hostessId));
@@ -949,6 +955,16 @@ export default function NuevoServicioScreen() {
               ${totals.total.toLocaleString()}
             </Text>
           </View>
+          {metodoPago === "tarjeta" && totals.total > 0 && (
+            <View style={[styles.cardNoteBox, { backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A" }]}>
+              <Text style={[styles.cardNoteTitle, { color: isDark ? "#FCD34D" : "#92400E" }]}>
+                Nota importante
+              </Text>
+              <Text style={[styles.cardNoteText, { color: isDark ? "#FDE68A" : "#78350F" }]}>
+                Generá venta por ${desgloseTarjeta.venta.toLocaleString()} y propina por ${desgloseTarjeta.propina.toLocaleString()}.
+              </Text>
+            </View>
+          )}
           <Pressable
             style={[
               styles.submitBtn,
@@ -1137,6 +1153,24 @@ const styles = StyleSheet.create({
   summaryVal: { fontSize: 15, fontWeight: "800" },
   totalLabelFinal: { fontSize: 16, fontWeight: "900" },
   totalValFinal: { fontSize: 28, fontWeight: "900" },
+  cardNoteBox: {
+    marginTop: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  cardNoteTitle: {
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  cardNoteText: {
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
   submitBtn: {
     height: 60,
     borderRadius: 20,
