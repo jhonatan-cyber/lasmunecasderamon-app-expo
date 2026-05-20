@@ -38,7 +38,7 @@ export function AnimatedScreen({
         return {
             opacity: opacity.value,
             transform: [{ translateY: translateY.value }],
-            flex: 1,
+            width: '100%',
         };
     });
 

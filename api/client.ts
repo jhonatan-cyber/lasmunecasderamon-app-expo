@@ -21,8 +21,8 @@ export class TimeoutError extends Error {
 
 export class NetworkError extends Error {
     code = 'NETWORK_ERROR';
-    constructor(message = __DEV__ 
-        ? 'Error de conexión con el servidor local. Verifica que el servidor esté corriendo y en la misma red.' 
+    constructor(message = __DEV__
+        ? 'Error de conexión con el servidor local. Verifica que el servidor esté corriendo y en la misma red.'
         : 'Error de conexión. Verifica tu internet e intenta nuevamente.') {
         super(message);
         this.name = 'NetworkError';
@@ -54,7 +54,7 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 
 const shouldRetry = (error: any, statusCode?: number): boolean => {
-   
+
     if (statusCode === 401 || statusCode === 403) {
         return false;
     }
@@ -130,14 +130,11 @@ const getBaseUrl = () => {
 
     const localIP = hostCandidates.map(extractHost).find(Boolean);
 
-   
+
     if (localIP) {
-        console.log('[API] Detected IP:', localIP);
         return `http://${localIP}:3000`;
     }
 
-    
-    console.log('[API] Using localhost fallback');
     return 'http://localhost:3000';
 };
 
@@ -146,8 +143,8 @@ export const API_URL = `${BASE_URL}/api`;
 
 // Debug: mostrar URL en desarrollo
 if (__DEV__) {
-        logger.debug('API base URL', { baseUrl: BASE_URL, apiUrl: API_URL });
-    }
+    logger.debug('API base URL', { baseUrl: BASE_URL, apiUrl: API_URL });
+}
 
 export const apiClient = async <T = any>(endpoint: string, options: RequestInit & { timeout?: number; retries?: number } = {}): Promise<T> => {
     const defaultRetries = __DEV__ ? 1 : 3;
@@ -195,7 +192,7 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
 
     let lastError: any = null;
     const startTime = Date.now();
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), customTimeout ?? 10000);
@@ -234,7 +231,7 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
             clearTimeout(timeoutId);
             const durationMs = Date.now() - startTime;
             lastError = err;
-            
+
             if (!shouldRetry(err) || attempt === maxRetries) {
                 logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
                 if (err?.name === 'AbortError') throw new TimeoutError();
@@ -249,13 +246,13 @@ export const apiClient = async <T = any>(endpoint: string, options: RequestInit 
                 }
                 throw err;
             }
-            
+
             logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
             if (attempt < maxRetries) {
                 await delay(Math.min(1000 * 2 ** attempt, 10000));
             }
         }
     }
-    
+
     throw lastError || new RetryExhaustedError();
 };

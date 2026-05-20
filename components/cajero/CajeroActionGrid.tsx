@@ -4,7 +4,6 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Spacing } from '@/constants';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
-import { StaggeredFadeIn } from '@/components/ui/StaggeredFadeIn';
 
 export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean }) => {
     const { accentColor } = useAccentColor();
@@ -35,9 +34,8 @@ export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean })
             {rows.map((row, rowIndex) => (
                 <View key={rowIndex} style={[styles.actionGrid, { marginTop: rowIndex > 0 ? spacing / 2 : 0, gap: spacing / 2 }]}>
                     {row.map((action, colIndex) => (
-                        <StaggeredFadeIn
+                        <View
                             key={action.title}
-                            index={rowIndex * cols + colIndex}
                             style={{ flex: row.length === 1 ? 0 : 1, width: row.length === 1 ? '100%' : undefined }}
                         >
                             <GarzonActionCard
@@ -47,7 +45,7 @@ export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean })
                                 color={action.color}
                                 onPress={() => router.push(action.route as any)}
                             />
-                        </StaggeredFadeIn>
+                        </View>
                     ))}
                     {row.length < cols && Array.from({ length: cols - row.length }).map((_, i) => (
                         <View key={`empty-${i}`} style={{ flex: 1 }} />
@@ -65,6 +63,7 @@ const styles = StyleSheet.create({
     },
     actionGrid: {
         flexDirection: 'row',
+        alignItems: 'stretch',
         gap: Spacing.sm,
     },
 });

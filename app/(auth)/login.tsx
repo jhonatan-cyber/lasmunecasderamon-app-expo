@@ -378,6 +378,10 @@ export default function LoginScreen() {
                                         </Pressable>
                                     </View>
 
+                                    <Text style={[styles.passwordHelpText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                                        Si nunca cambiaste tu contrase?a, ingres? tu RUT con formato chileno.
+                                    </Text>
+
                                     {/* Fila del Botón de Login (Ancho Completo) */}
                                     <View style={[styles.actionRow, { marginTop: 20 }]}>
                                         <Pressable
@@ -669,6 +673,12 @@ const styles = StyleSheet.create({
     },
     passwordInput: {
         flex: 1,
+    },
+    passwordHelpText: {
+        fontSize: 12,
+        lineHeight: 18,
+        marginTop: 8,
+        marginLeft: 4,
     },
     errorContainer: {
         padding: 12,
