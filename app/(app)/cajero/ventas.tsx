@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿﻿import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -35,7 +35,7 @@ const FlashList = ShopifyFlashList as any;
 
 // Utils for status colors and labels
 const statusColors: Record<number, string> = {
-  1: "#10B981", // Pagada -> Verde (estÃ¡ndar de Ã©xito)
+  1: "#10B981", // Pagada -> Verde (estándar de éxito)
   2: "#3B82F6", // En Proceso -> Azul
   3: "#EF4444", // Anulada -> Rojo
   4: "#F59E0B", // Por Anular -> Ambar
@@ -44,7 +44,7 @@ const statusColors: Record<number, string> = {
 const statusLabels: Record<number, string> = {
   1: "Completado",
   2: "En proceso",
-  3: "Pdte. AnulaciÃ³n",
+  3: "Pdte. Anulación",
   0: "Anulado",
 };
 
@@ -90,7 +90,7 @@ function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimar
   );
 }
 
-// Persistencia de estado de carga para evitar skeleton en re-navegaciÃ³n
+// Persistencia de estado de carga para evitar skeleton en re-navegación
 let initialVentasLoaded = false;
 
 export default function VentasScreen() {
@@ -320,7 +320,7 @@ export default function VentasScreen() {
       if (isManual) {
         Toast.show({
           type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Ã‰xito" : "InformaciÃ³n",
+          text1: hasChanges ? "Éxito" : "Información",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
           visibilityTime: 3000,
         });
@@ -361,8 +361,8 @@ export default function VentasScreen() {
     const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
       console.log("[DEBUG] Event refresh_sales received, updating list...", data);
       
-      // La notificaciÃ³n global (modal) ya la maneja GlobalTimerAlert.tsx
-      // AquÃ­ solo refrescamos la lista.
+      // La notificación global (modal) ya la maneja GlobalTimerAlert.tsx
+      // Aquí solo refrescamos la lista.
       fetchVentas();
       refreshTimers();
     });
@@ -429,7 +429,7 @@ export default function VentasScreen() {
       visible: true,
       title: "Finalizar Venta",
       message:
-        "Â¿EstÃ¡s seguro de que deseas finalizar esta venta? Esto liberarÃ¡ la habitaciÃ³n y detendrÃ¡ el temporizador.",
+        "¿Estás seguro de que deseas finalizar esta venta? Esto liberará la habitación y detendrá el temporizador.",
       type: "danger",
       onConfirm: async () => {
         try {
@@ -441,7 +441,7 @@ export default function VentasScreen() {
 
           if (res.success || (res && !res.error)) {
             setAlertConfig(prev => ({ ...prev, visible: false }));
-            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con Ã©xito." });
+            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con éxito." });
             fetchVentas();
             refreshTimers();
           } else {
@@ -453,7 +453,7 @@ export default function VentasScreen() {
           }
         } catch {
           setAlertConfig(prev => ({ ...prev, visible: false }));
-          showToast("Error", "Error al procesar la finalizaciÃ³n de la venta");
+          showToast("Error", "Error al procesar la finalización de la venta");
         }
       },
     });
@@ -481,7 +481,7 @@ export default function VentasScreen() {
     }
 
     if (!motivo) {
-      showToast("Error", "Debes ingresar el motivo de la anulaciÃ³n.");
+      showToast("Error", "Debes ingresar el motivo de la anulación.");
       return;
     }
 
@@ -502,18 +502,18 @@ export default function VentasScreen() {
         closeAnulacionModal();
         showToast(
           "Solicitud Enviada",
-          "La anulaciÃ³n ha sido solicitada al administrador por WhatsApp.",
+          "La anulación ha sido solicitada al administrador por WhatsApp.",
           "success",
         );
         fetchVentas();
       } else {
         showToast(
           "Error",
-          res.message || res.error || "No se pudo solicitar la anulaciÃ³n",
+          res.message || res.error || "No se pudo solicitar la anulación",
         );
       }
     } catch {
-      showToast("Error", "Error al procesar la solicitud de anulaciÃ³n");
+      showToast("Error", "Error al procesar la solicitud de anulación");
     } finally {
       setAnulandoVenta(false);
     }
@@ -521,8 +521,8 @@ export default function VentasScreen() {
 
   const renderVentaCard = ({ item }: { item: any }) => {
 const productCount = item.item_count || 0;
-    // Generar un color dinÃ¡mico basado en el ID para variedad, pero manteniendo el status color si es importante
-    // O mejor aÃºn: usar una rotaciÃ³n del color de acento segÃºn la posiciÃ³n/ID
+    // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
+    // O mejor aún: usar una rotación del color de acento según la posición/ID
     const ventaId = getVentaId(item);
     const itemAccent = rotateColor(accentColor, ((Number(ventaId) || 0) % 10) * 36);
     const statusColor = item.estado === 2 ? itemAccent : (statusColors[item.estado] || "#6B7280");
@@ -758,7 +758,7 @@ const productCount = item.item_count || 0;
               </TouchableOpacity>
               <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
                   <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+              <Text style={styles.backTextRight}>Atrás</Text>
               </Pressable>
           </View>
         }
@@ -824,7 +824,7 @@ const productCount = item.item_count || 0;
                     : { color: isDark ? "#9CA3AF" : "#64748B" },
                 ]}
               >
-              Ventas con HabitaciÃ³n
+              Ventas con Habitación
               </Text>
               {timers.filter((t) => t.tipoTransaccion === "venta").length >
                 0 && (
@@ -886,7 +886,7 @@ const productCount = item.item_count || 0;
               No hay ventas registradas
             </Text>
             <Text style={[styles.emptySub, { color: textSecondary }]}>
-                Las ventas aparecerÃ¡n conforme se procesen los pagos.
+                Las ventas aparecerán conforme se procesen los pagos.
             </Text>
           </View>
         }
@@ -909,7 +909,7 @@ const productCount = item.item_count || 0;
                   <View style={styles.modalHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
-                  <Text style={[styles.modalSubText, { color: textSecondary }]}>CÃ³digo: {selectedVenta.codigo}</Text>
+                  <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <View style={{ backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: (statusColors[selectedVenta.estado] || accentColor) + '30' }}>
@@ -957,7 +957,7 @@ const productCount = item.item_count || 0;
                         <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
                           <Ionicons name="bed-outline" size={16} color={accentColor} />
                           <Text style={[styles.origenPersonaLabel, { color: textSecondary, flex: 1 }]}>
-                                HabitaciÃ³n: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || 'â€”'}</Text>
+                                Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || 'â€”'}</Text>
                           </Text>
                           {selectedVenta.tiempo ? (
                             <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
@@ -979,7 +979,7 @@ const productCount = item.item_count || 0;
                           </Text>
                         </View>
                         <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
-                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>MÃ©todo Pago</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Método Pago</Text>
                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                              <Ionicons name={payMethodIcons[selectedVenta.metodo_pago] || "wallet"} size={16} color={accentColor} />
                              <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>{String(selectedVenta.metodo_pago || 'EFECTIVO').toUpperCase()}</Text>
@@ -1010,7 +1010,7 @@ const productCount = item.item_count || 0;
                         {selectedVenta.comisiones_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>DistribuciÃ³n de Comisiones</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Distribución de Comisiones</Text>
                               {selectedVenta.total_comision > 0 && (
                                 <Text style={{ fontSize: 14, fontWeight: '900', color: accentColor }}>${Number(selectedVenta.total_comision).toLocaleString('es-CL')} total</Text>
                               )}
@@ -1034,7 +1034,7 @@ const productCount = item.item_count || 0;
                         )}
                         {selectedVenta.propinas_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
-                          <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>DistribuciÃ³n de Propinas</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Propinas</Text>
                             {selectedVenta.propinas_detalle.map((p: any, idx: number) => (
                               <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.propinas_detalle.length - 1 ? 0 : 12 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -1088,7 +1088,7 @@ const productCount = item.item_count || 0;
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                               {det.producto_foto ? (
-                                <Image source={{ uri: `${BASE_URL}/img/products/${det.producto_foto}` }} style={{ width: 40, height: 40, borderRadius: 10 }} />
+                                <Image source={{ uri: `${BASE_URL}/api/images/products/${det.producto_foto}` }} style={{ width: 40, height: 40, borderRadius: 10 }} />
                               ) : (
                                 <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: isDark ? '#333' : '#EEE', justifyContent: 'center', alignItems: 'center' }}>
                                    <Ionicons name="cube-outline" size={20} color={textSecondary} />
@@ -1156,7 +1156,7 @@ const productCount = item.item_count || 0;
               <View style={[styles.anulacionIconBox, { backgroundColor: "#EF444415" }]}>
                 <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
               </View>
-              <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar AnulaciÃ³n</Text>
+              <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar Anulación</Text>
               <Text style={[styles.anulacionSubtitle, { color: textSecondary }]}>
                 Completa el monto y el motivo para enviar la solicitud al administrador.
               </Text>
@@ -1169,7 +1169,7 @@ const productCount = item.item_count || 0;
               ]}
             >
               <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
-                CÃ³digo: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.codigo || "-"}</Text>
+                Código: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.codigo || "-"}</Text>
               </Text>
               <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
                 Cliente: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.cliente_nombre || "Sin cliente"}</Text>
@@ -1200,11 +1200,11 @@ const productCount = item.item_count || 0;
             </View>
 
             <View style={styles.anulacionField}>
-              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Motivo de la anulaciÃ³n *</Text>
+              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Motivo de la anulación *</Text>
               <TextInput
                 value={motivoAnulacion}
                 onChangeText={setMotivoAnulacion}
-                placeholder="Describe el motivo de la anulaciÃ³n"
+                placeholder="Describe el motivo de la anulación"
                 placeholderTextColor={textSecondary}
                 editable={!anulandoVenta}
                 multiline
@@ -1255,7 +1255,7 @@ const productCount = item.item_count || 0;
             <View style={styles.actionSheetHeader}>
               <View style={[styles.actionSheetHandle, { backgroundColor: `${accentColor}60` }]} />
               <Text style={[styles.actionSheetTitle, { color: textPrimary }]}>Opciones de Venta</Text>
-              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>CÃ³digo: {activeVenta?.codigo}</Text>
+              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>Código: {activeVenta?.codigo}</Text>
             </View>
             <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={() => {
               const ventaId = getVentaId(activeVenta);
@@ -1271,7 +1271,7 @@ const productCount = item.item_count || 0;
                 <View style={[styles.actionIconBox, { backgroundColor: "#EF444415" }]}>
                   <Ionicons name="trash-outline" size={22} color="#EF4444" />
                 </View>
-                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar AnulaciÃ³n</Text>
+                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar Anulación</Text>
               </Pressable>
             )}
             <Pressable style={[styles.actionCancelBtn, { backgroundColor: accentColor + '15', borderWidth: 1, borderColor: accentColor + '40' }]} onPress={() => setActionSheetVisible(false)}>

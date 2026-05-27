@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
     ActivityIndicator,
@@ -91,7 +91,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                             {/* Participantes */}
                             {parentPropina?.participantes?.length > 0 && (
                                 <>
-                                    <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>REPARTICIÃ“N</Text>
+                                    <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>REPARTICIÓN</Text>
                                     <View style={[styles.productsList, { borderColor }]}>
                                         {parentPropina.participantes.map((p: any, idx: number) => (
                                             <View key={idx} style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: idx === parentPropina.participantes.length - 1 ? 0 : 1 }]}>
@@ -116,7 +116,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                             {/* Info de la venta */}
                             {saleDetail ? (
                                 <>
-                                    {/* Origen, habitaciÃ³n y anfitrionas */}
+                                    {/* Origen, habitación y anfitrionas */}
                                     <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>PERSONAL Y SERVICIO</Text>
                                     <View style={[styles.productsList, { borderColor }]}>
                                         {/* Origen */}
@@ -134,17 +134,17 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                             <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                                     <Ionicons name="cash-outline" size={16} color={textSecondary} />
-                                                    <Text style={{ color: textSecondary, fontSize: 13 }}>ProcesÃ³ la venta</Text>
+                                                    <Text style={{ color: textSecondary, fontSize: 13 }}>Procesó la venta</Text>
                                                 </View>
                                                 <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.cajero_nombre}</Text>
                                             </View>
                                         ) : null}
-                                        {/* HabitaciÃ³n */}
+                                        {/* Habitación */}
                                         {saleDetail.habitacion_nombre ? (
                                             <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                                     <Ionicons name="bed-outline" size={16} color={textSecondary} />
-                                                    <Text style={{ color: textSecondary, fontSize: 13 }}>HabitaciÃ³n</Text>
+                                                    <Text style={{ color: textSecondary, fontSize: 13 }}>Habitación</Text>
                                                 </View>
                                                 <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.habitacion_nombre}</Text>
                                             </View>
@@ -192,10 +192,10 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                         </View>
                                     </View>
 
-                                    {/* MÃ©todo pago y fecha */}
+                                    {/* Método pago y fecha */}
                                     <View style={{ marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: isDark ? '#37415140' : '#F3F4F6', marginBottom: 8 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                                            <Text style={{ color: textSecondary, fontSize: 12 }}>MÃ©todo de Pago</Text>
+                                            <Text style={{ color: textSecondary, fontSize: 12 }}>Método de Pago</Text>
                                             <Text style={{ color: textPrimary, fontSize: 12, fontWeight: '700' }}>{String(saleDetail.metodo_pago ?? '').toUpperCase() || '---'}</Text>
                                         </View>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

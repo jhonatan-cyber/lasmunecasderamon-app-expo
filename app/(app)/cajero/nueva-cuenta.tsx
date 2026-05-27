@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
@@ -137,7 +137,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
 
 const isChampagneProduct = (producto: any) => {
     const cat = (producto.categoria || '').toLowerCase();
-    return cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
+    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
 };
 
 const getChampagneLimit = (precio: number) => {
@@ -251,7 +251,7 @@ export default function NuevaCuentaScreen() {
                 anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
                 habitaciones: rawHabitaciones.map((room: any) => ({
                     ...room,
-                    nombre: room.nombre ?? room.name ?? `HabitaciÃ³n ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                    nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
                     precio: room.precio ?? room.price ?? 0,
                     tiempo: room.tiempo ?? room.time ?? 0,
                     estado: room.estado ?? room.status ?? 0,
@@ -273,7 +273,7 @@ export default function NuevaCuentaScreen() {
             }
         } catch (error) {
             console.error('Error fetching initial data:', error);
-            showToast('Error', 'No se pudo cargar la informaciÃ³n necesaria.');
+            showToast('Error', 'No se pudo cargar la información necesaria.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -371,7 +371,7 @@ export default function NuevaCuentaScreen() {
 
     const handleSubmit = useCallback(async () => {
         if (!cajaAbierta) {
-            showToast('Error', 'La caja estÃ¡ cerrada.');
+            showToast('Error', 'La caja está cerrada.');
             return;
         }
         if (!selectedCliente) {
@@ -379,7 +379,7 @@ export default function NuevaCuentaScreen() {
             return;
         }
         if (cart.length === 0) {
-            showToast('Error', 'La cuenta estÃ¡ vacÃ­a.');
+            showToast('Error', 'La cuenta está vacía.');
             return;
         }
 
@@ -427,14 +427,14 @@ export default function NuevaCuentaScreen() {
             });
 
             if (res.success) {
-                showToast('Ã‰xito', 'Cuenta registrada correctamente', 'success');
+                showToast('Éxito', 'Cuenta registrada correctamente', 'success');
                 setTimeout(() => router.replace('/cajero/cuentas'), 1500);
             } else {
                 showToast('Error', res.message || 'No se pudo crear la cuenta');
             }
         } catch (error) {
             console.error('Submit error:', error);
-            showToast('Error', 'OcurriÃ³ un error al procesar la cuenta.');
+            showToast('Error', 'Ocurrió un error al procesar la cuenta.');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
@@ -444,11 +444,11 @@ export default function NuevaCuentaScreen() {
         <View style={{ flex: 1, backgroundColor: bg }}>
             <PremiumHeader
                 title="Nueva Cuenta"
-                subtitle="Cargando informaciÃ³n..."
+                subtitle="Cargando información..."
                 rightComponent={
                     <View style={[styles.backBtnRight, { opacity: 0.5 }]}>
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+                        <Text style={styles.backTextRight}>Atrás</Text>
                     </View>
                 }
             />
@@ -502,7 +502,7 @@ export default function NuevaCuentaScreen() {
                         style={styles.backBtnRight}
                     >
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+                        <Text style={styles.backTextRight}>Atrás</Text>
                     </Pressable>
                 }
             />
@@ -513,14 +513,14 @@ export default function NuevaCuentaScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
                 <View style={styles.browserContainer}>
-                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. SelecciÃ³n de Productos</Text>
+                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
                         {categories.map((cat) => (
                             <Pressable
                                 key={cat.id}
                                 style={[styles.categorySmallCard, { backgroundColor: cardBg, borderColor }]}
                                 onPress={() => handleOpenCategory(cat)}
-                                accessibilityLabel={`CategorÃ­a ${cat.name}`}
+                                accessibilityLabel={`Categoría ${cat.name}`}
                                 accessibilityRole="button"
                             >
                                 <View style={[styles.catIconBox, { backgroundColor: `${accentColor}15` }]}>
@@ -575,13 +575,13 @@ export default function NuevaCuentaScreen() {
                         <Pressable
                             style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2 }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
-                            accessibilityLabel="Seleccionar habitaciÃ³n"
+                            accessibilityLabel="Seleccionar habitación"
                             accessibilityRole="button"
                         >
                             <Ionicons name="business" size={20} color="#10B981" />
                             <View style={{ flex: 1, marginLeft: 10 }}>
-                                <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>HABITACIÃ“N / ÃREA</Text>
-                                <Text style={[styles.selectorText, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Seleccionar HabitaciÃ³n (Opcional)'}</Text>
+                                <Text style={[styles.selectorLabel, { color: textSecondary, fontSize: 10 }]}>HABITACIÓN / ÁREA</Text>
+                                <Text style={[styles.selectorText, { color: textPrimary }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación (Opcional)'}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
                         </Pressable>
@@ -595,9 +595,9 @@ export default function NuevaCuentaScreen() {
                         >
                             <Ionicons name="time" size={20} color="#3B82F6" />
                             <View style={{ flex: 1, marginLeft: 10 }}>
-                                <Text style={[styles.selectorLabel, { color: '#3B82F6', fontSize: 10, fontWeight: '700' }]}>DURACIÃ“N DEL REGISTRO</Text>
+                                <Text style={[styles.selectorLabel, { color: '#3B82F6', fontSize: 10, fontWeight: '700' }]}>DURACIÓN DEL REGISTRO</Text>
                                 <Text style={[styles.selectorText, { color: textPrimary }]}>
-                                    {state.selectedTime > 0 ? `${state.selectedTime} minutos` : 'Seleccionar duraciÃ³n'}
+                                    {state.selectedTime > 0 ? `${state.selectedTime} minutos` : 'Seleccionar duración'}
                                 </Text>
                             </View>
                             <Ionicons name="chevron-down" size={18} color="#3B82F6" />
@@ -730,7 +730,7 @@ export default function NuevaCuentaScreen() {
                                                     addProductToCart(item);
                                                 }
                                             }}
-                                            accessibilityLabel={`AÃ±adir ${item.nombre}`}
+                                            accessibilityLabel={`Añadir ${item.nombre}`}
                                             accessibilityRole="button"
                                         >
                                             <Ionicons name="cart-outline" size={20} color="#FFFFFF" />
@@ -743,7 +743,7 @@ export default function NuevaCuentaScreen() {
                         <Pressable
                             style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                            accessibilityLabel="Confirmar selecciÃ³n de productos"
+                            accessibilityLabel="Confirmar selección de productos"
                             accessibilityRole="button"
                         >
                             <Text style={styles.confirmModalBtnText}>Confirmar</Text>
@@ -804,7 +804,7 @@ export default function NuevaCuentaScreen() {
                         newSelected = currentSelected.filter(x => String(x) !== strId);
                     } else {
                         if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
-                            showToast('LÃ­mite', `MÃ¡ximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
+                            showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
                             return;
                         }
                         newSelected = [...currentSelected, strId];
@@ -820,7 +820,7 @@ export default function NuevaCuentaScreen() {
                         const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0;
                         const currentSelected = modalHostessSelections[pid] || [];
                         if (hasComm && currentSelected.length === 0) {
-                            showToast('AsignaciÃ³n', 'Debes escoger al menos 1 anfitriona', 'error');
+                            showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
                             return;
                         }
                         addProductToCart(hostessSelectionTarget.product);
@@ -830,7 +830,7 @@ export default function NuevaCuentaScreen() {
                 }}
             />
 
-            {/* Modal de SelecciÃ³n de Tiempo */}
+            {/* Modal de Selección de Tiempo */}
             <Modal visible={state.timeModalVisible} animationType="fade" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: cardBg }]}>

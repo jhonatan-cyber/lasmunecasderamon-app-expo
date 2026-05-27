@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -131,7 +131,7 @@ export default function ServiciosScreen() {
             if (isRefreshing) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
+                    text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
@@ -170,8 +170,8 @@ export default function ServiciosScreen() {
             if (selectedHostesses.length >= maxHostesses) {
                 Toast.show({
                     type: 'info',
-                    text1: 'LÃ­mite alcanzado',
-                    text2: `MÃ¡ximo ${maxHostesses} anfitrionas permitidas`
+                    text1: 'Límite alcanzado',
+                    text2: `Máximo ${maxHostesses} anfitrionas permitidas`
                 });
                 return;
             }
@@ -194,8 +194,8 @@ export default function ServiciosScreen() {
             if (selectedClients.length >= maxClients) {
                 Toast.show({
                     type: 'info',
-                    text1: 'LÃ­mite alcanzado',
-                    text2: `MÃ¡ximo ${maxClients} clientes permitidos`
+                    text1: 'Límite alcanzado',
+                    text2: `Máximo ${maxClients} clientes permitidos`
                 });
                 return;
             }
@@ -221,8 +221,8 @@ export default function ServiciosScreen() {
 
     const maxHostesses = useMemo(() => {
         if (!hasComision) return 10;
-        // Regla: MÃ¡ximo 3 anfitrionas. 
-        // AdemÃ¡s, Total (Anf + Cli) <= 4. Si no hay clientes, se asume 1 cupo para el cÃ¡lculo.
+        // Regla: Máximo 3 anfitrionas. 
+        // Además, Total (Anf + Cli) <= 4. Si no hay clientes, se asume 1 cupo para el cálculo.
         const effectiveClients = Math.max(1, selectedClients.length);
         const limitByTotal = 4 - effectiveClients;
         return Math.min(3, limitByTotal);
@@ -277,7 +277,7 @@ export default function ServiciosScreen() {
 
         let currentIva = 0;
         if (paymentMethod === 'tarjeta') {
-            // El IVA del 20% se calcula Ãºnicamente sobre el subtotal del servicio (no incluye habitaciÃ³n)
+            // El IVA del 20% se calcula únicamente sobre el subtotal del servicio (no incluye habitación)
             currentIva = Math.floor(subtotal * 0.20);
         }
 
@@ -303,11 +303,11 @@ export default function ServiciosScreen() {
     }, [totals.iva]);
 
     const handleSubmit = async () => {
-        if (!selectedRoom) return Alert.alert('Error', 'Selecciona una habitaciÃ³n');
+        if (!selectedRoom) return Alert.alert('Error', 'Selecciona una habitación');
         if (selectedHostesses.length === 0) return Alert.alert('Error', 'Selecciona al menos una anfitriona');
-        if (!paymentMethod) return Alert.alert('Error', 'Selecciona un mÃ©todo de pago');
+        if (!paymentMethod) return Alert.alert('Error', 'Selecciona un método de pago');
 
-        // El precio de servicio es obligatorio SOLO si la habitaciÃ³n NO tiene comisiÃ³n
+        // El precio de servicio es obligatorio SOLO si la habitación NO tiene comisión
         if (!hasComision && (!servicePrice || servicePrice === '0')) {
             return Alert.alert('Error', 'Ingresa el precio del servicio');
         }
@@ -357,7 +357,7 @@ export default function ServiciosScreen() {
                 Alert.alert('Error', res.message || 'No se pudo crear el servicio');
             }
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Error de conexiÃ³n');
+            Alert.alert('Error', err.message || 'Error de conexión');
         } finally {
             setSubmitting(false);
         }
@@ -415,11 +415,11 @@ export default function ServiciosScreen() {
             >
                 <PremiumHeader 
                     title="Servicios"
-                    subtitle="Registrar nuevo servicio en habitaciÃ³n"
+                    subtitle="Registrar nuevo servicio en habitación"
                     rightComponent={
                         <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                            <Text style={styles.backTextHeader}>Atrás</Text>
                         </Pressable>
                     }
                 />
@@ -427,7 +427,7 @@ export default function ServiciosScreen() {
                 <View style={{ padding: 20 }}>
 
                 {/* Habitaciones */}
-                <Text style={[styles.sectionLabel, { color: textSecondary }]}>HABITACIÃ“N</Text>
+                <Text style={[styles.sectionLabel, { color: textSecondary }]}>HABITACIÓN</Text>
                 <Pressable 
                     onPress={() => setRoomModalVisible(true)}
                     style={[styles.selectField, { backgroundColor: cardBg, borderColor: selectedRoom ? primaryColor : borderColor }]}
@@ -437,7 +437,7 @@ export default function ServiciosScreen() {
                         <Text style={[styles.selectFieldText, { color: selectedRoom ? textPrimary : textSecondary }]}>
                             {selectedRoom 
                                 ? `${selectedRoom.nombre || selectedRoom.name || selectedRoom.numero} - $${(selectedRoom.precio || selectedRoom.price || 0).toLocaleString()}`
-                                : 'Seleccionar habitaciÃ³n...'}
+                                : 'Seleccionar habitación...'}
                         </Text>
                     </View>
                     <Ionicons name="chevron-down" size={20} color={textSecondary} />
@@ -467,14 +467,14 @@ export default function ServiciosScreen() {
                 {hasComision && (
                     <View style={{ backgroundColor: primaryColor + '15', padding: 12, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: primaryColor + '40' }}>
                         <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 13, textAlign: 'center' }}>
-                            âœ¨ LÃ­mite: MÃ¡x 3 Anfitrionas y 4 personas en total
+                            âœ¨ Límite: Máx 3 Anfitrionas y 4 personas en total
                         </Text>
                     </View>
                 )}
 
                 {/* Anfitrionas */}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                    ANFITRIONAS {hasComision && `(MÃX ${maxHostesses})`}
+                    ANFITRIONAS {hasComision && `(MÁX ${maxHostesses})`}
                 </Text>
                 <Pressable 
                     onPress={() => setHostessModalVisible(true)}
@@ -510,7 +510,7 @@ export default function ServiciosScreen() {
 
                 {/* Clientes */}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                    CLIENTES (OPCIONAL {hasComision && `- MÃX ${maxClients}`})
+                    CLIENTES (OPCIONAL {hasComision && `- MÁX ${maxClients}`})
                 </Text>
                 <Pressable 
                     onPress={() => setClientModalVisible(true)}
@@ -567,7 +567,7 @@ export default function ServiciosScreen() {
 
                     {!hasPrepago && (
                         <>
-                            <Text style={[styles.sectionLabel, { color: textSecondary }]}>MÃ‰TODO DE PAGO</Text>
+                            <Text style={[styles.sectionLabel, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
                             <View style={styles.methodContainer}>
                                 {['efectivo', 'tarjeta', 'transferencia'].map((m) => (
                                     <Pressable
@@ -594,7 +594,7 @@ export default function ServiciosScreen() {
                                 <Ionicons name="wallet" size={20} color="#10B981" />
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 14 }}>
-                                        PAGO AUTOMÃTICO CON SALDO
+                                        PAGO AUTOMÁTICO CON SALDO
                                     </Text>
                                     <Text style={{ color: '#10B981', fontWeight: '800', fontSize: 12 }}>
                                         Saldo disponible: ${(activeClientWithBalance?.saldo || 0).toLocaleString()}
@@ -626,12 +626,12 @@ export default function ServiciosScreen() {
                         <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
                     </View>
                     <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>HabitaciÃ³n:</Text>
+                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Habitación:</Text>
                         <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.totalHabitacion.toLocaleString()}</Text>
                     </View>
                     {hasComision && selectedHostesses.length > 0 && (
                         <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: primaryColor + '20' }]}>
-                            <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>ComisiÃ³n p/Anf:</Text>
+                            <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>Comisión p/Anf:</Text>
                             <Text style={[styles.summaryValue, { color: '#10B981', fontWeight: '800' }]}>
                                 ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
                             </Text>

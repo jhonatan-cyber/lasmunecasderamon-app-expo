@@ -42,9 +42,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
   if (!selectedPedido) return null;
 
+  const existingTip = Number(selectedPedido.propina || pedidoDetails?.[0]?.propina || 0);
+  const subtotalBase = Number(
+    selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - existingTip)
+  );
+  const tipAmount = existingTip > 0 ? existingTip : agregarPropina ? subtotalBase * 0.1 : 0;
+  const totalFinal = subtotalBase + tipAmount;
+
   const mixedPaymentDetails = (() => {
     if (!selectedClient || metodoPago !== "prepago") return { isMixed: false, prepago: 0, adicional: 0 };
-    const total = selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.1 : 0);
+    const total = totalFinal;
     const saldo = Number(selectedClient.saldo || 0);
     if (saldo < total && saldo > 0) return { isMixed: true, prepago: saldo, adicional: total - saldo };
     return { isMixed: false, prepago: 0, adicional: 0 };
@@ -115,9 +122,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             )}
 
             <View style={[styles.totals, { backgroundColor: accentBg }]}>
-              <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${selectedPedido.total.toLocaleString()}</Text></View>
-              {agregarPropina && <View style={styles.row}><Text style={{ color: textSecondary }}>Propina 10%</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${(selectedPedido.total * 0.1).toLocaleString()}</Text></View>}
-              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${(selectedPedido.total + (agregarPropina ? selectedPedido.total * 0.1 : 0)).toLocaleString()}</Text></View>
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
+              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : 'Propina 10%'}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
+              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${totalFinal.toLocaleString()}</Text></View>
             </View>
           </ScrollView>
 

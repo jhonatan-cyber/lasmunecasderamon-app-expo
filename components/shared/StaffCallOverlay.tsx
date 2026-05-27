@@ -187,6 +187,7 @@ export function StaffCallOverlay() {
             }
         } catch (error: any) {
             Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+            setPendingCalls(prev => prev.filter(c => c.id !== id));
         } finally {
             setAccepting(null);
         }

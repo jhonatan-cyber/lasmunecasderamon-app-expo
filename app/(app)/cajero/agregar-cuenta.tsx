@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
@@ -131,7 +131,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
 
 const isChampagneProduct = (producto: any) => {
     const cat = (producto.categoria || '').toLowerCase();
-    return cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
+    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
 };
 
 const getChampagneLimit = (precio: number) => {
@@ -222,7 +222,7 @@ export default function AgregarCuentaScreen() {
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
     const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
-    // Mostrar selector de habitaciÃ³n si hay productos con anfitriona asignada en el carrito
+    // Mostrar selector de habitación si hay productos con anfitriona asignada en el carrito
     const showRoomSelector = cart.some(item =>
         item.selectedHostesses && item.selectedHostesses.length > 0
     );
@@ -267,7 +267,7 @@ export default function AgregarCuentaScreen() {
                     categories: categoriesRes.success ? (categoriesRes.data || []) : [],
                     habitaciones: rawHabitaciones.map((room: any) => ({
                         ...room,
-                        nombre: room.nombre ?? room.name ?? `HabitaciÃ³n ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                        nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
                         precio: room.precio ?? room.price ?? 0,
                         tiempo: room.tiempo ?? room.time ?? 0,
                         estado: room.estado ?? room.status ?? 0,
@@ -277,7 +277,7 @@ export default function AgregarCuentaScreen() {
             });
         } catch (error) {
             console.error('Error fetching initial data:', error);
-            showToast('Error', 'No se pudo cargar la informaciÃ³n necesaria.');
+            showToast('Error', 'No se pudo cargar la información necesaria.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -287,7 +287,7 @@ export default function AgregarCuentaScreen() {
     useEffect(() => {
         fetchInitialData();
         if (!cuentaOriginal) {
-            showToast('Error', 'No se recibiÃ³ la informaciÃ³n de la cuenta');
+            showToast('Error', 'No se recibió la información de la cuenta');
             router.back();
         }
     }, [fetchInitialData, cuentaOriginal, router]);
@@ -427,7 +427,7 @@ export default function AgregarCuentaScreen() {
                 body: JSON.stringify(cuentaData),
             });
             if (res.success) {
-                showToast('Ã‰xito', 'Productos agregados correctamente', 'success');
+                showToast('Éxito', 'Productos agregados correctamente', 'success');
                 DeviceEventEmitter.emit('refresh_cuentas');
                 setTimeout(() => router.back(), 1500);
             } else {
@@ -435,7 +435,7 @@ export default function AgregarCuentaScreen() {
             }
         } catch (error) {
             console.error('Submit error:', error);
-            showToast('Error', 'OcurriÃ³ un error al procesar la cuenta.');
+            showToast('Error', 'Ocurrió un error al procesar la cuenta.');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
@@ -468,7 +468,7 @@ export default function AgregarCuentaScreen() {
                         accessibilityLabel="Volver"
                     >
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextRight}>ATRÃS</Text>
+                        <Text style={styles.backTextRight}>ATRÁS</Text>
                     </Pressable>
                 }
             />
@@ -499,7 +499,7 @@ export default function AgregarCuentaScreen() {
                     >
                         <Ionicons name="timer-outline" size={18} color={extraTiempo > 0 ? '#3B82F6' : textSecondary} />
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>TIEMPO EXTRA HABITACIÃ“N</Text>
+                            <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>TIEMPO EXTRA HABITACIÓN</Text>
                             <Text style={[styles.tiempoChipValue, { color: extraTiempo > 0 ? '#3B82F6' : textPrimary }]}>
                                 {extraTiempo > 0 ? `+ ${extraTiempo} minutos` : 'Sin tiempo extra'}
                             </Text>
@@ -509,14 +509,14 @@ export default function AgregarCuentaScreen() {
                 )}
 
                 <View style={styles.browserContainer}>
-                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. SelecciÃ³n de Productos</Text>
+                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
                         {categories.map((cat, idx) => (
                             <Pressable
                                 key={cat.id}
                                 style={[styles.categorySmallCard, { backgroundColor: cardBg, borderColor }]}
                                 onPress={() => handleOpenCategory(cat)}
-                                accessibilityLabel={`CategorÃ­a ${cat.name}`}
+                                accessibilityLabel={`Categoría ${cat.name}`}
                                 accessibilityRole="button"
                             >
                                 <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? `${accentColor}15` : '#10B98115' }]}>
@@ -528,7 +528,7 @@ export default function AgregarCuentaScreen() {
                     </ScrollView>
                 </View>
 
-                {/* HabitaciÃ³n y tiempo para productos con comisiÃ³n < 160k */}
+                {/* Habitación y tiempo para productos con comisión < 160k */}
                 {showRoomSelector && (
                     <View style={{ marginBottom: spacing }}>
                         <Pressable
@@ -537,9 +537,9 @@ export default function AgregarCuentaScreen() {
                         >
                             <Ionicons name="business" size={18} color={selectedHabitacion ? accentColor : textSecondary} />
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>HABITACIÃ“N</Text>
+                                <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>HABITACIÓN</Text>
                                 <Text style={[styles.tiempoChipValue, { color: selectedHabitacion ? accentColor : textPrimary }]}>
-                                    {selectedHabitacion?.nombre || 'Seleccionar habitaciÃ³n'}
+                                    {selectedHabitacion?.nombre || 'Seleccionar habitación'}
                                 </Text>
                             </View>
                             <Ionicons name="chevron-down" size={16} color={selectedHabitacion ? accentColor : textSecondary} />
@@ -677,7 +677,7 @@ export default function AgregarCuentaScreen() {
                                             if (hasComm) {
                                                 const price = item.precio ?? item.price ?? 0;
                                                 // Si precio < 160,000: max anfitrionas = cantidad del producto
-                                                // Si es champagne (precio >= 160,000): usar lÃ­mite de champagne
+                                                // Si es champagne (precio >= 160,000): usar límite de champagne
                                                 const qty = modalQuantities[id] || 1;
                                                 const max = price < 160000 ? qty : getHostessLimit(item, qty);
                                                 const currentSelections = modalHostessSelections[id] || [];

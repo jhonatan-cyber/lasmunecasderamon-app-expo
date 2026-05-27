@@ -70,7 +70,7 @@ const formatServiceDetail = (raw: any) => {
   const habitacionComision = safeNumber(raw?.habitacion_comision ?? 0);
   const tieneComisionHabitacion = habitacionComision > 0;
 
-  // Si la habitaciÃ³n tiene comisiÃ³n fija, se divide entre las anfitrionas
+  // Si la habitación tiene comisión fija, se divide entre las anfitrionas
   // Si no, cada anfitriona recibe el precio del input
   const comisionIndividual = tieneComisionHabitacion
     ? Math.floor(habitacionComision / totalUsuarios)
@@ -127,7 +127,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
     // Actualizar inmediatamente al cambiar el item o el offset
     setRemaining(calculateRemainingTime(item, serverOffset));
     
-    // Si no estÃ¡ activo o estÃ¡ pausado, no corremos el intervalo
+    // Si no está activo o está pausado, no corremos el intervalo
     if (activeTab === "finalizados" || item.isPaused || item.estado === 3) return;
 
     const interval = setInterval(() => {
@@ -473,13 +473,26 @@ export default function ServiciosActivosScreen() {
   }), [isDark, accentColor]);
 
   const activeServicios = useMemo(() => {
-    return timers.filter(t => t.tipoTransaccion === 'servicio');
+    const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');
+    // Si hay un temporal activo (es_temporal=true), ocultar el original al que reemplaza
+    const temporalOriginalIds = new Set(
+      servicios
+        .filter(t => t.es_temporal && t.servicio_original_id)
+        .map(t => String(t.servicio_original_id))
+    );
+    return servicios.filter(t => {
+      // Mostrar temporales siempre
+      if (t.es_temporal) return true;
+      // Ocultar originales que tienen un temporal activo
+      if (temporalOriginalIds.has(String(t.servicioId))) return false;
+      return true;
+    });
   }, [timers]);
 
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
     try {
-      // Traer todos los finalizados con paginaciÃ³n
+      // Traer todos los finalizados con paginación
       let allData: any[] = [];
       let page = 1;
       const limit = 200;
@@ -509,8 +522,8 @@ export default function ServiciosActivosScreen() {
           const comisionIndividual = safeNumber(sAny.comision_individual || 0);
           const totalUsuarios = Math.max(1, safeNumber(sAny.total_usuarios || 1));
           
-          // Si hay comisiÃ³n de habitaciÃ³n, esa es la comisiÃ³n total
-          // Si no, se usa la comisiÃ³n individual por las anfitrionas
+          // Si hay comisión de habitación, esa es la comisión total
+          // Si no, se usa la comisión individual por las anfitrionas
           const totalComision = habitacionComision > 0 
             ? habitacionComision 
             : comisionIndividual * totalUsuarios;
@@ -612,12 +625,12 @@ export default function ServiciosActivosScreen() {
       type: 'SET_ALERT', payload: {
         visible: true,
         title: "Finalizar Servicio",
-        message: "Â¿Seguro que deseas finalizar el servicio?",
+        message: "¿Seguro que deseas finalizar el servicio?",
         type: "danger",
         onConfirm: async () => {
           try {
             if (!timer.servicioId || timer.servicioId === 'NaN' || timer.servicioId === '0') {
-              showToast("Error", "ID de servicio invÃ¡lido", "error");
+              showToast("Error", "ID de servicio inválido", "error");
               dispatch({ type: 'CLOSE_ALERT' });
               return;
             }
@@ -666,7 +679,7 @@ export default function ServiciosActivosScreen() {
             style={styles.backBtnRight}
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+            <Text style={styles.backTextRight}>Atrás</Text>
           </Pressable>
         }
         tabs={[
@@ -747,7 +760,7 @@ export default function ServiciosActivosScreen() {
               <View style={styles.detailsGrid}>
                 <View style={[styles.gridItem, { width: '100%', flexDirection: 'row', justifyContent: 'space-between' }]}>
                   <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÃ“N</Text>
+                    <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
                     <Text style={[styles.gridValue, { color: theme.text }]} numberOfLines={1}>{selectedServiceDetail?.roomName || 'S/N'}</Text>
                   </View>
                   <View style={{ flex: 1, marginRight: 8 }}>
@@ -840,7 +853,7 @@ export default function ServiciosActivosScreen() {
                   <Text style={[styles.summaryVal, { color: theme.text }]}>${(safeNumber(selectedServiceDetail?.precio_servicio) * safeNumber(selectedServiceDetail?.total_usuarios)).toLocaleString()}</Text>
                 </View>
                 <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio HabitaciÃ³n</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Precio Habitación</Text>
                   <Text style={[styles.summaryVal, { color: theme.text }]}>${safeNumber(selectedServiceDetail?.precio_habitacion).toLocaleString()}</Text>
                 </View>
                 {selectedServiceDetail?.iva > 0 && (
@@ -855,46 +868,46 @@ export default function ServiciosActivosScreen() {
                    <Text style={[styles.totalValFinal, { color: theme.accent }]}>${safeNumber(selectedServiceDetail?.total).toLocaleString()}</Text>
                 </View>
 
-                {/* SecciÃ³n de Comisiones */}
+                {/* Sección de Comisiones */}
                 {selectedServiceDetail?.habitacion_comision > 0 ? (
-                  // Si hay comisiÃ³n de habitaciÃ³n, esa es la comisiÃ³n total que se divide
+                  // Si hay comisión de habitación, esa es la comisión total que se divide
                   <>
                     <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
-                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>ComisiÃ³n HabitaciÃ³n</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Comisión Habitación</Text>
                       <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
                         ${safeNumber(selectedServiceDetail?.total_comision).toLocaleString()}
                       </Text>
                     </View>
                     <View style={styles.summaryRow}>
-                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>ComisiÃ³n p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
                       <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
                         ${safeNumber(selectedServiceDetail?.comision_individual).toLocaleString()} c/u
                       </Text>
                     </View>
                     <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
                       <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
-                        * La comisiÃ³n de habitaciÃ³n se divide entre las {selectedServiceDetail?.total_usuarios} anfitrionas.
+                        * La comisión de habitación se divide entre las {selectedServiceDetail?.total_usuarios} anfitrionas.
                       </Text>
                     </View>
                   </>
                 ) : (
-                  // Si no hay comisiÃ³n de habitaciÃ³n, mostrar total comisiÃ³n (precio servicio Ã— anfitrionas)
+                  // Si no hay comisión de habitación, mostrar total comisión (precio servicio × anfitrionas)
                   <>
                     <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
-                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total ComisiÃ³n</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>
                       <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
                         ${safeNumber(selectedServiceDetail?.total_comision ?? (safeNumber(selectedServiceDetail?.comision_individual) * safeNumber(selectedServiceDetail?.total_usuarios))).toLocaleString()}
                       </Text>
                     </View>
                     <View style={styles.summaryRow}>
-                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>ComisiÃ³n p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>Comisión p/Anfitriona ({selectedServiceDetail?.total_usuarios})</Text>
                       <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
                         ${safeNumber(selectedServiceDetail?.comision_individual).toLocaleString()} c/u
                       </Text>
                     </View>
                     <View style={{ marginTop: 16, padding: 12, borderRadius: 12, backgroundColor: theme.accent + '15', borderWidth: 1, borderColor: theme.accent + '30' }}>
                       <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
-                        * La comisiÃ³n total se divide entre las anfitrionas que participaron en el servicio.
+                        * La comisión total se divide entre las anfitrionas que participaron en el servicio.
                       </Text>
                     </View>
                   </>

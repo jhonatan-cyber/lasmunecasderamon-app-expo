@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -48,8 +48,8 @@ export const PremiumHeaderActions = ({
 
     const handleLogout = () => {
         showAlert(
-            'Cerrar sesiÃ³n',
-            'Â¿EstÃ¡s seguro que deseas salir del sistema?',
+            'Cerrar sesión',
+            '¿Estás seguro que deseas salir del sistema?',
             'danger',
             () => {
                 logout();
@@ -87,7 +87,7 @@ export const PremiumHeaderActions = ({
                             return;
                         }
                         if (setHasNewAlert) setHasNewAlert(false);
-                        showAlert('Sin Notificaciones', 'Tu bandeja de entrada estÃ¡ limpia por el momento.', 'info');
+                        showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
                     }}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
                 >

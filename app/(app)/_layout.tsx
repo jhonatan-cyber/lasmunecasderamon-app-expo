@@ -50,7 +50,7 @@ export default function AppLayout() {
         setShowAsistenciaModal(false);
     };
 
-    // Inicializar el manejador central de notificaciones (NavegaciÃ³n, TTS, Haptics)
+    // Inicializar el manejador central de notificaciones (Navegación, TTS, Haptics)
     useNotificationHandler();
 
     useEffect(() => {
@@ -79,7 +79,7 @@ export default function AppLayout() {
             />
             <StaffCallOverlay />
 
-            {/* Modal de sesiÃ³n expirada - no redirige automÃ¡ticamente */}
+            {/* Modal de sesión expirada - no redirige automáticamente */}
             <Modal
                 visible={sessionExpired}
                 transparent
@@ -89,18 +89,18 @@ export default function AppLayout() {
                 <View style={styles.overlay}>
                     <View style={styles.dialog}>
                         <View style={styles.iconContainer}>
-                            <Text style={styles.icon}>ðŸ”’</Text>
+                            <Text style={styles.icon}>🔒</Text>
                         </View>
-                        <Text style={styles.title}>SesiÃ³n expirada</Text>
+                        <Text style={styles.title}>Sesión expirada</Text>
                         <Text style={styles.message}>
-                            Tu sesiÃ³n ha expirado o el acceso fue revocado.{'\n'}
-                            Por favor, inicia sesiÃ³n nuevamente para continuar.
+                            Tu sesión ha expirado o el acceso fue revocado.{'\n'}
+                            Por favor, iniciá sesión nuevamente para continuar.
                         </Text>
                         <TouchableOpacity style={styles.btn} onPress={handleLogout}>
-                            <Text style={styles.btnText}>Iniciar sesiÃ³n</Text>
+                            <Text style={styles.btnText}>Iniciar sesión</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.btnSecondary} onPress={clearSessionExpired}>
-                            <Text style={styles.btnSecondaryText}>Continuar sin cerrar sesiÃ³n</Text>
+                            <Text style={styles.btnSecondaryText}>Continuar sin cerrar sesión</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -32,7 +32,7 @@ interface PremiumProfileViewProps {
     onClose?: () => void;
 }
 
-const ESTADO_CIVIL_OPTIONS = ['Soltero/a', 'Casado/a', 'UniÃ³n Libre', 'Divorciado/a', 'Viudo/a', 'Separado/a'];
+const ESTADO_CIVIL_OPTIONS = ['Soltero/a', 'Casado/a', 'Unión Libre', 'Divorciado/a', 'Viudo/a', 'Separado/a'];
 
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
@@ -114,14 +114,14 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
     const onSave = async () => {
         const res = await saveProfile();
         if (res.success) {
-            showAlert('Ã‰xito', res.message, 'success', () => { if (onClose) onClose(); });
+            showAlert('Éxito', res.message, 'success', () => { if (onClose) onClose(); });
         } else {
             showAlert('Error', res.message, 'danger');
         }
     };
 
     const handleInternalLogout = useCallback(() => {
-        showAlert('Cerrar sesiÃ³n', 'Â¿EstÃ¡s seguro que deseas salir?', 'warning', () => {
+        showAlert('Cerrar sesión', '¿Estás seguro que deseas salir?', 'warning', () => {
             if (onLogout) onLogout();
             else { logout(); router.replace('/(auth)/login'); }
         }, true);
@@ -160,7 +160,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
                         style={styles.backBtnRight}
                     >
                         <Ionicons name="arrow-back" size={isTablet ? 26 : 22} color="#FFFFFF" />
-                        <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                        <Text style={styles.backTextHeader}>Atrás</Text>
                     </Pressable>
                 )}
             </View>
@@ -270,7 +270,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.inputLabel, { color: textSecondary }]}>TelÃ©fono</Text>
+                        <Text style={[styles.inputLabel, { color: textSecondary }]}>Teléfono</Text>
                         <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
                             <Ionicons name="call-outline" size={20} color={accentColor} style={styles.inputIcon} />
                             <TextInput
@@ -283,7 +283,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.inputLabel, { color: textSecondary }]}>DirecciÃ³n</Text>
+                        <Text style={[styles.inputLabel, { color: textSecondary }]}>Dirección</Text>
                         <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
                             <Ionicons name="location-outline" size={20} color={accentColor} style={styles.inputIcon} />
                             <TextInput
@@ -308,7 +308,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
                     <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.inputLabel, { color: textSecondary }]}>Nueva ContraseÃ±a</Text>
+                        <Text style={[styles.inputLabel, { color: textSecondary }]}>Nueva Contraseña</Text>
                         <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
                             <Ionicons name="lock-closed-outline" size={20} color={accentColor} style={styles.inputIcon} />
                             <TextInput
@@ -332,7 +332,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
 
                         <Pressable style={styles.logoutBtn} onPress={handleInternalLogout}>
                             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-                            <Text style={styles.logoutBtnText}>Cerrar SesiÃ³n</Text>
+                            <Text style={styles.logoutBtnText}>Cerrar Sesión</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -344,11 +344,11 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
                         <Text style={[styles.modalTitle, { color: textPrimary }]}>Elegir Foto</Text>
                         <Pressable style={styles.modalOption} onPress={handleTakePhoto}>
                             <Ionicons name="camera-outline" size={24} color={accentColor} />
-                            <Text style={[styles.modalOptionText, { color: textPrimary }]}>CÃ¡mara</Text>
+                            <Text style={[styles.modalOptionText, { color: textPrimary }]}>Cámara</Text>
                         </Pressable>
                         <Pressable style={styles.modalOption} onPress={handlePickImage}>
                             <Ionicons name="image-outline" size={24} color={accentColor} />
-                            <Text style={[styles.modalOptionText, { color: textPrimary }]}>GalerÃ­a</Text>
+                            <Text style={[styles.modalOptionText, { color: textPrimary }]}>Galería</Text>
                         </Pressable>
                         <Pressable style={styles.cancelModalBtn} onPress={() => setImagePickerVisible(false)}>
                             <Text style={[styles.cancelModalBtnText, { color: accentColor }]}>Cancelar</Text>

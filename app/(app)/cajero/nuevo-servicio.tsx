@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿﻿import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
@@ -239,7 +239,7 @@ export default function NuevoServicioScreen() {
         price: room.price ?? room.precio ?? 0,
         tiempo: room.tiempo ?? room.time ?? 0,
         time: room.time ?? room.tiempo ?? 0,
-        nombre: room.nombre ?? room.name ?? `HabitaciÃ³n ${room.numero ?? room.id_habitacion ?? room.id ?? ''}`.trim(),
+        nombre: room.nombre ?? room.name ?? `Habitación ${room.numero ?? room.id_habitacion ?? room.id ?? ''}`.trim(),
       }));
 
       dispatch({
@@ -261,7 +261,7 @@ export default function NuevoServicioScreen() {
       }
     } catch (error) {
       console.error("Error fetching initial data:", error);
-      showToast("Error", "No se pudo cargar la informaciÃ³n necesaria.");
+      showToast("Error", "No se pudo cargar la información necesaria.");
     } finally {
       dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
     }
@@ -284,7 +284,7 @@ export default function NuevoServicioScreen() {
 
     const multiplicadorTiempo = selectedHabitacion?.tiempo === 60 ? 2 : 1;
     const multiplicadorServicio = numAnfitrionas;
-    // Si la habitaciÃ³n tiene comisiÃ³n, NO se multiplica por anfitrionas
+    // Si la habitación tiene comisión, NO se multiplica por anfitrionas
     const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
     const multiplicadorHabitacion = tieneComision ? 1 : Math.max(numAnfitrionas, numClientes);
 
@@ -338,7 +338,7 @@ export default function NuevoServicioScreen() {
       next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
     } else {
       if (selectedHostesses.length >= maxHostesses) {
-        showToast("LÃ­mite", `MÃ¡ximo ${maxHostesses} anfitrionas`);
+        showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
         return;
       }
       next = [...selectedHostesses, hostessId];
@@ -359,7 +359,7 @@ export default function NuevoServicioScreen() {
       next = selectedClients.filter((id) => String(id) !== String(clientId));
     } else {
       if (selectedClients.length >= maxClients) {
-        showToast("LÃ­mite", `MÃ¡ximo ${maxHostesses} anfitrionas`);
+        showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
         return;
       }
       next = [...selectedClients, clientId];
@@ -386,8 +386,8 @@ export default function NuevoServicioScreen() {
     if (saldo >= totals.total && totals.total > 0) {
       dispatch({ type: 'SET_METODO_PAGO', payload: 'prepago' });
     } else if (saldo > 0 && saldo < totals.total) {
-      // Saldo parcial: cambiar a mixto solo si aÃºn no estÃ¡ en mixto
-      // para no sobreescribir los pagos que el usuario ya configurÃ³
+      // Saldo parcial: cambiar a mixto solo si aún no está en mixto
+      // para no sobreescribir los pagos que el usuario ya configuró
       dispatch({ type: 'SET_METODO_PAGO', payload: 'mixto' });
       dispatch({
         type: 'SET_PAGOS_MIXTOS',
@@ -414,7 +414,7 @@ export default function NuevoServicioScreen() {
       });
 
       if (res.success) {
-        showToast("Ã‰xito", "Saldo cargado correctamente", "success");
+        showToast("Éxito", "Saldo cargado correctamente", "success");
         dispatch({ type: 'UPDATE_CLIENT_SALDO', payload: { id: clientId, saldo: res.data.nuevo_saldo } });
         dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false });
         dispatch({ type: 'SET_BALANCE_AMOUNT', payload: "" });
@@ -439,7 +439,7 @@ export default function NuevoServicioScreen() {
       return;
     }
     
-    // Validar mÃ©todo mixto (puede ser principal o adicional)
+    // Validar método mixto (puede ser principal o adicional)
     const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
     if (esMixto) {
       const sumaPagos = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
@@ -448,7 +448,7 @@ export default function NuevoServicioScreen() {
         return;
       }
       if (pagosMixtos.length < 2) {
-        showToast("MÃ©todos Insuficientes", "Selecciona al menos 2 mÃ©todos de pago para el mÃ©todo mixto", "error");
+        showToast("Métodos Insuficientes", "Selecciona al menos 2 métodos de pago para el método mixto", "error");
         return;
       }
     }
@@ -463,13 +463,13 @@ export default function NuevoServicioScreen() {
           return;
         }
       } else if (saldo < totals.total && !metodoPagoAdicional) {
-        showToast("Saldo Insuficiente", "El saldo del cliente no cubre el total. Selecciona un mÃ©todo adicional.", "error");
+        showToast("Saldo Insuficiente", "El saldo del cliente no cubre el total. Selecciona un método adicional.", "error");
         return;
       }
     }
 
     if (!selectedHabitacion) {
-      showToast("Falta Datos", "Selecciona una habitaciÃ³n.");
+      showToast("Falta Datos", "Selecciona una habitación.");
       return;
     }
     if (selectedHostesses.length === 0) {
@@ -496,11 +496,11 @@ export default function NuevoServicioScreen() {
         usuarios: selectedHostesses,
       };
 
-      // Si es mÃ©todo mixto (principal o adicional), incluir los pagos mixtos
+      // Si es método mixto (principal o adicional), incluir los pagos mixtos
       const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
       if (esMixto) {
         payload.pagos_mixtos = pagosMixtos;
-        // Calcular cuÃ¡nto se paga con prepago del cliente
+        // Calcular cuánto se paga con prepago del cliente
         const prepagoMonto = pagosMixtos.find(p => p.metodo === 'prepago')?.monto || 0;
         if (prepagoMonto > 0 && metodoPago !== 'mixto') {
           payload.metodo_pago = 'prepago';
@@ -522,14 +522,14 @@ export default function NuevoServicioScreen() {
         body: JSON.stringify(payload),
       });
       if (res.success) {
-        showToast("Ã‰xito", "Servicio creado correctamente", "success");
+        showToast("Éxito", "Servicio creado correctamente", "success");
         setTimeout(() => router.replace("/cajero/servicios"), 1500);
       } else {
         showToast("Error", res.message || "No se pudo crear el servicio");
       }
     } catch (error) {
       console.error("Submit error:", error);
-      showToast("Error", "OcurriÃ³ un error al procesar el servicio.");
+      showToast("Error", "Ocurrió un error al procesar el servicio.");
     } finally {
       dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
@@ -539,11 +539,11 @@ export default function NuevoServicioScreen() {
     <View style={{ flex: 1, backgroundColor: bg }}>
       <PremiumHeader 
         title="Nuevo Servicio" 
-        subtitle="Cargando informaciÃ³n..." 
+        subtitle="Cargando información..." 
         rightComponent={
           <View style={[styles.backBtnRight, { opacity: 0.5 }]}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+            <Text style={styles.backTextRight}>Atrás</Text>
           </View>
         }
       />
@@ -591,7 +591,7 @@ export default function NuevoServicioScreen() {
             style={styles.backBtnRight}
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+            <Text style={styles.backTextRight}>Atrás</Text>
           </Pressable>
         }
       />
@@ -610,16 +610,16 @@ export default function NuevoServicioScreen() {
           <Pressable
             style={[styles.selectorBtn, { borderColor }]}
             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
-            accessibilityLabel="Seleccionar habitaciÃ³n"
+            accessibilityLabel="Seleccionar habitación"
             accessibilityRole="button"
           >
             <Ionicons name="business" size={22} color={accentColor} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorLabel, { color: textSecondary }]}>
-                HabitaciÃ³n (Requerido)
+                Habitación (Requerido)
               </Text>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
-                {selectedHabitacion?.nombre || "Seleccionar habitaciÃ³n"}
+                {selectedHabitacion?.nombre || "Seleccionar habitación"}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
@@ -740,7 +740,7 @@ export default function NuevoServicioScreen() {
                 dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: "" });
                 dispatch({ type: 'SET_PAGOS_MIXTOS', payload: [] });
               }
-              // Si selecciona mixto, inicializar vacÃ­o para que agregue manualmente
+              // Si selecciona mixto, inicializar vacío para que agregue manualmente
               if (val === 'mixto') {
                 const saldo = Number(selectedClientData?.saldo || 0);
                 // Solo agregar prepago si hay saldo, el resto lo agrega el usuario manualmente
@@ -754,13 +754,13 @@ export default function NuevoServicioScreen() {
             }}
           />
 
-          {/* UI de Pagos Mixtos - cuando se selecciona mixto como mÃ©todo principal */}
+          {/* UI de Pagos Mixtos - cuando se selecciona mixto como método principal */}
           {metodoPago === 'mixto' && (
             <View style={{ marginTop: 16, padding: 12, backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderRadius: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <Ionicons name="shuffle-outline" size={18} color={accentColor} />
                 <Text style={{ color: textPrimary, fontSize: 13, fontWeight: '800', marginLeft: 8, textTransform: 'uppercase' }}>
-                  DistribuciÃ³n de Pagos (Total: ${totals.total.toLocaleString()})
+                  Distribución de Pagos (Total: ${totals.total.toLocaleString()})
                 </Text>
               </View>
               
@@ -811,7 +811,7 @@ export default function NuevoServicioScreen() {
                 </View>
               ))}
 
-              {/* Agregar mÃ¡s mÃ©todos de pago */}
+              {/* Agregar más métodos de pago */}
               {(() => {
                 const sumaActual = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
                 const yaCompleto = sumaActual >= totals.total;
@@ -819,12 +819,12 @@ export default function NuevoServicioScreen() {
                 return (
                   <View style={{ marginTop: 12 }}>
                     <Text style={{ color: textSecondary, fontSize: 11, marginBottom: 8, fontWeight: '600' }}>
-                      {yaCompleto ? 'Total completado' : 'Agregar mÃ©todo de pago:'}
+                      {yaCompleto ? 'Total completado' : 'Agregar método de pago:'}
                     </Text>
                     {!yaCompleto && (
                       <View style={{ flexDirection: 'row', gap: 8 }}>
                         {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
-                          // No mostrar si ya estÃ¡ en la lista
+                          // No mostrar si ya está en la lista
                           if (pagosMixtos.some(p => p.metodo === metodo)) return null;
                           const sinSaldo = metodo === 'prepago' && Number(selectedClientData?.saldo || 0) <= 0;
                           return (
@@ -900,7 +900,7 @@ export default function NuevoServicioScreen() {
           {!hasAnfitrionaComision && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-                HabitaciÃ³n
+                Habitación
               </Text>
               <Text style={[styles.summaryVal, { color: textPrimary }]}>
                 ${totals.precioHabitacionActual.toLocaleString()}
@@ -911,7 +911,7 @@ export default function NuevoServicioScreen() {
             <>
               <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>
-                  ComisiÃ³n total
+                  Comisión total
                 </Text>
                 <Text style={[styles.summaryVal, { color: '#10B981', fontWeight: '800' }]}>
                   ${(selectedHabitacion?.comision_anfitriona ?? 0).toLocaleString()}
@@ -919,7 +919,7 @@ export default function NuevoServicioScreen() {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: '#10B981' }]}>
-                  ComisiÃ³n p/Anf
+                  Comisión p/Anf
                 </Text>
                 <Text style={[styles.summaryVal, { color: '#10B981' }]}>
                   ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
@@ -961,7 +961,7 @@ export default function NuevoServicioScreen() {
                 Nota importante
               </Text>
               <Text style={[styles.cardNoteText, { color: isDark ? "#FDE68A" : "#78350F" }]}>
-                GenerÃ¡ venta por ${desgloseTarjeta.venta.toLocaleString()} y propina por ${desgloseTarjeta.propina.toLocaleString()}.
+                Generá venta por ${desgloseTarjeta.venta.toLocaleString()} y propina por ${desgloseTarjeta.propina.toLocaleString()}.
               </Text>
             </View>
           )}

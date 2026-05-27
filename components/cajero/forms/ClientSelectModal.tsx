@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
     Modal,
@@ -53,7 +53,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>Clientes</Text>
                             {max !== undefined && (
                                 <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                                    MÃ¡ximo {max} seleccionados
+                                    Máximo {max} seleccionados
                                 </Text>
                             )}
                         </View>
@@ -69,7 +69,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                                 (item.id !== undefined && String(sid) === String(item.id))
                             );
 
-                            // Soporte para mÃºltiples convenciones de nombres de la API (snake_case y CamelCase)
+                            // Soporte para múltiples convenciones de nombres de la API (snake_case y CamelCase)
                             const firstName = item.nombre || item.name || '';
                             const lastName = item.apellido || item.lastName || item.last_name || '';
                             const fullName = `${firstName} ${lastName}`.trim() || 'Cliente sin nombre';

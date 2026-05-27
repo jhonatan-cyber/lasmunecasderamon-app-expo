@@ -1,4 +1,4 @@
-﻿import Ionicons from '@expo/vector-icons/Ionicons';
+﻿﻿import Ionicons from '@expo/vector-icons/Ionicons';
 import {useAccentColor} from '@/hooks/useAccentColor';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -113,14 +113,14 @@ export default function ProductosScreen() {
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
+                    text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
             }
         } catch (err: any) {
             console.error('Error fetching data:', err);
-            setError(err.message || 'Error de conexiÃ³n');
+            setError(err.message || 'Error de conexión');
             if (isManual) {
                 Toast.show({
                     type: 'error',
@@ -222,7 +222,7 @@ export default function ProductosScreen() {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: err.message || 'Error de conexiÃ³n',
+                text2: err.message || 'Error de conexión',
             });
         } finally {
             setSubmitting(false);
@@ -247,7 +247,7 @@ export default function ProductosScreen() {
     // Max hostesses logic for modal
     const getMaxHostesses = (item: CartItem) => {
         const cat = (item.product.categoria || '').toLowerCase();
-        const isChampagne = cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
+        const isChampagne = cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
 
         if (isChampagne) {
             const p = item.product.price;
@@ -279,7 +279,7 @@ export default function ProductosScreen() {
                         )}
                         <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                            <Text style={styles.backTextHeader}>Atrás</Text>
                         </Pressable>
                     </View>
                 }
@@ -294,7 +294,7 @@ export default function ProductosScreen() {
                 ListHeaderComponent={
                     <View>
                         <Text style={[styles.sectionTitle, { color: textSecondary, marginBottom: 8 }]}>
-                            {products.length} productos en catÃ¡logo
+                            {products.length} productos en catálogo
                         </Text>
                         
                         {/* Selector de Cliente (Opcional) */}
@@ -336,10 +336,10 @@ export default function ProductosScreen() {
             <PremiumAlert 
                 visible={clearCartAlertVisible}
                 title="Vaciar Carrito"
-                message="Â¿EstÃ¡s seguro que deseas eliminar todos los productos del pedido? Esta acciÃ³n no se puede deshacer."
+                message="¿Estás seguro que deseas eliminar todos los productos del pedido? Esta acción no se puede deshacer."
                 type="danger"
                 showCancel
-                confirmText="SÃ­, vaciar"
+                confirmText="Sí, vaciar"
                 cancelText="Cancelar"
                 onConfirm={() => {
                     clearCart();
@@ -390,8 +390,8 @@ export default function ProductosScreen() {
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: textPrimary }]}>
                                 {activeConfigItem?.type === 'hostess'
-                                    ? `Asignar Anfitrionas (MÃ¡x ${maxHostesses})`
-                                    : 'Seleccionar HabitaciÃ³n'}
+                                    ? `Asignar Anfitrionas (Máx ${maxHostesses})`
+                                    : 'Seleccionar Habitación'}
                             </Text>
                             <Pressable onPress={() => setActiveConfigItem(null)}>
                                 <Ionicons name="close" size={24} color={textPrimary} />
@@ -414,8 +414,8 @@ export default function ProductosScreen() {
                                                 } else {
                                                     Toast.show({
                                                         type: 'error',
-                                                        text1: 'LÃ­mite',
-                                                        text2: `MÃ¡ximo ${maxHostesses} anfitriona(s) para este producto.`,
+                                                        text1: 'Límite',
+                                                        text2: `Máximo ${maxHostesses} anfitriona(s) para este producto.`,
                                                     });
                                                 }
                                             }}
@@ -432,7 +432,7 @@ export default function ProductosScreen() {
                                         onPress={() => { updateItemRoom(activeConfigItem!.productId, null); setActiveConfigItem(null); }}
                                         style={[styles.modalItem, { borderColor: !currentConfigItem?.selectedRoom ? accentColor : borderColor, backgroundColor: !currentConfigItem?.selectedRoom ? `${accentColor}15` : 'transparent' }]}
                                     >
-                                        <Text style={[styles.modalItemText, { color: textPrimary }]}>Sin HabitaciÃ³n</Text>
+                                        <Text style={[styles.modalItemText, { color: textPrimary }]}>Sin Habitación</Text>
                                     </Pressable>
                                     {rooms.map(r => (
                                         <Pressable

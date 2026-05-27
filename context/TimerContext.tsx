@@ -9,7 +9,7 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { DeviceEventEmitter } from 'react-native';
+import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';
 import EventSource from "react-native-sse";
 import { MetodoPago } from '../types/api';
 
@@ -48,6 +48,9 @@ export interface Timer {
   comision_individual?: number;
   lastAnnouncedMinute?: number;
   isOverdueNotified?: boolean;
+  // Campos para servicios temporales
+  es_temporal?: boolean;
+  servicio_original_id?: string | null;
 }
 
 interface TimerContextType {
@@ -79,6 +82,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [serverOffset, setServerOffset] = useState(0);
   const serverOffsetRef = useRef(0);
   const [loading, setLoading] = useState(true);
+  const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
   const user = useAuthStore((state) => state.user);
   const eventSourceRef = useRef<EventSource | null>(null);
   const timersRef = useRef<Timer[]>([]);
@@ -149,6 +153,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           total_usuarios: t.total_usuarios,
           comision_individual: t.comision_individual,
           isOverdueNotified: currentTimersMap.get(`${t.servicioId}-${t.roomId}`) || false,
+          es_temporal: t.es_temporal === 1 || t.es_temporal === true,
+          servicio_original_id: t.servicioOriginalId ? String(t.servicioOriginalId) : null,
         }));
 
         setTimers(activeTimers);
@@ -200,12 +206,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           metodo_pago: newTimerData.metodo_pago,
           waiter_name: newTimerData.waiter_name,
           habitacion_comision: newTimerData.habitacion_comision || 0,
-          anfitrionas_ids: typeof newTimerData.anfitrionas_ids === 'string' ? newTimerData.anfitrionas_ids.split(',').filter(Boolean) : (newTimerData.anfitrionas_ids || []),
+          anfitrionas_ids: typeof newTimerData.anfitrionas_ids === 'string' 
+            ? newTimerData.anfitrionas_ids.split(',').filter(Boolean) 
+            : (newTimerData.anfitrionas_ids || []),
           created_at: newTimerData.created_at || newTimerData.startTime,
           estado: newTimerData.estado || 2,
           total_usuarios: newTimerData.total_usuarios,
           comision_individual: newTimerData.comision_individual,
           isOverdueNotified: false,
+          es_temporal: newTimerData.es_temporal === 1 || newTimerData.es_temporal === true,
+          servicio_original_id: newTimerData.servicioOriginalId ? String(newTimerData.servicioOriginalId) : null,
         };
         setTimers((prev) => [
           ...prev.filter((t) => !(String(t.servicioId) === String(newTimer.servicioId) && t.tipoTransaccion === newTimer.tipoTransaccion)),
@@ -232,9 +242,24 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const targetTipo = payload.data.tipoTransaccion || 'servicio';
 
-        setTimers((prev) =>
-          prev.filter((t) => !(String(t.servicioId) === String(targetServicioId) && (t.tipoTransaccion === targetTipo || !t.tipoTransaccion))),
-        );
+        // Si el timer detenido es un temporal, reanudar el original LOCALMENTE
+        // como fallback por si timer_resumed llegó antes o no se procesó
+        const originalId = stoppedTimerInfo?.servicio_original_id;
+
+        setTimers((prev) => {
+          let next = prev.filter((t) => !(String(t.servicioId) === String(targetServicioId) && (t.tipoTransaccion === targetTipo || !t.tipoTransaccion)));
+          
+          if (originalId) {
+            next = next.map((t) => {
+              if (String(t.servicioId) === String(originalId) && t.tipoTransaccion === targetTipo) {
+                return { ...t, isPaused: false, estado: 2, lastAnnouncedMinute: undefined };
+              }
+              return t;
+            });
+          }
+          
+          return next;
+        });
 
         DeviceEventEmitter.emit('refresh_sales', {
           roomName: roomNameForEvent,
@@ -379,6 +404,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
               t.id === timer.id ? { ...t, isOverdueNotified: true } : t,
             ),
           );
+
+          // Mostrar modal persistente con info del timer expirado
+          setExpiredTimer(timer);
         }
       });
     }, 5000);
@@ -403,6 +431,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [handleSSEEvent]);
 
+  const handleDismissExpired = useCallback(() => {
+    setExpiredTimer(null);
+  }, []);
+
   return (
     <TimerContext.Provider
       value={{
@@ -413,6 +445,91 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
       }}
     >
       {children}
+
+      {/* Modal persistente de tiempo terminado */}
+      <Modal visible={!!expiredTimer} animationType="fade" transparent onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#1c1c1e', borderRadius: 24, width: '100%', maxWidth: 380, overflow: 'hidden' }}>
+            {/* Header rojo */}
+            <View style={{ backgroundColor: '#DC2626', padding: 20, alignItems: 'center' }}>
+              <Text style={{ fontSize: 28, marginBottom: 4 }}>⏰</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'center' }}>¡Tiempo Terminado!</Text>
+              <Text style={{ color: '#fca5a5', fontSize: 13, marginTop: 2, textAlign: 'center' }}>
+                {expiredTimer?.tipoTransaccion === 'servicio'
+                  ? 'Servicio completado'
+                  : expiredTimer?.tipoTransaccion === 'venta'
+                    ? 'Venta completada'
+                    : 'Tiempo terminado'}
+              </Text>
+            </View>
+
+            {/* Info */}
+            <View style={{ padding: 20, gap: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>🛏️</Text>
+                <View>
+                  <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Habitación</Text>
+                  <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{expiredTimer?.roomName || '—'}</Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>👤</Text>
+                <View>
+                  <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Cliente</Text>
+                  <Text style={{ color: '#fff', fontSize: 15 }}>{expiredTimer?.clienteNombre || '—'}</Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>
+                  {expiredTimer?.tipoTransaccion === 'venta' ? '🛒' : '🏠'}
+                </Text>
+                <View>
+                  <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Tipo</Text>
+                  <Text style={{ color: '#fff', fontSize: 15, textTransform: 'capitalize' }}>
+                    {expiredTimer?.tipoTransaccion === 'servicio'
+                      ? 'Servicio'
+                      : expiredTimer?.tipoTransaccion === 'venta'
+                        ? 'Venta'
+                        : '—'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>⏱️</Text>
+                <View>
+                  <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Duración</Text>
+                  <Text style={{ color: '#fff', fontSize: 15 }}>{expiredTimer?.duration || 0} minutos</Text>
+                </View>
+              </View>
+
+              <View style={{ borderTopWidth: 1, borderTopColor: '#333', paddingTop: 12, marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#9ca3af', fontSize: 12 }}>Código:</Text>
+                  <Text style={{ color: '#fff', fontSize: 13, fontFamily: 'monospace' }}>#{expiredTimer?.servicioCode || '—'}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Botón Entendido */}
+            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#333' }}>
+              <Pressable
+                onPress={handleDismissExpired}
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? '#b91c1c' : '#DC2626',
+                  paddingVertical: 14,
+                  borderRadius: 999,
+                  alignItems: 'center',
+                })}
+              >
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Entendido</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </TimerContext.Provider>
   );
 };

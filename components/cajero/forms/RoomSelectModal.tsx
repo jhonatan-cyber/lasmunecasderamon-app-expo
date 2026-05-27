@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿﻿import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   FlatList,
@@ -39,7 +39,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
 
-  // Una habitaciÃ³n estÃ¡ ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
+  // Una habitación está ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
   const isLibre = (room: Room) => {
     const estado = Number(room.estado ?? room.status ?? 0);
     return estado === 1; // Solo libre si estado = 1
@@ -51,7 +51,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
         <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Seleccionar HabitaciÃ³n
+              Seleccionar Habitación
             </Text>
             <Pressable onPress={onClose}>
               <Ionicons name="close" size={24} color={textPrimary} />
@@ -65,7 +65,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
               const estaLibre = isLibre(item);
-              const roomName = item.nombre || `HabitaciÃ³n ${item.id_habitacion || item.id}`;
+              const roomName = item.nombre || `Habitación ${item.id_habitacion || item.id}`;
 
               return (
                 <Pressable

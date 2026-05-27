@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useState } from 'react';
 import {
@@ -47,7 +47,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
         if (!dateStr) return 'Sin fecha';
         try {
             const date = parseDateSafe(dateStr);
-            if (isNaN(date.getTime())) return 'Fecha invÃ¡lida';
+            if (isNaN(date.getTime())) return 'Fecha inválida';
             const day = date.getUTCDate();
             const month = date.toLocaleDateString('es-ES', { month: 'short' });
             const year = date.getUTCFullYear();
@@ -82,7 +82,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                     }
                 }
             } else {
-                // Para comisiones ya viene bastante data, pero podrÃ­as extenderlo si fuera necesario
+                // Para comisiones ya viene bastante data, pero podrías extenderlo si fuera necesario
             }
         } catch (e) { console.error(e); } finally { setLoadingDetail(false); }
     };
@@ -131,7 +131,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                             <Text style={[styles.timeText, { color: textSecondary }]}>{formatTime(item.fecha_crea)}</Text>
                         </View>
                         <View style={styles.amountRow}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>{type === 'comisiones' ? 'ComisiÃ³n de Venta' : 'Propina'}</Text>
+                            <Text style={[styles.amountLabel, { color: textSecondary }]}>{type === 'comisiones' ? 'Comisión de Venta' : 'Propina'}</Text>
                             <Text style={[styles.amountValue, { color: isPendiente ? accentColor : '#10B981' }]}>${amount.toLocaleString()}</Text>
                         </View>
                         <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
@@ -196,7 +196,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                                     <Text style={[styles.modalTitle, { color: textPrimary }]}>
                                         Detalles
                                     </Text>
-                                    <Text style={[styles.modalSubtitle, { color: textSecondary }]}>CÃ³digo: {selectedItem?.codigo || selectedItem?.codigo_venta || '---'}</Text>
+                                    <Text style={[styles.modalSubtitle, { color: textSecondary }]}>Código: {selectedItem?.codigo || selectedItem?.codigo_venta || '---'}</Text>
                                 </View>
                                 <Pressable onPress={() => setModalVisible(false)} style={styles.closeBtn}>
                                     <Ionicons name="close" size={24} color={textPrimary} />
@@ -210,7 +210,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                                     </View>
                                 ) : (
                                     <View style={[styles.infoCard, { borderColor, backgroundColor: cardBg }]}>
-                                        <Text style={[styles.cardTitle, { color: textSecondary }]}>DATOS DE LA COMISIÃ“N</Text>
+                                        <Text style={[styles.cardTitle, { color: textSecondary }]}>DATOS DE LA COMISIÓN</Text>
                                         <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Cliente:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.cliente_nombre || 'Particular'}</Text></View>
                                         <View style={styles.infoRow}><Text style={{ color: textSecondary }}>Lugar:</Text><Text style={{ color: textPrimary, fontWeight: '700' }}>{selectedItem?.habitacion_nombre || 'Barra'}</Text></View>
                                         {selectedItem?.productos && (

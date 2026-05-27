@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿﻿import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -340,7 +340,7 @@ export default function CuentasScreen() {
 
         if (isManual) {
           showToast(
-            hasChanges ? "Ã‰xito" : "InformaciÃ³n",
+            hasChanges ? "Éxito" : "Información",
             hasChanges ? "Datos actualizados" : "Sin cambios",
             hasChanges ? "success" : ("info" as any),
           );
@@ -479,13 +479,13 @@ export default function CuentasScreen() {
           return;
         }
         dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false });
-        showToast("Ã‰xito", "Cuenta cobrada correctamente", "success");
+        showToast("Éxito", "Cuenta cobrada correctamente", "success");
         fetchCuentas();
       } else {
         showToast("Error", res.message || "Error al cobrar");
       }
     } catch {
-      showToast("Error", "Error de conexiÃ³n al procesar el cobro");
+      showToast("Error", "Error de conexión al procesar el cobro");
     } finally {
       dispatch({ type: "SET_COBRO_SUBMITTING", payload: false });
     }
@@ -591,7 +591,7 @@ export default function CuentasScreen() {
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
       }
     } catch {
-      showToast("Error", "Error de conexiÃ³n al cargar detalles");
+      showToast("Error", "Error de conexión al cargar detalles");
       dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
     } finally {
       dispatch({ type: "SET_LOADING_DETAIL", payload: false });
@@ -1059,7 +1059,7 @@ export default function CuentasScreen() {
               </TouchableOpacity>
               <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                   <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                  <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                  <Text style={styles.backTextHeader}>Atrás</Text>
               </Pressable>
           </View>
         }
@@ -1071,7 +1071,7 @@ export default function CuentasScreen() {
                 <Ionicons name="search" size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
                 <TextInput
                     style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#111827" }]}
-                    placeholder="Buscar por cÃ³digo o cliente..."
+                    placeholder="Buscar por código o cliente..."
                     placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
                     value={search}
                     onChangeText={(t) => dispatch({ type: "SET_SEARCH", payload: t })}
@@ -1164,7 +1164,7 @@ export default function CuentasScreen() {
               No hay cuentas registradas
             </Text>
             <Text style={[styles.emptySub, { color: textSecondary }]}>
-              Las cuentas aparecerÃ¡n cuando las crees en el registro.
+              Las cuentas aparecerán cuando las crees en el registro.
             </Text>
           </View>
         }
@@ -1250,7 +1250,7 @@ export default function CuentasScreen() {
                         </View>
 
                         <View style={styles.gridItem}>
-                          <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÃ“N / SECTOR</Text>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN / SECTOR</Text>
                           <Text style={[styles.gridValue, { color: textPrimary }]}>
                             {selectedCuenta.habitacion_numero || "Barra / General"}
                           </Text>
@@ -1586,7 +1586,7 @@ export default function CuentasScreen() {
                                           <Ionicons name="person-circle" size={18} color={accentColor} />
                                         )}
                                         <Text style={{ fontSize: 12, color: textPrimary, fontWeight: '800' }}>
-                                          VÃ­a: {det.added_by}
+                                          Vía: {det.added_by}
                                         </Text>
                                       </View>
                                     )}
@@ -1615,7 +1615,7 @@ export default function CuentasScreen() {
                                     </View>
 
                                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#F43F5E", textTransform: 'uppercase' }}>ComisiÃ³n</Text>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#F43F5E", textTransform: 'uppercase' }}>Comisión</Text>
                                       <Text style={{ fontSize: 16, fontWeight: '900', color: "#F43F5E" }}>
                                         ${Number(det.comision || 0).toLocaleString('es-CL')}
                                       </Text>
@@ -1648,7 +1648,7 @@ export default function CuentasScreen() {
                       {/* Propina (solo si existe y es > 0) */}
                       {(selectedCuenta.propina > 0) && (
                         <View style={[styles.summaryRow, { marginBottom: 12 }]}>
-                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>AtenciÃ³n / Propina (+)</Text>
+                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>Atención / Propina (+)</Text>
                           <Text style={[styles.summaryValue, { color: "#10B981", fontWeight: '700' }]}>
                             ${Number(selectedCuenta.propina).toLocaleString('es-CL')}
                           </Text>
@@ -1901,7 +1901,7 @@ export default function CuentasScreen() {
                 Opciones de Cuenta
               </Text>
               <Text style={[styles.actionSheetSub, { color: textSecondary }]}>
-                CÃ³digo: {activeCuenta?.codigo}
+                Código: {activeCuenta?.codigo}
               </Text>
             </View>
             <Pressable

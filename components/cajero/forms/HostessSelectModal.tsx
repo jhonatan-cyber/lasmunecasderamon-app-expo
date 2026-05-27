@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+﻿﻿import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   Image,
@@ -57,7 +57,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               </Text>
               {max !== undefined && (
                 <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                  MÃ¡ximo {max} seleccionadas
+                  Máximo {max} seleccionadas
                 </Text>
               )}
             </View>

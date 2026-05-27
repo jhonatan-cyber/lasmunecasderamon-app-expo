@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -75,7 +75,7 @@ export const ProductCard = ({
                 <View style={styles.productInfo}>
                     <Text style={[styles.productName, { color: textPrimary }]}>{product.name}</Text>
                     <Text style={[styles.productDesc, { color: textSecondary }]} numberOfLines={1}>
-                        {product.description || 'Sin descripciÃ³n'}
+                        {product.description || 'Sin descripción'}
                     </Text>
                     <Text style={styles.productPrice}>${product.price.toLocaleString()}</Text>
                 </View>
@@ -125,7 +125,7 @@ export const ProductCard = ({
                                 <Text style={[styles.configBtnText, { color: textPrimary }]} numberOfLines={1}>
                                     {cartItem?.selectedRoom
                                         ? rooms.find(r => r.id === cartItem.selectedRoom)?.name
-                                        : 'HabitaciÃ³n'}
+                                        : 'Habitación'}
                                 </Text>
                             </Pressable>
                         )}

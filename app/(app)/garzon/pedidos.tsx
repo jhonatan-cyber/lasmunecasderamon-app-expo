@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -58,24 +58,24 @@ export default function PedidosScreen() {
                     .sort((a: Category, b: Category) => a.display_order - b.display_order);
                 setCategories(active);
             } else {
-                setError(data.message || 'Error al cargar categorÃ­as');
+                setError(data.message || 'Error al cargar categorías');
             }
 
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
+                    text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
             }
         } catch (err: any) {
-            setError(err.message || 'Error de conexiÃ³n');
+            setError(err.message || 'Error de conexión');
             if (isManual) {
                 Toast.show({
                     type: 'error',
                     text1: 'Error',
-                    text2: 'No se pudo actualizar el catÃ¡logo',
+                    text2: 'No se pudo actualizar el catálogo',
                     visibilityTime: 3000
                 });
             }
@@ -139,12 +139,12 @@ export default function PedidosScreen() {
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <PremiumHeader 
-                title="CategorÃ­as"
+                title="Categorías"
                 subtitle="Selecciona una para ver los productos"
                 rightComponent={
                     <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                        <Text style={styles.backTextHeader}>Atrás</Text>
                     </Pressable>
                 }
             />
@@ -171,8 +171,8 @@ export default function PedidosScreen() {
                         <View style={[styles.emptyIconBg, { backgroundColor: cardBg }]}>
                             <Ionicons name="basket-outline" size={60} color={textSecondary} />
                         </View>
-                        <Text style={[styles.emptyText, { color: textPrimary }]}>No hay categorÃ­as disponibles</Text>
-                        <Text style={[styles.emptySubtext, { color: textSecondary }]}>Por el momento no se han encontrado categorÃ­as activas para mostrar.</Text>
+                        <Text style={[styles.emptyText, { color: textPrimary }]}>No hay categorías disponibles</Text>
+                        <Text style={[styles.emptySubtext, { color: textSecondary }]}>Por el momento no se han encontrado categorías activas para mostrar.</Text>
                     </View>
                 }
             />

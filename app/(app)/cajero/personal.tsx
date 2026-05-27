@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
@@ -73,9 +73,9 @@ export default function PersonalScreen() {
                     const r = u.role?.toLowerCase() || '';
                     // Excluir administrador
                     if (r.includes('administrador') || r.includes('admin')) return false;
-                    // Incluir garzÃ³n, mesero, cajero y anfitriona
+                    // Incluir garzón, mesero, cajero y anfitriona
                     return r.includes('garzon') || 
-                           r.includes('garzÃ³n') || 
+                           r.includes('garzón') || 
                            r.includes('mesero') ||
                            r.includes('cajero') ||
                            r.includes('anfitriona');
@@ -91,7 +91,7 @@ export default function PersonalScreen() {
                     Toast.show({
                         type: 'success',
                         text1: 'Actualizado',
-                        text2: 'Lista de personal al dÃ­a',
+                        text2: 'Lista de personal al día',
                     });
                 }
             }
@@ -140,7 +140,7 @@ export default function PersonalScreen() {
             if (data.success) {
                 Toast.show({
                     type: 'success',
-                    text1: 'Ã‰xito',
+                    text1: 'Éxito',
                     text2: 'Token QR generado correctamente',
                 });
                 
@@ -177,7 +177,7 @@ export default function PersonalScreen() {
             try {
                 const data = await apiClient(`/users/${selectedUser.id}`);
                 if (data.success && data.user) {
-                    // Si el QR cambiÃ³ (ya fue usado), actualizar y cerrar el modal
+                    // Si el QR cambió (ya fue usado), actualizar y cerrar el modal
                     if (data.user.qr_token !== selectedUser.qr_token) {
                         setSelectedUser(data.user);
                         setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
@@ -185,8 +185,8 @@ export default function PersonalScreen() {
                         setSelectedUser(null);
                         Toast.show({
                             type: 'info',
-                            text1: 'ðŸ“± CÃ³digo QR usado',
-                            text2: 'El usuario ya registrÃ³ su asistencia'
+                            text1: 'ðŸ“± Código QR usado',
+                            text2: 'El usuario ya registró su asistencia'
                         });
                     }
                 }
@@ -318,7 +318,7 @@ export default function PersonalScreen() {
                             </Pressable>
                             <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                                 <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                                <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                                <Text style={styles.backTextHeader}>Atrás</Text>
                             </Pressable>
                         </View>
                     }
@@ -351,7 +351,7 @@ export default function PersonalScreen() {
                         </Pressable>
                         <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
+                            <Text style={styles.backTextHeader}>Atrás</Text>
                         </Pressable>
                     </View>
                 }
@@ -462,13 +462,13 @@ export default function PersonalScreen() {
                                         <View style={styles.qrFooter}>
                                             <Ionicons name="shield-checkmark" size={14} color={accentColor} />
                                             <Text style={[styles.qrHint, { color: textSecondary, marginTop: 0 }]}>
-                                                Token de seguridad personal Ãºnico
+                                                Token de seguridad personal único
                                             </Text>
                                         </View>
 
                                         {codigoAsistencia ? (
                                             <View style={[styles.codigoBadge, { borderColor: accentColor }]}>
-                                                <Text style={[styles.codigoLabel, { color: textSecondary }]}>CÃ³digo: </Text>
+                                                <Text style={[styles.codigoLabel, { color: textSecondary }]}>Código: </Text>
                                                 <Text style={[styles.codigoValue, { color: accentColor }]}>{codigoAsistencia}</Text>
                                             </View>
                                         ) : null}
@@ -496,9 +496,9 @@ export default function PersonalScreen() {
                                     <View style={[styles.noQrIconCircle, { backgroundColor: `${accentColor}15` }]}>
                                         <Ionicons name="qr-code-outline" size={56} color={accentColor} />
                                     </View>
-                                    <Text style={[styles.noQrTitle, { color: textPrimary }]}>Sin CÃ³digo QR</Text>
+                                    <Text style={[styles.noQrTitle, { color: textPrimary }]}>Sin Código QR</Text>
                                     <Text style={[styles.noQrText, { color: textSecondary }]}>
-                                        Este usuario no tiene un cÃ³digo de asistencia asignado
+                                        Este usuario no tiene un código de asistencia asignado
                                     </Text>
                                     <Pressable 
                                         style={[styles.generateBtn, { backgroundColor: accentColor }]}
@@ -510,7 +510,7 @@ export default function PersonalScreen() {
                                         ) : (
                                             <>
                                                 <Ionicons name="qr-code-outline" size={20} color="white" />
-                                                <Text style={styles.generateBtnText}>Generar CÃ³digo QR</Text>
+                                                <Text style={styles.generateBtnText}>Generar Código QR</Text>
                                             </>
                                         )}
                                     </Pressable>

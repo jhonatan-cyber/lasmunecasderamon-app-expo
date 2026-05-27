@@ -29,13 +29,13 @@ const commonContentContainerStyle: ViewStyle = {
 
 const commonText1Style: TextStyle = {
   fontSize: 17,
-  fontWeight: "800",
+  fontWeight: "700",
   color: "#111827",
 };
 
 const commonText2Style: TextStyle = {
   fontSize: 14,
-  fontWeight: "600",
+  fontWeight: "500",
   color: "#6B7280",
 };
 
@@ -84,7 +84,7 @@ export const toastConfig: ToastConfig = {
       text2NumberOfLines={2}
       renderLeadingIcon={() => (
         <View style={{ justifyContent: "center", paddingLeft: 15 }}>
-          <Text style={{ fontSize: 24 }}>🛍️</Text>
+          <Text style={{ fontSize: 22 }}>📋</Text>
         </View>
       )}
     />

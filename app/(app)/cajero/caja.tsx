@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+﻿﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
@@ -198,8 +198,8 @@ export default function CajaScreen() {
                 });
             }
         } catch {
-            if (isManual) showToast('Error', 'No se pudo actualizar la informaciÃ³n');
-            else showToast('Error', 'No se pudo cargar la informaciÃ³n de la caja');
+            if (isManual) showToast('Error', 'No se pudo actualizar la información');
+            else showToast('Error', 'No se pudo cargar la información de la caja');
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -225,7 +225,7 @@ export default function CajaScreen() {
             numericMonto = stats?.balance_total || 0;
         } else {
             const cleanMonto = monto.replace(/\./g, '');
-            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto vÃ¡lido'); return; }
+            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
             numericMonto = Number(cleanMonto);
         }
 
@@ -243,7 +243,7 @@ export default function CajaScreen() {
                 else showToast('Error', res.message || 'Error al abrir caja');
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister/retiros', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
@@ -253,7 +253,7 @@ export default function CajaScreen() {
                 }
                 else showToast('Error', res.message || 'Error al retirar efectivo');
             } else {
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister', { method: 'PATCH', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto_cierre: numericMonto, usuario_id_cierre: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
@@ -301,7 +301,7 @@ export default function CajaScreen() {
                             accessibilityLabel="Volver"
                         >
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
+                            <Text style={styles.backTextRight}>Atrás</Text>
                         </Pressable>
                     </View>
                 }
