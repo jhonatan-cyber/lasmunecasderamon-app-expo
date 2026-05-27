@@ -100,10 +100,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
         authenticateWithBiometric: async () => {
             try {
                 const result = await LocalAuthentication.authenticateAsync({
-                    promptMessage: 'AutentÃ­cate para acceder',
+                    promptMessage: 'Autentícate para acceder',
                     cancelLabel: 'Cancelar',
                     disableDeviceFallback: false,
-                    fallbackLabel: 'Usar contraseÃ±a',
+                    fallbackLabel: 'Usar contraseña',
                 });
 
                 return result.success;
@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 } else {
                     let emailToSend = username.trim();
                     if (!emailToSend.includes('@')) {
-                        emailToSend = `${emailToSend}@lasmuÃ±ecasderamon.com`;
+                        emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
                     }
                     payload.email = emailToSend;
                     payload.password = password;
@@ -167,7 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 }
 
                 if (!response.success && !response.token) {
-                    throw new Error(response.message || 'Error en autenticaciÃ³n');
+                    throw new Error(response.message || 'Error en autenticación');
                 }
 
                 const { token, user, asistenciaRegistrada = false } = response;

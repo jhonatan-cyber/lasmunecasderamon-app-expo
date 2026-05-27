@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -35,7 +35,7 @@ const FlashList = ShopifyFlashList as any;
 
 // Utils for status colors and labels
 const statusColors: Record<number, string> = {
-  1: "#10B981", // Pagada -> Verde (estándar de éxito)
+  1: "#10B981", // Pagada -> Verde (estÃ¡ndar de Ã©xito)
   2: "#3B82F6", // En Proceso -> Azul
   3: "#EF4444", // Anulada -> Rojo
   4: "#F59E0B", // Por Anular -> Ambar
@@ -44,7 +44,7 @@ const statusColors: Record<number, string> = {
 const statusLabels: Record<number, string> = {
   1: "Completado",
   2: "En proceso",
-  3: "Pdte. Anulación",
+  3: "Pdte. AnulaciÃ³n",
   0: "Anulado",
 };
 
@@ -90,7 +90,7 @@ function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimar
   );
 }
 
-// Persistencia de estado de carga para evitar skeleton en re-navegación
+// Persistencia de estado de carga para evitar skeleton en re-navegaciÃ³n
 let initialVentasLoaded = false;
 
 export default function VentasScreen() {
@@ -320,7 +320,7 @@ export default function VentasScreen() {
       if (isManual) {
         Toast.show({
           type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Éxito" : "Información",
+          text1: hasChanges ? "Ã‰xito" : "InformaciÃ³n",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
           visibilityTime: 3000,
         });
@@ -361,8 +361,8 @@ export default function VentasScreen() {
     const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
       console.log("[DEBUG] Event refresh_sales received, updating list...", data);
       
-      // La notificación global (modal) ya la maneja GlobalTimerAlert.tsx
-      // Aquí solo refrescamos la lista.
+      // La notificaciÃ³n global (modal) ya la maneja GlobalTimerAlert.tsx
+      // AquÃ­ solo refrescamos la lista.
       fetchVentas();
       refreshTimers();
     });
@@ -429,7 +429,7 @@ export default function VentasScreen() {
       visible: true,
       title: "Finalizar Venta",
       message:
-        "¿Estás seguro de que deseas finalizar esta venta? Esto liberará la habitación y detendrá el temporizador.",
+        "Â¿EstÃ¡s seguro de que deseas finalizar esta venta? Esto liberarÃ¡ la habitaciÃ³n y detendrÃ¡ el temporizador.",
       type: "danger",
       onConfirm: async () => {
         try {
@@ -441,7 +441,7 @@ export default function VentasScreen() {
 
           if (res.success || (res && !res.error)) {
             setAlertConfig(prev => ({ ...prev, visible: false }));
-            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con éxito." });
+            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con Ã©xito." });
             fetchVentas();
             refreshTimers();
           } else {
@@ -453,7 +453,7 @@ export default function VentasScreen() {
           }
         } catch {
           setAlertConfig(prev => ({ ...prev, visible: false }));
-          showToast("Error", "Error al procesar la finalización de la venta");
+          showToast("Error", "Error al procesar la finalizaciÃ³n de la venta");
         }
       },
     });
@@ -481,7 +481,7 @@ export default function VentasScreen() {
     }
 
     if (!motivo) {
-      showToast("Error", "Debes ingresar el motivo de la anulación.");
+      showToast("Error", "Debes ingresar el motivo de la anulaciÃ³n.");
       return;
     }
 
@@ -502,18 +502,18 @@ export default function VentasScreen() {
         closeAnulacionModal();
         showToast(
           "Solicitud Enviada",
-          "La anulación ha sido solicitada al administrador por WhatsApp.",
+          "La anulaciÃ³n ha sido solicitada al administrador por WhatsApp.",
           "success",
         );
         fetchVentas();
       } else {
         showToast(
           "Error",
-          res.message || res.error || "No se pudo solicitar la anulación",
+          res.message || res.error || "No se pudo solicitar la anulaciÃ³n",
         );
       }
     } catch {
-      showToast("Error", "Error al procesar la solicitud de anulación");
+      showToast("Error", "Error al procesar la solicitud de anulaciÃ³n");
     } finally {
       setAnulandoVenta(false);
     }
@@ -521,8 +521,8 @@ export default function VentasScreen() {
 
   const renderVentaCard = ({ item }: { item: any }) => {
 const productCount = item.item_count || 0;
-    // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
-    // O mejor aún: usar una rotación del color de acento según la posición/ID
+    // Generar un color dinÃ¡mico basado en el ID para variedad, pero manteniendo el status color si es importante
+    // O mejor aÃºn: usar una rotaciÃ³n del color de acento segÃºn la posiciÃ³n/ID
     const ventaId = getVentaId(item);
     const itemAccent = rotateColor(accentColor, ((Number(ventaId) || 0) % 10) * 36);
     const statusColor = item.estado === 2 ? itemAccent : (statusColors[item.estado] || "#6B7280");
@@ -726,7 +726,7 @@ const productCount = item.item_count || 0;
                 {item.propina > 0 && (
                   <>
                     <Text style={{ color: textSecondary, marginHorizontal: 4 }}>
-                              •
+                              â€¢
                     </Text>
                     <Text style={styles.cardPropinaGreen}>
                       +${item.propina.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
@@ -758,7 +758,7 @@ const productCount = item.item_count || 0;
               </TouchableOpacity>
               <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
                   <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextRight}>Atrás</Text>
+              <Text style={styles.backTextRight}>AtrÃ¡s</Text>
               </Pressable>
           </View>
         }
@@ -824,7 +824,7 @@ const productCount = item.item_count || 0;
                     : { color: isDark ? "#9CA3AF" : "#64748B" },
                 ]}
               >
-              Ventas con Habitación
+              Ventas con HabitaciÃ³n
               </Text>
               {timers.filter((t) => t.tipoTransaccion === "venta").length >
                 0 && (
@@ -886,7 +886,7 @@ const productCount = item.item_count || 0;
               No hay ventas registradas
             </Text>
             <Text style={[styles.emptySub, { color: textSecondary }]}>
-                Las ventas aparecerán conforme se procesen los pagos.
+                Las ventas aparecerÃ¡n conforme se procesen los pagos.
             </Text>
           </View>
         }
@@ -909,7 +909,7 @@ const productCount = item.item_count || 0;
                   <View style={styles.modalHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
-                  <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
+                  <Text style={[styles.modalSubText, { color: textSecondary }]}>CÃ³digo: {selectedVenta.codigo}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <View style={{ backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: (statusColors[selectedVenta.estado] || accentColor) + '30' }}>
@@ -939,15 +939,15 @@ const productCount = item.item_count || 0;
                           {selectedVenta.pedido_id ? (
                             <View style={styles.origenPersonas}>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || '—'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
+                                  Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || 'â€”'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
                               </Text>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || 'â€”'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                               </Text>
                             </View>
                           ) : (
                             <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || '—'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || 'â€”'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                             </Text>
                           )}
                         </View>
@@ -957,7 +957,7 @@ const productCount = item.item_count || 0;
                         <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
                           <Ionicons name="bed-outline" size={16} color={accentColor} />
                           <Text style={[styles.origenPersonaLabel, { color: textSecondary, flex: 1 }]}>
-                                Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || '—'}</Text>
+                                HabitaciÃ³n: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || 'â€”'}</Text>
                           </Text>
                           {selectedVenta.tiempo ? (
                             <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
@@ -979,7 +979,7 @@ const productCount = item.item_count || 0;
                           </Text>
                         </View>
                         <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
-                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>Método Pago</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>MÃ©todo Pago</Text>
                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                              <Ionicons name={payMethodIcons[selectedVenta.metodo_pago] || "wallet"} size={16} color={accentColor} />
                              <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimary }}>{String(selectedVenta.metodo_pago || 'EFECTIVO').toUpperCase()}</Text>
@@ -1010,7 +1010,7 @@ const productCount = item.item_count || 0;
                         {selectedVenta.comisiones_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Distribución de Comisiones</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>DistribuciÃ³n de Comisiones</Text>
                               {selectedVenta.total_comision > 0 && (
                                 <Text style={{ fontSize: 14, fontWeight: '900', color: accentColor }}>${Number(selectedVenta.total_comision).toLocaleString('es-CL')} total</Text>
                               )}
@@ -1034,7 +1034,7 @@ const productCount = item.item_count || 0;
                         )}
                         {selectedVenta.propinas_detalle?.length > 0 && (
                           <View style={{ backgroundColor: isDark ? '#1A1A1A' : '#FFF', padding: 18, borderRadius: 24, borderWidth: 1, borderColor: borderColor }}>
-                          <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>Distribución de Propinas</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', marginBottom: 15, letterSpacing: 0.5 }}>DistribuciÃ³n de Propinas</Text>
                             {selectedVenta.propinas_detalle.map((p: any, idx: number) => (
                               <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: idx === selectedVenta.propinas_detalle.length - 1 ? 0 : 12 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -1156,7 +1156,7 @@ const productCount = item.item_count || 0;
               <View style={[styles.anulacionIconBox, { backgroundColor: "#EF444415" }]}>
                 <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
               </View>
-              <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar Anulación</Text>
+              <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar AnulaciÃ³n</Text>
               <Text style={[styles.anulacionSubtitle, { color: textSecondary }]}>
                 Completa el monto y el motivo para enviar la solicitud al administrador.
               </Text>
@@ -1169,7 +1169,7 @@ const productCount = item.item_count || 0;
               ]}
             >
               <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
-                Código: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.codigo || "-"}</Text>
+                CÃ³digo: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.codigo || "-"}</Text>
               </Text>
               <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
                 Cliente: <Text style={{ color: textPrimary, fontWeight: "800" }}>{activeVenta?.cliente_nombre || "Sin cliente"}</Text>
@@ -1200,11 +1200,11 @@ const productCount = item.item_count || 0;
             </View>
 
             <View style={styles.anulacionField}>
-              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Motivo de la anulación *</Text>
+              <Text style={[styles.anulacionLabel, { color: textPrimary }]}>Motivo de la anulaciÃ³n *</Text>
               <TextInput
                 value={motivoAnulacion}
                 onChangeText={setMotivoAnulacion}
-                placeholder="Describe el motivo de la anulación"
+                placeholder="Describe el motivo de la anulaciÃ³n"
                 placeholderTextColor={textSecondary}
                 editable={!anulandoVenta}
                 multiline
@@ -1255,7 +1255,7 @@ const productCount = item.item_count || 0;
             <View style={styles.actionSheetHeader}>
               <View style={[styles.actionSheetHandle, { backgroundColor: `${accentColor}60` }]} />
               <Text style={[styles.actionSheetTitle, { color: textPrimary }]}>Opciones de Venta</Text>
-              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>Código: {activeVenta?.codigo}</Text>
+              <Text style={[styles.actionSheetSub, { color: textSecondary }]}>CÃ³digo: {activeVenta?.codigo}</Text>
             </View>
             <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={() => {
               const ventaId = getVentaId(activeVenta);
@@ -1271,7 +1271,7 @@ const productCount = item.item_count || 0;
                 <View style={[styles.actionIconBox, { backgroundColor: "#EF444415" }]}>
                   <Ionicons name="trash-outline" size={22} color="#EF4444" />
                 </View>
-                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar Anulación</Text>
+                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar AnulaciÃ³n</Text>
               </Pressable>
             )}
             <Pressable style={[styles.actionCancelBtn, { backgroundColor: accentColor + '15', borderWidth: 1, borderColor: accentColor + '40' }]} onPress={() => setActionSheetVisible(false)}>
@@ -1331,14 +1331,14 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(155,155,155,0.1)",
   },
   backBtn: {
     height: 44,
-    borderRadius: 22,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: 'rgba(155,155,155,0.1)',
@@ -1351,7 +1351,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 38,
-    borderRadius: 12,
+    borderRadius: 9999,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     gap: 6
@@ -1363,7 +1363,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 9999,
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#E11D48",
@@ -1553,7 +1553,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 9999,
     backgroundColor: "rgba(0,0,0,0.05)",
     justifyContent: "center",
     alignItems: "center",
@@ -1699,7 +1699,7 @@ const styles = StyleSheet.create({
   hostessTextDetail: { fontSize: 13, fontWeight: "800", color: "#E11D48" },
 
   tableContainer: {
-    borderRadius: 16,
+    borderRadius: 9999,
     borderWidth: 1,
     overflow: "hidden",
     marginBottom: 20,
@@ -1735,7 +1735,7 @@ const styles = StyleSheet.create({
 
   modalCloseBtn: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
@@ -1775,7 +1775,7 @@ const styles = StyleSheet.create({
   toastBtn: {
     width: "100%",
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1816,7 +1816,7 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 16, fontWeight: "700" },
   actionCancelBtn: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
@@ -1891,7 +1891,7 @@ const styles = StyleSheet.create({
   anulacionSecondaryBtn: {
     flex: 1,
     height: 52,
-    borderRadius: 16,
+    borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -1903,7 +1903,7 @@ const styles = StyleSheet.create({
   anulacionPrimaryBtn: {
     flex: 1,
     height: 52,
-    borderRadius: 16,
+    borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1917,7 +1917,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "rgba(155,155,155,0.05)",
-    borderRadius: 16,
+    borderRadius: 9999,
     padding: 4,
     marginTop: 15,
     borderWidth: 1,
@@ -1925,7 +1925,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1942,7 +1942,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EF4444",
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 9999,
   },
   tabBadgeText: {
     color: "#FFF",
@@ -1977,7 +1977,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 9999,
     marginBottom: 8,
   },
   finishBtnText: {

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -154,13 +154,32 @@ export function StaffCallOverlay() {
     const handleAccept = async (id: number | string) => {
         setAccepting(id);
         try {
+            const now = new Date();
+            const atendidoPorNombre =
+                user?.name ||
+                user?.username ||
+                `${(user as any)?.nombre || ''} ${(user as any)?.apellido || ''}`.trim() ||
+                'Staff';
+
             const res = await apiClient('/notifications/assistance/accept', {
                 method: 'POST',
-                body: JSON.stringify({ id })
+                body: JSON.stringify({
+                    id,
+                    estado: 'atendido',
+                    atendido_por_id: user?.id,
+                    atendido_por_nombre: atendidoPorNombre,
+                    fecha_atencion: now.toISOString().slice(0, 10),
+                    hora_atencion: now.toTimeString().slice(0, 8),
+                    atendido_en: now.toISOString(),
+                })
             });
 
             if (res.success) {
-                Toast.show({ type: 'success', text1: 'Llamado Aceptado', text2: 'Dirígete a atender' });
+                Toast.show({
+                    type: 'success',
+                    text1: 'Llamado atendido',
+                    text2: `${atendidoPorNombre} • ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                });
                 setPendingCalls(prev => prev.filter(c => c.id !== id));
             } else {
                 Toast.show({ type: 'error', text1: 'Atención', text2: res.message });
@@ -172,7 +191,6 @@ export function StaffCallOverlay() {
             setAccepting(null);
         }
     };
-
     if ((!isStaff && !isHostess) || (isStaff && pendingCalls.length === 0) || (isHostess)) {
         // Las anfitrionas no ven las tarjetas, solo escuchan los eventos.
         if (isHostess || pendingCalls.length === 0) return null;
@@ -291,7 +309,7 @@ const styles = StyleSheet.create({
     },
     btn: {
         height: 48,
-        borderRadius: 14,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -301,5 +319,6 @@ const styles = StyleSheet.create({
         fontWeight: '900',
     }
 });
+
 
 

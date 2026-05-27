@@ -76,7 +76,7 @@ export function useGratificaciones() {
       setEmployees(filteredEmployees);
 
       if (isManual) {
-        Toast.show({ type: 'success', text1: '?xito', text2: 'Gratificaciones actualizadas' });
+        Toast.show({ type: 'success', text1: 'Éxito', text2: 'Gratificaciones actualizadas' });
       }
     } catch (err: any) {
       const message = err?.message || 'Error al cargar gratificaciones';
@@ -100,7 +100,7 @@ export function useGratificaciones() {
         });
 
         if (!response?.success) {
-          throw new Error(response?.message || 'No se pudo crear la gratificaci?n');
+          throw new Error(response?.message || 'No se pudo crear la gratificación');
         }
 
         await fetchData();
@@ -109,13 +109,13 @@ export function useGratificaciones() {
           text1: 'Solicitud enviada',
           text2:
             response.pendingApproval
-              ? 'Se envi? al administrador por WhatsApp para aprobaci?n'
-              : 'Gratificaci?n registrada correctamente'
+              ? 'Se envió al administrador por WhatsApp para aprobación'
+              : 'Gratificación registrada correctamente'
         });
 
         return response;
       } catch (err: any) {
-        const message = err?.message || 'Error al crear la gratificaci?n';
+        const message = err?.message || 'Error al crear la gratificación';
         Toast.show({ type: 'error', text1: 'Error', text2: message });
         throw err;
       } finally {

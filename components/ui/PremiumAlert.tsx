@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -65,7 +65,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             <View style={styles.modalOverlay}>
                 <View style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}>
 
-                    {/* Botón cerrar ✕ — esquina superior derecha */}
+                    {/* BotÃ³n cerrar âœ• â€” esquina superior derecha */}
                     <Pressable
                         onPress={onCancel ?? onConfirm}
                         style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
         right: 16,
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     alertBtn: {
         flex: 1,
         height: 54,
-        borderRadius: 18,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 12,

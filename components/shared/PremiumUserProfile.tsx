@@ -32,7 +32,7 @@ const getRoleLabel = (role?: string) => {
         case 'anfitriona':
             return 'Anfitriona';
         case 'garzon':
-            return 'Garz?n';
+            return 'Garzón';
         case 'cajero':
             return 'Cajero';
         default:

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   Image,
@@ -57,7 +57,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               </Text>
               {max !== undefined && (
                 <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                  Máximo {max} seleccionadas
+                  MÃ¡ximo {max} seleccionadas
                 </Text>
               )}
             </View>
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   modalActionBtn: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,

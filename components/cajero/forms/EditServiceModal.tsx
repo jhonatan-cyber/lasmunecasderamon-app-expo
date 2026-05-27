@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -64,7 +64,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 console.log('[EditServiceModal] Total habitaciones:', res.data.length);
 
                 res.data.forEach((h: any, index: number) => {
-                    console.log(`[EditServiceModal] Habitación ${index}:`, {
+                    console.log(`[EditServiceModal] HabitaciÃ³n ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
                         tiempo: h.tiempo || h.time,
@@ -215,7 +215,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             if (res.success) {
                 Toast.show({
                     type: 'success',
-                    text1: 'Éxito',
+                    text1: 'Ã‰xito',
                     text2: 'Nuevo servicio iniciado (Principal pausado)'
                 });
                 onSuccess();
@@ -228,7 +228,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 });
             }
         } catch {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
+            Toast.show({ type: 'error', text1: 'Error', text2: 'OcurriÃ³ un error inesperado' });
         } finally {
             setLoading(false);
         }
@@ -246,7 +246,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             <View style={styles.overlay}>
                 <View style={[styles.modalContainer, { backgroundColor: bg }]}>
                     <View style={styles.header}>
-                        <Text style={[styles.title, { color: textPrimary }]}>Añadir Consumo / Servicio</Text>
+                        <Text style={[styles.title, { color: textPrimary }]}>AÃ±adir Consumo / Servicio</Text>
                         <Pressable onPress={onClose} style={styles.closeBtn}>
                             <Ionicons name="close" size={24} color={textSecondary} />
                         </Pressable>
@@ -254,18 +254,18 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
                     <ScrollView style={styles.content}>
                         <View style={styles.infoBox}>
-                            <Text style={[styles.infoLabel, { color: textSecondary }]}>Habitación: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.roomName}</Text></Text>
+                            <Text style={[styles.infoLabel, { color: textSecondary }]}>HabitaciÃ³n: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.roomName}</Text></Text>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>Cliente: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.clienteNombre}</Text></Text>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>Anfitrionas actuales: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>{timer.anfitrionas}</Text></Text>
                             <Text style={[styles.infoLabel, { color: textSecondary }]}>
-                                Precio habitación: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>
+                                Precio habitaciÃ³n: <Text style={{ color: textPrimary, fontWeight: 'bold' }}>
                                     ${(precioHabitacionSinComision || 0).toLocaleString('es-CL')}
                                 </Text>
                                 {precioHabitacionSinComision === 0 && <Text style={{ color: '#EF4444', fontSize: 11 }}> (No encontrado)</Text>}
                             </Text>
                         </View>
 
-                        {/* Selección de Anfitrionas */}
+                        {/* SelecciÃ³n de Anfitrionas */}
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: textSecondary }]}>ANFITRIONAS ({anfitrionasSeleccionadas.length} seleccionadas)</Text>
                             <Pressable
@@ -322,7 +322,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                                 </View>
 
                                 <View style={styles.summaryRow}>
-                                    <Text style={[styles.summaryLabel, { color: textSecondary }]}>Habitación ({anfitrionasSeleccionadas.length} anfitriona{anfitrionasSeleccionadas.length > 1 ? 's' : ''})</Text>
+                                    <Text style={[styles.summaryLabel, { color: textSecondary }]}>HabitaciÃ³n ({anfitrionasSeleccionadas.length} anfitriona{anfitrionasSeleccionadas.length > 1 ? 's' : ''})</Text>
                                     <Text style={[styles.summaryValue, { color: textPrimary }]}>
                                         ${(precioHabitacionSinComision * anfitrionasSeleccionadas.length).toLocaleString('es-CL')}
                                     </Text>
@@ -367,7 +367,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                         <View style={styles.warningBox}>
                             <Ionicons name="alert-circle" size={20} color="#F59E0B" />
                             <Text style={styles.warningText}>
-                                Al guardar, el servicio actual de {timer.roomName} se pausará automáticamente.
+                                Al guardar, el servicio actual de {timer.roomName} se pausarÃ¡ automÃ¡ticamente.
                             </Text>
                         </View>
                     </ScrollView>
@@ -393,7 +393,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     </View>
                 </View>
 
-                {/* Modal de Selección de Anfitrionas */}
+                {/* Modal de SelecciÃ³n de Anfitrionas */}
                 <HostessSelectModal
                     visible={showHostessModal}
                     onClose={() => setShowHostessModal(false)}
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     btn: {
         flex: 1,
         height: 54,
-        borderRadius: 16,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
     },

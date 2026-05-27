@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
         bottom: 20, 
         height: 56, 
         paddingHorizontal: 24,
-        borderRadius: 28, 
+        borderRadius: 9999,
         flexDirection: 'row',
         alignItems: 'center', 
         justifyContent: 'center', 

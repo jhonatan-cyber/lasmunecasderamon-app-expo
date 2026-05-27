@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -340,7 +340,7 @@ export default function CuentasScreen() {
 
         if (isManual) {
           showToast(
-            hasChanges ? "Éxito" : "Información",
+            hasChanges ? "Ã‰xito" : "InformaciÃ³n",
             hasChanges ? "Datos actualizados" : "Sin cambios",
             hasChanges ? "success" : ("info" as any),
           );
@@ -479,13 +479,13 @@ export default function CuentasScreen() {
           return;
         }
         dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false });
-        showToast("Éxito", "Cuenta cobrada correctamente", "success");
+        showToast("Ã‰xito", "Cuenta cobrada correctamente", "success");
         fetchCuentas();
       } else {
         showToast("Error", res.message || "Error al cobrar");
       }
     } catch {
-      showToast("Error", "Error de conexión al procesar el cobro");
+      showToast("Error", "Error de conexiÃ³n al procesar el cobro");
     } finally {
       dispatch({ type: "SET_COBRO_SUBMITTING", payload: false });
     }
@@ -591,7 +591,7 @@ export default function CuentasScreen() {
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
       }
     } catch {
-      showToast("Error", "Error de conexión al cargar detalles");
+      showToast("Error", "Error de conexiÃ³n al cargar detalles");
       dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
     } finally {
       dispatch({ type: "SET_LOADING_DETAIL", payload: false });
@@ -1059,7 +1059,7 @@ export default function CuentasScreen() {
               </TouchableOpacity>
               <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                   <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                  <Text style={styles.backTextHeader}>Atrás</Text>
+                  <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
               </Pressable>
           </View>
         }
@@ -1071,7 +1071,7 @@ export default function CuentasScreen() {
                 <Ionicons name="search" size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
                 <TextInput
                     style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#111827" }]}
-                    placeholder="Buscar por código o cliente..."
+                    placeholder="Buscar por cÃ³digo o cliente..."
                     placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
                     value={search}
                     onChangeText={(t) => dispatch({ type: "SET_SEARCH", payload: t })}
@@ -1164,7 +1164,7 @@ export default function CuentasScreen() {
               No hay cuentas registradas
             </Text>
             <Text style={[styles.emptySub, { color: textSecondary }]}>
-              Las cuentas aparecerán cuando las crees en el registro.
+              Las cuentas aparecerÃ¡n cuando las crees en el registro.
             </Text>
           </View>
         }
@@ -1209,7 +1209,7 @@ export default function CuentasScreen() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors[Number(selectedCuenta.estado)] || '#6B7280' }} />
                           <Text style={[styles.modalSubText, { color: textSecondary, fontWeight: '800' }]}>
-                            {statusLabels[Number(selectedCuenta.estado)] || "Desconocido"} • #{selectedCuenta.codigo}
+                            {statusLabels[Number(selectedCuenta.estado)] || "Desconocido"} â€¢ #{selectedCuenta.codigo}
                           </Text>
                         </View>
                       </View>
@@ -1250,7 +1250,7 @@ export default function CuentasScreen() {
                         </View>
 
                         <View style={styles.gridItem}>
-                          <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN / SECTOR</Text>
+                          <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÃ“N / SECTOR</Text>
                           <Text style={[styles.gridValue, { color: textPrimary }]}>
                             {selectedCuenta.habitacion_numero || "Barra / General"}
                           </Text>
@@ -1586,7 +1586,7 @@ export default function CuentasScreen() {
                                           <Ionicons name="person-circle" size={18} color={accentColor} />
                                         )}
                                         <Text style={{ fontSize: 12, color: textPrimary, fontWeight: '800' }}>
-                                          Vía: {det.added_by}
+                                          VÃ­a: {det.added_by}
                                         </Text>
                                       </View>
                                     )}
@@ -1615,7 +1615,7 @@ export default function CuentasScreen() {
                                     </View>
 
                                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#F43F5E", textTransform: 'uppercase' }}>Comisión</Text>
+                                      <Text style={{ fontSize: 10, fontWeight: '900', color: "#F43F5E", textTransform: 'uppercase' }}>ComisiÃ³n</Text>
                                       <Text style={{ fontSize: 16, fontWeight: '900', color: "#F43F5E" }}>
                                         ${Number(det.comision || 0).toLocaleString('es-CL')}
                                       </Text>
@@ -1648,7 +1648,7 @@ export default function CuentasScreen() {
                       {/* Propina (solo si existe y es > 0) */}
                       {(selectedCuenta.propina > 0) && (
                         <View style={[styles.summaryRow, { marginBottom: 12 }]}>
-                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>Atención / Propina (+)</Text>
+                          <Text style={[styles.summaryLabel, { color: textSecondary, fontSize: 13 }]}>AtenciÃ³n / Propina (+)</Text>
                           <Text style={[styles.summaryValue, { color: "#10B981", fontWeight: '700' }]}>
                             ${Number(selectedCuenta.propina).toLocaleString('es-CL')}
                           </Text>
@@ -1901,7 +1901,7 @@ export default function CuentasScreen() {
                 Opciones de Cuenta
               </Text>
               <Text style={[styles.actionSheetSub, { color: textSecondary }]}>
-                Código: {activeCuenta?.codigo}
+                CÃ³digo: {activeCuenta?.codigo}
               </Text>
             </View>
             <Pressable
@@ -2248,7 +2248,7 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   backBtn: {
     height: 44,
-    borderRadius: 22,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: 'rgba(155,155,155,0.1)',
@@ -2312,7 +2312,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     marginTop: 20,
-    borderRadius: 16,
+    borderRadius: 9999,
     padding: 4,
     borderWidth: 1,
   },
@@ -2321,7 +2321,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
+    borderRadius: 9999,
   },
   tabText: { fontSize: 14, fontWeight: "700" },
   tabWithBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -2329,7 +2329,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: 9999,
   },
   tabBadgeText: { color: "#E11D48", fontSize: 11, fontWeight: "900" },
 
@@ -2428,7 +2428,7 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardActionBtn: {
     height: 38,
-    borderRadius: 12,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -2494,7 +2494,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 9999,
     gap: 6,
     minWidth: 90,
     justifyContent: "center",
@@ -2553,7 +2553,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 9999,
     backgroundColor: "rgba(128,128,128,0.1)",
     justifyContent: "center",
     alignItems: "center",
@@ -2588,7 +2588,7 @@ const styles = StyleSheet.create({
   },
   hostessTextDetail: { fontSize: 13, fontWeight: "800", color: "#E11D48" },
   tableContainer: {
-    borderRadius: 16,
+    borderRadius: 9999,
     borderWidth: 1,
     overflow: "hidden",
     marginBottom: 20,
@@ -2620,7 +2620,7 @@ const styles = StyleSheet.create({
   totalValFinal: { fontSize: 24, fontWeight: "900", color: "#E11D48" },
   modalCloseBtn: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
@@ -2669,7 +2669,7 @@ const styles = StyleSheet.create({
   actionCancelBtn: {
     marginTop: 8,
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -2695,7 +2695,7 @@ const styles = StyleSheet.create({
   totalValCobro: { fontSize: 24, fontWeight: "900", color: "#10B981" },
   cobrarSubmitBtn: {
     height: 60,
-    borderRadius: 20,
+    borderRadius: 9999,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -2704,7 +2704,7 @@ const styles = StyleSheet.create({
   cobrarSubmitBtnText: { color: "#FFF", fontSize: 16, fontWeight: "900" },
   cobrarCancelBtn: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 12,
@@ -2714,7 +2714,7 @@ const styles = StyleSheet.create({
       flexDirection: 'row', 
       alignItems: 'center', 
       height: 38, 
-      borderRadius: 12, 
+      borderRadius: 9999,
       backgroundColor: 'rgba(255,255,255,0.2)',
       paddingHorizontal: 12,
       gap: 6

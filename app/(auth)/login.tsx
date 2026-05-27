@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -84,13 +84,13 @@ export default function LoginScreen() {
 
     const handleResetPassword = async () => {
         if (!resetRun.trim()) {
-            showAlert('Atención', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
+            showAlert('AtenciÃ³n', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
             return;
         }
 
         showAlert(
-            'Resetear Contraseña',
-            `¿Estás seguro que deseas resetear la contraseña de @${username}? La nueva contraseña será tu número de RUN.`,
+            'Resetear ContraseÃ±a',
+            `Â¿EstÃ¡s seguro que deseas resetear la contraseÃ±a de @${username}? La nueva contraseÃ±a serÃ¡ tu nÃºmero de RUN.`,
             'info',
             async () => {
                 setLoading(true);
@@ -103,12 +103,12 @@ export default function LoginScreen() {
                     if (res.success) {
                         setShowResetPasswordModal(false);
                         setResetRun('');
-                        showAlert('Éxito', 'Tu contraseña ha sido reseteada. Revisa tu WhatsApp para ver los detalles.', 'success');
+                        showAlert('Ã‰xito', 'Tu contraseÃ±a ha sido reseteada. Revisa tu WhatsApp para ver los detalles.', 'success');
                     } else {
                         throw new Error(res.message);
                     }
                 } catch (err: any) {
-                    showAlert('Error', err.message || 'No se pudo resetear la contraseña', 'danger');
+                    showAlert('Error', err.message || 'No se pudo resetear la contraseÃ±a', 'danger');
                 } finally {
                     setLoading(false);
                 }
@@ -123,7 +123,7 @@ export default function LoginScreen() {
                 await handleBiometricLogin();
                 return;
             }
-            setError('Por favor ingresa tu usuario y contraseña');
+            setError('Por favor ingresa tu usuario y contraseÃ±a');
             return;
         }
         await performLogin(username.trim(), password);
@@ -143,13 +143,13 @@ export default function LoginScreen() {
                     Toast.show({
                         type: 'success',
                         text1: 'Asistencia Registrada',
-                        text2: 'Tu asistencia ha sido registrada automáticamente',
+                        text2: 'Tu asistencia ha sido registrada automÃ¡ticamente',
                     });
                 }
                 if (isBiometricSupported && !isBiometricEnabled) {
                     showAlert(
-                        'Acceso Biométrico',
-                        '¿Te gustaría habilitar el inicio de sesión con huella dactilar para la próxima vez?',
+                        'Acceso BiomÃ©trico',
+                        'Â¿Te gustarÃ­a habilitar el inicio de sesiÃ³n con huella dactilar para la prÃ³xima vez?',
                         'info',
                         async () => {
                             await saveCredentials(u, p);
@@ -166,7 +166,7 @@ export default function LoginScreen() {
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Error al iniciar sesión');
+            setError(err.message || 'Error al iniciar sesiÃ³n');
         } finally {
             setLoading(false);
         }
@@ -191,14 +191,14 @@ export default function LoginScreen() {
             if (res.asistenciaRegistrada) {
                 Toast.show({
                     type: 'success',
-                    text1: '¡Bienvenido/a!',
-                    text2: 'Tu asistencia ha sido registrada automáticamente',
+                    text1: 'Â¡Bienvenido/a!',
+                    text2: 'Tu asistencia ha sido registrada automÃ¡ticamente',
                 });
             }
 
             router.replace('/');
         } catch (err: any) {
-            setError(err.message || 'Error al validar código QR');
+            setError(err.message || 'Error al validar cÃ³digo QR');
         } finally {
             setLoading(false);
         }
@@ -207,7 +207,7 @@ export default function LoginScreen() {
     const handleBiometricLogin = useCallback(async () => {
         if (!isBiometricEnabled || isPrompting) {
             if (!isBiometricEnabled) {
-                showAlert('Atención', 'Debes iniciar sesión manualmente y habilitar la opción de huella dactilar primero.', 'warning');
+                showAlert('AtenciÃ³n', 'Debes iniciar sesiÃ³n manualmente y habilitar la opciÃ³n de huella dactilar primero.', 'warning');
             }
             return;
         }
@@ -215,8 +215,8 @@ export default function LoginScreen() {
         setIsPrompting(true);
         try {
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Inicia sesión con tu huella dactilar',
-                fallbackLabel: 'Usar contraseña',
+                promptMessage: 'Inicia sesiÃ³n con tu huella dactilar',
+                fallbackLabel: 'Usar contraseÃ±a',
                 disableDeviceFallback: false,
                 cancelLabel: 'Cancelar',
             });
@@ -228,7 +228,7 @@ export default function LoginScreen() {
                     setPassword(creds.password);
                     await performLogin(creds.username, creds.password);
                 } else {
-                    showAlert('Error', 'No se encontraron credenciales guardadas. Inicia sesión manualmente.', 'danger');
+                    showAlert('Error', 'No se encontraron credenciales guardadas. Inicia sesiÃ³n manualmente.', 'danger');
                 }
             }
         } finally {
@@ -297,7 +297,7 @@ export default function LoginScreen() {
                                 {/* Title */}
                                 <View style={styles.headerTextContainer}>
                                     <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                                        Iniciar Sesión
+                                        Iniciar SesiÃ³n
                                     </Text>
                                     <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
                                         Ingresa tus credenciales para continuar
@@ -322,7 +322,7 @@ export default function LoginScreen() {
                                                 borderColor: isDark ? '#374151' : '#E5E7EB',
                                             },
                                         ]}
-                                        placeholder="pepe (se completará automáticamente)"
+                                        placeholder="pepe (se completarÃ¡ automÃ¡ticamente)"
                                         placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                                         autoCapitalize="none"
                                         value={username}
@@ -331,7 +331,7 @@ export default function LoginScreen() {
                                         onSubmitEditing={() => passwordRef.current?.focus()}
                                     />
 
-                                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>Contraseña</Text>
+                                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>ContraseÃ±a</Text>
                                     <View style={styles.passwordContainer}>
                                         <TextInput
                                             style={[
@@ -343,7 +343,7 @@ export default function LoginScreen() {
                                                     borderColor: isDark ? '#374151' : '#E5E7EB',
                                                 },
                                             ]}
-                                            placeholder="Ingresa tu contrase?a"
+                                            placeholder="Ingresa tu contraseÃ±a"
                                             placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                                             secureTextEntry={!showPassword}
                                             value={password}
@@ -353,13 +353,7 @@ export default function LoginScreen() {
                                             onSubmitEditing={handleLogin}
                                         />
                                         <Pressable
-                                            style={[
-                                                styles.eyeButton,
-                                                {
-                                                    backgroundColor: isDark ? '#1F2937' : '#E5E7EB',
-                                                    borderColor: isDark ? '#374151' : '#D1D5DB',
-                                                },
-                                            ]}
+                                            style={styles.eyeButton}
                                             onPress={() => setShowPassword(!showPassword)}
                                         >
                                             <Ionicons
@@ -367,22 +361,10 @@ export default function LoginScreen() {
                                                 size={20}
                                                 color={isDark ? '#FFFFFF' : '#111827'}
                                             />
-                                            <Text
-                                                style={[
-                                                    styles.eyeButtonText,
-                                                    { color: isDark ? '#FFFFFF' : '#111827' },
-                                                ]}
-                                            >
-                                                {showPassword ? 'Ocultar' : 'Ver'}
-                                            </Text>
                                         </Pressable>
                                     </View>
 
-                                    <Text style={[styles.passwordHelpText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                                        Si nunca cambiaste tu contrase?a, ingres? tu RUT con formato chileno.
-                                    </Text>
-
-                                    {/* Fila del Botón de Login (Ancho Completo) */}
+                                    {/* Fila del BotÃ³n de Login (Ancho Completo) */}
                                     <View style={[styles.actionRow, { marginTop: 20 }]}>
                                         <Pressable
                                             style={({ pressed }) => [
@@ -402,7 +384,7 @@ export default function LoginScreen() {
                                                 <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
                                             ) : (
                                                 <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                                                    Iniciar Sesión
+                                                    Iniciar SesiÃ³n
                                                 </Text>
                                             )}
                                         </Pressable>
@@ -410,7 +392,7 @@ export default function LoginScreen() {
 
                                     {/* Fila Inferior para QR y Huella */}
                                     <View style={[styles.actionRow, { justifyContent: 'center', marginTop: 15, gap: 20 }]}>
-                                        {/* Botón QR (Acceso Rápido) */}
+                                        {/* BotÃ³n QR (Acceso RÃ¡pido) */}
                                         <Pressable
                                             style={({ pressed }) => [
                                                 styles.biometricButton,
@@ -426,7 +408,7 @@ export default function LoginScreen() {
                                             <Ionicons name="qr-code-outline" size={28} color={isDark ? '#FFFFFF' : '#000000'} />
                                         </Pressable>
 
-                                        {/* Botón Biometría */}
+                                        {/* BotÃ³n BiometrÃ­a */}
                                         {(isBiometricEnabled && isBiometricSupported) && (
                                             <Pressable
                                                 style={({ pressed }) => [
@@ -463,7 +445,7 @@ export default function LoginScreen() {
                                         style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
                                     >
                                         <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                                            ¿Olvidaste tu contraseña?
+                                            Â¿Olvidaste tu contraseÃ±a?
                                         </Text>
                                     </Pressable>
                                 </View>
@@ -528,7 +510,7 @@ export default function LoginScreen() {
                 </View>
             </Modal>
 
-            {/* Selector de QR para Login Rápido */}
+            {/* Selector de QR para Login RÃ¡pido */}
             <Modal
                 transparent
                 visible={showResetPasswordModal}
@@ -540,9 +522,9 @@ export default function LoginScreen() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
-                        <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Resetear Contraseña</Text>
+                        <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Resetear ContraseÃ±a</Text>
                         <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                            Ingresa tu RUN para validar el reseteo. La nueva contraseña será ese mismo RUN.
+                            Ingresa tu RUN para validar el reseteo. La nueva contraseÃ±a serÃ¡ ese mismo RUN.
                         </Text>
                         <TextInput
                             style={[
@@ -652,33 +634,21 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
         position: 'relative',
-        height: 60,
+        justifyContent: 'center',
     },
     eyeButton: {
-        marginLeft: 12,
-        minWidth: 72,
-        height: 60,
-        borderRadius: 18,
-        borderWidth: 1.5,
+        position: 'absolute',
+        right: 14,
+        height: 36,
+        width: 36,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 2,
-    },
-    eyeButtonText: {
-        fontSize: 11,
-        fontWeight: '800',
     },
     passwordInput: {
-        flex: 1,
-    },
-    passwordHelpText: {
-        fontSize: 12,
-        lineHeight: 18,
-        marginTop: 8,
-        marginLeft: 4,
+        width: '100%',
+        paddingRight: 56,
     },
     errorContainer: {
         padding: 12,
@@ -693,7 +663,7 @@ const styles = StyleSheet.create({
     },
     loginButton: {
         height: 60,
-        borderRadius: 20,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -712,7 +682,7 @@ const styles = StyleSheet.create({
     biometricButton: {
         height: 60,
         width: 60,
-        borderRadius: 20,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1.5,
@@ -781,7 +751,7 @@ const styles = StyleSheet.create({
     },
     alertBtn: {
         height: 54,
-        borderRadius: 18,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 15,

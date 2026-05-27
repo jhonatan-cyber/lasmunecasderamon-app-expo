@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
@@ -65,7 +65,7 @@ export function PremiumHeader({
                 {onBack && (
                     <Pressable onPress={onBack} style={styles.backBtn}>
                         <Ionicons name="arrow-back" size={isTablet ? 26 : 22} color="#FFFFFF" />
-                        <Text style={[styles.backText, isTablet && { fontSize: 18 }]}>Atrás</Text>
+                        <Text style={[styles.backText, isTablet && { fontSize: 18 }]}>AtrÃ¡s</Text>
                     </Pressable>
                 )}
                 <View style={{ flex: 1, marginLeft: onBack ? 12 : 0 }}>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         paddingRight: 12, 
         height: 44, 
-        borderRadius: 22, 
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.15)',
         paddingLeft: 8,
         gap: 4

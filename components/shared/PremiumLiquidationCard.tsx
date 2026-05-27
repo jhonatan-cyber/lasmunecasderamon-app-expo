@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -178,7 +178,7 @@ export function PremiumLiquidationCard({
             showAlert('Descarga completada', 'El reporte se ha guardado correctamente en tu dispositivo.', 'success');
           } catch (e) {
             console.error('Error saving file:', e);
-            showAlert('Error de Guardado', 'No se pudo guardar el archivo en la ubicación seleccionada.', 'danger');
+            showAlert('Error de Guardado', 'No se pudo guardar el archivo en la ubicaciÃ³n seleccionada.', 'danger');
           }
         } else {
           // Fallback to sharing if permission is denied
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   exportBtn: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 9999,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',

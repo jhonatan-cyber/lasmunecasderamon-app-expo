@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -199,7 +199,7 @@ export default function SolicitudesScreen() {
             setAlertConfig({
                 visible: true,
                 title: requiereAprobacion ? 'Aprobar y Pagar Anticipo' : 'Pagar Anticipo',
-                message: `¿Confirmas que has entregado el efectivo de $${itemInfo.monto.toLocaleString()} a ${itemInfo.usuario}?`,
+                message: `Â¿Confirmas que has entregado el efectivo de $${itemInfo.monto.toLocaleString()} a ${itemInfo.usuario}?`,
                 type: 'success',
                 onConfirm: async () => {
                     setAlertConfig(prev => ({ ...prev, visible: false }));
@@ -223,7 +223,7 @@ export default function SolicitudesScreen() {
                         });
                         if (res.success) {
                             removeSolicitudLocally(id, 'anticipo');
-                            showToast('Éxito', 'Anticipo entregado y descontado de caja.', 'success');
+                            showToast('Ã‰xito', 'Anticipo entregado y descontado de caja.', 'success');
                             DeviceEventEmitter.emit('refresh_requests');
                             DeviceEventEmitter.emit('refresh_anticipos');
                         } else {
@@ -239,7 +239,7 @@ export default function SolicitudesScreen() {
             return;
         }
 
-        // Caso: Aprobación de Servicio
+        // Caso: AprobaciÃ³n de Servicio
         if (tipo === 'solicitud') {
             const executeAprobacion = async () => {
                 removeSolicitudLocally(id, 'solicitud');
@@ -253,7 +253,7 @@ export default function SolicitudesScreen() {
                     });
 
                     if (res.success) {
-                        showToast('Éxito', 'Servicio aprobado correctamente.', 'success');
+                        showToast('Ã‰xito', 'Servicio aprobado correctamente.', 'success');
                         DeviceEventEmitter.emit('refresh_requests');
                         setMetodoPago('');
                         setMetodoPagoAdicional('');
@@ -268,15 +268,15 @@ export default function SolicitudesScreen() {
                 }
             };
 
-            // Si viene de un modal (selectedService existe) o ya tiene método, aprobamos directo.
-            // Si viene de la card (clic rápido), pedimos confirmación.
+            // Si viene de un modal (selectedService existe) o ya tiene mÃ©todo, aprobamos directo.
+            // Si viene de la card (clic rÃ¡pido), pedimos confirmaciÃ³n.
             if (serviceModalVisible) {
                 executeAprobacion();
             } else {
                 setAlertConfig({
                     visible: true,
                     title: 'Aprobar Servicio',
-                    message: `¿Confirmas la aprobación del servicio en la ${itemInfo?.habitacion_nombre || 'habitación'}?`,
+                    message: `Â¿Confirmas la aprobaciÃ³n del servicio en la ${itemInfo?.habitacion_nombre || 'habitaciÃ³n'}?`,
                     type: 'success',
                     onConfirm: () => {
                         setAlertConfig(prev => ({ ...prev, visible: false }));
@@ -291,7 +291,7 @@ export default function SolicitudesScreen() {
         setAlertConfig({
             visible: true,
             title: 'Rechazar',
-            message: `¿Seguro que deseas rechazar este ${tipo === 'solicitud' ? 'servicio' : 'pedido'}?`,
+            message: `Â¿Seguro que deseas rechazar este ${tipo === 'solicitud' ? 'servicio' : 'pedido'}?`,
             type: 'danger',
             onConfirm: async () => {
                 setAlertConfig(prev => ({ ...prev, visible: false }));
@@ -303,7 +303,7 @@ export default function SolicitudesScreen() {
                         body: JSON.stringify(tipo === 'solicitud' ? { motivo_rechazo: 'Caja' } : { estado: 2 })
                     });
                     if (res.success) {
-                        showToast('Éxito', 'Solicitud eliminada.', 'success');
+                        showToast('Ã‰xito', 'Solicitud eliminada.', 'success');
                         DeviceEventEmitter.emit('refresh_requests');
                     } else {
                         showToast('Error', 'No se pudo rechazar.', 'error');
@@ -406,7 +406,7 @@ export default function SolicitudesScreen() {
             });
 
             if (res.success) {
-                showToast('Éxito', 'Pedido cobrado y cerrado.', 'success');
+                showToast('Ã‰xito', 'Pedido cobrado y cerrado.', 'success');
                 removeSolicitudLocally(selectedPedido.id_pedido, 'pedido');
                 setCheckoutModalVisible(false);
                 DeviceEventEmitter.emit('refresh_requests');
@@ -445,7 +445,7 @@ export default function SolicitudesScreen() {
             }));
             
             const subTotal = detalles.reduce((sum: number, d: any) => sum + d.sub_total, 0);
-            const total = subTotal; // Sin comisión para cuenta
+            const total = subTotal; // Sin comisiÃ³n para cuenta
 
             const payload = {
                 codigo: `CUENTA-${Date.now()}`,
@@ -465,7 +465,7 @@ export default function SolicitudesScreen() {
             });
 
             if (res.success) {
-                showToast('Éxito', `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, 'success');
+                showToast('Ã‰xito', `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, 'success');
                 removeSolicitudLocally(selectedPedido.id_pedido, 'pedido');
                 setCheckoutModalVisible(false);
                 DeviceEventEmitter.emit('refresh_requests');
@@ -524,9 +524,9 @@ export default function SolicitudesScreen() {
     // Handle auto-opening from SSE (via Hook)
     useEffect(() => {
         console.log('[useEffect pendingAutoOpen] pendingAutoOpen:', pendingAutoOpen, 'solicitudes.length:', solicitudes.length, 'typeof id:', typeof pendingAutoOpen?.id);
-        // Solo procesar si hay un ID válido
+        // Solo procesar si hay un ID vÃ¡lido
         if (!pendingAutoOpen || !pendingAutoOpen.id || pendingAutoOpen.id === 'undefined' || pendingAutoOpen.id === undefined || !solicitudes.length) {
-            console.log('[useEffect pendingAutoOpen] ❌ Returning early - invalid id');
+            console.log('[useEffect pendingAutoOpen] âŒ Returning early - invalid id');
             return;
         }
         
@@ -547,7 +547,7 @@ export default function SolicitudesScreen() {
                 setServiceModalVisible(true);
             }
         } else {
-            // Si no se encontró, limpiar el pendingAutoOpen para evitar bucles
+            // Si no se encontrÃ³, limpiar el pendingAutoOpen para evitar bucles
             console.log('[useEffect pendingAutoOpen] no found, clearing...');
             setPendingAutoOpen(null);
         }
@@ -580,16 +580,16 @@ export default function SolicitudesScreen() {
 
             <PremiumHeader
                 title="Solicitudes"
-                subtitle={!cajaAbierta ? 'Caja cerrada' : 'Pendientes de aprobación'}
+                subtitle={!cajaAbierta ? 'Caja cerrada' : 'Pendientes de aprobaciÃ³n'}
                 connectionStatus={{ 
                     isConnected: !isOffline, 
-                    label: isOffline ? 'Modo Offline' : 'En Línea' 
+                    label: isOffline ? 'Modo Offline' : 'En LÃ­nea' 
                 }}
                 rightComponent={
                     <View style={styles.headerActions}>
                         <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextRight}>Atrás</Text>
+                            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
                         </Pressable>
                     </View>
                 }
@@ -614,7 +614,7 @@ export default function SolicitudesScreen() {
                 >
                     <Ionicons name="warning" size={20} color="#FFFFFF" />
                     <Text style={styles.urgencyBarText}>
-                        ATENCIÓN: {solicitudes.length} SOLICITUDES PENDIENTES
+                        ATENCIÃ“N: {solicitudes.length} SOLICITUDES PENDIENTES
                     </Text>
                 </MotiView>
             )}
@@ -660,7 +660,7 @@ export default function SolicitudesScreen() {
                     <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
                         <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" style={{ marginBottom: 12 }} />
                         <Text style={[styles.emptyText, { color: textPrimary }]}>
-                            {!cajaAbierta ? 'Caja Cerrada' : 'Todo al día'}
+                            {!cajaAbierta ? 'Caja Cerrada' : 'Todo al dÃ­a'}
                         </Text>
                         <Text style={[styles.emptySub, { color: textSecondary }]}>
                             {!cajaAbierta ? 'Abre una caja para procesar' : 'No hay solicitudes pendientes'}
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         height: 38, 
-        borderRadius: 12, 
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6

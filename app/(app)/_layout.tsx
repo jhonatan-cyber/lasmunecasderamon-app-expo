@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router';
+﻿import { Redirect, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     Modal,
@@ -50,7 +50,7 @@ export default function AppLayout() {
         setShowAsistenciaModal(false);
     };
 
-    // Inicializar el manejador central de notificaciones (Navegación, TTS, Haptics)
+    // Inicializar el manejador central de notificaciones (NavegaciÃ³n, TTS, Haptics)
     useNotificationHandler();
 
     useEffect(() => {
@@ -79,7 +79,7 @@ export default function AppLayout() {
             />
             <StaffCallOverlay />
 
-            {/* Modal de sesión expirada - no redirige automáticamente */}
+            {/* Modal de sesiÃ³n expirada - no redirige automÃ¡ticamente */}
             <Modal
                 visible={sessionExpired}
                 transparent
@@ -89,18 +89,18 @@ export default function AppLayout() {
                 <View style={styles.overlay}>
                     <View style={styles.dialog}>
                         <View style={styles.iconContainer}>
-                            <Text style={styles.icon}>🔒</Text>
+                            <Text style={styles.icon}>ðŸ”’</Text>
                         </View>
-                        <Text style={styles.title}>Sesión expirada</Text>
+                        <Text style={styles.title}>SesiÃ³n expirada</Text>
                         <Text style={styles.message}>
-                            Tu sesión ha expirado o el acceso fue revocado.{'\n'}
-                            Por favor, inicia sesión nuevamente para continuar.
+                            Tu sesiÃ³n ha expirado o el acceso fue revocado.{'\n'}
+                            Por favor, inicia sesiÃ³n nuevamente para continuar.
                         </Text>
                         <TouchableOpacity style={styles.btn} onPress={handleLogout}>
-                            <Text style={styles.btnText}>Iniciar sesión</Text>
+                            <Text style={styles.btnText}>Iniciar sesiÃ³n</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.btnSecondary} onPress={clearSessionExpired}>
-                            <Text style={styles.btnSecondaryText}>Continuar sin cerrar sesión</Text>
+                            <Text style={styles.btnSecondaryText}>Continuar sin cerrar sesiÃ³n</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     },
     btn: {
         backgroundColor: '#6c63ff',
-        borderRadius: 12,
+        borderRadius: 9999,
         paddingVertical: 14,
         paddingHorizontal: 32,
         width: '100%',

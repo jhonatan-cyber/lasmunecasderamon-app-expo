@@ -130,7 +130,7 @@ export default function CajeroGratificacionesScreen() {
         <Text style={[styles.employeeName, { color: textPrimary }]}>{item.usuario}</Text>
         <Text style={[styles.amountText, { color: accentColor }]}>{formatCurrency(item.monto)}</Text>
         <Text style={[styles.descriptionText, { color: textSecondary }]}>
-          {item.descripcion || 'Sin descripci?n'}
+          {item.descripcion || 'Sin descripción'}
         </Text>
 
         <View style={styles.metaRow}>
@@ -162,17 +162,17 @@ export default function CajeroGratificacionesScreen() {
     <View style={[styles.container, { backgroundColor: bg }]}>
       <PremiumHeader
         title="Gratificaciones"
-        subtitle="Crea solicitudes para aprobaci?n"
+        subtitle="Crea solicitudes para aprobación"
         rightComponent={
           <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atr?s</Text>
+            <Text style={styles.backTextHeader}>Atrás</Text>
           </Pressable>
         }
       />
 
       <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
-        <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL PENDIENTE DE APROBACI?N</Text>
+        <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL PENDIENTE DE APROBACIÓN</Text>
         <Text style={[styles.summaryAmount, { color: '#F59E0B' }]}>{formatCurrency(totals.pendiente)}</Text>
         <View style={styles.summaryDetails}>
           <Text style={[styles.summaryDetail, { color: textSecondary }]}>Por pagar: {formatCurrency(totals.porPagar)}</Text>
@@ -229,9 +229,12 @@ export default function CajeroGratificacionesScreen() {
         />
       )}
 
-      <Pressable style={[styles.fab, { backgroundColor: accentColor }]} onPress={() => setModalVisible(true)}>
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </Pressable>
+      {!modalVisible && (
+        <Pressable style={[styles.fab, { backgroundColor: accentColor }]} onPress={() => setModalVisible(true)}>
+          <Ionicons name="add" size={22} color="#FFFFFF" />
+          <Text style={styles.fabText}>Nueva gratificación</Text>
+        </Pressable>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
@@ -239,7 +242,7 @@ export default function CajeroGratificacionesScreen() {
           <View style={[styles.modalContent, { backgroundColor: bg }]}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textPrimary }]}>Nueva Gratificaci?n</Text>
+              <Text style={[styles.modalTitle, { color: textPrimary }]}>Nueva Gratificación</Text>
               <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
                 <Ionicons name="close" size={22} color={textSecondary} />
               </Pressable>
@@ -298,7 +301,7 @@ export default function CajeroGratificacionesScreen() {
                 styles.textArea,
                 { backgroundColor: cardBg, color: textPrimary, borderColor }
               ]}
-              placeholder="Descripci?n (opcional)"
+              placeholder="Descripción (opcional)"
               placeholderTextColor={textSecondary}
               multiline
               value={descripcion}
@@ -335,7 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 38,
-    borderRadius: 12,
+    borderRadius: 9999,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     gap: 6
@@ -353,9 +356,25 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 34, fontWeight: '900', marginBottom: 8 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 12, fontWeight: '600' },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 16, gap: 8 },
-  filterButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9999, borderWidth: 1 },
-  filterText: { fontSize: 11, fontWeight: '700' },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 8
+  },
+  filterButton: {
+    minWidth: 124,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 9999,
+    alignItems: 'center',
+    borderWidth: 1
+  },
+  filterText: { fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 100, paddingTop: 10 },
   card: {
     borderRadius: 18,
@@ -381,11 +400,13 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
+    bottom: 42,
+    right: 20,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 9999,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
@@ -394,6 +415,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8
   },
+  fabText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: {
@@ -412,7 +434,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 22, fontWeight: '800' },
-  closeButton: { padding: 8, borderRadius: 20, backgroundColor: 'rgba(128,128,128,0.15)' },
+  closeButton: { padding: 8, borderRadius: 9999, backgroundColor: 'rgba(128,128,128,0.15)' },
   input: {
     borderWidth: 1.5,
     borderRadius: 16,
@@ -429,7 +451,7 @@ const styles = StyleSheet.create({
   },
   employeeRow: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 9999,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -437,7 +459,7 @@ const styles = StyleSheet.create({
   employeeRowName: { fontSize: 14, fontWeight: '700' },
   employeeRowMeta: { fontSize: 12, marginTop: 2 },
   submitButton: {
-    borderRadius: 16,
+    borderRadius: 9999,
     padding: 18,
     alignItems: 'center',
     marginTop: 4

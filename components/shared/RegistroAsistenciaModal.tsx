@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import React, { useState } from 'react';
 import {
@@ -52,7 +52,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: 'Por favor ingresa el código de asistencia'
+                text2: 'Por favor ingresa el cÃ³digo de asistencia'
             });
             return;
         }
@@ -66,24 +66,24 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
             if (res.success) {
                 if (res.alreadyRegistered) {
-                    // Ya tiene asistencia registrada hoy - cerrar modales porque el código ya fue usado
+                    // Ya tiene asistencia registrada hoy - cerrar modales porque el cÃ³digo ya fue usado
                     Toast.show({
                         type: 'warning',
-                        text1: '⚠️ Ya tienes asistencia',
-                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                        text1: 'âš ï¸ Ya tienes asistencia',
+                        text2: res.message || 'Ya tenÃ­as asistencia registrada hoy'
                     });
                     onRegistered(); // Cerrar los modales
                 } else {
                     // Nueva asistencia registrada
                     Toast.show({
                         type: 'success',
-                        text1: '✅ Asistencia Registrada',
+                        text1: 'âœ… Asistencia Registrada',
                         text2: res.message || 'Tu asistencia ha sido registrada correctamente'
                     });
                     onRegistered();
                 }
             } else {
-                throw new Error(res.message || 'Código inválido');
+                throw new Error(res.message || 'CÃ³digo invÃ¡lido');
             }
         } catch (error: any) {
             Toast.show({
@@ -110,21 +110,21 @@ if (res.success) {
                     // Ya tiene asistencia registrada hoy
                     Toast.show({
                         type: 'warning',
-                        text1: '⚠️ Ya tienes asistencia',
-                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                        text1: 'âš ï¸ Ya tienes asistencia',
+                        text2: res.message || 'Ya tenÃ­as asistencia registrada hoy'
                     });
                     onRegistered(); // Cerrar los modales
                 } else {
                     // Nueva asistencia registrada
                     Toast.show({
                         type: 'success',
-                        text1: '✅ Asistencia Registrada',
+                        text1: 'âœ… Asistencia Registrada',
                         text2: res.message || 'Tu asistencia ha sido registrada correctamente'
                     });
 onRegistered();
                 }
             } else {
-                throw new Error(res.message || 'Código QR inválido');
+                throw new Error(res.message || 'CÃ³digo QR invÃ¡lido');
             }
         } catch (error: any) {
             Toast.show({
@@ -158,7 +158,7 @@ onRegistered();
                             </View>
                             <Text style={[styles.title, { color: textPrimary }]}>Registrar Asistencia</Text>
                             <Text style={[styles.subtitle, { color: textSecondary }]}>
-                                Ingresa tu código o escanea el QR para registrar tu asistencia
+                                Ingresa tu cÃ³digo o escanea el QR para registrar tu asistencia
                             </Text>
                         </View>
 
@@ -177,12 +177,12 @@ onRegistered();
                         </View>
 
                         <View style={styles.inputSection}>
-                            <Text style={[styles.label, { color: textSecondary }]}>Código de Asistencia</Text>
+                            <Text style={[styles.label, { color: textSecondary }]}>CÃ³digo de Asistencia</Text>
                             <View style={[styles.inputContainer, { backgroundColor: cardBg, borderColor }]}>
                                 <Ionicons name="key-outline" size={20} color={textSecondary} />
                                 <TextInput
                                     style={[styles.input, { color: textPrimary }]}
-                                    placeholder="Ingresa el código"
+                                    placeholder="Ingresa el cÃ³digo"
                                     placeholderTextColor={textSecondary}
                                     value={codigo}
                                     onChangeText={setCodigo}
@@ -221,7 +221,7 @@ onRegistered();
                             <View style={styles.qrBtnText}>
                                 <Text style={[styles.qrBtnTitle, { color: textPrimary }]}>Escanear QR</Text>
                                 <Text style={[styles.qrBtnSubtitle, { color: textSecondary }]}>
-                                    Apunta al código QR del cajero
+                                    Apunta al cÃ³digo QR del cajero
                                 </Text>
                             </View>
                             <Ionicons name="chevron-forward" size={24} color={textSecondary} />
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 54,
-        borderRadius: 16,
+        borderRadius: 9999,
         gap: 8,
     },
     submitBtnText: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 16,
+        borderRadius: 9999,
         padding: 16,
     },
     qrIconCircle: {

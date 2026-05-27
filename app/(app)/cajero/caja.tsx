@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
@@ -23,7 +23,7 @@ import { useAuthStore } from '@/store/authStore';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type CajaState = {
     loading: boolean;
     refreshing: boolean;
@@ -80,7 +80,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
     Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string, borderColor: string }) => (
     <View style={{ gap: 16, padding: 16 }}>
         {/* Status card skeleton */}
@@ -118,7 +118,7 @@ const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string
     </View>
 );
 
-// ─── Stat Card ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Stat Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MetricCard = ({
     label, value, icon, color, bgColor, isDark, cardBg, borderColor
 }: {
@@ -136,7 +136,7 @@ const MetricCard = ({
     </View>
 );
 
-// ─── Row Item ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Row Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor }: {
     label: string; value: number; accent?: string;
     textPrimary: string; textSecondary: string; borderColor: string;
@@ -149,7 +149,7 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
     </View>
 );
 
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CajaScreen() {
     const { accentColor, isDark } = useAccentColor();
     const router = useRouter();
@@ -198,8 +198,8 @@ export default function CajaScreen() {
                 });
             }
         } catch {
-            if (isManual) showToast('Error', 'No se pudo actualizar la información');
-            else showToast('Error', 'No se pudo cargar la información de la caja');
+            if (isManual) showToast('Error', 'No se pudo actualizar la informaciÃ³n');
+            else showToast('Error', 'No se pudo cargar la informaciÃ³n de la caja');
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -225,7 +225,7 @@ export default function CajaScreen() {
             numericMonto = stats?.balance_total || 0;
         } else {
             const cleanMonto = monto.replace(/\./g, '');
-            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto válido'); return; }
+            if (!cleanMonto || isNaN(Number(cleanMonto))) { showToast('Error', 'Ingresa un monto vÃ¡lido'); return; }
             numericMonto = Number(cleanMonto);
         }
 
@@ -243,7 +243,7 @@ export default function CajaScreen() {
                 else showToast('Error', res.message || 'Error al abrir caja');
             } else if (modalType === 'retiro') {
                 if (!motivoRetiro.trim()) { showToast('Error', 'Ingresa el motivo del retiro'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister/retiros', { method: 'POST', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto: numericMonto, motivo: motivoRetiro, usuario_id: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
@@ -253,7 +253,7 @@ export default function CajaScreen() {
                 }
                 else showToast('Error', res.message || 'Error al retirar efectivo');
             } else {
-                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontró la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
+                if (!cajaInfo?.id_caja) { showToast('Error', 'No se encontrÃ³ la caja a cerrar'); dispatch({ type: 'SET_SUBMITTING', payload: false }); return; }
                 const res = await apiClient('/cashregister', { method: 'PATCH', body: JSON.stringify({ id_caja: cajaInfo.id_caja, monto_cierre: numericMonto, usuario_id_cierre: user?.id || 1 }) });
                 if (res.success) {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
@@ -301,7 +301,7 @@ export default function CajaScreen() {
                             accessibilityLabel="Volver"
                         >
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextRight}>Atrás</Text>
+                            <Text style={styles.backTextRight}>AtrÃ¡s</Text>
                         </Pressable>
                     </View>
                 }
@@ -318,7 +318,7 @@ export default function CajaScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* ── Status Card ── */}
+                    {/* â”€â”€ Status Card â”€â”€ */}
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
                             {/* Status Pill */}
@@ -374,7 +374,7 @@ export default function CajaScreen() {
 
                     {cajaAbierta && stats && (
                         <>
-                            {/* ── 2-col Metric Cards ── */}
+                            {/* â”€â”€ 2-col Metric Cards â”€â”€ */}
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
@@ -398,7 +398,7 @@ export default function CajaScreen() {
                                 />
                             </View>
 
-                            {/* ── Breakdown Card ── */}
+                            {/* â”€â”€ Breakdown Card â”€â”€ */}
                             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                                 <View style={styles.breakdownHeader}>
                                     <Ionicons name="bar-chart-outline" size={16} color={accentColor} />
@@ -449,7 +449,7 @@ export default function CajaScreen() {
                 </ScrollView>
             )}
 
-            {/* ── Modal ── */}
+            {/* â”€â”€ Modal â”€â”€ */}
             <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
                     <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>
@@ -568,7 +568,7 @@ export default function CajaScreen() {
     );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const styles = StyleSheet.create({
     container: { flex: 1 },
 
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         height: 38, 
-        borderRadius: 12, 
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6

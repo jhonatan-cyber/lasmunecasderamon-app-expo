@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -35,7 +35,7 @@ interface Event {
     subType?: string;
 }
 
-// ─── Skeleton ───────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
 }) => {
@@ -88,7 +88,7 @@ export default function AdministrativoScreen() {
             if (isManual) {
                 Toast.show({
                     type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                     visibilityTime: 3000
                 });
@@ -128,22 +128,22 @@ export default function AdministrativoScreen() {
     }, [selectedDates, recentActivity]);
 
     const typeLabels: Record<string, string> = {
-        comision: "Comisión",
+        comision: "ComisiÃ³n",
         asistencia: "Asistencia",
         anticipo: "Anticipo",
         propina: "Propina",
         venta: "Venta",
         servicio: "Servicio",
-        gratificacion: "Gratificación",
+        gratificacion: "GratificaciÃ³n",
         hora_extra: "Hora Extra"
     };
 
     const getEventLabel = (item: any) => {
         if (!item) return "";
         if (item.type === 'comision') {
-            if (item.subType === 'venta') return "Comisión de Venta";
-            if (item.subType === 'servicio') return "Comisión de Servicio";
-            return "Comisión";
+            if (item.subType === 'venta') return "ComisiÃ³n de Venta";
+            if (item.subType === 'servicio') return "ComisiÃ³n de Servicio";
+            return "ComisiÃ³n";
         }
         if (item.type === 'propina') {
             if (item.subType === 'venta') return "Propina de Venta";
@@ -232,7 +232,7 @@ export default function AdministrativoScreen() {
                             style={styles.backBtnRight}
                         >
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>Atrás</Text>
+                            <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
                         </Pressable>
                     </View>
                 }
@@ -262,7 +262,7 @@ export default function AdministrativoScreen() {
 
                 {selectedDates.length > 0 && (
                     <View style={[styles.selectionFloat, { backgroundColor: cardBg, borderWidth: 1, borderColor }]}>
-                        <Text style={[styles.selectionText, { color: textPrimary }]}>{selectedDates.length} {selectedDates.length === 1 ? 'día' : 'días'} seleccionados</Text>
+                        <Text style={[styles.selectionText, { color: textPrimary }]}>{selectedDates.length} {selectedDates.length === 1 ? 'dÃ­a' : 'dÃ­as'} seleccionados</Text>
                         <View style={styles.selectionActions}>
                             <Pressable onPress={() => setSelectedDates([])} style={styles.clearBtn}><Text style={styles.clearBtnText}>Borrar</Text></Pressable>
                             <Pressable onPress={() => setIsModalVisible(true)} style={[styles.viewBtn, { backgroundColor: accentColor }]}><Text style={styles.viewBtnText}>Detalles</Text></Pressable>
@@ -283,7 +283,7 @@ export default function AdministrativoScreen() {
                         <View style={styles.modalHeader}>
                             <View>
                                 <Text style={[styles.modalTitle, { color: textPrimary }]}>Eventos Detallados</Text>
-                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>{selectedDates.length} {selectedDates.length === 1 ? 'día seleccionado' : 'días seleccionados'} · {selectedEvents.length} eventos</Text>
+                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>{selectedDates.length} {selectedDates.length === 1 ? 'dÃ­a seleccionado' : 'dÃ­as seleccionados'} Â· {selectedEvents.length} eventos</Text>
                             </View>
                             <Pressable
                                 style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}
@@ -346,12 +346,12 @@ export default function AdministrativoScreen() {
                             ListEmptyComponent={
                                 <View style={styles.emptyEvents}>
                                     <Ionicons name="calendar-outline" size={48} color={textSecondary} />
-                                    <Text style={[styles.emptyEventsText, { color: textSecondary }]}>Sin eventos en los días seleccionados</Text>
+                                    <Text style={[styles.emptyEventsText, { color: textSecondary }]}>Sin eventos en los dÃ­as seleccionados</Text>
                                 </View>
                             }
                         />
 
-                        {/* Botón cerrar fijo al fondo */}
+                        {/* BotÃ³n cerrar fijo al fondo */}
                         <View style={[styles.modalFooter, { backgroundColor: bg, borderTopColor: isDark ? '#374151' : '#E5E7EB' }]}>
                             <Pressable
                                 style={[styles.closeFooterBtn, { backgroundColor: accentColor }]}
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         height: 38, 
-        borderRadius: 12, 
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6

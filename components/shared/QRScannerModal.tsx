@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { MotiView } from 'moti';
@@ -73,9 +73,9 @@ export const QRScannerModal = ({
                 <View style={styles.container}>
                     <View style={styles.permissionContent}>
                         <Ionicons name="camera" size={60} color="#60A5FA" />
-                        <Text style={styles.title}>Permiso de Cámara</Text>
+                        <Text style={styles.title}>Permiso de CÃ¡mara</Text>
                         <Text style={styles.message}>
-                            Necesitamos acceso a tu cámara para escanear el código QR de asistencia.
+                            Necesitamos acceso a tu cÃ¡mara para escanear el cÃ³digo QR de asistencia.
                         </Text>
                         {canAskAgain ? (
                             <TouchableOpacity style={styles.btn} onPress={requestPermission}>
@@ -84,7 +84,7 @@ export const QRScannerModal = ({
                         ) : (
                             <>
                                 <Text style={styles.message}>
-                                    El permiso fue denegado. Actívalo desde Ajustes para poder escanear.
+                                    El permiso fue denegado. ActÃ­valo desde Ajustes para poder escanear.
                                 </Text>
                                 <TouchableOpacity
                                     style={styles.btn}
@@ -93,7 +93,7 @@ export const QRScannerModal = ({
                                             Toast.show({
                                                 type: 'error',
                                                 text1: 'No se pudo abrir Ajustes',
-                                                text2: 'Abre Ajustes manualmente y habilita la cámara para esta app.'
+                                                text2: 'Abre Ajustes manualmente y habilita la cÃ¡mara para esta app.'
                                             });
                                         });
                                     }}
@@ -122,7 +122,7 @@ export const QRScannerModal = ({
         try {
             const trimmed = (data ?? '').trim();
             if (!trimmed) {
-                throw new Error('QR vacío o ilegible.');
+                throw new Error('QR vacÃ­o o ilegible.');
             }
             onClose(); // Cerrar modal antes de procesar
             await onScanned(trimmed);
@@ -132,7 +132,7 @@ export const QRScannerModal = ({
             Toast.show({
                 type: 'error',
                 text1: 'Error de Lectura',
-                text2: error.message || 'No se pudo procesar el código QR.'
+                text2: error.message || 'No se pudo procesar el cÃ³digo QR.'
             });
         }
     };
@@ -204,14 +204,14 @@ export const QRScannerModal = ({
                     <View style={styles.footer}>
                         {codigo ? (
                             <View style={[styles.codigoBadge, { borderColor: accentColor }]}>
-                                <Text style={styles.codigoLabel}>Código: </Text>
+                                <Text style={styles.codigoLabel}>CÃ³digo: </Text>
                                 <Text style={[styles.codigoValue, { color: accentColor }]}>{codigo}</Text>
                             </View>
                         ) : null}
                         <Text style={styles.footerText}>
                             {zoom > 0
-                                ? 'Modo macro activo. Aleja el QR unos 10–15 cm.'
-                                : 'Apunta al código QR a unos 15–25 cm de distancia.'}
+                                ? 'Modo macro activo. Aleja el QR unos 10â€“15 cm.'
+                                : 'Apunta al cÃ³digo QR a unos 15â€“25 cm de distancia.'}
                         </Text>
                         <TouchableOpacity style={styles.cerrarBtn} onPress={onClose}>
                             <Text style={styles.cerrarBtnText}>Cerrar</Text>
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#60A5FA',
         paddingVertical: 15,
         paddingHorizontal: 30,
-        borderRadius: 16,
+        borderRadius: 9999,
         width: '100%',
         alignItems: 'center',
     },
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     backButton: {
         width: 44,
         height: 44,
-        borderRadius: 22,
+        borderRadius: 9999,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.15)',
         paddingVertical: 14,
         paddingHorizontal: 30,
-        borderRadius: 16,
+        borderRadius: 9999,
         alignItems: 'center',
         marginTop: 10,
     },

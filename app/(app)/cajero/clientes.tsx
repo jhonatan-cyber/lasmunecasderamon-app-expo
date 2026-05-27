@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -118,7 +118,7 @@ export default function ClientesScreen() {
                 (c.phone?.toLowerCase().includes(s))
             );
         }
-        // Ordenar alfabéticamente por nombre
+        // Ordenar alfabÃ©ticamente por nombre
         return list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     }, [clients, search]);
 
@@ -162,7 +162,7 @@ export default function ClientesScreen() {
             });
 
             if (res.success || res.id || (method === 'PUT' && res.message)) {
-                Toast.show({ type: 'success', text1: 'Éxito', text2: editingClient ? 'Cliente actualizado' : 'Cliente creado' });
+                Toast.show({ type: 'success', text1: 'Ã‰xito', text2: editingClient ? 'Cliente actualizado' : 'Cliente creado' });
                 setClientModalVisible(false);
                 fetchClients(true);
             } else {
@@ -170,7 +170,7 @@ export default function ClientesScreen() {
             }
         } catch (error: any) {
             console.error("Error saving client:", error);
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexiÃ³n' });
         } finally {
             setSubmitting(false);
         }
@@ -222,7 +222,7 @@ export default function ClientesScreen() {
     const handleLoadBalance = async () => {
         const rawAmount = unformatCurrency(loadingAmount);
         if (!editingClient || !rawAmount || isNaN(Number(rawAmount)) || Number(rawAmount) <= 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ingrese un monto válido' });
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Ingrese un monto vÃ¡lido' });
             return;
         }
 
@@ -242,7 +242,7 @@ export default function ClientesScreen() {
                 monto: Number(rawAmount),
                 tipo: 'CARGA',
                 metodo_pago: loadMetodoPago,
-                motivo: 'Carga de saldo prepago (Módulo Clientes)'
+                motivo: 'Carga de saldo prepago (MÃ³dulo Clientes)'
             };
 
             if (loadMetodoPago === 'mixto') {
@@ -260,7 +260,7 @@ export default function ClientesScreen() {
             });
 
             if (res.success) {
-                Toast.show({ type: 'success', text1: 'Éxito', text2: 'Saldo cargado correctamente' });
+                Toast.show({ type: 'success', text1: 'Ã‰xito', text2: 'Saldo cargado correctamente' });
                 setLoadModalVisible(false);
                 await fetchClients(true);
             } else {
@@ -268,7 +268,7 @@ export default function ClientesScreen() {
             }
         } catch (error: any) {
             console.error("Error loading balance:", error);
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexiÃ³n' });
         } finally {
             setSubmitting(false);
         }
@@ -277,7 +277,7 @@ export default function ClientesScreen() {
     const confirmDelete = (client: Client) => {
         Alert.alert(
             "Eliminar Cliente",
-            `¿Está seguro que desea eliminar a ${client.name} ${client.lastName}?`,
+            `Â¿EstÃ¡ seguro que desea eliminar a ${client.name} ${client.lastName}?`,
             [
                 { text: "Cancelar", style: "cancel" },
                 {
@@ -327,7 +327,7 @@ export default function ClientesScreen() {
                                 <View style={styles.infoRowSmall}>
                                     <Ionicons name="call-outline" size={13} color={textSecondary} />
                                     <Text style={[styles.clientSub, { color: textSecondary }]} numberOfLines={1}>
-                                        {item.phone || "Sin Teléfono"}
+                                        {item.phone || "Sin TelÃ©fono"}
                                     </Text>
                                 </View>
                             </View>
@@ -401,7 +401,7 @@ export default function ClientesScreen() {
 
             <PremiumHeader
                 title="Clientes"
-                subtitle="Gestión de prepago y datos"
+                subtitle="GestiÃ³n de prepago y datos"
                 rightComponent={
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
                         <TouchableOpacity onPress={() => fetchClients(true)} style={styles.backBtnRight}>
@@ -409,7 +409,7 @@ export default function ClientesScreen() {
                         </TouchableOpacity>
                         <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                             <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>Atrás</Text>
+                            <Text style={styles.backTextHeader}>AtrÃ¡s</Text>
                         </Pressable>
                     </View>
                 }
@@ -421,7 +421,7 @@ export default function ClientesScreen() {
                         <Ionicons name="search" size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
                         <TextInput
                             style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#111827" }]}
-                            placeholder="Buscar cliente por nombre, RUN o teléfono..."
+                            placeholder="Buscar cliente por nombre, RUN o telÃ©fono..."
                             placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
                             value={search}
                             onChangeText={setSearch}
@@ -486,7 +486,7 @@ export default function ClientesScreen() {
             />
 
 
-            {/* Modal de Registro/Edición */}
+            {/* Modal de Registro/EdiciÃ³n */}
             <Modal visible={clientModalVisible} animationType="slide" transparent>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
                     <View style={[styles.modalContent, {
@@ -519,7 +519,7 @@ export default function ClientesScreen() {
                                     style={[styles.input, { color: isDark ? "#FFFFFF" : "#111827", borderColor: isDark ? "#374151" : "#E5E7EB" }]}
                                     value={formLastName}
                                     onChangeText={setFormLastName}
-                                    placeholder="Ej: Pérez"
+                                    placeholder="Ej: PÃ©rez"
                                     placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
                                 />
                             </View>
@@ -534,7 +534,7 @@ export default function ClientesScreen() {
                                 />
                             </View>
                             <View style={styles.formGroup}>
-                                <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>TELÉFONO</Text>
+                                <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>TELÃ‰FONO</Text>
                                 <TextInput
                                     style={[styles.input, { color: isDark ? "#FFFFFF" : "#111827", borderColor: isDark ? "#374151" : "#E5E7EB" }]}
                                     value={formPhone}
@@ -613,7 +613,7 @@ export default function ClientesScreen() {
                                 <View style={styles.mixedInputs}>
                                     <View style={styles.mixedHeader}>
                                         <Ionicons name="shuffle-outline" size={18} color={accentColor} />
-                                        <Text style={[styles.mixedTitle, { color: accentColor }]}>Distribución de Pago</Text>
+                                        <Text style={[styles.mixedTitle, { color: accentColor }]}>DistribuciÃ³n de Pago</Text>
                                     </View>
                                     
                                     <View style={styles.mixedRow}>
@@ -763,7 +763,7 @@ export default function ClientesScreen() {
                                             <Ionicons name="receipt-outline" size={36} color={isDark ? "#374151" : "#D1D5DB"} />
                                         </View>
                                         <Text style={{ color: textSecondary, marginTop: 14, fontSize: 15, fontWeight: '700' }}>Sin movimientos</Text>
-                                        <Text style={{ color: textSecondary, marginTop: 4, fontSize: 12, opacity: 0.7 }}>Aún no hay actividad registrada</Text>
+                                        <Text style={{ color: textSecondary, marginTop: 4, fontSize: 12, opacity: 0.7 }}>AÃºn no hay actividad registrada</Text>
                                     </View>
                                 ) : (
                                     historyData.map((item: any, index: number) => {
@@ -791,7 +791,7 @@ export default function ClientesScreen() {
                                                 marginBottom: 12,
                                                 overflow: 'hidden',
                                             }}>
-                                                {/* Header: Icono + Categoría + Monto */}
+                                                {/* Header: Icono + CategorÃ­a + Monto */}
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                                                     <View style={{
                                                         width: 44, height: 44, borderRadius: 14,
@@ -839,7 +839,7 @@ export default function ClientesScreen() {
                                                                         <Ionicons name="bed-outline" size={14} color="#3B82F6" />
                                                                     </View>
                                                                     <View>
-                                                                        <Text style={{ fontSize: 8, fontWeight: '800', color: '#3B82F6', textTransform: 'uppercase', letterSpacing: 0.5 }}>Habitación</Text>
+                                                                        <Text style={{ fontSize: 8, fontWeight: '800', color: '#3B82F6', textTransform: 'uppercase', letterSpacing: 0.5 }}>HabitaciÃ³n</Text>
                                                                         <Text style={{ fontSize: 13, fontWeight: '900', color: textPrimary }}>{item.detalle.habitacion}</Text>
                                                                     </View>
                                                                 </View>
@@ -850,7 +850,7 @@ export default function ClientesScreen() {
                                                                         <Ionicons name="timer-outline" size={14} color="#3B82F6" />
                                                                     </View>
                                                                     <View>
-                                                                        <Text style={{ fontSize: 8, fontWeight: '800', color: '#3B82F6', textTransform: 'uppercase', letterSpacing: 0.5 }}>Duración</Text>
+                                                                        <Text style={{ fontSize: 8, fontWeight: '800', color: '#3B82F6', textTransform: 'uppercase', letterSpacing: 0.5 }}>DuraciÃ³n</Text>
                                                                         <Text style={{ fontSize: 13, fontWeight: '900', color: textPrimary }}>{item.detalle.tiempo} min</Text>
                                                                     </View>
                                                                 </View>
@@ -911,7 +911,7 @@ export default function ClientesScreen() {
                                                     </View>
                                                 )}
 
-                                                {/* Footer: Método de pago */}
+                                                {/* Footer: MÃ©todo de pago */}
                                                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                                                     <View style={{
                                                         flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         height: 38,
-        borderRadius: 12,
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6

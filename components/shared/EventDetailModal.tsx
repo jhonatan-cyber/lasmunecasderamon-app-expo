@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
     Modal,
@@ -118,7 +118,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
                         {(event?.type === 'venta' || event?.type === 'servicio') && event?.codigo && (
                             <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Código</Text>
+                                <Text style={[styles.detailLabel, { color: textSecondary }]}>CÃ³digo</Text>
                                 <Text style={[styles.detailValue, { color: textPrimary }]}>{String(event.codigo)}</Text>
                             </View>
                         )}
@@ -154,7 +154,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                                         </View>
                                         {Number(eventDetail.descuento_total) > 0 && (
                                             <View style={styles.detailRow}>
-                                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Desc. habitación ({eventDetail.semanas_con_descuento} sem.)</Text>
+                                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Desc. habitaciÃ³n ({eventDetail.semanas_con_descuento} sem.)</Text>
                                                 <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${formatAmount(eventDetail.descuento_total)}</Text>
                                             </View>
                                         )}
@@ -181,21 +181,21 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
                                 {eventDetail.garzon_nombre && (
                                     <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Realizó el pedido</Text>
+                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>RealizÃ³ el pedido</Text>
                                         <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.garzon_nick || eventDetail.garzon_nombre}</Text>
                                     </View>
                                 )}
 
                                 {eventDetail.cajero_nombre && (
                                     <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Procesó la venta</Text>
+                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>ProcesÃ³ la venta</Text>
                                         <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.cajero_nick || eventDetail.cajero_nombre}</Text>
                                     </View>
                                 )}
 
                                 {eventDetail.habitacion_nombre && (
                                     <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Habitación</Text>
+                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>HabitaciÃ³n</Text>
                                         <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.habitacion_nombre}</Text>
                                     </View>
                                 )}
@@ -243,7 +243,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
                                 {user?.role?.toLowerCase() === 'anfitriona' && eventDetail.anfitrionas?.length > 0 && (
                                     <View style={{ width: '100%', marginTop: 4 }}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary, marginBottom: 8 }]}>Comisión por anfitriona</Text>
+                                        <Text style={[styles.detailLabel, { color: textSecondary, marginBottom: 8 }]}>ComisiÃ³n por anfitriona</Text>
                                         {eventDetail.anfitrionas.map((a: any, i: number) => (
                                             <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
                                                 <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{a.nick || a.nombre}</Text>
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     detailCloseBtn: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.05)'
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     confirmBtn: {
         width: '100%',
         height: 56,
-        borderRadius: 18,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 4,

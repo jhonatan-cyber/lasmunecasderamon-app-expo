@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
 import { toastConfig } from "@/utils/toast-config";
 
-// Configuraci?n de notificaciones en el nivel superior (fuera del componente)
+// Configuración de notificaciones en el nivel superior (fuera del componente)
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -53,7 +53,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const handleServerEvent = useCallback((payload: any) => {
-    // Detecci?n robusta del nombre del rol
+    // Detección robusta del nombre del rol
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
     const lowerRole = roleName?.toLowerCase();
     const isCajero = ["cajero", "cajera"].includes(lowerRole);
@@ -173,13 +173,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
             const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "success", text1: "Temporizador Iniciado", text2: `Habitaci?n: ${roomLabel}` });
+            // Toast.show({ type: "success", text1: "Temporizador Iniciado", text2: `Habitación: ${roomLabel}` });
           }
         } else if (payload.type === "timer_stopped") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
             const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "error", text1: "Temporizador Detenido", text2: `Sesi?n finalizada en ${roomLabel}` });
+            // Toast.show({ type: "error", text1: "Temporizador Detenido", text2: `Sesión finalizada en ${roomLabel}` });
           }
         }
         break;
@@ -191,11 +191,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           Toast.show({
             type: "success",
             text1: "Venta Actualizada",
-            text2: `C?digo: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}` ,
+            text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}` ,
             visibilityTime: 4000,
           });
           DeviceEventEmitter.emit("refresh_sales");
-          DeviceEventEmitter.emit("refresh_requests"); // Por si ven?a de un pedido
+          DeviceEventEmitter.emit("refresh_requests"); // Por si venía de un pedido
         }
         break;
 
@@ -240,7 +240,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       default:
-        console.log('[NotificationContext] Evento SSE no manejado espec?ficamente:', payload.type);
+        console.log('[NotificationContext] Evento SSE no manejado específicamente:', payload.type);
     }
   }, [showLocalNotification, user?.id, user?.role]);
 
@@ -256,7 +256,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       es.addEventListener("message", (event: any) => {
         if (!event.data) {
-          console.log('[NotificationContext] Evento SSE vac?o');
+          console.log('[NotificationContext] Evento SSE vacío');
           return;
         }
         try {
@@ -274,7 +274,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("open", () => {
-        console.log('[NotificationContext] Conexi?n SSE establecida con ?xito');
+        console.log('[NotificationContext] Conexión SSE establecida con éxito');
         setIsConnected(true);
         Toast.show({
             type: "info",
@@ -285,7 +285,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("error", (err: any) => {
-        console.error('[NotificationContext] Error de conexi?n SSE:', JSON.stringify(err));
+        console.error('[NotificationContext] Error de conexión SSE:', JSON.stringify(err));
         setIsConnected(false);
       });
 

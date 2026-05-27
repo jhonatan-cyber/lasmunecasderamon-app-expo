@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   FlatList,
@@ -39,7 +39,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
 
-  // Una habitación está ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
+  // Una habitaciÃ³n estÃ¡ ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
   const isLibre = (room: Room) => {
     const estado = Number(room.estado ?? room.status ?? 0);
     return estado === 1; // Solo libre si estado = 1
@@ -51,7 +51,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
         <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Seleccionar Habitación
+              Seleccionar HabitaciÃ³n
             </Text>
             <Pressable onPress={onClose}>
               <Ionicons name="close" size={24} color={textPrimary} />
@@ -65,7 +65,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
               const estaLibre = isLibre(item);
-              const roomName = item.nombre || `Habitación ${item.id_habitacion || item.id}`;
+              const roomName = item.nombre || `HabitaciÃ³n ${item.id_habitacion || item.id}`;
 
               return (
                 <Pressable
@@ -100,7 +100,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${(Number(item.precio || 0)).toLocaleString()} • {item.tiempo || 0} min
+                        ${(Number(item.precio || 0)).toLocaleString()} â€¢ {item.tiempo || 0} min
                       </Text>
                       <Text
                         style={{
@@ -110,7 +110,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                           fontWeight: "bold",
                         }}
                       >
-                        {estaLibre ? "● LIBRE" : "● OCUPADA"}
+                        {estaLibre ? "â— LIBRE" : "â— OCUPADA"}
                       </Text>
                     </View>
                   </View>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   modalActionBtn: {
     height: 54,
-    borderRadius: 18,
+    borderRadius: 9999,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,

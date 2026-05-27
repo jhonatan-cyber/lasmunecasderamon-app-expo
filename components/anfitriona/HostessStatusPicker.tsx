@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     statusBtn: {
         flex: 1,
         height: 44,
-        borderRadius: 14,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,

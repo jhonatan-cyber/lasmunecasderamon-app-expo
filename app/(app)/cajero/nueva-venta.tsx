@@ -1,4 +1,4 @@
-import React, { 
+﻿import React, { 
     useCallback, 
     useEffect, 
     useMemo, 
@@ -201,7 +201,7 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
 
 const isChampagneProduct = (producto: any) => {
     const cat = (producto.categoria || '').toLowerCase();
-    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+    return cat.includes('champaÃ±a') || cat.includes('shampaÃ±a') || cat.includes('champagne');
 };
 
 const getChampagneLimit = (precio: number) => {
@@ -276,7 +276,7 @@ export default function NuevaVentaScreen() {
                 anfitrionas: Array.isArray(anfitrionas) ? anfitrionas : (anfitrionas?.success ? anfitrionas.data : []),
                 habitaciones: rawHabitaciones.map((room: any) => ({
                     ...room,
-                    nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                    nombre: room.nombre ?? room.name ?? `HabitaciÃ³n ${room.id_habitacion ?? room.id ?? ''}`.trim(),
                     precio: room.precio ?? room.price ?? 0,
                     tiempo: room.tiempo ?? room.time ?? 0,
                     estado: room.estado ?? room.status ?? 0,
@@ -293,13 +293,13 @@ export default function NuevaVentaScreen() {
 
             dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
 
-            // Solo avisar si el servidor CONFIRMÓ que no hay caja abierta (no si hubo error de red)
+            // Solo avisar si el servidor CONFIRMÃ“ que no hay caja abierta (no si hubo error de red)
             if (cajaRes.status === 'fulfilled' && (!caja?.success || !caja?.data?.hasOpenCaja)) {
                 showToast('Caja Cerrada', 'Abre una caja primero.');
             }
         } catch (error) {
             console.error('Error fetching data:', error);
-            showToast('Error', 'No se pudo cargar la información.');
+            showToast('Error', 'No se pudo cargar la informaciÃ³n.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
@@ -313,7 +313,7 @@ export default function NuevaVentaScreen() {
     
     const handleLoadPrepago = async () => {
         if (!loadingTargetClient || !loadingAmount || isNaN(Number(loadingAmount)) || Number(loadingAmount) <= 0) {
-            showToast('Error', 'Ingrese un monto válido');
+            showToast('Error', 'Ingrese un monto vÃ¡lido');
             return;
         }
 
@@ -331,13 +331,13 @@ export default function NuevaVentaScreen() {
             });
 
             if (res.success) {
-                showToast('Éxito', 'Saldo cargado correctamente', 'success');
+                showToast('Ã‰xito', 'Saldo cargado correctamente', 'success');
                 dispatch({ type: 'SET_LOAD_MODAL', visible: false });
                 
                 // Actualizar clientes para reflejar el nuevo saldo
                 fetchInitialData(true);
                 
-                // Si el cliente cargado es el seleccionado, actualizarlo también
+                // Si el cliente cargado es el seleccionado, actualizarlo tambiÃ©n
                 if (selectedCliente && (String(selectedCliente.id_cliente || selectedCliente.id) === String(loadingTargetClient.id_cliente || loadingTargetClient.id))) {
                     dispatch({ type: 'SET_SELECTED_CLIENTE', payload: { ...selectedCliente, saldo: (Number(selectedCliente.saldo || 0) + Number(loadingAmount)) } });
                 }
@@ -346,7 +346,7 @@ export default function NuevaVentaScreen() {
             }
         } catch (error) {
             console.error('Error loading balance:', error);
-            showToast('Error', 'Error de conexión');
+            showToast('Error', 'Error de conexiÃ³n');
         } finally {
             dispatch({ type: 'SET_LOAD_SUBMITTING', payload: false });
         }
@@ -380,7 +380,7 @@ export default function NuevaVentaScreen() {
 
         const newCart = [...cart];
 
-        // Las anfitrionas acompañan el producto pero NO multiplican la cantidad
+        // Las anfitrionas acompaÃ±an el producto pero NO multiplican la cantidad
         const itemHostesses = hostesses.length > 0 ? hostesses : [];
         const hostessNames = hostesses.length > 0
             ? hostesses.map((hId: string) => anfitrionas.find((a: any) => String(a.id_usuario || a.id) === hId)?.nick || '').filter(Boolean).join(', ')
@@ -406,7 +406,7 @@ export default function NuevaVentaScreen() {
         }
 
         dispatch({ type: 'SET_CART', payload: newCart });
-        showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
+        showToast('Producto Agregado', `Se agregÃ³ ${prod.name || prod.nombre} al carrito`, 'success');
     }, [cart, modalQuantities, modalHostessSelections, anfitrionas]);
 
     const removeFromCart = useCallback((index: number) => {
@@ -441,15 +441,15 @@ export default function NuevaVentaScreen() {
   const showCardCommissionNote = metodoPago === "tarjeta" && commissionTotal > 0;
   const suggestedInvoiceAmount = Math.max(0, totals.total - commissionTotal);
 
-    // Calcular si hay algún producto que tenga comisión para habilitar o no la selección de habitación
+    // Calcular si hay algÃºn producto que tenga comisiÃ³n para habilitar o no la selecciÃ³n de habitaciÃ³n
     const hasCommissionItem = useMemo(() => {
         return cart.some(item => Number(item.commission || item.comision || 0) > 0 || Number(item.precio || item.price || 0) >= 30000);
     }, [cart]);
 
     const handleSubmit = useCallback(async () => {
-        // null = estado desconocido (error de red), se permite intentar — el backend valida
+        // null = estado desconocido (error de red), se permite intentar â€” el backend valida
         if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
-        if (cart.length === 0) return showToast('Error', 'Carrito vacío');
+        if (cart.length === 0) return showToast('Error', 'Carrito vacÃ­o');
 
         // Validar mixto
         if (metodoPago === 'mixto') {
@@ -458,7 +458,7 @@ export default function NuevaVentaScreen() {
                 return showToast('Monto Incorrecto', `La suma ($${suma.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`);
             }
             if (pagosMixtos.length < 2) {
-                return showToast('Métodos Insuficientes', 'Selecciona al menos 2 métodos de pago');
+                return showToast('MÃ©todos Insuficientes', 'Selecciona al menos 2 mÃ©todos de pago');
             }
         }
 
@@ -490,13 +490,13 @@ export default function NuevaVentaScreen() {
 
             const res = await apiClient('/sales', { method: 'POST', body: JSON.stringify(payload) });
             if (res.success) {
-                showToast('Éxito', 'Venta realizada', 'success');
+                showToast('Ã‰xito', 'Venta realizada', 'success');
                 refreshVentas();
                 router.replace('/cajero/ventas');
             } else showToast('Error', res.message || 'Error al vender');
         } catch (error) {
             console.error('Submit error:', error);
-            showToast('Error', 'Error de conexión');
+            showToast('Error', 'Error de conexiÃ³n');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
@@ -506,11 +506,11 @@ export default function NuevaVentaScreen() {
         <View style={{ flex: 1, backgroundColor: bg }}>
             <PremiumHeader 
                 title="Nueva Venta" 
-                subtitle="Cargando información..." 
+                subtitle="Cargando informaciÃ³n..." 
                 rightComponent={
                     <View style={styles.backBtnRight}>
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ opacity: 0.5 }} />
-                        <Text style={[styles.backTextRight, { opacity: 0.5 }]}>Atrás</Text>
+                        <Text style={[styles.backTextRight, { opacity: 0.5 }]}>AtrÃ¡s</Text>
                     </View>
                 }
             />
@@ -549,7 +549,7 @@ export default function NuevaVentaScreen() {
                 rightComponent={
                     <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextRight}>Atrás</Text>
+                        <Text style={styles.backTextRight}>AtrÃ¡s</Text>
                     </Pressable>
                 }
             />
@@ -566,11 +566,11 @@ export default function NuevaVentaScreen() {
                         <Pressable
                             style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
-                            accessibilityLabel="Seleccionar habitación"
+                            accessibilityLabel="Seleccionar habitaciÃ³n"
                             accessibilityRole="button"
                         >
                             <Ionicons name="business" size={20} color={accentColor} />
-                            <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar Habitación'}</Text>
+                            <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>{selectedHabitacion?.nombre || 'Seleccionar HabitaciÃ³n'}</Text>
                         </Pressable>
                     )}
                     {selectedHabitacion && (
@@ -627,7 +627,7 @@ export default function NuevaVentaScreen() {
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                                 <Ionicons name="shuffle-outline" size={18} color={accentColor} />
                                 <Text style={{ color: textPrimary, fontSize: 13, fontWeight: '800', marginLeft: 8, textTransform: 'uppercase' }}>
-                                    Distribución de Pagos (Total: ${totals.total.toLocaleString()})
+                                    DistribuciÃ³n de Pagos (Total: ${totals.total.toLocaleString()})
                                 </Text>
                             </View>
 
@@ -719,10 +719,10 @@ export default function NuevaVentaScreen() {
                     {showCardCommissionNote && (
                         <View style={[styles.cardNoteBox, { backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A" }]}>
                             <Text style={[styles.cardNoteTitle, { color: isDark ? "#FCD34D" : "#92400E" }]}>
-                                Nota de facturación para tarjeta
+                                Nota de facturaciÃ³n para tarjeta
                             </Text>
                             <Text style={[styles.cardNoteText, { color: isDark ? "#FDE68A" : "#78350F" }]}>
-                                Facturá/registrá la venta por ${suggestedInvoiceAmount.toLocaleString()} y la propina por ${commissionTotal.toLocaleString()}.
+                                FacturÃ¡/registrÃ¡ la venta por ${suggestedInvoiceAmount.toLocaleString()} y la propina por ${commissionTotal.toLocaleString()}.
                             </Text>
                         </View>
                     )}
@@ -806,7 +806,7 @@ export default function NuevaVentaScreen() {
                                                     addProductToCart(item);
                                                 }
                                             }}
-                                            accessibilityLabel={`Añadir ${item.name || item.nombre}`}
+                                            accessibilityLabel={`AÃ±adir ${item.name || item.nombre}`}
                                             accessibilityRole="button"
                                         >
                                             <Ionicons name="add" size={24} color="#FFF" />
@@ -818,7 +818,7 @@ export default function NuevaVentaScreen() {
                         <Pressable
                             style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
                             onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                            accessibilityLabel="Confirmar selección de productos"
+                            accessibilityLabel="Confirmar selecciÃ³n de productos"
                             accessibilityRole="button"
                         >
                             <Text style={styles.confirmModalBtnText}>Confirmar</Text>
@@ -908,7 +908,7 @@ export default function NuevaVentaScreen() {
                         newSelected = currentSelected.filter(x => x !== stringId);
                     } else {
                         if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
-                            showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
+                            showToast('LÃ­mite', `MÃ¡ximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
                             return;
                         }
                         newSelected = [...currentSelected, stringId];
@@ -924,7 +924,7 @@ export default function NuevaVentaScreen() {
                         const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0 || Number(hostessSelectionTarget.product.precio || hostessSelectionTarget.product.price || 0) >= 30000;
                         const currentSelected = modalHostessSelections[pid] || [];
                         if (hasComm && currentSelected.length === 0) {
-                            showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
+                            showToast('AsignaciÃ³n', 'Debes escoger al menos 1 anfitriona', 'error');
                             return;
                         }
                         addProductToCart(hostessSelectionTarget.product);
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     backBtn: {
         width: 44,
         height: 44,
-        borderRadius: 22,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(155,155,155,0.1)',
@@ -1074,7 +1074,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         height: 38, 
-        borderRadius: 12, 
+        borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6

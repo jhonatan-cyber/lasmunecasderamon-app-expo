@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
 import { useCallback, useRef, useState } from 'react';
@@ -83,7 +83,7 @@ export default function PropinasScreen() {
                 if (isManual) {
                     Toast.show({
                         type: hasChanges ? 'success' : 'info',
-                        text1: hasChanges ? 'Éxito' : 'Información',
+                        text1: hasChanges ? 'Ã‰xito' : 'InformaciÃ³n',
                         text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
                         visibilityTime: 3000
                     });
@@ -100,7 +100,7 @@ export default function PropinasScreen() {
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Error de conexión');
+            setError(err.message || 'Error de conexiÃ³n');
             if (isManual) {
                 Toast.show({
                     type: 'error',
@@ -134,7 +134,7 @@ export default function PropinasScreen() {
         setParentPropina(null);
 
         try {
-            // 1. Obtener info de la propina "madre" (monto total y repartición)
+            // 1. Obtener info de la propina "madre" (monto total y reparticiÃ³n)
             const tipRes = await apiClient<{ success: boolean; data: any }>(`/tips/${item.propina_id}`);
             if (tipRes.success) {
                 setParentPropina(tipRes.data);
@@ -149,9 +149,9 @@ export default function PropinasScreen() {
             }
         } catch (error) {
             console.error('Error fetching propina detail:', error);
-            // Si el tipRes falla, al menos intentamos por código si es posible (no tan fiable sin endpoint)
+            // Si el tipRes falla, al menos intentamos por cÃ³digo si es posible (no tan fiable sin endpoint)
             if (item.codigo_venta) {
-                // Podríamos buscar por código si existiera un endpoint, pero preferimos el ID
+                // PodrÃ­amos buscar por cÃ³digo si existiera un endpoint, pero preferimos el ID
             }
         } finally {
             setLoadingDetail(false);
@@ -162,7 +162,7 @@ export default function PropinasScreen() {
         if (!dateStr) return 'Sin fecha';
         try {
             const date = parseDateSafe(dateStr);
-            if (isNaN(date.getTime())) return 'Fecha inválida';
+            if (isNaN(date.getTime())) return 'Fecha invÃ¡lida';
             const day = date.getUTCDate();
             const month = date.toLocaleDateString('es-ES', { month: 'short' });
             const year = date.getUTCFullYear();
@@ -191,7 +191,7 @@ export default function PropinasScreen() {
 
     const renderItem = ({ item, index }: { item: Propina; index: number }) => {
         const isPendiente = item.estado === 1;
-        // Dinamismo: Rotar el color basado en el ID del detalle (hacer un resumen numérico si es UUID)
+        // Dinamismo: Rotar el color basado en el ID del detalle (hacer un resumen numÃ©rico si es UUID)
         const idNum = typeof item.id_detalle_propina === 'string' ? item.id_detalle_propina.split('-').pop()?.substring(0, 2) : item.id_detalle_propina;
         const itemAccent = rotateColor(accentColor, ((Number(idNum) || index) % 10) * 36);
 
@@ -331,7 +331,7 @@ export default function PropinasScreen() {
 
             {error ? (
                 <View style={[styles.errorCard, { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' }]}>
-                    <Text style={styles.errorText}>⚠️ {error}</Text>
+                    <Text style={styles.errorText}>âš ï¸ {error}</Text>
                     <Pressable onPress={() => fetchData()} style={({ pressed }) => [styles.retryButton, pressed && { opacity: 0.7 }]}>
                         <Text style={styles.retryText}>Reintentar</Text>
                     </Pressable>
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
 
     closeModalBtn: {
         height: 54,
-        borderRadius: 16,
+        borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,
