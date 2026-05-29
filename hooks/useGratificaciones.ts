@@ -55,7 +55,7 @@ export function useGratificaciones() {
 
       const filteredEmployees = usersData
         .map(normalizeEmployee)
-        .filter(user => {
+        .filter((user: GratificacionEmployee) => {
           const role = (user.role || '').toLowerCase();
           return !role.includes('administrador') && !role.includes('admin');
         });

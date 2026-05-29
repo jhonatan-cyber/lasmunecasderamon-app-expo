@@ -37,6 +37,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import logger from '@/utils/logger';
 interface HomeScreenProps {
   role: "anfitriona" | "garzon" | "cajero";
 }
@@ -82,13 +83,13 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
   const handleSelectEvent = async (item: any) => {
     setSelectedEvent(item);
-    if (['comision', 'propina', 'asistencia', 'anticipo'].includes(item.type)) {
+    if (['comision', 'propina', 'asistencia', 'anticipo', 'servicio', 'venta'].includes(item.type)) {
       setLoadingDetail(true);
       try {
         const res = await apiClient(`/events/detail/${item.id}?type=${item.type}`);
         if (res.success) setEventDetail(res.data);
       } catch (e) {
-        console.error(e);
+        logger.captureException(e, { context: 'HomeScreen:handleSelectEvent' });
       } finally {
         setLoadingDetail(false);
       }

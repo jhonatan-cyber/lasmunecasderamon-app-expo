@@ -47,6 +47,7 @@ import { Timer, useTimer } from '@/context/TimerContext';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
 
+import logger from '@/utils/logger';
 // Cast para evitar errores de tipos en React 19 con FlashList
 const FlashList = ShopifyFlashList as any;
 
@@ -346,7 +347,7 @@ export default function CuentasScreen() {
           );
         }
       } catch (error) {
-        console.error("Error fetching cuentas:", error);
+        logger.captureException(error, { context: 'Cuentas:fetchCuentas' });
         if (isManual) showToast("Error", "No se pudo actualizar");
       } finally {
         dispatch({ type: "SET_LOADING", payload: false });

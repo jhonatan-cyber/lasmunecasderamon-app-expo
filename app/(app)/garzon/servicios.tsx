@@ -25,6 +25,7 @@ import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal
 import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 
+import logger from '@/utils/logger';
 interface Room {
     id: number;
     id_habitacion?: number;
@@ -137,7 +138,7 @@ export default function ServiciosScreen() {
                 });
             }
         } catch (err: any) {
-            console.error('Error fetching data:', err);
+            logger.captureException(err, { context: 'Servicios:fetchServicios' });
             Toast.show({
                 type: 'error',
                 text1: 'Error',

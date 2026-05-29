@@ -14,6 +14,7 @@ import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 
+import logger from '@/utils/logger';
 export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boolean }) {
     const user = useAuthStore((state) => state.user);
     const router = useRouter();
@@ -58,7 +59,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                 }
             }
         } catch (error) {
-            console.error('[PendingSolicitudesAlert] Error fetching counts:', error);
+            logger.captureException(error, { context: 'PendingSolicitudesAlert:fetchPending' });
         }
     }, [isCajeroOrAdmin, triggerShake]);
 

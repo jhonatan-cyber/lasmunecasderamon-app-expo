@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import logger from '@/utils/logger';
 export interface ThemeColors {
     primary: string;
     gradient: string[];
@@ -46,7 +47,7 @@ export const useThemeStore = create<ThemeState>()(
 
             setAccentColor: (userId, color) => {
                 if (userId === undefined || userId === null) return;
-                console.log(`Setting accent color for user ${userId}: ${color}`);
+                logger.info(`Setting accent color for user ${userId}: ${color}`);
                 set((state) => ({
                     userColors: {
                         ...state.userColors,

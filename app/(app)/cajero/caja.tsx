@@ -120,21 +120,29 @@ const CajaSkeleton = ({ cardBg, borderColor }: { isDark: boolean, cardBg: string
 
 // â”€â”€â”€ Stat Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MetricCard = ({
-    label, value, icon, color, bgColor, isDark, cardBg, borderColor
+    label, value, icon, color, bgColor, isDark, cardBg, borderColor,
+    subtitle
 }: {
-    label: string; value: number; icon: any; color: string; bgColor: string;
+    label: string; value: number | string; icon: any; color: string; bgColor: string;
     isDark: boolean; cardBg: string; borderColor: string;
-}) => (
-    <View style={[styles.metricCard, { backgroundColor: cardBg, borderColor }]}>
-        <View style={[styles.metricIconBox, { backgroundColor: bgColor }]}>
-            <Ionicons name={icon} size={18} color={color} />
+    subtitle?: string;
+}) => {
+    const displayValue = typeof value === 'number' ? `$${value.toLocaleString()}` : value;
+    return (
+        <View style={[styles.metricCard, { backgroundColor: cardBg, borderColor }]}>
+            <View style={[styles.metricIconBox, { backgroundColor: bgColor }]}>
+                <Ionicons name={icon} size={18} color={color} />
+            </View>
+            <Text style={[styles.metricLabel, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{label}</Text>
+            <Text style={[styles.metricValue, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                {displayValue}
+            </Text>
+            {subtitle && (
+                <Text style={[styles.metricSubtitle, { color: isDark ? '#6B7280' : '#9CA3AF' }]}>{subtitle}</Text>
+            )}
         </View>
-        <Text style={[styles.metricLabel, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{label}</Text>
-        <Text style={[styles.metricValue, { color: isDark ? '#F9FAFB' : '#111827' }]}>
-            ${value.toLocaleString()}
-        </Text>
-    </View>
-);
+    );
+};
 
 // â”€â”€â”€ Row Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor }: {
@@ -374,13 +382,49 @@ export default function CajaScreen() {
 
                     {cajaAbierta && stats && (
                         <>
-                            {/* â”€â”€ 2-col Metric Cards â”€â”€ */}
+                            {/* â”€â”€ 2-col Metric Cards (fila 1) â”€â”€ */}
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
                                     icon="wallet-outline" color={accentColor} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
+                                <MetricCard
+                                    label="Total Ventas" value={stats.total_ventas || 0}
+                                    subtitle={`${stats.cantidad_ventas || 0} ventas`}
+                                    icon="cart-outline" color="#10B981" bgColor="#10B98118"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                            </View>
+                            {/* â”€â”€ 2-col Metric Cards (fila 2) â”€â”€ */}
+                            <View style={styles.metricsGrid}>
+                                <MetricCard
+                                    label="Total Servicios" value={stats.total_servicios || 0}
+                                    subtitle={`${stats.cantidad_servicios || 0} servicios`}
+                                    icon="construct-outline" color="#3B82F6" bgColor="#3B82F618"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Efectivo" value={stats.total_efectivo || 0}
+                                    icon="cash-outline" color="#F59E0B" bgColor="#F59E0B18"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                            </View>
+                            {/* â”€â”€ 2-col Metric Cards (fila 3) â”€â”€ */}
+                            <View style={styles.metricsGrid}>
+                                <MetricCard
+                                    label="Tarjetas" value={stats.total_tarjeta || 0}
+                                    icon="card-outline" color="#8B5CF6" bgColor="#8B5CF618"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Transferencias" value={stats.total_transferencia || 0}
+                                    icon="swap-horizontal-outline" color="#EC4899" bgColor="#EC489918"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                            </View>
+                            {/* â”€â”€ 2-col Metric Cards (fila 4) â”€â”€ */}
+                            <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="IVA" value={stats.total_iva || 0}
                                     icon="document-text-outline" color="#10B981" bgColor="#10B98118"
@@ -391,9 +435,17 @@ export default function CajaScreen() {
                                     icon="people-outline" color="#8B5CF6" bgColor="#8B5CF618"
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
+                            </View>
+                            {/* â”€â”€ 2-col Metric Cards (fila 5) â”€â”€ */}
+                            <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Propinas" value={stats.total_propina || 0}
                                     icon="heart-outline" color="#F59E0B" bgColor="#F59E0B18"
+                                    isDark={isDark} cardBg={cardBg} borderColor={borderColor}
+                                />
+                                <MetricCard
+                                    label="Anticipos" value={stats.total_anticipo || 0}
+                                    icon="trending-down-outline" color="#EF4444" bgColor="#EF444418"
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
@@ -428,7 +480,7 @@ export default function CajaScreen() {
                         </>
                     )}
 
-                    {!cajaAbierta && (
+                    {!cajaAbierta && stats && (
                         <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
                             <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
@@ -436,6 +488,26 @@ export default function CajaScreen() {
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
                             <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
                                 Abre la caja para comenzar a registrar movimientos del turno
+                            </Text>
+                            <Pressable
+                                style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
+                                onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                            >
+                                <Ionicons name="power-outline" size={18} color="#FFF" />
+                                <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
+                            </Pressable>
+                        </View>
+                    )}
+
+                    {/* Historical cierres / empty state when no caja */}
+                    {!cajaAbierta && !stats && (
+                        <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
+                                <Ionicons name="wallet-outline" size={36} color={textSecondary} />
+                            </View>
+                            <Text style={[styles.emptyTitle, { color: textPrimary }]}>Sin datos de caja</Text>
+                            <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
+                                No hay registros de caja aún. Abre una para comenzar.
                             </Text>
                             <Pressable
                                 style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
@@ -620,6 +692,7 @@ const styles = StyleSheet.create({
     metricIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
     metricLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
     metricValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+    metricSubtitle: { fontSize: 10, fontWeight: '600', marginTop: 2 },
 
     // Breakdown
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },

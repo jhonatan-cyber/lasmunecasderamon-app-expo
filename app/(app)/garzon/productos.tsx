@@ -24,6 +24,7 @@ import {PremiumHeader} from '@/components/ui/PremiumHeader';
 import {ClientSelectModal} from '@/components/cajero/forms/ClientSelectModal';
 import {PremiumAlert} from '@/components/ui/PremiumAlert';
 
+import logger from '@/utils/logger';
 interface Client {
     id: string;
     id_cliente?: string;
@@ -86,7 +87,7 @@ export default function ProductosScreen() {
             const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
             const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
 
-            console.log('Anfitrionas response:', anfData);
+            logger.info('Anfitrionas response', { data: anfData });
 
             const newData = { products: prodData?.data, anfitrionas: anfData?.data || (Array.isArray(anfData) ? anfData : null), rooms: roomData?.data, clients: clientData?.data || clientData };
             const serialized = JSON.stringify(newData);
@@ -119,7 +120,7 @@ export default function ProductosScreen() {
                 });
             }
         } catch (err: any) {
-            console.error('Error fetching data:', err);
+            logger.captureException(err, { context: 'Productos:fetchProductos' });
             setError(err.message || 'Error de conexión');
             if (isManual) {
                 Toast.show({
@@ -200,10 +201,10 @@ export default function ProductosScreen() {
                 usuarios: Array.from(new Set(cart.flatMap(i => i.selectedHostesses))).map(id => ({ usuarioId: id })),
             };
 
-            console.log('[DEBUG] Enviando pedido:', JSON.stringify(orderData, null, 2));
-            console.log('[DEBUG] Cliente ID:', selectedClientId);
-            console.log('[DEBUG] Propina:', tipAmount);
-            console.log('[DEBUG] Total:', cartTotal);
+            logger.info('[DEBUG] Enviando pedido', { orderData });
+            logger.info('[DEBUG] Cliente ID', { clienteId: selectedClientId });
+            logger.info('[DEBUG] Propina', { amount: tipAmount });
+            logger.info('[DEBUG] Total', { total: cartTotal });
 
             const res = await apiClient('/orders', { method: 'POST', body: JSON.stringify(orderData) });
             if (res.success) {

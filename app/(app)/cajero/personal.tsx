@@ -23,6 +23,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
+import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
 const { width } = Dimensions.get('window');
@@ -62,9 +63,9 @@ export default function PersonalScreen() {
 
     const fetchUsers = useCallback(async (isManual = false) => {
         try {
-            console.log('[PersonalScreen] Fetching users with status=active...');
+            logger.info('[PersonalScreen] Fetching users with status=active...');
             const data = await apiClient('/users?status=active');
-            console.log('[PersonalScreen] Response:', data);
+            logger.info('[PersonalScreen] Response:', data);
             
             if (data.success) {
                 // Filtrar personal activo (excluir administrador)
@@ -96,7 +97,7 @@ export default function PersonalScreen() {
                 }
             }
         } catch (error: any) {
-            console.error('[PersonalScreen] Error fetching users:', error);
+            logger.captureException(error, { context: 'Personal:fetchUsers' });
             Toast.show({
                 type: 'error',
                 text1: 'Error',
@@ -123,7 +124,7 @@ export default function PersonalScreen() {
                     const res = await apiClient('/codigo/actual');
                     if (res.success) setCodigoAsistencia(res.codigo);
                 } catch (e) {
-                    console.error('[Personal] Error refreshing attendance code:', e);
+                    logger.captureException(e, { context: 'Personal:onRefresh' });
                 }
             })()
         ]);
@@ -191,7 +192,7 @@ export default function PersonalScreen() {
                     }
                 }
             } catch (e) {
-                console.error('Error polling user QR:', e);
+                logger.captureException(e, { context: 'Personal:updatePersonal' });
             }
         };
 

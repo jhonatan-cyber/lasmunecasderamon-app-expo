@@ -7,6 +7,7 @@ import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 
+import logger from '@/utils/logger';
 export const AttendanceCodeDisplay = () => {
     const [codigo, setCodigo] = useState<string>('');
     const [showQR, setShowQR] = useState(false);
@@ -31,7 +32,7 @@ export const AttendanceCodeDisplay = () => {
                 setCodigo(res.codigo);
             }
         } catch (error) {
-            console.error('Error fetching attendance code:', error);
+            logger.captureException(error, { context: 'AttendanceCodeDisplay:fetchCodigo' });
         }
     }, [canSeeCode, role]);
 

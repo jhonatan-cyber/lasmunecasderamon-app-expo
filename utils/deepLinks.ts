@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
+import logger from './logger';
 interface DeepLinkConfig {
     screens: Record<string, string>;
     prefixes: string[];
@@ -71,7 +72,7 @@ export const handleDeepLink = (url: string): { screen: string; params?: Record<s
         
         return null;
     } catch (error) {
-        console.error('Error parsing deep link:', error);
+        logger.captureException(error, { context: 'DeepLinks:parseDeepLink' });
         return null;
     }
 };

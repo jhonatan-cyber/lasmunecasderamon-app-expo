@@ -5,6 +5,7 @@ import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
+import logger from '@/utils/logger';
 export interface Anticipo {
   id_solicitud: number | string;
   usuario_id: number | string;
@@ -64,7 +65,7 @@ export function useAnticipos() {
         return response.data;
       }
     } catch (e) {
-      console.error(e);
+      logger.captureException(e, { context: 'useAnticipos:fetchMaximo' });
     }
     return null;
   }, []);

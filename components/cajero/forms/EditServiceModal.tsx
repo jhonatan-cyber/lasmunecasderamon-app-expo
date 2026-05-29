@@ -19,6 +19,7 @@ import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/for
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { parseDateSafe } from '@/utils/timeUtils';
 
+import logger from '@/utils/logger';
 interface Anfitriona {
     id_usuario: number;
     nombre: string;
@@ -58,13 +59,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const fetchHabitacionSinComision = useCallback(async () => {
         try {
             const res = await apiClient('/rooms');
-            console.log('[EditServiceModal] Respuesta habitaciones:', JSON.stringify(res, null, 2));
+            logger.info('[EditServiceModal] Respuesta habitaciones', { response: res });
 
             if (res.success && Array.isArray(res.data)) {
-                console.log('[EditServiceModal] Total habitaciones:', res.data.length);
+                logger.info('[EditServiceModal] Total habitaciones', { count: res.data.length });
 
                 res.data.forEach((h: any, index: number) => {
-                    console.log(`[EditServiceModal] Habitación ${index}:`, {
+                    logger.info(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
                         tiempo: h.tiempo || h.time,

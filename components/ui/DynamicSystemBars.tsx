@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
+import logger from '@/utils/logger';
 export const DynamicSystemBars = () => {
   const { accentColor } = useAccentColor();
 
@@ -15,7 +16,7 @@ export const DynamicSystemBars = () => {
         await NavigationBar.setVisibilityAsync('visible');
 
       } catch (error) {
-        console.log('Error setting navigation bar color:', error);
+        logger.captureException(error, { context: 'DynamicSystemBars:updateNavigationBar' });
       }
     };
     const timeout = setTimeout(updateNavigationBar, 100);

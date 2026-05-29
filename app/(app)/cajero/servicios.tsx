@@ -28,6 +28,7 @@ import {
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
+import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
 // --- Helper for safe number conversion ---
@@ -571,7 +572,7 @@ export default function ServiciosActivosScreen() {
         if (isManual) Toast.show({ type: "success", text1: "Actualizado" });
       }
     } catch (error) {
-      console.error("fetchFinalizados error:", error);
+      logger.captureException(error, { context: 'Servicios:fetchData' });
     } finally {
       dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: false });
     }

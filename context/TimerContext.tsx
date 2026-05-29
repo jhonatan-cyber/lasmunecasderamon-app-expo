@@ -10,11 +10,11 @@ import React, {
     useState,
 } from "react";
 import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';
-import EventSource from "react-native-sse";
 import { MetodoPago } from '../types/api';
 
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 
+import logger from '@/utils/logger';
 export interface Timer {
   id: string;
   servicioId: string;
@@ -71,7 +71,7 @@ const announceVoice = async (message: string) => {
       pitch: 1.0,
     });
   } catch (error) {
-    console.error("Error al anunciar por voz:", error);
+    logger.captureException(error, { context: 'TimerContext:announceVoice' });
   }
 };
 
@@ -84,7 +84,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
   const user = useAuthStore((state) => state.user);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const timersRef = useRef<Timer[]>([]);
 
   // Sincronizar ref con estado para el intervalo de voz
@@ -100,13 +99,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     const nowTs = Date.now();
     // Evitar llamadas excesivas (mucha frecuencia): mínimo 2 segundos entre fetch
     if (nowTs - lastFetchTimeRef.current < 2000) {
-      console.log('[TimerContext Mobile] Skipping fetchActiveTimers (debounced)');
+      logger.info('[TimerContext Mobile] Skipping fetchActiveTimers (debounced)');
       return;
     }
     lastFetchTimeRef.current = nowTs;
 
     try {
-      console.log('[TimerContext Mobile] Calling fetchActiveTimers');
+      logger.info('[TimerContext Mobile] Calling fetchActiveTimers');
       // Timeout más largo (20s) para evitar AbortError en red lenta
       const data = await apiClient("/timers/active?source=mobile", { timeout: 20000 });
       if (data.success && Array.isArray(data.data)) {
@@ -343,7 +342,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
       case "timers_updated": {
-        console.log('[TimerContext Mobile] timers_updated received - syncing list');
+        logger.info('[TimerContext Mobile] timers_updated received - syncing list');
         fetchActiveTimers();
         break;
       }

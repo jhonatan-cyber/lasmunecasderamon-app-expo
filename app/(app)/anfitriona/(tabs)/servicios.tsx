@@ -16,6 +16,7 @@ import { useServicios, Servicio } from '@/hooks/useServicios';
 import { ServiceCard } from '@/components/anfitriona/ServiceCard';
 import { ServiceDetailModal } from '@/components/anfitriona/ServiceDetailModal';
 
+import logger from '@/utils/logger';
 export default function ServiciosScreen() {
     const { accentColor, isDark } = useAccentColor();
     const { servicios, loading, refreshing, error, onRefresh, handleAssistance, fetchData } = useServicios();
@@ -143,7 +144,7 @@ export default function ServiciosScreen() {
                 onClose={() => setModalVisible(false)}
                 onEdit={() => {
                     // TODO: Implementar edición del servicio
-                    console.log('Editar servicio:', selectedServicio?.id_servicio);
+                    logger.info('Editar servicio', { servicioId: selectedServicio?.id_servicio });
                 }}
             />
 

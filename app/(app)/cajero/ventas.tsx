@@ -31,6 +31,7 @@ import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from '@/utils/colors';
 
+import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
 // Utils for status colors and labels
@@ -327,7 +328,7 @@ export default function VentasScreen() {
       }
       setAlertConfig(prev => ({ ...prev, visible: false }));
     } catch (error) {
-      console.error("Error fetching ventas:", error);
+      logger.captureException(error, { context: 'Ventas:fetchData' });
       if (isManual) {
         Toast.show({
           type: "error",
@@ -359,7 +360,7 @@ export default function VentasScreen() {
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
-      console.log("[DEBUG] Event refresh_sales received, updating list...", data);
+      logger.info("[DEBUG] Event refresh_sales received, updating list...", data);
       
       // La notificación global (modal) ya la maneja GlobalTimerAlert.tsx
       // Aquí solo refrescamos la lista.

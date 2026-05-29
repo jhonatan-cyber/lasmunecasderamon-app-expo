@@ -28,6 +28,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 
+import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
 interface Client {
@@ -93,7 +94,7 @@ export default function ClientesScreen() {
                 setClients(res.data || []);
             }
         } catch (error: any) {
-            console.error("Error fetching clients:", error);
+            logger.captureException(error, { context: 'Clientes:fetchClients' });
             Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'No se pudieron descargar los clientes' });
         } finally {
             setLoading(false);
@@ -169,7 +170,7 @@ export default function ClientesScreen() {
                 Toast.show({ type: 'error', text1: 'Error', text2: res.message || 'Error al guardar' });
             }
         } catch (error: any) {
-            console.error("Error saving client:", error);
+            logger.captureException(error, { context: 'Clientes:saveClient' });
             Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
         } finally {
             setSubmitting(false);
@@ -194,7 +195,7 @@ export default function ClientesScreen() {
                 setHistoryData(res);
             }
         } catch (error) {
-            console.error("Error fetching history:", error);
+            logger.captureException(error, { context: 'Clientes:fetchHistory' });
         } finally {
             setHistoryLoading(false);
             setRefreshingHistory(false);
@@ -267,7 +268,7 @@ export default function ClientesScreen() {
                 Toast.show({ type: 'error', text1: 'Error', text2: res.message || 'Error al cargar saldo' });
             }
         } catch (error: any) {
-            console.error("Error loading balance:", error);
+            logger.captureException(error, { context: 'Clientes:loadBalance' });
             Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
         } finally {
             setSubmitting(false);

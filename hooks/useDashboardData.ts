@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import Toast from "react-native-toast-message";
 import { DashboardEvent, DashboardStats, UserRole } from "@/types/api";
 
+import logger from '@/utils/logger';
 export interface DashboardData {
   events: DashboardEvent[];
   stats: DashboardStats;
@@ -52,7 +53,7 @@ export function useDashboardData(role: UserRole) {
       }
 
       const results = await Promise.all(endpoints.map(p => p.catch(e => {
-        console.error("Endpoint error:", e);
+        logger.error("Endpoint error:", e);
         return { success: false, data: null };
       })));
 
@@ -102,14 +103,14 @@ export function useDashboardData(role: UserRole) {
     });
     
     const sseSub = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
-        console.log('[SSE Event received]:', payload?.type, payload?.data);
+        logger.info('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
         const businessEvents = ["new_order", "new_service_request", "order_updated", "service_request_approved", "room_occupied"];
         if (payload && businessEvents.includes(payload.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
             
             // Emitir evento para que las solicitudes se actualicen y abran el modal automáticamente
             if (payload.type === 'new_order' || payload.type === 'new_service_request') {
-                console.log('[SSE] Emitiendo refresh_requests para:', payload.type, payload.data?.id);
+                logger.info('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
                 DeviceEventEmitter.emit('refresh_requests', payload);
             }
         }

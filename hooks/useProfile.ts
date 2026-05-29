@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 
+import logger from '@/utils/logger';
 interface ProfileData {
   nick: string;
   phone: string;
@@ -46,7 +47,7 @@ export function useProfile() {
         }));
       }
     } catch (error) {
-      console.error('[useProfile] Fetch error:', error);
+      logger.captureException(error, { context: 'useProfile:fetchProfile' });
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 import { NetworkError } from '@/api/client';
 
+import logger from '@/utils/logger';
 interface QueuedRequest {
     id: string;
     endpoint: string;
@@ -40,7 +41,7 @@ class OfflineSyncManager {
                 this.notifyListeners();
             });
         } catch (e) {
-            console.log('Network listener init failed:', e);
+            logger.captureException(e, { context: 'OfflineSync:initListener' });
         }
     }
 
@@ -136,7 +137,7 @@ class OfflineSyncManager {
                 syncedCount: successCount
             });
         } catch (error) {
-            console.error('Sync failed:', error);
+            logger.captureException(error, { context: 'OfflineSync:sync' });
             await this.setSyncStatus({ lastSync: Date.now(), success: false, pendingCount: (await this.getQueue()).length });
         } finally {
             this.syncInProgress = false;

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 
+import logger from '@/utils/logger';
 /**
  * Hook centralizado para manejar notificaciones entrantes y navegación (Deep Linking)
  */
@@ -73,7 +74,7 @@ export function useNotificationHandler() {
                 break;
 
             default:
-                console.log('⚠️ Tipo de notificación no manejado para navegación:', type);
+                logger.info('⚠️ Tipo de notificación no manejado para navegación', { type });
         }
     };
 }

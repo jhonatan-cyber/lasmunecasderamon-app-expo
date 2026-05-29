@@ -5,6 +5,7 @@ import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
+import logger from '@/utils/logger';
 interface Gratificacion {
   id: string;
   usuario_id: number;
@@ -71,7 +72,7 @@ export function useAsistencia() {
         setGratificaciones(data);
       }
     } catch (err) {
-      console.error('Error fetching gratificaciones', err);
+      logger.captureException(err, { context: 'useAsistencia:fetchGratificaciones' });
     }
   }, []);
 
@@ -102,4 +103,3 @@ export function useAsistencia() {
     onRefresh
   };
 }
-

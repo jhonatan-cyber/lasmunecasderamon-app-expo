@@ -213,7 +213,6 @@ export default function CajeroGratificacionesScreen() {
           data={filteredData}
           keyExtractor={item => item.id}
           renderItem={renderItem}
-          estimatedItemSize={120}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />

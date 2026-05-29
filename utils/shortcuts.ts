@@ -2,6 +2,7 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
+import logger from './logger';
 interface Shortcut {
     id: string;
     title: string;
@@ -72,7 +73,7 @@ export const getShortcutFromIntent = async (): Promise<string | null> => {
         //     return action || null;
         // }
     } catch (error) {
-        console.log('No pending intent or method not found');
+        logger.info('No pending intent or method not found');
     }
     
     return null;

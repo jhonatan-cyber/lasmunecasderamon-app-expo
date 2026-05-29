@@ -19,6 +19,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from "@/utils/colors";
 import { parseDateSafe } from "@/utils/timeUtils";
 
+import logger from '@/utils/logger';
 interface Propina {
     id_detalle_propina: string;
     propina_id: string;
@@ -148,7 +149,7 @@ export default function PropinasScreen() {
                 }
             }
         } catch (error) {
-            console.error('Error fetching propina detail:', error);
+            logger.captureException(error, { context: 'Propinas:fetchTips' });
             // Si el tipRes falla, al menos intentamos por código si es posible (no tan fiable sin endpoint)
             if (item.codigo_venta) {
                 // Podríamos buscar por código si existiera un endpoint, pero preferimos el ID

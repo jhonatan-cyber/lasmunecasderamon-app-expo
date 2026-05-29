@@ -6,6 +6,7 @@ import * as Speech from "expo-speech";
 import { Platform, Vibration } from "react-native";
 import { apiClient } from "@/api/client";
 
+import logger from '@/utils/logger';
 export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
@@ -51,10 +52,10 @@ export async function registerForPushNotificationsAsync(): Promise<
         await saveTokenToServer(token);
       }
     } catch (e) {
-      console.error("❌ Error obteniendo push token:", e);
+      logger.captureException(e, { context: 'PushNotifications:getPushToken' });
     }
   } else {
-    console.log("Se debe usar un dispositivo físico para notificaciones push");
+    logger.info("Se debe usar un dispositivo físico para notificaciones push");
   }
 
   if (Platform.OS === "android") {
@@ -82,10 +83,10 @@ async function saveTokenToServer(token: string) {
     if (response.success) {
       
     } else {
-      console.error("❌ Error registrando push token:", response.message);
+      logger.error("❌ Error registrando push token:", response.message);
     }
   } catch (error) {
-    console.error("❌ Error de red registrando push token:", error);
+    logger.captureException(error, { context: 'PushNotifications:saveToken' });
   }
 }
 
@@ -118,7 +119,7 @@ export async function triggerNotificationEffects(
       });
     }
   } catch (error) {
-    console.error("[NOTIF EFFECTS] Error:", error);
+    logger.captureException(error, { context: 'PushNotifications:roleLower' });
   }
 }
 

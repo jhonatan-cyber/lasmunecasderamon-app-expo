@@ -27,6 +27,7 @@ import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useTimer } from '@/context/TimerContext';
 
+import logger from '@/utils/logger';
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
@@ -276,7 +277,7 @@ export default function AgregarCuentaScreen() {
                 }
             });
         } catch (error) {
-            console.error('Error fetching initial data:', error);
+            logger.captureException(error, { context: 'AgregarCuenta:addCuenta' });
             showToast('Error', 'No se pudo cargar la información necesaria.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
@@ -308,7 +309,7 @@ export default function AgregarCuentaScreen() {
                 showToast('Error', 'No se pudieron cargar los productos');
             }
         } catch (error) {
-            console.error('Fetch products error:', error);
+            logger.captureException(error, { context: 'AgregarCuenta:handleOpenCategory' });
         } finally {
             dispatch({ type: 'SET_MODAL_LOADING', payload: false });
         }
@@ -434,7 +435,7 @@ export default function AgregarCuentaScreen() {
                 showToast('Error', res.message || 'No se pudo actualizar la cuenta');
             }
         } catch (error) {
-            console.error('Submit error:', error);
+            logger.captureException(error, { context: 'AgregarCuenta:addCuenta' });
             showToast('Error', 'Ocurrió un error al procesar la cuenta.');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });

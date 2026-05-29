@@ -1,6 +1,6 @@
 import { API_URL } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 import { MetodoPago } from '../types/api';
 
@@ -29,7 +29,6 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const user = useAuthStore((state) => state.user);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const refreshVentas = useCallback(async () => {
     try {

@@ -7,6 +7,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 
+import logger from '@/utils/logger';
 interface Event {
   type: string;
   id: number;
@@ -177,7 +178,7 @@ export function PremiumLiquidationCard({
             await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
             showAlert('Descarga completada', 'El reporte se ha guardado correctamente en tu dispositivo.', 'success');
           } catch (e) {
-            console.error('Error saving file:', e);
+            logger.captureException(e, { context: 'PremiumLiquidationCard:processLiquidation' });
             showAlert('Error de Guardado', 'No se pudo guardar el archivo en la ubicación seleccionada.', 'danger');
           }
         } else {
@@ -197,7 +198,7 @@ export function PremiumLiquidationCard({
 
       onExportSuccess?.();
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.captureException(error, { context: 'PremiumLiquidationCard:fetchLiquidacion' });
       showAlert('Error', 'No se pudo generar el reporte PDF correctamente.', 'danger');
     }
   }, [accentColor, events, onExportSuccess, title, totalDisplayed, totalLabel, user]);

@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
 import { toastConfig } from "@/utils/toast-config";
 
+import logger from '@/utils/logger';
 // Configuración de notificaciones en el nivel superior (fuera del componente)
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -60,7 +61,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const isCajeroOrAdmin = ["cajero", "cajera", "administrador", "administradora"].includes(lowerRole);
     const isRequester = String(payload?.data?.usuario_id || "") === String(user?.id || "");
 
-    console.log(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+    logger.info(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
 
 
@@ -240,7 +241,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       default:
-        console.log('[NotificationContext] Evento SSE no manejado específicamente:', payload.type);
+        logger.info('[NotificationContext] Evento SSE no manejado específicamente', { type: payload.type });
     }
   }, [showLocalNotification, user?.id, user?.role]);
 
@@ -248,7 +249,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user?.id) return;
 
     const sseUrl = `${API_URL}/notifications/sse`;
-    console.log('[NotificationContext] Intentando conectar SSE a:', sseUrl);
+    logger.info('[NotificationContext] Intentando conectar SSE', { url: sseUrl });
     let es: EventSource | null = null;
     try {
       es = new EventSource(sseUrl);
@@ -256,12 +257,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       es.addEventListener("message", (event: any) => {
         if (!event.data) {
-          console.log('[NotificationContext] Evento SSE vacío');
+          logger.info('[NotificationContext] Evento SSE vacío');
           return;
         }
         try {
           const payload = JSON.parse(event.data);
-          console.log('[NotificationContext] Evento SSE recibido:', payload.type, payload.data?.id || '');
+          logger.info('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
           
           // No emitimos eventos de control para evitar bucles de refresco en dashboards
           if (payload.type !== 'connected' && payload.type !== 'ping') {
@@ -269,12 +270,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           handleServerEvent(payload);
         } catch (err) {
-          console.error('[NotificationContext] Error parseando datos SSE:', err);
+          logger.captureException(err, { context: 'NotificationContext:parseEvent' });
         }
       });
 
       es.addEventListener("open", () => {
-        console.log('[NotificationContext] Conexión SSE establecida con éxito');
+        logger.info('[NotificationContext] Conexión SSE establecida con éxito');
         setIsConnected(true);
         Toast.show({
             type: "info",
@@ -285,12 +286,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("error", (err: any) => {
-        console.error('[NotificationContext] Error de conexión SSE:', JSON.stringify(err));
+        logger.error('[NotificationContext] Error de conexión SSE', { error: JSON.stringify(err) });
         setIsConnected(false);
       });
 
     } catch (err) {
-       console.error('[NotificationContext] Error fatal al crear EventSource:', err);
+       logger.captureException(err, { context: 'NotificationContext:connectSSE' });
     }
 
     return () => {

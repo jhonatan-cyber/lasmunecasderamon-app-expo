@@ -38,6 +38,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useSales } from '@/context/SalesContext';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
+import logger from '@/utils/logger';
 type VentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
@@ -298,7 +299,7 @@ export default function NuevaVentaScreen() {
                 showToast('Caja Cerrada', 'Abre una caja primero.');
             }
         } catch (error) {
-            console.error('Error fetching data:', error);
+            logger.captureException(error, { context: 'NuevaVenta:processVenta' });
             showToast('Error', 'No se pudo cargar la información.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
@@ -345,7 +346,7 @@ export default function NuevaVentaScreen() {
                 showToast('Error', res.message || 'Error al cargar saldo');
             }
         } catch (error) {
-            console.error('Error loading balance:', error);
+            logger.captureException(error, { context: 'NuevaVenta:submitVenta' });
             showToast('Error', 'Error de conexión');
         } finally {
             dispatch({ type: 'SET_LOAD_SUBMITTING', payload: false });
@@ -367,7 +368,7 @@ export default function NuevaVentaScreen() {
                 dispatch({ type: 'OPEN_CATEGORY_MODAL', category: cat, products: res.data || [] });
             } else showToast('Error', 'No se pudieron cargar los productos');
         } catch (error) {
-            console.error('Fetch error:', error);
+            logger.captureException(error, { context: 'NuevaVenta:handleOpenCategory' });
         } finally {
             dispatch({ type: 'SET_MODAL_LOADING', payload: false });
         }
@@ -482,7 +483,7 @@ export default function NuevaVentaScreen() {
                 router.replace('/cajero/ventas');
             } else showToast('Error', res.message || 'Error al vender');
         } catch (error) {
-            console.error('Submit error:', error);
+            logger.captureException(error, { context: 'NuevaVenta:processVenta' });
             showToast('Error', 'Error de conexión');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });

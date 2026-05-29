@@ -21,6 +21,7 @@ import { apiClient } from '@/api/client';
 import { parseDateSafe } from "@/utils/timeUtils";
 
 
+import logger from '@/utils/logger';
 interface FinancialEventsScreenProps {
     title: string;
     subtitle: string;
@@ -84,7 +85,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
             } else {
                 // Para comisiones ya viene bastante data, pero podrías extenderlo si fuera necesario
             }
-        } catch (e) { console.error(e); } finally { setLoadingDetail(false); }
+        } catch (e) { logger.captureException(e, { context: 'FinancialEventsScreen:fetchDetail' }); } finally { setLoadingDetail(false); }
     };
 
     const filteredData = data.filter((a) => {

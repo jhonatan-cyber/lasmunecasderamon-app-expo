@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
+import logger from '@/utils/logger';
 // Componentes locales refactoreados
 import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -94,7 +95,7 @@ export default function AdministrativoScreen() {
                 });
             }
         } catch (error) {
-            console.error('Error fetching administrative data:', error);
+            logger.captureException(error, { context: 'Administrativo:fetchData' });
             if (isManual) {
                 Toast.show({
                     type: 'error',
@@ -162,7 +163,7 @@ export default function AdministrativoScreen() {
                 const res = await apiClient(`/events/detail/${item.id}?type=${item.type}`);
                 if (res.success && res.data) setEventDetail(res.data);
             } catch (e) {
-                console.error('detail fetch error', e);
+                logger.captureException(e, { context: 'Administrativo:handleSelectEvent' });
             } finally {
                 setLoadingDetail(false);
             }

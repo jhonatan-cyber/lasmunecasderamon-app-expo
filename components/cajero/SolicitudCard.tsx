@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { parseDateSafe } from '@/utils/timeUtils';
 
+import logger from '@/utils/logger';
 interface SolicitudCardProps {
     item: any;
     accentColor: string;
@@ -58,10 +59,10 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
     const isUrgent = minutesElapsed >= 5 && !isAnticipo;
     const itemId = isSolicitud ? item.id_solicitud : isAnticipo ? item.id_anticipo : item.id_pedido;
     const tipoItem = item.tipoItem;
-    console.log('[SolicitudCard] Render - itemId:', itemId, 'id_solicitud:', item.id_solicitud, 'id_anticipo:', item.id_anticipo, 'id_pedido:', item.id_pedido, 'tipoItem:', tipoItem);
+    logger.info('[SolicitudCard] Render - itemId:', { arg0: itemId, arg1: 'id_solicitud:', arg2: item.id_solicitud, arg3: 'id_anticipo:', arg4: item.id_anticipo, arg5: 'id_pedido:', arg6: item.id_pedido, arg7: 'tipoItem:', arg8: tipoItem });
 
     const handleCardPress = () => {
-        console.log('[SolicitudCard] itemId:', itemId, 'tipoItem:', item.tipoItem, 'item keys:', Object.keys(item));
+        logger.info('[SolicitudCard] itemId:', { arg0: itemId, arg1: 'tipoItem:', arg2: item.tipoItem, arg3: 'item keys:', arg4: Object.keys(item) });
         if (isSolicitud) {
             onShowServiceModal(item);
         } else if (isAnticipo) {
@@ -182,7 +183,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                             onPress={(e) => {
                                 e.stopPropagation();
                                 const idAEnviar = tipoItem === 'solicitud' ? item.id_solicitud : tipoItem === 'anticipo' ? item.id_anticipo : item.id_pedido;
-                                console.log('[SolicitudCard] APROBAR - tipoItem:', tipoItem, 'idCalculado:', idAEnviar, 'id_pedido:', item.id_pedido, 'id_solicitud:', item.id_solicitud);
+                                logger.info('[SolicitudCard] APROBAR - tipoItem:', { arg0: tipoItem, arg1: 'idCalculado:', arg2: idAEnviar, arg3: 'id_pedido:', arg4: item.id_pedido, arg5: 'id_solicitud:', arg6: item.id_solicitud });
                                 onAprobar(idAEnviar, tipoItem, item);
                             }}
                             disabled={!cajaAbierta}

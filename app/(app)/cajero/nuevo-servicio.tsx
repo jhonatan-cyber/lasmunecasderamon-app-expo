@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { parseDateSafe } from "@/utils/timeUtils";
 
+import logger from '@/utils/logger';
 // Tipo para pagos mixtos
 interface MetodoPagoMonto {
   metodo: PaymentMethod;
@@ -260,7 +261,7 @@ export default function NuevoServicioScreen() {
         );
       }
     } catch (error) {
-      console.error("Error fetching initial data:", error);
+      logger.captureException(error, { context: 'NuevoServicio:fetchInitialData' });
       showToast("Error", "No se pudo cargar la información necesaria.");
     } finally {
       dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
@@ -514,7 +515,7 @@ export default function NuevoServicioScreen() {
       const anfitrionasDataRes = await apiClient("/anfitrionas");
       const anfitrionasData = Array.isArray(anfitrionasDataRes) ? anfitrionasDataRes : (anfitrionasDataRes.success ? anfitrionasDataRes.data : []);
       if (anfitrionasData.length > 0) {
-        console.log('Anfitrionas fetched:', anfitrionasData.length, 'entries. First one foto:', anfitrionasData[0]?.foto);
+        logger.info('Anfitrionas fetched:', { arg0: anfitrionasData.length, arg1: 'entries. First one foto:', arg2: anfitrionasData[0]?.foto });
       }
 
       const res = await apiClient("/servicios", {
@@ -528,7 +529,7 @@ export default function NuevoServicioScreen() {
         showToast("Error", res.message || "No se pudo crear el servicio");
       }
     } catch (error) {
-      console.error("Submit error:", error);
+      logger.captureException(error, { context: 'NuevoServicio:submit' });
       showToast("Error", "Ocurrió un error al procesar el servicio.");
     } finally {
       dispatch({ type: 'SET_SUBMITTING', payload: false });

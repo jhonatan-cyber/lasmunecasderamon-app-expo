@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import logger from './logger';
 interface CacheItem<T> {
     data: T;
     timestamp: number;
@@ -30,7 +31,7 @@ class AppCache {
         try {
             await AsyncStorage.setItem(this.getKey(key), JSON.stringify(item));
         } catch (error) {
-            console.error('Cache set error:', error);
+            logger.captureException(error, { context: 'Cache:set' });
         }
     }
 
@@ -57,7 +58,7 @@ class AppCache {
         try {
             await AsyncStorage.removeItem(this.getKey(key));
         } catch (error) {
-            console.error('Cache remove error:', error);
+            logger.captureException(error, { context: 'Cache:remove' });
         }
     }
 
@@ -67,7 +68,7 @@ class AppCache {
             const cacheKeys = keys.filter(k => k.startsWith(this.prefix));
             await AsyncStorage.multiRemove(cacheKeys);
         } catch (error) {
-            console.error('Cache clear error:', error);
+            logger.captureException(error, { context: 'Cache:clear' });
         }
     }
 

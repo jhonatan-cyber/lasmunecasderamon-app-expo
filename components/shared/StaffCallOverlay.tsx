@@ -1,20 +1,21 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    DeviceEventEmitter,
     Pressable,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import EventSource from 'react-native-sse';
 import Toast from 'react-native-toast-message';
-import { API_URL, apiClient } from '@/api/client';
+import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 
+import logger from '@/utils/logger';
 interface StaffCall {
     id: number | string;
     anfitriona_id: number | string;
@@ -33,8 +34,6 @@ export function StaffCallOverlay() {
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
     const [accepting, setAccepting] = useState<number | string | null>(null);
     const { accentColor, isDark, cardBg } = useAccentColor();
-    const sseRef = useRef<EventSource | null>(null);
-
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
     const safeRole = roleName.toLowerCase();
 
@@ -77,17 +76,13 @@ export function StaffCallOverlay() {
                 setPendingCalls(mapped);
             }
         } catch (error) {
-            console.error('[StaffCallOverlay] Error fetching pending:', error);
+            logger.captureException(error, { context: 'StaffCallOverlay:fetchPending' });
         }
     }, [isStaff, mapPendingCall]);
 
     useEffect(() => {
         if (!isStaff && !isHostess) {
             setPendingCalls([]);
-            if (sseRef.current) {
-                sseRef.current.close();
-                sseRef.current = null;
-            }
             return;
         }
 
@@ -95,59 +90,46 @@ export function StaffCallOverlay() {
             fetchPending();
         }
 
-        // Connect to SSE
-        const sse = new EventSource(`${API_URL}/notifications/sse`);
-        sseRef.current = sse;
+        // Escuchar eventos SSE centralizados desde NotificationContext
+        const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+            if (!payload) return;
 
-        sse.addEventListener('message', (event) => {
-            if (!event.data) return;
-            try {
-                const payload = JSON.parse(event.data);
+            // Caso 1: Nuevo llamado (Solo para Staff)
+            if ((payload.type === 'staff_call' || payload.type === 'assistance_request') && isStaff) {
+                const callData = payload.type === 'assistance_request'
+                    ? mapPendingCall(payload.data)
+                    : payload.data;
+                setPendingCalls(prev => {
+                    // Evitar duplicados
+                    if (prev.find(c => c.id === callData.id)) return prev;
 
-                // Caso 1: Nuevo llamado (Solo para Staff)
-                if ((payload.type === 'staff_call' || payload.type === 'assistance_request') && isStaff) {
-                    const callData = payload.type === 'assistance_request'
-                        ? mapPendingCall(payload.data)
-                        : payload.data;
-                    setPendingCalls(prev => {
-                        // Evitar duplicados
-                        if (prev.find(c => c.id === callData.id)) return prev;
+                    // Efectos de sonido y vibración con prioridad
+                    const hostessName = callData.anfitriona_nick || 'Anfitriona';
+                    const location = callData.roomName !== 'N/A' ? `en la habitación ${callData.roomName}` : 'en el salón';
+                    const typeNormalized = (callData.assistanceType || '').toLowerCase().includes('general') ? 'atención' : (callData.assistanceType || '');
+                    const voiceMessage = `Solicitud de asistencia. La anfitriona ${hostessName} se encuentra ${location} y solicita ${typeNormalized}.`;
 
-                        // Efectos de sonido y vibración con prioridad
-                        const hostessName = callData.anfitriona_nick || 'Anfitriona';
-                        const location = callData.roomName !== 'N/A' ? `en la habitación ${callData.roomName}` : 'en el salón';
-                        const typeNormalized = (callData.assistanceType || '').toLowerCase().includes('general') ? 'atención' : (callData.assistanceType || '');
-                        const voiceMessage = `Solicitud de asistencia. La anfitriona ${hostessName} se encuentra ${location} y solicita ${typeNormalized}.`;
+                    const userRole = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
+                    triggerNotificationEffects("Solicitud de Personal", voiceMessage, userRole, true);
 
-                        const userRole = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-                        triggerNotificationEffects("Solicitud de Personal", voiceMessage, userRole, true);
+                    return [callData, ...prev];
+                });
+            }
 
-                        return [callData, ...prev];
-                    });
+            // Caso 2: Llamado aceptado (Staff y Anfitrionas)
+            else if (payload.type === 'staff_call_accepted') {
+                if (isStaff) {
+                    setPendingCalls(prev => prev.filter(c => c.id !== payload.data.id));
                 }
 
-                // Caso 2: Llamado aceptado (Staff y Anfitrionas)
-                else if (payload.type === 'staff_call_accepted') {
-                    if (isStaff) {
-                        setPendingCalls(prev => prev.filter(c => c.id !== payload.data.id));
-                    }
-
-                    if (isHostess && payload.data.anfitriona_id === user?.id) {
-                        // Solo registramos en consola, sin notificar al usuario en UI
-                        console.log('[StaffCallOverlay] Asistencia aceptada por:', payload.data.atendido_por_nombre);
-                    }
+                if (isHostess && payload.data.anfitriona_id === user?.id) {
+                    logger.info('[StaffCallOverlay] Asistencia aceptada por:', payload.data.atendido_por_nombre);
                 }
-            } catch (e) {
-                console.error('[StaffCallOverlay] SSE parse error:', e);
             }
         });
 
-        sse.addEventListener('error', (e) => {
-            console.warn('[StaffCallOverlay] SSE Error:', e);
-        });
-
         return () => {
-            sse.close();
+            subscription.remove();
         };
     }, [isStaff, isHostess, fetchPending, mapPendingCall, user?.id, user?.role]);
 

@@ -22,6 +22,9 @@ export const CajeroActionGrid = ({ fullWidth = false }: { fullWidth?: boolean })
         { title: "CLIENTES", description: "Gestión de prepago", icon: "person" as const, color: accentColor, route: '/cajero/clientes' },
         { title: "PERSONAL", description: "Liquidación y Asistencia", icon: "people" as const, color: accentColor, route: '/cajero/administrativo' },
         { title: "GRATIFICACIONES", description: "Solicitar y revisar gratificaciones", icon: "gift" as const, color: accentColor, route: '/cajero/gratificaciones' },
+        { title: "ASISTENCIAS", description: "Registro de entrada/salida", icon: "calendar" as const, color: accentColor, route: '/cajero/asistencias' },
+        { title: "HORAS EXTRAS", description: "Gestión de horas extra", icon: "time" as const, color: accentColor, route: '/cajero/horas-extras' },
+        { title: "CALENDARIO", description: "Vista mensual de eventos", icon: "calendar-outline" as const, color: accentColor, route: '/cajero/calendario' },
     ];
 
     const rows = [];

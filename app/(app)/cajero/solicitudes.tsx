@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { MetodoPago } from '../../../types/api';
 
+import logger from '@/utils/logger';
 // API & Utils
 import { apiClient } from '@/api/client';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
@@ -89,6 +90,21 @@ export default function SolicitudesScreen() {
         isOffline
     } = useSolicitudes();
 
+    // Filter tabs
+    const [activeFilter, setActiveFilter] = useState<'all' | 'anticipo' | 'pedido' | 'solicitud'>('all');
+
+    // Compute total a pagar from pending anticipos
+    const { totalAPagar, filteredSolicitudes } = React.useMemo(() => {
+        let filtered = solicitudes;
+        if (activeFilter !== 'all') {
+            filtered = solicitudes.filter(s => s.tipoItem === activeFilter);
+        }
+        const total = filtered
+            .filter(s => s.tipoItem === 'anticipo' && s.estado !== 0)
+            .reduce((sum: number, s: any) => sum + (Number(s.monto) || 0), 0);
+        return { totalAPagar: total, filteredSolicitudes: filtered };
+    }, [solicitudes, activeFilter]);
+
     // Styles & Theme
     const { 
         accentColor, 
@@ -144,14 +160,14 @@ export default function SolicitudesScreen() {
     // --- LOGIC HANDLERS ---
 
     const handleAprobar = useCallback(async (id: string, tipo: string, itemInfo?: any) => {
-        console.log('[handleAprobar] id:', id, 'tipo:', tipo, 'itemInfo:', itemInfo);
+        logger.info('[handleAprobar] id:', { arg0: id, arg1: 'tipo:', arg2: tipo, arg3: 'itemInfo:', arg4: itemInfo });
         if (!cajaAbierta) {
             showToast('Caja Cerrada', 'No puedes aprobar servicios ni pedidos porque no hay una caja abierta.', 'error');
             return;
         }
 
         if (tipo === 'pedido' && itemInfo) {
-            console.log('[handleAprobar] pedido itemInfo keys:', Object.keys(itemInfo), 'id_pedido:', itemInfo.id_pedido);
+            logger.info('[handleAprobar] pedido itemInfo keys:', { arg0: Object.keys(itemInfo), arg1: 'id_pedido:', arg2: itemInfo.id_pedido });
             setSelectedPedido(itemInfo);
             setMetodoPago('');
             setMetodoPagoAdicional('');
@@ -162,21 +178,21 @@ export default function SolicitudesScreen() {
 
             try {
                 const res = await apiClient(`/orders/detail?id=${id}`);
-                console.log('[handleAprobar] Order detail:', res.data?.[0]);
+                logger.info('[handleAprobar] Order detail:', res.data?.[0]);
                 if (res.success) {
                     setPedidoDetails(res.data);
                     const cId = res.data?.[0]?.cliente_id || itemInfo.id_cliente || itemInfo.cliente_id;
-                    console.log('[handleAprobar] cliente_id:', cId);
+                    logger.info('[handleAprobar] cliente_id:', cId);
                     if (cId) {
                         const cRes = await apiClient(`/clients?id=${cId}`).catch(() => ({ success: false }));
-                        console.log('[handleAprobar] Client response:', cRes.data);
+                        logger.info('[handleAprobar] Client response:', cRes.data);
                         if (cRes.success && cRes.data) {
                             setSelectedClient(cRes.data);
-                            console.log('[handleAprobar] Client saldo:', cRes.data.saldo);
+                            logger.info('[handleAprobar] Client saldo:', cRes.data.saldo);
                             if (Number(cRes.data.saldo || 0) > 0) setMetodoPago('prepago');
                         }
                     } else {
-                        console.log('[handleAprobar] No cliente_id, cliente no asignado');
+                        logger.info('[handleAprobar] No cliente_id, cliente no asignado');
                         setSelectedClient(null);
                     }
                     if (res.data?.[0]?.propina > 0) setAgregarPropina(true);
@@ -489,7 +505,7 @@ export default function SolicitudesScreen() {
 
     // Limpiar pendingAutoOpen al montar el componente para evitar auto-open no deseado
     useEffect(() => {
-        console.log('[useEffect mount] Limpiando pendingAutoOpen');
+        logger.info('[useEffect mount] Limpiando pendingAutoOpen');
         setPendingAutoOpen(null);
     }, [setPendingAutoOpen]);
 
@@ -501,7 +517,7 @@ export default function SolicitudesScreen() {
 
     // handle query params (Navigation from depth)
     useEffect(() => {
-        console.log('[useEffect queryParams] openId:', openId, 'queryType:', queryType, 'solicitudes.length:', solicitudes.length);
+        logger.info('[useEffect queryParams] openId:', { arg0: openId, arg1: 'queryType:', arg2: queryType, arg3: 'solicitudes.length:', arg4: solicitudes.length });
         if (openId && queryType && solicitudes.length > 0) {
             const id = openId as string;
             if (id === processedOpenId) return;
@@ -512,7 +528,7 @@ export default function SolicitudesScreen() {
             );
 
             if (found) {
-                console.log('[useEffect queryParams] found:', found);
+                logger.info('[useEffect queryParams] found:', found);
                 setProcessedOpenId(id);
                 router.setParams({ openId: undefined, type: undefined });
                 if (queryType === 'new_order') {
@@ -527,20 +543,20 @@ export default function SolicitudesScreen() {
 
     // Handle auto-opening from SSE (via Hook)
     useEffect(() => {
-        console.log('[useEffect pendingAutoOpen] pendingAutoOpen:', pendingAutoOpen, 'solicitudes.length:', solicitudes.length, 'typeof id:', typeof pendingAutoOpen?.id);
+        logger.info('[useEffect pendingAutoOpen] pendingAutoOpen:', { arg0: pendingAutoOpen, arg1: 'solicitudes.length:', arg2: solicitudes.length, arg3: 'typeof id:', arg4: typeof pendingAutoOpen?.id });
         // Solo procesar si hay un ID válido
         if (!pendingAutoOpen || !pendingAutoOpen.id || pendingAutoOpen.id === 'undefined' || pendingAutoOpen.id === undefined || !solicitudes.length) {
-            console.log('[useEffect pendingAutoOpen] âŒ Returning early - invalid id');
+            logger.info('[useEffect pendingAutoOpen] âŒ Returning early - invalid id');
             return;
         }
         
         const { id, type } = pendingAutoOpen;
-        console.log('[useEffect pendingAutoOpen] id:', id, 'type:', type);
+        logger.info('[useEffect pendingAutoOpen] id:', { arg0: id, arg1: 'type:', arg2: type });
         const found = solicitudes.find(s =>
             (type === 'pedido' && s.tipoItem === 'pedido' && s.id_pedido === id) ||
             (type === 'solicitud' && s.tipoItem === 'solicitud' && s.id_solicitud === id)
         );
-        console.log('[useEffect pendingAutoOpen] found:', found);
+        logger.info('[useEffect pendingAutoOpen] found:', found);
 
         if (found) {
             setPendingAutoOpen(null);
@@ -552,7 +568,7 @@ export default function SolicitudesScreen() {
             }
         } else {
             // Si no se encontró, limpiar el pendingAutoOpen para evitar bucles
-            console.log('[useEffect pendingAutoOpen] no found, clearing...');
+            logger.info('[useEffect pendingAutoOpen] no found, clearing...');
             setPendingAutoOpen(null);
         }
     }, [solicitudes, pendingAutoOpen, handleAprobar, setPendingAutoOpen]);
@@ -610,21 +626,65 @@ export default function SolicitudesScreen() {
                 </MotiView>
             )}
 
+            {/* Total a pagar banner (solo cuando hay anticipos pendientes) */}
+            {totalAPagar > 0 && (
+                <MotiView
+                    from={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={[styles.totalBanner, { backgroundColor: cardBg, borderColor, borderLeftColor: accentColor }]}
+                >
+                    <View style={[styles.totalBannerIcon, { backgroundColor: `${accentColor}20` }]}>
+                        <Ionicons name="cash-outline" size={22} color={accentColor} />
+                    </View>
+                    <View style={styles.totalBannerText}>
+                        <Text style={[styles.totalBannerLabel, { color: textSecondary }]}>TOTAL A PAGAR EN ANTICIPOS</Text>
+                        <Text style={[styles.totalBannerValue, { color: accentColor }]}>${totalAPagar.toLocaleString()}</Text>
+                    </View>
+                </MotiView>
+            )}
+
+            {/* Filter tabs */}
+            <View style={[styles.filterRow, { paddingHorizontal: 16 }]}>
+                {(['all', 'anticipo', 'pedido', 'solicitud'] as const).map(type => {
+                    const count = type === 'all' ? solicitudes.length : solicitudes.filter(s => s.tipoItem === type).length;
+                    const labels: Record<string, string> = { all: 'Todas', anticipo: 'Anticipos', pedido: 'Pedidos', solicitud: 'Servicios' };
+                    return (
+                        <Pressable
+                            key={type}
+                            style={[
+                                styles.filterTab,
+                                { backgroundColor: cardBg, borderColor },
+                                activeFilter === type && { backgroundColor: accentColor, borderColor: accentColor }
+                            ]}
+                            onPress={() => setActiveFilter(type)}
+                        >
+                            <Text style={[
+                                styles.filterTabText,
+                                { color: textSecondary },
+                                activeFilter === type && { color: '#FFFFFF', fontWeight: '800' }
+                            ]}>
+                                {labels[type]} ({count})
+                            </Text>
+                        </Pressable>
+                    );
+                })}
+            </View>
+
             {solicitudes.length > 0 && !isOffline && (
                 <MotiView
                     from={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={[styles.urgencyBar, { backgroundColor: accentColor, margin: 16, marginBottom: 0 }]}
+                    style={[styles.urgencyBar, { backgroundColor: accentColor, marginHorizontal: 16 }]}
                 >
                     <Ionicons name="warning" size={20} color="#FFFFFF" />
                     <Text style={styles.urgencyBarText}>
-                        ATENCIÓN: {solicitudes.length} SOLICITUDES PENDIENTES
+                        {filteredSolicitudes.length} {activeFilter === 'all' ? 'SOLICITUDES' : activeFilter.toUpperCase()} PENDIENTE{filteredSolicitudes.length !== 1 ? 'S' : ''}
                     </Text>
                 </MotiView>
             )}
 
             <FlashList
-                data={solicitudes}
+                data={filteredSolicitudes}
                 keyExtractor={(item: any) => item.id_unificado}
                 renderItem={({ item }: { item: any }) => (
                     <View
@@ -653,7 +713,7 @@ export default function SolicitudesScreen() {
                         />
                     </View>
                 )}
-                extraData={nowTick}
+                extraData={`${nowTick}-${activeFilter}`}
                 estimatedItemSize={120}
                 numColumns={numColumns}
                 columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
@@ -664,7 +724,7 @@ export default function SolicitudesScreen() {
                     <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
                         <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" style={{ marginBottom: 12 }} />
                         <Text style={[styles.emptyText, { color: textPrimary }]}>
-                            {!cajaAbierta ? 'Caja Cerrada' : 'Todo al día'}
+                            {!cajaAbierta ? 'Caja Cerrada' : activeFilter !== 'all' ? `Sin ${activeFilter === 'anticipo' ? 'anticipos' : activeFilter === 'pedido' ? 'pedidos' : 'servicios'} pendientes` : 'Todo al día'}
                         </Text>
                         <Text style={[styles.emptySub, { color: textSecondary }]}>
                             {!cajaAbierta ? 'Abre una caja para procesar' : 'No hay solicitudes pendientes'}
@@ -760,6 +820,40 @@ const styles = StyleSheet.create({
     emptyCard: { borderRadius: 24, padding: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginTop: 40, borderStyle: 'dashed' },
     emptyText: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
     emptySub: { fontSize: 14, fontWeight: '500' },
+    totalBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 16,
+        marginBottom: 4,
+        padding: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderLeftWidth: 4,
+        gap: 14,
+        elevation: 2,
+    },
+    totalBannerIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    totalBannerText: { flex: 1 },
+    totalBannerLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+    totalBannerValue: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    filterRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 8,
+    },
+    filterTab: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 14,
+        borderWidth: 1,
+    },
+    filterTabText: { fontSize: 12, fontWeight: '700' },
     urgencyBar: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -771,6 +865,7 @@ const styles = StyleSheet.create({
         elevation: 4,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
+        marginBottom: 8,
     },
     urgencyBarText: {
         color: '#FFFFFF',

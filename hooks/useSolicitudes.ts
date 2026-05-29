@@ -6,6 +6,7 @@ import { apiClient } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
 
+import logger from '@/utils/logger';
 const CACHE_KEY = 'solicitudes_cache_v1';
 
 export const useSolicitudes = () => {
@@ -29,7 +30,7 @@ export const useSolicitudes = () => {
                     setSolicitudes(parsed);
                 }
             } catch (err) {
-                console.error('[useSolicitudes] Error cargando caché:', err);
+                logger.captureException(err, { context: 'useSolicitudes:loadCache' });
             }
         };
         loadCache();
@@ -114,7 +115,7 @@ export const useSolicitudes = () => {
                 });
             }
         } catch (error) {
-            console.error('Error fetching solicitudes:', error);
+            logger.captureException(error, { context: 'useSolicitudes:fetchSolicitudes' });
             setIsOffline(true);
             if (isManual) {
                 Toast.show({
@@ -136,17 +137,17 @@ export const useSolicitudes = () => {
 
     useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload?: any) => {
-            console.log('[useSolicitudes] 📡 SSE event received:', payload);
+            logger.info('[useSolicitudes] 📡 SSE event received:', payload);
             fetchSolicitudes();
             // Solo configurar auto-open si hay un ID válido
             if (payload && payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
-                console.log('[useSolicitudes] 🤖 Auto-opening signal received:', payload.type, payload.data.id);
+                logger.info('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
                 setPendingAutoOpen({
                     id: payload.data.id,
                     type: payload.type === 'new_order' ? 'pedido' : 'solicitud'
                 });
             } else {
-                console.log('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id);
+                logger.info('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id);
             }
         });
         return () => subscription.remove();

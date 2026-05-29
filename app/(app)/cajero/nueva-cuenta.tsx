@@ -27,6 +27,7 @@ import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
+import logger from '@/utils/logger';
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
@@ -272,7 +273,7 @@ export default function NuevaCuentaScreen() {
                 showToast('Caja Cerrada', 'Debes abrir una caja antes de registrar consumos.', 'error');
             }
         } catch (error) {
-            console.error('Error fetching initial data:', error);
+            logger.captureException(error, { context: 'NuevaCuenta:createCuenta' });
             showToast('Error', 'No se pudo cargar la información necesaria.');
         } finally {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
@@ -300,7 +301,7 @@ export default function NuevaCuentaScreen() {
                 showToast('Error', 'No se pudieron cargar los productos');
             }
         } catch (error) {
-            console.error('Fetch products error:', error);
+            logger.captureException(error, { context: 'NuevaCuenta:handleOpenCategory' });
         } finally {
             dispatch({ type: 'SET_MODAL_LOADING', payload: false });
         }
@@ -433,7 +434,7 @@ export default function NuevaCuentaScreen() {
                 showToast('Error', res.message || 'No se pudo crear la cuenta');
             }
         } catch (error) {
-            console.error('Submit error:', error);
+            logger.captureException(error, { context: 'NuevaCuenta:createCuenta' });
             showToast('Error', 'Ocurrió un error al procesar la cuenta.');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });

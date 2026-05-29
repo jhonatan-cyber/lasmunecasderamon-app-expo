@@ -3,6 +3,7 @@ import { useColorScheme as useRNColorScheme, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
 
+import logger from '@/utils/logger';
 interface ThemeColors {
     background: string;
     card: string;
@@ -106,7 +107,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         try {
             await AsyncStorage.setItem('accent-color', color);
         } catch (e) {
-            console.log('Error saving accent color:', e);
+            logger.captureException(e, { context: 'ThemeContext:setAccentColor' });
         }
     };
 
