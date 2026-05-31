@@ -2,6 +2,7 @@ import logger from '@/utils/logger';
 import { TokenStorage } from '@/utils/tokenStorage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { PROD_API_BASE_URL, API_PREFIX, WEB_PORT } from '@lasmunecasderamon/config';
 
 export class UnauthorizedError extends Error {
     code = 'UNAUTHORIZED';
@@ -98,11 +99,10 @@ const logApiCall = (endpoint: string, attempt: number, maxRetries: number, statu
 };
 
 const getBaseUrl = () => {
-    const PROD_URL = 'https://xn--lasmuecasderamon-bub.com';
     const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
     if (!__DEV__) {
-        return envUrl || PROD_URL;
+        return envUrl || PROD_API_BASE_URL;
     }
 
     if (envUrl) {
@@ -111,7 +111,7 @@ const getBaseUrl = () => {
 
     if (Platform.OS === 'web') {
         const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-        return `http://${hostname}:3000`;
+        return `http://${hostname}:${WEB_PORT}`;
     }
 
     const hostCandidates = [
@@ -132,14 +132,14 @@ const getBaseUrl = () => {
 
 
     if (localIP) {
-        return `http://${localIP}:3000`;
+        return `http://${localIP}:${WEB_PORT}`;
     }
 
-    return 'http://localhost:3000';
+    return `http://localhost:${WEB_PORT}`;
 };
 
 export const BASE_URL = getBaseUrl();
-export const API_URL = `${BASE_URL}/api`;
+export const API_URL = `${BASE_URL}${API_PREFIX}`;
 
 // Debug: mostrar URL en desarrollo
 if (__DEV__) {

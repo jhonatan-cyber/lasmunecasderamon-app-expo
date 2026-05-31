@@ -66,7 +66,8 @@ export default function ProductosScreen() {
         clearCart,
         getSubtotal,
         getTipAmount,
-        getTotal
+        getTotal,
+        buildOrderPayload
     } = useCartStore();
 
     // Modal state
@@ -177,29 +178,26 @@ export default function ProductosScreen() {
         setSubmitting(true);
         try {
             const codigo = generateCode();
-            const totalComision = cart.reduce((s, i) => s + (i.product.commission * i.quantity), 0);
 
-            const orderData = {
-                codigo,
+            // Construir y validar payload con Zod mediante el store
+            const buildResult = buildOrderPayload({
                 meseroId: user.id,
+                codigo,
                 clienteId: selectedClientId,
-                subtotal: cartSubtotal,
-                total: cartTotal,
-                propina: tipAmount,
-                totalComision,
-                detalles: cart.map(item => ({
-                    productoId: item.product.id,
-                    precio: item.product.price,
-                    comision: item.product.commission,
-                    cantidad: item.quantity,
-                    subtotal: item.product.price * item.quantity,
-                    generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
-                    hostessId: item.selectedHostesses.length === 1 ? item.selectedHostesses[0] : null,
-                    selectedHostesses: item.selectedHostesses.map(String),
-                    roomId: item.selectedRoom,
-                })),
-                usuarios: Array.from(new Set(cart.flatMap(i => i.selectedHostesses))).map(id => ({ usuarioId: id })),
-            };
+                device_date: new Date().toISOString(),
+            });
+
+            if (!buildResult.success) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Datos inválidos',
+                    text2: buildResult.errors.join('; '),
+                });
+                setSubmitting(false);
+                return;
+            }
+
+            const orderData = buildResult.data;
 
             logger.info('[DEBUG] Enviando pedido', { orderData });
             logger.info('[DEBUG] Cliente ID', { clienteId: selectedClientId });

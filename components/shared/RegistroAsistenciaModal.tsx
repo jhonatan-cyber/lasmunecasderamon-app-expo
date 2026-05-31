@@ -15,6 +15,7 @@ import { apiClient } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
+import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
 
 interface RegistroAsistenciaModalProps {
     visible: boolean;
@@ -48,11 +49,13 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.1)';
 
     const handleRegistrarConCodigo = async () => {
-        if (!codigo.trim()) {
+        const validation = AttendanceRegisterSchema.safeParse({ qrData: codigo });
+
+        if (!validation.success) {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: 'Por favor ingresa el código de asistencia'
+                text2: validation.error.errors[0]?.message || 'Por favor ingresa el código de asistencia'
             });
             return;
         }
@@ -61,7 +64,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
         try {
             const res = await apiClient('/attendance/register', {
                 method: 'POST',
-                body: JSON.stringify({ qr_data: codigo.trim() })
+                body: JSON.stringify({ qr_data: validation.data.qrData })
             });
 
             if (res.success) {
@@ -97,12 +100,24 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     };
 
     const handleQRScanned = async (data: string) => {
+        const validation = AttendanceRegisterSchema.safeParse({ qrData: data });
+
+        if (!validation.success) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: validation.error.errors[0]?.message || 'Código QR inválido'
+            });
+            setShowScanner(false);
+            return;
+        }
+
         setShowScanner(false);
         setLoading(true);
         try {
             const res = await apiClient('/attendance/register', {
                 method: 'POST',
-                body: JSON.stringify({ qr_data: data })
+                body: JSON.stringify({ qr_data: validation.data.qrData })
             });
 
 if (res.success) {

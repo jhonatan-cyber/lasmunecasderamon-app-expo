@@ -17,6 +17,7 @@ import {
 import Toast from "react-native-toast-message";
 import { apiClient } from "@/api/client";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { ServiceCreateSchema, type ServiceCreateType } from '@lasmunecasderamon/validations';
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
 import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
 import {
@@ -29,6 +30,16 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { parseDateSafe } from "@/utils/timeUtils";
 
 import logger from '@/utils/logger';
+
+// Tipo del payload completo enviado al API
+type ServicePayload = ServiceCreateType & {
+  codigo: string;
+  fecha_crea: string;
+  pagos_mixtos?: MetodoPagoMonto[];
+  metodo_pago_adicional?: string;
+  monto_prepago?: number;
+};
+
 // Tipo para pagos mixtos
 interface MetodoPagoMonto {
   metodo: PaymentMethod;
@@ -480,12 +491,11 @@ export default function NuevoServicioScreen() {
 
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
-      const payload: any = {
+      const payload: ServicePayload = {
         codigo: generateCode(),
-        cliente_id: selectedClients.length > 0 ? selectedClients[0] : null,
-        clientes: selectedClients,
-        habitacion_id:
-          selectedHabitacion.id_habitacion || selectedHabitacion.id,
+        cliente_id: selectedClients.length > 0 ? String(selectedClients[0]) : null,
+        clientes: selectedClients.map(id => String(id)),
+        habitacion_id: String(selectedHabitacion.id_habitacion || selectedHabitacion.id),
         precio_habitacion: totals.precioHabitacionActual,
         precio_servicio: numericPrecioServicio,
         iva: totals.iva,
@@ -494,7 +504,7 @@ export default function NuevoServicioScreen() {
         tiempo: selectedHabitacion.tiempo || 0,
         fecha_crea: parseDateSafe(new Date()).toISOString(),
         metodo_pago: metodoPago,
-        usuarios: selectedHostesses,
+        usuarios: selectedHostesses.map(id => String(id)),
       };
 
       // Si es método mixto (principal o adicional), incluir los pagos mixtos
@@ -509,6 +519,16 @@ export default function NuevoServicioScreen() {
         }
       } else if (metodoPago === 'prepago' && (Number(selectedClientData?.saldo || 0) < totals.total)) {
         payload.metodo_pago_adicional = metodoPagoAdicional || undefined;
+      }
+
+      // Validar payload con ServiceCreateSchema
+      const validation = ServiceCreateSchema.safeParse(payload);
+
+      if (!validation.success) {
+        const msg = validation.error.errors[0]?.message || 'Datos del servicio inválidos';
+        showToast('Error de Validación', msg);
+        dispatch({ type: 'SET_SUBMITTING', payload: false });
+        return;
       }
 
       // Log anfitrionas data as requested

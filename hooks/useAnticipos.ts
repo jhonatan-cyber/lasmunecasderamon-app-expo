@@ -5,6 +5,8 @@ import { apiClient } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
+import { AnticipoRequestSchema } from '@lasmunecasderamon/validations';
+
 import logger from '@/utils/logger';
 export interface Anticipo {
   id_solicitud: number | string;
@@ -71,10 +73,20 @@ export function useAnticipos() {
   }, []);
 
   const solicitarAnticipo = async (monto: number, motivo: string) => {
+    const validation = AnticipoRequestSchema.safeParse({ monto, motivo });
+
+    if (!validation.success) {
+      const msg = validation.error.errors[0]?.message || 'Datos inválidos';
+      Toast.show({ type: 'warning', text1: 'Atención', text2: msg });
+      return false;
+    }
+
+    const { monto: montoVal, motivo: motivoVal } = validation.data;
+
     try {
       const response = await apiClient('/anticipos/solicitudes', {
         method: 'POST',
-        body: JSON.stringify({ monto, motivo }),
+        body: JSON.stringify({ monto: montoVal, motivo: motivoVal }),
       });
       if (response.success) {
         Toast.show({ type: 'success', text1: 'Éxito', text2: 'Solicitud enviada correctamente' });

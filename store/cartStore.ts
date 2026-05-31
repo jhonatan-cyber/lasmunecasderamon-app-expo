@@ -1,5 +1,21 @@
 import { create } from 'zustand';
 import { CartItem, Product } from '@/components/shared/ProductCard';
+import { OrderCreateSchema, type OrderCreateType } from '@lasmunecasderamon/validations';
+
+interface BuildOrderParams {
+  meseroId: string;
+  codigo: string;
+  clienteId?: string | null;
+  device_date?: string;
+}
+
+type BuildOrderResult = {
+  success: true;
+  data: OrderCreateType;
+} | {
+  success: false;
+  errors: string[];
+}
 
 interface CartState {
     cart: CartItem[];
@@ -13,6 +29,7 @@ interface CartState {
     getTotal: () => number;
     getSubtotal: () => number;
     getTipAmount: () => number;
+    buildOrderPayload: (params: BuildOrderParams) => BuildOrderResult;
 }
 
 const isChampagne = (product: Product) => {
@@ -87,6 +104,48 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     getTotal: () => {
         return get().getSubtotal() + get().getTipAmount();
+    },
+
+    buildOrderPayload: (params) => {
+        const { meseroId, codigo, clienteId, device_date } = params;
+        const state = get();
+        const subtotal = state.getSubtotal();
+        const tipAmount = state.getTipAmount();
+        const total = state.getTotal();
+        const totalComision = state.cart.reduce((s, i) => s + (i.product.commission || 0) * i.quantity, 0);
+
+        const orderData = {
+            codigo,
+            meseroId,
+            clienteId: clienteId ?? null,
+            subtotal,
+            total,
+            propina: tipAmount,
+            totalComision,
+            device_date,
+            detalles: state.cart.map(item => ({
+                productoId: item.product.id,
+                precio: item.product.price,
+                comision: item.product.commission || 0,
+                cantidad: item.quantity,
+                subtotal: item.product.price * item.quantity,
+                generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
+                hostessId: item.selectedHostesses.length === 1 ? item.selectedHostesses[0] : null,
+                selectedHostesses: item.selectedHostesses.map(String),
+                roomId: item.selectedRoom,
+            })),
+            usuarios: Array.from(new Set(state.cart.flatMap(i => i.selectedHostesses))).map(id => ({ usuarioId: id })),
+        };
+
+        const parsed = OrderCreateSchema.safeParse(orderData);
+        if (!parsed.success) {
+            return {
+                success: false,
+                errors: parsed.error.errors.map(e => `"${e.path.join('.')}": ${e.message}`),
+            };
+        }
+
+        return { success: true, data: parsed.data };
     },
 }));
 

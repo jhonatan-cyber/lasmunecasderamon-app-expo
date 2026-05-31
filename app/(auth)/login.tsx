@@ -26,6 +26,7 @@ import { apiClient } from '@/api/client';
 import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
 import { useAuthStore } from '@/store/authStore';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
+import { resetPasswordSchema } from '@lasmunecasderamon/validations';
 
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
@@ -83,10 +84,14 @@ export default function LoginScreen() {
     };
 
     const handleResetPassword = async () => {
-        if (!resetRun.trim()) {
-            showAlert('Atención', 'Por favor, ingresa tu usuario o email en el campo de arriba para solicitar el reseteo.', 'warning');
+        const validation = resetPasswordSchema.safeParse({ run: resetRun });
+
+        if (!validation.success) {
+            showAlert('Atención', validation.error.errors[0]?.message || 'Por favor, ingresa un RUN válido.', 'warning');
             return;
         }
+
+        const { run } = validation.data;
 
         showAlert(
             'Resetear Contraseña',
@@ -97,7 +102,7 @@ export default function LoginScreen() {
                 try {
                     const res = await apiClient('/auth/reset-password', {
                         method: 'POST',
-                        body: JSON.stringify({ run: resetRun.trim() })
+                        body: JSON.stringify({ run })
                     });
 
                     if (res.success) {
