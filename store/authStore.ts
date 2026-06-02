@@ -156,7 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         password,
                     });
                     if (!parsed.success) {
-                        const firstError = parsed.error.errors[0]?.message || 'Credenciales inválidas';
+                        const firstError = parsed.error.issues[0]?.message || 'Credenciales inválidas';
                         throw new Error(firstError);
                     }
 

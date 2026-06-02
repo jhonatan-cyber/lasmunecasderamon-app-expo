@@ -15,6 +15,9 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
+    "@lasmunecasderamon/config": "workspace:*",
+    "@lasmunecasderamon/types": "workspace:*",
+    "@lasmunecasderamon/utils": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@sentry/react-native": "^8.7.0",

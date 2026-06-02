@@ -1,4 +1,4 @@
-﻿﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import React, { useState } from 'react';
 import {
@@ -55,7 +55,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: validation.error.errors[0]?.message || 'Por favor ingresa el código de asistencia'
+                text2: validation.error.issues[0]?.message || 'Por favor ingresa el código de asistencia'
             });
             return;
         }
@@ -106,7 +106,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             Toast.show({
                 type: 'error',
                 text1: 'Error',
-                text2: validation.error.errors[0]?.message || 'Código QR inválido'
+                text2: validation.error.issues[0]?.message || 'Código QR inválido'
             });
             setShowScanner(false);
             return;

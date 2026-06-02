@@ -1,4 +1,4 @@
-﻿﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -87,7 +87,7 @@ export default function LoginScreen() {
         const validation = resetPasswordSchema.safeParse({ run: resetRun });
 
         if (!validation.success) {
-            showAlert('Atención', validation.error.errors[0]?.message || 'Por favor, ingresa un RUN válido.', 'warning');
+            showAlert('Atención', validation.error.issues[0]?.message || 'Por favor, ingresa un RUN válido.', 'warning');
             return;
         }
 
@@ -261,7 +261,7 @@ export default function LoginScreen() {
     return (
         <View style={styles.container}>
             <ImageBackground
-                source={require('@/assets/images/login_bg.png')}
+                source={require('../../assets/images/login_bg.png')}
                 style={StyleSheet.absoluteFillObject}
                 resizeMode="cover"
             >
@@ -279,21 +279,14 @@ export default function LoginScreen() {
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={false}
                     >
-                        <Pressable
-                            style={{ flex: 1 }}
-                            onPress={() => {
-                                if (isBiometricEnabled && !username && !password) {
-                                    handleBiometricLogin();
-                                }
-                            }}
-                        >
+                        <View style={{ flex: 1 }}>
                             <AnimatedScreen delay={100}>
                                 <StatusBar style={isDark ? 'light' : 'dark'} translucent backgroundColor="transparent" />
 
                                 {/* Logo */}
-                                <View style={styles.logoContainer}>
-                                    <Image
-                                        source={require('@/assets/images/logo2.png')}
+                                    <View style={styles.logoContainer}>
+                                        <Image
+                                        source={require('../../assets/images/logo2.png')}
                                         style={styles.logo}
                                         resizeMode="contain"
                                     />
@@ -455,7 +448,7 @@ export default function LoginScreen() {
                                     </Pressable>
                                 </View>
                             </AnimatedScreen>
-                        </Pressable>
+                        </View>
                     </ScrollView>
                 </KeyboardAvoidingView>
             </ImageBackground>

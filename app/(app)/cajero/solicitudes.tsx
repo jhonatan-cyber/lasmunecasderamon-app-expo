@@ -1,4 +1,4 @@
-﻿﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -127,7 +127,7 @@ export default function SolicitudesScreen() {
     const [pedidoDetails, setPedidoDetails] = useState<any[]>([]);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [loadingClient, setLoadingClient] = useState(false);
-    const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | ''>('');
+    const [metodoPago, setMetodoPago] = useState<MetodoPago>('');
     const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<MetodoPago>('');
     const [selectedClient, setSelectedClient] = useState<any>(null);
     const [agregarPropina, setAgregarPropina] = useState(false);

@@ -151,7 +151,7 @@ describe('authStore', () => {
 
         it('debe retornar false si la autenticación falla', async () => {
             const la = await import('expo-local-authentication');
-            vi.mocked(la.authenticateAsync).mockResolvedValue({ success: false });
+            vi.mocked(la.authenticateAsync).mockResolvedValue({ success: false, error: 'unknown' as any });
 
             const result = await useAuthStore.getState().authenticateWithBiometric();
             expect(result).toBe(false);

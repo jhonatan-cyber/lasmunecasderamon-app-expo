@@ -76,7 +76,7 @@ export function useAnticipos() {
     const validation = AnticipoRequestSchema.safeParse({ monto, motivo });
 
     if (!validation.success) {
-      const msg = validation.error.errors[0]?.message || 'Datos inválidos';
+      const msg = validation.error.issues[0]?.message || 'Datos inválidos';
       Toast.show({ type: 'warning', text1: 'Atención', text2: msg });
       return false;
     }

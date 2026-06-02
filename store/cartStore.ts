@@ -141,7 +141,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         if (!parsed.success) {
             return {
                 success: false,
-                errors: parsed.error.errors.map(e => `"${e.path.join('.')}": ${e.message}`),
+                errors: parsed.error.issues.map(e => `"${e.path.join('.')}": ${e.message}`),
             };
         }
 

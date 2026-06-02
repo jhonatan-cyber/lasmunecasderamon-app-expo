@@ -1,4 +1,4 @@
-﻿﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
@@ -525,7 +525,7 @@ export default function NuevoServicioScreen() {
       const validation = ServiceCreateSchema.safeParse(payload);
 
       if (!validation.success) {
-        const msg = validation.error.errors[0]?.message || 'Datos del servicio inválidos';
+        const msg = validation.error.issues[0]?.message || 'Datos del servicio inválidos';
         showToast('Error de Validación', msg);
         dispatch({ type: 'SET_SUBMITTING', payload: false });
         return;

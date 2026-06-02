@@ -1,3 +1,6 @@
+packages:
+  - "packages/*"
+
 ignoredBuiltDependencies:
   - '@sentry/cli'
   - unrs-resolver

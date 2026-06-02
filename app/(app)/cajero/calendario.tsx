@@ -3,7 +3,6 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Dimensions,
     Modal,
     Pressable,
     RefreshControl,
@@ -17,9 +16,6 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 import logger from '@/utils/logger';
-const { width } = Dimensions.get('window');
-const DAY_SIZE = Math.floor((width - 64) / 7);
-
 const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -81,7 +77,7 @@ function getStatusBadge(estado: number) {
 
 export default function CalendarioScreen() {
     const router = useRouter();
-    const { accentColor, accentBg, isDark } = useAccentColor();
+    const { accentColor, isDark } = useAccentColor();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [days, setDays] = useState<CalendarDay[]>([]);
     const [loading, setLoading] = useState(true);
@@ -195,11 +191,11 @@ export default function CalendarioScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [currentDate, apiClient]);
+    }, [currentDate]);
 
     useEffect(() => {
         fetchCalendarData();
-    }, [currentDate]);
+    }, [fetchCalendarData]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -271,13 +267,13 @@ export default function CalendarioScreen() {
         } finally {
             setIsLoadingSelected(false);
         }
-    }, [selectedDates, selectedDataType, apiClient]);
+    }, [selectedDates, selectedDataType]);
 
     useEffect(() => {
         if (modalVisible) {
             fetchSelectedDateDetails();
         }
-    }, [modalVisible, selectedDataType]);
+    }, [modalVisible, fetchSelectedDateDetails]);
 
     const navigateMonth = (direction: number) => {
         setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
@@ -453,7 +449,6 @@ export default function CalendarioScreen() {
                 ) : (
                     <View style={styles.daysGrid}>
                         {days.map((day, index) => {
-                            const hasData = day.data.asistencias || day.data.anticipos || day.data.propinas || day.data.horasExtras;
                             const isSelected = selectedDates.some(d => d.toDateString() === day.date.toDateString());
 
                             return (

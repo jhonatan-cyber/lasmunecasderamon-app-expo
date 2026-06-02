@@ -1,4 +1,4 @@
-﻿import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     Modal,

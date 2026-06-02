@@ -1,4 +1,4 @@
-﻿﻿import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {useAccentColor} from '@/hooks/useAccentColor';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -64,7 +64,6 @@ export default function ProductosScreen() {
         tipEnabled,
         setTipEnabled,
         clearCart,
-        getSubtotal,
         getTipAmount,
         getTotal,
         buildOrderPayload
@@ -144,7 +143,6 @@ export default function ProductosScreen() {
         fetchData(true);
     }, [fetchData]);
 
-    const cartSubtotal = getSubtotal();
     const tipAmount = getTipAmount();
     const cartTotal = getTotal();
 

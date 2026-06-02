@@ -13,6 +13,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -79,6 +80,14 @@ export default function AsistenciasScreen() {
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
                 setData(res.data || []);
+                if (isManual) {
+                    Toast.show({
+                        type: hasChanges ? 'success' : 'info',
+                        text1: hasChanges ? 'Éxito' : 'Información',
+                        text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                        visibilityTime: 2500,
+                    });
+                }
             } else {
                 setError(res.message || 'Error al cargar asistencias');
             }
@@ -88,7 +97,7 @@ export default function AsistenciasScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [currentDate]);
 
     useFocusEffect(
         useCallback(() => { fetchData(); }, [fetchData])
