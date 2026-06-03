@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     modalDismiss: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     modalContent: {
         width: '100%',

@@ -10,7 +10,9 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {},
+    "updates": {
+      "url": "https://u.expo.dev/e026de98-e7d7-404d-abee-a44f0e121af8"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lasmunecasderamon.app",
@@ -20,8 +22,6 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
-        "applinks:dashboard.xn--lasmuecasderamon-bub.com",
-        "applinks:dashboard.lasmuñecasderamon.com",
         "applinks:dashboard.xn--lasmuecasderamon-bub.com",
         "applinks:dashboard.lasmuñecasderamon.com"
       ]
@@ -129,7 +129,8 @@
         {
           "cameraPermission": "Permite el acceso a la cámara para registrar tu asistencia mediante QR."
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -138,9 +139,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bdeebda1-fe58-443b-b59c-2f265ecb2eb5"
+        "projectId": "e026de98-e7d7-404d-abee-a44f0e121af8"
       }
     },
-    "owner": "lasmunecasderamon-app"
+    "owner": "nuwesoft801"
   }
 }

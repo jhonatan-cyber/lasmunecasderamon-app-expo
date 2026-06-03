@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   },
   fabText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,

@@ -32,13 +32,23 @@ export const AttendanceCodeDisplay = () => {
                 setCodigo(res.codigo);
             }
         } catch (error) {
+            if (error instanceof Error && ['NetworkError', 'TimeoutError', 'UnauthorizedError'].includes(error.name)) {
+                logger.warn('[AttendanceCodeDisplay] No se pudo cargar el código de asistencia', {
+                    context: 'AttendanceCodeDisplay:fetchCodigo',
+                    error: error.message,
+                    name: error.name,
+                });
+                return;
+            }
+
             logger.captureException(error, { context: 'AttendanceCodeDisplay:fetchCodigo' });
         }
     }, [canSeeCode, role]);
 
     useEffect(() => {
-        fetchCodigo();
-        
+        const timer = setTimeout(() => {
+            void fetchCodigo();
+        }, 0);
         const subscription = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigo(payload.data.codigo);
@@ -46,6 +56,7 @@ export const AttendanceCodeDisplay = () => {
         });
 
         return () => {
+            clearTimeout(timer);
             subscription.remove();
         };
     }, [fetchCodigo]);
@@ -55,8 +66,11 @@ export const AttendanceCodeDisplay = () => {
     const handleOpenQR = async () => {
         setLoading(true);
         setShowQR(true);
-        await fetchCodigo();
-        setLoading(false);
+        try {
+            await fetchCodigo();
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (!canSeeCode) return null;

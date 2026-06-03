@@ -119,26 +119,30 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         } finally {
             setLoadingAnfitrionas(false);
         }
-    }, [timer?.servicioId]);
+    }, [timer]);
 
     useEffect(() => {
         if (visible && timer) {
-            setPrecioServicio('0');
-            setTiempo(30);
-            setMetodoPago('efectivo');
-            
-            // Prioridad a anfitrionas_ids (array), fallback a split de anfitrionas (string)
-            let ids: string[] = [];
-            if (timer.anfitrionas_ids && Array.isArray(timer.anfitrionas_ids)) {
-                ids = timer.anfitrionas_ids.map(id => String(id));
-            } else if (timer.anfitrionas && typeof timer.anfitrionas === 'string') {
-                // Si solo tenemos el string, intentamos buscar las disponibles que coincidan con el nick
-                // Pero es mejor confiar en los IDs si existen.
-            }
-            
-            setAnfitrionasSeleccionadas(ids);
-            fetchAnfitrionas();
-            fetchHabitacionSinComision();
+            const timerId = setTimeout(() => {
+                setPrecioServicio('0');
+                setTiempo(30);
+                setMetodoPago('efectivo');
+                
+                // Prioridad a anfitrionas_ids (array), fallback a split de anfitrionas (string)
+                let ids: string[] = [];
+                if (timer.anfitrionas_ids && Array.isArray(timer.anfitrionas_ids)) {
+                    ids = timer.anfitrionas_ids.map(id => String(id));
+                } else if (timer.anfitrionas && typeof timer.anfitrionas === 'string') {
+                    // Si solo tenemos el string, intentamos buscar las disponibles que coincidan con el nick
+                    // Pero es mejor confiar en los IDs si existen.
+                }
+                
+                setAnfitrionasSeleccionadas(ids);
+                void fetchAnfitrionas();
+                void fetchHabitacionSinComision();
+            }, 0);
+
+            return () => clearTimeout(timerId);
         }
     }, [visible, timer, fetchAnfitrionas, fetchHabitacionSinComision]);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Pressable, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +13,7 @@ interface ActiveServiceCardProps {
 
 export const ActiveServiceCard = ({ habitacion, tiempoRestante, onPress }: ActiveServiceCardProps) => {
     const { accentColor } = useAccentColor();
-    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const [pulseAnim] = useState(() => new Animated.Value(1));
 
     useEffect(() => {
         const pulse = Animated.loop(

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
     ActivityIndicator,
     Animated,
@@ -37,7 +37,7 @@ const ESTADO_CIVIL_OPTIONS = ['Soltero/a', 'Casado/a', 'Unión Libre', 'Divorcia
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
 }) => {
-    const anim = useRef(new Animated.Value(0.3)).current;
+    const [anim] = useState(() => new Animated.Value(0.3));
     useEffect(() => {
         Animated.loop(
             Animated.sequence([
@@ -127,7 +127,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
         }, true);
     }, [onLogout, logout, router, showAlert]);
 
-    const Header = ({ skeletonMode = false }: { skeletonMode?: boolean }) => (
+    const renderHeader = (skeletonMode = false) => (
         <LinearGradient
             colors={skeletonMode
                 ? (isDark ? ['#FFFFFF', '#F1F5F9'] as any : ['#2D2870', '#1E1B4B', '#0F0D2E'] as any)
@@ -172,7 +172,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
             <View style={[styles.container, { backgroundColor: bg }]}>
                 <Stack.Screen options={{ headerShown: false }} />
                 <StatusBar style={isDark ? 'dark' : 'light'} />
-                <Header skeletonMode />
+                {renderHeader(true)}
                 <ScrollView style={{ flex: 1 }} scrollEnabled={false} contentContainerStyle={{ padding: 24 }}>
                     <View style={{ alignItems: 'center', paddingVertical: 32, gap: 14 }}>
                         <SkeletonBox width={140} height={140} borderRadius={70} />
@@ -200,7 +200,7 @@ export function PremiumProfileView({ roleLabel, avatarEmoji = 'ðŸ‘¤', onLog
         <View style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'dark' : 'light'} />
-            <Header />
+            {renderHeader()}
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHero}>
                     <View style={[styles.avatarBorder, { borderColor: accentColor }]}>

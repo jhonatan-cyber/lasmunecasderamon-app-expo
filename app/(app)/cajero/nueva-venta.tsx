@@ -490,7 +490,7 @@ export default function NuevaVentaScreen() {
         }
     }, [cajaAbierta, cart, selectedCliente, selectedHabitacion, metodoPago, pagosMixtos, totals, selectedTime, router, refreshVentas, hasCommissionItem]);
 
-    const NuevaVentaSkeleton = () => (
+    const renderNuevaVentaSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
             <PremiumHeader 
                 title="Nueva Venta" 
@@ -524,7 +524,7 @@ export default function NuevaVentaScreen() {
         </View>
     );
 
-    if (loadingInitial) return <NuevaVentaSkeleton />;
+    if (loadingInitial) return renderNuevaVentaSkeleton();
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>

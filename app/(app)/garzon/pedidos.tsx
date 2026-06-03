@@ -32,6 +32,37 @@ interface Category {
     display_order: number;
 }
 
+function PedidosSkeleton({ bg, gradientColors, insets }: { bg: string; gradientColors: string[]; insets: { top: number } }) {
+    return (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={[styles.header, {
+                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
+                    paddingBottom: 25,
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                    height: 160
+                }]}
+            >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
+                    <Skeleton width={150} height={30} />
+                    <Skeleton width={44} height={44} borderRadius={22} />
+                </View>
+                <View style={{ paddingHorizontal: 20 }}>
+                    <Skeleton width="60%" height={24} />
+                </View>
+            </LinearGradient>
+
+            <View style={{ padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 15 }}>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} width={(width - 55) / 2} height={180} borderRadius={24} />
+                ))}
+            </View>
+        </View>
+    );
+}
+
 export default function PedidosScreen() {
     const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
     const router = useRouter();
@@ -85,7 +116,10 @@ export default function PedidosScreen() {
         }
     }, []);
 
-    useEffect(() => { fetchCategories(); }, [fetchCategories]);
+    useEffect(() => {
+        const run = async () => { await fetchCategories(); };
+        void run();
+    }, [fetchCategories]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -105,36 +139,7 @@ export default function PedidosScreen() {
         />
     );
 
-    const PedidosSkeleton = () => (
-        <View style={{ flex: 1, backgroundColor: bg }}>
-            <LinearGradient
-                colors={gradientColors as any}
-                style={[styles.header, {
-                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
-                    paddingBottom: 25,
-                    borderBottomLeftRadius: 32,
-                    borderBottomRightRadius: 32,
-                    height: 160
-                }]}
-            >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
-                     <Skeleton width={150} height={30} />
-                     <Skeleton width={44} height={44} borderRadius={22} />
-                </View>
-                <View style={{ paddingHorizontal: 20 }}>
-                     <Skeleton width="60%" height={24} />
-                </View>
-            </LinearGradient>
-
-            <View style={{ padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 15 }}>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} width={(width - 55) / 2} height={180} borderRadius={24} />
-                ))}
-            </View>
-        </View>
-    );
-
-    if (loading) return <PedidosSkeleton />;
+    if (loading) return <PedidosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>

@@ -136,7 +136,10 @@ export default function ProductosScreen() {
         }
     }, [categoryId]);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useEffect(() => {
+        const run = async () => { await fetchData(); };
+        void run();
+    }, [fetchData]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);

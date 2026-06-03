@@ -36,10 +36,14 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     const [showScanner, setShowScanner] = useState(false);
 
     React.useEffect(() => {
-        if (visible) {
-            setShowScanner(false);
-            setCodigo('');
-        }
+        const timer = setTimeout(() => {
+            if (visible) {
+                setShowScanner(false);
+                setCodigo('');
+            }
+        }, 0);
+
+        return () => clearTimeout(timer);
     }, [visible]);
 
     const bg = isDark ? '#000000' : '#FFFFFF';

@@ -133,8 +133,6 @@ const CuentaTimer = React.memo(
     );
 
     React.useEffect(() => {
-      // Actualizar inmediatamente al montar
-      setRemaining(calculateRemainingTime(timer, serverOffset));
       // Tick cada segundo
       const interval = setInterval(() => {
         setRemaining(calculateRemainingTime(timer, serverOffset));
@@ -599,7 +597,7 @@ export default function CuentasScreen() {
     }
   };
 
-  const DetailSkeleton = () => (
+  const renderDetailSkeleton = () => (
     <View style={{ padding: 20 }}>
       {/* Header Skeleton */}
       <View
@@ -663,7 +661,7 @@ export default function CuentasScreen() {
     </View>
   );
 
-  const CuentasSkeleton = () => (
+  const renderCuentasSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
         colors={gradientColors as any}
@@ -1043,7 +1041,7 @@ export default function CuentasScreen() {
   }, [cuentas, activeTab, search]);
 
   if (loading && !refreshing && cuentas.length === 0)
-    return <CuentasSkeleton />;
+    return renderCuentasSkeleton();
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -1198,7 +1196,7 @@ export default function CuentasScreen() {
             ]}
           >
             {loadingDetail ? (
-              <DetailSkeleton />
+              renderDetailSkeleton()
             ) : (
               selectedCuenta && (
                 <>

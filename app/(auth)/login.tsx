@@ -18,9 +18,9 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    useColorScheme,
     View
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
@@ -54,15 +54,18 @@ export default function LoginScreen() {
 
     const [isBiometricSupported, setIsBiometricSupported] = useState(false);
 
-    useEffect(() => {
-        checkBiometrics();
-    }, []);
-
-    const checkBiometrics = async () => {
+    const checkBiometrics = useCallback(async () => {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
         setIsBiometricSupported(hasHardware && isEnrolled);
-    };
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            void checkBiometrics();
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [checkBiometrics]);
 
     const hasAutoPrompted = useRef(false);
 
@@ -244,7 +247,7 @@ export default function LoginScreen() {
     useFocusEffect(
         useCallback(() => {
             if (Platform.OS === 'android') {
-                NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+                (NavigationBar as any).setButtonStyleAsync(isDark ? 'light' : 'dark');
             }
 
             if (isBiometricEnabled && isBiometricSupported && !hasAutoPrompted.current) {
@@ -262,14 +265,13 @@ export default function LoginScreen() {
         <View style={styles.container}>
             <ImageBackground
                 source={require('../../assets/images/login_bg.png')}
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
                 resizeMode="cover"
             >
                 <LinearGradient
                     colors={isDark ? ['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)', '#000000'] : ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.8)', '#FFFFFF']}
-                    style={StyleSheet.absoluteFillObject}
+                    style={StyleSheet.absoluteFill}
                 />
-
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={{ flex: 1 }}
@@ -281,7 +283,7 @@ export default function LoginScreen() {
                     >
                         <View style={{ flex: 1 }}>
                             <AnimatedScreen delay={100}>
-                                <StatusBar style={isDark ? 'light' : 'dark'} translucent backgroundColor="transparent" />
+                                <StatusBar style={isDark ? 'light' : 'dark'} />
 
                                 {/* Logo */}
                                     <View style={styles.logoContainer}>

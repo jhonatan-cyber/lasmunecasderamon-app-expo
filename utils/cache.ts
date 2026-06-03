@@ -66,7 +66,7 @@ class AppCache {
         try {
             const keys = await AsyncStorage.getAllKeys();
             const cacheKeys = keys.filter(k => k.startsWith(this.prefix));
-            await AsyncStorage.multiRemove(cacheKeys);
+            await Promise.all(cacheKeys.map((key) => AsyncStorage.removeItem(key)));
         } catch (error) {
             logger.captureException(error, { context: 'Cache:clear' });
         }

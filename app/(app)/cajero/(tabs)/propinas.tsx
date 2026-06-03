@@ -261,7 +261,7 @@ export default function PropinasScreen() {
         );
     };
 
-    const PropinasSkeleton = () => (
+    const renderPropinasSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <PremiumHeader title="Propinas" subtitle="Mis ganancias por servicio" />
             <View style={{ margin: 16 }}>
@@ -290,7 +290,7 @@ export default function PropinasScreen() {
         </View>
     );
 
-    if (loading) return <PropinasSkeleton />;
+    if (loading) return renderPropinasSkeleton();
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>

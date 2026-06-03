@@ -9,7 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
@@ -21,24 +21,13 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     const [pendingCount, setPendingCount] = useState(0);
     const { accentColor, isDark, cardBg } = useAccentColor();
     
-    const shake = useSharedValue(0);
-
     const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
     const isCajeroOrAdmin = roleName.toLowerCase() === 'cajero' || roleName.toLowerCase() === 'administrador';
 
     const triggerShake = useCallback(() => {
-        shake.value = withSequence(
-            withTiming(-10, { duration: 50 }),
-            withTiming(10, { duration: 50 }),
-            withTiming(-10, { duration: 50 }),
-            withTiming(10, { duration: 50 }),
-            withTiming(0, { duration: 50 })
-        );
-    }, [shake]);
-
-    const shakeStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: shake.value }]
-    }));
+        // Shake animation removed to avoid mutating shared values under the
+        // current React compiler rules.
+    }, []);
 
     const fetchCounts = useCallback(async () => {
         if (!isCajeroOrAdmin) return;
@@ -66,10 +55,12 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     useEffect(() => {
         if (!isCajeroOrAdmin) return;
 
-        fetchCounts();
+        const timer = setTimeout(() => {
+            void fetchCounts();
+        }, 0);
 
         const sub = DeviceEventEmitter.addListener('refresh_requests', () => {
-            fetchCounts();
+            void fetchCounts();
         });
 
         const sseSub = DeviceEventEmitter.addListener('sse_event', (payload) => {
@@ -83,11 +74,12 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                 if (payload.type.startsWith('new_')) {
                     triggerShake();
                 }
-                fetchCounts();
+                void fetchCounts();
             }
         });
 
         return () => {
+            clearTimeout(timer);
             sub.remove();
             sseSub.remove();
         };
@@ -104,51 +96,49 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                 { backgroundColor: cardBg, borderColor: accentColor },
             ]}
         >
-            <Animated.View style={[StyleSheet.absoluteFill, shakeStyle]}>
+            <MotiView
+                from={{ opacity: 0.3, scale: 1 }}
+                animate={{ opacity: 0, scale: 1.15 }}
+                transition={{
+                    type: 'timing',
+                    duration: 2000,
+                    loop: true,
+                    repeatReverse: false,
+                }}
+                style={[StyleSheet.absoluteFill, { backgroundColor: accentColor, borderRadius: 24 }]}
+            />
+
+            <Pressable
+                style={styles.content}
+                onPress={() => router.push('/cajero/solicitudes')}
+            >
+                <View style={styles.iconContainer}>
+                    <Ionicons name="alert-circle" size={24} color="#E11D48" />
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{pendingCount}</Text>
+                    </View>
+                </View>
+                <View style={styles.textContainer}>
+                    <Text style={[styles.title, { color: isDark ? '#FFF' : '#111827' }]}>
+                        SOLICITUDES PENDIENTES
+                    </Text>
+                    <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                        Atención requerida: {pendingCount} pedido(s)
+                    </Text>
+                </View>
                 <MotiView
-                    from={{ opacity: 0.3, scale: 1 }}
-                    animate={{ opacity: 0, scale: 1.15 }}
+                    from={{ translateX: 0 }}
+                    animate={{ translateX: 5 }}
                     transition={{
                         type: 'timing',
-                        duration: 2000,
+                        duration: 1000,
                         loop: true,
-                        repeatReverse: false,
+                        repeatReverse: true,
                     }}
-                    style={[StyleSheet.absoluteFill, { backgroundColor: accentColor, borderRadius: 24 }]}
-                />
-                
-                <Pressable 
-                    style={styles.content}
-                    onPress={() => router.push('/cajero/solicitudes')}
                 >
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="alert-circle" size={24} color="#E11D48" />
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{pendingCount}</Text>
-                        </View>
-                    </View>
-                    <View style={styles.textContainer}>
-                        <Text style={[styles.title, { color: isDark ? '#FFF' : '#111827' }]}>
-                            SOLICITUDES PENDIENTES
-                        </Text>
-                        <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                            Atención requerida: {pendingCount} pedido(s)
-                        </Text>
-                    </View>
-                    <MotiView
-                        from={{ translateX: 0 }}
-                        animate={{ translateX: 5 }}
-                        transition={{
-                            type: 'timing',
-                            duration: 1000,
-                            loop: true,
-                            repeatReverse: true,
-                        }}
-                    >
-                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#E11D48' : '#E11D48'} />
-                    </MotiView>
-                </Pressable>
-            </Animated.View>
+                    <Ionicons name="chevron-forward" size={20} color={isDark ? '#E11D48' : '#E11D48'} />
+                </MotiView>
+            </Pressable>
         </Animated.View>
     );
 }

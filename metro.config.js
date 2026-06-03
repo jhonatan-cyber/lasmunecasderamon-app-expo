@@ -1,5 +1,6 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
+require('./scripts/patch-expo-web');
 
 const config = getDefaultConfig(__dirname);
 const forcedTslibPath = path.resolve(__dirname, 'node_modules/tslib/tslib.es6.js');

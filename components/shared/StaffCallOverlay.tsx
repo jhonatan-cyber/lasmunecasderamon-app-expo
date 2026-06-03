@@ -82,12 +82,16 @@ export function StaffCallOverlay() {
 
     useEffect(() => {
         if (!isStaff && !isHostess) {
-            setPendingCalls([]);
-            return;
+            const timer = setTimeout(() => setPendingCalls([]), 0);
+            return () => clearTimeout(timer);
         }
 
+        const timers: (ReturnType<typeof setTimeout>)[] = [];
         if (isStaff) {
-            fetchPending();
+            const timer = setTimeout(() => {
+                void fetchPending();
+            }, 0);
+            timers.push(timer);
         }
 
         // Escuchar eventos SSE centralizados desde NotificationContext
@@ -129,6 +133,7 @@ export function StaffCallOverlay() {
         });
 
         return () => {
+            timers.forEach(clearTimeout);
             subscription.remove();
         };
     }, [isStaff, isHostess, fetchPending, mapPendingCall, user?.id, user?.role]);

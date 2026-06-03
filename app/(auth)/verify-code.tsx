@@ -11,9 +11,9 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    useColorScheme,
     View
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 
@@ -26,7 +26,7 @@ export default function VerifyCodeScreen() {
     const login = useAuthStore((state) => state.login);
     const tempAuthData = useAuthStore((state) => state.tempAuthData);
 
-    const colorScheme = useColorScheme() ?? 'light';
+    const colorScheme = useColorScheme();
     const theme = Colors[colorScheme];
 
     // Create refs array for the 4 inputs

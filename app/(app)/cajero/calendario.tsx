@@ -194,7 +194,10 @@ export default function CalendarioScreen() {
     }, [currentDate]);
 
     useEffect(() => {
-        fetchCalendarData();
+        const timer = setTimeout(() => {
+            void fetchCalendarData();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [fetchCalendarData]);
 
     const onRefresh = useCallback(() => {
@@ -270,9 +273,11 @@ export default function CalendarioScreen() {
     }, [selectedDates, selectedDataType]);
 
     useEffect(() => {
-        if (modalVisible) {
-            fetchSelectedDateDetails();
-        }
+        if (!modalVisible) return;
+        const timer = setTimeout(() => {
+            void fetchSelectedDateDetails();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [modalVisible, fetchSelectedDateDetails]);
 
     const navigateMonth = (direction: number) => {

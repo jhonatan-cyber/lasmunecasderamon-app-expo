@@ -107,7 +107,7 @@ export default function HorasExtrasScreen() {
         />
     );
 
-    const HorasExtrasSkeleton = () => (
+    const renderHorasExtrasSkeleton = () => (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <PremiumHeader title="Horas Extras" subtitle="Mi tiempo adicional laborado" />
             <View style={{ margin: 16 }}>
@@ -136,7 +136,7 @@ export default function HorasExtrasScreen() {
         </View>
     );
 
-    if (loading) return <HorasExtrasSkeleton />;
+    if (loading) return renderHorasExtrasSkeleton();
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>

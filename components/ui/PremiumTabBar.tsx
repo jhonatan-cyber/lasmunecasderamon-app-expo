@@ -1,4 +1,3 @@
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -9,7 +8,33 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const PremiumTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+type PremiumTabBarProps = {
+    state: {
+        index: number;
+        routes: { key: string; name: string; params?: any }[];
+    };
+    descriptors: Record<
+        string,
+        {
+            options: {
+                href?: string | null;
+                tabBarLabel?: React.ReactNode;
+                title?: string;
+                tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+            };
+        }
+    >;
+    navigation: {
+        emit: (event: {
+            type: 'tabPress';
+            target: string;
+            canPreventDefault: true;
+        }) => { defaultPrevented: boolean };
+        navigate: (name: string, params?: any) => void;
+    };
+};
+
+export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarProps) => {
     const { gradientColors } = useAccentColor();
     const insets = useSafeAreaInsets();
     const indicatorPosition = useSharedValue(0);

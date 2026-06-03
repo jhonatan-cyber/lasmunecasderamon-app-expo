@@ -441,7 +441,7 @@ export default function NuevaCuentaScreen() {
         }
     }, [cajaAbierta, selectedCliente, selectedHabitacion, cart, totals, router, state.selectedTime]);
 
-    const NuevaCuentaSkeleton = () => (
+    const renderNuevaCuentaSkeleton = () => (
         <View style={{ flex: 1, backgroundColor: bg }}>
             <PremiumHeader
                 title="Nueva Cuenta"
@@ -484,7 +484,7 @@ export default function NuevaCuentaScreen() {
         </View>
     );
 
-    if (loadingInitial) return <NuevaCuentaSkeleton />;
+    if (loadingInitial) return renderNuevaCuentaSkeleton();
 
     return (
         <KeyboardAvoidingView

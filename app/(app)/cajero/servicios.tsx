@@ -125,9 +125,6 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   const [remaining, setRemaining] = useState(() => calculateRemainingTime(item, serverOffset));
 
   useEffect(() => {
-    // Actualizar inmediatamente al cambiar el item o el offset
-    setRemaining(calculateRemainingTime(item, serverOffset));
-    
     // Si no está activo o está pausado, no corremos el intervalo
     if (activeTab === "finalizados" || item.isPaused || item.estado === 3) return;
 

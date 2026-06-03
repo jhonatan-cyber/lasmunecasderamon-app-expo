@@ -48,17 +48,20 @@ export const QRScannerModal = ({
     }, []);
     
     useEffect(() => {
-        if (visible) {
-            setScanning(false);
-            setLoading(false);
-            setTorch(false);
-            setZoom(ZOOM_NORMAL);
-            fetchCodigo();
-            timerRef.current = setTimeout(() => setCameraActive(true), 300);
-        } else {
-            setCameraActive(false);
-        }
+        const timer = setTimeout(() => {
+            if (visible) {
+                setScanning(false);
+                setLoading(false);
+                setTorch(false);
+                setZoom(ZOOM_NORMAL);
+                void fetchCodigo();
+                timerRef.current = setTimeout(() => setCameraActive(true), 300);
+            } else {
+                setCameraActive(false);
+            }
+        }, 0);
         return () => {
+            clearTimeout(timer);
             clearTimeout(timerRef.current);
         };
     }, [visible, fetchCodigo]);
@@ -280,7 +283,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     camera: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     overlay: {
         flex: 1,

@@ -188,7 +188,7 @@ export default function ClientesScreen() {
 
     const fetchHistory = async (clientId: string | number) => {
         try {
-            const res = await apiClient(`/clients/history?cliente_id=${clientId}&_t=${Date.now()}`);
+            const res = await apiClient(`/clients/history?cliente_id=${clientId}`);
             if (res.success && Array.isArray(res.data)) {
                 setHistoryData(res.data);
             } else if (Array.isArray(res)) {

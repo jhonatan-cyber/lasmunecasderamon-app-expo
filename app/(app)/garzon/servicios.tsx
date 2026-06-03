@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -60,6 +60,40 @@ interface Client {
     saldo?: number;
 }
 
+function ServiciosSkeleton({ bg, gradientColors, insets }: { bg: string; gradientColors: string[]; insets: { top: number } }) {
+    return (
+        <View style={{ flex: 1, backgroundColor: bg }}>
+            <LinearGradient
+                colors={gradientColors as any}
+                style={[styles.header, {
+                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
+                    paddingBottom: 25,
+                    borderBottomLeftRadius: 32,
+                    borderBottomRightRadius: 32,
+                    height: 160
+                }]}
+            >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
+                    <Skeleton width={150} height={30} />
+                    <Skeleton width={44} height={44} borderRadius={22} />
+                </View>
+                <View style={{ paddingHorizontal: 20 }}>
+                    <Skeleton width="60%" height={24} />
+                </View>
+            </LinearGradient>
+
+            <ScrollView style={{ flex: 1, padding: 20 }} showsVerticalScrollIndicator={false}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <View key={i} style={{ marginBottom: 20, gap: 10 }}>
+                        <Skeleton width={100} height={18} />
+                        <Skeleton width="100%" height={56} borderRadius={16} />
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
+}
+
 export default function ServiciosScreen() {
     const { accentColor, gradientColors } = useAccentColor();
     const router = useRouter();
@@ -81,7 +115,6 @@ export default function ServiciosScreen() {
     const [selectedClients, setSelectedClients] = useState<(number | string)[]>([]);
     const [servicePrice, setServicePrice] = useState<string>('');
     const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | ''>('');
-    const [iva, setIva] = useState<string>('0');
     const [roomModalVisible, setRoomModalVisible] = useState(false);
     const [hostessModalVisible, setHostessModalVisible] = useState(false);
     const [clientModalVisible, setClientModalVisible] = useState(false);
@@ -152,7 +185,8 @@ export default function ServiciosScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchData();
+            const run = async () => { await fetchData(); };
+            void run();
         }, [fetchData])
     );
 
@@ -207,6 +241,16 @@ export default function ServiciosScreen() {
             .map(idStr => next.find(id => String(id) === idStr) || idStr);
 
         setSelectedClients(uniqueNext as any);
+
+        const activeClient = uniqueNext.length === 0
+            ? null
+            : clients.find(c => String(c.id_cliente || c.id) === String(uniqueNext[0]));
+
+        if (activeClient && (activeClient.saldo || 0) > 0) {
+            setPaymentMethod('prepago');
+        } else if (paymentMethod === 'prepago') {
+            setPaymentMethod('');
+        }
     };
 
     // Helpers from web logic
@@ -214,44 +258,23 @@ export default function ServiciosScreen() {
         return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
     }, [selectedRoom]);
 
-    useEffect(() => {
-        if (hasComision) {
-            setServicePrice('');
-        }
-    }, [hasComision]);
+    const maxHostesses = !hasComision
+        ? 10
+        : Math.min(3, 4 - Math.max(1, selectedClients.length));
 
-    const maxHostesses = useMemo(() => {
-        if (!hasComision) return 10;
-        // Regla: Máximo 3 anfitrionas. 
-        // Además, Total (Anf + Cli) <= 4. Si no hay clientes, se asume 1 cupo para el cálculo.
-        const effectiveClients = Math.max(1, selectedClients.length);
-        const limitByTotal = 4 - effectiveClients;
-        return Math.min(3, limitByTotal);
-    }, [hasComision, selectedClients.length]);
+    const maxClients = !hasComision
+        ? 10
+        : 4 - Math.max(1, selectedHostesses.length);
 
-    const maxClients = useMemo(() => {
-        if (!hasComision) return 10;
-        // Regla: Total <= 4. Siempre debe haber espacio para al menos 1 anfitriona.
-        const effectiveHostesses = Math.max(1, selectedHostesses.length);
-        return 4 - effectiveHostesses;
-    }, [hasComision, selectedHostesses.length]);
-
-    const activeClientWithBalance = useMemo(() => {
-        if (selectedClients.length === 0) return null;
-        const mainClientId = selectedClients[0];
-        const client = clients.find(c => String(c.id_cliente || c.id) === String(mainClientId));
-        return (client && (client.saldo || 0) > 0) ? client : null;
-    }, [selectedClients, clients]);
+    const activeClientWithBalance = selectedClients.length === 0
+        ? null
+        : (() => {
+            const mainClientId = selectedClients[0];
+            const client = clients.find(c => String(c.id_cliente || c.id) === String(mainClientId));
+            return (client && (client.saldo || 0) > 0) ? client : null;
+        })();
 
     const hasPrepago = !!activeClientWithBalance;
-
-    useEffect(() => {
-        if (hasPrepago) {
-            setPaymentMethod('prepago');
-        } else if (paymentMethod === 'prepago') {
-            setPaymentMethod('');
-        }
-    }, [hasPrepago, paymentMethod]);
 
     // Calculation logic (simplified version of web version)
     const totals = useMemo(() => {
@@ -298,10 +321,6 @@ export default function ServiciosScreen() {
 
         return { subtotal, totalHabitacion, total, iva: currentIva, comisionPorAnfitriona };
     }, [servicePrice, selectedRoom, selectedHostesses.length, selectedClients.length, paymentMethod, hasComision]);
-
-    useEffect(() => {
-        setIva(totals.iva.toString());
-    }, [totals.iva]);
 
     const handleSubmit = async () => {
         if (!selectedRoom) return Alert.alert('Error', 'Selecciona una habitación');
@@ -369,39 +388,7 @@ export default function ServiciosScreen() {
         return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
 
-    const ServiciosSkeleton = () => (
-        <View style={{ flex: 1, backgroundColor: bg }}>
-            <LinearGradient
-                colors={gradientColors as any}
-                style={[styles.header, {
-                    paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
-                    paddingBottom: 25,
-                    borderBottomLeftRadius: 32,
-                    borderBottomRightRadius: 32,
-                    height: 160
-                }]}
-            >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 20 }}>
-                    <Skeleton width={150} height={30} />
-                    <Skeleton width={44} height={44} borderRadius={22} />
-                </View>
-                <View style={{ paddingHorizontal: 20 }}>
-                    <Skeleton width="60%" height={24} />
-                </View>
-            </LinearGradient>
-
-            <ScrollView style={{ flex: 1, padding: 20 }} showsVerticalScrollIndicator={false}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <View key={i} style={{ marginBottom: 20, gap: 10 }}>
-                        <Skeleton width={100} height={18} />
-                        <Skeleton width="100%" height={56} borderRadius={16} />
-                    </View>
-                ))}
-            </ScrollView>
-        </View>
-    );
-
-    if (loading) return <ServiciosSkeleton />;
+    if (loading) return <ServiciosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 
     return (
         <KeyboardAvoidingView
@@ -449,6 +436,9 @@ export default function ServiciosScreen() {
                     onClose={() => setRoomModalVisible(false)}
                     onSelect={(room) => {
                         setSelectedRoom(room as any);
+                        if ((room as any).comision_anfitriona && (room as any).comision_anfitriona > 0) {
+                            setServicePrice('');
+                        }
                         setRoomModalVisible(false);
                     }}
                     rooms={rooms.filter(r => 
@@ -612,7 +602,7 @@ export default function ServiciosScreen() {
                                 <Text style={{ color: textSecondary, fontSize: 18, marginRight: 8 }}>$</Text>
                                 <TextInput
                                     style={[styles.input, { color: textPrimary }]}
-                                    value={formatNumber(iva)}
+                                    value={formatNumber(totals.iva.toString())}
                                     editable={false}
                                 />
                             </View>

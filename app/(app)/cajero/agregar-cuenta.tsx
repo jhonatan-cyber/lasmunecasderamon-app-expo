@@ -283,7 +283,7 @@ export default function AgregarCuentaScreen() {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
-    }, [cuentaOriginal?.id_cuenta]);
+    }, [cuentaOriginal]);
 
     useEffect(() => {
         fetchInitialData();

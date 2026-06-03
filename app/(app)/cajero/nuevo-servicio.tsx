@@ -556,7 +556,7 @@ export default function NuevoServicioScreen() {
     }
   }, [cajaAbierta, selectedHabitacion, selectedHostesses, selectedClients, totals, numericPrecioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, selectedClientData, router, hasAnfitrionaComision]);
 
-  const NuevoServicioSkeleton = () => (
+  const renderNuevoServicioSkeleton = () => (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <PremiumHeader 
         title="Nuevo Servicio" 
@@ -593,7 +593,7 @@ export default function NuevoServicioScreen() {
     </View>
   );
 
-  if (loadingInitial) return <NuevoServicioSkeleton />;
+  if (loadingInitial) return renderNuevoServicioSkeleton();
 
   return (
     <KeyboardAvoidingView

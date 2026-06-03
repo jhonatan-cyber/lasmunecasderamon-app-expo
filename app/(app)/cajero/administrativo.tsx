@@ -40,7 +40,7 @@ interface Event {
 const SkeletonBox = ({ width, height, borderRadius = 10, style = {} }: {
     width: number | string; height: number; borderRadius?: number; style?: any;
 }) => {
-    const anim = useRef(new Animated.Value(0.3)).current;
+    const [anim] = useState(() => new Animated.Value(0.3));
     useEffect(() => {
         Animated.loop(
             Animated.sequence([
@@ -111,7 +111,10 @@ export default function AdministrativoScreen() {
     }, []);
 
     useEffect(() => {
-        fetchData();
+        const timer = setTimeout(() => {
+            void fetchData();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [fetchData]);
 
     const onRefresh = () => {

@@ -529,14 +529,17 @@ export default function SolicitudesScreen() {
 
             if (found) {
                 logger.info('[useEffect queryParams] found:', found);
-                setProcessedOpenId(id);
-                router.setParams({ openId: undefined, type: undefined });
-                if (queryType === 'new_order') {
-                    handleAprobar(id, 'pedido', found);
-                } else {
-                    setSelectedService(found);
-                    setServiceModalVisible(true);
-                }
+                const timer = setTimeout(() => {
+                    setProcessedOpenId(id);
+                    router.setParams({ openId: undefined, type: undefined });
+                    if (queryType === 'new_order') {
+                        handleAprobar(id, 'pedido', found);
+                    } else {
+                        setSelectedService(found);
+                        setServiceModalVisible(true);
+                    }
+                }, 0);
+                return () => clearTimeout(timer);
             }
         }
     }, [openId, queryType, solicitudes, processedOpenId, handleAprobar, router]);
@@ -559,13 +562,16 @@ export default function SolicitudesScreen() {
         logger.info('[useEffect pendingAutoOpen] found:', found);
 
         if (found) {
-            setPendingAutoOpen(null);
-            if (type === 'pedido') {
-                handleAprobar(id, 'pedido', found);
-            } else {
-                setSelectedService(found);
-                setServiceModalVisible(true);
-            }
+            const timer = setTimeout(() => {
+                setPendingAutoOpen(null);
+                if (type === 'pedido') {
+                    handleAprobar(id, 'pedido', found);
+                } else {
+                    setSelectedService(found);
+                    setServiceModalVisible(true);
+                }
+            }, 0);
+            return () => clearTimeout(timer);
         } else {
             // Si no se encontró, limpiar el pendingAutoOpen para evitar bucles
             logger.info('[useEffect pendingAutoOpen] no found, clearing...');
@@ -578,13 +584,19 @@ export default function SolicitudesScreen() {
         if (serviceModalVisible && selectedService) {
             const cId = selectedService.cliente_id || selectedService.id_cliente;
             if (cId) {
-                setLoadingClient(true);
-                apiClient(`/clients?id=${cId}`).then(res => {
-                    if (res.success) setSelectedClient(res.data);
-                }).catch(() => setSelectedClient(null))
-                  .finally(() => setLoadingClient(false));
+                const timer = setTimeout(() => {
+                    setLoadingClient(true);
+                    apiClient(`/clients?id=${cId}`).then(res => {
+                        if (res.success) setSelectedClient(res.data);
+                    }).catch(() => setSelectedClient(null))
+                      .finally(() => setLoadingClient(false));
+                }, 0);
+                return () => clearTimeout(timer);
             } else {
-                setSelectedClient(null);
+                const timer = setTimeout(() => {
+                    setSelectedClient(null);
+                }, 0);
+                return () => clearTimeout(timer);
             }
         }
     }, [serviceModalVisible, selectedService]);

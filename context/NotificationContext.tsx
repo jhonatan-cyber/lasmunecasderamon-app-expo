@@ -48,8 +48,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         },
         trigger: null,
       });
-    } catch (err) {
-      
+    } catch {
+
     }
   }, []);
 
@@ -170,17 +170,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "timer_updated":
       case "room_occupied":
      
-        if (payload.type === "timer_started") {
+      if (payload.type === "timer_started") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
-            const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "success", text1: "Temporizador Iniciado", text2: `Habitación: ${roomLabel}` });
+            // Toast.show({ type: "success", text1: "Temporizador Iniciado" });
           }
         } else if (payload.type === "timer_stopped") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (lowerRole !== "anfitriona" || isAssigned) {
-            const roomLabel = payload.data.habitacion_numero || payload.data.habitacion_id || payload.data.roomName || 'asignada';
-            // Toast.show({ type: "error", text1: "Temporizador Detenido", text2: `Sesión finalizada en ${roomLabel}` });
+            // Toast.show({ type: "error", text1: "Temporizador Detenido" });
           }
         }
         break;
@@ -243,7 +241,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       default:
         logger.info('[NotificationContext] Evento SSE no manejado específicamente', { type: payload.type });
     }
-  }, [showLocalNotification, user?.id, user?.role]);
+  }, [router, showLocalNotification, user]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -286,7 +284,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("error", (err: any) => {
-        logger.error('[NotificationContext] Error de conexión SSE', { error: JSON.stringify(err) });
+        logger.warn('[NotificationContext] Error de conexión SSE', { error: JSON.stringify(err) });
         setIsConnected(false);
       });
 

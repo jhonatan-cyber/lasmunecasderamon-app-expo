@@ -55,14 +55,21 @@ const payMethodIcons: Record<string, any> = {
   transferencia: "swap-horizontal-outline",
 };
 
-// Componente aislado para el temporizador: tiene su propio tick interno
+type VentasSkeletonProps = {
+  bg: string;
+  cardBg: string;
+  borderColor: string;
+  gradientColors: string[];
+  insets: { top: number };
+  isTablet: boolean;
+};
+
 function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimary }: {
   timer: any; serverOffset: number; accentColor: string; textSecondary: string; textPrimary: string;
 }) {
   const [remaining, setRemaining] = useState(() => calculateRemainingTime(timer, serverOffset));
 
   useEffect(() => {
-    setRemaining(calculateRemainingTime(timer, serverOffset));
     if (timer.isPaused) return;
     const interval = setInterval(() => {
       setRemaining(calculateRemainingTime(timer, serverOffset));
@@ -86,6 +93,134 @@ function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimar
       <View>
         <Text style={[styles.timerLabel, { color: textSecondary }]}>RESTANTE</Text>
         <Text style={[styles.timerValue, { color: remaining < 60 ? '#EF4444' : textPrimary }]}>{fmt(remaining)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function DetailSkeleton({ borderColor }: { borderColor: string }) {
+  return (
+    <View style={{ padding: 20 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 }}>
+        <View>
+          <Skeleton width={180} height={28} style={{ marginBottom: 10 }} />
+          <Skeleton width={120} height={18} />
+        </View>
+        <Skeleton width={44} height={44} borderRadius={22} />
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
+        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
+      </View>
+
+      <Skeleton width={140} height={20} style={{ marginBottom: 12 }} />
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 25 }}>
+        <Skeleton width={90} height={32} borderRadius={16} />
+        <Skeleton width={90} height={32} borderRadius={16} />
+      </View>
+
+      <Skeleton width="100%" height={180} borderRadius={24} style={{ marginBottom: 25 }} />
+
+      <View style={{ gap: 15 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Skeleton width={100} height={18} />
+          <Skeleton width={80} height={18} />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Skeleton width={120} height={26} />
+          <Skeleton width={140} height={32} borderRadius={16} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function VentaCardSkeleton({ isTablet, cardBg, borderColor }: { isTablet: boolean; cardBg: string; borderColor: string }) {
+  return (
+    <View
+      style={{
+        width: isTablet ? '48.5%' : '100%',
+        padding: 16,
+        borderRadius: 24,
+        marginBottom: 14,
+        backgroundColor: cardBg,
+        borderWidth: 1,
+        borderColor,
+      }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+        <Skeleton width={120} height={20} />
+        <Skeleton width={80} height={20} borderRadius={12} />
+      </View>
+      <View style={{ gap: 8, marginBottom: 15 }}>
+        <Skeleton width='90%' height={14} />
+        <Skeleton width='70%' height={14} />
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <View style={{ gap: 4 }}>
+          <Skeleton width={60} height={12} />
+          <Skeleton width={100} height={24} />
+        </View>
+        <Skeleton width={100} height={40} borderRadius={12} />
+      </View>
+    </View>
+  );
+}
+
+function VentasSkeleton({ bg, cardBg, borderColor, gradientColors, insets, isTablet }: VentasSkeletonProps) {
+  return (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      <LinearGradient
+        colors={gradientColors as any}
+        style={[styles.header, { paddingTop: insets.top + (isTablet ? 20 : 10), paddingBottom: 25, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 20,
+          }}
+        >
+          <Skeleton width={150} height={30} />
+          <Skeleton width={44} height={44} borderRadius={22} />
+        </View>
+        <Skeleton width='60%' height={24} />
+      </LinearGradient>
+      <View style={{ padding: isTablet ? 12 : 16 }}>
+        <Skeleton height={isTablet ? 180 : 140} borderRadius={24} style={{ marginBottom: 20 }} />
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
+          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              style={{
+                width: isTablet ? '48.5%' : '100%',
+                padding: 16,
+                borderRadius: 20,
+                marginBottom: 14,
+                backgroundColor: cardBg,
+                borderWidth: 1,
+                borderColor,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 10,
+                }}
+              >
+                <Skeleton width={100} height={20} />
+                <Skeleton width={80} height={20} borderRadius={10} />
+              </View>
+              <Skeleton width='100%' height={60} borderRadius={12} />
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -158,133 +293,6 @@ export default function VentasScreen() {
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
 
-  const DetailSkeleton = () => (
-    <View style={{ padding: 20 }}>
-      {/* Header Skeleton */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 25 }}>
-        <View>
-          <Skeleton width={180} height={28} style={{ marginBottom: 10 }} />
-          <Skeleton width={120} height={18} />
-        </View>
-        <Skeleton width={44} height={44} borderRadius={22} />
-      </View>
-
-      {/* Grid Info Skeleton */}
-      <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
-        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
-        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
-      </View>
-
-      {/* Hostess Badges Skeleton */}
-      <Skeleton width={140} height={20} style={{ marginBottom: 12 }} />
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 25 }}>
-        <Skeleton width={90} height={32} borderRadius={16} />
-        <Skeleton width={90} height={32} borderRadius={16} />
-      </View>
-
-      {/* Table Skeleton */}
-      <Skeleton width="100%" height={180} borderRadius={24} style={{ marginBottom: 25 }} />
-
-      {/* Footer Summary Skeleton */}
-      <View style={{ gap: 15 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Skeleton width={100} height={18} />
-          <Skeleton width={80} height={18} />
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Skeleton width={120} height={26} />
-          <Skeleton width={140} height={32} borderRadius={16} />
-        </View>
-      </View>
-    </View>
-  );
-
-  const VentaCardSkeleton = () => (
-    <View
-      style={{
-        width: isTablet ? "48.5%" : "100%",
-        padding: 16,
-        borderRadius: 24,
-        marginBottom: 14,
-        backgroundColor: cardBg,
-        borderWidth: 1,
-        borderColor,
-      }}
-    >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15 }}>
-        <Skeleton width={120} height={20} />
-        <Skeleton width={80} height={20} borderRadius={12} />
-      </View>
-      <View style={{ gap: 8, marginBottom: 15 }}>
-        <Skeleton width="90%" height={14} />
-        <Skeleton width="70%" height={14} />
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <View style={{ gap: 4 }}>
-          <Skeleton width={60} height={12} />
-          <Skeleton width={100} height={24} />
-        </View>
-        <Skeleton width={100} height={40} borderRadius={12} />
-      </View>
-    </View>
-  );
-
-  const VentasSkeleton = () => (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <LinearGradient
-        colors={gradientColors as any}
-        style={[styles.header, { paddingTop: insets.top + (isTablet ? 20 : 10), paddingBottom: 25, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <Skeleton width={150} height={30} />
-          <Skeleton width={44} height={44} borderRadius={22} />
-        </View>
-        <Skeleton width="60%" height={24} />
-      </LinearGradient>
-      <View style={{ padding: isTablet ? 12 : 16 }}>
-        <Skeleton height={isTablet ? 180 : 140} borderRadius={24} style={{ marginBottom: 20 }} />
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <View
-              key={i}
-              style={{
-                width: isTablet ? "48.5%" : "100%",
-                padding: 16,
-                borderRadius: 20,
-                marginBottom: 14,
-                backgroundColor: cardBg,
-                borderWidth: 1,
-                borderColor,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 10,
-                }}
-              >
-                <Skeleton width={100} height={20} />
-                <Skeleton width={80} height={20} borderRadius={10} />
-              </View>
-              <Skeleton width="100%" height={60} borderRadius={12} />
-            </View>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-
   const fetchVentas = useCallback(async (isManual = false) => {
     try {
       if (!isManual && !initialVentasLoaded) setLoading(true);
@@ -346,7 +354,8 @@ export default function VentasScreen() {
   }, []);
 
   useEffect(() => {
-    fetchVentas();
+    const run = async () => { await fetchVentas(); };
+    void run();
   }, [fetchVentas]);
 
   useFocusEffect(
@@ -743,7 +752,7 @@ const productCount = item.item_count || 0;
     );
   };
 
-  if (loading) return <VentasSkeleton />;
+  if (loading) return <VentasSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} gradientColors={gradientColors} insets={insets} isTablet={isTablet} />;
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -903,7 +912,7 @@ const productCount = item.item_count || 0;
         <View style={styles.modalOverlay}>
           <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
             {loadingDetail ? (
-              <DetailSkeleton />
+              <DetailSkeleton borderColor={borderColor} />
             ) : (
               selectedVenta && (
                 <View style={{ flex: 1 }}>

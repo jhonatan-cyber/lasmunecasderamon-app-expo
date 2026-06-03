@@ -73,8 +73,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 const savedTheme = await AsyncStorage.getItem('app-theme');
                 if (savedTheme === 'light' || savedTheme === 'dark') {
                     setThemeState(savedTheme);
-                } else if (systemColorScheme) {
-                    setThemeState(systemColorScheme);
+                } else {
+                    setThemeState(systemColorScheme === 'dark' ? 'dark' : 'light');
                 }
                 
                 const savedAccent = await AsyncStorage.getItem('accent-color');
