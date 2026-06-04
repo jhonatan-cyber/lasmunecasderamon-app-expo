@@ -5,6 +5,11 @@ import { apiClient } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import Toast from "react-native-toast-message";
 import { DashboardEvent, DashboardStats, UserRole } from "@/types/api";
+import {
+  emitRefreshRequests,
+  REALTIME_EVENT_NAMES,
+  shouldInvalidateDashboardFromSse,
+} from "@/utils/realtime";
 
 import logger from '@/utils/logger';
 export interface DashboardData {
@@ -29,7 +34,6 @@ export function useDashboardData(role: UserRole) {
     isLoading: loading, 
     isFetching: refreshing, 
     refetch,
-    error 
   } = useQuery({
     queryKey: ['dashboard', role],
     queryFn: async () => {
@@ -98,20 +102,19 @@ export function useDashboardData(role: UserRole) {
 
   // Radar de eventos en tiempo real: Invalida la query para que React Query la refresque sola
   useEffect(() => {
-    const refreshSub = DeviceEventEmitter.addListener("refresh_requests", () => {
+    const refreshSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.refreshRequests, () => {
         queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
     });
     
-    const sseSub = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+    const sseSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
         logger.info('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
-        const businessEvents = ["new_order", "new_service_request", "order_updated", "service_request_approved", "room_occupied"];
-        if (payload && businessEvents.includes(payload.type)) {
+        if (shouldInvalidateDashboardFromSse(payload?.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
             
             // Emitir evento para que las solicitudes se actualicen y abran el modal automáticamente
             if (payload.type === 'new_order' || payload.type === 'new_service_request') {
                 logger.info('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
-                DeviceEventEmitter.emit('refresh_requests', payload);
+                emitRefreshRequests(payload);
             }
         }
     });
@@ -126,7 +129,7 @@ export function useDashboardData(role: UserRole) {
     try {
         await refetch();
         Toast.show({ type: "success", text1: "Éxito", text2: "Datos actualizados" });
-    } catch (e) {
+    } catch {
         Toast.show({ type: "error", text1: "Error", text2: "Fallo al refrescar" });
     }
   }, [refetch]);

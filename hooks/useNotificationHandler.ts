@@ -1,10 +1,17 @@
-import * as Notifications from 'expo-notifications';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { triggerNotificationEffects } from '@/services/pushNotifications';
+import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useRef } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { triggerNotificationEffects } from "@/services/pushNotifications";
+import {
+    getUserRole,
+    getUserRoleName,
+    isAdminRole,
+    isGarzonRole,
+    isHostessRole,
+} from "@/utils/userRole";
 
-import logger from '@/utils/logger';
+import logger from "@/utils/logger";
 /**
  * Hook centralizado para manejar notificaciones entrantes y navegación (Deep Linking)
  */
@@ -14,16 +21,50 @@ export function useNotificationHandler() {
     const notificationListener = useRef<Notifications.Subscription | null>(null);
     const responseListener = useRef<Notifications.Subscription | null>(null);
 
+    const handleNotificationNavigation = useCallback((type: string, data: any) => {
+        const role = getUserRole(user);
+
+        switch (type) {
+            case "new_service_request":
+                if (isAdminRole(user) || role === "cajero") {
+                    router.push("/(app)/cajero/solicitudes");
+                }
+                break;
+
+            case "timer_ended":
+                if (isAdminRole(user) || role === "cajero") {
+                    router.push("/(app)/cajero/servicios");
+                }
+                break;
+
+            case "order_created":
+                if (isAdminRole(user) || role === "cajero") {
+                    router.push("/(app)/cajero/ventas");
+                }
+                break;
+
+            case "service_request_approved":
+                if (isGarzonRole(user)) router.push("/(app)/garzon" as any);
+                if (isHostessRole(user)) router.push("/(app)/anfitriona" as any);
+                break;
+
+            case "order_processed":
+                if (isGarzonRole(user)) router.push("/(app)/garzon" as any);
+                break;
+
+            default:
+                logger.info("⚠️ Tipo de notificación no manejado para navegación", { type });
+        }
+    }, [router, user]);
+
     useEffect(() => {
         if (!user) return;
-
 
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
             const { title, body } = notification.request.content;
 
-            triggerNotificationEffects(title || '', body || '', (user.role as any)?.name || user.role);
+            triggerNotificationEffects(title || "", body || "", getUserRoleName(user));
         });
-
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
             const data = response.notification.request.content.data;
@@ -39,44 +80,5 @@ export function useNotificationHandler() {
                 responseListener.current.remove();
             }
         };
-    }, [user]);
-
-    const handleNotificationNavigation = (type: string, data: any) => {
-        const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-        const role = roleName?.toLowerCase();
-
-        switch (type) {
-            case 'new_service_request':
-                if (role === 'cajero' || role === 'administrador') {
-                    router.push('/(app)/cajero/solicitudes');
-                }
-                break;
-
-            case 'timer_ended':
-                if (role === 'cajero' || role === 'administrador') {
-                    router.push('/(app)/cajero/servicios');
-                }
-                break;
-
-            case 'order_created':
-                if (role === 'cajero' || role === 'administrador') {
-                    router.push('/(app)/cajero/ventas');
-                }
-                break;
-
-            case 'service_request_approved':
-                if (role === 'garzon') router.push('/(app)/garzon' as any);
-                if (role === 'anfitriona') router.push('/(app)/anfitriona' as any);
-                break;
-
-            case 'order_processed':
-                if (role === 'garzon') router.push('/(app)/garzon' as any);
-                break;
-
-            default:
-                logger.info('⚠️ Tipo de notificación no manejado para navegación', { type });
-        }
-    };
+    }, [user, handleNotificationNavigation]);
 }
-
-

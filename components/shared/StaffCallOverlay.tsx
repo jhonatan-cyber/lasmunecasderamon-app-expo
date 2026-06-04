@@ -14,6 +14,7 @@ import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
+import { getUserRole, isAdminRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 
 import logger from '@/utils/logger';
 interface StaffCall {
@@ -34,11 +35,10 @@ export function StaffCallOverlay() {
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
     const [accepting, setAccepting] = useState<number | string | null>(null);
     const { accentColor, isDark, cardBg } = useAccentColor();
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-    const safeRole = roleName.toLowerCase();
+    const safeRole = getUserRole(user);
 
-    const isStaff = safeRole === 'garzon' || safeRole === 'cajero' || safeRole === 'administrador';
-    const isHostess = safeRole === 'anfitriona';
+    const isStaff = isGarzonRole(user) || isCajeroRole(user) || isAdminRole(user);
+    const isHostess = isHostessRole(user);
 
     const mapPendingCall = useCallback((item: any): StaffCall => {
         let parsedData: any = {};
@@ -113,8 +113,7 @@ export function StaffCallOverlay() {
                     const typeNormalized = (callData.assistanceType || '').toLowerCase().includes('general') ? 'atención' : (callData.assistanceType || '');
                     const voiceMessage = `Solicitud de asistencia. La anfitriona ${hostessName} se encuentra ${location} y solicita ${typeNormalized}.`;
 
-                    const userRole = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-                    triggerNotificationEffects("Solicitud de Personal", voiceMessage, userRole, true);
+                    triggerNotificationEffects("Solicitud de Personal", voiceMessage, safeRole, true);
 
                     return [callData, ...prev];
                 });
@@ -136,7 +135,7 @@ export function StaffCallOverlay() {
             timers.forEach(clearTimeout);
             subscription.remove();
         };
-    }, [isStaff, isHostess, fetchPending, mapPendingCall, user?.id, user?.role]);
+    }, [isStaff, isHostess, fetchPending, mapPendingCall, safeRole, user?.id, user?.role]);
 
     const handleAccept = async (id: number | string) => {
         setAccepting(id);

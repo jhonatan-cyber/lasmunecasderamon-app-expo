@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
+import { getUserRole, isAdminRole, isCajeroRole } from '@/utils/userRole';
 
 import logger from '@/utils/logger';
 export const AttendanceCodeDisplay = () => {
@@ -15,10 +16,9 @@ export const AttendanceCodeDisplay = () => {
     const user = useAuthStore(state => state.user);
     const { width } = useWindowDimensions();
 
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-    const role = roleName.toLowerCase();
+    const role = getUserRole(user);
     // Mostrar el código QR a administradores y cajeros
-    const canSeeCode = role.includes('administrador') || role.includes('cajero');
+    const canSeeCode = isAdminRole(user) || isCajeroRole(user);
 
     const fetchCodigo = useCallback(async () => {
         if (!canSeeCode) return;

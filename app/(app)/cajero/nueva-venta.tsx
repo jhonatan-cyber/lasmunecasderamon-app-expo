@@ -6,9 +6,7 @@ import React, {
 } from 'react';
 import {
     ActivityIndicator,
-    FlatList,
     KeyboardAvoidingView,
-    Modal,
     Platform,
     Pressable,
     RefreshControl,
@@ -16,7 +14,6 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View,
     useWindowDimensions
 } from 'react-native';
@@ -29,8 +26,9 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { CartList } from '@/components/cajero/forms/CartList';
 import { CategorySelector } from '@/components/cajero/forms/CategorySelector';
 import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
-import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
+import { NuevaVentaHostessModal } from '@/components/cajero/nueva-venta/NuevaVentaHostessModal';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { NuevaVentaModals } from '@/components/cajero/nueva-venta/NuevaVentaModals';
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
@@ -410,6 +408,25 @@ export default function NuevaVentaScreen() {
         showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
     }, [cart, modalQuantities, modalHostessSelections, anfitrionas]);
 
+    const handlePressAddProduct = useCallback((item: any) => {
+        const hasComm = Number(item.comision || item.commission || 0) > 0 || Number(item.precio || item.price || 0) >= 30000;
+
+        if (hasComm) {
+            dispatch({
+                type: 'SET_HOSTESS_TARGET',
+                target: {
+                    productId: item.id || item.id_producto,
+                    product: item,
+                    max: getHostessLimit(item),
+                    isChampagne: isChampagneProduct(item),
+                },
+            });
+            return;
+        }
+
+        addProductToCart(item);
+    }, [addProductToCart]);
+
     const removeFromCart = useCallback((index: number) => {
         const newCart = [...cart];
         newCart.splice(index, 1);
@@ -716,126 +733,36 @@ export default function NuevaVentaScreen() {
                 </View>
             </ScrollView>
 
-            <Modal visible={modalOpen} animationType="slide" transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>{modalCategoria?.name || 'Productos'}</Text>
-                            <Pressable
-                                onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                                accessibilityLabel="Cerrar modal"
-                                accessibilityRole="button"
-                            >
-                                <Ionicons name="close" size={26} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        {modalLoading ? <ActivityIndicator size="large" color={accentColor} style={{ margin: 40 }} /> : (
-                            <FlatList
-                                data={modalProducts}
-                                keyExtractor={(item) => (item.id || item.id_producto).toString()}
-                                renderItem={({ item }) => (
-                                    <View style={[styles.productItem, { borderBottomColor: borderColor }]}>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.productName, { color: textPrimary }]}>{item.name || item.nombre}</Text>
-                                            <Text style={[styles.productPrice, { color: textSecondary }]}>${(item.precio || item.price || 0).toLocaleString()}</Text>
-                                        </View>
-                                        <View style={styles.modalQuantityActions}>
-                                            <Pressable
-                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
-                                                onPress={() => {
-                                                    const id = item.id || item.id_producto;
-                                                    const qty = Math.max(1, (modalQuantities[id] || 1) - 1);
-                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                                }}
-                                            >
-                                                <Ionicons name="remove" size={16} color={textPrimary} />
-                                            </Pressable>
-                                            <Text style={[styles.modalQtyText, { color: textPrimary }]}>
-                                                {modalQuantities[item.id || item.id_producto] || 1}
-                                            </Text>
-                                            <Pressable
-                                                style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
-                                                onPress={() => {
-                                                    const id = item.id || item.id_producto;
-                                                    const qty = (modalQuantities[id] || 1) + 1;
-                                                    dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                                }}
-                                            >
-                                                <Ionicons name="add" size={16} color={textPrimary} />
-                                            </Pressable>
-                                        </View>
-                                        <Pressable
-                                            style={[styles.addBtn, { backgroundColor: accentColor }]}
-                                            onPress={() => {
-                                                const id = item.id || item.id_producto;
-                                                const hasComm = Number(item.comision || item.commission || 0) > 0 || Number(item.precio || item.price || 0) >= 30000;
-
-                                                if (hasComm) {
-                                                    dispatch({
-                                                        type: 'SET_HOSTESS_TARGET',
-                                                        target: {
-                                                            productId: id,
-                                                            product: item,
-                                                            max: getHostessLimit(item),
-                                                            isChampagne: isChampagneProduct(item)
-                                                        }
-                                                    });
-                                                } else {
-                                                    addProductToCart(item);
-                                                }
-                                            }}
-                                            accessibilityLabel={`Añadir ${item.name || item.nombre}`}
-                                            accessibilityRole="button"
-                                        >
-                                            <Ionicons name="add" size={24} color="#FFF" />
-                                        </Pressable>
-                                    </View>
-                                )}
-                            />
-                        )}
-                        <Pressable
-                            style={[styles.confirmModalBtn, { backgroundColor: accentColor }]}
-                            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
-                            accessibilityLabel="Confirmar selección de productos"
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.confirmModalBtnText}>Confirmar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal visible={timeModalVisible} animationType="slide" transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg, padding: 0 }]} >
-                        <View style={[styles.modalHeader, { padding: 24, paddingBottom: 10, marginBottom: 0 }]}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Tiempo de Estancia</Text>
-                            <Pressable onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}>
-                                <Ionicons name="close" size={26} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        <FlatList
-                            data={[10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]}
-                            keyExtractor={(item) => item.toString()}
-                            contentContainerStyle={{ paddingHorizontal: 24 }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[styles.productItem, { borderBottomColor: borderColor }]}
-                                    onPress={() => {
-                                        dispatch({ type: 'SET_SELECTED_TIME', payload: item });
-                                        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false });
-                                    }}
-                                >
-                                    <Ionicons name="time" size={22} color="#10B981" />
-                                    <Text style={[styles.productName, { color: textPrimary, marginLeft: 16 }]}>{item} minutos</Text>
-                                    {selectedTime === item && <Ionicons name="checkmark-circle" size={24} color={accentColor} style={{ marginLeft: 'auto' }} />}
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
-                </View>
-            </Modal>
-
+            <NuevaVentaModals
+                styles={styles}
+                accentColor={accentColor}
+                cardBg={cardBg}
+                borderColor={borderColor}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                isDark={isDark}
+                categoryModalVisible={modalOpen}
+                modalCategoria={modalCategoria}
+                modalProducts={modalProducts}
+                modalLoading={modalLoading}
+                modalQuantities={modalQuantities}
+                selectedTime={selectedTime}
+                timeModalVisible={timeModalVisible}
+                loadModalVisible={loadModalVisible}
+                loadingTargetClient={loadingTargetClient}
+                loadingAmount={loadingAmount}
+                loadMetodoPago={loadMetodoPago}
+                loadSubmitting={loadSubmitting}
+                onCloseCategoryModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
+                onPressAddProduct={handlePressAddProduct}
+                onUpdateModalQuantity={(productId, quantity) => dispatch({ type: 'SET_MODAL_QUANTITY', productId, quantity })}
+                onCloseTimeModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}
+                onSelectTime={(time) => dispatch({ type: 'SET_SELECTED_TIME', payload: time })}
+                onCloseLoadModal={() => dispatch({ type: 'SET_LOAD_MODAL', visible: false })}
+                onLoadAmountChange={(value) => dispatch({ type: 'SET_LOAD_AMOUNT', payload: value })}
+                onLoadMetodoPagoChange={(value) => dispatch({ type: 'SET_LOAD_METODO_PAGO', payload: value })}
+                onConfirmLoad={handleLoadPrepago}
+            />
             <RoomSelectModal
                 visible={roomModalVisible}
                 rooms={habitaciones}
@@ -861,124 +788,34 @@ export default function NuevaVentaScreen() {
                 }}
             />
 
-            <HostessSelectModal
+            <NuevaVentaHostessModal
                 visible={hostessSubModalVisible && hostessSelectionTarget !== null}
-                hostesses={anfitrionas
-                  .filter((item: any, index: number, self: any[]) => 
-                    index === self.findIndex((t: any) => (t.id_usuario || t.id) === (item.id_usuario || item.id))
-                  )
-                  .map(a => ({
-                    id: String(a.id_usuario || a.id),
-                    id_usuario: String(a.id_usuario || a.id),
-                    nick: a.nick,
-                    estado_servicio: a.estado_servicio || 0
-                  }))}
+                hostesses={anfitrionas}
                 selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
-                max={hostessSelectionTarget?.max}
-                onToggle={(id) => {
+                selectionTarget={hostessSelectionTarget}
+                showToast={showToast}
+                onToggleHostess={(id) => {
                     if (!hostessSelectionTarget) return;
                     const pid = hostessSelectionTarget.productId;
                     const currentSelected = modalHostessSelections[pid] || [];
                     let newSelected: string[];
-                    const stringId = String(id);
 
-                    if (currentSelected.includes(stringId)) {
-                        newSelected = currentSelected.filter(x => x !== stringId);
+                    if (currentSelected.includes(id)) {
+                        newSelected = currentSelected.filter((x) => x !== id);
                     } else {
-                        if (hostessSelectionTarget.max && currentSelected.length >= hostessSelectionTarget.max) {
-                            showToast('Límite', `Máximo ${hostessSelectionTarget.max} anfitrionas por esta cantidad`, 'error');
-                            return;
-                        }
-                        newSelected = [...currentSelected, stringId];
+                        newSelected = [...currentSelected, id];
                     }
+
                     dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
                 }}
                 onClose={() => {
                     dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
                 }}
-                onConfirm={() => {
-                    if (hostessSelectionTarget) {
-                        const pid = hostessSelectionTarget.productId;
-                        const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0 || Number(hostessSelectionTarget.product.precio || hostessSelectionTarget.product.price || 0) >= 30000;
-                        const currentSelected = modalHostessSelections[pid] || [];
-                        if (hasComm && currentSelected.length === 0) {
-                            showToast('Asignación', 'Debes escoger al menos 1 anfitriona', 'error');
-                            return;
-                        }
-                        addProductToCart(hostessSelectionTarget.product);
-                        dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
-                    }
+                onConfirmProduct={(product) => {
+                    addProductToCart(product);
+                    dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
                 }}
             />
-        
-            {/* Modal para Cargar Prepago */}
-            <Modal visible={loadModalVisible} animationType="fade" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: cardBg, height: 'auto', paddingBottom: 40 }]}>
-                        <View style={styles.modalHeader}>
-                            <View>
-                                <Text style={[styles.modalTitle, { color: textPrimary }]}>Cargar Saldo</Text>
-                                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                                    {loadingTargetClient?.nombre || loadingTargetClient?.name}
-                                </Text>
-                            </View>
-                            <Pressable onPress={() => dispatch({ type: 'SET_LOAD_MODAL', visible: false })}>
-                                <Ionicons name="close" size={24} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        
-                        <View style={{ gap: 15 }}>
-                            <View>
-                                <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '800', marginBottom: 8 }}>MONTO A CARGAR</Text>
-                                <TextInput
-                                    style={{
-                                        borderWidth: 1,
-                                        borderColor: borderColor,
-                                        borderRadius: 12,
-                                        padding: 15,
-                                        color: textPrimary,
-                                        fontSize: 18,
-                                        fontWeight: '700',
-                                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'
-                                    }}
-                                    placeholder="0"
-                                    placeholderTextColor={textSecondary}
-                                    keyboardType="numeric"
-                                    value={loadingAmount}
-                                    onChangeText={(val) => dispatch({ type: 'SET_LOAD_AMOUNT', payload: val })}
-                                    autoFocus
-                                />
-                            </View>
-
-                            <PaymentMethodSelect 
-                                selectedMethod={loadMetodoPago} 
-                                onSelect={(val) => dispatch({ type: 'SET_LOAD_METODO_PAGO', payload: val as PaymentMethod })} 
-                                showPrepago={false}
-                            />
-
-                            <TouchableOpacity
-                                style={{ 
-                                    backgroundColor: accentColor, 
-                                    height: 56, 
-                                    borderRadius: 16, 
-                                    justifyContent: 'center', 
-                                    alignItems: 'center',
-                                    marginTop: 10,
-                                    opacity: loadSubmitting ? 0.7 : 1
-                                }}
-                                onPress={handleLoadPrepago}
-                                disabled={loadSubmitting}
-                            >
-                                {loadSubmitting ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '900' }}>CONFIRMAR CARGA</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
         </KeyboardAvoidingView>
     );
 }

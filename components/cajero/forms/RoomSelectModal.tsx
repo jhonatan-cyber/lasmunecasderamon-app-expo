@@ -36,13 +36,18 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
   rooms,
   selectedRoomId,
 }) => {
-  const { accentColor: primaryColor, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+  const {
+    accentColor: primaryColor,
+    cardBg,
+    borderColor,
+    textPrimary,
+    textSecondary,
+  } = useAccentColor();
 
-
-  // Una habitación está ocupada si: estado=2 O si hay servicios/ventas activas (el backend ahora devuelve status=2 para ocupado)
+  // Una habitación está ocupada si el backend la marca como activa.
   const isLibre = (room: Room) => {
     const estado = Number(room.estado ?? room.status ?? 0);
-    return estado === 1; // Solo libre si estado = 1
+    return estado === 1;
   };
 
   return (
@@ -57,6 +62,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
           </View>
+
           <FlatList
             data={rooms}
             extraData={selectedRoomId}
@@ -100,7 +106,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${(Number(item.precio || 0)).toLocaleString()} â€¢ {item.tiempo || 0} min
+                        ${(Number(item.precio || 0)).toLocaleString()} • {item.tiempo || 0} min
                       </Text>
                       <Text
                         style={{
@@ -110,7 +116,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
                           fontWeight: "bold",
                         }}
                       >
-                        {estaLibre ? "â— LIBRE" : "â— OCUPADA"}
+                        {estaLibre ? "● LIBRE" : "● OCUPADA"}
                       </Text>
                     </View>
                   </View>
@@ -119,6 +125,7 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
               );
             }}
           />
+
           <Pressable
             style={[styles.modalActionBtn, { backgroundColor: primaryColor }]}
             onPress={onClose}

@@ -12,8 +12,14 @@ export const DynamicSystemBars = () => {
 
     const updateNavigationBar = async () => {
       try {
-        await (NavigationBar as any).setButtonStyleAsync('light');
-        await NavigationBar.setVisibilityAsync('visible');
+        const setButtonStyleAsync = (NavigationBar as any).setButtonStyleAsync;
+        if (typeof setButtonStyleAsync === 'function') {
+          await setButtonStyleAsync('light');
+        }
+
+        if (typeof NavigationBar.setVisibilityAsync === 'function') {
+          await NavigationBar.setVisibilityAsync('visible');
+        }
 
       } catch (error) {
         logger.captureException(error, { context: 'DynamicSystemBars:updateNavigationBar' });

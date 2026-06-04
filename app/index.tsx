@@ -1,5 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import { isAdminRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 
 export default function Index() {
     const user = useAuthStore((state) => state.user);
@@ -8,14 +9,11 @@ export default function Index() {
         return <Redirect href="/(auth)/login" />;
     }
 
-    const roleName = typeof user.role === 'string' ? user.role : (user.role as any)?.name || '';
-    const role = roleName.toLowerCase();
-
-    if (role.includes('garzon')) {
+    if (isGarzonRole(user)) {
         return <Redirect href="/(app)/garzon/(tabs)" />;
-    } else if (role.includes('anfitriona')) {
+    } else if (isHostessRole(user)) {
         return <Redirect href="/(app)/anfitriona/(tabs)" />;
-    } else if (role.includes('cajero') || role.includes('admin')) {
+    } else if (isCajeroRole(user) || isAdminRole(user)) {
         return <Redirect href="/(app)/cajero/(tabs)" />;
     }
 

@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MotiView } from "moti";
 import {
-  DeviceEventEmitter,
   Image,
   Modal,
   Pressable,
@@ -20,18 +19,16 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
-import { apiClient, BASE_URL } from '@/api/client';
+import { BASE_URL } from '@/api/client';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useTimer } from '@/context/TimerContext';
+import { useVentasScreen } from '@/hooks/useVentasScreen';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from '@/utils/colors';
-
-import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
 // Utils for status colors and labels
@@ -226,308 +223,53 @@ function VentasSkeleton({ bg, cardBg, borderColor, gradientColors, insets, isTab
   );
 }
 
-// Persistencia de estado de carga para evitar skeleton en re-navegación
-let initialVentasLoaded = false;
-
 export default function VentasScreen() {
   const { accentColor, gradientColors, isDark } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-
-  const [loading, setLoading] = useState(!initialVentasLoaded);
-  const [refreshing, setRefreshing] = useState(false);
-  const [ventas, setVentas] = useState<any[]>([]);
-  const [resumen, setResumen] = useState<any>(null);
-  const [loadingSales, setLoadingSales] = useState(false);
-  const dataRef = useRef<string>("");
-  const isFocused = useRef(true);
-  const [selectedVenta, setSelectedVenta] = useState<any>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const ventasList = Array.isArray(ventas) ? ventas : [];
-
-  // Action Sheet state
-  const [actionSheetVisible, setActionSheetVisible] = useState(false);
-  const [activeVenta, setActiveVenta] = useState<any>(null);
-  const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
-  const [motivoAnulacion, setMotivoAnulacion] = useState("");
-  const [montoAnulacion, setMontoAnulacion] = useState("");
-  const [anulandoVenta, setAnulandoVenta] = useState(false);
-
-  const { timers, serverOffset, refreshTimers } = useTimer();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const numColumns = isTablet ? 2 : 1;
-  const params = useLocalSearchParams();
-  const [activeTab, setActiveTab] = useState<"historial" | "proceso">(
-    (params.tab as any) === "proceso" ? "proceso" : "historial",
-  );
-  // Alert state
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    type: "info" | "success" | "warning" | "danger";
-    onConfirm?: () => void;
-    onCancel?: () => void;
-    showCancel?: boolean;
-    confirmText?: string;
-  }>({ visible: false, title: "", message: "", type: "info", showCancel: true });
-
-  const showToast = (
-    title: string,
-    message: string,
-    type: "success" | "error" = "error",
-  ) => {
-    Toast.show({
-      type,
-      text1: title,
-      text2: message,
-      visibilityTime: 4000,
-    });
-  };
+  const { timers, serverOffset } = useTimer();
+  const {
+    loading,
+    refreshing,
+    ventasList,
+    resumen,
+    loadingSales,
+    selectedVenta,
+    loadingDetail,
+    modalVisible,
+    actionSheetVisible,
+    activeVenta,
+    anulacionModalVisible,
+    motivoAnulacion,
+    montoAnulacion,
+    anulandoVenta,
+    activeTab,
+    alertConfig,
+    onRefresh,
+    setActiveTab,
+    setAlertConfig,
+    setModalVisible,
+    setActionSheetVisible,
+    setMotivoAnulacion,
+    setMontoAnulacion,
+    handleOpenActionSheet,
+    handleVerDetalles,
+    handleFinalizarVenta,
+    handleAnularVenta,
+    openAnulacionModal,
+    closeAnulacionModal,
+    formatMontoInput,
+    getVentaId,
+  } = useVentasScreen();
 
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111827";
   const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
-
-  const fetchVentas = useCallback(async (isManual = false) => {
-    try {
-      if (!isManual && !initialVentasLoaded) setLoading(true);
-      if (isManual) setLoadingSales(true);
-      const timestamp = Date.now();
-      const [resSales, resResumen] = await Promise.all([
-        apiClient(`/sales?limit=50&_t=${timestamp}`).catch(() => ({
-          success: false,
-          data: [],
-        })),
-        apiClient(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
-          success: false,
-          data: null,
-        })),
-      ]);
-
-      const salesPayload = Array.isArray(resSales.data)
-        ? resSales.data
-        : Array.isArray(resSales.data?.data)
-          ? resSales.data.data
-          : [];
-      const newData = { sales: salesPayload, resumen: resResumen.data };
-      const serialized = JSON.stringify(newData);
-      const hasChanges = dataRef.current !== serialized;
-      dataRef.current = serialized;
-
-      if (resSales.success) {
-        setVentas(salesPayload);
-      }
-      if (resResumen.success) {
-        setResumen(resResumen.data);
-      }
-
-      if (isManual) {
-        Toast.show({
-          type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Éxito" : "Información",
-          text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
-          visibilityTime: 3000,
-        });
-      }
-      setAlertConfig(prev => ({ ...prev, visible: false }));
-    } catch (error) {
-      logger.captureException(error, { context: 'Ventas:fetchData' });
-      if (isManual) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "No se pudo actualizar",
-          visibilityTime: 3000,
-        });
-      }
-    } finally {
-      initialVentasLoaded = true;
-      setLoading(false);
-      setLoadingSales(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const run = async () => { await fetchVentas(); };
-    void run();
-  }, [fetchVentas]);
-
-  useFocusEffect(
-    useCallback(() => {
-      isFocused.current = true;
-      fetchVentas();
-      refreshTimers();
-      return () => { isFocused.current = false; };
-    }, [fetchVentas, refreshTimers])
-  );
-
-  useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
-      logger.info("[DEBUG] Event refresh_sales received, updating list...", data);
-      
-      // La notificación global (modal) ya la maneja GlobalTimerAlert.tsx
-      // Aquí solo refrescamos la lista.
-      fetchVentas();
-      refreshTimers();
-    });
-    return () => subscription.remove();
-  }, [fetchVentas, refreshTimers]);
-
-  // Tick eliminado: TimerPill maneja su propio intervalo
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchVentas(true);
-    refreshTimers();
-  };
-
-  const getVentaId = (venta: any) => venta?.id ?? venta?.id_venta ?? null;
-  const formatMontoInput = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) return "";
-    return Number(digits).toLocaleString("es-CL");
-  };
-  const parseMontoInput = (value: string) => Number(value.replace(/\D/g, "") || 0);
-
-  const handleOpenActionSheet = (venta: any) => {
-    setActiveVenta(venta);
-    setActionSheetVisible(true);
-  };
-
-  const openAnulacionModal = () => {
-    if (!activeVenta) return;
-    setActionSheetVisible(false);
-    setMotivoAnulacion("");
-    setMontoAnulacion(formatMontoInput(String(Math.round(Number(activeVenta.total || 0)))));
-    setAnulacionModalVisible(true);
-  };
-
-  const closeAnulacionModal = () => {
-    if (anulandoVenta) return;
-    setAnulacionModalVisible(false);
-    setMotivoAnulacion("");
-    setMontoAnulacion("");
-  };
-
-  const handleVerDetalles = async (id: number | string) => {
-    setActionSheetVisible(false);
-    setLoadingDetail(true);
-    setModalVisible(true);
-    try {
-      const res = await apiClient(`/ventas/${id}`);
-      if (res?.success && res.data) {
-        setSelectedVenta(res.data);
-      } else {
-        showToast("Error", res?.message || "No se pudo obtener el detalle de la venta");
-        setModalVisible(false);
-      }
-    } catch (error: any) {
-      showToast("Error", error?.message || "Error al cargar detalles");
-      setModalVisible(false);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
-
-  const handleFinalizarVenta = async (venta: any) => {
-    setAlertConfig({
-      visible: true,
-      title: "Finalizar Venta",
-      message:
-        "¿Estás seguro de que deseas finalizar esta venta? Esto liberará la habitación y detendrá el temporizador.",
-      type: "danger",
-      onConfirm: async () => {
-        try {
-          const ventaId = getVentaId(venta);
-          const res = await apiClient(`/ventas/${ventaId}`, {
-            method: "PUT",
-            body: JSON.stringify({ estado: 1 }), // 1 = Completado/Finalizado
-          });
-
-          if (res.success || (res && !res.error)) {
-            setAlertConfig(prev => ({ ...prev, visible: false }));
-            Toast.show({ type: "success", text1: "Venta Finalizada", text2: "La venta ha finalizado con éxito." });
-            fetchVentas();
-            refreshTimers();
-          } else {
-            setAlertConfig(prev => ({ ...prev, visible: false }));
-            showToast(
-              "Error",
-              res.message || res.error || "No se pudo finalizar la venta",
-            );
-          }
-        } catch {
-          setAlertConfig(prev => ({ ...prev, visible: false }));
-          showToast("Error", "Error al procesar la finalización de la venta");
-        }
-      },
-    });
-  };
-
-  const handleAnularVenta = async () => {
-    if (!activeVenta) return;
-    const ventaId = getVentaId(activeVenta);
-    const monto = parseMontoInput(montoAnulacion);
-    const motivo = motivoAnulacion.trim();
-
-    if (!ventaId) {
-      showToast("Error", "No se pudo identificar la venta.");
-      return;
-    }
-
-    if (!monto || monto <= 0) {
-      showToast("Error", "Debes ingresar un monto mayor a 0.");
-      return;
-    }
-
-    if (monto > Number(activeVenta.total || 0)) {
-      showToast("Error", "El monto no puede ser mayor al total de la venta.");
-      return;
-    }
-
-    if (!motivo) {
-      showToast("Error", "Debes ingresar el motivo de la anulación.");
-      return;
-    }
-
-    try {
-      setAnulandoVenta(true);
-      const res = await apiClient(
-        `/ventas/anulacion`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            ventaId,
-            motivo,
-            monto,
-          }),
-        },
-      );
-      if (res.success || !res.error) {
-        closeAnulacionModal();
-        showToast(
-          "Solicitud Enviada",
-          "La anulación ha sido solicitada al administrador por WhatsApp.",
-          "success",
-        );
-        fetchVentas();
-      } else {
-        showToast(
-          "Error",
-          res.message || res.error || "No se pudo solicitar la anulación",
-        );
-      }
-    } catch {
-      showToast("Error", "Error al procesar la solicitud de anulación");
-    } finally {
-      setAnulandoVenta(false);
-    }
-  };
 
   const renderVentaCard = ({ item }: { item: any }) => {
 const productCount = item.item_count || 0;
@@ -763,7 +505,7 @@ const productCount = item.item_count || 0;
         subtitle={activeTab === "historial" ? "Historial de transacciones" : "Ventas activas en tiempo real"}
         rightComponent={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-              <TouchableOpacity onPress={() => fetchVentas(true)} style={styles.backBtnRight}>
+              <TouchableOpacity onPress={onRefresh} style={styles.backBtnRight}>
                   <Ionicons name="refresh" size={20} color="#FFFFFF" />
               </TouchableOpacity>
               <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
@@ -790,10 +532,6 @@ const productCount = item.item_count || 0;
                 : { borderWidth: 1, borderColor: accentColor + '30' },
             ]}
             onPress={() => {
-              if (activeTab !== "historial") {
-                setLoadingSales(true);
-                setTimeout(() => setLoadingSales(false), 400);
-              }
               setActiveTab("historial");
             }}
           >
@@ -817,10 +555,6 @@ const productCount = item.item_count || 0;
                 : { borderWidth: 1, borderColor: accentColor + '30' },
             ]}
             onPress={() => {
-              if (activeTab !== "proceso") {
-                setLoadingSales(true);
-                setTimeout(() => setLoadingSales(false), 400);
-              }
               setActiveTab("proceso");
             }}
           >
@@ -1292,10 +1026,10 @@ const productCount = item.item_count || 0;
       </Modal>
 
       <PremiumFAB
-          label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
+          label="NUEVA VENTA"
           icon={activeTab === "historial" ? "cart-outline" : "add"}
           onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
-          visible={!modalVisible && !actionSheetVisible && !anulacionModalVisible && !alertConfig.visible}
+          visible={false}
       />
 
       <PremiumAlert

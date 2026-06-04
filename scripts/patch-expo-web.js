@@ -114,6 +114,25 @@ const patches = [
       },
     ],
   },
+  {
+    filePath: path.join(
+      nodeModulesRoot,
+      '@expo',
+      'cli',
+      'build',
+      'src',
+      'start',
+      'server',
+      'metro',
+      'createFileMap-fork.js',
+    ),
+    replacements: [
+      {
+        from: '    return fileMap;\n',
+        to: '    return {\n        fileMap,\n        hasteMap,\n        dependencyPlugin\n    };\n',
+      },
+    ],
+  },
 ];
 
 const results = patches.map(({ filePath, replacements }) =>

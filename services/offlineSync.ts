@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
-import { NetworkError } from '@/api/client';
 
 import logger from '@/utils/logger';
 interface QueuedRequest {
@@ -120,7 +119,7 @@ class OfflineSyncManager {
                         retries: 0
                     });
                     successCount++;
-                } catch (error) {
+                } catch {
                     if (req.retries < MAX_RETRIES) {
                         req.retries++;
                         failedRequests.push(req);

@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
-import { DeviceEventEmitter } from "react-native";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
 import Toast from "react-native-toast-message";
@@ -8,6 +7,20 @@ import { API_URL } from "@/api/client";
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
 import { toastConfig } from "@/utils/toast-config";
+import {
+  emitRefreshAnticipos,
+  emitRefreshCuentas,
+  emitRefreshRequests,
+  emitRefreshSales,
+  emitSseEvent,
+  isSseControlEvent,
+} from "@/utils/realtime";
+import {
+  getUserRole,
+  getUserRoleName,
+  isCajeroOrAdminRole,
+  isCajeroRole,
+} from "@/utils/userRole";
 
 import logger from '@/utils/logger';
 // Configuración de notificaciones en el nivel superior (fuera del componente)
@@ -55,10 +68,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleServerEvent = useCallback((payload: any) => {
     // Detección robusta del nombre del rol
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-    const lowerRole = roleName?.toLowerCase();
-    const isCajero = ["cajero", "cajera"].includes(lowerRole);
-    const isCajeroOrAdmin = ["cajero", "cajera", "administrador", "administradora"].includes(lowerRole);
+    const roleName = getUserRoleName(user);
+    const lowerRole = getUserRole(user);
+    const isCajeroOrAdmin = isCajeroOrAdminRole(user);
     const isRequester = String(payload?.data?.usuario_id || "") === String(user?.id || "");
 
     logger.info(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
@@ -84,7 +96,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             isOrder ? "Nuevo Pedido" : "Solicitud de Servicio",
             isOrder ? `Pedido: ${payload.data.codigo}` : payload.data.descripcion
           );
-          DeviceEventEmitter.emit("refresh_requests", payload);
+          emitRefreshRequests(payload);
 
           // Navegar automáticamente a solicitudes para procesar el pedido/servicio
           if (id) {
@@ -107,7 +119,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             visibilityTime: 5000,
           });
           showLocalNotification("Nueva solicitud de anticipo", body);
-          DeviceEventEmitter.emit("refresh_requests", payload);
+          emitRefreshRequests(payload);
         }
         break;
 
@@ -116,7 +128,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         const title = approved ? "Anticipo aceptado" : "Anticipo rechazado";
         const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
 
-        if (isCajero || isRequester) {
+        if (isCajeroRole(user) || isRequester) {
           Haptics.notificationAsync(
             approved
               ? Haptics.NotificationFeedbackType.Success
@@ -131,18 +143,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           showLocalNotification(title, body);
         }
 
-        if (isCajero) {
-          DeviceEventEmitter.emit("refresh_requests", payload);
+        if (isCajeroRole(user)) {
+          emitRefreshRequests(payload);
         }
 
         if (isRequester) {
-          DeviceEventEmitter.emit("refresh_anticipos", payload);
+          emitRefreshAnticipos(payload);
         }
         break;
       }
 
       case "anticipo_delivered":
-        if (isCajero || isRequester) {
+        if (isCajeroRole(user) || isRequester) {
           const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Toast.show({
@@ -154,12 +166,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           showLocalNotification("Anticipo entregado", body);
         }
 
-        if (isCajero) {
-          DeviceEventEmitter.emit("refresh_requests", payload);
+        if (isCajeroRole(user)) {
+          emitRefreshRequests(payload);
         }
 
         if (isRequester) {
-          DeviceEventEmitter.emit("refresh_anticipos", payload);
+          emitRefreshAnticipos(payload);
         }
         break;
 
@@ -172,12 +184,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
      
       if (payload.type === "timer_started") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
-          if (lowerRole !== "anfitriona" || isAssigned) {
+          if (!lowerRole.includes("anfitriona") || isAssigned) {
             // Toast.show({ type: "success", text1: "Temporizador Iniciado" });
           }
         } else if (payload.type === "timer_stopped") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
-          if (lowerRole !== "anfitriona" || isAssigned) {
+          if (!lowerRole.includes("anfitriona") || isAssigned) {
             // Toast.show({ type: "error", text1: "Temporizador Detenido" });
           }
         }
@@ -193,8 +205,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}` ,
             visibilityTime: 4000,
           });
-          DeviceEventEmitter.emit("refresh_sales");
-          DeviceEventEmitter.emit("refresh_requests"); // Por si venía de un pedido
+          emitRefreshSales();
+          emitRefreshRequests(); // Por si venía de un pedido
         }
         break;
 
@@ -203,7 +215,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "service_request_approved":
       case "service_request_rejected":
         if (isCajeroOrAdmin) {
-          DeviceEventEmitter.emit("refresh_requests");
+          emitRefreshRequests();
         }
         break;
 
@@ -229,11 +241,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             visibilityTime: 5000,
           });
           showLocalNotification(title, body);
-          DeviceEventEmitter.emit("refresh_requests", payload);
+          emitRefreshRequests(payload);
           if (tipo === "cuenta") {
-            DeviceEventEmitter.emit("refresh_cuentas", payload);
+            emitRefreshCuentas(payload);
           } else if (tipo === "venta") {
-            DeviceEventEmitter.emit("refresh_sales", payload);
+            emitRefreshSales(payload);
           }
         }
         break;
@@ -263,8 +275,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           logger.info('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
           
           // No emitimos eventos de control para evitar bucles de refresco en dashboards
-          if (payload.type !== 'connected' && payload.type !== 'ping') {
-             DeviceEventEmitter.emit("sse_event", payload);
+          if (!isSseControlEvent(payload.type)) {
+             emitSseEvent(payload);
           }
           handleServerEvent(payload);
         } catch (err) {

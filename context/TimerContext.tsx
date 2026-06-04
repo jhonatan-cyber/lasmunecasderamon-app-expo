@@ -13,6 +13,13 @@ import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';
 import { MetodoPago } from '../types/api';
 
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
+import {
+  emitRefreshCuentas,
+  emitRefreshRequests,
+  emitRefreshSales,
+  REALTIME_EVENT_NAMES,
+} from "@/utils/realtime";
+import { isCajeroRole } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
 export interface Timer {
@@ -85,6 +92,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
   const user = useAuthStore((state) => state.user);
   const timersRef = useRef<Timer[]>([]);
+  const fetchActiveTimersRef = useRef<() => Promise<void>>(async () => {});
 
   // Sincronizar ref con estado para el intervalo de voz
   useEffect(() => {
@@ -158,16 +166,20 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         setTimers(activeTimers);
       }
-    } catch (error) {
+    } catch {
       // Silencioso: programa retry en 5s sin mostrar error al usuario
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       retryTimerRef.current = setTimeout(() => {
-        fetchActiveTimers();
+        void fetchActiveTimersRef.current();
       }, 5000);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchActiveTimersRef.current = fetchActiveTimers;
+  }, [fetchActiveTimers, serverOffset]);
 
   const handleSSEEvent = useCallback((payload: any) => {
     switch (payload.type) {
@@ -220,9 +232,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...prev.filter((t) => !(String(t.servicioId) === String(newTimer.servicioId) && t.tipoTransaccion === newTimer.tipoTransaccion)),
           newTimer,
         ]);
-        DeviceEventEmitter.emit('refresh_sales');
-        DeviceEventEmitter.emit('refresh_requests');
-        DeviceEventEmitter.emit('refresh_cuentas');
+        emitRefreshSales();
+        emitRefreshRequests();
+        emitRefreshCuentas();
         break;
       }
 
@@ -260,15 +272,15 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           return next;
         });
 
-        DeviceEventEmitter.emit('refresh_sales', {
+        emitRefreshSales({
           roomName: roomNameForEvent,
           automatic: false,
           reason: 'stopped',
           servicioId: targetServicioId,
           tipoTransaccion: targetTipo,
         });
-        DeviceEventEmitter.emit('refresh_requests');
-        DeviceEventEmitter.emit('refresh_cuentas');
+        emitRefreshRequests();
+        emitRefreshCuentas();
         break;
 
       case "timer_paused": {
@@ -287,9 +299,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
-        DeviceEventEmitter.emit('refresh_sales');
-        DeviceEventEmitter.emit('refresh_requests');
-        DeviceEventEmitter.emit('refresh_cuentas');
+        emitRefreshSales();
+        emitRefreshRequests();
+        emitRefreshCuentas();
         break;
       }
 
@@ -309,9 +321,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
-        DeviceEventEmitter.emit('refresh_sales');
-        DeviceEventEmitter.emit('refresh_requests');
-        DeviceEventEmitter.emit('refresh_cuentas');
+        emitRefreshSales();
+        emitRefreshRequests();
+        emitRefreshCuentas();
         break;
       }
 
@@ -336,9 +348,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             return t;
           }),
         );
-        DeviceEventEmitter.emit('refresh_sales');
-        DeviceEventEmitter.emit('refresh_requests');
-        DeviceEventEmitter.emit('refresh_cuentas');
+        emitRefreshSales();
+        emitRefreshRequests();
+        emitRefreshCuentas();
         break;
       }
       case "timers_updated": {
@@ -347,15 +359,14 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
       case "user_status_updated": {
-        DeviceEventEmitter.emit('refresh_requests');
+        emitRefreshRequests();
         break;
       }
     }
-  }, [fetchActiveTimers]);
+  }, [fetchActiveTimers, serverOffset]);
 
   useEffect(() => {
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name;
-    if (roleName?.toLowerCase() !== "cajero") return;
+    if (!isCajeroRole(user)) return;
 
     const interval = setInterval(() => {
       const currentTimers = timersRef.current;
@@ -390,7 +401,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         if (remSeconds <= 0 && !timer.isOverdueNotified && elapsedSinceStart > 10) {
-          DeviceEventEmitter.emit('refresh_sales', {
+          emitRefreshSales({
             roomName: timer.roomName,
             automatic: true,
             reason: 'ended',
@@ -415,12 +426,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Cargar temporizadores iniciales al cambiar de usuario
   useEffect(() => {
-    fetchActiveTimers();
+    const timeout = setTimeout(() => {
+      void fetchActiveTimers();
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [user?.id, fetchActiveTimers]);
 
   // Listener para eventos SSE
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
       handleSSEEvent(payload);
     });
 

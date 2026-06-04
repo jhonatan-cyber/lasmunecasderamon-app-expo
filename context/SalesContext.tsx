@@ -1,8 +1,9 @@
-import { API_URL } from "@/api/client";
-import { useAuthStore } from "@/store/authStore";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { apiClient } from "@/api/client";
+import { REALTIME_EVENT_NAMES, shouldRefreshSalesFromSse } from "@/utils/realtime";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { createContext, useCallback, useContext, useEffect } from "react";
 import { DeviceEventEmitter } from "react-native";
-import { MetodoPago } from '../types/api';
+import { MetodoPago } from "../types/api";
 
 export interface Venta {
   id?: string;
@@ -26,41 +27,42 @@ interface SalesContextType {
 const SalesContext = createContext<SalesContextType | undefined>(undefined);
 
 export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ventas, setVentas] = useState<Venta[]>([]);
-  const [loading, setLoading] = useState(true);
-  const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  const {
+    data: ventas = [],
+    isLoading: loading,
+    refetch,
+  } = useQuery({
+    queryKey: ["sales"],
+    queryFn: async () => {
+      const data = await apiClient("/sales?limit=50");
+      return data.success && Array.isArray(data.data) ? data.data : [];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
 
   const refreshVentas = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/sales?limit=50`);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setVentas(data.data);
-      }
-    } catch (error) {
-  
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    await refetch();
+  }, [refetch]);
 
   useEffect(() => {
-    refreshVentas();
+    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
+      if (!shouldRefreshSalesFromSse(payload?.type)) {
+        return;
+      }
 
-    const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
-      if (payload.type === "sale_created" || payload.type === "new_sale" || payload.type === "sale_updated") {
-        if (payload.data && payload.type !== "sale_updated") {
-          setVentas(prev => [payload.data, ...prev]);
-        } else {
-          refreshVentas();
-        }
+      if (payload.data && payload.type !== "sale_updated") {
+        queryClient.setQueryData<Venta[]>(["sales"], (prev = []) => [payload.data, ...prev]);
+      } else {
+        void refetch();
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [refreshVentas]);
+  }, [queryClient, refetch]);
 
   return (
     <SalesContext.Provider value={{ ventas, loading, refreshVentas }}>
@@ -76,4 +78,3 @@ export const useSales = () => {
   }
   return context;
 };
-

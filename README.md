@@ -2,6 +2,8 @@
 
 Aplicacion `Expo Router` para operacion interna, con soporte `android`, `ios` y `web`.
 
+Para desarrollo en dispositivo fisico o emulador, usa `expo-dev-client` en vez de Expo Go.
+
 ## Inicio rapido
 
 ```bash
@@ -12,12 +14,24 @@ corepack pnpm start
 Comandos utiles:
 
 ```bash
+corepack pnpm start:go
+corepack pnpm start:tunnel
+corepack pnpm android:dev
+corepack pnpm android:preview
 corepack pnpm android
 corepack pnpm ios
 corepack pnpm web
 corepack pnpm lint
 corepack pnpm typecheck
 ```
+
+## Desarrollo movil
+
+- `corepack pnpm start` arranca Metro en modo `dev-client`.
+- `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
+- Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.
+- Si quieres una prueba mas cercana a preproduccion, instala `corepack pnpm android:preview`.
+- Si quieres seguir usando Expo Go, usa `corepack pnpm start:go`, pero esta app puede requerir una version de Expo Go mas nueva que la instalada en tu telefono.
 
 ## Calidad
 

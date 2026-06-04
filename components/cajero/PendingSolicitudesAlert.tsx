@@ -13,6 +13,7 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
+import { isAdminRole, isCajeroRole } from '@/utils/userRole';
 
 import logger from '@/utils/logger';
 export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boolean }) {
@@ -21,8 +22,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     const [pendingCount, setPendingCount] = useState(0);
     const { accentColor, isDark, cardBg } = useAccentColor();
     
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-    const isCajeroOrAdmin = roleName.toLowerCase() === 'cajero' || roleName.toLowerCase() === 'administrador';
+    const isCajeroOrAdmin = isCajeroRole(user) || isAdminRole(user);
 
     const triggerShake = useCallback(() => {
         // Shake animation removed to avoid mutating shared values under the

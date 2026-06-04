@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 
 interface PremiumHeaderActionsProps {
     hasNewAlert?: boolean;
@@ -32,10 +33,8 @@ export const PremiumHeaderActions = ({
     const user = useAuthStore(state => state.user);
     const router = useRouter();
 
-    const roleName = typeof user?.role === 'string' ? user.role : (user?.role as any)?.name || '';
-    const role = roleName.toLowerCase();
-    const isRestrictedRole = role.includes('garzon') || role.includes('anfitriona');
-    const isCajeroRole = role.includes('cajero');
+    const isRestrictedRole = isGarzonRole(user) || isHostessRole(user);
+    const canUseCajeroActions = isCajeroRole(user);
 
     // Forzar siempre blanco para el header premium
     const iconColor = '#FFFFFF';
@@ -63,7 +62,7 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
-            {onQRScannerPress && !isCajeroRole && (
+            {onQRScannerPress && !canUseCajeroActions && (
                 <Pressable
                     onPress={onQRScannerPress}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}

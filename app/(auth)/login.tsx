@@ -247,7 +247,14 @@ export default function LoginScreen() {
     useFocusEffect(
         useCallback(() => {
             if (Platform.OS === 'android') {
-                (NavigationBar as any).setButtonStyleAsync(isDark ? 'light' : 'dark');
+                try {
+                    const setButtonStyleAsync = (NavigationBar as any).setButtonStyleAsync;
+                    if (typeof setButtonStyleAsync === 'function') {
+                        void setButtonStyleAsync(isDark ? 'light' : 'dark');
+                    }
+                } catch (error) {
+                    console.warn('Failed to update navigation bar button style on login screen', error);
+                }
             }
 
             if (isBiometricEnabled && isBiometricSupported && !hasAutoPrompted.current) {

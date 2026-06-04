@@ -1,3 +1,4 @@
+import "expo-dev-client";
 import { DynamicSystemBars } from "@/components/ui/DynamicSystemBars";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SalesProvider } from "@/context/SalesContext";
