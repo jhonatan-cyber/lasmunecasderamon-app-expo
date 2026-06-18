@@ -891,10 +891,10 @@ const productCount = item.item_count || 0;
       </Modal>
 
       <PremiumFAB
-          label="NUEVA VENTA"
+          label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
           icon={activeTab === "historial" ? "cart-outline" : "add"}
           onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
-          visible={false}
+          visible={true}
       />
 
       <PremiumAlert
