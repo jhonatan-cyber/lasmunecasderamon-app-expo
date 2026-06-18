@@ -26,6 +26,7 @@ import {
   useTimer,
 } from '@/context/TimerContext';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
+import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 import logger from '@/utils/logger';
@@ -457,18 +458,19 @@ export default function ServiciosActivosScreen() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig, selectedServiceDetail, detailModalVisible } = state;
 
+  const colors = Colors[isDark ? 'dark' : 'light'];
   const theme = useMemo(() => ({
     bg: isDark ? "#000000" : "#F8FAFC",
-    card: isDark ? "#111111" : "#FFFFFF",
-    text: isDark ? "#F9FAFB" : "#0F172A",
-    textMuted: isDark ? "#9CA3AF" : "#64748B",
-    border: isDark ? `${accentColor}40` : "#E2E8F0",
+    card: colors.card,
+    text: colors.text,
+    textMuted: colors.textMuted,
+    border: isDark ? `${accentColor}40` : colors.border,
     accent: accentColor,
-    success: "#10B981",
-    danger: "#EF4444",
-    warning: "#F59E0B",
-    info: "#3B82F6",
-  }), [isDark, accentColor]);
+    success: colors.success,
+    danger: colors.danger,
+    warning: colors.warning,
+    info: colors.info,
+  }), [isDark, accentColor, colors]);
 
   const activeServicios = useMemo(() => {
     const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');

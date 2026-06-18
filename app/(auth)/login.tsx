@@ -20,6 +20,7 @@ import {
     TextInput,
     View
 } from 'react-native';
+import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
@@ -51,6 +52,9 @@ export default function LoginScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme() ?? 'dark';
     const isDark = colorScheme === 'dark';
+
+    const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+    const C = theme;
 
     const [isBiometricSupported, setIsBiometricSupported] = useState(false);
 
@@ -303,7 +307,7 @@ export default function LoginScreen() {
 
                                 {/* Title */}
                                 <View style={styles.headerTextContainer}>
-                                    <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                                    <Text style={[styles.title, { color: C.text }]}>
                                         Iniciar Sesión
                                     </Text>
                                     <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
@@ -319,18 +323,18 @@ export default function LoginScreen() {
                                         </View>
                                     ) : null}
 
-                                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000' }]}>Usuario</Text>
+                                    <Text style={[styles.label, { color: C.text }]}>Usuario</Text>
                                     <TextInput
                                         style={[
                                             styles.input,
                                             {
-                                                backgroundColor: isDark ? '#111111' : '#F3F4F6',
-                                                color: isDark ? '#FFFFFF' : '#000000',
-                                                borderColor: isDark ? '#374151' : '#E5E7EB',
+                                                backgroundColor: isDark ? C.card : Colors.light.backgroundSecondary,
+                                                color: C.text,
+                                                borderColor: C.border,
                                             },
                                         ]}
                                         placeholder="pepe (se completará automáticamente)"
-                                        placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                                        placeholderTextColor={C.textMuted}
                                         autoCapitalize="none"
                                         value={username}
                                         onChangeText={setUsername}
@@ -338,20 +342,20 @@ export default function LoginScreen() {
                                         onSubmitEditing={() => passwordRef.current?.focus()}
                                     />
 
-                                    <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000', marginTop: 20 }]}>Contraseña</Text>
+                                    <Text style={[styles.label, { color: C.text, marginTop: 20 }]}>Contraseña</Text>
                                     <View style={styles.passwordContainer}>
                                         <TextInput
                                             style={[
                                                 styles.input,
                                                 styles.passwordInput,
                                                 {
-                                                    backgroundColor: isDark ? '#111111' : '#F3F4F6',
-                                                    color: isDark ? '#FFFFFF' : '#000000',
-                                                    borderColor: isDark ? '#374151' : '#E5E7EB',
+                                                    backgroundColor: isDark ? C.card : Colors.light.backgroundSecondary,
+                                                    color: C.text,
+                                                    borderColor: C.border,
                                                 },
                                             ]}
                                             placeholder="Ingresa tu contraseña"
-                                            placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                                            placeholderTextColor={C.textMuted}
                                             secureTextEntry={!showPassword}
                                             value={password}
                                             onChangeText={setPassword}
@@ -366,7 +370,7 @@ export default function LoginScreen() {
                                             <Ionicons
                                                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                                 size={20}
-                                                color={isDark ? '#FFFFFF' : '#111827'}
+                                                color={isDark ? Colors.dark.text : '#111827'}
                                             />
                                         </Pressable>
                                     </View>
@@ -377,8 +381,8 @@ export default function LoginScreen() {
                                             style={({ pressed }) => [
                                                 styles.loginButton,
                                                 {
-                                                    backgroundColor: isDark ? '#FFFFFF' : '#000000',
-                                                    borderColor: isDark ? '#FFFFFF' : '#000000',
+                                                    backgroundColor: C.text,
+                                                    borderColor: C.text,
                                                     width: '100%',
                                                 },
                                                 loading && { opacity: 0.5 },
@@ -405,14 +409,14 @@ export default function LoginScreen() {
                                                 styles.biometricButton,
                                                 {
                                                     backgroundColor: isDark ? '#1C1917' : '#F3F4F6',
-                                                    borderColor: isDark ? '#374151' : '#E5E7EB',
+                                                    borderColor: C.border,
                                                 },
                                                 pressed && { opacity: 0.7 }
                                             ]}
                                             onPress={() => setShowQRScanner(true)}
                                             disabled={loading}
                                         >
-                                            <Ionicons name="qr-code-outline" size={28} color={isDark ? '#FFFFFF' : '#000000'} />
+                                            <Ionicons name="qr-code-outline" size={28} color={C.text} />
                                         </Pressable>
 
                                         {/* Botón Biometría */}
@@ -422,14 +426,14 @@ export default function LoginScreen() {
                                                     styles.biometricButton,
                                                     {
                                                         backgroundColor: isDark ? '#1C1917' : '#F3F4F6',
-                                                        borderColor: isDark ? '#374151' : '#E5E7EB',
+                                                        borderColor: C.border,
                                                     },
                                                     pressed && { opacity: 0.7 }
                                                 ]}
                                                 onPress={handleBiometricLogin}
                                                 disabled={loading}
                                             >
-                                                <Ionicons name="finger-print-outline" size={28} color={isDark ? '#FFFFFF' : '#000000'} />
+                                                <Ionicons name="finger-print-outline" size={28} color={C.text} />
                                             </Pressable>
                                         )}
                                     </View>
@@ -442,7 +446,7 @@ export default function LoginScreen() {
                                         <Ionicons
                                             name={isDark ? 'sunny-outline' : 'moon-outline'}
                                             size={28}
-                                            color={isDark ? '#9CA3AF' : '#6B7280'}
+                                            color={C.textSecondary}
                                         />
                                     </Pressable>
 
@@ -451,7 +455,7 @@ export default function LoginScreen() {
                                         onPress={() => setShowResetPasswordModal(true)}
                                         style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
                                     >
-                                        <Text style={[styles.forgotPasswordText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                                        <Text style={[styles.forgotPasswordText, { color: C.textSecondary }]}>
                                             ¿Olvidaste tu contraseña?
                                         </Text>
                                     </Pressable>
@@ -487,15 +491,15 @@ export default function LoginScreen() {
                             />
                         </View>
 
-                        <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>{alertConfig.title}</Text>
-                        <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{alertConfig.message}</Text>
+                        <Text style={[styles.alertTitle, { color: C.text }]}>{alertConfig.title}</Text>
+                        <Text style={[styles.alertMessage, { color: C.textSecondary }]}>{alertConfig.message}</Text>
 
                         <View style={styles.alertActions}>
                             {alertConfig.showCancel && (
                                 <Pressable
                                     onPress={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-                                    style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1 }]}>
-                                    <Text style={[styles.alertBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>Cancelar</Text>
+                                    style={[styles.alertBtn, { backgroundColor: C.border, flex: 1 }]}>
+                                    <Text style={[styles.alertBtnText, { color: C.text }]}>Cancelar</Text>
                                 </Pressable>
                             )}
                             <Pressable
@@ -529,8 +533,8 @@ export default function LoginScreen() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
-                        <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Resetear Contraseña</Text>
-                        <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                        <Text style={[styles.alertTitle, { color: C.text }]}>Resetear Contraseña</Text>
+                        <Text style={[styles.alertMessage, { color: C.textSecondary }]}>
                             Ingresa tu RUN para validar el reseteo. La nueva contraseña será ese mismo RUN.
                         </Text>
                         <TextInput
@@ -538,13 +542,13 @@ export default function LoginScreen() {
                                 styles.input,
                                 styles.resetInput,
                                 {
-                                    backgroundColor: isDark ? '#111111' : '#F3F4F6',
-                                    color: isDark ? '#FFFFFF' : '#000000',
-                                    borderColor: isDark ? '#374151' : '#E5E7EB',
+                                    backgroundColor: isDark ? C.card : Colors.light.backgroundSecondary,
+                                    color: C.text,
+                                    borderColor: C.border,
                                 },
                             ]}
                             placeholder="Ingresa tu RUN"
-                            placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                            placeholderTextColor={C.textMuted}
                             autoCapitalize="characters"
                             value={resetRun}
                             onChangeText={setResetRun}
@@ -555,9 +559,9 @@ export default function LoginScreen() {
                                     setShowResetPasswordModal(false);
                                     setResetRun('');
                                 }}
-                                style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1 }]}
+                                style={[styles.alertBtn, { backgroundColor: C.border, flex: 1 }]}
                             >
-                                <Text style={[styles.alertBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>Cancelar</Text>
+                                <Text style={[styles.alertBtnText, { color: C.text }]}>Cancelar</Text>
                             </Pressable>
                             <Pressable
                                 onPress={handleResetPassword}

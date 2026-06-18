@@ -181,26 +181,32 @@ export default function CajeroGratificacionesScreen() {
         </View>
       </View>
 
-      <View style={styles.filterRow}>
-        {(['todos', 'pendiente', 'por_pagar', 'pagado', 'rechazada'] as const).map(item => (
-          <Pressable
-            key={item}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: filter === item ? accentColor : cardBg,
-                borderColor: filter === item ? accentColor : borderColor
-              }
-            ]}
-            onPress={() => setFilter(item)}
-          >
-            <Text style={[styles.filterText, { color: filter === item ? '#FFFFFF' : textSecondary }]}>
-              {item === 'por_pagar'
-                ? 'Por pagar'
-                : item.charAt(0).toUpperCase() + item.slice(1).replace('_', ' ')}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.filterScrollWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {(['todos', 'pendiente', 'por_pagar', 'pagado', 'rechazada'] as const).map(item => (
+            <Pressable
+              key={item}
+              style={[
+                styles.filterButton,
+                {
+                  backgroundColor: filter === item ? accentColor : cardBg,
+                  borderColor: filter === item ? accentColor : borderColor
+                }
+              ]}
+              onPress={() => setFilter(item)}
+            >
+              <Text style={[styles.filterText, { color: filter === item ? '#FFFFFF' : textSecondary }]}>
+                {item === 'por_pagar'
+                  ? 'Por pagar'
+                  : item.charAt(0).toUpperCase() + item.slice(1).replace('_', ' ')}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       {error ? (
@@ -355,22 +361,23 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 34, fontWeight: '900', marginBottom: 8 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 12, fontWeight: '600' },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+  filterScrollWrapper: {
+    height: 52,
     marginTop: 16,
     marginBottom: 8,
+  },
+  filterScroll: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8
   },
   filterButton: {
-    minWidth: 124,
     paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderRadius: 9999,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1
   },
   filterText: { fontSize: 12, fontWeight: '700' },

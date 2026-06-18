@@ -7,6 +7,9 @@ import {
   ToastConfig,
   BaseToastProps,
 } from "react-native-toast-message";
+import { Colors } from '@/constants/theme';
+
+const { success, error, info, warning } = Colors.light;
 
 // Tipado explícito para evitar errores de TypeScript con DimensionValue
 const commonStyle: ViewStyle = {
@@ -43,7 +46,7 @@ export const toastConfig: ToastConfig = {
   success: (props: BaseToastProps) => (
     <BaseToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#10B981" }]}
+      style={[commonStyle, { borderLeftColor: success }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}
@@ -54,7 +57,7 @@ export const toastConfig: ToastConfig = {
   error: (props: BaseToastProps) => (
     <ErrorToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#EF4444" }]}
+      style={[commonStyle, { borderLeftColor: error }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}
@@ -65,7 +68,7 @@ export const toastConfig: ToastConfig = {
   info: (props: BaseToastProps) => (
     <InfoToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#3B82F6" }]}
+      style={[commonStyle, { borderLeftColor: info }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}
@@ -76,7 +79,7 @@ export const toastConfig: ToastConfig = {
   order: (props: BaseToastProps) => (
     <BaseToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#E11D48" }]}
+      style={[commonStyle, { borderLeftColor: '#E11D48' }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}
@@ -93,7 +96,7 @@ export const toastConfig: ToastConfig = {
   warning: (props: BaseToastProps) => (
     <BaseToast
       {...props}
-      style={[commonStyle, { borderLeftColor: "#F59E0B" }]}
+      style={[commonStyle, { borderLeftColor: warning }]}
       contentContainerStyle={commonContentContainerStyle}
       text1Style={commonText1Style}
       text2Style={commonText2Style}

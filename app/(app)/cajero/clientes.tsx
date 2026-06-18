@@ -25,6 +25,7 @@ import { apiClient } from '@/api/client';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 
@@ -43,13 +44,12 @@ interface Client {
 }
 
 export default function ClientesScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, textPrimary } = useAccentColor();
+    const textSecondary = isDark ? '#FFFFFF' : '#6B7280';
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
-    const textPrimary = isDark ? "#FFFFFF" : "#111827";
-    const textSecondary = isDark ? "#FFFFFF" : "#6B7280";
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);

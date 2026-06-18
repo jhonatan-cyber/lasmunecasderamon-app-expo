@@ -5,9 +5,7 @@ export {
   TimeoutError,
   UnauthorizedError,
 } from "./errors";
-export {
-  apiClient,
-} from "./request";
+export { apiClient } from "./request";
 export {
   ensureTokenInMemory,
   getTokenInMemory,

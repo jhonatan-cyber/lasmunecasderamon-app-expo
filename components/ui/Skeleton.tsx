@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { StyleProp, StyleSheet, useColorScheme, View, ViewStyle } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -16,16 +17,18 @@ interface SkeletonProps {
     style?: StyleProp<ViewStyle>;
 }
 
+
+
 export const Skeleton: React.FC<SkeletonProps> = ({
     width = '100%',
     height = 20,
     borderRadius = 8,
     style
 }) => {
-    const isDark = useColorScheme() === 'dark';
+    const { accentColor, isDark } = useAccentColor();
     const shimmerValue = useSharedValue(0);
 
-    const baseColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+    const baseColor = isDark ? `${accentColor}25` : `${accentColor}15`;
     const shimmerColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.3)';
 
     useEffect(() => {

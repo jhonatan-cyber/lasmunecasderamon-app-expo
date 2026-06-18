@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
+import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -159,7 +160,8 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
 
 // â”€â”€â”€ Main Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CajaScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
     const user = useAuthStore(state => state.user);
 
@@ -167,10 +169,6 @@ export default function CajaScreen() {
     const { loading, refreshing, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#F1F5F9';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
     const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
     useWindowDimensions();
 

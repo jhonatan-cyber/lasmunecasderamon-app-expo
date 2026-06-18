@@ -1,13 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import React, { useCallback, useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { PremiumAlert } from "@/components/ui/PremiumAlert";
 
-import logger from '@/utils/logger';
+import logger from "@/utils/logger";
 interface Event {
   type: string;
   id: number;
@@ -36,45 +36,48 @@ interface PremiumLiquidationCardProps {
 export function PremiumLiquidationCard({
   user,
   events,
-  title = 'Total a cobrar',
-  subtitle = 'Resumen de Actividad',
-  totalLabel = 'Total a cobrar',
+  title = "Total a cobrar",
+  subtitle = "Resumen de Actividad",
+  totalLabel = "Total a cobrar",
   totalAmount,
-  onExportSuccess
+  onExportSuccess,
 }: PremiumLiquidationCardProps) {
   const { accentColor, isDark } = useAccentColor();
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
     message: string;
-    type: 'success' | 'danger' | 'warning' | 'info';
+    type: "success" | "danger" | "warning" | "info";
   }>({
     visible: false,
-    title: '',
-    message: '',
-    type: 'info'
+    title: "",
+    message: "",
+    type: "info",
   });
 
-  const showAlert = (title: string, message: string, type: 'success' | 'danger' | 'warning' | 'info' = 'success') => {
+  const showAlert = (
+    title: string,
+    message: string,
+    type: "success" | "danger" | "warning" | "info" = "success",
+  ) => {
     setAlertConfig({ visible: true, title, message, type });
   };
 
-  const cardBg = isDark ? '#111111' : '#FFFFFF';
-  const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-  const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-  const borderColor = isDark ? `${accentColor}40` : 'rgba(0, 0, 0, 0.05)';
+  const cardBg = isDark ? "#111111" : "#FFFFFF";
+  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
+  const borderColor = isDark ? `${accentColor}40` : "rgba(0, 0, 0, 0.05)";
 
   const totalCalculated = useMemo(() => {
     return events.reduce((sum, eventItem) => {
       if (eventItem.estado !== undefined && eventItem.estado !== 1) return sum;
       const amount = Number(eventItem.amount) || 0;
-      if (eventItem.type === 'anticipo') return sum - amount;
+      if (eventItem.type === "anticipo") return sum - amount;
       return sum + amount;
     }, 0);
   }, [events]);
 
   const totalDisplayed = useMemo(() => {
-    if (typeof totalAmount === 'number' && !Number.isNaN(totalAmount)) {
+    if (typeof totalAmount === "number" && !Number.isNaN(totalAmount)) {
       return totalAmount;
     }
     return totalCalculated;
@@ -112,7 +115,7 @@ export function PremiumLiquidationCard({
             <div class="info-grid">
               <div class="info-box">
                 <div class="info-label">USUARIO</div>
-                <div class="info-value">${user?.name || ''} ${user?.lastName || ''} ${user?.nick ? `- ${user.nick}` : ''}</div>
+                <div class="info-value">${user?.name || ""} ${user?.lastName || ""} ${user?.nick ? `- ${user.nick}` : ""}</div>
               </div>
               <div class="info-box">
                 <div class="info-label">FECHA DE REPORTE</div>
@@ -130,21 +133,23 @@ export function PremiumLiquidationCard({
               </thead>
               <tbody>
                 ${events
-                  .map(eventItem => {
+                  .map((eventItem) => {
                     let typeLabel = eventItem.type.toUpperCase();
-                    if (eventItem.type === 'comision') typeLabel = 'COMISION DE VENTA';
-                    if (eventItem.type === 'venta') typeLabel = 'VENTA DE PRODUCTO';
+                    if (eventItem.type === "comision")
+                      typeLabel = "COMISION DE VENTA";
+                    if (eventItem.type === "venta")
+                      typeLabel = "VENTA DE PRODUCTO";
 
                     return `
                       <tr>
-                        <td>${new Date(eventItem.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</td>
+                        <td>${new Date(eventItem.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</td>
                         <td>${typeLabel}</td>
                         <td>${eventItem.codigo}</td>
                         <td style="text-align: right;">$${(eventItem.amount || 0).toLocaleString()}</td>
                       </tr>
                     `;
                   })
-                  .join('')}
+                  .join("")}
                 <tr class="total-row">
                   <td colspan="3" class="total-label">${totalLabel.toUpperCase()}</td>
                   <td class="total-value" style="text-align: right;">$${totalDisplayed.toLocaleString()}</td>
@@ -161,68 +166,98 @@ export function PremiumLiquidationCard({
 
       const { uri } = await Print.printToFileAsync({ html });
 
-      if (Platform.OS === 'android') {
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        
+      if (Platform.OS === "android") {
+        const permissions =
+          await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
         if (permissions.granted) {
           const fileName = `reporte_${Date.now()}.pdf`;
-          const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-          
+          const base64 = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+
           try {
-            const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-              permissions.directoryUri,
-              fileName,
-              'application/pdf'
+            const fileUri =
+              await FileSystem.StorageAccessFramework.createFileAsync(
+                permissions.directoryUri,
+                fileName,
+                "application/pdf",
+              );
+
+            await FileSystem.writeAsStringAsync(fileUri, base64, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            showAlert(
+              "Descarga completada",
+              "El reporte se ha guardado correctamente en tu dispositivo.",
+              "success",
             );
-            
-            await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
-            showAlert('Descarga completada', 'El reporte se ha guardado correctamente en tu dispositivo.', 'success');
           } catch (e) {
-            logger.captureException(e, { context: 'PremiumLiquidationCard:processLiquidation' });
-            showAlert('Error de Guardado', 'No se pudo guardar el archivo en la ubicación seleccionada.', 'danger');
+            logger.captureException(e, {
+              context: "PremiumLiquidationCard:processLiquidation",
+            });
+            showAlert(
+              "Error de Guardado",
+              "No se pudo guardar el archivo en la ubicación seleccionada.",
+              "danger",
+            );
           }
         } else {
           // Fallback to sharing if permission is denied
           const canShare = await Sharing.isAvailableAsync();
           if (canShare) {
             await Sharing.shareAsync(uri, {
-              mimeType: 'application/pdf',
+              mimeType: "application/pdf",
               dialogTitle: title,
-              UTI: 'com.adobe.pdf'
+              UTI: "com.adobe.pdf",
             });
           }
         }
-      } else if (Platform.OS === 'ios') {
+      } else if (Platform.OS === "ios") {
         await Print.printAsync({ html });
       }
 
       onExportSuccess?.();
     } catch (error) {
-      logger.captureException(error, { context: 'PremiumLiquidationCard:fetchLiquidacion' });
-      showAlert('Error', 'No se pudo generar el reporte PDF correctamente.', 'danger');
+      logger.captureException(error, {
+        context: "PremiumLiquidationCard:fetchLiquidacion",
+      });
+      showAlert(
+        "Error",
+        "No se pudo generar el reporte PDF correctamente.",
+        "danger",
+      );
     }
-  }, [accentColor, events, onExportSuccess, title, totalDisplayed, totalLabel, user]);
+  }, [
+    accentColor,
+    events,
+    onExportSuccess,
+    title,
+    totalDisplayed,
+    totalLabel,
+    user,
+  ]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: textPrimary }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: textSecondary }]}>{subtitle}</Text>
-      </View>
       <View style={styles.actionsRow}>
-        <View style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textSecondary }]}>{totalLabel}</Text>
-          <Text style={[styles.value, { color: '#10B981' }]}>
+        <View
+          style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}
+        >
+          <Text style={[styles.label, { color: textSecondary }]}>
+            {totalLabel}
+          </Text>
+          <Text style={[styles.value, { color: "#10B981" }]}>
             ${totalDisplayed.toLocaleString()}
           </Text>
         </View>
         <Pressable
           onPress={handleExportReport}
           style={[styles.exportBtn, { backgroundColor: accentColor }]}
-          accessibilityLabel='Exportar reporte a PDF'
-          accessibilityRole='button'
+          accessibilityLabel="Exportar reporte a PDF"
+          accessibilityRole="button"
         >
-          <Ionicons name='document-text-outline' size={20} color='#FFF' />
+          <Ionicons name="document-text-outline" size={20} color="#FFF" />
           <Text style={styles.exportBtnText}>Reportes</Text>
         </Pressable>
       </View>
@@ -232,7 +267,9 @@ export function PremiumLiquidationCard({
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}
-        onConfirm={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+        onConfirm={() =>
+          setAlertConfig((prev) => ({ ...prev, visible: false }))
+        }
       />
     </View>
   );
@@ -240,62 +277,62 @@ export function PremiumLiquidationCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10
+    marginBottom: 10,
   },
   header: {
     paddingHorizontal: 20,
-    marginBottom: 12
+    marginBottom: 12,
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.5
+    fontWeight: "900",
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2
+    fontWeight: "600",
+    marginTop: 2,
   },
   actionsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
   },
   miniSummary: {
     flex: 1,
     padding: 15,
     borderRadius: 20,
     borderWidth: 1.5,
-    justifyContent: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 3
+    elevation: 3,
   },
   label: {
     fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase'
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   value: {
     fontSize: 24,
-    fontWeight: '800',
-    marginTop: 4
+    fontWeight: "800",
+    marginTop: 4,
   },
   exportBtn: {
     flex: 1,
-    borderRadius: 9999,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8
+    height: 48,
+    alignSelf: "center",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   exportBtnText: {
-    color: '#FFF',
-    fontWeight: '800',
-    fontSize: 15
-  }
+    color: "#FFF",
+    fontWeight: "800",
+    fontSize: 15,
+  },
 });
-
-

@@ -24,6 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CuentaTimer } from '@/components/cajero/CuentaTimer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
+import { CuentasSkeleton } from '@/components/cajero/cuentas/CuentasSkeleton';
+import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCuentasScreen } from '@/hooks/useCuentasScreen';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
@@ -55,7 +57,8 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 export default function CuentasScreen() {
-  const { accentColor, gradientColors, isDark } = useAccentColor();
+  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const C = Colors[isDark ? 'dark' : 'light'];
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -86,75 +89,7 @@ export default function CuentasScreen() {
     cobroModalVisible,
   } = screen;
 
-  const bg = isDark ? "#000000" : "#F3F4F6";
-  const cardBg = isDark ? "#111111" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
   const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
-
-  const renderCuentasSkeleton = () => (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <LinearGradient
-        colors={gradientColors as any}
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + (isTablet ? 20 : 10),
-            paddingBottom: 25,
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
-          },
-        ]}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <Skeleton width={150} height={30} />
-          <Skeleton width={44} height={44} borderRadius={22} />
-        </View>
-        <Skeleton width="60%" height={24} />
-      </LinearGradient>
-      <View style={{ padding: isTablet ? 12 : 16 }}>
-        <Skeleton height={120} borderRadius={24} style={{ marginBottom: 20 }} />
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <View
-              key={i}
-              style={{
-                width: isTablet ? "48.5%" : "100%",
-                padding: 16,
-                borderRadius: 20,
-                marginBottom: 14,
-                backgroundColor: cardBg,
-                borderWidth: 1,
-                borderColor,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 10,
-                }}
-              >
-                <Skeleton width={100} height={20} />
-                <Skeleton width={80} height={20} borderRadius={10} />
-              </View>
-              <Skeleton width="100%" height={60} borderRadius={12} />
-            </View>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
 
   const renderCuentaCard = useCallback(
     ({ item }: { item: any }) => {
@@ -219,7 +154,7 @@ export default function CuentasScreen() {
               flex: 1, borderRadius: 24, padding: 16, borderWidth: 1,
               marginBottom: 16, marginHorizontal: 8,
               backgroundColor: cardBg,
-              borderColor: isOverdue ? '#EF4444' : borderColor,
+              borderColor: isOverdue ? C.danger : borderColor,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             }]}
@@ -279,9 +214,9 @@ export default function CuentasScreen() {
             {hasTimer && (
               <View style={{
                 flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 12,
-                backgroundColor: isOverdue ? '#EF444415' : `${accentColor}08`,
+                backgroundColor: isOverdue ? `${C.danger}15` : `${accentColor}08`,
               }}>
-                <Ionicons name="time" size={24} color={isOverdue ? '#EF4444' : accentColor} />
+                <Ionicons name="time" size={24} color={isOverdue ? C.danger : accentColor} />
                 <View style={{ marginLeft: 10 }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: textSecondary }}>TIEMPO RESTANTE</Text>
                   {timer ? (
@@ -345,13 +280,13 @@ export default function CuentasScreen() {
                         flex: 1, height: 44, borderRadius: 12,
                         justifyContent: 'center', alignItems: 'center',
                         flexDirection: 'row', gap: 6,
-                        backgroundColor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FFF7ED',
-                        borderWidth: 1, borderColor: '#F59E0B55',
+                        backgroundColor: isDark ? `${C.warning}24` : '#FFF7ED',
+                        borderWidth: 1, borderColor: `${C.warning}55`,
                         opacity: pressed ? 0.7 : 1,
                       }]}
                       onPress={() => handleFinalizarTemporizador(item)}
                     >
-                      <Ionicons name="stop-circle-outline" size={16} color="#F59E0B" />
+                      <Ionicons name="stop-circle-outline" size={16} color={C.warning} />
                       <Text style={{ color: '#F59E0B', fontWeight: '900', fontSize: 12 }}>FINALIZAR</Text>
                     </Pressable>
                   )}
@@ -360,13 +295,13 @@ export default function CuentasScreen() {
                       flex: 1, height: 44, borderRadius: 12,
                       justifyContent: 'center', alignItems: 'center',
                       flexDirection: 'row', gap: 6,
-                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.14)' : '#FEF2F2',
-                      borderWidth: 1, borderColor: '#EF444455',
+                      backgroundColor: isDark ? `${C.danger}24` : '#FEF2F2',
+                      borderWidth: 1, borderColor: `${C.danger}55`,
                       opacity: pressed ? 0.7 : 1,
                     }]}
                     onPress={() => handleSolicitarAnulacion(item)}
                   >
-                    <Ionicons name="ban-outline" size={16} color="#EF4444" />
+                    <Ionicons name="ban-outline" size={16} color={C.danger} />
                     <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 12 }}>ANULAR</Text>
                   </Pressable>
                 </View>
@@ -453,7 +388,7 @@ export default function CuentasScreen() {
     ],
   );
   if (loading && !refreshing && cuentas.length === 0)
-    return renderCuentasSkeleton();
+    return <CuentasSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} gradientColors={gradientColors} insets={insets} isTablet={isTablet} />;
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -502,8 +437,8 @@ export default function CuentasScreen() {
                         ${(resumen?.total_por_cobrar || 0).toLocaleString()}
                       </Text>
                 </View>
-                <View style={[styles.summaryPill, { backgroundColor: '#10B98110' }]}>
-                      <Ionicons name="checkmark-circle-outline" size={14} color="#10B981" />
+                <View style={[styles.summaryPill, { backgroundColor: `${C.success}10` }]}>
+                      <Ionicons name="checkmark-circle-outline" size={14} color={C.success} />
                       <Text style={styles.summaryLabel}>PRODUCTOS</Text>
                       <Text style={[styles.summaryValue, { color: '#10B981' }]}>
                         {resumen?.total_cuentas || 0}
@@ -821,7 +756,7 @@ const styles = StyleSheet.create({
   cardActionBtnCobrar: {
     paddingHorizontal: 16,
     elevation: 2,
-    shadowColor: "#10B981",
+    shadowColor: '#10B981',
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -994,7 +929,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   totalLabelFinal: { fontSize: 18, fontWeight: "900" },
-  totalValFinal: { fontSize: 24, fontWeight: "900", color: "#E11D48" },
+  totalValFinal: { fontSize: 24, fontWeight: "900", color: '#E11D48' },
   modalCloseBtn: {
     height: 56,
     borderRadius: 9999,

@@ -23,17 +23,36 @@ export interface User {
     two_factor_enabled?: boolean;
 }
 
+interface LoginPayload {
+    qr_token?: string;
+    email?: string;
+    password?: string;
+    codigo?: string;
+}
+
+export interface TempAuthData {
+    username: string;
+    password: string;
+    userTmp?: User;
+}
+
+interface LoginResult {
+    requiereCodigo?: boolean;
+    user?: User;
+    asistenciaRegistrada?: boolean;
+}
+
 interface AuthState {
     user: User | null;
     token: string | null;
     isLoading: boolean;
     sessionExpired: boolean;
-    login: (username: string, password: string, codigo?: string, qr_token?: string) => Promise<{ requiereCodigo?: boolean, user?: User, asistenciaRegistrada?: boolean }>;
+    login: (username: string, password: string, codigo?: string, qr_token?: string) => Promise<LoginResult>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearSessionExpired: () => void;
-    tempAuthData: { username: string; password: string; userTmp?: any } | null;
-    setTempAuthData: (data: { username: string; password: string; userTmp?: any } | null) => void;
+    tempAuthData: TempAuthData | null;
+    setTempAuthData: (data: TempAuthData | null) => void;
     updateProfile: (partialUser: Partial<User>) => Promise<void>;
     isBiometricEnabled: boolean;
     setBiometricEnabled: (enabled: boolean) => Promise<void>;
@@ -140,7 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         login: async (username, password, codigo, qr_token) => {
             try {
-                const payload: any = {};
+                const payload: LoginPayload = {};
 
                 if (qr_token) {
                     payload.qr_token = qr_token;
@@ -175,7 +194,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 });
 
                 if (response.requiereCodigo) {
-                    return { requiereCodigo: true, user: response.user };
+                    return { requiereCodigo: true, user: response.user as User | undefined };
                 }
 
                 if (!response.success && !response.token) {
@@ -185,13 +204,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const { token, user, asistenciaRegistrada = false } = response;
                 await TokenStorage.saveToken(token);
                 await AsyncStorage.setItem('user', JSON.stringify(user));
-                
+
                 setTokenInMemory(token);
                 set({ user, token, tempAuthData: null });
 
                 return { requiereCodigo: false, asistenciaRegistrada };
-            } catch (error: any) {
-                throw new Error(error.message);
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : 'Error desconocido en autenticación';
+                throw new Error(message);
             }
         },
 
@@ -209,9 +229,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         checkAuth: async () => {
             try {
-                const withTimeout = (promise: Promise<any>, timeoutMs: number) => {
-                    let timeoutHandle: any;
-                    const timeoutPromise = new Promise((_, reject) => {
+                const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> => {
+                    let timeoutHandle: ReturnType<typeof setTimeout>;
+                    const timeoutPromise = new Promise<null>((_, reject) => {
                         timeoutHandle = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
                     });
                     return Promise.race([
@@ -227,7 +247,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
                 if (token && userStr) {
                     setTokenInMemory(token);
-                    set({ token, user: JSON.parse(userStr) });
+                    const parsedUser = JSON.parse(userStr) as User;
+                    set({ token, user: parsedUser });
                 }
 
                 const biometricEnabled = await AsyncStorage.getItem('biometricEnabled');
@@ -255,7 +276,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         getCredentials: async () => {
             const credentials = await SecureStore.getItemAsync('user_credentials');
-            return credentials ? JSON.parse(credentials) : null;
+            return credentials ? JSON.parse(credentials) as { username: string; password: string } : null;
         },
 
         removeCredentials: async () => {
@@ -266,10 +287,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
             const currentUser = get().user;
             if (currentUser) {
                 // Verificar si hay cambios reales para evitar re-renders innecesarios
-                const hasChanges = Object.keys(partialUser).some(
-                    (key) => (partialUser as any)[key] !== (currentUser as any)[key]
+                const keys = Object.keys(partialUser) as (keyof User)[];
+                const hasChanges = keys.some(
+                    (key) => partialUser[key] !== currentUser[key]
                 );
-                
+
                 if (hasChanges) {
                     const updatedUser = { ...currentUser, ...partialUser };
                     await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
@@ -279,7 +301,3 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
     };
 });
-
-
-
-

@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 
 
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
 export default function AsistenciaScreen() {
     const { accentColor, isDark } = useAccentColor();
     const {
@@ -21,7 +23,8 @@ export default function AsistenciaScreen() {
         asistencias, gratificaciones,
         loading, refreshing,
         filter, setFilter,
-        onRefresh
+        onRefresh,
+        currentDate, navigateMonth, goToCurrentMonth
     } = useAsistencia();
 
     const bg = isDark ? '#000000' : '#F9FAFB';
@@ -173,6 +176,22 @@ export default function AsistenciaScreen() {
                 </Pressable>
             </View>
 
+            {activeTab === 'asistencias' && (
+                <View style={[styles.monthNav, { backgroundColor: cardBg, borderColor }]}>
+                    <Pressable onPress={() => navigateMonth(-1)} style={styles.monthNavBtn}>
+                        <Ionicons name="chevron-back" size={18} color={textPrimary} />
+                    </Pressable>
+                    <Pressable onPress={goToCurrentMonth} style={styles.monthNavLabel}>
+                        <Text style={[styles.monthNavText, { color: textPrimary }]}>
+                            {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
+                        </Text>
+                    </Pressable>
+                    <Pressable onPress={() => navigateMonth(1)} style={styles.monthNavBtn}>
+                        <Ionicons name="chevron-forward" size={18} color={textPrimary} />
+                    </Pressable>
+                </View>
+            )}
+
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>
                     {activeTab === 'asistencias' ? 'SITUACIÓN DE ASISTENCIAS' : 'GRATIFICACIONES ENTREGADAS'}
@@ -254,6 +273,14 @@ const styles = StyleSheet.create({
     paymentText: { fontSize: 12 },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
+    monthNav: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        marginHorizontal: 16, marginTop: 12, borderRadius: 14, paddingVertical: 10,
+        paddingHorizontal: 12, borderWidth: 1,
+    },
+    monthNavBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+    monthNavLabel: { flex: 1, alignItems: 'center' },
+    monthNavText: { fontSize: 15, fontWeight: '800' },
 });
 
 

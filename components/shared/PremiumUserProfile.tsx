@@ -90,13 +90,13 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
                         {fullName}
                     </Text>
                 )}
-                <View style={styles.statusRow}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(userStatus, true) }]} />
-                    <Text style={[styles.statusText, { color: textSecondary }]} numberOfLines={1}>
-                        {getStatusLabel(userStatus)}
-                        {roleLabel ? ` ? ${roleLabel}` : ''}
-                    </Text>
-                </View>
+                {roleLabel ? (
+                    <View style={styles.statusRow}>
+                        <Text style={[styles.statusText, { color: textSecondary }]} numberOfLines={1}>
+                            {roleLabel}
+                        </Text>
+                    </View>
+                ) : null}
             </View>
         </View>
     );

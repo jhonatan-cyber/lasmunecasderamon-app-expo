@@ -23,10 +23,11 @@ import { BASE_URL } from '@/api/client';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { VentasSkeleton, DetailSkeleton, VentaCardSkeleton } from '@/components/cajero/ventas/VentasSkeleton';
 import { useTimer } from '@/context/TimerContext';
 import { useVentasScreen } from '@/hooks/useVentasScreen';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
+import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from '@/utils/colors';
 const FlashList = ShopifyFlashList as any;
@@ -50,15 +51,6 @@ const payMethodIcons: Record<string, any> = {
   efectivo: "cash-outline",
   tarjeta: "card-outline",
   transferencia: "swap-horizontal-outline",
-};
-
-type VentasSkeletonProps = {
-  bg: string;
-  cardBg: string;
-  borderColor: string;
-  gradientColors: string[];
-  insets: { top: number };
-  isTablet: boolean;
 };
 
 function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimary }: {
@@ -90,134 +82,6 @@ function TimerPill({ timer, serverOffset, accentColor, textSecondary, textPrimar
       <View>
         <Text style={[styles.timerLabel, { color: textSecondary }]}>RESTANTE</Text>
         <Text style={[styles.timerValue, { color: remaining < 60 ? '#EF4444' : textPrimary }]}>{fmt(remaining)}</Text>
-      </View>
-    </View>
-  );
-}
-
-function DetailSkeleton({ borderColor }: { borderColor: string }) {
-  return (
-    <View style={{ padding: 20 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 }}>
-        <View>
-          <Skeleton width={180} height={28} style={{ marginBottom: 10 }} />
-          <Skeleton width={120} height={18} />
-        </View>
-        <Skeleton width={44} height={44} borderRadius={22} />
-      </View>
-
-      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
-        <Skeleton style={{ flex: 1 }} height={65} borderRadius={18} />
-      </View>
-
-      <Skeleton width={140} height={20} style={{ marginBottom: 12 }} />
-      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 25 }}>
-        <Skeleton width={90} height={32} borderRadius={16} />
-        <Skeleton width={90} height={32} borderRadius={16} />
-      </View>
-
-      <Skeleton width="100%" height={180} borderRadius={24} style={{ marginBottom: 25 }} />
-
-      <View style={{ gap: 15 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Skeleton width={100} height={18} />
-          <Skeleton width={80} height={18} />
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Skeleton width={120} height={26} />
-          <Skeleton width={140} height={32} borderRadius={16} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function VentaCardSkeleton({ isTablet, cardBg, borderColor }: { isTablet: boolean; cardBg: string; borderColor: string }) {
-  return (
-    <View
-      style={{
-        width: isTablet ? '48.5%' : '100%',
-        padding: 16,
-        borderRadius: 24,
-        marginBottom: 14,
-        backgroundColor: cardBg,
-        borderWidth: 1,
-        borderColor,
-      }}
-    >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-        <Skeleton width={120} height={20} />
-        <Skeleton width={80} height={20} borderRadius={12} />
-      </View>
-      <View style={{ gap: 8, marginBottom: 15 }}>
-        <Skeleton width='90%' height={14} />
-        <Skeleton width='70%' height={14} />
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <View style={{ gap: 4 }}>
-          <Skeleton width={60} height={12} />
-          <Skeleton width={100} height={24} />
-        </View>
-        <Skeleton width={100} height={40} borderRadius={12} />
-      </View>
-    </View>
-  );
-}
-
-function VentasSkeleton({ bg, cardBg, borderColor, gradientColors, insets, isTablet }: VentasSkeletonProps) {
-  return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <LinearGradient
-        colors={gradientColors as any}
-        style={[styles.header, { paddingTop: insets.top + (isTablet ? 20 : 10), paddingBottom: 25, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 20,
-          }}
-        >
-          <Skeleton width={150} height={30} />
-          <Skeleton width={44} height={44} borderRadius={22} />
-        </View>
-        <Skeleton width='60%' height={24} />
-      </LinearGradient>
-      <View style={{ padding: isTablet ? 12 : 16 }}>
-        <Skeleton height={isTablet ? 180 : 140} borderRadius={24} style={{ marginBottom: 20 }} />
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-          <Skeleton style={{ flex: 1 }} height={44} borderRadius={16} />
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <View
-              key={i}
-              style={{
-                width: isTablet ? '48.5%' : '100%',
-                padding: 16,
-                borderRadius: 20,
-                marginBottom: 14,
-                backgroundColor: cardBg,
-                borderWidth: 1,
-                borderColor,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: 10,
-                }}
-              >
-                <Skeleton width={100} height={20} />
-                <Skeleton width={80} height={20} borderRadius={10} />
-              </View>
-              <Skeleton width='100%' height={60} borderRadius={12} />
-            </View>
-          ))}
-        </View>
       </View>
     </View>
   );
@@ -265,6 +129,7 @@ export default function VentasScreen() {
     getVentaId,
   } = useVentasScreen();
 
+  const C = Colors[isDark ? 'dark' : 'light'];
   const bg = isDark ? "#000000" : "#F3F4F6";
   const cardBg = isDark ? "#111111" : "#FFFFFF";
   const textPrimary = isDark ? "#FFFFFF" : "#111827";
@@ -683,15 +548,15 @@ const productCount = item.item_count || 0;
                           {selectedVenta.pedido_id ? (
                             <View style={styles.origenPersonas}>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || 'â€”'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
+                                  Pedido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.garzon_nombre || 'â€"'} {selectedVenta.garzon_nick ? `(@${selectedVenta.garzon_nick})` : ''}</Text>
                               </Text>
                               <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || 'â€”'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Procesado por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || 'â€"'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                               </Text>
                             </View>
                           ) : (
                             <Text style={[styles.origenPersonaLabel, { color: textSecondary }]}>
-                                  Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || 'â€”'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
+                                  Vendido por: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.cajero_nombre || selectedVenta.vendedor_nombre || 'â€"'} {selectedVenta.cajero_nick ? `(@${selectedVenta.cajero_nick})` : ''}</Text>
                             </Text>
                           )}
                         </View>
@@ -701,7 +566,7 @@ const productCount = item.item_count || 0;
                         <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
                           <Ionicons name="bed-outline" size={16} color={accentColor} />
                           <Text style={[styles.origenPersonaLabel, { color: textSecondary, flex: 1 }]}>
-                                Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || 'â€”'}</Text>
+                                Habitación: <Text style={[styles.origenPersonaValue, { color: textPrimary }]}>{selectedVenta.habitacion_nombre || selectedVenta.habitacion_numero || 'â€"'}</Text>
                           </Text>
                           {selectedVenta.tiempo ? (
                             <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
@@ -898,7 +763,7 @@ const productCount = item.item_count || 0;
           >
             <View style={styles.anulacionHeader}>
               <View style={[styles.anulacionIconBox, { backgroundColor: "#EF444415" }]}>
-                <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+                <Ionicons name="alert-circle-outline" size={24} color={C.danger} />
               </View>
               <Text style={[styles.anulacionTitle, { color: textPrimary }]}>Solicitar Anulación</Text>
               <Text style={[styles.anulacionSubtitle, { color: textSecondary }]}>
@@ -1013,9 +878,9 @@ const productCount = item.item_count || 0;
             {activeVenta?.estado !== 0 && activeVenta?.estado !== 3 && (
               <Pressable style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]} onPress={openAnulacionModal}>
                 <View style={[styles.actionIconBox, { backgroundColor: "#EF444415" }]}>
-                  <Ionicons name="trash-outline" size={22} color="#EF4444" />
+                  <Ionicons name="trash-outline" size={22} color={C.danger} />
                 </View>
-                <Text style={[styles.actionText, { color: "#EF4444" }]}>Solicitar Anulación</Text>
+                <Text style={[styles.actionText, { color: C.danger }]}>Solicitar Anulación</Text>
               </Pressable>
             )}
             <Pressable style={[styles.actionCancelBtn, { backgroundColor: accentColor + '15', borderWidth: 1, borderColor: accentColor + '40' }]} onPress={() => setActionSheetVisible(false)}>
@@ -1730,4 +1595,3 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
-

@@ -35,12 +35,27 @@ export function useAsistencia() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const dataRef = useRef<string>('');
+
+  const navigateMonth = useCallback((direction: number) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
+  }, []);
+
+  const goToCurrentMonth = useCallback(() => {
+    setCurrentDate(new Date());
+  }, []);
 
   const fetchAsistencias = useCallback(async (isManual = false) => {
     try {
       setError('');
-      const data = await apiClient('/attendance/user?tipo=detalle');
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const lastDay = new Date(year, currentDate.getMonth() + 1, 0).getDate();
+      const startDate = `${year}-${month}-01`;
+      const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+
+      const data = await apiClient(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`);
       if (data.success) {
         const serialized = JSON.stringify(data.data);
         const hasChanges = dataRef.current !== serialized;
@@ -63,7 +78,7 @@ export function useAsistencia() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [currentDate]);
 
   const fetchGratificaciones = useCallback(async (isManual = false) => {
     try {
@@ -100,6 +115,9 @@ export function useAsistencia() {
     error,
     filter,
     setFilter,
-    onRefresh
+    onRefresh,
+    currentDate,
+    navigateMonth,
+    goToCurrentMonth
   };
 }

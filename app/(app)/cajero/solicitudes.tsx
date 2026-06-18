@@ -20,6 +20,7 @@ import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { SolicitudesSkeleton } from '@/components/cajero/solicitudes/SolicitudesSkeleton';
 
 // New Refactored Components & Hook
 import { CheckoutModal } from '@/components/cajero/CheckoutModal';
@@ -29,36 +30,6 @@ import { useSolicitudes } from '@/hooks/useSolicitudes';
 import { useSolicitudesActions } from '@/hooks/useSolicitudesActions';
 
 const FlashList = ShopifyFlashList as any;
-
-const SolicitudesSkeleton = ({ bg, cardBg, borderColor, insets, isTablet, gradientColors }: any) => (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-        <LinearGradient
-            colors={gradientColors as any}
-            style={[{ paddingTop: insets.top + (isTablet ? 20 : 10), height: 160, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]}
-        >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                <Skeleton width={150} height={30} />
-                <Skeleton width={44} height={44} borderRadius={22} />
-            </View>
-            <Skeleton width="60%" height={24} />
-        </LinearGradient>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-            {[1, 2, 3, 4].map(i => (
-                <View key={i} style={[styles.cardSkeleton, { backgroundColor: cardBg, borderColor, padding: 20 }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-                        <Skeleton width={120} height={20} />
-                        <Skeleton width={80} height={20} borderRadius={10} />
-                    </View>
-                    <Skeleton width="100%" height={60} borderRadius={12} style={{ marginBottom: 15 }} />
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <Skeleton style={{ flex: 1 }} height={44} borderRadius={12} />
-                        <Skeleton style={{ flex: 1 }} height={44} borderRadius={12} />
-                    </View>
-                </View>
-            ))}
-        </ScrollView>
-    </View>
-);
 
 export default function SolicitudesScreen() {
     const router = useRouter();
