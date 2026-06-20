@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   Stack,
   useRouter,
@@ -22,7 +21,6 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CuentaTimer } from '@/components/cajero/CuentaTimer';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
 import { CuentasSkeleton } from '@/components/cajero/cuentas/CuentasSkeleton';
 import { Colors } from '@/constants/theme';
@@ -385,6 +383,8 @@ export default function CuentasScreen() {
       accentColor,
       isDark,
       router,
+      C.danger,
+      C.warning,
     ],
   );
   if (loading && !refreshing && cuentas.length === 0)

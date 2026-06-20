@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { MotiView } from 'moti';
@@ -9,7 +8,6 @@ import React, { useState } from 'react';
 import {
     Pressable,
     RefreshControl,
-    ScrollView,
     StyleSheet,
     Text,
     useWindowDimensions,
@@ -18,7 +16,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { SolicitudesSkeleton } from '@/components/cajero/solicitudes/SolicitudesSkeleton';
 

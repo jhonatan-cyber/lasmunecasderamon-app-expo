@@ -25,7 +25,6 @@ import { apiClient } from '@/api/client';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 

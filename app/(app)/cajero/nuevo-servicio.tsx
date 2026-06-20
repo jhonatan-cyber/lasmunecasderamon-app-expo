@@ -35,7 +35,6 @@ export default function NuevoServicioScreen() {
     hasAnfitrionaComision,
     maxHostesses,
     maxClients,
-    numericPrecioServicio,
     totals,
     desgloseTarjeta,
     selectedClientData,

@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
-import { Colors } from '@/constants/theme';
+
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -161,7 +161,6 @@ const StatRow = ({ label, value, accent, textPrimary, textSecondary, borderColor
 
 export default function CajaScreen() {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
-    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
     const user = useAuthStore(state => state.user);
 
