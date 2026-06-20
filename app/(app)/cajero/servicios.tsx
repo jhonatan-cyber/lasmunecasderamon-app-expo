@@ -32,7 +32,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import logger from '@/utils/logger';
 const FlashList = ShopifyFlashList as any;
 
-// --- Helper for safe number conversion ---
+
 
 const safeNumber = (val: any) => {
   if (val === null || val === undefined || val === "") return 0;
@@ -50,7 +50,7 @@ const safeNumber = (val: any) => {
 };
 
 const formatServiceDetail = (raw: any) => {
-  // El precio_servicio del backend es el valor original del input (no multiplicado)
+  
   const precioServicio = safeNumber(raw?.precio_servicio ?? raw?.precioServicio ?? 0);
   const precioHabitacion = safeNumber(raw?.precio_habitacion ?? raw?.precioHabitacion ?? 0);
   const iva = safeNumber(raw?.iva ?? 0);
@@ -72,8 +72,8 @@ const formatServiceDetail = (raw: any) => {
   const habitacionComision = safeNumber(raw?.habitacion_comision ?? 0);
   const tieneComisionHabitacion = habitacionComision > 0;
 
-  // Si la habitación tiene comisión fija, se divide entre las anfitrionas
-  // Si no, cada anfitriona recibe el precio del input
+  
+  
   const comisionIndividual = tieneComisionHabitacion
     ? Math.floor(habitacionComision / totalUsuarios)
     : precioServicio;
@@ -104,7 +104,7 @@ const formatServiceDetail = (raw: any) => {
   };
 };
 
-// --- ServiceCard Component ---
+
 const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar, onPress, theme }: {
   item: Timer & {
     waiter_name?: string;
@@ -126,7 +126,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
   const [remaining, setRemaining] = useState(() => calculateRemainingTime(item, serverOffset));
 
   useEffect(() => {
-    // Si no está activo o está pausado, no corremos el intervalo
+    
     if (activeTab === "finalizados" || item.isPaused || item.estado === 3) return;
 
     const interval = setInterval(() => {
@@ -293,7 +293,7 @@ const ServiceCard = memo(({ item, activeTab, serverOffset, onFinalizar, onEditar
 });
 ServiceCard.displayName = "ServiceCard";
 
-// --- State Management ---
+
 type ScreenState = {
   refreshing: boolean;
   activeTab: 'activos' | 'finalizados';
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   paymentMethodBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(156, 163, 175, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   paymentMethodText: { fontSize: 10, fontWeight: '800' },
 
-  // Detail Modal Styles
+  
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
@@ -474,16 +474,16 @@ export default function ServiciosActivosScreen() {
 
   const activeServicios = useMemo(() => {
     const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');
-    // Si hay un temporal activo (es_temporal=true), ocultar el original al que reemplaza
+    
     const temporalOriginalIds = new Set(
       servicios
         .filter(t => t.es_temporal && t.servicio_original_id)
         .map(t => String(t.servicio_original_id))
     );
     return servicios.filter(t => {
-      // Mostrar temporales siempre
+      
       if (t.es_temporal) return true;
-      // Ocultar originales que tienen un temporal activo
+      
       if (temporalOriginalIds.has(String(t.servicioId))) return false;
       return true;
     });
@@ -492,7 +492,7 @@ export default function ServiciosActivosScreen() {
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
     try {
-      // Traer todos los finalizados con paginación
+      
       let allData: any[] = [];
       let page = 1;
       const limit = 200;
@@ -522,8 +522,8 @@ export default function ServiciosActivosScreen() {
           const comisionIndividual = safeNumber(sAny.comision_individual || 0);
           const totalUsuarios = Math.max(1, safeNumber(sAny.total_usuarios || 1));
           
-          // Si hay comisión de habitación, esa es la comisión total
-          // Si no, se usa la comisión individual por las anfitrionas
+          
+          
           const totalComision = habitacionComision > 0 
             ? habitacionComision 
             : comisionIndividual * totalUsuarios;
@@ -742,7 +742,7 @@ export default function ServiciosActivosScreen() {
         onCancel={() => dispatch({ type: 'CLOSE_ALERT' })}
       />
 
-      {/* Detalle Modal Simple */}
+      {}
       <Modal visible={detailModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -868,9 +868,9 @@ export default function ServiciosActivosScreen() {
                    <Text style={[styles.totalValFinal, { color: theme.accent }]}>${safeNumber(selectedServiceDetail?.total).toLocaleString()}</Text>
                 </View>
 
-                {/* Sección de Comisiones */}
+                {}
                 {selectedServiceDetail?.habitacion_comision > 0 ? (
-                  // Si hay comisión de habitación, esa es la comisión total que se divide
+                  
                   <>
                     <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
                       <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Comisión Habitación</Text>
@@ -891,7 +891,7 @@ export default function ServiciosActivosScreen() {
                     </View>
                   </>
                 ) : (
-                  // Si no hay comisión de habitación, mostrar total comisión (precio servicio × anfitrionas)
+                  
                   <>
                     <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border }]}>
                       <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>

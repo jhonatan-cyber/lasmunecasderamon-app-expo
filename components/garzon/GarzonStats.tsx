@@ -18,7 +18,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
 
     return (
         <View style={styles.container}>
-            {/* Quick Stats Grid */}
+            {}
             <View style={styles.statsGrid}>
                 <LinearGradient
                     colors={isDark ? ['#10B981', '#059669'] : ['#10B981', '#34D399']}
@@ -49,7 +49,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                 </LinearGradient>
             </View>
 
-            {/* Performance Chart Card */}
+            {}
             <View style={[styles.glassCard, { backgroundColor: cardBg, borderColor }]}>
                 <View style={styles.cardHeader}>
                     <View>

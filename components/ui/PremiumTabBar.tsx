@@ -39,7 +39,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
     const insets = useSafeAreaInsets();
     const indicatorPosition = useSharedValue(0);
     
-    // Si el navbar es de color, los iconos deben ser blancos
+    
     const activeTintColor = '#FFFFFF';
     const inactiveTintColor = 'rgba(255, 255, 255, 0.6)';
     const borderColor = 'rgba(255, 255, 255, 0.1)';
@@ -72,7 +72,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
             colors={gradientColors as any}
             style={[styles.tabBarContainer, { paddingBottom: insets.bottom, borderTopColor: borderColor }]}
         >
-            {/* Indicador Animado de Fondo */}
+            {}
             <Animated.View style={[
                 styles.indicator,
                 { width: tabWidth },
@@ -128,7 +128,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
                             })}
                         </View>
 
-                        {/* Solo mostrar etiqueta si no es el tab central */}
+                        {}
                         {!isCenter && label !== 'Inicio' && (
                             <Text style={[styles.tabLabel, { color: isFocused ? activeTintColor : inactiveTintColor }]}>
                                 {label as string}

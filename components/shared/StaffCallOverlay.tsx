@@ -26,8 +26,8 @@ interface StaffCall {
     assistanceType: string;
     message?: string;
     timestamp: string;
-    habitacion_nombre?: string; // from API GET
-    anfitriona_nick_api?: string; // from API GET
+    habitacion_nombre?: string; 
+    anfitriona_nick_api?: string; 
 }
 
 export function StaffCallOverlay() {
@@ -94,20 +94,20 @@ export function StaffCallOverlay() {
             timers.push(timer);
         }
 
-        // Escuchar eventos SSE centralizados desde NotificationContext
+        
         const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
             if (!payload) return;
 
-            // Caso 1: Nuevo llamado (Solo para Staff)
+            
             if ((payload.type === 'staff_call' || payload.type === 'assistance_request') && isStaff) {
                 const callData = payload.type === 'assistance_request'
                     ? mapPendingCall(payload.data)
                     : payload.data;
                 setPendingCalls(prev => {
-                    // Evitar duplicados
+                    
                     if (prev.find(c => c.id === callData.id)) return prev;
 
-                    // Efectos de sonido y vibración con prioridad
+                    
                     const hostessName = callData.anfitriona_nick || 'Anfitriona';
                     const location = callData.roomName !== 'N/A' ? `en la habitación ${callData.roomName}` : 'en el salón';
                     const typeNormalized = (callData.assistanceType || '').toLowerCase().includes('general') ? 'atención' : (callData.assistanceType || '');
@@ -119,7 +119,7 @@ export function StaffCallOverlay() {
                 });
             }
 
-            // Caso 2: Llamado aceptado (Staff y Anfitrionas)
+            
             else if (payload.type === 'staff_call_accepted') {
                 if (isStaff) {
                     setPendingCalls(prev => prev.filter(c => c.id !== payload.data.id));
@@ -179,7 +179,7 @@ export function StaffCallOverlay() {
         }
     };
     if ((!isStaff && !isHostess) || (isStaff && pendingCalls.length === 0) || (isHostess)) {
-        // Las anfitrionas no ven las tarjetas, solo escuchan los eventos.
+        
         if (isHostess || pendingCalls.length === 0) return null;
     }
 

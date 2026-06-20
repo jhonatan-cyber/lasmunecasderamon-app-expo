@@ -11,7 +11,7 @@ import { Colors } from '@/constants/theme';
 
 const { success, error, info, warning } = Colors.light;
 
-// Tipado explícito para evitar errores de TypeScript con DimensionValue
+
 const commonStyle: ViewStyle = {
   backgroundColor: "#FFFFFF",
   borderRadius: 18,
@@ -92,7 +92,7 @@ export const toastConfig: ToastConfig = {
       )}
     />
   ),
-  // Alias para advertencias o tipos personalizados
+  
   warning: (props: BaseToastProps) => (
     <BaseToast
       {...props}

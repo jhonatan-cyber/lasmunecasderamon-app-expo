@@ -25,7 +25,7 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
     const minHeight = isTablet ? 160 : 100;
     const padding = isTablet ? 24 : 16;
 
-    // Premium Floating Design
+    
     const cardBg = isDark ? '#111111' : '#FFFFFF';
     const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
     const textSecondary = isDark ? '#9CA3AF' : '#64748B';
@@ -66,7 +66,7 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
                 </Text>
             </View>
 
-            {/* Subtle light indicator */}
+            {}
             {!disabled && <View style={[styles.sideIndicator, { backgroundColor: color }]} />}
         </AnimatedButton>
     );

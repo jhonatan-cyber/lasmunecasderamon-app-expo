@@ -127,10 +127,10 @@ export const QRScannerModal = ({
             if (!trimmed) {
                 throw new Error('QR vacío o ilegible.');
             }
-            onClose(); // Cerrar modal antes de procesar
+            onClose(); 
             await onScanned(trimmed);
         } catch (error: any) {
-            // Mostrar error y cerrar modal
+            
             onClose();
             Toast.show({
                 type: 'error',

@@ -1,0 +1,270 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Toast from 'react-native-toast-message';
+import { apiClient } from '@/api/client';
+import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
+import { CartItem, Product, Anfitriona, Room } from '@/components/shared/ProductCard';
+import logger from '@/utils/logger';
+
+export interface Client {
+    id: string;
+    id_cliente?: string;
+    name: string;
+    nombre?: string;
+    lastName: string;
+    apellido?: string;
+}
+
+export function useGarzonProductos() {
+    const router = useRouter();
+    const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
+    const user = useAuthStore((state) => state.user);
+
+    
+    const [products, setProducts] = useState<Product[]>([]);
+    const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const dataRef = useRef<string>('');
+
+    
+    const [clientModalVisible, setClientModalVisible] = useState(false);
+    const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
+    const [activeConfigItem, setActiveConfigItem] = useState<{ productId: string, type: 'hostess' | 'room' } | null>(null);
+
+    
+    const {
+        cart,
+        addToCart,
+        removeFromCart,
+        updateItemHostesses,
+        updateItemRoom,
+        tipEnabled,
+        setTipEnabled,
+        clearCart,
+        getTipAmount,
+        getTotal,
+        buildOrderPayload
+    } = useCartStore();
+
+    const fetchData = useCallback(async (isManual = false) => {
+        try {
+            setError('');
+            const [prodRes, anfRes, roomRes, clientRes] = await Promise.allSettled([
+                apiClient(`/products?category_id=${categoryId}`),
+                apiClient('/anfitrionas'),
+                apiClient('/rooms?status=1'),
+                apiClient('/clients'),
+            ]);
+
+            const prodData = prodRes.status === 'fulfilled' ? prodRes.value : null;
+            const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
+            const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
+            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
+
+            logger.info('Anfitrionas response', { data: anfData });
+
+            const newData = { 
+                products: prodData?.data, 
+                anfitrionas: anfData?.data || (Array.isArray(anfData) ? anfData : null), 
+                rooms: roomData?.data, 
+                clients: clientData?.data || clientData 
+            };
+            const serialized = JSON.stringify(newData);
+            const hasChanges = dataRef.current !== serialized;
+            dataRef.current = serialized;
+
+            if (prodData?.success) {
+                const active = (prodData.data || []).filter((p: Product) => p.status === 1);
+                setProducts(active);
+            }
+            if (anfData?.success) {
+                setAnfitrionas(anfData.data || []);
+            } else if (Array.isArray(anfData)) {
+                setAnfitrionas(anfData);
+            }
+            if (roomData?.success) setRooms(roomData.data || []);
+            
+            if (Array.isArray(clientData)) {
+                setClients(clientData);
+            } else if (clientData?.success) {
+                setClients(clientData.data || []);
+            }
+
+            if (isManual) {
+                Toast.show({
+                    type: hasChanges ? 'success' : 'info',
+                    text1: hasChanges ? 'Éxito' : 'Información',
+                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
+                    visibilityTime: 3000
+                });
+            }
+        } catch (err: any) {
+            logger.captureException(err, { context: 'Productos:fetchProductos' });
+            setError(err.message || 'Error de conexión');
+            if (isManual) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo actualizar la lista de productos',
+                    visibilityTime: 3000
+                });
+            }
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [categoryId]);
+
+    useEffect(() => {
+        const run = async () => { await fetchData(); };
+        void run();
+    }, [fetchData]);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchData(true);
+    }, [fetchData]);
+
+    const tipAmount = getTipAmount();
+    const cartTotal = getTotal();
+
+    const getMaxHostesses = (item: CartItem) => {
+        const cat = (item.product.categoria || '').toLowerCase();
+        const isChampagne = cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
+
+        if (isChampagne) {
+            const p = item.product.price;
+            if (p >= 240000) return 5;
+            if (p >= 200000) return 4;
+            if (p >= 140000) return 3;
+            if (p >= 120000) return 2;
+            return 1;
+        }
+        return item.quantity;
+    };
+
+    const submitOrder = async () => {
+        if (cart.length === 0) return;
+        if (!user) return;
+
+        
+        for (const item of cart) {
+            const hasCommission = (item.product.commission || 0) > 0;
+            if (hasCommission && item.selectedHostesses.length === 0) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Falta Anfitriona',
+                    text2: `Debes asignar al menos una anfitriona a "${item.product.name}"`,
+                });
+                return;
+            }
+        }
+
+        const generateCode = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
+
+        setSubmitting(true);
+        try {
+            const codigo = generateCode();
+
+            
+            const buildResult = buildOrderPayload({
+                meseroId: user.id,
+                codigo,
+                clienteId: selectedClientId,
+                device_date: new Date().toISOString(),
+            });
+
+            if (!buildResult.success) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Datos inválidos',
+                    text2: buildResult.errors.join('; '),
+                });
+                setSubmitting(false);
+                return;
+            }
+
+            const orderData = buildResult.data;
+
+            logger.info('[DEBUG] Enviando pedido', { orderData });
+
+            const res = await apiClient('/orders', { method: 'POST', body: JSON.stringify(orderData) });
+            if (res.success) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Pedido Enviado',
+                    text2: 'El pedido ha sido registrado correctamente',
+                });
+                clearCart();
+                router.back();
+            } else {
+                throw new Error(res.message || 'Error al enviar pedido');
+            }
+
+        } catch (err: any) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: err.message || 'Error de conexión',
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return {
+        
+        categoryName,
+
+        
+        products,
+        anfitrionas,
+        rooms,
+        clients,
+        selectedClientId,
+        setSelectedClientId,
+        loading,
+        refreshing,
+        submitting,
+        error,
+
+        
+        clientModalVisible,
+        setClientModalVisible,
+        clearCartAlertVisible,
+        setClearCartAlertVisible,
+        activeConfigItem,
+        setActiveConfigItem,
+
+        
+        cart,
+        addToCart,
+        removeFromCart,
+        updateItemHostesses,
+        updateItemRoom,
+        tipEnabled,
+        setTipEnabled,
+        clearCart,
+        tipAmount,
+        cartTotal,
+
+        
+        onRefresh,
+        getMaxHostesses,
+        submitOrder,
+    };
+}

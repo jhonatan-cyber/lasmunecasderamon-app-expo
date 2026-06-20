@@ -83,7 +83,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                     }
                 }
             } else {
-                // Para comisiones ya viene bastante data, pero podrías extenderlo si fuera necesario
+                
             }
         } catch (e) { logger.captureException(e, { context: 'FinancialEventsScreen:fetchDetail' }); } finally { setLoadingDetail(false); }
     };
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
         shadowRadius: 5
     },
     
-    // New Styles for Tip Detail (Parity with Cajero)
+    
     divisionCard: { flexDirection: 'row', padding: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     divisionItem: { flex: 1, alignItems: 'center' },
     divisionLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4 },

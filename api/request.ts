@@ -74,7 +74,7 @@ export const apiClient = async <T = any>(
     logger.debug("API token loaded", { hasToken: false });
   }
 
-  // Inyectar automáticamente la fecha del dispositivo en peticiones que envían datos
+  
   let finalBody = fetchOptions.body;
   if (
     ["POST", "PUT", "PATCH"].includes(options.method?.toUpperCase() || "") &&
@@ -82,7 +82,7 @@ export const apiClient = async <T = any>(
   ) {
     try {
       const bodyObj = JSON.parse(fetchOptions.body);
-      // Solo inyectamos si es un objeto y no tiene ya una fecha seteada explícitamente
+      
       if (
         typeof bodyObj === "object" &&
         bodyObj !== null &&
@@ -92,7 +92,7 @@ export const apiClient = async <T = any>(
         finalBody = JSON.stringify(bodyObj);
       }
     } catch {
-      // Si no es JSON, lo dejamos como está
+      
     }
   }
 
@@ -147,7 +147,7 @@ export const apiClient = async <T = any>(
             undefined,
             durationMs,
           );
-          // Incluir el mensaje del servidor en el error
+          
           const serverMessage =
             data.message || data.error || `Error ${response.status}`;
           throw new Error(serverMessage);
@@ -186,7 +186,7 @@ export const apiClient = async <T = any>(
       if (!shouldRetry(err) || attempt === maxRetries) {
         logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
         if (err?.name === "AbortError") throw new TimeoutError();
-        // Si el error ya es una instancia de Error lanzada arriba (con mensaje de servidor), no la convertimos a NetworkError
+        
         if (
           err instanceof UnauthorizedError ||
           err instanceof TimeoutError ||
@@ -194,7 +194,7 @@ export const apiClient = async <T = any>(
         )
           throw err;
         if (!err.type || err.type === "fetch-failed") {
-          // Si el mensaje del error NO contiene "network" y viene de una respuesta fallida controlada, mantenemos el mensaje original
+          
           if (err.message && !err.message.toLowerCase().includes("fetch")) {
             throw err;
           }

@@ -1,13 +1,13 @@
 import { vi } from 'vitest';
 
-// ─────────── Mock @/api/client ───────────
+
 vi.mock('@/api/client', () => ({
     apiClient: vi.fn(),
     setTokenInMemory: vi.fn(),
     setUnauthorizedHandler: vi.fn(),
 }));
 
-// ─────────── Mock @/utils/logger ───────────
+
 vi.mock('@/utils/logger', () => ({
     default: {
         info: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-// ─────────── Mock @/utils/tokenStorage ───────────
+
 vi.mock('@/utils/tokenStorage', () => ({
     TokenStorage: {
         saveToken: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('@/utils/tokenStorage', () => ({
     },
 }));
 
-// ─────────── Mock @react-native-async-storage/async-storage ───────────
+
 const asyncStorageStore: Record<string, string> = {};
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
@@ -47,14 +47,14 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
     },
 }));
 
-// ─────────── Mock expo-secure-store (factory to avoid importing module) ───────────
+
 vi.mock('expo-secure-store', () => ({
     setItemAsync: vi.fn(() => Promise.resolve()),
     getItemAsync: vi.fn(() => Promise.resolve(null)),
     deleteItemAsync: vi.fn(() => Promise.resolve()),
 }));
 
-// ─────────── Mock expo-local-authentication (factory to avoid importing) ───────────
+
 vi.mock('expo-local-authentication', () => ({
     hasHardwareAsync: vi.fn(() => Promise.resolve(false)),
     isEnrolledAsync: vi.fn(() => Promise.resolve(false)),
@@ -67,8 +67,8 @@ vi.mock('expo-local-authentication', () => ({
     },
 }));
 
-// ─────────── Mock expo-router ───────────
-// Simula useFocusEffect como useEffect para evitar loops infinitos
+
+
 import { useEffect, useRef } from 'react';
 
 vi.mock('expo-router', () => ({
@@ -86,7 +86,7 @@ vi.mock('expo-router', () => ({
     useSegments: vi.fn(() => []),
 }));
 
-// ─────────── Mock react-native-toast-message ───────────
+
 vi.mock('react-native-toast-message', () => ({
     default: {
         show: vi.fn(),
@@ -94,7 +94,7 @@ vi.mock('react-native-toast-message', () => ({
     },
 }));
 
-// ─────────── Mock expo-haptics ───────────
+
 vi.mock('expo-haptics', () => ({
     impactAsync: vi.fn(() => Promise.resolve()),
     notificationAsync: vi.fn(() => Promise.resolve()),
@@ -103,7 +103,7 @@ vi.mock('expo-haptics', () => ({
     NotificationFeedbackType: { Success: 0, Warning: 1, Error: 2 },
 }));
 
-// ─────────── Mock react-native (partial - avoid importing native modules) ───────────
+
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios', select: vi.fn((obj: any) => obj?.ios ?? obj?.default) },
     DeviceEventEmitter: {
@@ -114,7 +114,7 @@ vi.mock('react-native', () => ({
     NativeEventEmitter: vi.fn(() => ({ addListener: vi.fn(), remove: vi.fn() })),
 }));
 
-// ─────────── Mock @tanstack/react-query ───────────
+
 vi.mock('@tanstack/react-query', () => ({
     useQuery: vi.fn(),
     useQueryClient: vi.fn(() => ({
@@ -126,7 +126,7 @@ vi.mock('@tanstack/react-query', () => ({
     QueryClientProvider: vi.fn(({ children }: { children: any }) => children),
 }));
 
-// ─────────── Mock expo-image-picker ───────────
+
 vi.mock('expo-image-picker', () => ({
     requestCameraPermissionsAsync: vi.fn(() => Promise.resolve({ status: 'granted' })),
     requestMediaLibraryPermissionsAsync: vi.fn(() => Promise.resolve({ status: 'granted' })),

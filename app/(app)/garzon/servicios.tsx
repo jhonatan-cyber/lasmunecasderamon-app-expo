@@ -100,7 +100,7 @@ export default function ServiciosScreen() {
     const insets = useSafeAreaInsets();
     const primaryColor = accentColor;
 
-    // Data states
+    
     const [rooms, setRooms] = useState<Room[]>([]);
     const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
@@ -109,7 +109,7 @@ export default function ServiciosScreen() {
     const [submitting, setSubmitting] = useState(false);
     const dataRef = useRef<string>('');
 
-    // Form states
+    
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
     const [selectedHostesses, setSelectedHostesses] = useState<(number | string)[]>([]);
     const [selectedClients, setSelectedClients] = useState<(number | string)[]>([]);
@@ -121,7 +121,7 @@ export default function ServiciosScreen() {
 
     const { bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
-    // Fetch data
+    
     const fetchData = useCallback(async (isRefreshing = false) => {
         try {
             if (!isRefreshing) setLoading(true);
@@ -155,7 +155,7 @@ export default function ServiciosScreen() {
 
             setRooms(roomData?.data || []);
             
-            // Unir las nuevas con las que ya tengamos seleccionadas para no perder sus datos (nicks, etc)
+            
             setAnfitrionas(prev => {
                 const combined = [...(rawAnf || []), ...(prev || [])];
                 return deduplicate(combined, 'id_usuario');
@@ -253,7 +253,7 @@ export default function ServiciosScreen() {
         }
     };
 
-    // Helpers from web logic
+    
     const hasComision = useMemo(() => {
         return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
     }, [selectedRoom]);
@@ -276,7 +276,7 @@ export default function ServiciosScreen() {
 
     const hasPrepago = !!activeClientWithBalance;
 
-    // Calculation logic (simplified version of web version)
+    
     const totals = useMemo(() => {
         const price = parseInt(servicePrice.replace(/\./g, '')) || 0;
         const roomPrice = selectedRoom ? (selectedRoom.precio || selectedRoom.price || 0) : 0;
@@ -301,7 +301,7 @@ export default function ServiciosScreen() {
 
         let currentIva = 0;
         if (paymentMethod === 'tarjeta') {
-            // El IVA del 20% se calcula únicamente sobre el subtotal del servicio (no incluye habitación)
+            
             currentIva = Math.floor(subtotal * 0.20);
         }
 
@@ -327,7 +327,7 @@ export default function ServiciosScreen() {
         if (selectedHostesses.length === 0) return Alert.alert('Error', 'Selecciona al menos una anfitriona');
         if (!paymentMethod) return Alert.alert('Error', 'Selecciona un método de pago');
 
-        // El precio de servicio es obligatorio SOLO si la habitación NO tiene comisión
+        
         if (!hasComision && (!servicePrice || servicePrice === '0')) {
             return Alert.alert('Error', 'Ingresa el precio del servicio');
         }
@@ -414,7 +414,7 @@ export default function ServiciosScreen() {
 
                 <View style={{ padding: 20 }}>
 
-                {/* Habitaciones */}
+                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>HABITACIÓN</Text>
                 <Pressable 
                     onPress={() => setRoomModalVisible(true)}
@@ -463,7 +463,7 @@ export default function ServiciosScreen() {
                     </View>
                 )}
 
-                {/* Anfitrionas */}
+                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     ANFITRIONAS {hasComision && `(MÁX ${maxHostesses})`}
                 </Text>
@@ -499,7 +499,7 @@ export default function ServiciosScreen() {
                     max={maxHostesses}
                 />
 
-                {/* Clientes */}
+                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     CLIENTES (OPCIONAL {hasComision && `- MÁX ${maxClients}`})
                 </Text>
@@ -535,7 +535,7 @@ export default function ServiciosScreen() {
                     max={maxClients}
                 />
 
-                {/* Precios y Pagos */}
+                {}
                 <View style={styles.formSection}>
                     {!hasComision && (
                         <View style={styles.inputGroup}>
@@ -610,7 +610,7 @@ export default function ServiciosScreen() {
                     )}
                 </View>
 
-                {/* Resumen Final */}
+                {}
                 <View style={[styles.summaryCard, { backgroundColor: primaryColor + '15', borderColor: primaryColor }]}>
                     <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal:</Text>

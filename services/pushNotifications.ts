@@ -10,7 +10,7 @@ import logger from '@/utils/logger';
 export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
-  // En Expo Go (appOwnership === 'expo') las push remotas ya no están soportadas.
+  
   const isExpoGo = Constants.appOwnership === "expo";
 
   if (Platform.OS === "web" || isExpoGo) {
@@ -90,9 +90,7 @@ async function saveTokenToServer(token: string) {
   }
 }
 
-/**
- * Dispara efectos visuales, táctiles y sonoros (TTS) según el tipo de notificación
- */
+
 export async function triggerNotificationEffects(
   title: string,
   body: string,
@@ -100,20 +98,20 @@ export async function triggerNotificationEffects(
   isPriority: boolean = false
 ) {
   try {
-    // 1. Respuesta táctica (Vibración)
+    
     if (isPriority) {
-      // Patrón agresivo para llamados: vibrar 500ms, pausa 200ms, vibrar 500ms...
+      
       Vibration.vibrate([0, 500, 200, 500, 200, 500]);
     } else {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
 
-    // 2. Si el usuario es Staff, leer la notificación en voz alta (TTS)
+    
     const roleLower = (role || "").toLowerCase();
     if (roleLower === "cajero" || roleLower === "administrador" || roleLower === "garzon") {
       const textToSpeak = `${title}. ${body}`;
       Speech.speak(textToSpeak, {
-        language: "es-ES", // Cambiado a es-ES para mejor acento local si está disponible
+        language: "es-ES", 
         pitch: 1.0,
         rate: 0.9,
       });

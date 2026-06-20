@@ -17,7 +17,7 @@ export const AttendanceCodeDisplay = () => {
     const { width } = useWindowDimensions();
 
     const role = getUserRole(user);
-    // Mostrar el código QR a administradores y cajeros
+    
     const canSeeCode = isAdminRole(user) || isCajeroRole(user);
 
     const fetchCodigo = useCallback(async () => {
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
     },
-    // Modal Styles
+    
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',

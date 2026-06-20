@@ -25,7 +25,7 @@ export default function AppLayout() {
         (user.role.toLowerCase().includes('garzon') || 
          user.role.toLowerCase().includes('anfitriona'));
 
-    // Solo mostrar modal al hacer login (cuando user.id cambia)
+    
     useEffect(() => {
         if (user && isStaffMember) {
             const checkAndShowModal = async () => {
@@ -50,12 +50,12 @@ export default function AppLayout() {
         setShowAsistenciaModal(false);
     };
 
-    // Inicializar el manejador central de notificaciones (Navegación, TTS, Haptics)
+    
     useNotificationHandler();
 
     useEffect(() => {
         if (user) {
-            // Configurar comportamiento global (banners, sonidos)
+            
             configureNotifications();
         }
     }, [user]);
@@ -79,7 +79,7 @@ export default function AppLayout() {
             />
             <StaffCallOverlay />
 
-            {/* Modal de sesión expirada - no redirige automáticamente */}
+            {}
             <Modal
                 visible={sessionExpired}
                 transparent
@@ -106,7 +106,7 @@ export default function AppLayout() {
                 </View>
             </Modal>
 
-            {/* Modal de Registro de Asistencia para Garzones/Anfitrionas */}
+            {}
             <RegistroAsistenciaModal
                 visible={showAsistenciaModal}
                 onClose={() => setShowAsistenciaModal(false)}

@@ -277,7 +277,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
       >
         <AnimatedScreen>
           <View style={{ padding: role === "cajero" ? 0 : 16 }}>
-            {/* {role === 'cajero' && <PendingSolicitudesAlert isInline />} */}
+            {}
 
             {role === "anfitriona" && activeService && (
               <ActiveServiceCard

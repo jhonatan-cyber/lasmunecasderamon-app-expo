@@ -17,7 +17,7 @@ interface SolicitudCardProps {
     onAprobar: (id: string, tipo: string, item: any) => void;
     onRechazar: (id: string, tipo: string) => void;
     onShowServiceModal: (item: any) => void;
-    nowTick?: number; // Para forzar re-render de timers
+    nowTick?: number; 
 }
 
 export const SolicitudCard: React.FC<SolicitudCardProps> = ({

@@ -29,25 +29,25 @@ export default function VerifyCodeScreen() {
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme];
 
-    // Create refs array for the 4 inputs
+    
     const inputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
 
     const handleCodeChange = (text: string, index: number) => {
-        setError(''); // clear error when typing
+        setError(''); 
 
-        // Only allow numbers
+        
         const cleanText = text.replace(/[^0-9]/g, '');
 
         const newCode = [...code];
         newCode[index] = cleanText;
         setCode(newCode);
 
-        // Auto-advance
+        
         if (cleanText && index < 3) {
             inputRefs.current[index + 1]?.focus();
         }
 
-        // Auto-submit when last digit is filled
+        
         if (cleanText && index === 3 && newCode.every(num => num !== '')) {
             Keyboard.dismiss();
             verifyCode(newCode.join(''));
@@ -65,7 +65,7 @@ export default function VerifyCodeScreen() {
 
         try {
             await login(tempAuthData.username, tempAuthData.password, fullCode);
-            // Login exitoso con código → ir al index que redirige según rol
+            
             router.replace('/');
         } catch (err: any) {
             setError(err.message || 'Código incorrecto. Intenta nuevamente.');
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     },
     verifyButton: {
         height: 56,
-        borderRadius: 9999, // rounded-full
+        borderRadius: 9999, 
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',

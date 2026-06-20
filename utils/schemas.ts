@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Esquemas de validación unificados para las respuestas de la API.
- */
+
 
 export const UserSchema = z.object({
   id: z.number(),

@@ -100,7 +100,7 @@ export default function NuevoServicioScreen() {
             Formulario de Servicio
           </Text>
 
-          {/* Room Selector */}
+          {}
           <Pressable
             style={[styles.selectorBtn, { borderColor }]}
             onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: true })}
@@ -119,7 +119,7 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          {/* Hostess Selector */}
+          {}
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
             onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "hostess", visible: true })}
@@ -147,7 +147,7 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          {/* Client Selector */}
+          {}
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
             onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true })}
@@ -179,7 +179,7 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          {/* Service Price Input */}
+          {}
           {!hasAnfitrionaComision && (
             <View style={{ marginTop: 20 }}>
               <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>
@@ -204,7 +204,7 @@ export default function NuevoServicioScreen() {
             </View>
           )}
 
-          {/* Client Balance */}
+          {}
           {selectedClientData && (
             <View
               style={{
@@ -280,7 +280,7 @@ export default function NuevoServicioScreen() {
             onSelect={handleMetodoPagoChange}
           />
 
-          {/* Pagos Mixtos UI */}
+          {}
           {metodoPago === "mixto" && (
             <PagosMixtosSection
               pagosMixtos={pagosMixtos}

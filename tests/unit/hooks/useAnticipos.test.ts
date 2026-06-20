@@ -82,9 +82,9 @@ describe('useAnticipos', () => {
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        // Mock the POST call
+        
         vi.mocked(apiClient).mockResolvedValueOnce({ success: true });
-        // And the subsequent refreshes
+        
         vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
         vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockPagos });
 

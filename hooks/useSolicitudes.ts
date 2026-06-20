@@ -20,7 +20,7 @@ export const useSolicitudes = () => {
     const dataRef = useRef<string>('');
     const [pendingAutoOpen, setPendingAutoOpen] = useState<{ id: string, type: string } | null>(null);
 
-    // Cargar caché al inicio
+    
     useEffect(() => {
         const loadCache = async () => {
             try {
@@ -76,7 +76,7 @@ export const useSolicitudes = () => {
             if (resOrders.success) {
                 const arr = (resOrders.data || []).map((o: any) => ({
                     ...o,
-                    // El backend devuelve 'id' pero necesitamos 'id_pedido' para el frontend
+                    
                     id_pedido: o.id_pedido || o.id,
                     tipoItem: 'pedido',
                     id_unificado: `pedido_${o.id_pedido || o.id}`,
@@ -103,7 +103,7 @@ export const useSolicitudes = () => {
             setSolicitudes(combined);
             setIsOffline(false);
 
-            // Guardar en caché exitosamente
+            
             AsyncStorage.setItem(CACHE_KEY, JSON.stringify(combined)).catch(() => null);
 
             if (isManual) {
@@ -139,7 +139,7 @@ export const useSolicitudes = () => {
         const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload?: any) => {
             logger.info('[useSolicitudes] 📡 SSE event received:', payload);
             fetchSolicitudes();
-            // Solo configurar auto-open si hay un ID válido
+            
             if (payload && payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
                 logger.info('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
                 setPendingAutoOpen({

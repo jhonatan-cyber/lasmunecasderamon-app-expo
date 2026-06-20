@@ -54,7 +54,7 @@ export default function ProductosScreen() {
     const [submitting, setSubmitting] = useState(false);
     const dataRef = useRef<string>('');
 
-    // Get cart from persistent store
+    
     const {
         cart,
         addToCart,
@@ -69,7 +69,7 @@ export default function ProductosScreen() {
         buildOrderPayload
     } = useCartStore();
 
-    // Modal state
+    
     const [activeConfigItem, setActiveConfigItem] = useState<{ productId: string, type: 'hostess' | 'room' } | null>(null);
 
     const fetchData = useCallback(async (isManual = false) => {
@@ -149,12 +149,12 @@ export default function ProductosScreen() {
     const tipAmount = getTipAmount();
     const cartTotal = getTotal();
 
-    // ============ SUBMIT ============
+    
     const submitOrder = async () => {
         if (cart.length === 0) return;
         if (!user) return;
 
-        // Validation: All items with commission must have at least 1 hostess
+        
         for (const item of cart) {
             const hasCommission = (item.product.commission || 0) > 0;
             if (hasCommission && item.selectedHostesses.length === 0) {
@@ -180,7 +180,7 @@ export default function ProductosScreen() {
         try {
             const codigo = generateCode();
 
-            // Construir y validar payload con Zod mediante el store
+            
             const buildResult = buildOrderPayload({
                 meseroId: user.id,
                 codigo,
@@ -229,7 +229,7 @@ export default function ProductosScreen() {
         }
     };
 
-    // ============ RENDER ============
+    
     const renderProduct = ({ item: product }: { item: Product }) => (
         <ProductCard
             product={product}
@@ -244,7 +244,7 @@ export default function ProductosScreen() {
 
     const currentConfigItem = activeConfigItem ? cart.find(i => i.product.id === activeConfigItem.productId) : null;
 
-    // Max hostesses logic for modal
+    
     const getMaxHostesses = (item: CartItem) => {
         const cat = (item.product.categoria || '').toLowerCase();
         const isChampagne = cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
@@ -297,7 +297,7 @@ export default function ProductosScreen() {
                             {products.length} productos en catálogo
                         </Text>
                         
-                        {/* Selector de Cliente (Opcional) */}
+                        {}
                         <Text style={[styles.sectionLabel, { color: textSecondary }]}>CLIENTE (OPCIONAL)</Text>
                         <Pressable 
                             onPress={() => setClientModalVisible(true)}
@@ -383,7 +383,7 @@ export default function ProductosScreen() {
                 </View>
             )}
 
-            {/* Config Modals */}
+            {}
             <Modal visible={!!activeConfigItem} transparent animationType="slide">
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: cardBg, paddingBottom: insets.bottom }]}>

@@ -66,12 +66,12 @@ export const getShortcutFromIntent = async (): Promise<string | null> => {
     if (Platform.OS !== 'android') return null;
     
     try {
-        // Obsolete: getPendingIntent no longer exists in expo-intent-launcher
-        // const intent = await IntentLauncher.getPendingIntent();
-        // if (intent?.data) {
-        //     const action = intent.data.extra?.shortcutId;
-        //     return action || null;
-        // }
+        
+        
+        
+        
+        
+        
     } catch (error) {
         logger.info('No pending intent or method not found');
     }

@@ -28,7 +28,7 @@ export function useDashboardData(role: UserRole) {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [hasNewAlert, setHasNewAlert] = useState(false);
 
-  // El motor principal: useQuery maneja loading, error y cache
+  
   const { 
     data, 
     isLoading: loading, 
@@ -44,7 +44,7 @@ export function useDashboardData(role: UserRole) {
         apiClient("/users/me/stats"),
       ];
 
-      // Endpoints específicos por rol
+      
       if (role === 'anfitriona') {
         endpoints.push(apiClient("/events/stats"));
         endpoints.push(apiClient("/servicios/user"));
@@ -82,7 +82,7 @@ export function useDashboardData(role: UserRole) {
             extraData.pendingCount = results[5]?.count || 0;
         }
 
-        // side effect: update auth store
+        
         if (meRes?.success && meRes?.user) {
             useAuthStore.getState().updateProfile(meRes.user);
         }
@@ -97,10 +97,10 @@ export function useDashboardData(role: UserRole) {
       }
       throw new Error("Failed to fetch dashboard central data");
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos de cache fresco
+    staleTime: 1000 * 60 * 5, 
   });
 
-  // Radar de eventos en tiempo real: Invalida la query para que React Query la refresque sola
+  
   useEffect(() => {
     const refreshSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.refreshRequests, () => {
         queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
@@ -111,7 +111,7 @@ export function useDashboardData(role: UserRole) {
         if (shouldInvalidateDashboardFromSse(payload?.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
             
-            // Emitir evento para que las solicitudes se actualicen y abran el modal automáticamente
+            
             if (payload.type === 'new_order' || payload.type === 'new_service_request') {
                 logger.info('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
                 emitRefreshRequests(payload);
@@ -148,6 +148,6 @@ export function useDashboardData(role: UserRole) {
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
-    fetchData: refetch // para compatibilidad con el HomeScreen si lo llama manualmente
+    fetchData: refetch 
   };
 }

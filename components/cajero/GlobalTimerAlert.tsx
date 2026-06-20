@@ -21,9 +21,9 @@ export function GlobalTimerAlert() {
 
     useEffect(() => {
         const sub = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
-            // Si es automático, mostrar el modal de aviso
+            
             if (data?.automatic && data?.reason === "ended" && data?.roomName) {
-                // Evitar duplicados para el mismo ID de servicio
+                
                 if (data.servicioId && lastNotifiedId.current === data.servicioId) {
                     return;
                 }
@@ -42,7 +42,7 @@ export function GlobalTimerAlert() {
 
     const handleConfirm = async () => {
         setAlertConfig(prev => ({ ...prev, visible: false }));
-        // Emitir eventos para actualizar las listas en cualquier pantalla
+        
         DeviceEventEmitter.emit("timer_alert_closed");
         await refreshTimers();
     };

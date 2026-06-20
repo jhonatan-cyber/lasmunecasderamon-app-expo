@@ -12,9 +12,7 @@ import {
 } from "@/utils/userRole";
 
 import logger from "@/utils/logger";
-/**
- * Hook centralizado para manejar notificaciones entrantes y navegación (Deep Linking)
- */
+
 export function useNotificationHandler() {
     const router = useRouter();
     const user = useAuthStore((state) => state.user);

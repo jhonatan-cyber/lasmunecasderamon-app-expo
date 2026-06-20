@@ -16,7 +16,7 @@ export interface FinancialEvent {
   fecha_crea: string;
   fecha_mod?: string | null;
   propina_fecha_crea?: string | null;
-  estado: number; // 0=pagado, 1=pendiente
+  estado: number; 
   tipo: 'venta' | 'servicio' | 'otro' | 'propina';
   subType?: string;
   cliente_nombre?: string;
@@ -38,7 +38,7 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
       setError('');
       const res = await apiClient(endpoint);
       if (res.success) {
-        // Para comisiones, filtramos solo las de tipo 'venta' (como estaba originalmente en anfitriona)
+        
         const filteredData = type === 'comisiones' 
             ? (res.data || []).filter((c: any) => c.tipo === 'venta')
             : (res.data || []);

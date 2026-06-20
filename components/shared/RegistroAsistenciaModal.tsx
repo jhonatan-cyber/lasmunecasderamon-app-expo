@@ -73,15 +73,15 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
             if (res.success) {
                 if (res.alreadyRegistered) {
-                    // Ya tiene asistencia registrada hoy - cerrar modales porque el código ya fue usado
+                    
                     Toast.show({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: res.message || 'Ya tenías asistencia registrada hoy'
                     });
-                    onRegistered(); // Cerrar los modales
+                    onRegistered(); 
                 } else {
-                    // Nueva asistencia registrada
+                    
                     Toast.show({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
@@ -126,15 +126,15 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
 if (res.success) {
                 if (res.alreadyRegistered) {
-                    // Ya tiene asistencia registrada hoy
+                    
                     Toast.show({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: res.message || 'Ya tenías asistencia registrada hoy'
                     });
-                    onRegistered(); // Cerrar los modales
+                    onRegistered(); 
                 } else {
-                    // Nueva asistencia registrada
+                    
                     Toast.show({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',

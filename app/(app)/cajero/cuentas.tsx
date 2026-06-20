@@ -29,15 +29,15 @@ import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCuentasScreen } from '@/hooks/useCuentasScreen';
 import { calculateRemainingTime, parseDateSafe } from '@/utils/timeUtils';
-// Cast para evitar errores de tipos en React 19 con FlashList
+
 const FlashList = ShopifyFlashList as any;
 
 const statusColors: Record<number, string> = {
-  0: "#10B981", // Cobrado
-  1: "#fa2828ff", // Pendiente / Activo
-  2: "#F59E0B", // Solicitud de anulacion
-  3: "#6B7280", // Anulado
-  4: "#FB923C", // Anulada parcial / saldo pendiente
+  0: "#10B981", 
+  1: "#fa2828ff", 
+  2: "#F59E0B", 
+  3: "#6B7280", 
+  4: "#FB923C", 
 };
 
 const statusLabels: Record<number, string> = {
@@ -159,7 +159,7 @@ export default function CuentasScreen() {
               transform: [{ scale: pressed ? 0.98 : 1 }],
             }]}
           >
-            {/* Header */}
+            {}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: accentColor + '15' }}>
@@ -183,7 +183,7 @@ export default function CuentasScreen() {
               </View>
             </View>
 
-            {/* Details List */}
+            {}
             <View style={{ gap: 8, marginBottom: 16, paddingHorizontal: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="person" size={14} color={textSecondary} />
@@ -210,7 +210,7 @@ export default function CuentasScreen() {
               )}
             </View>
 
-            {/* Timer Hero */}
+            {}
             {hasTimer && (
               <View style={{
                 flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 12,
@@ -232,7 +232,7 @@ export default function CuentasScreen() {
               </View>
             )}
 
-            {/* Finance Box */}
+            {}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(156, 163, 175, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
                 <Ionicons name="card-outline" size={12} color={textSecondary} />
@@ -270,7 +270,7 @@ export default function CuentasScreen() {
               </View>
             )}
 
-            {/* Actions Box */}
+            {}
             {isPending && (
               <View style={{ gap: 10, marginTop: 15 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 14, fontWeight: '900' },
   listContainer: { padding: 16, paddingBottom: 100 },
 
-  // Tabs
+  
   tabContainer: {
     flexDirection: "row",
     marginTop: 20,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
 
 
 
-  // Cards Premium
+  
   card: {
     flex: 1,
     borderRadius: 24,
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   cardActionBtnCobrarText: { color: "#FFF", fontSize: 13, fontWeight: "800" },
-  // Legacy aliases (used elsewhere)
+  
   cardMainRow: { flexDirection: "row", justifyContent: "space-between" },
   cardLeftContent: { flex: 1.2 },
   cardTopActions: {
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   finishBtnText: { color: "#FFF", fontSize: 13, fontWeight: "800" },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
 
-  // Empty
+  
   emptyCard: {
     borderRadius: 32,
     padding: 48,
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  // Modal
+  
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
   },
   modalCloseBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 
-  // Action Sheet
+  
   actionSheet: {
     padding: 24,
     borderTopLeftRadius: 32,
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   },
   actionCancelText: { fontSize: 16, fontWeight: "800" },
 
-  // Cobro Modal New Styles
+  
   infoBannerCobro: {
     padding: 20,
     borderRadius: 20,

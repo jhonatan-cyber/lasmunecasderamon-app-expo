@@ -65,7 +65,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             <View style={styles.modalOverlay}>
                 <View style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}>
 
-                    {/* Botón cerrar âœ• â€” esquina superior derecha */}
+                    {}
                     <Pressable
                         onPress={onCancel ?? onConfirm}
                         style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}

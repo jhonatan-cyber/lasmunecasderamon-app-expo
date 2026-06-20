@@ -1,7 +1,7 @@
 import type { ServiceCreateType } from '@lasmunecasderamon/validations';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 
-// Tipo del payload completo enviado al API
+
 export type ServicePayload = ServiceCreateType & {
   codigo: string;
   fecha_crea: string;
@@ -10,7 +10,7 @@ export type ServicePayload = ServiceCreateType & {
   monto_prepago?: number;
 };
 
-// Tipo para pagos mixtos
+
 export interface MetodoPagoMonto {
   metodo: PaymentMethod;
   monto: number;

@@ -86,7 +86,7 @@ export default function HorasExtrasScreen() {
         fetchData(true);
     }, [fetchData]);
 
-    // Unique employees for filter
+    
     const employees = useMemo(() => {
         const map = new Map<number, { id: number; name: string }>();
         data.forEach(h => {
@@ -109,7 +109,7 @@ export default function HorasExtrasScreen() {
         return result;
     }, [data, statusFilter, userFilter]);
 
-    // Per-employee summary
+    
     const perEmployeeStats = useMemo(() => {
         const map = new Map<number, { usuario_id: number; usuario: string; totalHoras: number; totalMonto: number; totalACobrar: number; count: number }>();
         data.forEach(h => {
@@ -133,7 +133,7 @@ export default function HorasExtrasScreen() {
         return Array.from(map.values()).sort((a, b) => b.totalMonto - a.totalMonto);
     }, [data]);
 
-    // Stats
+    
     const stats = useMemo(() => {
         const totalRegistros = data.length;
         const totalMonto = data.reduce((sum, h) => sum + (h.monto || 0), 0);
@@ -237,7 +237,7 @@ export default function HorasExtrasScreen() {
                 }
             />
 
-            {/* Stats Cards */}
+            {}
             <View style={styles.statsRow}>
                 <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
                     <View style={[styles.statIconBox, { backgroundColor: '#3B82F615' }]}>
@@ -262,7 +262,7 @@ export default function HorasExtrasScreen() {
                 </View>
             </View>
 
-            {/* Per-employee summary cards */}
+            {}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 4 }}>
                     {perEmployeeStats.map(emp => (
@@ -296,7 +296,7 @@ export default function HorasExtrasScreen() {
                 </View>
             </ScrollView>
 
-            {/* Employee Filter Chips */}
+            {}
             {employees.length > 1 && (
                 <View style={styles.empFilterRow}>
                     <Pressable
@@ -319,7 +319,7 @@ export default function HorasExtrasScreen() {
                 </View>
             )}
 
-            {/* Status Filter */}
+            {}
             <View style={styles.filterRow}>
                 {(['all', 'pendiente', 'pagado'] as const).map(item => (
                     <Pressable
@@ -357,12 +357,12 @@ export default function HorasExtrasScreen() {
                 />
             )}
 
-            {/* Detail Modal */}
+            {}
             <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setModalVisible(false)} />
                     <View style={[styles.modalContainer, { backgroundColor: cardBg }]}>
-                        {/* Modal Header */}
+                        {}
                         <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                                 <View style={[styles.modalAvatar, { backgroundColor: accentColor + '20' }]}>
@@ -391,13 +391,13 @@ export default function HorasExtrasScreen() {
                                 const fecMod = selectedRecord.fecha_mod ? new Date(selectedRecord.fecha_mod) : null;
                                 return (
                                     <>
-                                        {/* Status Banner */}
+                                        {}
                                         <View style={[styles.modalStatusBanner, { backgroundColor: status.bg }]}>
                                             <View style={[styles.modalStatusDot, { backgroundColor: status.color }]} />
                                             <Text style={[styles.modalStatusBannerText, { color: status.color }]}>{status.label}</Text>
                                         </View>
 
-                                        {/* Detail Cards */}
+                                        {}
                                         <View style={[styles.modalDetailCard, { backgroundColor: isDark ? '#1A1A1A' : '#F9FAFB', borderColor }]}>
                                             <Text style={[styles.modalDetailSectionTitle, { color: textSecondary }]}>Información del Registro</Text>
                                             <View style={{ gap: 12, marginTop: 10 }}>                                                    <View style={styles.modalDetailRow}>
@@ -430,7 +430,7 @@ export default function HorasExtrasScreen() {
                                             </View>
                                         </View>
 
-                                        {/* Total Card */}
+                                        {}
                                         <View style={[styles.modalTotalCard, { backgroundColor: accentColor + '10', borderColor: accentColor + '30' }]}>
                                             <View style={{ flex: 1 }}>
                                                 <Text style={[styles.modalTotalLabel, { color: textSecondary }]}>Total a pagar</Text>
@@ -441,7 +441,7 @@ export default function HorasExtrasScreen() {
                                             <Ionicons name="checkmark-circle" size={32} color={accentColor} />
                                         </View>
 
-                                        {/* Metadata */}
+                                        {}
                                         <View style={[styles.modalDetailCard, { backgroundColor: isDark ? '#1A1A1A' : '#F9FAFB', borderColor }]}>
                                             <Text style={[styles.modalDetailSectionTitle, { color: textSecondary }]}>Metadatos</Text>
                                             <View style={{ gap: 8, marginTop: 10 }}>
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     empSummaryName: { fontSize: 12, fontWeight: '800', maxWidth: 90 },
     empSummaryStat: { fontSize: 10, fontWeight: '600' },
     empSummaryAmount: { fontSize: 13, fontWeight: '900' },
-    // Modal styles
+    
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContainer: {
         borderTopLeftRadius: 24, borderTopRightRadius: 24,

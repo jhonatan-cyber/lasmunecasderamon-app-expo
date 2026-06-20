@@ -1,7 +1,7 @@
-// Re-export shared types
+
 export { type MetodoPago, type UserRole } from '@lasmunecasderamon/types';
 
-// Mobile-specific types (not shared with web)
+
 export interface ApiRes<T> {
   success: boolean;
   data: T;

@@ -123,3 +123,79 @@ export function ventasReducer(state: VentasState, action: VentasAction): VentasS
       return state;
   }
 }
+
+
+export interface Venta {
+  id: string | number;
+  codigo: string;
+  cliente_id: string | number | null;
+  cliente_nombre?: string | null;
+  habitacion_id: string | number | null;
+  habitacion_nombre?: string | null;
+  habitacion_numero?: string | null;
+  metodo_pago: string;
+  propina: number;
+  sub_total: number;
+  total: number;
+  fecha_crea: string;
+  estado: number;
+  tiempo?: number | null;
+  anfitrionas_nicks?: string | null;
+  item_count?: number;
+  usuarios_nicks?: string | null;
+  id_venta?: string | number;
+}
+
+export interface VentaDetalle {
+  id?: string | number;
+  venta_id?: string | number;
+  producto_id?: string | number;
+  precio: number;
+  comision: number;
+  cantidad: number;
+  sub_total: number;
+  producto_nombre?: string;
+  producto_foto?: string | null;
+  hostess_id?: string | number | null;
+  hostess_nick?: string | null;
+}
+
+export interface ComisionDetalle {
+  foto?: string | null;
+  nick: string;
+  monto: number;
+}
+
+export interface PropinaDetalle {
+  foto?: string | null;
+  nick: string;
+  monto: number;
+}
+
+export interface VentaDetail extends Venta {
+  detalles: VentaDetalle[];
+  comisiones_detalle: ComisionDetalle[];
+  propinas_detalle: PropinaDetalle[];
+  total_comision: number;
+  pedido_id?: string | number | null;
+  garzon_nombre?: string | null;
+  garzon_nick?: string | null;
+  cajero_nombre?: string | null;
+  cajero_nick?: string | null;
+  vendedor_nombre?: string | null;
+  usuarios_nicks?: string | null;
+}
+
+export interface VentaResumen {
+  total_ventas: number;
+  total_efectivo: number;
+  total_tarjeta: number;
+  total_transferencia: number;
+  total_propinas: number;
+  total_comisiones: number;
+  ventas_hoy: number;
+  ventas_mes: number;
+  promedio_venta: number;
+}
+
+export type TabType = "historial" | "proceso";

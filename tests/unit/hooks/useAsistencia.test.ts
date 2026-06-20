@@ -31,7 +31,7 @@ describe('useAsistencia', () => {
 
     it('debe cargar asistencias al montarse', async () => {
         vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockAsistencias });
-        vi.mocked(apiClient).mockResolvedValueOnce([]); // gratificaciones vacías
+        vi.mocked(apiClient).mockResolvedValueOnce([]); 
 
         const { result } = renderHook(() => useAsistencia());
 

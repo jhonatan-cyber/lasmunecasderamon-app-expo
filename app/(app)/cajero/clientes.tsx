@@ -56,7 +56,7 @@ export default function ClientesScreen() {
     const [clients, setClients] = useState<Client[]>([]);
     const [search, setSearch] = useState("");
 
-    // Modals state
+    
     const [clientModalVisible, setClientModalVisible] = useState(false);
     const [loadModalVisible, setLoadModalVisible] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -64,18 +64,18 @@ export default function ClientesScreen() {
     const [loadMetodoPago, setLoadMetodoPago] = useState<PaymentMethod>('efectivo');
     const [submitting, setSubmitting] = useState(false);
     
-    // History states
+    
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyData, setHistoryData] = useState<any[]>([]);
 
-    // Mixed payment loading states
+    
     const [primaryMethod, setPrimaryMethod] = useState<PaymentMethod>('efectivo');
     const [secondaryMethod, setSecondaryMethod] = useState<PaymentMethod>('transferencia');
     const [primaryAmount, setPrimaryAmount] = useState("");
     const [secondaryAmount, setSecondaryAmount] = useState("");
 
-    // Form state
+    
     const [formName, setFormName] = useState("");
     const [formLastName, setFormLastName] = useState("");
     const [formRun, setFormRun] = useState("");
@@ -119,7 +119,7 @@ export default function ClientesScreen() {
                 (c.phone?.toLowerCase().includes(s))
             );
         }
-        // Ordenar alfabéticamente por nombre
+        
         return list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     }, [clients, search]);
 
@@ -213,7 +213,7 @@ export default function ClientesScreen() {
     const formatCurrency = (value: string) => {
         const cleanValue = value.replace(/\D/g, "");
         if (!cleanValue) return "";
-        return Number(cleanValue).toLocaleString('de-DE'); // 'de-DE' uses dots for thousands
+        return Number(cleanValue).toLocaleString('de-DE'); 
     };
 
     const unformatCurrency = (value: string) => {
@@ -311,7 +311,7 @@ export default function ClientesScreen() {
                 { backgroundColor: bg, borderColor }
             ]}>
                 <View style={styles.cardHeader}>
-                    {/* Main Content Area */}
+                    {}
                     <View style={styles.clientInfoMain}>
                         <View style={styles.textContainer}>
                             <Text style={[styles.clientName, { color: textPrimary }]} numberOfLines={1}>
@@ -487,7 +487,7 @@ export default function ClientesScreen() {
             />
 
 
-            {/* Modal de Registro/Edición */}
+            {}
             <Modal visible={clientModalVisible} animationType="slide" transparent>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
                     <View style={[styles.modalContent, {
@@ -546,7 +546,7 @@ export default function ClientesScreen() {
                                 />
                             </View>
 
-                             {/* Fin de campos del formulario */}
+                             {}
                         </ScrollView>
 
                         <TouchableOpacity
@@ -562,7 +562,7 @@ export default function ClientesScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* Modal de Carga de Saldo */}
+            {}
             <Modal visible={loadModalVisible} animationType="fade" transparent>
                 <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
                     <View style={[styles.modalContent, {
@@ -633,7 +633,7 @@ export default function ClientesScreen() {
                                                 onChangeText={(text) => {
                                                     const formatted = formatCurrency(text);
                                                     setPrimaryAmount(formatted);
-                                                    // Auto-calc secondary
+                                                    
                                                     const total = Number(unformatCurrency(loadingAmount)) || 0;
                                                     const pVal = Number(unformatCurrency(formatted)) || 0;
                                                     if (total > pVal) setSecondaryAmount(formatCurrency((total - pVal).toString()));
@@ -662,7 +662,7 @@ export default function ClientesScreen() {
                                                 onChangeText={(text) => {
                                                     const formatted = formatCurrency(text);
                                                     setSecondaryAmount(formatted);
-                                                    // Auto-calc primary
+                                                    
                                                     const total = Number(unformatCurrency(loadingAmount)) || 0;
                                                     const sVal = Number(unformatCurrency(formatted)) || 0;
                                                     if (total > sVal) setPrimaryAmount(formatCurrency((total - sVal).toString()));
@@ -690,7 +690,7 @@ export default function ClientesScreen() {
                     </View>
                 </View>
             </Modal>
-            {/* Modal de Historial */}
+            {}
             <Modal visible={historyModalVisible} animationType="fade" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, {
@@ -732,7 +732,7 @@ export default function ClientesScreen() {
                                     />
                                 }
                             >
-                                {/* Resumen de totales */}
+                                {}
                                 {historyData.length > 0 && (() => {
                                     const totalServicios = historyData.filter((i: any) => i.category === 'SERVICIO').reduce((a: number, i: any) => a + Number(i.monto || 0), 0);
                                     const totalConsumo = historyData.filter((i: any) => i.category === 'CONSUMO').reduce((a: number, i: any) => a + Number(i.monto || 0), 0);
@@ -792,7 +792,7 @@ export default function ClientesScreen() {
                                                 marginBottom: 12,
                                                 overflow: 'hidden',
                                             }}>
-                                                {/* Header: Icono + Categoría + Monto */}
+                                                {}
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                                                     <View style={{
                                                         width: 44, height: 44, borderRadius: 14,
@@ -826,7 +826,7 @@ export default function ClientesScreen() {
                                                     </View>
                                                 </View>
 
-                                                {/* Detalle de Servicio */}
+                                                {}
                                                 {isServicio && item.detalle && (
                                                     <View style={{ 
                                                         marginTop: 12, padding: 12, borderRadius: 14,
@@ -872,7 +872,7 @@ export default function ClientesScreen() {
                                                     </View>
                                                 )}
 
-                                                {/* Detalle de Consumo / Venta */}
+                                                {}
                                                 {isConsumo && item.detalle && (
                                                     <View style={{ marginTop: 12 }}>
                                                         {Array.isArray(item.detalle.productos) && item.detalle.productos.length > 0 && (
@@ -912,7 +912,7 @@ export default function ClientesScreen() {
                                                     </View>
                                                 )}
 
-                                                {/* Footer: Método de pago */}
+                                                {}
                                                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                                                     <View style={{
                                                         flexDirection: 'row', alignItems: 'center', gap: 5,

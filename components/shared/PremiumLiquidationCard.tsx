@@ -203,7 +203,7 @@ export function PremiumLiquidationCard({
             );
           }
         } else {
-          // Fallback to sharing if permission is denied
+          
           const canShare = await Sharing.isAvailableAsync();
           if (canShare) {
             await Sharing.shareAsync(uri, {

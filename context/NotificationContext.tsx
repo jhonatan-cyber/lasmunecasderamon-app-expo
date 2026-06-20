@@ -23,7 +23,7 @@ import {
 } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
-// Configuración de notificaciones en el nivel superior (fuera del componente)
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -67,7 +67,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const handleServerEvent = useCallback((payload: any) => {
-    // Detección robusta del nombre del rol
+    
     const roleName = getUserRoleName(user);
     const lowerRole = getUserRole(user);
     const isCajeroOrAdmin = isCajeroOrAdminRole(user);
@@ -98,7 +98,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           );
           emitRefreshRequests(payload);
 
-          // Navegar automáticamente a solicitudes para procesar el pedido/servicio
+          
           if (id) {
             router.push({
               pathname: "/(app)/cajero/solicitudes",
@@ -185,12 +185,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       if (payload.type === "timer_started") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (!lowerRole.includes("anfitriona") || isAssigned) {
-            // Toast.show({ type: "success", text1: "Temporizador Iniciado" });
+            
           }
         } else if (payload.type === "timer_stopped") {
           const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
           if (!lowerRole.includes("anfitriona") || isAssigned) {
-            // Toast.show({ type: "error", text1: "Temporizador Detenido" });
+            
           }
         }
         break;
@@ -206,7 +206,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             visibilityTime: 4000,
           });
           emitRefreshSales();
-          emitRefreshRequests(); // Por si venía de un pedido
+          emitRefreshRequests(); 
         }
         break;
 
@@ -274,7 +274,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           const payload = JSON.parse(event.data);
           logger.info('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
           
-          // No emitimos eventos de control para evitar bucles de refresco en dashboards
+          
           if (!isSseControlEvent(payload.type)) {
              emitSseEvent(payload);
           }

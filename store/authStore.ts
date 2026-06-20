@@ -169,7 +169,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
                     }
 
-                    // Validar credenciales con Zod antes de enviar
+                    
                     const parsed = loginSchema.safeParse({
                         email: emailToSend,
                         password,
@@ -286,7 +286,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         updateProfile: async (partialUser) => {
             const currentUser = get().user;
             if (currentUser) {
-                // Verificar si hay cambios reales para evitar re-renders innecesarios
+                
                 const keys = Object.keys(partialUser) as (keyof User)[];
                 const hasChanges = keys.some(
                     (key) => partialUser[key] !== currentUser[key]

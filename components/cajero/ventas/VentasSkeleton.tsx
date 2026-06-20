@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { View } from "react-native";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-// ---------- Detail Skeleton ----------
+
 
 export function DetailSkeleton({ borderColor }: { borderColor: string }) {
   return (
@@ -42,7 +42,7 @@ export function DetailSkeleton({ borderColor }: { borderColor: string }) {
   );
 }
 
-// ---------- Card Skeleton (used during loadingSales) ----------
+
 
 type VentasCardSkeletonProps = {
   isTablet: boolean;
@@ -82,7 +82,7 @@ export function VentaCardSkeleton({ isTablet, cardBg, borderColor }: VentasCardS
   );
 }
 
-// ---------- Full-screen Loading Skeleton ----------
+
 
 type VentasSkeletonProps = {
   bg: string;

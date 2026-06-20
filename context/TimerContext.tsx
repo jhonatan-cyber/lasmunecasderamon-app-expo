@@ -28,8 +28,8 @@ export interface Timer {
   servicioId: string;
   roomId: string;
   roomName: string;
-  duration: number; // en minutos
-  remainingTime: number; // en segundos
+  duration: number; 
+  remainingTime: number; 
   isActive: boolean;
   isPaused: boolean;
   startTime: Date;
@@ -56,7 +56,7 @@ export interface Timer {
   comision_individual?: number;
   lastAnnouncedMinute?: number;
   isOverdueNotified?: boolean;
-  // Campos para servicios temporales
+  
   es_temporal?: boolean;
   servicio_original_id?: string | null;
 }
@@ -70,7 +70,7 @@ interface TimerContextType {
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
-// Función de utilidad para hablar
+
 const announceVoice = async (message: string) => {
   try {
     Speech.speak(message, {
@@ -95,7 +95,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const timersRef = useRef<Timer[]>([]);
   const fetchActiveTimersRef = useRef<() => Promise<void>>(async () => {});
 
-  // Sincronizar ref con estado para el intervalo de voz
+  
   useEffect(() => {
     timersRef.current = timers;
   }, [timers]);
@@ -106,7 +106,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchActiveTimers = useCallback(async () => {
     const nowTs = Date.now();
-    // Evitar llamadas excesivas (mucha frecuencia): mínimo 2 segundos entre fetch
+    
     if (nowTs - lastFetchTimeRef.current < 2000) {
       logger.info('[TimerContext Mobile] Skipping fetchActiveTimers (debounced)');
       return;
@@ -115,7 +115,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       logger.info('[TimerContext Mobile] Calling fetchActiveTimers');
-      // Timeout más largo (20s) para evitar AbortError en red lenta
+      
       const data = await apiClient("/timers/active?source=mobile", { timeout: 20000 });
       if (data.success && Array.isArray(data.data)) {
         if (data.serverTime) {
@@ -126,7 +126,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           serverOffsetRef.current = offset;
         }
 
-        // Guardamos el estado actual de isOverdueNotified para no reiniciarlo y evitar un loop infinito de modales
+        
         const currentTimersMap = new Map(timersRef.current.map(t => [t.id, t.isOverdueNotified]));
 
         const activeTimers = data.data.map((t: any) => ({
@@ -168,7 +168,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         setTimers(activeTimers);
       }
     } catch {
-      // Silencioso: programa retry en 5s sin mostrar error al usuario
+      
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       retryTimerRef.current = setTimeout(() => {
         void fetchActiveTimersRef.current();
@@ -193,7 +193,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
         
         if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
-            remainingSeconds = durationMins * 60; // Grace period like the web app
+            remainingSeconds = durationMins * 60; 
         }
 
         const newTimer: Timer = {
@@ -254,8 +254,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const targetTipo = payload.data.tipoTransaccion || 'servicio';
 
-        // Si el timer detenido es un temporal, reanudar el original LOCALMENTE
-        // como fallback por si timer_resumed llegó antes o no se procesó
+        
+        
         const originalId = stoppedTimerInfo?.servicio_original_id;
 
         setTimers((prev) => {
@@ -376,7 +376,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const remSeconds = calculateRemainingTime(timer, serverOffset);
 
-        // Definimos la marca lógica según los segundos exactos
+        
         let targetMinute: number | null = null;
         if (remSeconds > 0) {
             if (remSeconds <= 300 && remSeconds > 60 && timer.lastAnnouncedMinute !== 5) {
@@ -416,7 +416,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
             ),
           );
 
-          // Mostrar modal persistente con info del timer expirado
+          
           setExpiredTimer(timer);
         }
       });
@@ -425,7 +425,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearInterval(interval);
   }, [user, serverOffset]);
 
-  // Cargar temporizadores iniciales al cambiar de usuario
+  
   useEffect(() => {
     const timeout = setTimeout(() => {
       void fetchActiveTimers();
@@ -434,7 +434,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearTimeout(timeout);
   }, [user?.id, fetchActiveTimers]);
 
-  // Listener para eventos SSE
+  
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
       handleSSEEvent(payload);
@@ -461,11 +461,11 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     >
       {children}
 
-      {/* Modal persistente de tiempo terminado */}
+      {}
       <Modal visible={!!expiredTimer} animationType="fade" transparent onRequestClose={() => {}}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ backgroundColor: Colors.dark.cardSecondary, borderRadius: 24, width: '100%', maxWidth: 380, overflow: 'hidden' }}>
-            {/* Header rojo */}
+            {}
             <View style={{ backgroundColor: Colors.dark.error, padding: 20, alignItems: 'center' }}>
               <Text style={{ fontSize: 28, marginBottom: 4 }}>⏰</Text>
               <Text style={{ color: Colors.dark.text, fontSize: 20, fontWeight: '800', textAlign: 'center' }}>¡Tiempo Terminado!</Text>
@@ -478,7 +478,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
               </Text>
             </View>
 
-            {/* Info */}
+            {}
             <View style={{ padding: 20, gap: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontSize: 18 }}>🛏️</Text>
@@ -528,7 +528,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
               </View>
             </View>
 
-            {/* Botón Entendido */}
+            {}
             <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: Colors.dark.border }}>
               <Pressable
                 onPress={handleDismissExpired}

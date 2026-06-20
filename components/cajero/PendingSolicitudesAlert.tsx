@@ -25,8 +25,8 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     const isCajeroOrAdmin = isCajeroRole(user) || isAdminRole(user);
 
     const triggerShake = useCallback(() => {
-        // Shake animation removed to avoid mutating shared values under the
-        // current React compiler rules.
+        
+        
     }, []);
 
     const fetchCounts = useCallback(async () => {

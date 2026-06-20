@@ -42,7 +42,7 @@ export function AdvanceCard({
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
     const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
-    // Default normalizeEstado if not provided
+    
     const normalize = normalizeEstado || ((estado: Anticipo['estado'] | number | string) => {
         if (estado === 2 || estado === '2' || estado === 'pendiente') return 'pendiente';
         if (estado === 1 || estado === '1' || estado === 'confirmada' || estado === 'aprobado' || estado === 'aprobada') return 'confirmada';
@@ -57,7 +57,7 @@ export function AdvanceCard({
     const isPagada = estado === 'pagada';
     const isRechazada = estado === 'rechazada';
 
-    // Status colors
+    
     const getStatusColors = () => {
         if (isPendiente) {
             return {
@@ -73,7 +73,7 @@ export function AdvanceCard({
                 label: isPagada ? 'Cobrado' : viewMode === 'solicitudes' ? 'Aprobada' : 'Cobrado'
             };
         }
-        // Rechazada
+        
         return {
             backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
             color: isDark ? '#F87171' : '#B91C1C',
@@ -111,7 +111,7 @@ export function AdvanceCard({
             transition={{ type: 'spring', delay: index * 100 }}
         >
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                {/* Header */}
+                {}
                 <View style={styles.cardHeader}>
                     {showIndexBadge ? (
                         <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
@@ -128,7 +128,7 @@ export function AdvanceCard({
                     </View>
                 </View>
 
-                {/* Body */}
+                {}
                 <View style={[styles.cardBody, compactDate && styles.cardBodyCompact]}>
                     {compactDate ? (
                         <View style={styles.dateRowCompact}>
@@ -153,7 +153,7 @@ export function AdvanceCard({
                         </View>
                     )}
 
-                    {/* Amount */}
+                    {}
                     <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
                         <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
@@ -163,14 +163,14 @@ export function AdvanceCard({
                         </View>
                     </View>
 
-                    {/* Motivo */}
+                    {}
                     {item.motivo ? (
                         <View style={styles.motivoRow}>
                             <Text style={[styles.motivoText, { color: textSecondary }]}>📝 {item.motivo}</Text>
                         </View>
                     ) : null}
 
-                    {/* Motivo Rechazo */}
+                    {}
                     {item.motivo_rechazo && isRechazada && (
                         <View style={[styles.rejectionBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
                             <Ionicons name="close-circle" size={14} color={isDark ? '#F87171' : '#B91C1C'} />

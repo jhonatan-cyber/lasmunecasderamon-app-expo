@@ -36,7 +36,7 @@ export const PremiumHeaderActions = ({
     const isRestrictedRole = isGarzonRole(user) || isHostessRole(user);
     const canUseCajeroActions = isCajeroRole(user);
 
-    // Forzar siempre blanco para el header premium
+    
     const iconColor = '#FFFFFF';
     const btnBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)';
     const btnBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#000', // Movido a inline para soporte de tema
+        borderColor: '#000', 
     },
     notificationText: {
         color: '#FFFFFF',

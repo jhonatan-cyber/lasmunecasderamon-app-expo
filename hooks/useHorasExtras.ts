@@ -12,7 +12,7 @@ export interface HoraExtra {
   hora: string;
   monto: number;
   total: number;
-  estado: number; // 0=pagado, 1=pendiente
+  estado: number; 
 }
 
 export function useHorasExtras() {

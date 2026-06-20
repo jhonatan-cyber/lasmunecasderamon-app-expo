@@ -29,18 +29,18 @@ const mockChampagne = {
 
 describe('cartStore', () => {
     beforeEach(() => {
-        // Reset store to initial state before each test
+        
         useCartStore.setState({ cart: [], tipEnabled: false });
     });
 
-    // Initial State
+    
     it('debe iniciar con carrito vacio y tip deshabilitado', () => {
         const state = useCartStore.getState();
         expect(state.cart).toEqual([]);
         expect(state.tipEnabled).toBe(false);
     });
 
-    // addToCart
+    
     it('addToCart: debe agregar un producto nuevo al carrito', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         const cart = useCartStore.getState().cart;
@@ -66,7 +66,7 @@ describe('cartStore', () => {
         expect(cart[1].quantity).toBe(1);
     });
 
-    // removeFromCart
+    
     it('removeFromCart: debe decrementar quantity si > 1', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().addToCart(mockProduct as any);
@@ -90,7 +90,7 @@ describe('cartStore', () => {
         expect(cart).toHaveLength(1);
     });
 
-    // updateItemHostesses
+    
     it('updateItemHostesses: debe actualizar las anfitrionas seleccionadas', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().updateItemHostesses('prod-1', ['hostess-1', 'hostess-2']);
@@ -107,7 +107,7 @@ describe('cartStore', () => {
         expect(cart[1].selectedHostesses).toEqual([]);
     });
 
-    // updateItemRoom
+    
     it('updateItemRoom: debe actualizar la habitacion seleccionada', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().updateItemRoom('prod-1', 'room-vip');
@@ -123,7 +123,7 @@ describe('cartStore', () => {
         expect(cart[0].selectedRoom).toBeNull();
     });
 
-    // setTipEnabled
+    
     it('setTipEnabled: debe habilitar/deshabilitar la propina', () => {
         useCartStore.getState().setTipEnabled(true);
         expect(useCartStore.getState().tipEnabled).toBe(true);
@@ -131,7 +131,7 @@ describe('cartStore', () => {
         expect(useCartStore.getState().tipEnabled).toBe(false);
     });
 
-    // clearCart
+    
     it('clearCart: debe vaciar el carrito y deshabilitar tip', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().setTipEnabled(true);
@@ -141,7 +141,7 @@ describe('cartStore', () => {
         expect(state.tipEnabled).toBe(false);
     });
 
-    // getSubtotal
+    
     it('getSubtotal: debe calcular el subtotal correctamente', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().addToCart(mockProduct as any);
@@ -154,7 +154,7 @@ describe('cartStore', () => {
         expect(useCartStore.getState().getSubtotal()).toBe(0);
     });
 
-    // getTipAmount
+    
     it('getTipAmount: debe dar 10% del subtotal si tipEnabled', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().setTipEnabled(true);
@@ -168,7 +168,7 @@ describe('cartStore', () => {
         expect(tip).toBe(0);
     });
 
-    // getTotal
+    
     it('getTotal: subtotal + tip si tipEnabled', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().setTipEnabled(true);

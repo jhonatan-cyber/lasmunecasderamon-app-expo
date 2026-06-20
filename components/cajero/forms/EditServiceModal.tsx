@@ -128,13 +128,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 setTiempo(30);
                 setMetodoPago('efectivo');
                 
-                // Prioridad a anfitrionas_ids (array), fallback a split de anfitrionas (string)
+                
                 let ids: string[] = [];
                 if (timer.anfitrionas_ids && Array.isArray(timer.anfitrionas_ids)) {
                     ids = timer.anfitrionas_ids.map(id => String(id));
                 } else if (timer.anfitrionas && typeof timer.anfitrionas === 'string') {
-                    // Si solo tenemos el string, intentamos buscar las disponibles que coincidan con el nick
-                    // Pero es mejor confiar en los IDs si existen.
+                    
+                    
                 }
                 
                 setAnfitrionasSeleccionadas(ids);
@@ -270,7 +270,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                             </Text>
                         </View>
 
-                        {/* Selección de Anfitrionas */}
+                        {}
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: textSecondary }]}>ANFITRIONAS ({anfitrionasSeleccionadas.length} seleccionadas)</Text>
                             <Pressable
@@ -314,7 +314,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                             onSelect={setMetodoPago}
                         />
 
-                        {/* Resumen de Precios */}
+                        {}
                         {anfitrionasSeleccionadas.length > 0 && (
                             <View style={[styles.summaryBox, { backgroundColor: cardBg, borderColor }]}>
                                 <Text style={[styles.summaryTitle, { color: textPrimary }]}>RESUMEN</Text>
@@ -398,7 +398,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     </View>
                 </View>
 
-                {/* Modal de Selección de Anfitrionas */}
+                {}
                 <HostessSelectModal
                     visible={showHostessModal}
                     onClose={() => setShowHostessModal(false)}

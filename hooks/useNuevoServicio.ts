@@ -431,7 +431,7 @@ export function useNuevoServicio() {
         return;
       }
 
-      // Log anfitrionas data
+      
       const anfitrionasDataRes = await apiClient('/anfitrionas');
       const anfitrionasData = Array.isArray(anfitrionasDataRes)
         ? anfitrionasDataRes
@@ -478,7 +478,7 @@ export function useNuevoServicio() {
     router,
   ]);
 
-  // Auto-select prepago if client balance covers total
+  
   useEffect(() => {
     const selectedClient =
       selectedClients.length === 0
@@ -533,7 +533,7 @@ export function useNuevoServicio() {
   return {
     state,
     dispatch,
-    // Computed values
+    
     hasAnfitrionaComision,
     maxHostesses,
     maxClients,
@@ -541,7 +541,7 @@ export function useNuevoServicio() {
     totals,
     desgloseTarjeta,
     selectedClientData,
-    // Actions
+    
     toggleHostess,
     toggleClient,
     handleLoadBalance,

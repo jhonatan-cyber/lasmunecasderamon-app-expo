@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { SolicitudesSkeleton } from '@/components/cajero/solicitudes/SolicitudesSkeleton';
 
-// New Refactored Components & Hook
+
 import { CheckoutModal } from '@/components/cajero/CheckoutModal';
 import { ServiceModal } from '@/components/cajero/ServiceModal';
 import { SolicitudCard } from '@/components/cajero/SolicitudCard';
@@ -38,7 +38,7 @@ export default function SolicitudesScreen() {
     const isTablet = width >= 768;
     const numColumns = isTablet ? 2 : 1;
 
-    // Custom Hook logic
+    
     const {
         solicitudes,
         loading,
@@ -91,10 +91,10 @@ export default function SolicitudesScreen() {
         setPendingAutoOpen,
     });
 
-    // Filter tabs
+    
     const [activeFilter, setActiveFilter] = useState<'all' | 'anticipo' | 'pedido' | 'solicitud'>('all');
 
-    // Compute total a pagar from pending anticipos
+    
     const { totalAPagar, filteredSolicitudes } = React.useMemo(() => {
         let filtered = solicitudes;
         if (activeFilter !== 'all') {
@@ -106,7 +106,7 @@ export default function SolicitudesScreen() {
         return { totalAPagar: total, filteredSolicitudes: filtered };
     }, [solicitudes, activeFilter]);
 
-    // Styles & Theme
+    
     const { 
         accentColor, 
         gradientColors, 
@@ -158,7 +158,7 @@ export default function SolicitudesScreen() {
                 </MotiView>
             )}
 
-            {/* Total a pagar banner (solo cuando hay anticipos pendientes) */}
+            {}
             {totalAPagar > 0 && (
                 <MotiView
                     from={{ opacity: 0, scale: 0.95 }}
@@ -175,7 +175,7 @@ export default function SolicitudesScreen() {
                 </MotiView>
             )}
 
-            {/* Filter tabs */}
+            {}
             <View style={[styles.filterRow, { paddingHorizontal: 16 }]}>
                 {(['all', 'anticipo', 'pedido', 'solicitud'] as const).map(type => {
                     const count = type === 'all' ? solicitudes.length : solicitudes.filter(s => s.tipoItem === type).length;

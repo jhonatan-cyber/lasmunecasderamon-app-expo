@@ -5,8 +5,8 @@ require('./scripts/patch-expo-web');
 const config = getDefaultConfig(__dirname);
 const forcedTslibPath = path.resolve(__dirname, 'node_modules/tslib/tslib.es6.js');
 
-// Avoid resolving tslib through package "exports" (`modules/index.js`)
-// which crashes with Metro web in this dependency graph.
+
+
 config.resolver.unstable_enablePackageExports = false;
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),

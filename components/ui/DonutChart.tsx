@@ -29,7 +29,7 @@ export const DonutChart = ({ percent, color, size = 140, strokeWidth = 10, label
             accessibilityRole="image"
         >
             <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-                {/* Background Circle */}
+                {}
                 <Circle
                     cx={size / 2}
                     cy={size / 2}
@@ -38,7 +38,7 @@ export const DonutChart = ({ percent, color, size = 140, strokeWidth = 10, label
                     strokeWidth={strokeWidth}
                     fill="transparent"
                 />
-                {/* Progress Circle */}
+                {}
                 <Circle
                     cx={size / 2}
                     cy={size / 2}

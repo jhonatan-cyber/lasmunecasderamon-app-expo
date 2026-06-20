@@ -540,7 +540,7 @@ export function useNuevaVenta() {
     dispatch,
     totals,
     hasCommissionItem,
-    isTablet: false, // será overrideado en la screen con useWindowDimensions
+    isTablet: false, 
     fetchInitialData,
     onRefresh,
     handleLoadPrepago,

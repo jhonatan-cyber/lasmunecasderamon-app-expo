@@ -588,7 +588,7 @@ export default function NuevaCuentaScreen() {
                         </Pressable>
                     )}
 
-                    {/* Selector de tiempo si hay comision y habitacion seleccionada sin costo fijo */}
+                    {}
                     {totals.totalComision > 0 && selectedHabitacion && (!selectedHabitacion.comision_anfitriona || Number(selectedHabitacion.comision_anfitriona) === 0) && (
                         <Pressable
                             style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: spacing / 2, backgroundColor: isDark ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.05)' }]}
@@ -831,7 +831,7 @@ export default function NuevaCuentaScreen() {
                 }}
             />
 
-            {/* Modal de Selección de Tiempo */}
+            {}
             <Modal visible={state.timeModalVisible} animationType="fade" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: cardBg }]}>

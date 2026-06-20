@@ -79,7 +79,7 @@ export default function AnticiposScreen() {
     };
 
     const openSolicitarModal = async () => {
-        // Cargar datos si no están disponibles
+        
         if (montoMaximo === 0) {
             await fetchMaximo();
         }

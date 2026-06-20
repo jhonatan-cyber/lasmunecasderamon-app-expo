@@ -112,7 +112,7 @@ export function PagosMixtosSection({
         </View>
       ))}
 
-      {/* Add more payment methods */}
+      {}
       <View style={{ marginTop: 12 }}>
         <Text
           style={{
@@ -163,7 +163,7 @@ export function PagosMixtosSection({
         )}
       </View>
 
-      {/* Sum vs Total */}
+      {}
       <View
         style={{
           marginTop: 12,

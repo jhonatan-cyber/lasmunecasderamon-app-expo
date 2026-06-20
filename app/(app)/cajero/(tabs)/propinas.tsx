@@ -58,7 +58,7 @@ export default function PropinasScreen() {
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const dataRef = useRef<string>('');
 
-    // Detail Modal State
+    
     const [selectedPropina, setSelectedPropina] = useState<Propina | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
@@ -135,12 +135,12 @@ export default function PropinasScreen() {
         setParentPropina(null);
 
         try {
-            // 1. Obtener info de la propina "madre" (monto total y repartición)
+            
             const tipRes = await apiClient<{ success: boolean; data: any }>(`/tips/${item.propina_id}`);
             if (tipRes.success) {
                 setParentPropina(tipRes.data);
 
-                // 2. Si tiene vinculada una venta, obtener el detalle completo de la venta
+                
                 if (tipRes.data.venta_id) {
                     const saleRes = await apiClient<{ success: boolean; data: any }>(`/ventas/${tipRes.data.venta_id}`);
                     if (saleRes && saleRes.success) {
@@ -150,9 +150,9 @@ export default function PropinasScreen() {
             }
         } catch (error) {
             logger.captureException(error, { context: 'Propinas:fetchTips' });
-            // Si el tipRes falla, al menos intentamos por código si es posible (no tan fiable sin endpoint)
+            
             if (item.codigo_venta) {
-                // Podríamos buscar por código si existiera un endpoint, pero preferimos el ID
+                
             }
         } finally {
             setLoadingDetail(false);
@@ -192,7 +192,7 @@ export default function PropinasScreen() {
 
     const renderItem = ({ item, index }: { item: Propina; index: number }) => {
         const isPendiente = item.estado === 1;
-        // Dinamismo: Rotar el color basado en el ID del detalle (hacer un resumen numérico si es UUID)
+        
         const idNum = typeof item.id_detalle_propina === 'string' ? item.id_detalle_propina.split('-').pop()?.substring(0, 2) : item.id_detalle_propina;
         const itemAccent = rotateColor(accentColor, ((Number(idNum) || index) % 10) * 36);
 
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 
-    // Modal Styles
+    
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: {
         height: '85%',

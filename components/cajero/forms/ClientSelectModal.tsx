@@ -69,7 +69,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                                 (item.id !== undefined && String(sid) === String(item.id))
                             );
 
-                            // Soporte para múltiples convenciones de nombres de la API (snake_case y CamelCase)
+                            
                             const firstName = item.nombre || item.name || '';
                             const lastName = item.apellido || item.lastName || item.last_name || '';
                             const fullName = `${firstName} ${lastName}`.trim() || 'Cliente sin nombre';

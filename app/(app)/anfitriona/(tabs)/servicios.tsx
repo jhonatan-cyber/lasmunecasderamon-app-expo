@@ -143,7 +143,7 @@ export default function ServiciosScreen() {
                 servicio={selectedServicio} 
                 onClose={() => setModalVisible(false)}
                 onEdit={() => {
-                    // TODO: Implementar edición del servicio
+                    
                     logger.info('Editar servicio', { servicioId: selectedServicio?.id_servicio });
                 }}
             />

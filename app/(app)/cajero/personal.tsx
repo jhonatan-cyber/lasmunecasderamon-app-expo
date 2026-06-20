@@ -68,13 +68,13 @@ export default function PersonalScreen() {
             logger.info('[PersonalScreen] Response:', data);
             
             if (data.success) {
-                // Filtrar personal activo (excluir administrador)
+                
                 const allUsers = data.data || [];
                 const staff = allUsers.filter((u: User) => {
                     const r = u.role?.toLowerCase() || '';
-                    // Excluir administrador
+                    
                     if (r.includes('administrador') || r.includes('admin')) return false;
-                    // Incluir garzón, mesero, cajero y anfitriona
+                    
                     return r.includes('garzon') || 
                            r.includes('garzón') || 
                            r.includes('mesero') ||
@@ -145,7 +145,7 @@ export default function PersonalScreen() {
                     text2: 'Token QR generado correctamente',
                 });
                 
-                // Actualizar localmente
+                
                 setUsers(prev => prev.map(u => 
                     u.id === userId ? { ...u, qr_token: data.qr_token } : u
                 ));
@@ -178,11 +178,11 @@ export default function PersonalScreen() {
             try {
                 const data = await apiClient(`/users/${selectedUser.id}`);
                 if (data.success && data.user) {
-                    // Si el QR cambió (ya fue usado), actualizar y cerrar el modal
+                    
                     if (data.user.qr_token !== selectedUser.qr_token) {
                         setSelectedUser(data.user);
                         setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
-                        // Cerrar el modal porque el QR ya fue usado
+                        
                         setSelectedUser(null);
                         Toast.show({
                             type: 'info',
@@ -198,7 +198,7 @@ export default function PersonalScreen() {
 
         fetchUserData();
 
-        const interval = setInterval(fetchUserData, 5000); // Polling cada 5 segundos
+        const interval = setInterval(fetchUserData, 5000); 
         return () => clearInterval(interval);
     }, [selectedUser, selectedUser?.id]);
 
@@ -242,7 +242,7 @@ export default function PersonalScreen() {
                         pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }
                     ]}
                 >
-                    {/* Header con gradiente */}
+                    {}
                     <View style={[styles.cardHeader, { backgroundColor: accentColor }]}>
                         <Text style={styles.cardRoleText} numberOfLines={1}>
                             {item.role?.toUpperCase()}
@@ -264,7 +264,7 @@ export default function PersonalScreen() {
                                     </Text>
                                 </View>
                             )}
-                            {/* Indicador de estado QR */}
+                            {}
                             <View style={[
                                 styles.qrStatusIndicator, 
                                 { backgroundColor: hasQR ? '#10B981' : '#EF4444' }
@@ -282,7 +282,7 @@ export default function PersonalScreen() {
                             </Text>
                         </View>
                         
-                        {/* Badge de estado QR */}
+                        {}
                         <View style={[
                             styles.qrStatusBadge, 
                             { backgroundColor: hasQR ? '#10B98120' : '#EF444420' }
@@ -397,7 +397,7 @@ export default function PersonalScreen() {
                 }
             />
 
-            {/* QR Modal */}
+            {}
             <Modal
                 visible={!!selectedUser}
                 transparent

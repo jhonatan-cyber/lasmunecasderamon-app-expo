@@ -10,7 +10,7 @@ const captureBreadcrumb = (message: string, category: string, data?: Record<stri
       data: formatPayload(data) as Record<string, any> | undefined,
     });
   } catch {
-    // Sentry may not be initialized yet.
+    
   }
 };
 
@@ -22,7 +22,7 @@ const handleSentryError = (error: any) => {
       Sentry.captureMessage(JSON.stringify(formatPayload(error)));
     }
   } catch {
-    // ignore send failures
+    
   }
 };
 

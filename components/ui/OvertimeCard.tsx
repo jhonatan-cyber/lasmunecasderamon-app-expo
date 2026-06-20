@@ -12,7 +12,7 @@ export interface HoraExtra {
     hora: string;
     monto: number;
     total: number;
-    estado: number; // 0=pagado, 1=pendiente
+    estado: number; 
     fecha_formatted?: string;
 }
 
@@ -62,7 +62,7 @@ export function OvertimeCard({
             transition={{ type: 'spring', delay: index * 100 }}
         >
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                {/* Header */}
+                {}
                 <View style={styles.cardHeader}>
                     {showIndexBadge ? (
                         <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
@@ -89,7 +89,7 @@ export function OvertimeCard({
                     </View>
                 </View>
 
-                {/* Date Row */}
+                {}
                 <View style={[styles.cardBody, compactDate && styles.cardBodyCompact]}>
                     {compactDate ? (
                         <View style={styles.dateRowCompact}>
@@ -114,7 +114,7 @@ export function OvertimeCard({
                         </View>
                     )}
 
-                    {/* Amounts Row */}
+                    {}
                     <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
                         <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto/hr</Text>
@@ -126,7 +126,7 @@ export function OvertimeCard({
                         </View>
                     </View>
 
-                    {/* Payment Date */}
+                    {}
                     {showPaymentDate && item.fecha_mod && item.estado === 0 && (
                         <View style={styles.paymentRow}>
                             <Ionicons name="checkmark-circle" size={14} color={accentColor} />

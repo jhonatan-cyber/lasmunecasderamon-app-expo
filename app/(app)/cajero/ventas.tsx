@@ -32,12 +32,12 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from '@/utils/colors';
 const FlashList = ShopifyFlashList as any;
 
-// Utils for status colors and labels
+
 const statusColors: Record<number, string> = {
-  1: "#10B981", // Pagada -> Verde (estándar de éxito)
-  2: "#3B82F6", // En Proceso -> Azul
-  3: "#EF4444", // Anulada -> Rojo
-  4: "#F59E0B", // Por Anular -> Ambar
+  1: "#10B981", 
+  2: "#3B82F6", 
+  3: "#EF4444", 
+  4: "#F59E0B", 
 };
 
 const statusLabels: Record<number, string> = {
@@ -138,13 +138,13 @@ export default function VentasScreen() {
 
   const renderVentaCard = ({ item }: { item: any }) => {
 const productCount = item.item_count || 0;
-    // Generar un color dinámico basado en el ID para variedad, pero manteniendo el status color si es importante
-    // O mejor aún: usar una rotación del color de acento según la posición/ID
+    
+    
     const ventaId = getVentaId(item);
     const itemAccent = rotateColor(accentColor, ((Number(ventaId) || 0) % 10) * 36);
     const statusColor = item.estado === 2 ? itemAccent : (statusColors[item.estado] || "#6B7280");
 
-    // Check if this sale has an active timer (matching room or service ID)
+    
     const activeTimer = timers.find(
       (t) =>
         t.tipoTransaccion === "venta" &&
@@ -172,7 +172,7 @@ const productCount = item.item_count || 0;
           onPress={() => handleOpenActionSheet(item)}
         >
           <View style={styles.cardMainRow}>
-          {/* Left Info Section */}
+          {}
           <View style={styles.cardLeftContent}>
            <View style={styles.cardTopActions}>
                <Text style={[styles.cardCode, { color: textPrimary }]}>Codigo : {item.codigo}</Text>
@@ -203,7 +203,7 @@ const productCount = item.item_count || 0;
                 </Text>
               </View>
 
-              {/* Cantidad de productos */}
+              {}
               <View style={styles.detailItemRow}>
                 <Ionicons
                   name="cube-outline"
@@ -285,7 +285,7 @@ const productCount = item.item_count || 0;
             )}
           </View>
 
-          {/* Right Info Section */}
+          {}
           <View style={styles.cardRightContent}>
             {item.estado === 2 && (
               <Pressable
@@ -312,7 +312,7 @@ const productCount = item.item_count || 0;
               </Text>
             </View>
             
-            {/* Status Badge below payment method */}
+            {}
             <View style={[
               styles.methodBadgeContainer,
               { marginTop: 4 }
@@ -446,7 +446,7 @@ const productCount = item.item_count || 0;
             </View>
           </Pressable>
         </View>
-      {/* Main Content */}
+      {}
       <FlashList
         data={
           loadingSales
@@ -501,7 +501,7 @@ const productCount = item.item_count || 0;
         }
       />
 
-      {/* Detail Modal Refactored Premium */}
+      {}
       <Modal
         animationType="slide"
         transparent={true}
@@ -531,7 +531,7 @@ const productCount = item.item_count || 0;
                   </View>
 
                   <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
-                    {/* Origen de la venta */}
+                    {}
                     <View style={[styles.origenSection, { backgroundColor: isDark ? '#1a1a2e' : '#F8FAFC', borderColor }]}>
                       <View style={styles.origenRow}>
                         <View style={[styles.origenIconBox, { backgroundColor: selectedVenta.pedido_id ? `${accentColor}20` : '#10B98120' }]}>
@@ -578,7 +578,7 @@ const productCount = item.item_count || 0;
                       )}
                     </View>
 
-                    {/* Top Info Header */}
+                    {}
                     <View style={{ marginBottom: 25, paddingHorizontal: 4 }}>
                       <View style={{ flexDirection: 'row', gap: 12 }}>
                         <View style={{ flex: 1, backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', padding: 15, borderRadius: 18, borderWidth: 1, borderColor: borderColor }}>
@@ -597,7 +597,7 @@ const productCount = item.item_count || 0;
                       </View>
                     </View>
 
-                    {/* Cliente Section */}
+                    {}
                     <View style={{ marginBottom: 25 }}>
                       <View style={{ flex: 1, gap: 10 }}>
                         <Text style={{ fontSize: 11, fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>Cliente</Text>
@@ -613,7 +613,7 @@ const productCount = item.item_count || 0;
                       </View>
                     </View>
 
-                    {/* Distributions Bio */}
+                    {}
                     {(selectedVenta.comisiones_detalle?.length > 0 || selectedVenta.propinas_detalle?.length > 0) && (
                       <View style={{ marginBottom: 25, gap: 12 }}>
                         {selectedVenta.comisiones_detalle?.length > 0 && (
@@ -664,7 +664,7 @@ const productCount = item.item_count || 0;
                       </View>
                     )}
 
-                    {/* Grouped Product Cards */}
+                    {}
                     <View style={{ marginTop: 5, paddingHorizontal: 4 }}>
                       <Text style={{ fontSize: 12, fontWeight: '900', color: textSecondary, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 }}>
                         Listado de Productos
@@ -715,7 +715,7 @@ const productCount = item.item_count || 0;
                       })()}
                     </View>
 
-                    {/* Summary Totals Detail */}
+                    {}
                     <View style={{ marginTop: 20, backgroundColor: isDark ? '#111' : '#F9F9F9', padding: 20, borderRadius: 24, borderWidth: 1, borderColor }}>
                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                           <Text style={{ color: textSecondary, fontWeight: '700' }}>Subtotal</Text>
@@ -857,7 +857,7 @@ const productCount = item.item_count || 0;
         </View>
       </Modal>
 
-      {/* Action Sheet Modal */}
+      {}
       <Modal animationType="fade" transparent={true} visible={actionSheetVisible} onRequestClose={() => setActionSheetVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setActionSheetVisible(false)}>
           <View style={[styles.actionSheet, { backgroundColor: cardBg, borderColor: `${accentColor}40`, borderWidth: 1, borderBottomWidth: 0 }]}>
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContainer: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 100 },
 
-  // Resumen Card
+  
   resumenCard: {
     padding: 24,
     borderRadius: 32,
@@ -1042,7 +1042,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
 
-  // Card Improved
+  
   card: {
     flex: 1,
     borderRadius: 20,
@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
   cardPropinaGreen: { fontSize: 12, fontWeight: "800", color: "#10B981" },
   moreOptionsBtn: { padding: 4, marginTop: 4 },
 
-  // Empty State
+  
   emptyCard: {
     borderRadius: 32,
     padding: 48,
@@ -1137,7 +1137,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  // Modal
+  
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1214,7 +1214,7 @@ const styles = StyleSheet.create({
   },
   tiempoText: { fontSize: 12, fontWeight: '800' },
 
-  // Modal Reference Layout
+  
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1352,7 +1352,7 @@ const styles = StyleSheet.create({
   },
   modalCloseBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 
-  // Toast
+  
   toastCard: {
     width: "90%",
     padding: 32,
@@ -1389,7 +1389,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toastBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-  // Action Sheet
+  
   actionSheet: {
     width: "100%",
     borderTopLeftRadius: 32,
@@ -1522,7 +1522,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  // Tab Styles
+  
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "rgba(155,155,155,0.05)",
@@ -1559,7 +1559,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  // Timer Pill inside Card
+  
   timerPill: {
     flexDirection: "row",
     alignItems: "center",

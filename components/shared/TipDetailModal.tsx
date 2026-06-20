@@ -64,7 +64,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                         </View>
                     ) : (
                         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                            {/* Resumen propina */}
+                            {}
                             <View style={[styles.divisionCard, { borderColor, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
                                 <View style={styles.divisionItem}>
                                     <Text style={[styles.divisionLabel, { color: textSecondary }]}>Total Propina</Text>
@@ -88,7 +88,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                 </View>
                             </View>
 
-                            {/* Participantes */}
+                            {}
                             {parentPropina?.participantes?.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>REPARTICIÓN</Text>
@@ -113,13 +113,13 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                 </>
                             )}
 
-                            {/* Info de la venta */}
+                            {}
                             {saleDetail ? (
                                 <>
-                                    {/* Origen, habitación y anfitrionas */}
+                                    {}
                                     <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>PERSONAL Y SERVICIO</Text>
                                     <View style={[styles.productsList, { borderColor }]}>
-                                        {/* Origen */}
+                                        {}
                                         <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                                 <Ionicons name="storefront-outline" size={16} color={textSecondary} />
@@ -129,7 +129,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 {saleDetail.garzon_nombre || saleDetail.mesero_nombre ? `Pedido por ${saleDetail.garzon_nombre || saleDetail.mesero_nombre}` : 'Venta realizada en barra'}
                                             </Text>
                                         </View>
-                                        {/* Cajero */}
+                                        {}
                                         {saleDetail.cajero_nombre ? (
                                             <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -139,7 +139,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.cajero_nombre}</Text>
                                             </View>
                                         ) : null}
-                                        {/* Habitación */}
+                                        {}
                                         {saleDetail.habitacion_nombre ? (
                                             <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -149,7 +149,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.habitacion_nombre}</Text>
                                             </View>
                                         ) : null}
-                                        {/* Tiempo */}
+                                        {}
                                         {saleDetail.tiempo ? (
                                             <View style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: ((saleDetail.usuarios?.length ?? 0) > 0) ? 1 : 0 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -159,7 +159,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 <Text style={[styles.productSubtotal, { color: textPrimary, fontSize: 13 }]}>{saleDetail.tiempo} min</Text>
                                             </View>
                                         ) : null}
-                                        {/* Anfitrionas */}
+                                        {}
                                         {saleDetail.usuarios?.map((u: any, idx: number, arr: any[]) => (
                                             <View key={idx} style={[styles.productRow, { borderBottomColor: borderColor, borderBottomWidth: idx === arr.length - 1 ? 0 : 1 }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -174,7 +174,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                         ))}
                                     </View>
 
-                                    {/* Productos */}
+                                    {}
                                     <Text style={[styles.sectionTitle, { color: textSecondary, marginTop: 20 }]}>PRODUCTOS</Text>
                                     <View style={[styles.productsList, { borderColor }]}>
                                         {saleDetail.detalles?.map((det: any, idx: number) => (
@@ -192,7 +192,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                         </View>
                                     </View>
 
-                                    {/* Método pago y fecha */}
+                                    {}
                                     <View style={{ marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: isDark ? '#37415140' : '#F3F4F6', marginBottom: 8 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
                                             <Text style={{ color: textSecondary, fontSize: 12 }}>Método de Pago</Text>

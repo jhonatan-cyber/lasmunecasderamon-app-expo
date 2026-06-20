@@ -223,7 +223,7 @@ export default function AgregarCuentaScreen() {
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
     const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
-    // Mostrar selector de habitación si hay productos con anfitriona asignada en el carrito
+    
     const showRoomSelector = cart.some(item =>
         item.selectedHostesses && item.selectedHostesses.length > 0
     );
@@ -458,7 +458,7 @@ export default function AgregarCuentaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Header premium con gradiente */}
+            {}
             <PremiumHeader 
                 title="Agregar Productos"
                 subtitle={`Cuenta ${cuentaOriginal?.codigo}`}
@@ -529,7 +529,7 @@ export default function AgregarCuentaScreen() {
                     </ScrollView>
                 </View>
 
-                {/* Habitación y tiempo para productos con comisión < 160k */}
+                {}
                 {showRoomSelector && (
                     <View style={{ marginBottom: spacing }}>
                         <Pressable
@@ -677,8 +677,8 @@ export default function AgregarCuentaScreen() {
                                             const hasComm = Number(item.comision || item.commission || 0) > 0;
                                             if (hasComm) {
                                                 const price = item.precio ?? item.price ?? 0;
-                                                // Si precio < 160,000: max anfitrionas = cantidad del producto
-                                                // Si es champagne (precio >= 160,000): usar límite de champagne
+                                                
+                                                
                                                 const qty = modalQuantities[id] || 1;
                                                 const max = price < 160000 ? qty : getHostessLimit(item, qty);
                                                 const currentSelections = modalHostessSelections[id] || [];

@@ -296,7 +296,7 @@ export default function LoginScreen() {
                             <AnimatedScreen delay={100}>
                                 <StatusBar style={isDark ? 'light' : 'dark'} />
 
-                                {/* Logo */}
+                                {}
                                     <View style={styles.logoContainer}>
                                         <Image
                                         source={require('../../assets/images/logo2.png')}
@@ -305,7 +305,7 @@ export default function LoginScreen() {
                                     />
                                 </View>
 
-                                {/* Title */}
+                                {}
                                 <View style={styles.headerTextContainer}>
                                     <Text style={[styles.title, { color: C.text }]}>
                                         Iniciar Sesión
@@ -315,7 +315,7 @@ export default function LoginScreen() {
                                     </Text>
                                 </View>
 
-                                {/* Form */}
+                                {}
                                 <View style={styles.formContainer}>
                                     {error ? (
                                         <View style={[styles.errorContainer, { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' }]}>
@@ -375,7 +375,7 @@ export default function LoginScreen() {
                                         </Pressable>
                                     </View>
 
-                                    {/* Fila del Botón de Login (Ancho Completo) */}
+                                    {}
                                     <View style={[styles.actionRow, { marginTop: 20 }]}>
                                         <Pressable
                                             style={({ pressed }) => [
@@ -401,9 +401,9 @@ export default function LoginScreen() {
                                         </Pressable>
                                     </View>
 
-                                    {/* Fila Inferior para QR y Huella */}
+                                    {}
                                     <View style={[styles.actionRow, { justifyContent: 'center', marginTop: 15, gap: 20 }]}>
-                                        {/* Botón QR (Acceso Rápido) */}
+                                        {}
                                         <Pressable
                                             style={({ pressed }) => [
                                                 styles.biometricButton,
@@ -419,7 +419,7 @@ export default function LoginScreen() {
                                             <Ionicons name="qr-code-outline" size={28} color={C.text} />
                                         </Pressable>
 
-                                        {/* Botón Biometría */}
+                                        {}
                                         {(isBiometricEnabled && isBiometricSupported) && (
                                             <Pressable
                                                 style={({ pressed }) => [
@@ -438,7 +438,7 @@ export default function LoginScreen() {
                                         )}
                                     </View>
 
-                                    {/* Theme Toggle */}
+                                    {}
                                     <Pressable
                                         style={({ pressed }) => [styles.themeToggle, pressed && { opacity: 0.6 }]}
                                         onPress={toggleTheme}
@@ -450,7 +450,7 @@ export default function LoginScreen() {
                                         />
                                     </Pressable>
 
-                                    {/* Forgot Password */}
+                                    {}
                                     <Pressable
                                         onPress={() => setShowResetPasswordModal(true)}
                                         style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
@@ -466,7 +466,7 @@ export default function LoginScreen() {
                 </KeyboardAvoidingView>
             </ImageBackground>
 
-            {/* Premium Alert Modal */}
+            {}
             <Modal
                 transparent
                 visible={alertConfig.visible}
@@ -521,7 +521,7 @@ export default function LoginScreen() {
                 </View>
             </Modal>
 
-            {/* Selector de QR para Login Rápido */}
+            {}
             <Modal
                 transparent
                 visible={showResetPasswordModal}
