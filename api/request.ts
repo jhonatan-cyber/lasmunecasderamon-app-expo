@@ -6,14 +6,8 @@ import {
   TimeoutError,
   UnauthorizedError,
 } from "./errors";
-import {
-  delay,
-  shouldRetry,
-} from "./retry";
-import {
-  ensureTokenInMemory,
-  notifyUnauthorized,
-} from "./token";
+import { delay, shouldRetry } from "./retry";
+import { ensureTokenInMemory, notifyUnauthorized } from "./token";
 
 const logApiCall = (
   endpoint: string,
@@ -62,10 +56,7 @@ export const apiClient = async <T = any>(
     typeof fetchOptions.body === "object" &&
     typeof (fetchOptions.body as any).append === "function";
 
-  if (
-    !headers.has("Content-Type") &&
-    !isFormData
-  ) {
+  if (!headers.has("Content-Type") && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -78,7 +69,6 @@ export const apiClient = async <T = any>(
     logger.debug("API token loaded", { hasToken: false });
   }
 
-  
   let finalBody = fetchOptions.body;
   if (
     ["POST", "PUT", "PATCH"].includes(options.method?.toUpperCase() || "") &&
@@ -86,7 +76,7 @@ export const apiClient = async <T = any>(
   ) {
     try {
       const bodyObj = JSON.parse(fetchOptions.body);
-      
+
       if (
         typeof bodyObj === "object" &&
         bodyObj !== null &&
@@ -95,9 +85,7 @@ export const apiClient = async <T = any>(
         bodyObj.device_date = new Date().toISOString();
         finalBody = JSON.stringify(bodyObj);
       }
-    } catch {
-      
-    }
+    } catch {}
   }
 
   const config: RequestInit = {
@@ -151,7 +139,7 @@ export const apiClient = async <T = any>(
             undefined,
             durationMs,
           );
-          
+
           const serverMessage =
             data.message || data.error || `Error ${response.status}`;
           throw new Error(serverMessage);
@@ -190,7 +178,7 @@ export const apiClient = async <T = any>(
       if (!shouldRetry(err) || attempt === maxRetries) {
         logApiCall(endpoint, attempt, maxRetries, undefined, err, durationMs);
         if (err?.name === "AbortError") throw new TimeoutError();
-        
+
         if (
           err instanceof UnauthorizedError ||
           err instanceof TimeoutError ||
@@ -198,7 +186,6 @@ export const apiClient = async <T = any>(
         )
           throw err;
         if (!err.type || err.type === "fetch-failed") {
-          
           if (err.message && !err.message.toLowerCase().includes("fetch")) {
             throw err;
           }
