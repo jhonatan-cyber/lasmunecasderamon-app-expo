@@ -42,6 +42,23 @@ const getRoleLabel = (role?: string) => {
 
 export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfileProps) => {
     const [imageError, setImageError] = useState(false);
+
+    React.useEffect(() => {
+        setImageError(false);
+    }, [user?.foto]);
+
+    const avatarUri = useMemo(() => {
+        if (imageError) {
+            return `${BASE_URL}/api/images/users/default.png`;
+        }
+
+        if (user?.foto) {
+            return user.foto.startsWith('http') ? user.foto : `${BASE_URL}/api/images/users/${user.foto}`;
+        }
+
+        return `${BASE_URL}/api/images/users/default.png`;
+    }, [imageError, user?.foto]);
+
     const textPrimary = '#FFFFFF';
     const textSecondary = 'rgba(255,255,255,0.7)';
 
@@ -56,18 +73,6 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
     const showFullName = Boolean(fullName) && fullName !== nick;
 
     const roleLabel = getRoleLabel(role || user?.role);
-
-    const avatarUri = useMemo(() => {
-        if (imageError) {
-            return `${BASE_URL}/img/users/default.png`;
-        }
-
-        if (user?.foto) {
-            return user.foto.startsWith('http') ? user.foto : `${BASE_URL}/img/users/${user.foto}`;
-        }
-
-        return `${BASE_URL}/img/users/default.png`;
-    }, [imageError, user?.foto]);
 
     return (
         <View style={styles.headerUser}>

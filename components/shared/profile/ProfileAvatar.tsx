@@ -24,7 +24,7 @@ export function ProfileAvatar({ avatarIcon, formData, accentColor, textPrimary, 
                 ? formData.image
                 : user?.foto?.startsWith("http")
                   ? user.foto
-                  : `${BASE_URL}/img/users/${user?.foto}`,
+                  : `${BASE_URL}/api/images/users/${user?.foto}`,
             }}
             style={styles.avatar}
           />

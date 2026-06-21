@@ -466,19 +466,7 @@ const productCount = item.item_count || 0;
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
         estimatedItemSize={120}
-        ListHeaderComponent={resumen && activeTab === "historial" ? (
-          <View style={[styles.resumenCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : accentColor, shadowColor: isDark ? 'transparent' : accentColor, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
-            <View style={styles.resumenRow}>
-              <View>
-                <Text style={[styles.resumenLabel, { color: isDark ? textSecondary : 'rgba(255,255,255,0.8)' }]}>TOTAL VENTAS HOY</Text>
-                <Text style={[styles.resumenValue, { color: '#FFFFFF' }]}>${(resumen.resumen_general?.total_ventas_monto || resumen.total_hoy || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}</Text>
-              </View>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: 12, borderRadius: 16 }}>
-                <Ionicons name="stats-chart" size={32} color="#FFFFFF" />
-              </View>
-            </View>
-          </View>
-        ) : null}
+        ListHeaderComponent={null}
         contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
           <RefreshControl

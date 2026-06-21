@@ -123,25 +123,18 @@ export function useProfile() {
       }
 
       if (formData.image) {
-        const uriParts = formData.image.split(".");
-        const fileType = uriParts[uriParts.length - 1];
-        const fileName = formData.image.split("/").pop() || "profile.jpg";
+        const uri = formData.image;
+        const cleanUri = uri.split("?")[0];
+        const uriParts = cleanUri.split(".");
+        const extension = uriParts[uriParts.length - 1]?.toLowerCase() || "jpg";
+        const fileType = extension === "jpg" ? "jpeg" : extension;
+        const fileName = cleanUri.split("/").pop() || `profile.${extension}`;
 
-        try {
-          const response = await fetch(formData.image);
-          const blob = await response.blob();
-          form.append("foto", blob, fileName);
-        } catch (fetchErr) {
-          logger.error(
-            "Error fetching image blob, falling back to legacy object",
-            { error: String(fetchErr) },
-          );
-          form.append("foto", {
-            uri: formData.image,
-            name: fileName,
-            type: `image/${fileType === "jpg" ? "jpeg" : fileType}`,
-          } as any);
-        }
+        form.append("foto", {
+          uri: uri,
+          name: fileName,
+          type: `image/${fileType}`,
+        } as any);
       }
 
       const res = await apiClient("/users", {

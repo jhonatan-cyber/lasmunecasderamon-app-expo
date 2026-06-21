@@ -57,10 +57,14 @@ export const apiClient = async <T = any>(
   const url = `${API_URL}${endpoint}`;
   logger.debug("API request", { url, endpoint });
   const headers = new Headers(fetchOptions.headers || {});
+  const isFormData =
+    fetchOptions.body &&
+    typeof fetchOptions.body === "object" &&
+    typeof (fetchOptions.body as any).append === "function";
 
   if (
     !headers.has("Content-Type") &&
-    !(fetchOptions.body instanceof FormData)
+    !isFormData
   ) {
     headers.set("Content-Type", "application/json");
   }
