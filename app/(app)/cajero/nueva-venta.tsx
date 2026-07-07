@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -28,7 +27,7 @@ import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useNuevaVenta } from '@/hooks/useNuevaVenta';
 import { NuevaVentaSkeleton } from '@/components/cajero/nueva-venta/NuevaVentaSkeleton';
-import { showToast } from '@/components/cajero/nueva-venta/helpers';
+import { MixedPaymentPanel } from '@/components/cajero/nueva-venta/MixedPaymentPanel';
 
 export default function NuevaVentaScreen() {
   const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -84,8 +83,6 @@ export default function NuevaVentaScreen() {
     loadSubmitting,
     loadMetodoPago,
   } = state;
-
-
 
   const spacing = isTablet ? 24 : 16;
   const borderRadius = isTablet ? 28 : 24;
@@ -187,74 +184,26 @@ export default function NuevaVentaScreen() {
           />
 
           {metodoPago === 'mixto' && (
-            <View style={{ marginTop: 16, padding: 12, backgroundColor: isDark ? '#1F2937' : '#F3F4F6', borderRadius: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <Ionicons name="shuffle-outline" size={18} color={accentColor} />
-                <Text style={{ color: textPrimary, fontSize: 13, fontWeight: '800', marginLeft: 8, textTransform: 'uppercase' }}>
-                  Distribuci\u00f3n de Pagos (Total: ${totals.total.toLocaleString()})
-                </Text>
-              </View>
-
-              {pagosMixtos.map((pago, index) => (
-                <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <View style={{ width: 150, flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: textSecondary, fontSize: 10, textTransform: 'uppercase', fontWeight: '700' }}>{pago.metodo}</Text>
-                  </View>
-                  <Text style={{ color: textSecondary, fontSize: 12, marginRight: 4 }}>$</Text>
-                  <TextInput
-                    style={{ flex: 1, backgroundColor: cardBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, color: textPrimary, borderWidth: 1, borderColor, fontSize: 13 }}
-                    value={pago.display}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={textSecondary}
-                    onChangeText={(text) => {
-                      const clean = text.replace(/\D/g, '');
-                      const monto = clean ? parseInt(clean, 10) : 0;
-                      dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display: clean });
-                    }}
-                    onBlur={() => {
-                      dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto: pago.monto, display: pago.monto > 0 ? pago.monto.toLocaleString('es-CL') : '' });
-                    }}
-                  />
-                  <Pressable onPress={() => dispatch({ type: 'REMOVE_PAGO_MIXTO', index })} style={{ marginLeft: 6, padding: 4 }}>
-                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                  </Pressable>
-                </View>
-              ))}
-
-              {(() => {
-                const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
-                const completo = suma >= totals.total;
-                return (
-                  <View style={{ marginTop: 8 }}>
-                    {!completo && (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                        {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
-                          if (pagosMixtos.some((p) => p.metodo === metodo)) return null;
-                          const sinSaldo = metodo === 'prepago' && Number(selectedCliente?.saldo || 0) <= 0;
-                          return (
-                            <Pressable
-                              key={metodo}
-                              onPress={() => { if (!sinSaldo) dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo: metodo as any, monto: 0, display: '' } }); }}
-                              style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: sinSaldo ? textSecondary : accentColor, backgroundColor: sinSaldo ? 'transparent' : `${accentColor}10`, opacity: sinSaldo ? 0.35 : 1 }}
-                            >
-                              <Text style={{ color: sinSaldo ? textSecondary : accentColor, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{metodo}</Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    )}
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 1, borderTopColor: borderColor }}>
-                      <Text style={{ color: textSecondary, fontSize: 12 }}>Suma actual:</Text>
-                      <Text style={{ color: suma === totals.total ? '#10B981' : '#EF4444', fontWeight: '700' }}>${suma.toLocaleString()}</Text>
-                    </View>
-                    {suma !== totals.total && (
-                      <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 4 }}>* Falta: ${(totals.total - suma).toLocaleString()}</Text>
-                    )}
-                  </View>
-                );
-              })()}
-            </View>
+            <MixedPaymentPanel
+              pagosMixtos={pagosMixtos}
+              total={totals.total}
+              clienteSaldo={selectedCliente ? Number(selectedCliente.saldo || 0) : 0}
+              onUpdatePago={(index, monto, display) =>
+                dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display })
+              }
+              onRemovePago={(index) =>
+                dispatch({ type: 'REMOVE_PAGO_MIXTO', index })
+              }
+              onAddPago={(metodo) =>
+                dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo, monto: 0, display: '' } })
+              }
+              isDark={isDark}
+              accentColor={accentColor}
+              cardBg={cardBg}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+              borderColor={borderColor}
+            />
           )}
         </View>
 
@@ -344,7 +293,7 @@ export default function NuevaVentaScreen() {
         hostesses={anfitrionas}
         selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
         selectionTarget={hostessSelectionTarget}
-        showToast={showToast}
+        showToast={() => {}}
         onToggleHostess={handleToggleHostess}
         onClose={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
         onConfirmProduct={(product) => {
@@ -371,20 +320,6 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: 26, fontWeight: '900' },
   submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { height: '80%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '900' },
-  modalSubtitle: { fontSize: 14, fontWeight: '600', opacity: 0.7 },
-  productItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
-  productName: { fontSize: 16, fontWeight: '800' },
-  productPrice: { fontSize: 14, fontWeight: '900', marginTop: 4, color: '#10B981' },
-  modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
-  modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-  addBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-  confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   backBtnRight: {
     flexDirection: 'row',
     alignItems: 'center',
