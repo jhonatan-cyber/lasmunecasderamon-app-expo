@@ -3,10 +3,6 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Easing,
-  FlatList,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -24,68 +20,13 @@ import { PremiumCalendar } from "@/components/ui/PremiumCalendar";
 import { PremiumLiquidationCard } from "@/components/shared/PremiumLiquidationCard";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useAuthStore } from "@/store/authStore";
+import { Event } from "@/hooks/useAdministrativoScreen";
 
-interface Event {
-  type:
-    | "venta"
-    | "propina"
-    | "asistencia"
-    | "anticipo"
-    | "comision"
-    | "servicio";
-  id: number;
-  codigo: string;
-  date: string;
-  amount: number;
-  estado: number;
-  subType?: string;
-}
-
-const SkeletonBox = ({
-  width,
-  height,
-  borderRadius = 10,
-  style = {},
-}: {
-  width: number | string;
-  height: number;
-  borderRadius?: number;
-  style?: any;
-}) => {
-  const [anim] = useState(() => new Animated.Value(0.3));
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0.3,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [anim]);
-  return (
-    <Animated.View
-      style={[
-        {
-          width,
-          height,
-          borderRadius,
-          backgroundColor: "#111111",
-          opacity: anim,
-        },
-        style,
-      ]}
-    />
-  );
-};
+import {
+  AdministrativoSkeleton,
+  SelectionFloat,
+  DetailedEventsModal
+} from "@/components/cajero/administrativo";
 
 export default function AdministrativoScreen() {
   const { accentColor, isDark } = useAccentColor();
@@ -249,44 +190,10 @@ export default function AdministrativoScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: bg }}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar style={isDark ? "light" : "dark"} />
-
-        <PremiumHeader
-          title="Resumen Personal"
-          subtitle="Actividad y eventos"
-        />
-
-        <ScrollView style={{ flex: 1 }} scrollEnabled={false}>
-          <View style={{ padding: 20, gap: 20 }}>
-            <View
-              style={[
-                styles.skeletonCard,
-                {
-                  backgroundColor: isDark ? "#111111" : "#FFF",
-                  borderColor: isDark ? "#374151" : "#E2E8F0",
-                },
-              ]}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 16,
-                  marginBottom: 20,
-                }}
-              >
-                <SkeletonBox width={56} height={56} borderRadius={16} />
-                <View style={{ gap: 8, flex: 1 }}>
-                  <SkeletonBox width="60%" height={14} borderRadius={6} />
-                  <SkeletonBox width="40%" height={28} borderRadius={8} />
-                </View>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </View>
+      <AdministrativoSkeleton
+        bg={bg}
+        isDark={isDark}
+      />
     );
   }
 
@@ -326,33 +233,15 @@ export default function AdministrativoScreen() {
           <PremiumLiquidationCard user={user} events={recentActivity} />
         </View>
 
-        {selectedDates.length > 0 && (
-          <View
-            style={[
-              styles.selectionFloat,
-              { backgroundColor: cardBg, borderWidth: 1, borderColor },
-            ]}
-          >
-            <Text style={[styles.selectionText, { color: textPrimary }]}>
-              {selectedDates.length}{" "}
-              {selectedDates.length === 1 ? "día" : "días"} seleccionados
-            </Text>
-            <View style={styles.selectionActions}>
-              <Pressable
-                onPress={() => setSelectedDates([])}
-                style={styles.clearBtn}
-              >
-                <Text style={styles.clearBtnText}>Borrar</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setIsModalVisible(true)}
-                style={[styles.viewBtn, { backgroundColor: accentColor }]}
-              >
-                <Text style={styles.viewBtnText}>Detalles</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
+        <SelectionFloat
+          selectedDatesCount={selectedDates.length}
+          cardBg={cardBg}
+          borderColor={borderColor}
+          textPrimary={textPrimary}
+          accentColor={accentColor}
+          onClear={() => setSelectedDates([])}
+          onViewDetails={() => setIsModalVisible(true)}
+        />
 
         <View style={{ marginTop: 10 }}>
           <PremiumCalendar
@@ -376,168 +265,23 @@ export default function AdministrativoScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <Modal
+      <DetailedEventsModal
         visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalOverlayBottom}>
-          <View style={[styles.modalContent, { backgroundColor: bg }]}>
-            <View style={styles.dragHandle} />
+        onClose={() => setIsModalVisible(false)}
+        selectedDatesCount={selectedDates.length}
+        selectedEvents={selectedEvents}
+        bg={bg}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        isDark={isDark}
+        accentColor={accentColor}
+        onSelectEvent={handleSelectEvent}
+        getEventLabel={getEventLabel}
+        getStatusLabel={getStatusLabel}
+      />
 
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={[styles.modalTitle, { color: textPrimary }]}>
-                  Eventos Detallados
-                </Text>
-                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                  {selectedDates.length}{" "}
-                  {selectedDates.length === 1
-                    ? "día seleccionado"
-                    : "días seleccionados"}{" "}
-                  · {selectedEvents.length} eventos
-                </Text>
-              </View>
-              <Pressable
-                style={[
-                  styles.closeBtn,
-                  { backgroundColor: isDark ? "#374151" : "#F1F5F9" },
-                ]}
-                onPress={() => setIsModalVisible(false)}
-                accessibilityLabel="Cerrar modal"
-                accessibilityRole="button"
-              >
-                <Ionicons name="close" size={22} color={textPrimary} />
-              </Pressable>
-            </View>
-
-            <FlatList
-              data={selectedEvents}
-              keyExtractor={(item, index) => `${item.type}-${item.id}-${index}`}
-              renderItem={({ item }) => {
-                const isAnticipo = item.type === "anticipo";
-                const iconName =
-                  item.type === "venta"
-                    ? "fast-food"
-                    : item.type === "propina"
-                      ? "wallet"
-                      : item.type === "comision"
-                        ? "star"
-                        : item.type === "asistencia"
-                          ? "calendar"
-                          : "cash";
-                const iconColor = isAnticipo ? "#EF4444" : "#10B981";
-
-                return (
-                  <Pressable
-                    onPress={() => handleSelectEvent(item)}
-                    style={({ pressed }) => [
-                      styles.eventItem,
-                      {
-                        backgroundColor: cardBg,
-                        borderColor,
-                        opacity: pressed ? 0.7 : 1,
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.iconBox,
-                        { backgroundColor: `${iconColor}20` },
-                      ]}
-                    >
-                      <Ionicons
-                        name={iconName as any}
-                        size={18}
-                        color={iconColor}
-                      />
-                    </View>
-                    <View style={styles.eventInfo}>
-                      <Text style={[styles.eventTitle, { color: textPrimary }]}>
-                        {getEventLabel(item)}{" "}
-                        {item.codigo && item.codigo !== "TIPS"
-                          ? `- ${item.codigo}`
-                          : ""}
-                      </Text>
-                      <Text
-                        style={[styles.eventTime, { color: textSecondary }]}
-                      >
-                        {new Date(item.date).toLocaleDateString("es-ES", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text
-                        style={[
-                          styles.eventPrice,
-                          { color: isAnticipo ? "#EF4444" : "#10B981" },
-                        ]}
-                      >
-                        {isAnticipo ? "-" : "+"}${item.amount.toLocaleString()}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.statusMiniText,
-                          { color: textSecondary },
-                        ]}
-                      >
-                        {getStatusLabel(item.estado)}
-                      </Text>
-                    </View>
-                  </Pressable>
-                );
-              }}
-              contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-              ListEmptyComponent={
-                <View style={styles.emptyEvents}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={48}
-                    color={textSecondary}
-                  />
-                  <Text
-                    style={[styles.emptyEventsText, { color: textSecondary }]}
-                  >
-                    Sin eventos en los días seleccionados
-                  </Text>
-                </View>
-              }
-            />
-
-            <View
-              style={[
-                styles.modalFooter,
-                {
-                  backgroundColor: bg,
-                  borderTopColor: isDark ? "#374151" : "#E5E7EB",
-                },
-              ]}
-            >
-              <Pressable
-                style={[
-                  styles.closeFooterBtn,
-                  { backgroundColor: accentColor },
-                ]}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Ionicons
-                  name="close-circle-outline"
-                  size={20}
-                  color="#FFF"
-                  style={{ marginRight: 8 }}
-                />
-                <Text style={styles.closeFooterBtnText}>Cerrar</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
       <EventDetailModal
         visible={!!selectedEvent}
         event={selectedEvent}
@@ -572,107 +316,4 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 10 },
   container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  skeletonCard: { borderRadius: 20, borderWidth: 1, padding: 16 },
-
-  selectionFloat: {
-    padding: 16,
-    borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  selectionText: { fontWeight: "700" },
-  selectionActions: { flexDirection: "row", gap: 10 },
-  clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  clearBtnText: { color: "#EF4444", fontWeight: "800" },
-  viewBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
-  viewBtnText: { color: "#FFF", fontWeight: "800" },
-  modalOverlayBottom: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    height: "80%",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    overflow: "hidden",
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#D1D5DB",
-    alignSelf: "center",
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  modalHeader: {
-    paddingHorizontal: 25,
-    paddingVertical: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#37415120",
-  },
-  modalTitle: { fontSize: 22, fontWeight: "900" },
-  modalSubtitle: { fontSize: 14, marginTop: 4 },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  eventItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  eventInfo: { flex: 1, marginLeft: 15 },
-  eventTitle: { fontSize: 15, fontWeight: "700" },
-  eventTime: { fontSize: 12, marginTop: 2 },
-  eventPrice: { fontSize: 16, fontWeight: "800" },
-  emptyEvents: { alignItems: "center", paddingVertical: 48, gap: 12 },
-  emptyEventsText: { fontSize: 14, fontWeight: "600", textAlign: "center" },
-  modalFooter: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    borderTopWidth: 1,
-  },
-  closeFooterBtn: {
-    height: 52,
-    borderRadius: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeFooterBtnText: { fontSize: 16, fontWeight: "800", color: "#FFF" },
-  statusMiniText: {
-    fontSize: 10,
-    fontWeight: "700",
-    marginTop: 4,
-  },
 });
