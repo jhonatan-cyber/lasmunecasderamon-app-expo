@@ -5,9 +5,7 @@ import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
     ActivityIndicator,
     DeviceEventEmitter,
-    FlatList,
     KeyboardAvoidingView,
-    Modal,
     Platform,
     Pressable,
     RefreshControl,
@@ -20,14 +18,19 @@ import {
 import Toast from 'react-native-toast-message';
 import { apiClient } from '@/api/client';
 import { CartList } from "@/components/cajero/forms/CartList";
-import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
-import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
-import { TimeSelector } from "@/components/ui/TimeSelector";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useTimer } from '@/context/TimerContext';
-
 import logger from '@/utils/logger';
+
+import {
+    InfoBanner,
+    CategorySelector,
+    RoomSelectionSection,
+    NewConsumptionsSummary,
+    AgregarCuentaModales
+} from '@/components/cajero/agregar-cuenta';
+
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
@@ -223,7 +226,6 @@ export default function AgregarCuentaScreen() {
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
     const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
 
-    
     const showRoomSelector = cart.some(item =>
         item.selectedHostesses && item.selectedHostesses.length > 0
     );
@@ -239,13 +241,9 @@ export default function AgregarCuentaScreen() {
     const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const spacing = isTablet ? 24 : 16;
-    const borderRadius = isTablet ? 28 : 24;
 
     const dynamicStyles = {
         scrollContent: { padding: spacing, paddingBottom: 100 },
-        section: { padding: spacing, borderRadius: borderRadius, marginBottom: spacing },
-        summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
-        submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
     };
 
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
@@ -458,7 +456,6 @@ export default function AgregarCuentaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {}
             <PremiumHeader 
                 title="Agregar Productos"
                 subtitle={`Cuenta ${cuentaOriginal?.codigo}`}
@@ -479,19 +476,14 @@ export default function AgregarCuentaScreen() {
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
             >
-                <View style={[styles.infoBanner, { backgroundColor: isDark ? `${accentColor}10` : '#F0F9FF', borderColor: `${accentColor}30`, padding: 18, borderRadius: 24 }]}>
-                    <View style={[styles.catIconBox, { backgroundColor: `${accentColor}20`, marginRight: 15, width: 44, height: 44, borderRadius: 14 }]}>
-                        <Ionicons name="information-circle" size={24} color={accentColor} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ color: textPrimary, fontSize: 15, fontWeight: "800", letterSpacing: -0.3 }}>
-                            Agregando a la cuenta {cuentaOriginal?.codigo}
-                        </Text>
-                        <Text style={{ color: textSecondary, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
-                            Cliente: <Text style={{ color: textPrimary, fontWeight: '700' }}>{cuentaOriginal?.cliente_nombre || 'Sin cliente'}</Text>
-                        </Text>
-                    </View>
-                </View>
+                <InfoBanner
+                    cuentaCodigo={cuentaOriginal?.codigo || ''}
+                    clienteNombre={cuentaOriginal?.cliente_nombre || 'Sin cliente'}
+                    accentColor={accentColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    isDark={isDark}
+                />
 
                 {false && hasRoom && (
                     <Pressable
@@ -509,56 +501,28 @@ export default function AgregarCuentaScreen() {
                     </Pressable>
                 )}
 
-                <View style={styles.browserContainer}>
-                    <Text style={[styles.browserTitle, { color: textPrimary }]}>1. Selección de Productos</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-                        {categories.map((cat, idx) => (
-                            <Pressable
-                                key={cat.id}
-                                style={[styles.categorySmallCard, { backgroundColor: cardBg, borderColor }]}
-                                onPress={() => handleOpenCategory(cat)}
-                                accessibilityLabel={`Categoría ${cat.name}`}
-                                accessibilityRole="button"
-                            >
-                                <View style={[styles.catIconBox, { backgroundColor: idx % 2 === 0 ? `${accentColor}15` : '#10B98115' }]}>
-                                    <Ionicons name="beer-outline" size={20} color={idx % 2 === 0 ? accentColor : '#10B981'} />
-                                </View>
-                                <Text style={[styles.catSmallName, { color: textPrimary }]}>{cat.name}</Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
-                </View>
+                <CategorySelector
+                    categories={categories}
+                    accentColor={accentColor}
+                    cardBg={cardBg}
+                    borderColor={borderColor}
+                    textPrimary={textPrimary}
+                    onOpenCategory={handleOpenCategory}
+                />
 
-                {}
-                {showRoomSelector && (
-                    <View style={{ marginBottom: spacing }}>
-                        <Pressable
-                            style={[styles.tiempoChip, { backgroundColor: selectedHabitacion ? `${accentColor}10` : cardBg, borderColor: selectedHabitacion ? accentColor : borderColor }]}
-                            onPress={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: true })}
-                        >
-                            <Ionicons name="business" size={18} color={selectedHabitacion ? accentColor : textSecondary} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.tiempoChipLabel, { color: textSecondary }]}>HABITACIÓN</Text>
-                                <Text style={[styles.tiempoChipValue, { color: selectedHabitacion ? accentColor : textPrimary }]}>
-                                    {selectedHabitacion?.nombre || 'Seleccionar habitación'}
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-down" size={16} color={selectedHabitacion ? accentColor : textSecondary} />
-                        </Pressable>
-                        {selectedHabitacion && (
-                            <View style={{ marginTop: 8 }}>
-                                <TimeSelector
-                                    value={selectedTime}
-                                    onChange={(t) => dispatch({ type: 'SET_SELECTED_TIME', payload: t })}
-                                    step={5}
-                                    min={5}
-                                    max={60}
-                                    label="Tiempo (minutos)"
-                                />
-                            </View>
-                        )}
-                    </View>
-                )}
+                <RoomSelectionSection
+                    showRoomSelector={showRoomSelector}
+                    selectedHabitacion={selectedHabitacion}
+                    selectedTime={selectedTime}
+                    spacing={spacing}
+                    cardBg={cardBg}
+                    borderColor={borderColor}
+                    accentColor={accentColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    onPressRoom={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: true })}
+                    onChangeTime={(t) => dispatch({ type: 'SET_SELECTED_TIME', payload: t })}
+                />
 
                 {cart.length > 0 ? (
                     <CartList
@@ -582,152 +546,48 @@ export default function AgregarCuentaScreen() {
                     </View>
                 )}
 
-                <View style={[styles.summaryCard, dynamicStyles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Total Original</Text>
-                        <Text style={[styles.summaryVal, { color: textPrimary }]}>${(cuentaOriginal?.total || 0).toLocaleString()}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Nuevos Consumos</Text>
-                        <Text style={[styles.summaryVal, { color: '#E11D48' }]}>+ ${totals.subtotal.toLocaleString()}</Text>
-                    </View>
-                    {commissionPreview.totalCommission > 0 && (
-                        <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
-                            <View style={styles.summaryRow}>
-                                <Text style={[styles.summaryLabel, { color: textSecondary }]}>Comision Nuevos Productos</Text>
-                                <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${commissionPreview.totalCommission.toLocaleString()}</Text>
-                            </View>
-                            {commissionPreview.hostessDistribution.length > 0 && (
-                                <View style={{ marginTop: 12, gap: 8 }}>
-                                    <Text style={[styles.summaryLabel, { color: textSecondary }]}>Distribucion por anfitriona</Text>
-                                    {commissionPreview.hostessDistribution.map((item) => (
-                                        <View
-                                            key={item.id}
-                                            style={[
-                                                styles.summaryRow,
-                                                {
-                                                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.10)' : '#FFF7ED',
-                                                    borderWidth: 1,
-                                                    borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : '#FED7AA',
-                                                    borderRadius: 14,
-                                                    paddingHorizontal: 12,
-                                                    paddingVertical: 10,
-                                                }
-                                            ]}
-                                        >
-                                            <Text style={[styles.summaryLabel, { color: textPrimary }]}>{item.name}</Text>
-                                            <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>${item.amount.toLocaleString()}</Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
-                    )}
-                    <View style={[styles.summaryRow, { marginTop: 12, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 12 }]}>
-                        <Text style={[styles.totalLabelFinal, { color: textPrimary }]}>NUEVO TOTAL</Text>
-                        <Text style={[styles.totalValFinal, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
-                    </View>
-
-                    <Pressable
-                        style={[styles.submitBtn, { backgroundColor: cart.length > 0 ? accentColor : '#9CA3AF' }, submitting && { opacity: 0.7 }]}
-                        onPress={handleSubmit}
-                        disabled={submitting || cart.length === 0}
-                        accessibilityLabel="Agregar productos"
-                        accessibilityRole="button"
-                    >
-                        {submitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.submitBtnText}>Agregar a Cuenta</Text>}
-                    </Pressable>
-                </View>
+                <NewConsumptionsSummary
+                    cart={cart}
+                    cuentaOriginalTotal={cuentaOriginal?.total || 0}
+                    subtotal={totals.subtotal}
+                    total={totals.total}
+                    totalCommission={commissionPreview.totalCommission}
+                    hostessDistribution={commissionPreview.hostessDistribution}
+                    submitting={submitting}
+                    isDark={isDark}
+                    accentColor={accentColor}
+                    borderColor={borderColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    onSubmit={handleSubmit}
+                />
             </ScrollView>
 
-            <Modal visible={modalOpen} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>{modalCategoria?.name || 'Productos'}</Text>
-                            <Pressable onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}>
-                                <Ionicons name="close" size={26} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        {modalLoading ? <ActivityIndicator color={accentColor} size="large" /> : (
-                            <FlatList
-                                data={modalProducts}
-                                keyExtractor={(item) => (item.id || item.id_producto).toString()}
-                                renderItem={({ item }) => (
-                                    <View style={[styles.modalProductRow, { borderBottomColor: borderColor }]}>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.modalProductName, { color: textPrimary }]}>{item.nombre || item.name}</Text>
-                                            <Text style={[styles.modalProductPrice, { color: '#10B981' }]}>${(item.precio ?? item.price ?? 0).toLocaleString()}</Text>
-                                        </View>
-                                        <View style={styles.modalQuantityActions}>
-                                            <Pressable style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]} onPress={() => {
-                                                const id = item.id || item.id_producto;
-                                                const qty = Math.max(1, (modalQuantities[id] || 1) - 1);
-                                                dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                            }}><Ionicons name="remove" size={16} color={textPrimary} /></Pressable>
-                                            <Text style={[styles.modalQtyText, { color: textPrimary }]}>{modalQuantities[item.id || item.id_producto] || 1}</Text>
-                                            <Pressable style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]} onPress={() => {
-                                                const id = item.id || item.id_producto;
-                                                const qty = (modalQuantities[id] || 1) + 1;
-                                                dispatch({ type: 'SET_MODAL_QUANTITY', productId: id, quantity: qty });
-                                            }}><Ionicons name="add" size={16} color={textPrimary} /></Pressable>
-                                        </View>
-                                        <Pressable style={[styles.modalAddBtn, { backgroundColor: accentColor }]} onPress={() => {
-                                            const id = item.id || item.id_producto;
-                                            const hasComm = Number(item.comision || item.commission || 0) > 0;
-                                            if (hasComm) {
-                                                const price = item.precio ?? item.price ?? 0;
-                                                
-                                                
-                                                const qty = modalQuantities[id] || 1;
-                                                const max = price < 160000 ? qty : getHostessLimit(item, qty);
-                                                const currentSelections = modalHostessSelections[id] || [];
-                                                if (currentSelections.length === 0 && accountHostessIds.length > 0) {
-                                                    const preSelected = accountHostessIds.slice(0, max);
-                                                    dispatch({ type: 'SET_MODAL_HOSTESSES', productId: id, hostesses: preSelected });
-                                                }
-                                                dispatch({ type: 'SET_HOSTESS_TARGET', target: { productId: id, product: item, max, isChampagne: isChampagneProduct(item) } });
-                                            } else {
-                                                addProductToCart(item);
-                                            }
-                                        }}><Ionicons name="cart-outline" size={20} color="#FFFFFF" /></Pressable>
-                                    </View>
-                                )}
-                            />
-                        )}
-                        <Pressable style={[styles.confirmModalBtn, { backgroundColor: accentColor }]} onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}>
-                            <Text style={styles.confirmModalBtnText}>Confirmar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <AgregarCuentaModales
+                modalOpen={modalOpen}
+                modalCategoria={modalCategoria}
+                modalProducts={modalProducts}
+                modalLoading={modalLoading}
+                modalQuantities={modalQuantities}
+                modalHostessSelections={modalHostessSelections}
+                accountHostessIds={accountHostessIds}
+                onCloseCategoryModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
+                onSetQuantity={(productId, qty) => dispatch({ type: 'SET_MODAL_QUANTITY', productId, quantity: qty })}
+                onSetHostessTarget={(target) => dispatch({ type: 'SET_HOSTESS_TARGET', target })}
+                onSetModalHostesses={(productId, hostesses) => dispatch({ type: 'SET_MODAL_HOSTESSES', productId, hostesses })}
+                onSelectProduct={addProductToCart}
 
-            <Modal visible={timeModalVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContentWide, { backgroundColor: cardBg, height: 'auto', maxHeight: '60%' }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Tiempo Extra</Text>
-                            <Pressable onPress={() => dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false })}>
-                                <Ionicons name="close" size={26} color={textPrimary} />
-                            </Pressable>
-                        </View>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <Pressable style={[styles.timeOption, { borderColor: extraTiempo === 0 ? '#3B82F6' : borderColor }]} onPress={() => { dispatch({ type: 'SET_EXTRA_TIEMPO', payload: 0 }); dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false }); }}>
-                                <Text style={[styles.timeOptionText, { color: extraTiempo === 0 ? '#3B82F6' : textPrimary }]}>Sin tiempo extra</Text>
-                            </Pressable>
-                            {[5, 10, 15, 20, 25, 30, 45, 60].map((t) => (
-                                <Pressable key={t} style={[styles.timeOption, { borderColor: extraTiempo === t ? '#3B82F6' : borderColor }]} onPress={() => { dispatch({ type: 'SET_EXTRA_TIEMPO', payload: t }); dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false }); }}>
-                                    <Text style={[styles.timeOptionText, { color: extraTiempo === t ? '#3B82F6' : textPrimary }]}>+ {t} minutos</Text>
-                                </Pressable>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+                timeModalVisible={timeModalVisible}
+                onCloseTimeModal={() => dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false })}
+                extraTiempo={extraTiempo}
+                onSelectTimeOption={(t) => {
+                    dispatch({ type: 'SET_EXTRA_TIEMPO', payload: t });
+                    dispatch({ type: 'SET_TIME_MODAL_VISIBLE', payload: false });
+                }}
 
-            <HostessSelectModal
-                visible={hostessSubModalVisible && hostessSelectionTarget !== null}
-                hostesses={Array.from(
+                hostessSubModalVisible={hostessSubModalVisible && hostessSelectionTarget !== null}
+                hostessSelectionTarget={hostessSelectionTarget}
+                uniqueHostesses={Array.from(
                     new Map(anfitrionas.map((a: any) => [String(a.id_usuario || a.id), a])).values()
                 ).map((a: any) => ({
                     id: a.id_usuario || a.id,
@@ -735,9 +595,8 @@ export default function AgregarCuentaScreen() {
                     nick: a.nick,
                     status: a.status || 0
                 }))}
-                selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
-                max={hostessSelectionTarget?.max}
-                onToggle={(id) => {
+                selectedHostessIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
+                onToggleHostess={(id) => {
                     if (!hostessSelectionTarget) return;
                     const pid = hostessSelectionTarget.productId;
                     const currentSelected = modalHostessSelections[pid] || [];
@@ -751,8 +610,8 @@ export default function AgregarCuentaScreen() {
                     }
                     dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
                 }}
-                onClose={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
-                onConfirm={() => {
+                onCloseHostessModal={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
+                onConfirmHostess={() => {
                     if (hostessSelectionTarget) {
                         const pid = hostessSelectionTarget.productId;
                         const hasComm = Number(hostessSelectionTarget.product.comision || hostessSelectionTarget.product.commission || 0) > 0;
@@ -763,16 +622,22 @@ export default function AgregarCuentaScreen() {
                         dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false });
                     }
                 }}
-            />
-            <RoomSelectModal
-                visible={roomModalVisible}
-                rooms={habitaciones}
-                selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
-                onClose={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: false })}
-                onSelect={(room) => {
+
+                roomModalVisible={roomModalVisible}
+                habitaciones={habitaciones}
+                selectedHabitacion={selectedHabitacion}
+                onCloseRoomModal={() => dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: false })}
+                onSelectRoom={(room) => {
                     dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
                     dispatch({ type: 'SET_ROOM_MODAL_VISIBLE', payload: false });
                 }}
+
+                cardBg={cardBg}
+                borderColor={borderColor}
+                textPrimary={textPrimary}
+                accentColor={accentColor}
+                bg={bg}
+                isDark={isDark}
             />
         </KeyboardAvoidingView>
     );
@@ -780,46 +645,10 @@ export default function AgregarCuentaScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { paddingHorizontal: 20 },
-    headerTop: { flexDirection: 'row', alignItems: 'center' },
-    headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-    headerSubtitle: { fontSize: 13, fontWeight: '500', opacity: 0.8 },
-    backBtn: { height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(155,155,155,0.1)' },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { padding: 16, paddingBottom: 100 },
-    infoBanner: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 20 },
-    browserContainer: { marginBottom: 20 },
-    browserTitle: { fontSize: 13, fontWeight: '900', marginBottom: 16, textTransform: 'uppercase', opacity: 0.6 },
-    categoryScroll: { gap: 12 },
-    categorySmallCard: { width: 140, padding: 12, borderRadius: 20, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 64 },
-    catIconBox: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    catSmallName: { fontSize: 12, fontWeight: '800' },
     emptyCartBox: { padding: 20, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     emptyCartText: { fontSize: 14, fontWeight: '600' },
-    summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1 },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    summaryLabel: { fontSize: 14, fontWeight: '600' },
-    summaryVal: { fontSize: 15, fontWeight: '800' },
-    totalLabelFinal: { fontSize: 18, fontWeight: '900' },
-    totalValFinal: { fontSize: 26, fontWeight: '900', color: '#E11D48' },
-    submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-    submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContentWide: { width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 20, height: '85%' },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
-    modalProductRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
-    modalProductName: { fontSize: 16, fontWeight: '800' },
-    modalProductPrice: { fontSize: 14, fontWeight: '900', marginTop: 4 },
-    modalQuantityActions: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
-    modalQtyBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-    modalQtyText: { fontSize: 16, fontWeight: '700', marginHorizontal: 12 },
-    modalAddBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
-    confirmModalBtn: { height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-    confirmModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-    tiempoChip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20 },
-    tiempoChipLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
-    tiempoChipValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
     backBtnRight: {
         flexDirection: 'row', 
         alignItems: 'center', 
@@ -830,8 +659,7 @@ const styles = StyleSheet.create({
         gap: 6
     },
     backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-    timeOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
-    timeOptionText: { fontSize: 15, fontWeight: '700' },
+    tiempoChip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20 },
+    tiempoChipLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+    tiempoChipValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
 });
-
-
