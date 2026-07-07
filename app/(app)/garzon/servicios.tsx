@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -16,49 +14,11 @@ import {
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
-import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
-import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { Skeleton } from '@/components/ui/Skeleton';
-
-import logger from '@/utils/logger';
-interface Room {
-    id: number;
-    id_habitacion?: number;
-    name: string;
-    numero: string;
-    nombre?: string;
-    price: number;
-    precio?: number;
-    time: number;
-    tiempo?: number;
-    status: number;
-    comision_anfitriona?: number;
-}
-
-interface Anfitriona {
-    id: number;
-    id_usuario?: number;
-    nick: string;
-    name: string;
-    nombre?: string;
-    foto: string;
-    estado_servicio?: number;
-}
-
-interface Client {
-    id: number;
-    id_cliente?: number;
-    name: string;
-    nombre?: string;
-    lastName: string;
-    apellido?: string;
-    saldo?: number;
-}
+import { useGarzonServiciosScreen } from '@/hooks/useGarzonServiciosScreen';
+import { GarzonServicioSummary, GarzonServiciosModales } from '@/components/garzon/servicios';
 
 function ServiciosSkeleton({ bg, gradientColors, insets }: { bg: string; gradientColors: string[]; insets: { top: number } }) {
     return (
@@ -95,298 +55,44 @@ function ServiciosSkeleton({ bg, gradientColors, insets }: { bg: string; gradien
 }
 
 export default function ServiciosScreen() {
-    const { accentColor, gradientColors } = useAccentColor();
+    const { accentColor, gradientColors, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const primaryColor = accentColor;
 
-    
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
-    const [clients, setClients] = useState<Client[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const dataRef = useRef<string>('');
-
-    
-    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-    const [selectedHostesses, setSelectedHostesses] = useState<(number | string)[]>([]);
-    const [selectedClients, setSelectedClients] = useState<(number | string)[]>([]);
-    const [servicePrice, setServicePrice] = useState<string>('');
-    const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | ''>('');
-    const [roomModalVisible, setRoomModalVisible] = useState(false);
-    const [hostessModalVisible, setHostessModalVisible] = useState(false);
-    const [clientModalVisible, setClientModalVisible] = useState(false);
-
-    const { bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
-
-    
-    const fetchData = useCallback(async (isRefreshing = false) => {
-        try {
-            if (!isRefreshing) setLoading(true);
-            const [roomRes, anfRes, clientRes] = await Promise.allSettled([
-                apiClient('/rooms'),
-                apiClient('/users?anfitrionas=1'),
-                apiClient('/clients'),
-            ]);
-
-            const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
-            const anfData = anfRes.status === 'fulfilled' ? anfRes.value : null;
-            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
-
-            const deduplicate = (arr: any[], idKey: string) => {
-                if (!Array.isArray(arr)) return [];
-                const seen = new Set();
-                return arr.filter(item => {
-                    const id = item[idKey] || item.id;
-                    if (seen.has(id)) return false;
-                    seen.add(id);
-                    return true;
-                });
-            };
-
-            const rawAnf = anfData?.data || [];
-            const rawClients = Array.isArray(clientData) ? clientData : (clientData?.data || []);
-            const newData = { rooms: roomData?.data, anfitrionas: rawAnf, clients: rawClients };
-            const serialized = JSON.stringify(newData);
-            const hasChanges = dataRef.current !== serialized;
-            dataRef.current = serialized;
-
-            setRooms(roomData?.data || []);
-            
-            
-            setAnfitrionas(prev => {
-                const combined = [...(rawAnf || []), ...(prev || [])];
-                return deduplicate(combined, 'id_usuario');
-            });
-            setClients(deduplicate(rawClients, 'id_cliente'));
-
-            if (isRefreshing) {
-                Toast.show({
-                    type: hasChanges ? 'success' : 'info',
-                    text1: hasChanges ? 'Éxito' : 'Información',
-                    text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
-                    visibilityTime: 3000
-                });
-            }
-        } catch (err: any) {
-            logger.captureException(err, { context: 'Servicios:fetchServicios' });
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: isRefreshing ? 'No se pudieron actualizar los datos' : 'No se pudieron cargar los datos necesarios',
-            });
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
-
-    useFocusEffect(
-        useCallback(() => {
-            const run = async () => { await fetchData(); };
-            void run();
-        }, [fetchData])
-    );
-
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchData(true);
-    };
-
-    const toggleHostess = (hostessId: string | number) => {
-        const isSelected = selectedHostesses.some(id => String(id) === String(hostessId));
-        let next;
-        
-        if (isSelected) {
-            next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
-        } else {
-            if (selectedHostesses.length >= maxHostesses) {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Límite alcanzado',
-                    text2: `Máximo ${maxHostesses} anfitrionas permitidas`
-                });
-                return;
-            }
-            next = [...selectedHostesses, hostessId];
-        }
-
-        const uniqueNext = Array.from(new Set(next.map(id => String(id))))
-            .map(idStr => next.find(id => String(id) === idStr) || idStr);
-
-        setSelectedHostesses(uniqueNext as any);
-    };
-
-    const toggleClient = (clientId: string | number) => {
-        const isSelected = selectedClients.some(id => String(id) === String(clientId));
-        let next;
-
-        if (isSelected) {
-            next = selectedClients.filter((id) => String(id) !== String(clientId));
-        } else {
-            if (selectedClients.length >= maxClients) {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Límite alcanzado',
-                    text2: `Máximo ${maxClients} clientes permitidos`
-                });
-                return;
-            }
-            next = [...selectedClients, clientId];
-        }
-
-        const uniqueNext = Array.from(new Set(next.map(id => String(id))))
-            .map(idStr => next.find(id => String(id) === idStr) || idStr);
-
-        setSelectedClients(uniqueNext as any);
-
-        const activeClient = uniqueNext.length === 0
-            ? null
-            : clients.find(c => String(c.id_cliente || c.id) === String(uniqueNext[0]));
-
-        if (activeClient && (activeClient.saldo || 0) > 0) {
-            setPaymentMethod('prepago');
-        } else if (paymentMethod === 'prepago') {
-            setPaymentMethod('');
-        }
-    };
-
-    
-    const hasComision = useMemo(() => {
-        return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
-    }, [selectedRoom]);
-
-    const maxHostesses = !hasComision
-        ? 10
-        : Math.min(3, 4 - Math.max(1, selectedClients.length));
-
-    const maxClients = !hasComision
-        ? 10
-        : 4 - Math.max(1, selectedHostesses.length);
-
-    const activeClientWithBalance = selectedClients.length === 0
-        ? null
-        : (() => {
-            const mainClientId = selectedClients[0];
-            const client = clients.find(c => String(c.id_cliente || c.id) === String(mainClientId));
-            return (client && (client.saldo || 0) > 0) ? client : null;
-        })();
-
-    const hasPrepago = !!activeClientWithBalance;
-
-    
-    const totals = useMemo(() => {
-        const price = parseInt(servicePrice.replace(/\./g, '')) || 0;
-        const roomPrice = selectedRoom ? (selectedRoom.precio || selectedRoom.price || 0) : 0;
-
-        const cantAnfitrionas = selectedHostesses.length || 1;
-        const cantClientes = selectedClients.length || 1;
-
-        let multServicio = cantAnfitrionas;
-        let multHabitacion = cantAnfitrionas;
-
-        if (cantClientes > cantAnfitrionas && selectedRoom && (selectedRoom.comision_anfitriona ?? 0) === 0) {
-            multServicio = cantClientes;
-            multHabitacion = cantClientes;
-        }
-
-        if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
-            multHabitacion = 1;
-        }
-
-        const subtotal = price * multServicio;
-        const totalHabitacion = roomPrice * multHabitacion;
-
-        let currentIva = 0;
-        if (paymentMethod === 'tarjeta') {
-            
-            currentIva = Math.floor(subtotal * 0.20);
-        }
-
-        let total = subtotal + totalHabitacion + currentIva;
-
-        if (paymentMethod === 'tarjeta' && !hasComision) {
-            const totalRedondeado = Math.ceil(total / 5000) * 5000;
-            const excedente = totalRedondeado - total;
-            total = totalRedondeado;
-            currentIva += excedente;
-        }
-
-        const comisionTotal = selectedRoom ? (selectedRoom.comision_anfitriona || 0) : 0;
-        const comisionPorAnfitriona = (comisionTotal > 0 && selectedHostesses.length > 0) 
-            ? Math.floor(comisionTotal / selectedHostesses.length) 
-            : comisionTotal;
-
-        return { subtotal, totalHabitacion, total, iva: currentIva, comisionPorAnfitriona };
-    }, [servicePrice, selectedRoom, selectedHostesses.length, selectedClients.length, paymentMethod, hasComision]);
-
-    const handleSubmit = async () => {
-        if (!selectedRoom) return Alert.alert('Error', 'Selecciona una habitación');
-        if (selectedHostesses.length === 0) return Alert.alert('Error', 'Selecciona al menos una anfitriona');
-        if (!paymentMethod) return Alert.alert('Error', 'Selecciona un método de pago');
-
-        
-        if (!hasComision && (!servicePrice || servicePrice === '0')) {
-            return Alert.alert('Error', 'Ingresa el precio del servicio');
-        }
-
-        const generateCode = () => {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = '';
-            for (let i = 0; i < 8; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        };
-
-        setSubmitting(true);
-        try {
-            const codigo = generateCode();
-            const payload = {
-                codigo,
-                cliente_id: selectedClients.length > 0 ? selectedClients[0] : null,
-                clientes: selectedClients,
-                habitacion_id: selectedRoom.id_habitacion || selectedRoom.id,
-                precio_servicio: parseInt(servicePrice.replace(/\./g, '')) || 0,
-                precio_habitacion: selectedRoom.precio || selectedRoom.price || 0,
-                comision_anfitriona: selectedRoom.comision_anfitriona || 0,
-                usuarios: selectedHostesses,
-                anfitrionas_ids: selectedHostesses,
-                metodo_pago: paymentMethod,
-                tiempo: selectedRoom.tiempo || selectedRoom.time || 0,
-                total: totals.total,
-                iva: totals.iva,
-                num_clientes: selectedClients.length || 1,
-            };
-
-            const res = await apiClient('/solicitudes-servicios', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-
-            if (res.success) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Solicitud Enviada',
-                    text2: 'La solicitud de servicio ha sido enviada a caja',
-                });
-                router.back();
-            } else {
-                Alert.alert('Error', res.message || 'No se pudo crear el servicio');
-            }
-        } catch (err: any) {
-            Alert.alert('Error', err.message || 'Error de conexión');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const formatNumber = (val: string) => {
-        const num = val.replace(/\D/g, '');
-        return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    };
+    const {
+        rooms,
+        anfitrionas,
+        clients,
+        loading,
+        refreshing,
+        submitting,
+        selectedRoom,
+        setSelectedRoom,
+        selectedHostesses,
+        selectedClients,
+        servicePrice,
+        setServicePrice,
+        paymentMethod,
+        setPaymentMethod,
+        roomModalVisible,
+        setRoomModalVisible,
+        hostessModalVisible,
+        setHostessModalVisible,
+        clientModalVisible,
+        setClientModalVisible,
+        hasComision,
+        maxHostesses,
+        maxClients,
+        activeClientWithBalance,
+        hasPrepago,
+        totals,
+        onRefresh,
+        toggleHostess,
+        toggleClient,
+        handleSubmit,
+        formatNumber
+    } = useGarzonServiciosScreen();
 
     if (loading) return <ServiciosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 
@@ -414,7 +120,6 @@ export default function ServiciosScreen() {
 
                 <View style={{ padding: 20 }}>
 
-                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>HABITACIÓN</Text>
                 <Pressable 
                     onPress={() => setRoomModalVisible(true)}
@@ -431,39 +136,14 @@ export default function ServiciosScreen() {
                     <Ionicons name="chevron-down" size={20} color={textSecondary} />
                 </Pressable>
 
-                <RoomSelectModal 
-                    visible={roomModalVisible}
-                    onClose={() => setRoomModalVisible(false)}
-                    onSelect={(room) => {
-                        setSelectedRoom(room as any);
-                        if ((room as any).comision_anfitriona && (room as any).comision_anfitriona > 0) {
-                            setServicePrice('');
-                        }
-                        setRoomModalVisible(false);
-                    }}
-                    rooms={rooms.filter(r => 
-                        r.status === 1 && 
-                        (r.precio || r.price || 0) > 0 && 
-                        (r.tiempo || r.time || 0) > 0
-                    ).map(r => ({
-                        ...r,
-                        nombre: r.nombre || r.name || r.numero,
-                        precio: r.precio || r.price || 0,
-                        tiempo: r.tiempo || r.time || 0,
-                        estado: r.status
-                    }))}
-                    selectedRoomId={selectedRoom?.id_habitacion || selectedRoom?.id}
-                />
-
                 {hasComision && (
                     <View style={{ backgroundColor: primaryColor + '15', padding: 12, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: primaryColor + '40' }}>
                         <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 13, textAlign: 'center' }}>
-                            âœ¨ Límite: Máx 3 Anfitrionas y 4 personas en total
+                            ✨ Límite: Máx 3 Anfitrionas y 4 personas en total
                         </Text>
                     </View>
                 )}
 
-                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     ANFITRIONAS {hasComision && `(MÁX ${maxHostesses})`}
                 </Text>
@@ -489,17 +169,6 @@ export default function ServiciosScreen() {
                     <Ionicons name="chevron-down" size={20} color={textSecondary} />
                 </Pressable>
 
-                <HostessSelectModal 
-                    visible={hostessModalVisible}
-                    onClose={() => setHostessModalVisible(false)}
-                    onConfirm={() => setHostessModalVisible(false)}
-                    onToggle={toggleHostess}
-                    hostesses={anfitrionas as any}
-                    selectedIds={selectedHostesses}
-                    max={maxHostesses}
-                />
-
-                {}
                 <Text style={[styles.sectionLabel, { color: textSecondary }]}>
                     CLIENTES (OPCIONAL {hasComision && `- MÁX ${maxClients}`})
                 </Text>
@@ -526,16 +195,6 @@ export default function ServiciosScreen() {
                     <Ionicons name="chevron-down" size={20} color={textSecondary} />
                 </Pressable>
 
-                <ClientSelectModal 
-                    visible={clientModalVisible}
-                    onClose={() => setClientModalVisible(false)}
-                    onToggle={toggleClient}
-                    clients={clients as any}
-                    selectedIds={selectedClients}
-                    max={maxClients}
-                />
-
-                {}
                 <View style={styles.formSection}>
                     {!hasComision && (
                         <View style={styles.inputGroup}>
@@ -610,35 +269,15 @@ export default function ServiciosScreen() {
                     )}
                 </View>
 
-                {}
-                <View style={[styles.summaryCard, { backgroundColor: primaryColor + '15', borderColor: primaryColor }]}>
-                    <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal:</Text>
-                        <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>Habitación:</Text>
-                        <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.totalHabitacion.toLocaleString()}</Text>
-                    </View>
-                    {hasComision && selectedHostesses.length > 0 && (
-                        <View style={[styles.summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: primaryColor + '20' }]}>
-                            <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>Comisión p/Anf:</Text>
-                            <Text style={[styles.summaryValue, { color: '#10B981', fontWeight: '800' }]}>
-                                ${totals.comisionPorAnfitriona.toLocaleString()} x {selectedHostesses.length}
-                            </Text>
-                        </View>
-                    )}
-                    {paymentMethod === 'tarjeta' && (
-                        <View style={styles.summaryRow}>
-                            <Text style={[styles.summaryLabel, { color: textSecondary }]}>IVA/Ajuste:</Text>
-                            <Text style={[styles.summaryValue, { color: textPrimary }]}>${totals.iva.toLocaleString()}</Text>
-                        </View>
-                    )}
-                    <View style={[styles.totalRow, { borderTopColor: primaryColor + '30' }]}>
-                        <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
-                        <Text style={[styles.totalAmount, { color: primaryColor }]}>${totals.total.toLocaleString()}</Text>
-                    </View>
-                </View>
+                <GarzonServicioSummary
+                    totals={totals}
+                    hasComision={hasComision}
+                    selectedHostessesCount={selectedHostesses.length}
+                    paymentMethod={paymentMethod}
+                    primaryColor={primaryColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                />
 
                 <Pressable
                     onPress={handleSubmit}
@@ -652,20 +291,48 @@ export default function ServiciosScreen() {
                     {submitting ? (
                         <ActivityIndicator color="#FFF" />
                     ) : (
-                        <>
-                            <Text style={styles.submitText}>SOLICITAR SERVICIO</Text>
-                        </>
+                        <Text style={styles.submitText}>SOLICITAR SERVICIO</Text>
                     )}
                 </Pressable>
                 </View>
             </ScrollView>
+
+            <GarzonServiciosModales
+                roomModalVisible={roomModalVisible}
+                setRoomModalVisible={setRoomModalVisible}
+                rooms={rooms.filter(r => 
+                    r.status === 1 && 
+                    (r.precio || r.price || 0) > 0 && 
+                    (r.tiempo || r.time || 0) > 0
+                ).map(r => ({
+                    ...r,
+                    nombre: r.nombre || r.name || r.numero,
+                    precio: r.precio || r.price || 0,
+                    tiempo: r.tiempo || r.time || 0,
+                    estado: r.status
+                }))}
+                selectedRoom={selectedRoom}
+                setSelectedRoom={setSelectedRoom}
+                setServicePrice={setServicePrice}
+                hostessModalVisible={hostessModalVisible}
+                setHostessModalVisible={setHostessModalVisible}
+                anfitrionas={anfitrionas}
+                selectedHostesses={selectedHostesses}
+                toggleHostess={toggleHostess}
+                maxHostesses={maxHostesses}
+                clientModalVisible={clientModalVisible}
+                setClientModalVisible={setClientModalVisible}
+                clients={clients}
+                selectedClients={selectedClients}
+                toggleClient={toggleClient}
+                maxClients={maxClients}
+            />
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { 
         paddingHorizontal: 20,
     },
@@ -679,7 +346,6 @@ const styles = StyleSheet.create({
         gap: 6
     },
     backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-    title: { fontSize: 22, fontWeight: '900', flex: 1 },
     selectField: {
         height: 56,
         borderRadius: 16,
@@ -709,13 +375,6 @@ const styles = StyleSheet.create({
     methodContainer: { flexDirection: 'row', gap: 10, marginBottom: 10 },
     methodBtn: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     methodText: { fontSize: 12, fontWeight: '800' },
-    summaryCard: { padding: 20, borderRadius: 24, borderWidth: 1, marginVertical: 20, gap: 10 },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    summaryLabel: { fontSize: 14, fontWeight: '600' },
-    summaryValue: { fontSize: 14, fontWeight: '700' },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 15, borderTopWidth: 1 },
-    totalLabel: { fontSize: 18, fontWeight: '900' },
-    totalAmount: { fontSize: 24, fontWeight: '900' },
     submitBtn: { height: 64, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     submitText: { color: '#FFF', fontSize: 16, fontWeight: '900', letterSpacing: 1 }
 });
