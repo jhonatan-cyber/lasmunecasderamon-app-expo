@@ -18,7 +18,7 @@ import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
 
 import logger from "@/utils/logger";
 export default function ServiciosScreen() {
-  const { accentColor, isDark } = useAccentColor();
+  const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } = useAccentColor();
   const {
     servicios,
     loading,
@@ -45,10 +45,7 @@ export default function ServiciosScreen() {
     showCancel: true,
   });
 
-  const bg = isDark ? "#000000" : "#F9FAFB";
-  const cardBg = isDark ? "#111111" : "#FFFFFF";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? `${accentColor}40` : "#E5E7EB";
+
 
   const onConfirmAssistance = (
     servicioId: number,

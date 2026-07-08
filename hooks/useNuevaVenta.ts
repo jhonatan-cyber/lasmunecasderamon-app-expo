@@ -11,7 +11,11 @@ import {
   showToast,
   isChampagneProduct,
   getHostessLimit,
-} from '@/components/cajero/nueva-venta/helpers';
+  openCategory,
+  normalizeRoom,
+  normalizeClients,
+  normalizeAnfitrionas,
+} from '@/hooks/utils/cartUtils';
 import logger from '@/utils/logger';
 
 export const initialVentaState: VentaState = {
@@ -226,39 +230,19 @@ export function useNuevaVenta() {
         ]);
 
       const caja = cajaRes.status === 'fulfilled' ? cajaRes.value : null;
-      const anfitrionas = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value : null;
+      const anfitrionasVal = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value : null;
       const rooms = roomsRes.status === 'fulfilled' ? roomsRes.value : null;
       const clients = clientsRes.status === 'fulfilled' ? clientsRes.value : null;
       const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value : null;
 
-      const rawHabitaciones = rooms?.success ? rooms.data : [];
       const fetchedData: any = {
         cajaAbierta:
           cajaRes.status === 'fulfilled' ? caja?.success && caja?.data?.hasOpenCaja : null,
-        anfitrionas: Array.isArray(anfitrionas)
-          ? anfitrionas
-          : anfitrionas?.success
-            ? anfitrionas.data
-            : [],
-        habitaciones: rawHabitaciones.map((room: any) => ({
-          ...room,
-          nombre:
-            room.nombre ??
-            room.name ??
-            `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
-          precio: room.precio ?? room.price ?? 0,
-          tiempo: room.tiempo ?? room.time ?? 0,
-          estado: room.estado ?? room.status ?? 0,
-          comision_anfitriona: room.comision_anfitriona ?? 0,
-        })),
+        anfitrionas: normalizeAnfitrionas(anfitrionasVal),
+        habitaciones: (rooms?.success ? rooms.data : []).map(normalizeRoom),
         categories: categories?.success ? categories.data || [] : [],
+        clientes: normalizeClients(clients),
       };
-
-      if (Array.isArray(clients)) {
-        fetchedData.clientes = clients;
-      } else if (clients?.success) {
-        fetchedData.clientes = clients.data || [];
-      }
 
       dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
 
@@ -335,20 +319,10 @@ export function useNuevaVenta() {
     }
   }, [loadingTargetClient, loadingAmount, loadMetodoPago, selectedCliente, fetchInitialData]);
 
-  const handleOpenCategory = useCallback(async (cat: any) => {
-    dispatch({ type: 'SET_MODAL_LOADING', payload: true });
-    dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: true });
-    try {
-      const res = await apiClient(`/products?category_id=${cat.id}`);
-      if (res.success) {
-        dispatch({ type: 'OPEN_CATEGORY_MODAL', category: cat, products: res.data || [] });
-      } else showToast('Error', 'No se pudieron cargar los productos');
-    } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:handleOpenCategory' });
-    } finally {
-      dispatch({ type: 'SET_MODAL_LOADING', payload: false });
-    }
-  }, []);
+  const handleOpenCategory = useCallback(
+    (cat: any) => openCategory(cat, dispatch),
+    [],
+  );
 
   const addProductToCart = useCallback(
     (prod: any) => {

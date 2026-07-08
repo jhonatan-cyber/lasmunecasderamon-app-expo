@@ -41,11 +41,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     timer,
     onSuccess,
 }) => {
-    const { isDark, cardBg, borderColor, accentColor: accent } = useAccentColor();
-    const accentColor = accent;
-    const bg = isDark ? '#111827' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const { isDark, cardBg, borderColor, accentColor, bg, textPrimary, textSecondary } = useAccentColor();
     const [loading, setLoading] = useState(false);
     const [, setLoadingAnfitrionas] = useState(false);
     const [tiempo, setTiempo] = useState<number>(30);

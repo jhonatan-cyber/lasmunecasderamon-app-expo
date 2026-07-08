@@ -5,12 +5,23 @@ import { apiClient } from "@/api/client";
 import { useTimer } from "@/context/TimerContext";
 import logger from "@/utils/logger";
 import { CuentaState, CuentaAction, initialCuentaState, cuentaReducer } from "@/hooks/types/cuentaTypes";
-import { showToast, buildCommissionPreview, isChampagneProduct, getChampagneLimit, getHostessLimit } from "@/hooks/utils/cuentaUtils";
+import {
+  showToast,
+  buildCommissionPreview,
+  isChampagneProduct,
+  getChampagneLimit,
+  getHostessLimit,
+  openCategory,
+  addProductToCartUtils,
+  normalizeRoom,
+  normalizeAnfitrionas,
+} from "@/hooks/utils/cartUtils";
+import type { CuentaOriginal } from "@/hooks/types/cuentaTypes";
 
 export type { CuentaState, CuentaAction };
 export { initialCuentaState, cuentaReducer, showToast, isChampagneProduct, getChampagneLimit, getHostessLimit, buildCommissionPreview };
 
-export function useAgregarCuenta(cuentaOriginal: any) {
+export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
   const router = useRouter();
   const { timers, refreshTimers } = useTimer();
   const [state, dispatch] = useReducer(cuentaReducer, initialCuentaState);
@@ -42,7 +53,7 @@ export function useAgregarCuenta(cuentaOriginal: any) {
   const hasRoom = !!cuentaOriginal?.habitacion_id;
   const accountHostessIds = useMemo(() => {
     return (cuentaDetalle?.usuarios || [])
-      .map((u: any) => u.usuario_id || u.id_usuario)
+      .map((u) => (u.usuario_id ?? u.id_usuario) as number)
       .filter(Boolean) as number[];
   }, [cuentaDetalle]);
 
@@ -64,23 +75,12 @@ export function useAgregarCuenta(cuentaOriginal: any) {
         }
         const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
-        const rawHabitaciones = roomsRes?.success ? roomsRes.data : [];
         dispatch({
           type: "SET_INITIAL_DATA",
           payload: {
-            anfitrionas: Array.isArray(anfitrionasRes)
-              ? anfitrionasRes
-              : anfitrionasRes.success
-                ? anfitrionasRes.data
-                : [],
+            anfitrionas: normalizeAnfitrionas(anfitrionasRes),
             categories: categoriesRes.success ? categoriesRes.data || [] : [],
-            habitaciones: rawHabitaciones.map((room: any) => ({
-              ...room,
-              nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ""}`.trim(),
-              precio: room.precio ?? room.price ?? 0,
-              tiempo: room.tiempo ?? room.time ?? 0,
-              estado: room.estado ?? room.status ?? 0,
-            })),
+            habitaciones: (roomsRes?.success ? roomsRes.data : []).map(normalizeRoom),
             cuentaDetalle: cuentaDetalleRes || null,
           },
         });
@@ -108,64 +108,21 @@ export function useAgregarCuenta(cuentaOriginal: any) {
     fetchInitialData(true);
   }, [fetchInitialData]);
 
-  const handleOpenCategory = useCallback(async (cat: any) => {
-    dispatch({ type: "SET_MODAL_LOADING", payload: true });
-    dispatch({ type: "SET_MODAL_VISIBLE", modal: "category", visible: true });
-    try {
-      const res = await apiClient(`/products?category_id=${cat.id}`);
-      if (res.success) {
-        dispatch({ type: "OPEN_CATEGORY_MODAL", category: cat, products: res.data || [] });
-      } else {
-        showToast("Error", "No se pudieron cargar los productos");
-      }
-    } catch (error) {
-      logger.captureException(error, { context: "AgregarCuenta:handleOpenCategory" });
-    } finally {
-      dispatch({ type: "SET_MODAL_LOADING", payload: false });
-    }
-  }, []);
+  const handleOpenCategory = useCallback(
+    (cat: any) => openCategory(cat, dispatch),
+    [],
+  );
 
   const addProductToCart = useCallback(
-    (prod: any) => {
-      const id = prod.id || prod.id_producto;
-      const totalQty = modalQuantities[id] || 1;
-      const selectedHostesses = modalHostessSelections[id] || [];
-      const price = prod.precio ?? prod.price ?? 0;
-      const comm = prod.comision ?? prod.commission ?? 0;
-      const newCart = [...cart];
-      const hostessNames =
-        selectedHostesses.length > 0
-          ? selectedHostesses
-              .map((hId: number | string) => anfitrionas.find((a: any) => String(a.id_usuario || a.id) === String(hId))?.nick || "")
-              .filter(Boolean)
-              .join(", ")
-          : null;
-      const existingItemIndex = newCart.findIndex((item) => {
-        const itemId = item.id_producto || item.id;
-        const currentH = item.selectedHostesses || [];
-        const sortedCurrent = [...currentH].sort().join(",");
-        const sortedNew = [...selectedHostesses].sort().join(",");
-        return itemId === id && sortedCurrent === sortedNew;
-      });
-      if (existingItemIndex >= 0) {
-        newCart[existingItemIndex].cantidad += totalQty;
-        newCart[existingItemIndex].subtotal = price * newCart[existingItemIndex].cantidad;
-      } else {
-        newCart.push({
-          id_producto: id,
-          nombre: prod.nombre || prod.name || "Producto",
-          precio: price,
-          comision: comm,
-          cantidad: totalQty,
-          subtotal: price * totalQty,
-          selectedHostesses: selectedHostesses,
-          hostessNames: hostessNames || null,
-          isChampagne: isChampagneProduct(prod),
-        });
-      }
-      dispatch({ type: "SET_CART", payload: newCart });
-      showToast("Agregado", `${prod.nombre || prod.name} sumado a la cuenta`, "success");
-    },
+    (prod: any) =>
+      addProductToCartUtils(
+        prod,
+        cart,
+        modalQuantities,
+        modalHostessSelections,
+        anfitrionas,
+        dispatch,
+      ),
     [cart, modalQuantities, modalHostessSelections, anfitrionas],
   );
 
@@ -184,18 +141,18 @@ export function useAgregarCuenta(cuentaOriginal: any) {
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const originalUserIds = (cuentaDetalle?.usuarios || [])
-        .map((u: any) => u.usuario_id || u.id_usuario)
+        .map((u) => (u.usuario_id ?? u.id_usuario) as number)
         .filter(Boolean) as number[];
       const mergedHostessIds = new Set<number>(originalUserIds);
       cart.forEach((item) => {
         if (item.selectedHostesses && Array.isArray(item.selectedHostesses)) {
-          item.selectedHostesses.forEach((hId: number) => {
-            if (hId) mergedHostessIds.add(hId);
+          item.selectedHostesses.forEach((hId) => {
+            if (hId) mergedHostessIds.add(Number(hId));
           });
         }
       });
       const hasExistingTimer = timers.some(
-        (timer) => timer.tipoTransaccion === "cuenta" && String(timer.servicioId) === String(cuentaOriginal.id_cuenta),
+        (timer) => timer.tipoTransaccion === "cuenta" && String(timer.servicioId) === String(cuentaOriginal?.id_cuenta),
       );
       const currentRoomId = cuentaDetalle?.habitacion_id || cuentaOriginal?.habitacion_id || null;
       const roomIdToUse = selectedHabitacion?.id_habitacion || selectedHabitacion?.id || null;
@@ -227,7 +184,7 @@ export function useAgregarCuenta(cuentaOriginal: any) {
         cuentaData.tiempo = selectedTime;
       }
       refreshTimers?.();
-      const res = await apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`, {
+      const res = await apiClient(`/cuentas/${cuentaOriginal?.id_cuenta}`, {
         method: "PUT",
         body: JSON.stringify(cuentaData),
       });
@@ -291,7 +248,7 @@ export function useAgregarCuenta(cuentaOriginal: any) {
   }, [hostessSelectionTarget, modalHostessSelections]);
 
   const handleConfirmHostess = useCallback(() => {
-    if (hostessSelectionTarget) {
+    if (hostessSelectionTarget?.product) {
       const pid = hostessSelectionTarget.productId;
       const hasComm =
         Number(

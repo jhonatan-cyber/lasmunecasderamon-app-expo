@@ -19,6 +19,7 @@ export interface User {
 
 export function usePersonalScreen() {
     const theme = useAccentColor();
+    const { bg, cardBg, textPrimary, textSecondary, borderColor } = theme;
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -27,12 +28,6 @@ export function usePersonalScreen() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
     const dataRef = useRef<string>('');
-
-    const bg = theme.isDark ? '#000000' : '#F3F4F6';
-    const cardBg = theme.isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = theme.isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = theme.isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = theme.isDark ? `${theme.accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const fetchUsers = useCallback(async (isManual = false) => {
         try {
@@ -201,11 +196,6 @@ export function usePersonalScreen() {
         setSelectedUser,
         isGenerating,
         codigoAsistencia,
-        bg,
-        cardBg,
-        textPrimary,
-        textSecondary,
-        borderColor,
         fetchUsers,
         onRefresh,
         handleGenerateQR,

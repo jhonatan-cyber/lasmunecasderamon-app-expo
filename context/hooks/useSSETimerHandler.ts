@@ -34,7 +34,8 @@ export function useSSETimerHandler({
     timersRef.current = next;
   }, []);
 
-  const handleSSEEvent = useCallback((payload: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSSEEvent = useCallback((payload: SSEPayload) => {
     switch (payload.type) {
       case "timer_started": {
         const newTimerData = payload.data;
@@ -230,8 +231,8 @@ export function useSSETimerHandler({
   }, [fetchActiveTimers, setTimers]);
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
-      handleSSEEvent(payload);
+    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: unknown) => {
+      handleSSEEvent(payload as SSEPayload);
     });
 
     return () => {

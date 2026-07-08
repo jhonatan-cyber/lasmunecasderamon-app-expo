@@ -2,20 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useAccentColor } from '@/hooks/useAccentColor';
 import { PremiumTabBar } from '@/components/ui/PremiumTabBar';
 import ProfileEditModal from '@/components/shared/ProfileEditModal';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export default function GarzonTabsLayout() {
-    const { isDark } = useAccentColor();
+    const { bg } = useAccentColor();
     const [profileModalVisible, setProfileModalVisible] = useState(false);
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
-    const bgColor = isDark ? '#000000' : '#F3F4F6';
-
     return (
-        <View style={{ flex: 1, backgroundColor: bgColor }}>
+        <View style={{ flex: 1, backgroundColor: bg }}>
             <Tabs
                 tabBar={(props: any) => <PremiumTabBar {...props} />}
                 screenOptions={{

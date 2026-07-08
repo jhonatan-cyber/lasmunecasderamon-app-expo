@@ -35,7 +35,7 @@ const CARD_WIDTH = (width - (GRID_PADDING * 2) - GRID_GAP) / NUM_COLUMNS;
 
 export default function PersonalScreen() {
     const router = useRouter();
-    const { accentColor, accentBg, isDark } = useAccentColor();
+    const { accentColor, accentBg, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -45,11 +45,7 @@ export default function PersonalScreen() {
     const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+
 
     const fetchUsers = useCallback(async (isManual = false) => {
         try {

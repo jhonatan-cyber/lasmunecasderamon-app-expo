@@ -29,7 +29,7 @@ interface FinancialEventsScreenProps {
 }
 
 export function FinancialEventsScreen({ title, subtitle, type }: FinancialEventsScreenProps) {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const { data, loading, refreshing, onRefresh } = useFinancialEvents(type as any);
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
     const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -38,11 +38,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
     const [saleDetail, setSaleDetail] = useState<any>(null);
     const [parentPropina, setParentPropina] = useState<any>(null);
 
-    const bg = isDark ? '#000000' : '#F9FAFB';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
+
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';

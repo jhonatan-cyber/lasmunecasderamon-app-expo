@@ -1,4 +1,5 @@
 import Toast from "react-native-toast-message";
+import type { Cliente, Anfitriona, Producto, CartItem, CommissionPreview } from "@lasmunecasderamon/types";
 
 export const showToast = (title: string, message: string, type: "success" | "error" | "info" = "error") => {
   Toast.show({
@@ -9,7 +10,7 @@ export const showToast = (title: string, message: string, type: "success" | "err
   });
 };
 
-export const isChampagneProduct = (producto: any) => {
+export const isChampagneProduct = (producto: Pick<Producto, "categoria">) => {
   const cat = (producto.categoria || "").toLowerCase();
   return cat.includes("champaña") || cat.includes("shampaña") || cat.includes("champagne");
 };
@@ -22,7 +23,7 @@ export const getChampagneLimit = (precio: number) => {
   return 1;
 };
 
-export const getHostessLimit = (prod: any, qty: number) => {
+export const getHostessLimit = (prod: Producto, qty: number = 1) => {
   const price = prod.precio ?? prod.price ?? 0;
   if (isChampagneProduct(prod)) {
     return getChampagneLimit(price) * qty;
@@ -30,7 +31,7 @@ export const getHostessLimit = (prod: any, qty: number) => {
   return qty;
 };
 
-export const buildCommissionPreview = (items: any[], hostesses: any[]) => {
+export const buildCommissionPreview = (items: CartItem[], hostesses: Anfitriona[]): CommissionPreview => {
   const totalCommission = items.reduce(
     (acc, item) => acc + Number(item.comision || 0) * Number(item.cantidad || 0),
     0,
@@ -40,7 +41,7 @@ export const buildCommissionPreview = (items: any[], hostesses: any[]) => {
   const addAmount = (hostessId: string | number, amount: number) => {
     if (!hostessId || amount <= 0) return;
     const key = String(hostessId);
-    const hostess = hostesses.find((item: any) => String(item.id_usuario || item.id) === key);
+    const hostess = hostesses.find((item) => String(item.id_usuario || item.id) === key);
     const current = distribution.get(key);
     distribution.set(key, {
       id: key,
@@ -62,13 +63,13 @@ export const buildCommissionPreview = (items: any[], hostesses: any[]) => {
       const base = Math.floor(totalRounded / selectedHostesses.length);
       const remainder = totalRounded % selectedHostesses.length;
 
-      selectedHostesses.forEach((hostessId: string | number, index: number) => {
+      selectedHostesses.forEach((hostessId, index) => {
         addAmount(hostessId, base + (index === 0 ? remainder : 0));
       });
       return;
     }
 
-    selectedHostesses.forEach((hostessId: string | number) => {
+    selectedHostesses.forEach((hostessId) => {
       addAmount(hostessId, itemCommission);
     });
   });

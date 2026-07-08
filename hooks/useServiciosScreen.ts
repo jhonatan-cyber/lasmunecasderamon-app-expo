@@ -426,13 +426,12 @@ export function useServiciosScreen() {
     });
   }, [timers]);
 
-  const { isDark, accentColor } = theme;
+  const { isDark, accentColor, bg, cardBg: themeCardBg, borderColor } = theme;
   const colors = Colors[isDark ? "dark" : "light"];
-  const bg = isDark ? "#000000" : "#F8FAFC";
-  const card = colors.card;
+  const card = themeCardBg || colors.card;
   const text = colors.text;
   const textMuted = colors.textMuted;
-  const border = isDark ? `${accentColor}40` : colors.border;
+  const border = borderColor;
   const accent = accentColor;
   const success = colors.success;
   const danger = colors.danger;

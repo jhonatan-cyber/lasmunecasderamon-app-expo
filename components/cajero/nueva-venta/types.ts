@@ -1,4 +1,11 @@
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import type {
+  Anfitriona,
+  Habitacion,
+  Cliente,
+  Producto,
+  Categoria,
+} from '@lasmunecasderamon/types';
 
 export type PagoMixto = {
   metodo: PaymentMethod;
@@ -6,29 +13,45 @@ export type PagoMixto = {
   display: string;
 };
 
+/** Product item in the sales cart (uses both ES and EN field names for backward compat) */
+export type VentaCartItem = Producto & {
+  quantity: number;
+  cantidad?: number;
+  anfitrionas?: (string | number)[];
+  hostessNames?: string | null;
+};
+
+/** Hostess selection target for commission products */
+export type VentaHostessTarget = {
+  productId: string | number;
+  isChampagne: boolean;
+  max: number;
+  product?: Producto;
+};
+
 export type VentaState = {
   loadingInitial: boolean;
   refreshing: boolean;
-  anfitrionas: any[];
-  habitaciones: any[];
-  clientes: any[];
+  anfitrionas: Anfitriona[];
+  habitaciones: Habitacion[];
+  clientes: Cliente[];
   cajaAbierta: boolean | null;
-  cart: any[];
-  selectedCliente: any;
-  selectedHabitacion: any;
+  cart: VentaCartItem[];
+  selectedCliente: Cliente | null;
+  selectedHabitacion: Habitacion | null;
   metodoPago: PaymentMethod;
   pagosMixtos: PagoMixto[];
   enableTip: boolean;
   selectedTime: number;
   timeModalVisible: boolean;
-  categories: any[];
+  categories: Categoria[];
   modalOpen: boolean;
-  modalCategoria: any;
-  modalProducts: any[];
+  modalCategoria: Categoria | null;
+  modalProducts: Producto[];
   modalLoading: boolean;
   modalQuantities: { [key: string]: number };
   modalHostessSelections: { [key: string]: string[] };
-  hostessSelectionTarget: { productId: string; isChampagne: boolean; max: number; product?: any } | null;
+  hostessSelectionTarget: VentaHostessTarget | null;
   hostessSubModalVisible: boolean;
   hostessModalVisible: boolean;
   roomModalVisible: boolean;
@@ -37,7 +60,7 @@ export type VentaState = {
   submitting: boolean;
   loadModalVisible: boolean;
   loadingAmount: string;
-  loadingTargetClient: any | null;
+  loadingTargetClient: Cliente | null;
   loadSubmitting: boolean;
   loadMetodoPago: PaymentMethod;
   metodoPagoAdicional: PaymentMethod;
@@ -46,10 +69,10 @@ export type VentaState = {
 export type VentaAction =
   | { type: 'SET_LOADING_INITIAL'; payload: boolean }
   | { type: 'SET_REFRESHING'; payload: boolean }
-  | { type: 'SET_INITIAL_DATA'; payload: any }
-  | { type: 'SET_CART'; payload: any[] }
-  | { type: 'SET_SELECTED_CLIENTE'; payload: any }
-  | { type: 'SET_SELECTED_HABITACION'; payload: any }
+  | { type: 'SET_INITIAL_DATA'; payload: Partial<VentaState> }
+  | { type: 'SET_CART'; payload: VentaCartItem[] }
+  | { type: 'SET_SELECTED_CLIENTE'; payload: Cliente | null }
+  | { type: 'SET_SELECTED_HABITACION'; payload: Habitacion | null }
   | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
   | { type: 'SET_PAGOS_MIXTOS'; payload: PagoMixto[] }
   | { type: 'ADD_PAGO_MIXTO'; payload: PagoMixto }
@@ -58,14 +81,14 @@ export type VentaAction =
   | { type: 'SET_ENABLE_TIP'; payload: boolean }
   | { type: 'SET_SELECTED_TIME'; payload: number }
   | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
-  | { type: 'OPEN_CATEGORY_MODAL'; category: any; products: any[] }
+  | { type: 'OPEN_CATEGORY_MODAL'; category: Categoria; products: Producto[] }
   | { type: 'SET_MODAL_LOADING'; payload: boolean }
   | { type: 'SET_MODAL_QUANTITY'; productId: string; quantity: number }
   | { type: 'SET_MODAL_HOSTESSES'; productId: string; hostesses: string[] }
-  | { type: 'SET_HOSTESS_TARGET'; target: any }
+  | { type: 'SET_HOSTESS_TARGET'; target: VentaHostessTarget | null }
   | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
   | { type: 'SET_SUBMITTING'; payload: boolean }
-  | { type: 'SET_LOAD_MODAL'; visible: boolean; client?: any }
+  | { type: 'SET_LOAD_MODAL'; visible: boolean; client?: Cliente }
   | { type: 'SET_LOAD_AMOUNT'; payload: string }
   | { type: 'SET_LOAD_SUBMITTING'; payload: boolean }
   | { type: 'SET_LOAD_METODO_PAGO'; payload: PaymentMethod }

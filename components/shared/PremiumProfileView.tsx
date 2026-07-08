@@ -94,7 +94,7 @@ export function PremiumProfileView({
   onLogout,
   onClose,
 }: PremiumProfileViewProps) {
-  const { accentColor, gradientColors, isDark } = useAccentColor();
+  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const { setAccentColor } = useThemeStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -149,11 +149,7 @@ export function PremiumProfileView({
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   }, []);
 
-  const bg = isDark ? "#000000" : "#F3F4F6";
-  const cardBg = isDark ? "#111111" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
+
 
   const handleTakePhoto = async () => {
     const res = await takePhoto();

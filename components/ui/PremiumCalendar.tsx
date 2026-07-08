@@ -24,7 +24,7 @@ export const PremiumCalendar = ({
   currentMonth: propCurrentMonth,
   onMonthChange,
 }: PremiumCalendarProps) => {
-  const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
+  const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
 
   const currentMonth = propCurrentMonth || internalCurrentMonth;
@@ -36,8 +36,7 @@ export const PremiumCalendar = ({
     }
   };
 
-  const textPrimary = isDark ? "#FFFFFF" : "#000000";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+
 
   const daysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

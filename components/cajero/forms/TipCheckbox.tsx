@@ -16,9 +16,7 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
     tipAmount,
     label = 'Propina (10%)'
 }) => {
-    const { accentColor, isDark } = useAccentColor();
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const { accentColor, isDark, textPrimary, textSecondary } = useAccentColor();
 
     return (
         <Pressable

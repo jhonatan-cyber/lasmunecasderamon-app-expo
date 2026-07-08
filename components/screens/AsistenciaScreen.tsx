@@ -17,7 +17,7 @@ import {
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 export default function AsistenciaScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const {
         activeTab, setActiveTab,
         asistencias, gratificaciones,
@@ -27,11 +27,7 @@ export default function AsistenciaScreen() {
         currentDate, navigateMonth, goToCurrentMonth
     } = useAsistencia();
 
-    const bg = isDark ? '#000000' : '#F9FAFB';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
+
 
     const normalizeEstado = (estado: number | string | null | undefined) => {
         if (estado === 1 || estado === '1' || estado === 'pendiente' || estado === 'por_cobrar' || estado === 'por cobrar') {

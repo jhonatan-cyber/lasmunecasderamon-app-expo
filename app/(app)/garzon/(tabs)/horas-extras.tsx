@@ -15,14 +15,11 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useHorasExtras, HoraExtra } from '@/hooks/useHorasExtras';
 
 export default function HorasExtrasScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } = useAccentColor();
     const { data: horasExtras, loading, refreshing, error, onRefresh, fetchData } = useHorasExtras();
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
 
-    const bg = isDark ? '#000000' : '#F9FAFB';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
+
 
     const filteredData = horasExtras.filter((a) => {
         if (filter === 'pendiente') return a.estado === 1;

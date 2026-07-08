@@ -12,13 +12,7 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: ServiceDetailModalProps) => {
-    const { accentColor, isDark } = useAccentColor();
-    
-    const bg = isDark ? '#000000' : '#F9FAFB';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : '#E5E7EB';
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     if (!servicio) return null;
 

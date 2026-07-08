@@ -27,9 +27,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     disabled = false,
     disabledMethods = [],
 }) => {
-    const { accentColor, isDark } = useAccentColor();
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? '#374151' : '#E5E7EB';
+    const { accentColor, isDark, textSecondary, borderColor } = useAccentColor();
 
     const methods: { id: PaymentMethod; icon: any; label: string }[] = [
         { id: 'efectivo', icon: 'cash', label: 'Efectivo' },

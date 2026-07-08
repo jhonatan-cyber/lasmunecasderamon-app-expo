@@ -30,13 +30,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     getEventLabel,
     getStatusLabel
 }) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const user = useAuthStore((state) => state.user);
-
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
     const formatAmount = (value: any) =>
         Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 

@@ -29,7 +29,7 @@ import {
 } from "@/components/cajero/administrativo";
 
 export default function AdministrativoScreen() {
-  const { accentColor, isDark } = useAccentColor();
+  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   useWindowDimensions();
@@ -45,11 +45,7 @@ export default function AdministrativoScreen() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const bg = isDark ? "#000000" : "#F3F4F6";
-  const cardBg = isDark ? "#111111" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
+
 
   const fetchData = useCallback(
     async (isManual = false) => {

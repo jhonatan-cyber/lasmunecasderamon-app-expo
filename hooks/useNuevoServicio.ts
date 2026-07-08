@@ -11,7 +11,8 @@ import {
   type ServiceAction,
   type ServicePayload,
 } from '@/components/cajero/nuevo-servicio/types';
-import { showToast, generateCode } from '@/components/cajero/nuevo-servicio/helpers';
+import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
+import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate } from '@/hooks/utils/cartUtils';
 
 export const initialServiceState: ServiceState = {
   loadingInitial: true,
@@ -203,50 +204,18 @@ export function useNuevoServicio() {
         apiClient('/clients'),
       ]);
 
-      let fetchedClients: any[] = [];
-      if (Array.isArray(clientsRes)) {
-        fetchedClients = clientsRes;
-      } else if (clientsRes && clientsRes.success) {
-        fetchedClients = clientsRes.data || [];
-      }
-
-      const deduplicate = (arr: any[], idKey: string) => {
-        const seen = new Set();
-        return arr.filter((item) => {
-          const id = item[idKey] || item.id;
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-      };
-
-      const rawAnfitrionas = Array.isArray(anfitrionasRes)
-        ? anfitrionasRes
-        : anfitrionasRes.success
-          ? anfitrionasRes.data
-          : [];
-      const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
-      const habitacionesNormalizadas = rawHabitaciones.map((room: any) => ({
-        ...room,
-        estado: room.estado ?? room.status ?? 0,
-        status: room.status ?? room.estado ?? 0,
-        precio: room.precio ?? room.price ?? 0,
-        price: room.price ?? room.precio ?? 0,
-        tiempo: room.tiempo ?? room.time ?? 0,
-        time: room.time ?? room.tiempo ?? 0,
-        nombre:
-          room.nombre ??
-          room.name ??
-          `Habitación ${room.numero ?? room.id_habitacion ?? room.id ?? ''}`.trim(),
-      }));
-
       dispatch({
         type: 'SET_INITIAL_DATA',
         payload: {
           cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-          anfitrionas: deduplicate(rawAnfitrionas, 'id_usuario'),
-          habitaciones: deduplicate(habitacionesNormalizadas, 'id_habitacion'),
-          clientes: deduplicate(fetchedClients, 'id_cliente'),
+          anfitrionas: deduplicate(normalizeAnfitrionas(anfitrionasRes), 'id_usuario'),
+          habitaciones: deduplicate((roomsRes.success ? roomsRes.data : []).map((room: any) => ({
+            ...normalizeRoom(room),
+            status: room.status ?? room.estado ?? 0,
+            price: room.price ?? room.precio ?? 0,
+            time: room.time ?? room.tiempo ?? 0,
+          })), 'id_habitacion'),
+          clientes: deduplicate(normalizeClients(clientsRes), 'id_cliente'),
         },
       });
 

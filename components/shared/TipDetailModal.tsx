@@ -29,12 +29,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
     parentPropina,
     saleDetail
 }) => {
-    const { accentColor, isDark } = useAccentColor();
-
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     return (
         <Modal

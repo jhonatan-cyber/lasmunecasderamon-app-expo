@@ -18,6 +18,7 @@ export interface OvertimeRecord {
 
 export function useHorasExtrasScreen() {
     const theme = useAccentColor();
+    const { bg, cardBg, textPrimary, textSecondary, borderColor } = theme;
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -27,12 +28,6 @@ export function useHorasExtrasScreen() {
     const [selectedRecord, setSelectedRecord] = useState<OvertimeRecord | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
     const dataRef = useRef<string>('');
-
-    const bg = theme.isDark ? '#000000' : '#F3F4F6';
-    const cardBg = theme.isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = theme.isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = theme.isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = theme.isDark ? `${theme.accentColor}40` : '#E2E8F0';
 
     const fetchData = useCallback(async (isManual = false) => {
         try {
@@ -131,11 +126,6 @@ export function useHorasExtrasScreen() {
         setSelectedRecord,
         modalVisible,
         setModalVisible,
-        bg,
-        cardBg,
-        textPrimary,
-        textSecondary,
-        borderColor,
         fetchData,
         onRefresh,
         employees,

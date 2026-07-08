@@ -10,16 +10,16 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';
-import { MetodoPago } from '../types/api';
-
-import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
+import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';import { MetodoPago } from '../types/api';
+import type { TimerRawData, SSEPayload } from '../types/realtime';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
   emitRefreshCuentas,
   emitRefreshRequests,
   emitRefreshSales,
   REALTIME_EVENT_NAMES,
 } from "@/utils/realtime";
+import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import { isCajeroRole } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
@@ -129,26 +129,26 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
         
         const currentTimersMap = new Map(timersRef.current.map(t => [t.id, t.isOverdueNotified]));
 
-        const activeTimers = data.data.map((t: any) => ({
+        const activeTimers = data.data.map((t: TimerRawData) => ({
           id: `${t.servicioId}-${t.roomId}`,
-          servicioId: t.servicioId,
-          roomId: t.roomId,
-          roomName: t.roomName,
+          servicioId: String(t.servicioId),
+          roomId: String(t.roomId),
+          roomName: t.roomName || '',
           duration: t.duration,
           remainingTime: t.remainingTime || 0,
           isActive: true,
           isPaused: t.isPaused === 1 || t.estado === 3,
           startTime: parseDateSafe(t.startTime),
-          servicioCode: t.codigo,
+          servicioCode: t.codigo || '',
           cliente_id: t.cliente_id,
-          clienteNombre: t.clienteNombre,
+          clienteNombre: t.clienteNombre || '',
           tipoTransaccion: t.tipoTransaccion,
           anfitrionas: t.anfitrionas,
           precio_servicio: t.precio_servicio,
           precio_habitacion: t.precio_habitacion,
           iva: t.iva,
           total: t.total,
-          metodo_pago: t.metodo_pago,
+          metodo_pago: t.metodo_pago as MetodoPago | undefined,
           waiter_name: t.waiter_name,
           waiter_foto: t.waiter_foto,
           solicitante_name: t.solicitante_name,
@@ -182,10 +182,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchActiveTimersRef.current = fetchActiveTimers;
   }, [fetchActiveTimers, serverOffset]);
 
-  const handleSSEEvent = useCallback((payload: any) => {
+  const handleSSEEvent = useCallback((payload: SSEPayload) => {
     switch (payload.type) {
       case "timer_started": {
-        const newTimerData = payload.data;
+        const newTimerData = payload.data as TimerRawData;
         const start = parseDateSafe(newTimerData.startTime);
         const now = new Date(Date.now() + serverOffsetRef.current);
         const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
@@ -206,16 +206,16 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           isActive: true,
           isPaused: false,
           startTime: start,
-          servicioCode: newTimerData.codigo,
+          servicioCode: newTimerData.codigo || '',
           cliente_id: newTimerData.cliente_id,
-          clienteNombre: newTimerData.clienteNombre,
+          clienteNombre: newTimerData.clienteNombre || '',
           tipoTransaccion: newTimerData.tipoTransaccion,
           anfitrionas: newTimerData.anfitrionas,
           precio_servicio: newTimerData.precio_servicio,
           precio_habitacion: newTimerData.precio_habitacion,
           iva: newTimerData.iva,
           total: newTimerData.total,
-          metodo_pago: newTimerData.metodo_pago,
+          metodo_pago: newTimerData.metodo_pago as MetodoPago | undefined,
           waiter_name: newTimerData.waiter_name,
           habitacion_comision: newTimerData.habitacion_comision || 0,
           anfitrionas_ids: typeof newTimerData.anfitrionas_ids === 'string' 
@@ -436,8 +436,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
-      handleSSEEvent(payload);
+    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: unknown) => {
+      handleSSEEvent(payload as SSEPayload);
     });
 
     return () => {

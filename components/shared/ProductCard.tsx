@@ -58,13 +58,8 @@ export const ProductCard = ({
     anfitrionas,
     rooms
 }: ProductCardProps) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const qty = cartItem?.quantity || 0;
-
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
 
     const hasCommission = (product.commission || 0) > 0;
     const canSelectRoom = product.price >= 30000 && hasCommission;

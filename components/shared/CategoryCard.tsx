@@ -15,12 +15,7 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
-    const { accentColor, isDark } = useAccentColor();
-
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     return (
         <Pressable

@@ -42,7 +42,7 @@ export function PremiumLiquidationCard({
   totalAmount,
   onExportSuccess,
 }: PremiumLiquidationCardProps) {
-  const { accentColor, isDark } = useAccentColor();
+  const { accentColor, isDark, cardBg, textSecondary, borderColor } = useAccentColor();
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
@@ -63,9 +63,7 @@ export function PremiumLiquidationCard({
     setAlertConfig({ visible: true, title, message, type });
   };
 
-  const cardBg = isDark ? "#111111" : "#FFFFFF";
-  const textSecondary = isDark ? "#9CA3AF" : "#64748B";
-  const borderColor = isDark ? `${accentColor}40` : "rgba(0, 0, 0, 0.05)";
+
 
   const totalCalculated = useMemo(() => {
     return events.reduce((sum, eventItem) => {

@@ -1,17 +1,7 @@
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/hooks/utils/cartUtils';
 
-export const showToast = (
-  title: string,
-  message: string,
-  type: 'success' | 'error' = 'error',
-) => {
-  Toast.show({
-    type,
-    text1: title,
-    text2: message,
-    visibilityTime: 4000,
-  });
-};
+// Re-export shared showToast from cartUtils to eliminate duplication
+export { showToast };
 
 export const generateCode = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

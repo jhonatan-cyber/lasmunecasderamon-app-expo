@@ -1,7 +1,10 @@
 import React from "react";
 import { Pressable } from "react-native";
 import { MotiView } from "moti";
+import { useRouter } from "expo-router";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
+import type { CuentaDetalle } from "@/hooks/types/cuentaTypes";
+import type { Timer } from "@/context/TimerContext";
 import { CuentaCardHeader } from "./CuentaCardHeader";
 import { CuentaCardDetails } from "./CuentaCardDetails";
 import { CuentaCardTimer } from "./CuentaCardTimer";
@@ -9,8 +12,8 @@ import { CuentaCardFinance } from "./CuentaCardFinance";
 import { CuentaCardActions } from "./CuentaCardActions";
 
 interface CuentaCardProps {
-  item: any;
-  timers: any[];
+  item: CuentaDetalle;
+  timers: Timer[];
   serverOffset: number;
   accentColor: string;
   isDark: boolean;
@@ -22,11 +25,11 @@ interface CuentaCardProps {
     danger: string;
     warning: string;
   };
-  router: any;
-  handleCobrarCuenta: (item: any) => void;
-  handleFinalizarTemporizador: (item: any) => void;
-  handleSolicitarAnulacion: (item: any) => void;
-  setActionSheetVisible: (visible: boolean, item: any) => void;
+  router: ReturnType<typeof useRouter>;
+  handleCobrarCuenta: (item: CuentaDetalle) => void;
+  handleFinalizarTemporizador: (item: CuentaDetalle) => void;
+  handleSolicitarAnulacion: (item: CuentaDetalle) => void;
+  setActionSheetVisible: (visible: boolean, item: CuentaDetalle) => void;
 }
 
 const paymentMethodLabels: Record<string, string> = {
@@ -57,13 +60,13 @@ export function CuentaCard({
   const productCount =
     item.total_detalles ||
     (item.detalles
-      ? item.detalles.reduce((acc: number, d: any) => acc + d.cantidad, 0)
+      ? item.detalles.reduce((acc, d) => acc + d.cantidad, 0)
       : 0);
   const statusValue = Number(item.estado);
   const activeTime = Number(item.tiempo_activo ?? item.tiempo ?? 0);
   const isPending = statusValue === 1;
   const isPartialPending = statusValue === 4;
-  const hasTimer = isPending && activeTime > 0 && item.habitacion_id;
+  const hasTimer = !!(isPending && activeTime > 0 && item.habitacion_id);
 
   const timer = hasTimer
     ? timers.find(
@@ -148,7 +151,7 @@ export function CuentaCard({
         )}
 
         <CuentaCardFinance
-          total={item.total}
+          total={item.total ?? 0}
           statusValue={statusValue}
           paymentMethodText={paymentMethodText}
           isPartialPending={isPartialPending}

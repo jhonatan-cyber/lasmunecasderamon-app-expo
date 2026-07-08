@@ -8,17 +8,18 @@ import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import { useTimer } from "@/context/TimerContext";
 import { formatAmountInput, parseAmountInput } from "@/utils/money";
 import logger from "@/utils/logger";
+import type { CuentaDetalle, CuentaResumen } from "@/hooks/types/cuentaTypes";
 
 type CuentasState = {
   loading: boolean;
   refreshing: boolean;
-  cuentas: any[];
-  resumen: any;
-  selectedCuenta: any;
+  cuentas: CuentaDetalle[];
+  resumen: CuentaResumen | null;
+  selectedCuenta: CuentaDetalle | null;
   loadingDetail: boolean;
   modalVisible: boolean;
   actionSheetVisible: boolean;
-  activeCuenta: any;
+  activeCuenta: CuentaDetalle | null;
   activeTab: "historial" | "pendientes";
   search: string;
   cobroModalVisible: boolean;
@@ -43,8 +44,8 @@ type CuentasAction =
   | { type: "SET_SEARCH"; payload: string }
   | { type: "SET_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_LOADING_DETAIL"; payload: boolean }
-  | { type: "SET_SELECTED_CUENTA"; payload: any }
-  | { type: "SET_ACTION_SHEET"; visible: boolean; cuenta?: any }
+  | { type: "SET_SELECTED_CUENTA"; payload: CuentaDetalle | null }
+  | { type: "SET_ACTION_SHEET"; visible: boolean; cuenta?: CuentaDetalle }
   | { type: "SET_COBRO_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_COBRO_METODO_PAGO"; payload: PaymentMethod }
   | { type: "SET_COBRO_ENABLE_TIP"; payload: boolean }
@@ -128,7 +129,7 @@ export const useCuentasScreen = () => {
   const dataRef = useRef<string>("");
   const { timers, serverOffset, refreshTimers } = useTimer();
   const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
-  const [anulacionCuenta, setAnulacionCuenta] = useState<any>(null);
+  const [anulacionCuenta, setAnulacionCuenta] = useState<CuentaDetalle | null>(null);
   const [anulacionMotivo, setAnulacionMotivo] = useState("");
   const [anulacionMonto, setAnulacionMonto] = useState("");
   const [anulacionSubmitting, setAnulacionSubmitting] = useState(false);
@@ -251,7 +252,7 @@ export const useCuentasScreen = () => {
     void Promise.all([fetchCuentas(true), refreshTimers?.()]);
   }, [fetchCuentas, refreshTimers]);
 
-  const handleCobrarCuenta = useCallback((cuenta: any) => {
+  const handleCobrarCuenta = useCallback((cuenta: CuentaDetalle) => {
     dispatch({ type: "SET_ACTION_SHEET", visible: false });
     dispatch({ type: "SET_SELECTED_CUENTA", payload: cuenta });
     dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: true });
@@ -269,7 +270,7 @@ export const useCuentasScreen = () => {
   }, []);
 
   const registrarVentaDesdeCuenta = useCallback(
-    async (cuenta: any) => {
+    async (cuenta: CuentaDetalle) => {
       const ventaPayload = {
         origen: "cuenta",
         skip_client_prepago: true,
@@ -282,15 +283,15 @@ export const useCuentasScreen = () => {
         total_comision: Number(cuenta?.total_comision ?? 0),
         codigo: cuenta?.codigo,
         detalles:
-          cuenta?.detalles?.map((d: any) => ({
-            producto_id: String(d.producto_id ?? d.id_producto),
+          cuenta?.detalles?.map((d) => ({
+            producto_id: String(d.producto_id ?? d.id),
             precio: Number(d.precio ?? 0),
             cantidad: Number(d.cantidad ?? 1),
-            sub_total: Number(d.sub_total ?? d.subtotal ?? 0),
+            sub_total: Number(d.sub_total ?? 0),
             comision: Number(d.comision ?? 0),
             hostess_id: d.hostess_id != null ? String(d.hostess_id) : null,
           })) || [],
-        usuarios: cuenta?.usuarios?.map((u: any) => String(u.usuario_id ?? u.id_usuario ?? u)) || [],
+        usuarios: cuenta?.usuarios?.map((u) => String(u.usuario_id ?? u.id_usuario ?? u)) || [],
       };
 
       return await apiClient("/sales", {
@@ -360,7 +361,7 @@ export const useCuentasScreen = () => {
   ]);
 
   const handleFinalizarTemporizador = useCallback(
-    (cuenta: any) => {
+    (cuenta: CuentaDetalle) => {
       dispatch({
         type: "SET_ALERT",
         payload: {
@@ -393,7 +394,7 @@ export const useCuentasScreen = () => {
     [fetchCuentas, refreshTimers],
   );
 
-  const handleSolicitarAnulacion = useCallback((cuenta: any) => {
+  const handleSolicitarAnulacion = useCallback((cuenta: CuentaDetalle) => {
     dispatch({ type: "SET_ACTION_SHEET", visible: false });
     setAnulacionCuenta(cuenta);
     setAnulacionMotivo("");
@@ -523,8 +524,8 @@ export const useCuentasScreen = () => {
       dispatch({ type: "SET_ACTIVE_TAB", payload: value }),
     setSearch: (value: string) => dispatch({ type: "SET_SEARCH", payload: value }),
     setModalVisible: (value: boolean) => dispatch({ type: "SET_MODAL_VISIBLE", payload: value }),
-    setSelectedCuenta: (value: any) => dispatch({ type: "SET_SELECTED_CUENTA", payload: value }),
-    setActionSheetVisible: (value: boolean, cuenta?: any) =>
+    setSelectedCuenta: (value: CuentaDetalle | null) => dispatch({ type: "SET_SELECTED_CUENTA", payload: value }),
+    setActionSheetVisible: (value: boolean, cuenta?: CuentaDetalle) =>
       dispatch({ type: "SET_ACTION_SHEET", visible: value, cuenta }),
     setCobroModalVisible: (value: boolean) =>
       dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: value }),

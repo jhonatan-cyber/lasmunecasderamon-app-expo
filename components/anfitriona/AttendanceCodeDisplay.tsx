@@ -61,7 +61,7 @@ export const AttendanceCodeDisplay = () => {
         };
     }, [fetchCodigo]);
 
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
 
     const handleOpenQR = async () => {
         setLoading(true);
@@ -76,9 +76,6 @@ export const AttendanceCodeDisplay = () => {
     if (!canSeeCode) return null;
 
     const bgModal = isDark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.98)';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
     return (
         <>

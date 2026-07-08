@@ -16,7 +16,7 @@ interface GarzonActionCardProps {
 
 export const GarzonActionCard = ({ title, description, icon, color, onPress, disabled }: GarzonActionCardProps) => {
     const { width } = useWindowDimensions();
-    const { isDark } = useAccentColor();
+    const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const isTablet = width >= 768;
 
     const iconSize = isTablet ? 38 : 28;
@@ -24,11 +24,6 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
     const descSize = isTablet ? 14 : 10;
     const minHeight = isTablet ? 160 : 100;
     const padding = isTablet ? 24 : 16;
-
-    
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
     return (
         <AnimatedButton

@@ -25,12 +25,6 @@ export function useGratificacionesScreen() {
   const [monto, setMonto] = useState('');
   const [descripcion, setDescripcion] = useState('');
 
-  const bg = theme.isDark ? '#000000' : '#FFFFFF';
-  const cardBg = theme.isDark ? '#111111' : '#F3F4F6';
-  const textPrimary = theme.isDark ? '#FFFFFF' : '#111827';
-  const textSecondary = theme.isDark ? '#9CA3AF' : '#6B7280';
-  const borderColor = theme.isDark ? `${theme.accentColor}40` : '#E2E8F0';
-
   const filteredEmployees = useMemo(() => {
     const term = employeeSearch.trim().toLowerCase();
     if (!term) return employees;
@@ -111,11 +105,6 @@ export function useGratificacionesScreen() {
     setMonto,
     descripcion,
     setDescripcion,
-    bg,
-    cardBg,
-    textPrimary,
-    textSecondary,
-    borderColor,
     filteredEmployees,
     filteredData,
     totals,

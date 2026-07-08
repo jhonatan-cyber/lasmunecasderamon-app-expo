@@ -26,12 +26,9 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     confirmText = 'Aceptar',
     cancelText = 'Cancelar'
 }) => {
-    const { isDark, cardBg } = useAccentColor();
+    const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const { width } = Dimensions.get('window');
     const isTablet = width >= 768;
-
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
     const getIcon = () => {
         switch (type) {

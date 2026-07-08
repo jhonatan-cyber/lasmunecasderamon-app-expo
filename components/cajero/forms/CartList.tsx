@@ -3,17 +3,9 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
-export interface CartItem {
-    id?: number;
-    id_producto?: number;
-    name?: string;
-    nombre?: string;
-    price?: number;
-    precio?: number;
-    quantity: number;
-    cantidad?: number;
-    [key: string]: any;
-}
+import type { CartItem as SharedCartItem } from '@lasmunecasderamon/types';
+
+export type CartItem = SharedCartItem & { quantity?: number };
 
 interface CartListProps {
     items: CartItem[];
@@ -30,26 +22,24 @@ export const CartList: React.FC<CartListProps> = ({
     title = '3. Carrito',
     hideQuantityControls = false
 }) => {
-    const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
-        const ObjectGroups: Record<number, any> = {};
+        const ObjectGroups: Record<number, { id: number | string; name: string; precio: number; totalQty: number; subItems: (CartItem & { originalIndex: number })[] }> = {};
 
         items.forEach((item, idx) => {
             const id = item.id || item.id_producto || idx;
-            if (!ObjectGroups[id]) {
-                ObjectGroups[id] = {
+            if (!ObjectGroups[id as number]) {
+                ObjectGroups[id as number] = {
                     id,
-                    name: item.name || item.nombre || 'Producto',
-                    precio: item.precio || item.price || 0,
+                    name: item.nombre || 'Producto',
+                    precio: item.precio || 0,
                     totalQty: 0,
                     subItems: []
                 };
             }
-            ObjectGroups[id].totalQty += (item.quantity || item.cantidad || 1);
-            ObjectGroups[id].subItems.push({ ...item, originalIndex: idx });
+            ObjectGroups[id as number].totalQty += (item.cantidad || 1);
+            ObjectGroups[id as number].subItems.push({ ...item, originalIndex: idx });
         });
 
         return Object.values(ObjectGroups);

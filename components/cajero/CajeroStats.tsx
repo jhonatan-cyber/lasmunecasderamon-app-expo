@@ -66,13 +66,9 @@ interface CajeroStatsProps {
 }
 
 export const CajeroStats = ({ stats, fullWidth = false }: CajeroStatsProps) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
-
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#0F172A';
-    const textSecondary = isDark ? '#9CA3AF' : '#64748B';
 
     const statItems = [
         {

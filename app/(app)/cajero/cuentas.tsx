@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
+import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 import { CuentasSkeleton } from '@/components/cajero/cuentas/CuentasSkeleton';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -26,7 +27,7 @@ import { CuentaCard } from '@/components/cajero/cuentas/CuentaCard';
 const FlashList = ShopifyFlashList as any;
 
 export default function CuentasScreen() {
-  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const C = Colors[isDark ? 'dark' : 'light'];
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -58,10 +59,10 @@ export default function CuentasScreen() {
     cobroModalVisible,
   } = screen;
 
-  const borderColor = isDark ? `${accentColor}40` : "rgba(0,0,0,0.05)";
+
 
   const renderCuentaCard = useCallback(
-    ({ item }: { item: any }) => {
+    ({ item }: { item: CuentaDetalle }) => {
       return (
         <CuentaCard
           item={item}

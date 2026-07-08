@@ -64,14 +64,13 @@ const showToast = (title: string, message: string, type: 'success' | 'error' = '
 
 export function useCaja() {
     const theme = useAccentColor();
+    const { borderColor } = theme;
     const router = useRouter();
     const user = useAuthStore(state => state.user);
 
     const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
     const { loading, refreshing, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
-
-    const borderColor = theme.isDark ? `${theme.accentColor}40` : '#E2E8F0';
 
     const fetchData = useCallback(async (isManual = false) => {
         if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
@@ -232,7 +231,6 @@ export function useCaja() {
         monto,
         motivoRetiro,
         submitting,
-        borderColor,
         dispatch,
         fetchData,
         onRefresh,

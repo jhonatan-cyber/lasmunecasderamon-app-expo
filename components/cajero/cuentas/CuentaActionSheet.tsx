@@ -42,7 +42,7 @@ export function CuentaActionSheet({
           </View>
           <Pressable
             style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
-            onPress={() => screen.handleVerDetalles(activeCuenta?.id_cuenta)}
+            onPress={() => activeCuenta && screen.handleVerDetalles(String(activeCuenta.id_cuenta))}
           >
             <View style={[styles.actionIconBox, { backgroundColor: `${accentColor}15` }]}>
               <Ionicons name="eye-outline" size={22} color={accentColor} />
@@ -54,7 +54,7 @@ export function CuentaActionSheet({
               {timers.find((timer) => timer.tipoTransaccion === "cuenta" && String(timer.servicioId) === String(activeCuenta?.id_cuenta)) && (
                 <Pressable
                   style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
-                  onPress={() => screen.handleFinalizarTemporizador(activeCuenta)}
+                  onPress={() => activeCuenta && screen.handleFinalizarTemporizador(activeCuenta)}
                 >
                   <View style={[styles.actionIconBox, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
                     <Ionicons name="stop-circle-outline" size={22} color="#F59E0B" />
@@ -64,7 +64,7 @@ export function CuentaActionSheet({
               )}
               <Pressable
                 style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
-                onPress={() => screen.handleSolicitarAnulacion(activeCuenta)}
+                onPress={() => activeCuenta && screen.handleSolicitarAnulacion(activeCuenta)}
               >
                 <View style={[styles.actionIconBox, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
                   <Ionicons name="ban-outline" size={22} color="#EF4444" />
@@ -73,7 +73,7 @@ export function CuentaActionSheet({
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
-                onPress={() => screen.handleCobrarCuenta(activeCuenta)}
+                onPress={() => activeCuenta && screen.handleCobrarCuenta(activeCuenta)}
               >
                 <View style={[styles.actionIconBox, { backgroundColor: `${accentColor}15` }]}>
                   <Ionicons name="cash-outline" size={22} color={accentColor} />
@@ -85,7 +85,7 @@ export function CuentaActionSheet({
           {Number(activeCuenta?.estado) === 4 && (
             <Pressable
               style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed]}
-              onPress={() => screen.handleCobrarCuenta(activeCuenta)}
+              onPress={() => activeCuenta && screen.handleCobrarCuenta(activeCuenta)}
             >
               <View style={[styles.actionIconBox, { backgroundColor: `${accentColor}15` }]}>
                 <Ionicons name="cash-outline" size={22} color={accentColor} />

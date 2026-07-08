@@ -16,7 +16,7 @@ import { rotateColor } from "@/utils/colors";
 import { usePropinasScreen, Propina } from '@/hooks/usePropinasScreen';
 
 export default function PropinasScreen() {
-  const { accentColor, isDark } = useAccentColor();
+  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const {
     propinas,
     loading,
@@ -41,11 +41,7 @@ export default function PropinasScreen() {
     fetchData,
   } = usePropinasScreen();
 
-  const bg = isDark ? '#000000' : '#F3F4F6';
-  const cardBg = isDark ? '#111111' : '#FFFFFF';
-  const textPrimary = isDark ? '#FFFFFF' : '#111827';
-  const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-  const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+
 
   const renderItem = ({ item, index }: { item: Propina; index: number }) => {
     const isPendiente = item.estado === 1;

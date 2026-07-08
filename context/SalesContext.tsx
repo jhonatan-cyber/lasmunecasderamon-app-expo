@@ -47,13 +47,13 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [refetch]);
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
+    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: { type?: string; data?: Venta }) => {
       if (!shouldRefreshSalesFromSse(payload?.type)) {
         return;
       }
 
       if (payload.data && payload.type !== "sale_updated") {
-        queryClient.setQueryData<Venta[]>(["sales"], (prev = []) => [payload.data, ...prev]);
+        queryClient.setQueryData<Venta[]>(["sales"], (prev) => [payload.data!, ...(prev || [])]);
       } else {
         void refetch();
       }

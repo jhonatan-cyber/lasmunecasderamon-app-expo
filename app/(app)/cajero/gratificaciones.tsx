@@ -33,7 +33,7 @@ const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleStrin
 
 export default function CajeroGratificacionesScreen() {
   const router = useRouter();
-  const { accentColor, isDark } = useAccentColor();
+  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const { gratificaciones, employees, loading, refreshing, submitting, error, createGratificacion, onRefresh } =
     useGratificaciones();
 
@@ -44,11 +44,7 @@ export default function CajeroGratificacionesScreen() {
   const [monto, setMonto] = useState('');
   const [descripcion, setDescripcion] = useState('');
 
-  const bg = isDark ? '#000000' : '#FFFFFF';
-  const cardBg = isDark ? '#111111' : '#F3F4F6';
-  const textPrimary = isDark ? '#FFFFFF' : '#111827';
-  const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-  const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
+
 
   const filteredEmployees = useMemo(() => {
     const term = employeeSearch.trim().toLowerCase();

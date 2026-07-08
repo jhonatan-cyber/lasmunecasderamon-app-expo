@@ -30,6 +30,7 @@ import {
     NewConsumptionsSummary,
     AgregarCuentaModales
 } from '@/components/cajero/agregar-cuenta';
+import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 
 type CuentaState = {
     loadingInitial: boolean;
@@ -52,7 +53,7 @@ type CuentaState = {
     submitting: boolean;
     extraTiempo: number;
     timeModalVisible: boolean;
-    cuentaDetalle: any;
+    cuentaDetalle: CuentaDetalle | null;
 };
 
 type CuentaAction =
@@ -200,7 +201,7 @@ const getHostessLimit = (prod: any, qty: number) => {
 };
 
 export default function AgregarCuentaScreen() {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const router = useRouter();
     const params = useLocalSearchParams();
 
@@ -224,7 +225,7 @@ export default function AgregarCuentaScreen() {
     } = state;
 
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
-    const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u: any) => u.usuario_id || u.id_usuario).filter(Boolean);
+    const accountHostessIds: number[] = (cuentaDetalle?.usuarios || []).map((u) => (u.usuario_id ?? u.id_usuario) as number).filter(Boolean);
 
     const showRoomSelector = cart.some(item =>
         item.selectedHostesses && item.selectedHostesses.length > 0
@@ -234,11 +235,7 @@ export default function AgregarCuentaScreen() {
     const isTablet = width >= 768;
     const { timers, refreshTimers } = useTimer();
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.05)';
+
 
     const spacing = isTablet ? 24 : 16;
 
@@ -368,7 +365,7 @@ export default function AgregarCuentaScreen() {
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
             const originalUserIds = (cuentaDetalle?.usuarios || [])
-                .map((u: any) => u.usuario_id || u.id_usuario)
+                .map((u) => u.usuario_id || u.id_usuario)
                 .filter(Boolean) as number[];
             const mergedHostessIds = new Set<number>(originalUserIds);
             cart.forEach(item => {

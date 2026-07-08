@@ -12,9 +12,7 @@ interface GarzonStatsProps {
 }
 
 export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
-    const { isDark, cardBg, borderColor } = useAccentColor();
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const { isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
     return (
         <View style={styles.container}>

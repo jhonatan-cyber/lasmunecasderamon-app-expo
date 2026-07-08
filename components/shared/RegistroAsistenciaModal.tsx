@@ -28,7 +28,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     onClose,
     onRegistered
 }) => {
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const user = useAuthStore((state) => state.user);
 
     const [codigo, setCodigo] = useState('');
@@ -45,12 +45,6 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
         return () => clearTimeout(timer);
     }, [visible]);
-
-    const bg = isDark ? '#000000' : '#FFFFFF';
-    const cardBg = isDark ? '#111111' : '#F3F4F6';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : 'rgba(0,0,0,0.1)';
 
     const handleRegistrarConCodigo = async () => {
         const validation = AttendanceRegisterSchema.safeParse({ qrData: codigo });

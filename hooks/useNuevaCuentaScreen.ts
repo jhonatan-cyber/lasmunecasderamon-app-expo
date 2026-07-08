@@ -3,14 +3,20 @@ import { useRouter } from "expo-router";
 import { apiClient } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import logger from "@/utils/logger";
-import { initialCuentaState } from "@/components/cajero/nueva-cuenta/types";
+import type { Categoria, Producto } from "@lasmunecasderamon/types";
+import { initialCuentaState, type CuentaState } from "@/components/cajero/nueva-cuenta/types";
 import { cuentaReducer } from "@/components/cajero/nueva-cuenta/reducer";
 import {
   showToast,
+  openCategory,
+  addProductToCartUtils,
+  buildCommissionPreview,
   isChampagneProduct,
   getHostessLimit,
-  buildCommissionPreview,
-} from "@/hooks/utils/cuentaUtils";
+  normalizeRoom,
+  normalizeClients,
+  normalizeAnfitrionas,
+} from "@/hooks/utils/cartUtils";
 
 export type { CuentaState, CuentaAction } from "@/components/cajero/nueva-cuenta/types";
 export { getHostessLimit, buildCommissionPreview, isChampagneProduct };
@@ -37,14 +43,6 @@ export function useNuevaCuentaScreen() {
     selectedHabitacion,
   } = state;
 
-  const bg = theme.isDark ? "#000000" : "#F3F4F6";
-  const cardBg = theme.isDark ? "#111111" : "#FFFFFF";
-  const textPrimary = theme.isDark ? "#FFFFFF" : "#111827";
-  const textSecondary = theme.isDark ? "#9CA3AF" : "#6B7280";
-  const borderColor = theme.isDark
-    ? `${theme.accentColor}40`
-    : "rgba(0,0,0,0.05)";
-
   const fetchInitialData = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
     try {
@@ -57,33 +55,13 @@ export function useNuevaCuentaScreen() {
           apiClient("/categories"),
         ]);
 
-      const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
-      const fetchedData: any = {
+      const fetchedData: Partial<CuentaState> & { cajaAbierta: boolean | null } = {
         cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
-        anfitrionas: Array.isArray(anfitrionasRes)
-          ? anfitrionasRes
-          : anfitrionasRes.success
-            ? anfitrionasRes.data
-            : [],
-        habitaciones: rawHabitaciones.map((room: any) => ({
-          ...room,
-          nombre:
-            room.nombre ??
-            room.name ??
-            `Habitación ${room.id_habitacion ?? room.id ?? ""}`.trim(),
-          precio: room.precio ?? room.price ?? 0,
-          tiempo: room.tiempo ?? room.time ?? 0,
-          estado: room.estado ?? room.status ?? 0,
-          comision_anfitriona: room.comision_anfitriona ?? 0,
-        })),
+        anfitrionas: normalizeAnfitrionas(anfitrionasRes),
+        habitaciones: (roomsRes.success ? roomsRes.data : []).map(normalizeRoom),
         categories: categoriesRes.success ? categoriesRes.data || [] : [],
+        clientes: normalizeClients(clientsRes),
       };
-
-      if (Array.isArray(clientsRes)) {
-        fetchedData.clientes = clientsRes;
-      } else if (clientsRes && clientsRes.success) {
-        fetchedData.clientes = clientsRes.data || [];
-      }
 
       dispatch({ type: "SET_INITIAL_DATA", payload: fetchedData });
 
@@ -108,82 +86,21 @@ export function useNuevaCuentaScreen() {
     fetchInitialData(true);
   }, [fetchInitialData]);
 
-  const handleOpenCategory = useCallback(async (cat: any) => {
-    dispatch({ type: "SET_MODAL_LOADING", payload: true });
-    dispatch({ type: "SET_MODAL_VISIBLE", modal: "category", visible: true });
-    try {
-      const res = await apiClient(`/products?category_id=${cat.id}`);
-      if (res.success) {
-        dispatch({
-          type: "OPEN_CATEGORY_MODAL",
-          category: cat,
-          products: res.data || [],
-        });
-      } else {
-        showToast("Error", "No se pudieron cargar los productos");
-      }
-    } catch (error) {
-      logger.captureException(error, {
-        context: "NuevaCuenta:handleOpenCategory",
-      });
-    } finally {
-      dispatch({ type: "SET_MODAL_LOADING", payload: false });
-    }
-  }, []);
+  const handleOpenCategory = useCallback(
+    (cat: Categoria) => openCategory(cat, dispatch),
+    [],
+  );
 
   const addProductToCart = useCallback(
-    (prod: any) => {
-      const id = prod.id || prod.id_producto;
-      const totalQty = state.modalQuantities[id] || 1;
-      const selectedHostesses = state.modalHostessSelections[id] || [];
-
-      const price = prod.precio ?? prod.price ?? 0;
-      const comm = prod.comision ?? prod.commission ?? 0;
-
-      const newCart = [...state.cart];
-
-      const hostessNames =
-        selectedHostesses.length > 0
-          ? selectedHostesses
-              .map(
-                (hId: number | string) =>
-                  state.anfitrionas.find(
-                    (a: any) => String(a.id_usuario || a.id) === String(hId),
-                  )?.nick || "",
-              )
-              .filter(Boolean)
-              .join(", ")
-          : null;
-
-      const existingItemIndex = newCart.findIndex((item) => {
-        const itemId = item.id_producto || item.id;
-        const currentH = item.selectedHostesses || [];
-        const sortedCurrent = [...currentH].sort().join(",");
-        const sortedNew = [...selectedHostesses].sort().join(",");
-        return itemId === id && sortedCurrent === sortedNew;
-      });
-
-      if (existingItemIndex >= 0) {
-        newCart[existingItemIndex].cantidad += totalQty;
-        newCart[existingItemIndex].subtotal =
-          price * newCart[existingItemIndex].cantidad;
-      } else {
-        newCart.push({
-          id_producto: id,
-          nombre: prod.nombre || prod.name || "Producto",
-          precio: price,
-          comision: comm,
-          cantidad: totalQty,
-          subtotal: price * totalQty,
-          selectedHostesses: selectedHostesses,
-          hostessNames: hostessNames || null,
-          isChampagne: isChampagneProduct(prod),
-        });
-      }
-
-      dispatch({ type: "SET_CART", payload: newCart });
-      showToast("Agregado", `${prod.nombre || prod.name} sumado a la cuenta`, "success");
-    },
+    (prod: Producto) =>
+      addProductToCartUtils(
+        prod,
+        state.cart,
+        state.modalQuantities,
+        state.modalHostessSelections,
+        state.anfitrionas,
+        dispatch,
+      ),
     [state.cart, state.modalQuantities, state.modalHostessSelections, state.anfitrionas],
   );
 
@@ -289,11 +206,6 @@ export function useNuevaCuentaScreen() {
   return {
     ...theme,
     ...state,
-    bg,
-    cardBg,
-    textPrimary,
-    textSecondary,
-    borderColor,
     dispatch,
     onRefresh,
     handleOpenCategory,

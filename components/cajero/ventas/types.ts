@@ -12,14 +12,14 @@ export type AlertConfig = {
 export type VentasState = {
   loading: boolean;
   refreshing: boolean;
-  ventas: any[];
-  resumen: any | null;
+  ventas: Venta[];
+  resumen: VentaResumen | null;
   loadingSales: boolean;
-  selectedVenta: any | null;
+  selectedVenta: VentaDetail | null;
   loadingDetail: boolean;
   modalVisible: boolean;
   actionSheetVisible: boolean;
-  activeVenta: any | null;
+  activeVenta: Venta | null;
   anulacionModalVisible: boolean;
   motivoAnulacion: string;
   montoAnulacion: string;
@@ -31,14 +31,14 @@ export type VentasState = {
 export type VentasAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_REFRESHING"; payload: boolean }
-  | { type: "SET_VENTAS"; payload: any[] }
-  | { type: "SET_RESUMEN"; payload: any }
+  | { type: "SET_VENTAS"; payload: Venta[] }
+  | { type: "SET_RESUMEN"; payload: VentaResumen | null }
   | { type: "SET_LOADING_SALES"; payload: boolean }
-  | { type: "SET_SELECTED_VENTA"; payload: any | null }
+  | { type: "SET_SELECTED_VENTA"; payload: VentaDetail | null }
   | { type: "SET_LOADING_DETAIL"; payload: boolean }
   | { type: "SET_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_ACTION_SHEET_VISIBLE"; payload: boolean }
-  | { type: "SET_ACTIVE_VENTA"; payload: any | null }
+  | { type: "SET_ACTIVE_VENTA"; payload: Venta | null }
   | { type: "SET_ANULACION_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_MOTIVO_ANULACION"; payload: string }
   | { type: "SET_MONTO_ANULACION"; payload: string }

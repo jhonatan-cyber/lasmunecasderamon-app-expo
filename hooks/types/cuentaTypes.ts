@@ -1,40 +1,177 @@
+import type {
+  Habitacion,
+  Anfitriona,
+  Cliente,
+  Producto,
+  Categoria,
+  CartItem,
+} from "@lasmunecasderamon/types";
+
+// ── Cuenta detail sub-types ──────────────────────────────────────────
+
+export interface RoomHistoryEntry {
+  roomId: string | number;
+  roomName?: string;
+  assignedMinutes?: number;
+  consumedMinutes?: number;
+  remainingMinutes?: number;
+  startedAt?: string;
+  endedAt?: string;
+  isActive?: boolean;
+  carriedFromPrevious?: boolean;
+}
+
+export interface CuentaDetalleItem {
+  id?: string | number;
+  producto?: string;
+  producto_id?: string | number;
+  nombre?: string;
+  cantidad: number;
+  precio: number;
+  sub_total: number;
+  comision?: number;
+  hostess_nick?: string;
+  hostess_id?: string | number;
+  added_by?: string;
+  added_by_foto?: string;
+  isChampagne?: boolean;
+  fecha_crea?: string;
+  estado?: string | number;
+}
+
+export interface CuentaUsuario {
+  usuario_id?: string | number;
+  id_usuario?: string | number;
+  nick?: string;
+  nombre?: string;
+}
+
+export interface CuentaResumenFinanciero {
+  total_original?: number;
+  total_actual?: number;
+  total_anulado_aprobado?: number;
+  total_anulacion_pendiente?: number;
+}
+
+export interface SolicitudAnulacion {
+  id?: string | number;
+  monto?: number;
+  estado?: string;
+  motivo?: string;
+  fecha_crea?: string;
+  fecha_mod?: string;
+}
+
+export interface CuentaDetalle {
+  id_cuenta: string | number;
+  codigo: string;
+  estado: number;
+
+  // Client
+  cliente_id?: string | number | null;
+  cliente_nombre?: string;
+  cliente_apellido?: string;
+  cliente_saldo?: number;
+
+  // Room
+  habitacion_id?: string | number | null;
+  habitacion_nombre?: string;
+  habitacion_numero?: string;
+
+  // Time
+  tiempo?: number;
+  tiempo_total?: number;
+  tiempo_activo?: number;
+  habitaciones_historial_data?: RoomHistoryEntry[];
+
+  // Totals
+  total?: number;
+  sub_total?: number;
+  total_comision?: number;
+
+  // Staff
+  nombre_cajero?: string;
+  foto_cajero?: string;
+  nombre_cobrador?: string;
+  foto_cobrador?: string;
+
+  // Financial breakdown
+  resumen_financiero?: CuentaResumenFinanciero;
+  solicitudes_anulacion?: SolicitudAnulacion[];
+
+  // Line items & hostesses
+  detalles?: CuentaDetalleItem[];
+  usuarios?: CuentaUsuario[];
+
+  // Payment & counts
+  metodo_pago?: string;
+  total_detalles?: number;
+  creador_nombre?: string;
+
+  // Metadata
+  pedido_id?: string | number | null;
+  fecha_crea?: string;
+  fecha_mod?: string;
+}
+
+export interface CuentaResumen {
+  total_por_cobrar?: number;
+  total_cuentas?: number;
+}
+
+/** Original account data passed to useAgregarCuenta */
+export interface CuentaOriginal {
+  id_cuenta: string | number;
+  habitacion_id?: string | number | null;
+  total?: number;
+  codigo?: string;
+  cliente_nombre?: string;
+}
+
+export interface HostessSelectionTarget {
+  productId: number;
+  isChampagne: boolean;
+  max: number;
+  product?: Producto;
+}
+
 export type CuentaState = {
   loadingInitial: boolean;
   refreshing: boolean;
-  anfitrionas: any[];
-  habitaciones: any[];
-  categories: any[];
-  cart: any[];
-  selectedHabitacion: any;
+  anfitrionas: Anfitriona[];
+  habitaciones: Habitacion[];
+  categories: Categoria[];
+  cart: CartItem[];
+  selectedHabitacion: Habitacion | null;
   selectedTime: number;
   roomModalVisible: boolean;
   modalOpen: boolean;
-  modalCategoria: any;
-  modalProducts: any[];
+  modalCategoria: Categoria | null;
+  modalProducts: Producto[];
   modalLoading: boolean;
   modalQuantities: { [key: number]: number };
   modalHostessSelections: { [key: number]: (string | number)[] };
-  hostessSelectionTarget: { productId: number; isChampagne: boolean; max: number; product?: any } | null;
+  hostessSelectionTarget: HostessSelectionTarget | null;
   hostessSubModalVisible: boolean;
   submitting: boolean;
   extraTiempo: number;
   timeModalVisible: boolean;
-  cuentaDetalle: any;
+  cuentaDetalle: CuentaDetalle | null;
 };
 
 export type CuentaAction =
   | { type: "SET_LOADING_INITIAL"; payload: boolean }
   | { type: "SET_REFRESHING"; payload: boolean }
-  | { type: "SET_INITIAL_DATA"; payload: any }
-  | { type: "SET_CART"; payload: any[] }
+  | { type: "SET_INITIAL_DATA"; payload: Partial<CuentaState> }
+  | { type: "SET_CART"; payload: CartItem[] }
   | { type: "SET_MODAL_VISIBLE"; modal: string; visible: boolean }
-  | { type: "OPEN_CATEGORY_MODAL"; category: any; products: any[] }
+  | { type: "OPEN_CATEGORY_MODAL"; category: Categoria; products: Producto[] }
   | { type: "SET_MODAL_LOADING"; payload: boolean }
   | { type: "SET_MODAL_QUANTITY"; productId: number; quantity: number }
   | { type: "SET_MODAL_HOSTESSES"; productId: number; hostesses: (string | number)[] }
-  | { type: "SET_HOSTESS_TARGET"; target: any }
+  | { type: "SET_HOSTESS_TARGET"; target: HostessSelectionTarget | null }
   | { type: "SET_SUBMITTING"; payload: boolean }
-  | { type: "SET_SELECTED_HABITACION"; payload: any }
+  | { type: "SET_SELECTED_HABITACION"; payload: Habitacion | null }
   | { type: "SET_SELECTED_TIME"; payload: number }
   | { type: "SET_ROOM_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_EXTRA_TIEMPO"; payload: number }

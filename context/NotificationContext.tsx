@@ -15,6 +15,7 @@ import {
   emitSseEvent,
   isSseControlEvent,
 } from "@/utils/realtime";
+import type { SSEPayload } from '../types/realtime';
 import {
   getUserRole,
   getUserRoleName,
@@ -66,16 +67,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const handleServerEvent = useCallback((payload: any) => {
-    
+  const handleServerEvent = useCallback((payload: SSEPayload) => {
     const roleName = getUserRoleName(user);
     const lowerRole = getUserRole(user);
     const isCajeroOrAdmin = isCajeroOrAdminRole(user);
     const isRequester = String(payload?.data?.usuario_id || "") === String(user?.id || "");
 
     logger.info(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
-
-
 
     switch (payload.type) {
       case "new_order":
@@ -98,7 +96,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           );
           emitRefreshRequests(payload);
 
-          
           if (id) {
             router.push({
               pathname: "/(app)/cajero/solicitudes",
@@ -181,18 +178,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "timer_paused":
       case "timer_updated":
       case "room_occupied":
-     
-      if (payload.type === "timer_started") {
-          const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
-          if (!lowerRole.includes("anfitriona") || isAssigned) {
-            
-          }
-        } else if (payload.type === "timer_stopped") {
-          const isAssigned = payload.data?.anfitrionas_ids?.map(Number).includes(Number(user?.id));
-          if (!lowerRole.includes("anfitriona") || isAssigned) {
-            
-          }
-        }
         break;
 
       case "sale_created":
@@ -202,7 +187,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           Toast.show({
             type: "success",
             text1: "Venta Actualizada",
-            text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}` ,
+            text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}`,
             visibilityTime: 4000,
           });
           emitRefreshSales();
@@ -265,15 +250,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       es = new EventSource(sseUrl);
       eventSourceRef.current = es;
 
-      es.addEventListener("message", (event: any) => {
+      es.addEventListener("message", (event: { data?: string | null }) => {
         if (!event.data) {
           logger.info('[NotificationContext] Evento SSE vacío');
           return;
         }
         try {
-          const payload = JSON.parse(event.data);
+          const payload: SSEPayload = JSON.parse(event.data);
           logger.info('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
-          
           
           if (!isSseControlEvent(payload.type)) {
              emitSseEvent(payload);
@@ -295,7 +279,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       });
 
-      es.addEventListener("error", (err: any) => {
+      es.addEventListener("error", (err: unknown) => {
         logger.warn('[NotificationContext] Error de conexión SSE', { error: JSON.stringify(err) });
         setIsConnected(false);
       });

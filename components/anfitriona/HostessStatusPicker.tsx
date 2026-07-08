@@ -10,8 +10,7 @@ interface HostessStatusPickerProps {
 }
 
 export const HostessStatusPicker = ({ userStatus, onStatusChange }: HostessStatusPickerProps) => {
-    const { isDark, cardBg, borderColor } = useAccentColor();
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+    const { isDark, cardBg, borderColor, textSecondary } = useAccentColor();
 
     return (
         <View style={styles.statusControlGrid}>

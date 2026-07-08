@@ -24,7 +24,7 @@ import {
 
 export default function HorasExtrasScreen() {
     const router = useRouter();
-    const { accentColor, isDark } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -35,11 +35,7 @@ export default function HorasExtrasScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const dataRef = useRef<string>('');
 
-    const bg = isDark ? '#000000' : '#F3F4F6';
-    const cardBg = isDark ? '#111111' : '#FFFFFF';
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-    const borderColor = isDark ? `${accentColor}40` : '#E2E8F0';
+
 
     const fetchData = useCallback(async (isManual = false) => {
         try {

@@ -22,8 +22,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     onSelectCategory,
     title = '1. Selección de Categoría'
 }) => {
-    const { accentColor, isDark, cardBg, borderColor } = useAccentColor();
-    const textPrimary = isDark ? '#FFFFFF' : '#000000';
+    const { accentColor, isDark, cardBg, borderColor, textPrimary } = useAccentColor();
 
     return (
         <View style={styles.browserContainer}>
