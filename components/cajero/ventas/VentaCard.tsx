@@ -8,7 +8,7 @@ import { statusColors } from "./constants";
 import { VentaCardDetails } from "./VentaCardDetails";
 import { VentaCardRight } from "./VentaCardRight";
 import type { Venta } from "./types";
-import type { Timer } from "@/context/TimerContext";
+import type { Timer } from "@/context/types";
 
 type VentaCardProps = {
   item: Venta;

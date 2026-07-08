@@ -1,15 +1,15 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const ordersService = {
   list: () =>
-    apiClient('/orders'),
+    apiClientSafe('/orders'),
 
   detail: (id: string | number) =>
-    apiClient(`/orders/detail?id=${id}`),
+    apiClientSafe(`/orders/detail?id=${id}`),
 
-  update: (id: string | number, payload: any) =>
-    apiClient(`/orders/${id}`, {
+  update: (id: string | number, data: Record<string, unknown>) =>
+    apiClientSafe(`/orders/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

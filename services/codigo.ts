@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const codigoService = {
   actual: () =>
-    apiClient('/codigo/actual'),
+    apiClientSafe('/codigo/actual'),
 };

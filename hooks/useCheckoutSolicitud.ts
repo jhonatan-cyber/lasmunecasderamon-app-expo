@@ -1,7 +1,40 @@
 import { useCallback, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { cuentasService } from '@/services';
+
+interface DetallePago {
+  producto_id: string;
+  cantidad: number;
+  precio: number;
+  sub_total: number;
+}
+
+interface SalesSubmitPayload {
+  id_pedido: string;
+  cliente_id: string | number | null;
+  metodo_pago: string;
+  metodo_pago_adicional?: string;
+  monto_prepago: number;
+  duracion_habitacion: number;
+  detalles: DetallePago[];
+  sub_total: number;
+  total: number;
+  ganancia_tipo: string;
+  ganancia_monto: number;
+  comision_por_cliente: boolean;
+  recompensa_binario: boolean;
+  recompensa_activos: boolean;
+  recompensa_activos_monto: number;
+  ganancia_anfitriona: number;
+  ganancia_garzon: number;
+  ganancia_local: number;
+  ganancia_empresa: number;
+  total_comision: number;
+  tiempo: number;
+  usuarios: never[];
+  propina?: number;
+}
 
 interface UseCheckoutSolicitudParams {
   selectedPedido: any;
@@ -53,7 +86,7 @@ export function useCheckoutSolicitud({
 
     const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
 
-    const payload: any = {
+    const payload: SalesSubmitPayload = {
       id_pedido: selectedPedido.id_pedido,
       cliente_id: clienteId,
       metodo_pago: metodoPago,
@@ -88,7 +121,7 @@ export function useCheckoutSolicitud({
     }
 
     try {
-      const res = await apiClient("/sales", {
+      const res = await apiClientSafe("/sales", {
         method: "POST",
         body: JSON.stringify(payload),
       });

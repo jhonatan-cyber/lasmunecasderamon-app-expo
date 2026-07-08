@@ -1,4 +1,4 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import Toast from 'react-native-toast-message';
@@ -46,12 +46,12 @@ export function useGratificaciones() {
       setError('');
 
       const [gratificacionesRes, usersRes] = await Promise.all([
-        apiClient<any[]>('/gratificaciones'),
-        apiClient<any>('/users?status=active')
+        apiClientSafe('/gratificaciones'),
+        apiClientSafe('/users?status=active')
       ]);
 
-      const gratificacionesData = Array.isArray(gratificacionesRes) ? gratificacionesRes : [];
-      const usersData = Array.isArray(usersRes?.data) ? usersRes.data : [];
+      const gratificacionesData = (gratificacionesRes as any)?.data || [];
+      const usersData = Array.isArray((usersRes as any)?.data) ? (usersRes as any).data : [];
 
       const filteredEmployees = usersData
         .map(normalizeEmployee)
@@ -94,13 +94,13 @@ export function useGratificaciones() {
     async (payload: { usuario_id: string; monto: number; descripcion: string }) => {
       try {
         setSubmitting(true);
-        const response = await apiClient<any>('/gratificaciones', {
+        const response = await apiClientSafe('/gratificaciones', {
           method: 'POST',
           body: JSON.stringify(payload)
         });
 
-        if (!response?.success) {
-          throw new Error(response?.message || 'No se pudo crear la gratificación');
+        if (!(response as any)?.success) {
+          throw new Error((response as any)?.message || 'No se pudo crear la gratificación');
         }
 
         await fetchData();
@@ -108,7 +108,7 @@ export function useGratificaciones() {
           type: 'success',
           text1: 'Solicitud enviada',
           text2:
-            response.pendingApproval
+            (response as any).pendingApproval
               ? 'Se envió al administrador por WhatsApp para aprobación'
               : 'Gratificación registrada correctamente'
         });

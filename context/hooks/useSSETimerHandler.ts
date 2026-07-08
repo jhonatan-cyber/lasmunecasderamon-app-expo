@@ -8,6 +8,8 @@ import {
   emitRefreshSales,
   REALTIME_EVENT_NAMES,
 } from "@/utils/realtime";
+import type { SSEPayload, TimerRawData } from '@/types/realtime';
+import type { MetodoPago } from '@/types/api';
 import logger from '@/utils/logger';
 
 interface UseSSETimerHandlerParams {
@@ -34,15 +36,15 @@ export function useSSETimerHandler({
     timersRef.current = next;
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSSEEvent = useCallback((payload: SSEPayload) => {
     switch (payload.type) {
       case "timer_started": {
-        const newTimerData = payload.data;
-        const start = parseDateSafe(newTimerData.startTime);
+        if (!payload.data) break;
+        const d = payload.data as unknown as TimerRawData;
+        const start = parseDateSafe(d.startTime);
         const now = new Date(Date.now() + serverOffsetRef.current);
         const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
-        const durationMins = Number(newTimerData.duration || 0);
+        const durationMins = Number(d.duration || 0);
         let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
 
         if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
@@ -50,37 +52,37 @@ export function useSSETimerHandler({
         }
 
         const newTimer: Timer = {
-          id: `${newTimerData.servicioId}-${newTimerData.roomId}`,
-          servicioId: newTimerData.servicioId,
-          roomId: newTimerData.roomId,
-          roomName: newTimerData.roomName,
+          id: `${d.servicioId}-${d.roomId}`,
+          servicioId: d.servicioId,
+          roomId: d.roomId,
+          roomName: d.roomName,
           duration: durationMins,
           remainingTime: remainingSeconds,
           isActive: true,
           isPaused: false,
           startTime: start,
-          servicioCode: newTimerData.codigo,
-          cliente_id: newTimerData.cliente_id,
-          clienteNombre: newTimerData.clienteNombre,
-          tipoTransaccion: newTimerData.tipoTransaccion,
-          anfitrionas: newTimerData.anfitrionas,
-          precio_servicio: newTimerData.precio_servicio,
-          precio_habitacion: newTimerData.precio_habitacion,
-          iva: newTimerData.iva,
-          total: newTimerData.total,
-          metodo_pago: newTimerData.metodo_pago,
-          waiter_name: newTimerData.waiter_name,
-          habitacion_comision: newTimerData.habitacion_comision || 0,
-          anfitrionas_ids: typeof newTimerData.anfitrionas_ids === 'string'
-            ? newTimerData.anfitrionas_ids.split(',').filter(Boolean)
-            : (newTimerData.anfitrionas_ids || []),
-          created_at: newTimerData.created_at || newTimerData.startTime,
-          estado: newTimerData.estado || 2,
-          total_usuarios: newTimerData.total_usuarios,
-          comision_individual: newTimerData.comision_individual,
+          servicioCode: d.codigo || '',
+          cliente_id: d.cliente_id,
+          clienteNombre: d.clienteNombre || '',
+          tipoTransaccion: d.tipoTransaccion,
+          anfitrionas: d.anfitrionas,
+          precio_servicio: d.precio_servicio,
+          precio_habitacion: d.precio_habitacion,
+          iva: d.iva,
+          total: d.total,
+          metodo_pago: d.metodo_pago as MetodoPago | undefined,
+          waiter_name: d.waiter_name,
+          habitacion_comision: d.habitacion_comision || 0,
+          anfitrionas_ids: typeof d.anfitrionas_ids === 'string'
+            ? d.anfitrionas_ids.split(',').filter(Boolean)
+            : (d.anfitrionas_ids || []),
+          created_at: d.created_at || d.startTime,
+          estado: d.estado || 2,
+          total_usuarios: d.total_usuarios,
+          comision_individual: d.comision_individual,
           isOverdueNotified: false,
-          es_temporal: newTimerData.es_temporal === 1 || newTimerData.es_temporal === true,
-          servicio_original_id: newTimerData.servicioOriginalId ? String(newTimerData.servicioOriginalId) : null,
+          es_temporal: d.es_temporal === 1 || d.es_temporal === true,
+          servicio_original_id: d.servicioOriginalId ? String(d.servicioOriginalId) : null,
         };
         setTimers((prev) => {
           const next = [
@@ -97,19 +99,21 @@ export function useSSETimerHandler({
       }
 
       case "timer_stopped": {
-        const targetServicioId = payload.data.servicioId;
+        if (!payload.data) break;
+        const d = payload.data as unknown as TimerRawData;
+        const targetServicioId = d.servicioId;
         const stoppedTimerInfo = timersRef.current.find(
           (t) => String(t.servicioId) === String(targetServicioId)
         );
 
         const roomNameForEvent =
           stoppedTimerInfo?.roomName ||
-          payload.data?.roomName ||
-          payload.data?.habitacion_numero ||
-          payload.data?.habitacion_id ||
+          d.roomName ||
+          d.habitacion_numero ||
+          d.habitacion_id ||
           'asignada';
 
-        const targetTipo = payload.data.tipoTransaccion || 'servicio';
+        const targetTipo = d.tipoTransaccion || 'servicio';
         const originalId = stoppedTimerInfo?.servicio_original_id;
 
         setTimers((prev) => {
@@ -141,10 +145,12 @@ export function useSSETimerHandler({
       }
 
       case "timer_paused": {
-        const targetTipoP = payload.data.tipoTransaccion || 'servicio';
+        if (!payload.data) break;
+        const d = payload.data as unknown as TimerRawData;
+        const targetTipoP = d.tipoTransaccion || 'servicio';
         setTimers((prev) => {
           const next = prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoP) {
+            if (String(t.servicioId) === String(d.servicioId) && t.tipoTransaccion === targetTipoP) {
               const currentRemaining = calculateRemainingTime(t, serverOffsetRef.current);
               return {
                 ...t,
@@ -165,15 +171,17 @@ export function useSSETimerHandler({
       }
 
       case "timer_resumed": {
-        const targetTipoR = payload.data.tipoTransaccion || 'servicio';
+        if (!payload.data) break;
+        const d = payload.data as unknown as TimerRawData;
+        const targetTipoR = d.tipoTransaccion || 'servicio';
         setTimers((prev) => {
           const next = prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoR) {
+            if (String(t.servicioId) === String(d.servicioId) && t.tipoTransaccion === targetTipoR) {
               return {
                 ...t,
                 isPaused: false,
                 estado: 2,
-                startTime: parseDateSafe(payload.data.newStartTime),
+                startTime: parseDateSafe(d.newStartTime || d.startTime),
                 lastAnnouncedMinute: undefined,
               };
             }
@@ -189,22 +197,26 @@ export function useSSETimerHandler({
       }
 
       case "timer_updated": {
-        const targetTipoU = payload.data.tipoTransaccion || 'servicio';
+        if (!payload.data) break;
+        const d = payload.data as unknown as TimerRawData;
+        const targetTipoU = d.tipoTransaccion || 'servicio';
         setTimers((prev) => {
           const next = prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoU) {
+            if (String(t.servicioId) === String(d.servicioId) && t.tipoTransaccion === targetTipoU) {
               return {
                 ...t,
-                ...payload.data,
-                duration: Number(payload.data.duration || t.duration),
-                startTime: payload.data.startTime ? parseDateSafe(payload.data.startTime) : t.startTime,
-                roomName: payload.data.roomName || t.roomName,
-                anfitrionas: payload.data.anfitrionas !== undefined ? payload.data.anfitrionas : t.anfitrionas,
-                anfitrionas_ids: typeof payload.data.anfitrionas_ids === 'string'
-                  ? payload.data.anfitrionas_ids.split(',').filter(Boolean)
-                  : (payload.data.anfitrionas_ids || t.anfitrionas_ids),
+                ...d,
+                id: t.id,
+                duration: Number(d.duration || t.duration),
+                startTime: d.startTime ? parseDateSafe(d.startTime) : t.startTime,
+                roomName: d.roomName || t.roomName,
+                anfitrionas: d.anfitrionas !== undefined ? d.anfitrionas : t.anfitrionas,
+                anfitrionas_ids: typeof d.anfitrionas_ids === 'string'
+                  ? d.anfitrionas_ids.split(',').filter(Boolean)
+                  : (d.anfitrionas_ids || t.anfitrionas_ids),
+                servicio_original_id: d.servicioOriginalId ? String(d.servicioOriginalId) : null,
                 lastAnnouncedMinute: undefined,
-              };
+              } as Timer;
             }
             return t;
           });

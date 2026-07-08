@@ -74,7 +74,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                     <View style={styles.detailHeader}>
                         <View style={[styles.detailIconBox, { backgroundColor: `${iconColor}20` }]}>
                             <Ionicons
-                                name={getIconName(event?.type) as any}
+                                name={getIconName(event?.type) as keyof typeof Ionicons.glyphMap}
                                 size={32}
                                 color={iconColor}
                             />

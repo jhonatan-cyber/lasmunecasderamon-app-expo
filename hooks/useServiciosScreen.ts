@@ -5,7 +5,9 @@ import { Colors } from "@/constants/theme";
 import Toast from "react-native-toast-message";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { serviciosService } from "@/services";
-import { useTimer, Timer } from "@/context/TimerContext";
+import type { ApiRes } from "@/types/api";
+import { useTimer } from "@/context/TimerContext";
+import type { Timer } from '@/context/types';
 import { parseDateSafe } from "@/utils/timeUtils";
 import logger from "@/utils/logger";
 

@@ -1,7 +1,7 @@
 import { DeviceEventEmitter, Platform } from "react-native";
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
@@ -55,12 +55,12 @@ export function useAsistencia() {
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
 
-      const data = await apiClient(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`);
+      const data = await apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`);
       if (data.success) {
         const serialized = JSON.stringify(data.data);
         const hasChanges = dataRef.current !== serialized;
         dataRef.current = serialized;
-        setAsistencias(data.data || []);
+        setAsistencias((data.data || []) as Asistencia[]);
 
         if (isManual) {
           Toast.show({
@@ -82,7 +82,7 @@ export function useAsistencia() {
 
   const fetchGratificaciones = useCallback(async (isManual = false) => {
     try {
-      const data = await apiClient('/gratificaciones/me');
+      const data = await apiClientSafe('/gratificaciones/me');
       if (Array.isArray(data)) {
         setGratificaciones(data);
       }

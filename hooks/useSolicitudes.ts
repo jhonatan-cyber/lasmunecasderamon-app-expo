@@ -2,21 +2,25 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
+import type { Anfitriona } from '@lasmunecasderamon/types';
+import type { SSEPayload } from '@/types/realtime';
+import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
+
 
 import logger from '@/utils/logger';
 const CACHE_KEY = 'solicitudes_cache_v1';
 
 export const useSolicitudes = () => {
     const { serverOffset } = useTimer();
-    const [solicitudes, setSolicitudes] = useState<any[]>([]);
+    const [solicitudes, setSolicitudes] = useState<SolicitudItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [cajaAbierta, setCajaAbierta] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
-    const [allHostesses, setAllHostesses] = useState<any[]>([]);
+    const [allHostesses, setAllHostesses] = useState<Anfitriona[]>([]);
     const dataRef = useRef<string>('');
     const [pendingAutoOpen, setPendingAutoOpen] = useState<{ id: string, type: string } | null>(null);
 
@@ -39,17 +43,18 @@ export const useSolicitudes = () => {
     const fetchSolicitudes = useCallback(async (isManual = false) => {
         try {
             const [resSolicitudes, resOrders, resAnticipos, resStats, resAnfitrionas] = await Promise.all([
-                apiClient('/solicitudes-servicios?estado=0').catch(() => ({ success: false, data: [] })),
-                apiClient('/orders').catch(() => ({ success: false, data: [] })),
-                apiClient('/anticipos').catch(() => ({ success: false, data: [] })),
-                apiClient('/caja/stats').catch(() => null),
-                apiClient('/anfitrionas').catch(() => ({ success: false, data: [] }))
+                apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0').catch(() => ({ success: false, data: [] })),
+                apiClientSafe<SolicitudItem[]>('/orders').catch(() => ({ success: false, data: [] })),
+                apiClientSafe<SolicitudItem[]>('/anticipos').catch(() => ({ success: false, data: [] })),
+                apiClientSafe<{ cajas_abiertas: number }>('/caja/stats').catch(() => null),
+                apiClientSafe<Anfitriona[]>('/anfitrionas').catch(() => ({ success: false, data: [] }))
             ]);
 
+            const anfitrionasData = resAnfitrionas as unknown as { success: boolean; data: Anfitriona[] };
             if (Array.isArray(resAnfitrionas)) {
                 setAllHostesses(resAnfitrionas);
-            } else if (resAnfitrionas.success) {
-                setAllHostesses(resAnfitrionas.data || []);
+            } else if (anfitrionasData.success) {
+                setAllHostesses(anfitrionasData.data || []);
             }
 
             const newData = { solicitudes: resSolicitudes.data, orders: resOrders.data, stats: resStats };
@@ -57,45 +62,44 @@ export const useSolicitudes = () => {
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (resStats && typeof resStats.cajas_abiertas !== 'undefined') {
-                setCajaAbierta(resStats.cajas_abiertas > 0);
+            if (resStats?.data && typeof resStats.data.cajas_abiertas !== 'undefined') {
+                setCajaAbierta(resStats.data.cajas_abiertas > 0);
             }
 
-            let combined: any[] = [];
+            let combined: SolicitudItem[] = [];
 
             if (resSolicitudes.success) {
-                const arr = (resSolicitudes.data || []).map((s: any) => ({
+                const arr: SolicitudItem[] = (resSolicitudes.data as any[] || []).map((s: Record<string, unknown>) => ({
                     ...s,
-                    tipoItem: 'solicitud',
+                    tipoItem: 'solicitud' as const,
                     id_unificado: `solicitud_${s.id_solicitud}`,
-                    fecha_orden: parseDateSafe(s.fecha_solicitud).getTime()
-                }));
+                    fecha_orden: parseDateSafe(s.fecha_solicitud as string).getTime()
+                } as SolicitudItem));
                 combined = [...combined, ...arr];
             }
 
             if (resOrders.success) {
-                const arr = (resOrders.data || []).map((o: any) => ({
+                const arr: SolicitudItem[] = (resOrders.data as any[] || []).map((o: Record<string, unknown>) => ({
                     ...o,
-                    
                     id_pedido: o.id_pedido || o.id,
-                    tipoItem: 'pedido',
+                    tipoItem: 'pedido' as const,
                     id_unificado: `pedido_${o.id_pedido || o.id}`,
-                    fecha_orden: parseDateSafe(o.fecha_crea).getTime()
-                }));
+                    fecha_orden: parseDateSafe(o.fecha_crea as string).getTime()
+                } as SolicitudItem));
                 combined = [...combined, ...arr];
             }
 
             if (resAnticipos.success) {
-                const arr = (resAnticipos.data || [])
-                    .filter((a: any) => a.estado === 1 || a.estado === 2)
-                    .map((a: any) => ({
+                const arr: SolicitudItem[] = (resAnticipos.data as any[] || [])
+                    .filter((a: Record<string, unknown>) => a.estado === 1 || a.estado === 2)
+                    .map((a: Record<string, unknown>) => ({
                         ...a,
-                        codigo: a.codigo || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,
-                        usuario: a.usuario || a.nick || `${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`.trim(),
-                        tipoItem: 'anticipo',
+                        codigo: (a.codigo as string) || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,
+                        usuario: (a.usuario as string) || (a.nick as string) || `${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`.trim(),
+                        tipoItem: 'anticipo' as const,
                         id_unificado: `anticipo_${a.id_anticipo}`,
-                        fecha_orden: parseDateSafe(a.fecha_crea).getTime()
-                    }));
+                        fecha_orden: parseDateSafe(a.fecha_crea as string).getTime()
+                    } as SolicitudItem));
                 combined = [...combined, ...arr];
             }
 
@@ -136,18 +140,18 @@ export const useSolicitudes = () => {
     }, [fetchSolicitudes]);
 
     useEffect(() => {
-        const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload?: any) => {
-            logger.info('[useSolicitudes] 📡 SSE event received:', payload);
+        const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload: SSEPayload) => {
+            logger.info('[useSolicitudes] 📡 SSE event received:', payload as any);
             fetchSolicitudes();
             
-            if (payload && payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
+            if (payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
                 logger.info('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
                 setPendingAutoOpen({
-                    id: payload.data.id,
+                    id: payload.data.id as string,
                     type: payload.type === 'new_order' ? 'pedido' : 'solicitud'
                 });
             } else {
-                logger.info('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id);
+                logger.info('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id as any);
             }
         });
         return () => subscription.remove();

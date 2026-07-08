@@ -1,12 +1,12 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const tipsService = {
   userDetail: () =>
-    apiClient('/tips/user?tipo=detalle'),
+    apiClientSafe('/tips/user?tipo=detalle'),
 
   allDetail: () =>
-    apiClient('/tips?tipo=detalle'),
+    apiClientSafe('/tips?tipo=detalle'),
 
   getById: (id: string | number) =>
-    apiClient(`/tips/${id}`),
+    apiClientSafe(`/tips/${id}`),
 };

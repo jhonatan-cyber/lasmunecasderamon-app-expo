@@ -56,7 +56,7 @@ function SummaryCard({
             borderWidth: 1,
             borderColor: isDark ? `${color}26` : `${color}1A`,
         }}>
-            <Ionicons name={icon as any} size={16} color={color} />
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={color} />
             <Text style={{ fontSize: 7, fontWeight: '900', color, letterSpacing: 0.5, marginTop: 4, textTransform: 'uppercase' }}>
                 {label}
             </Text>

@@ -151,7 +151,7 @@ function UserInfoRow({ label, name, foto, icon, theme }: {
                     <Image source={{ uri: foto.startsWith('http') ? foto : `${BASE_URL}/img/users/${foto}` }} style={styles.avatarSquare} />
                 ) : (
                     <View style={[styles.avatarSquare, styles.avatarPlaceholder]}>
-                        <Ionicons name={icon as any} size={16} color={theme.textMuted} />
+                        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={theme.textMuted} />
                     </View>
                 )}
                 <Text style={[styles.gridValue, { color: theme.text, flex: 1 }]}>{name}</Text>

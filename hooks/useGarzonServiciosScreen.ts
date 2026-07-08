@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 
 export interface Room {
@@ -72,9 +72,9 @@ export function useGarzonServiciosScreen() {
     try {
       if (!isRefreshing) setLoading(true);
       const [roomRes, anfRes, clientRes] = await Promise.allSettled([
-        apiClient("/rooms"),
-        apiClient("/users?anfitrionas=1"),
-        apiClient("/clients"),
+        apiClientSafe("/rooms"),
+        apiClientSafe("/users?anfitrionas=1"),
+        apiClientSafe("/clients"),
       ]);
 
       const roomData = roomRes.status === "fulfilled" ? roomRes.value : null;
@@ -93,12 +93,12 @@ export function useGarzonServiciosScreen() {
         });
       };
 
-      const rawAnf = anfData?.data || [];
+      const rawAnf = (anfData as any)?.data || [];
       const rawClients = Array.isArray(clientData)
         ? clientData
-        : clientData?.data || [];
+        : (clientData as any)?.data || [];
       const newData = {
-        rooms: roomData?.data,
+        rooms: (roomData as any)?.data,
         anfitrionas: rawAnf,
         clients: rawClients,
       };
@@ -106,7 +106,7 @@ export function useGarzonServiciosScreen() {
       const hasChanges = dataRef.current !== serialized;
       dataRef.current = serialized;
 
-      setRooms(roomData?.data || []);
+      setRooms((roomData as any)?.data || []);
 
       
       setAnfitrionas((prev) => {
@@ -363,12 +363,12 @@ export function useGarzonServiciosScreen() {
         num_clientes: selectedClients.length || 1,
       };
 
-      const res = await apiClient("/solicitudes-servicios", {
+      const res = await apiClientSafe("/solicitudes-servicios", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      if (res.success) {
+      if ((res as any).success) {
         Toast.show({
           type: "success",
           text1: "Solicitud Enviada",
@@ -376,7 +376,7 @@ export function useGarzonServiciosScreen() {
         });
         router.back();
       } else {
-        Alert.alert("Error", res.message || "No se pudo crear el servicio");
+        Alert.alert("Error", (res as any).message || "No se pudo crear el servicio");
       }
     } catch (err: any) {
       Alert.alert("Error", err.message || "Error de conexión");

@@ -1,4 +1,4 @@
-import { apiClient, setTokenInMemory, setUnauthorizedHandler } from '@/api/client';
+import { apiClient, apiClientSafe, setTokenInMemory, setUnauthorizedHandler } from '@/api/client';
 import logger from '@/utils/logger';
 import { TokenStorage } from '@/utils/tokenStorage';
 import { loginSchema } from '@lasmunecasderamon/validations';
@@ -28,6 +28,15 @@ interface LoginPayload {
     email?: string;
     password?: string;
     codigo?: string;
+}
+
+interface LoginResponse {
+    success: boolean;
+    requiereCodigo?: boolean;
+    user?: User;
+    token?: string;
+    asistenciaRegistrada?: boolean;
+    message?: string;
 }
 
 export interface TempAuthData {
@@ -187,26 +196,27 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     payload.codigo = codigo;
                 }
 
-                const response = await apiClient('/auth/login', {
+                const response = await apiClientSafe('/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
+                const authData = response as unknown as LoginResponse;
 
-                if (response.requiereCodigo) {
-                    return { requiereCodigo: true, user: response.user as User | undefined };
+                if (authData.requiereCodigo) {
+                    return { requiereCodigo: true, user: authData.user };
                 }
 
-                if (!response.success && !response.token) {
-                    throw new Error(response.message || 'Error en autenticación');
+                if (!authData.success && !authData.token) {
+                    throw new Error(authData.message || 'Error en autenticación');
                 }
 
-                const { token, user, asistenciaRegistrada = false } = response;
-                await TokenStorage.saveToken(token);
+                const { token, user, asistenciaRegistrada = false } = authData;
+                await TokenStorage.saveToken(token!);
                 await AsyncStorage.setItem('user', JSON.stringify(user));
 
-                setTokenInMemory(token);
-                set({ user, token, tempAuthData: null });
+                setTokenInMemory(token!);
+                set({ user: user!, token, tempAuthData: null });
 
                 return { requiereCodigo: false, asistenciaRegistrada };
             } catch (error: unknown) {
@@ -217,7 +227,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         logout: async () => {
             try {
-                await apiClient('/auth/logout', { method: 'POST' });
+                await apiClientSafe('/auth/logout', { method: 'POST' });
             } catch (e) {
                 logger.error('API Logout failed', { error: e });
             }

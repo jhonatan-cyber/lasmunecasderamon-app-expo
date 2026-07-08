@@ -30,7 +30,7 @@ export function ProfileAvatar({ avatarIcon, formData, accentColor, textPrimary, 
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Ionicons name={avatarIcon as any} size={56} color={accentColor} />
+            <Ionicons name={avatarIcon as keyof typeof Ionicons.glyphMap} size={56} color={accentColor} />
           </View>
         )}
         <Pressable style={[styles.editPhotoBadge, { backgroundColor: accentColor, borderColor: textPrimary === "#FFFFFF" ? "#000" : "#FFF" }]} onPress={onEditPhoto}>

@@ -23,17 +23,17 @@ export function usePedidosScreen() {
             setError('');
             const data = await categoriesService.list();
 
-            const serialized = JSON.stringify(data.data || []);
+            const serialized = JSON.stringify((data as any).data || []);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (data.success) {
-                const active = (data.data || [])
+            if ((data as any).success) {
+                const active = ((data as any).data || [])
                     .filter((c: Category) => c.status === 1)
                     .sort((a: Category, b: Category) => a.display_order - b.display_order);
                 setCategories(active);
             } else {
-                setError(data.message || 'Error al cargar categorías');
+                setError((data as any).message || 'Error al cargar categorías');
             }
 
             if (isManual) {

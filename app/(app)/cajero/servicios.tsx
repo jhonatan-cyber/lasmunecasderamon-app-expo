@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+import FlashList from "@/components/shared/FlashList";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
@@ -13,9 +13,10 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { Timer, useTimer } from '@/context/TimerContext';
+import { useTimer } from '@/context/TimerContext';
+import type { Timer } from '@/context/types';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -25,8 +26,6 @@ import {
   ServiceCard,
   ServiciosModales
 } from '@/components/cajero/servicios';
-
-const FlashList = ShopifyFlashList as any;
 
 const safeNumber = (val: any) => {
   if (val === null || val === undefined || val === "") return 0;
@@ -207,17 +206,18 @@ export default function ServiciosActivosScreen() {
       let hasMore = true;
 
       while (hasMore) {
-        const res = await apiClient(`/servicios?all=true&limit=${limit}&page=${page}`);
-        const raw = Array.isArray((res as any)?.data?.data)
-          ? (res as any).data.data
-          : Array.isArray((res as any)?.data)
-            ? (res as any).data
+        const res = await apiClientSafe<{ data: any[]; total: number }>(`/servicios?all=true&limit=${limit}&page=${page}`);
+        const pageData = res.data;
+        const raw = Array.isArray(pageData?.data)
+          ? pageData.data
+          : Array.isArray(pageData)
+            ? pageData
             : [];
 
         if (!res.success || raw.length === 0) { hasMore = false; break; }
 
         allData = [...allData, ...raw];
-        const total = (res as any)?.data?.total || 0;
+        const total = pageData?.total || 0;
         hasMore = allData.length < total && raw.length === limit;
         page++;
       }
@@ -340,7 +340,7 @@ export default function ServiciosActivosScreen() {
               dispatch({ type: 'CLOSE_ALERT' });
               return;
             }
-            const res = await apiClient(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
+            const res = await apiClientSafe(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
             dispatch({ type: 'CLOSE_ALERT' });
             if (res.success) {
               Toast.show({ type: "success", text1: "Servicio Finalizado" });

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+import FlashList from "@/components/shared/FlashList";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -20,8 +20,6 @@ import { ClientCard } from "@/components/cajero/clientes/ClientCard";
 import { ClientFormModal } from "@/components/cajero/clientes/ClientFormModal";
 import { LoadBalanceModal } from "@/components/cajero/clientes/LoadBalanceModal";
 import { ClientHistoryModal } from "@/components/cajero/clientes/ClientHistoryModal";
-
-const FlashList = ShopifyFlashList as any;
 
 export default function ClientesScreen() {
   const {

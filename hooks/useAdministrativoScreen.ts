@@ -43,13 +43,14 @@ export function useAdministrativoScreen() {
         const eventsRes = await eventsService.getUserEvents(
           `startDate=${startDate}&endDate=${endDate}`,
         );
+        const evData = eventsRes as unknown as { success: boolean; data: Event[] };
 
-        const serialized = JSON.stringify(eventsRes.data || []);
+        const serialized = JSON.stringify(evData.data || []);
         const hasChanges = dataRef.current !== serialized;
         dataRef.current = serialized;
 
-        if (eventsRes.success) {
-          setRecentActivity(eventsRes.data || []);
+        if (evData.success) {
+          setRecentActivity(evData.data || []);
         }
 
         if (isManual) {
@@ -111,7 +112,8 @@ export function useAdministrativoScreen() {
       setLoadingDetail(true);
       try {
         const res = await eventsService.detail(item.id, item.type);
-        if (res.success && res.data) setEventDetail(res.data);
+        const detailRes = res as unknown as { success: boolean; data: any };
+        if (detailRes.success && detailRes.data) setEventDetail(detailRes.data);
       } catch (e) {
         logger.captureException(e, {
           context: "Administrativo:handleSelectEvent",

@@ -1,4 +1,4 @@
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 import type { Habitacion, Anfitriona, Cliente, Producto, Categoria, CartItem } from "@lasmunecasderamon/types";
 import { showToast, isChampagneProduct, getChampagneLimit, getHostessLimit, buildCommissionPreview } from "./cuentaUtils";
@@ -66,7 +66,7 @@ export const openCategory = async (
   dispatch({ type: "SET_MODAL_LOADING", payload: true });
   dispatch({ type: "SET_MODAL_VISIBLE", modal: "category", visible: true });
   try {
-    const res = await apiClient(`/products?category_id=${cat.id}`);
+    const res = await apiClientSafe(`/products?category_id=${cat.id}`);
     if (res.success) {
       dispatch({
         type: "OPEN_CATEGORY_MODAL",

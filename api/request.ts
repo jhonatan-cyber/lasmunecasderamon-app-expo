@@ -1,3 +1,4 @@
+import type { ApiRes } from "@/types/api";
 import logger from "@/utils/logger";
 import { API_URL } from "./base-url";
 import {
@@ -8,7 +9,6 @@ import {
 } from "./errors";
 import { delay, shouldRetry } from "./retry";
 import { ensureTokenInMemory, notifyUnauthorized } from "./token";
-
 const logApiCall = (
   endpoint: string,
   attempt: number,
@@ -38,7 +38,7 @@ const logApiCall = (
   logger.debug("API call", logEntry);
 };
 
-export const apiClient = async <T = any>(
+export const apiClient = async <T = ApiRes<unknown>>(
   endpoint: string,
   options: RequestInit & { timeout?: number; retries?: number } = {},
 ): Promise<T> => {

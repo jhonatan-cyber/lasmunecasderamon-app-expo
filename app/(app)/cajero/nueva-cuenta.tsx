@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client-safe";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { CartList } from "@/components/cajero/forms/CartList";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -157,20 +157,25 @@ export default function NuevaCuentaScreen() {
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.all([
-          apiClient("/cashregister/status"),
-          apiClient("/anfitrionas"),
-          apiClient("/rooms"),
-          apiClient("/clients"),
-          apiClient("/categories"),
+          apiClientSafe("/cashregister/status"),
+          apiClientSafe("/anfitrionas"),
+          apiClientSafe("/rooms"),
+          apiClientSafe("/clients"),
+          apiClientSafe("/categories"),
         ]);
 
-      const rawHabitaciones = roomsRes.success ? roomsRes.data : [];
+      const cajaData = cajaRes as unknown as { success: boolean; data: any };
+      const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
+      const catsData = categoriesRes as unknown as { success: boolean; data: any[] };
+      const clientsData = clientsRes as unknown as { success: boolean; data: any[] };
+
+      const rawHabitaciones = cajaData.success ? cajaData.data || [] : [];
       const fetchedData: any = {
-        cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
+        cajaAbierta: cajaData.success && cajaData.data?.hasOpenCaja,
         anfitrionas: Array.isArray(anfitrionasRes)
           ? anfitrionasRes
-          : anfitrionasRes.success
-            ? anfitrionasRes.data
+          : (anfitrionasRes as unknown as { success: boolean; data: any[] }).success
+            ? (anfitrionasRes as unknown as { success: boolean; data: any[] }).data
             : [],
         habitaciones: rawHabitaciones.map((room: any) => ({
           ...room,
@@ -183,18 +188,18 @@ export default function NuevaCuentaScreen() {
           estado: room.estado ?? room.status ?? 0,
           comision_anfitriona: room.comision_anfitriona ?? 0,
         })),
-        categories: categoriesRes.success ? categoriesRes.data || [] : [],
+        categories: catsData.success ? catsData.data || [] : [],
       };
 
       if (Array.isArray(clientsRes)) {
         fetchedData.clientes = clientsRes;
-      } else if (clientsRes && clientsRes.success) {
-        fetchedData.clientes = clientsRes.data || [];
+      } else if (clientsRes && clientsData.success) {
+        fetchedData.clientes = clientsData.data || [];
       }
 
       dispatch({ type: "SET_INITIAL_DATA", payload: fetchedData });
 
-      if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
+      if (!cajaData.success || !cajaData.data?.hasOpenCaja) {
         showToast(
           "Caja Cerrada",
           "Debes abrir una caja antes de registrar consumos.",
@@ -223,7 +228,7 @@ export default function NuevaCuentaScreen() {
     dispatch({ type: "SET_MODAL_LOADING", payload: true });
     dispatch({ type: "SET_MODAL_VISIBLE", modal: "category", visible: true });
     try {
-      const res = await apiClient(`/products?category_id=${cat.id}`);
+      const res = await apiClientSafe<any[]>(`/products?category_id=${cat.id}`);
       if (res.success) {
         dispatch({
           type: "OPEN_CATEGORY_MODAL",
@@ -383,7 +388,7 @@ export default function NuevaCuentaScreen() {
         ],
       };
 
-      const res = await apiClient("/cuentas", {
+      const res = await apiClientSafe("/cuentas", {
         method: "POST",
         body: JSON.stringify(cuentaData),
       });

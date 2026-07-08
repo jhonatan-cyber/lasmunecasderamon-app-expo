@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { MotiView } from "moti";
-import { Timer } from "@/context/TimerContext";
+import type { Timer } from "@/context/types";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import { safeNumber } from "@/hooks/useServiciosScreen";
 import { ServiceCardHeader } from "./ServiceCardHeader";

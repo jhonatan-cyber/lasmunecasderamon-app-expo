@@ -35,7 +35,7 @@ export function ProfileFormFields({ formData, updateField, accentColor, textPrim
         <View key={cfg.field} style={styles.inputGroup}>
           <Text style={[styles.inputLabel, { color: textSecondary }]}>{cfg.label}</Text>
           <View style={[styles.inputWrapper, { backgroundColor: cardBg, borderColor }]}>
-            <Ionicons name={cfg.icon as any} size={20} color={accentColor} style={styles.inputIcon} />
+            <Ionicons name={cfg.icon as keyof typeof Ionicons.glyphMap} size={20} color={accentColor} style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { color: textPrimary }]}
               value={formData[cfg.field] || ""}

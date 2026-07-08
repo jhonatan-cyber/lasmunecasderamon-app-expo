@@ -34,7 +34,7 @@ export default function PremiumAlertModal({ config, isDark, onClose, onConfirm }
             <View style={styles.modalOverlay}>
                 <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
                     <View style={[styles.alertIconHeader, { backgroundColor: iconBg }]}>
-                        <Ionicons name={iconName as any} size={40} color={iconColor} />
+                        <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={40} color={iconColor} />
                     </View>
 
                     <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>

@@ -15,7 +15,7 @@ import {
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 const ZOOM_NORMAL = 0;
@@ -42,8 +42,8 @@ export const QRScannerModal = ({
 
     const fetchCodigo = useCallback(async () => {
         try {
-            const res = await apiClient('/codigo/actual');
-            if (res.success) setCodigo(res.codigo);
+            const res = await apiClientSafe('/codigo/actual');
+            if (res.success) setCodigo((res as any).codigo);
         } catch {}
     }, []);
     

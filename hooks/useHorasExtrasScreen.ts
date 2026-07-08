@@ -33,12 +33,12 @@ export function useHorasExtrasScreen() {
         try {
             setError('');
             const res = await overtimeService.list();
-            if (res.success) {
-                const serialized = JSON.stringify(res.data);
+            if ((res as any).success) {
+                const serialized = JSON.stringify((res as any).data);
                 dataRef.current = serialized;
-                setData(res.data || []);
+                setData((res as any).data || []);
             } else {
-                setError(res.message || 'Error al cargar horas extras');
+                setError((res as any).message || 'Error al cargar horas extras');
             }
         } catch (err: any) {
             setError(err.message || 'Error de conexión');

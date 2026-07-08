@@ -6,6 +6,7 @@ export {
   UnauthorizedError,
 } from "./errors";
 export { apiClient } from "./request";
+export { apiClientSafe } from "./client-safe";
 export {
   ensureTokenInMemory,
   getTokenInMemory,

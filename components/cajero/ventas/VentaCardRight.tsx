@@ -47,7 +47,7 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
 
       <View style={styles.methodBadgeContainer}>
         <Ionicons
-          name={(payMethodIcons[metodoPago || ""] || "wallet-outline") as any}
+          name={(payMethodIcons[metodoPago || ""] || "wallet-outline") as keyof typeof Ionicons.glyphMap}
           size={14}
           color={textSecondary}
         />

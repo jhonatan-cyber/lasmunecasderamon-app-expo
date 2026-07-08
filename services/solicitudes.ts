@@ -1,25 +1,25 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const solicitudesService = {
   list: (estado = 0) =>
-    apiClient(`/solicitudes-servicios?estado=${estado}`),
+    apiClientSafe(`/solicitudes-servicios?estado=${estado}`),
 
-  create: (payload: any) =>
-    apiClient('/solicitudes-servicios', {
+  create: (data: Record<string, unknown>) =>
+    apiClientSafe('/solicitudes-servicios', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   aprobar: (id: string | number) =>
-    apiClient(`/solicitudes-servicios/${id}/aprobar`, {
+    apiClientSafe(`/solicitudes-servicios/${id}/aprobar`, {
       method: 'PATCH',
     }),
 
   rechazar: (id: string | number) =>
-    apiClient(`/solicitudes-servicios/${id}/rechazar`, {
+    apiClientSafe(`/solicitudes-servicios/${id}/rechazar`, {
       method: 'PATCH',
     }),
 
   pendingCount: () =>
-    apiClient('/solicitudes-servicios/pending-count'),
+    apiClientSafe('/solicitudes-servicios/pending-count'),
 };

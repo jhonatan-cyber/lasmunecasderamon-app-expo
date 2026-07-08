@@ -1,99 +1,17 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { ServiceCreateSchema } from '@lasmunecasderamon/validations';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { parseDateSafe } from '@/utils/timeUtils';
 import logger from '@/utils/logger';
 import {
-  type ServiceState,
-  type ServiceAction,
   type ServicePayload,
 } from '@/components/cajero/nuevo-servicio/types';
 import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
 import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate } from '@/hooks/utils/cartUtils';
-
-export const initialServiceState: ServiceState = {
-  loadingInitial: true,
-  anfitrionas: [],
-  habitaciones: [],
-  clientes: [],
-  cajaAbierta: null,
-  selectedHostesses: [],
-  selectedClients: [],
-  selectedHabitacion: null,
-  precioServicio: '0',
-  metodoPago: 'efectivo',
-  metodoPagoAdicional: '',
-  pagosMixtos: [],
-  submitting: false,
-  hostessModalVisible: false,
-  roomModalVisible: false,
-  clientModalVisible: false,
-  balanceModalVisible: false,
-  balanceAmount: '',
-  balanceSubmitting: false,
-};
-
-function serviceReducer(state: ServiceState, action: ServiceAction): ServiceState {
-  switch (action.type) {
-    case 'SET_LOADING_INITIAL':
-      return { ...state, loadingInitial: action.payload };
-    case 'SET_INITIAL_DATA':
-      return { ...state, ...action.payload };
-    case 'SET_SELECTED_HOSTESSES':
-      return { ...state, selectedHostesses: action.payload };
-    case 'SET_SELECTED_CLIENTS':
-      return { ...state, selectedClients: action.payload };
-    case 'SET_SELECTED_HABITACION':
-      return { ...state, selectedHabitacion: action.payload };
-    case 'SET_PRECIO_SERVICIO':
-      return { ...state, precioServicio: action.payload };
-    case 'SET_METODO_PAGO':
-      return { ...state, metodoPago: action.payload };
-    case 'SET_METODO_PAGO_ADICIONAL':
-      return { ...state, metodoPagoAdicional: action.payload };
-    case 'SET_PAGOS_MIXTOS':
-      return { ...state, pagosMixtos: action.payload };
-    case 'ADD_PAGO_MIXTO':
-      return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
-    case 'UPDATE_PAGO_MIXTO': {
-      const updatedPagos = [...state.pagosMixtos];
-      updatedPagos[action.index] = {
-        ...updatedPagos[action.index],
-        monto: action.monto,
-        display: action.display ?? (action.monto > 0 ? String(action.monto) : ''),
-      };
-      return { ...state, pagosMixtos: updatedPagos };
-    }
-    case 'REMOVE_PAGO_MIXTO':
-      return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
-    case 'SET_SUBMITTING':
-      return { ...state, submitting: action.payload };
-    case 'SET_MODAL_VISIBLE':
-      if (action.modal === 'hostess') return { ...state, hostessModalVisible: action.visible };
-      if (action.modal === 'room') return { ...state, roomModalVisible: action.visible };
-      if (action.modal === 'client') return { ...state, clientModalVisible: action.visible };
-      if (action.modal === 'balance') return { ...state, balanceModalVisible: action.visible };
-      return state;
-    case 'SET_BALANCE_AMOUNT':
-      return { ...state, balanceAmount: action.payload };
-    case 'SET_BALANCE_SUBMITTING':
-      return { ...state, balanceSubmitting: action.payload };
-    case 'UPDATE_CLIENT_SALDO':
-      return {
-        ...state,
-        clientes: state.clientes.map((c) =>
-          String(c.id_cliente || c.id) === String(action.payload.id)
-            ? { ...c, saldo: action.payload.saldo }
-            : c,
-        ),
-      };
-    default:
-      return state;
-  }
-}
+import { serviceReducer, initialServiceState } from '@/components/cajero/nuevo-servicio/reducer';
 
 export function useNuevoServicio() {
   const router = useRouter();
@@ -198,18 +116,18 @@ export function useNuevoServicio() {
     dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all([
-        apiClient('/cashregister/status'),
-        apiClient('/anfitrionas'),
-        apiClient('/rooms'),
-        apiClient('/clients'),
+        apiClientSafe('/cashregister/status'),
+        apiClientSafe('/anfitrionas'),
+        apiClientSafe('/rooms'),
+        apiClientSafe('/clients'),
       ]);
 
       dispatch({
         type: 'SET_INITIAL_DATA',
         payload: {
-          cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
+          cajaAbierta: (cajaRes as any).success && (cajaRes as any).data?.hasOpenCaja,
           anfitrionas: deduplicate(normalizeAnfitrionas(anfitrionasRes), 'id_usuario'),
-          habitaciones: deduplicate((roomsRes.success ? roomsRes.data : []).map((room: any) => ({
+          habitaciones: deduplicate(((roomsRes as any).success ? (roomsRes as any).data : []).map((room: any) => ({
             ...normalizeRoom(room),
             status: room.status ?? room.estado ?? 0,
             price: room.price ?? room.precio ?? 0,
@@ -219,7 +137,7 @@ export function useNuevoServicio() {
         },
       });
 
-      if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
+      if (!(cajaRes as any).success || !(cajaRes as any).data?.hasOpenCaja) {
         showToast('Caja Cerrada', 'Debes abrir una caja antes de crear servicios.', 'error');
       }
     } catch (error) {
@@ -293,7 +211,7 @@ export function useNuevoServicio() {
     dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: true });
     try {
       const amount = parseInt(balanceAmount.replace(/\./g, ''));
-      const res = await apiClient('/clients/prepago', {
+      const res = await apiClientSafe('/clients/prepago', {
         method: 'POST',
         body: JSON.stringify({
           cliente_id: clientId,
@@ -302,13 +220,13 @@ export function useNuevoServicio() {
         }),
       });
 
-      if (res.success) {
+      if ((res as any).success) {
         showToast('Éxito', 'Saldo cargado correctamente', 'success');
-        dispatch({ type: 'UPDATE_CLIENT_SALDO', payload: { id: clientId, saldo: res.data.nuevo_saldo } });
+        dispatch({ type: 'UPDATE_CLIENT_SALDO', payload: { id: clientId, saldo: (res as any).data.nuevo_saldo } });
         dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false });
         dispatch({ type: 'SET_BALANCE_AMOUNT', payload: '' });
       } else {
-        showToast('Error', res.message || 'No se pudo cargar el saldo');
+        showToast('Error', (res as any).message || 'No se pudo cargar el saldo');
       }
     } catch {
       showToast('Error', 'Error al procesar la carga de saldo');
@@ -401,11 +319,11 @@ export function useNuevoServicio() {
       }
 
       
-      const anfitrionasDataRes = await apiClient('/anfitrionas');
+      const anfitrionasDataRes = await apiClientSafe('/anfitrionas');
       const anfitrionasData = Array.isArray(anfitrionasDataRes)
         ? anfitrionasDataRes
         : anfitrionasDataRes.success
-          ? anfitrionasDataRes.data
+          ? (anfitrionasDataRes.data as any[])
           : [];
       if (anfitrionasData.length > 0) {
         logger.info('Anfitrionas fetched:', {
@@ -415,16 +333,16 @@ export function useNuevoServicio() {
         });
       }
 
-      const res = await apiClient('/servicios', {
+      const res = await apiClientSafe('/servicios', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
-      if (res.success) {
+      if ((res as any).success) {
         showToast('Éxito', 'Servicio creado correctamente', 'success');
         setTimeout(() => router.replace('/cajero/servicios'), 1500);
       } else {
-        showToast('Error', res.message || 'No se pudo crear el servicio');
+        showToast('Error', (res as any).message || 'No se pudo crear el servicio');
       }
     } catch (error) {
       logger.captureException(error, { context: 'NuevoServicio:submit' });

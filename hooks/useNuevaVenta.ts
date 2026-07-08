@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useRouter } from 'expo-router';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { useSales } from '@/context/SalesContext';
-import {
-  type VentaState,
-  type VentaAction,
-} from '@/components/cajero/nueva-venta/types';
 import {
   showToast,
   isChampagneProduct,
@@ -17,150 +13,8 @@ import {
   normalizeAnfitrionas,
 } from '@/hooks/utils/cartUtils';
 import logger from '@/utils/logger';
-
-export const initialVentaState: VentaState = {
-  loadingInitial: true,
-  refreshing: false,
-  anfitrionas: [],
-  habitaciones: [],
-  clientes: [],
-  cajaAbierta: null,
-  cart: [],
-  selectedCliente: null,
-  selectedHabitacion: null,
-  metodoPago: 'efectivo',
-  pagosMixtos: [],
-  enableTip: false,
-  selectedTime: 5,
-  timeModalVisible: false,
-  categories: [],
-  modalOpen: false,
-  modalCategoria: null,
-  modalProducts: [],
-  modalLoading: false,
-  modalQuantities: {},
-  modalHostessSelections: {},
-  hostessSelectionTarget: null,
-  hostessSubModalVisible: false,
-  hostessModalVisible: false,
-  roomModalVisible: false,
-  clientModalVisible: false,
-  activeCartIdx: null,
-  submitting: false,
-  loadModalVisible: false,
-  loadingAmount: '',
-  loadingTargetClient: null,
-  loadSubmitting: false,
-  loadMetodoPago: 'efectivo',
-  metodoPagoAdicional: 'efectivo',
-};
-
-function ventaReducer(state: VentaState, action: VentaAction): VentaState {
-  switch (action.type) {
-    case 'SET_LOADING_INITIAL':
-      return { ...state, loadingInitial: action.payload };
-    case 'SET_REFRESHING':
-      return { ...state, refreshing: action.payload };
-    case 'SET_INITIAL_DATA':
-      return { ...state, ...action.payload };
-    case 'SET_CART':
-      return { ...state, cart: action.payload };
-    case 'SET_SELECTED_CLIENTE': {
-      const client = action.payload;
-      const hasSaldo = (client?.saldo || 0) > 0;
-      return {
-        ...state,
-        selectedCliente: client,
-        metodoPago: hasSaldo ? 'prepago' : 'efectivo',
-        pagosMixtos: [],
-        metodoPagoAdicional: 'efectivo',
-      };
-    }
-    case 'SET_SELECTED_HABITACION':
-      return { ...state, selectedHabitacion: action.payload };
-    case 'SET_METODO_PAGO':
-      return {
-        ...state,
-        metodoPago: action.payload,
-        pagosMixtos:
-          action.payload === 'mixto'
-            ? Number(state.selectedCliente?.saldo || 0) > 0
-              ? [
-                  {
-                    metodo: 'prepago' as PaymentMethod,
-                    monto: Number(state.selectedCliente.saldo),
-                    display: Number(state.selectedCliente.saldo).toLocaleString('es-CL'),
-                  },
-                ]
-              : []
-            : [],
-      };
-    case 'SET_PAGOS_MIXTOS':
-      return { ...state, pagosMixtos: action.payload };
-    case 'ADD_PAGO_MIXTO':
-      return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
-    case 'UPDATE_PAGO_MIXTO': {
-      const updated = [...state.pagosMixtos];
-      updated[action.index] = {
-        ...updated[action.index],
-        monto: action.monto,
-        display: action.display ?? (action.monto > 0 ? String(action.monto) : ''),
-      };
-      return { ...state, pagosMixtos: updated };
-    }
-    case 'REMOVE_PAGO_MIXTO':
-      return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
-    case 'SET_METODO_PAGO_ADICIONAL':
-      return { ...state, metodoPagoAdicional: action.payload };
-    case 'SET_ENABLE_TIP':
-      return { ...state, enableTip: action.payload };
-    case 'SET_SELECTED_TIME':
-      return { ...state, selectedTime: action.payload };
-    case 'SET_MODAL_VISIBLE':
-      return {
-        ...state,
-        [`${action.modal}ModalVisible`]: action.visible,
-        modalOpen: action.modal === 'category' ? action.visible : state.modalOpen,
-      };
-    case 'OPEN_CATEGORY_MODAL':
-      return {
-        ...state,
-        modalOpen: true,
-        modalCategoria: action.category,
-        modalProducts: action.products,
-        modalQuantities: {},
-        modalHostessSelections: {},
-      };
-    case 'SET_MODAL_LOADING':
-      return { ...state, modalLoading: action.payload };
-    case 'SET_MODAL_QUANTITY':
-      return {
-        ...state,
-        modalQuantities: { ...state.modalQuantities, [action.productId]: action.quantity },
-      };
-    case 'SET_MODAL_HOSTESSES':
-      return {
-        ...state,
-        modalHostessSelections: { ...state.modalHostessSelections, [action.productId]: action.hostesses },
-      };
-    case 'SET_HOSTESS_TARGET':
-      return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
-    case 'SET_ACTIVE_CART_IDX':
-      return { ...state, activeCartIdx: action.payload };
-    case 'SET_SUBMITTING':
-      return { ...state, submitting: action.payload };
-    case 'SET_LOAD_MODAL':
-      return { ...state, loadModalVisible: action.visible, loadingTargetClient: action.client || null, loadingAmount: '' };
-    case 'SET_LOAD_AMOUNT':
-      return { ...state, loadingAmount: action.payload };
-    case 'SET_LOAD_SUBMITTING':
-      return { ...state, loadSubmitting: action.payload };
-    case 'SET_LOAD_METODO_PAGO':
-      return { ...state, loadMetodoPago: action.payload };
-    default:
-      return state;
-  }
-}
+import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta/reducer';
+import type { VentaState } from '@/components/cajero/nueva-venta/types';
 
 export function useNuevaVenta() {
   const router = useRouter();
@@ -222,11 +76,11 @@ export function useNuevaVenta() {
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.allSettled([
-          apiClient('/cashregister/status'),
-          apiClient('/anfitrionas'),
-          apiClient('/rooms'),
-          apiClient('/clients'),
-          apiClient('/categories'),
+          apiClientSafe('/cashregister/status'),
+          apiClientSafe('/anfitrionas'),
+          apiClientSafe('/rooms'),
+          apiClientSafe('/clients'),
+          apiClientSafe('/categories'),
         ]);
 
       const caja = cajaRes.status === 'fulfilled' ? cajaRes.value : null;
@@ -235,18 +89,18 @@ export function useNuevaVenta() {
       const clients = clientsRes.status === 'fulfilled' ? clientsRes.value : null;
       const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value : null;
 
-      const fetchedData: any = {
+      const fetchedData: Partial<VentaState> = {
         cajaAbierta:
-          cajaRes.status === 'fulfilled' ? caja?.success && caja?.data?.hasOpenCaja : null,
+          cajaRes.status === 'fulfilled' ? (caja as any)?.success && (caja as any)?.data?.hasOpenCaja : null,
         anfitrionas: normalizeAnfitrionas(anfitrionasVal),
-        habitaciones: (rooms?.success ? rooms.data : []).map(normalizeRoom),
-        categories: categories?.success ? categories.data || [] : [],
+        habitaciones: ((rooms as any)?.success ? (rooms as any).data : []).map(normalizeRoom),
+        categories: (categories as any)?.success ? (categories as any).data || [] : [],
         clientes: normalizeClients(clients),
       };
 
       dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
 
-      if (cajaRes.status === 'fulfilled' && (!caja?.success || !caja?.data?.hasOpenCaja)) {
+      if (cajaRes.status === 'fulfilled' && (!(caja as any)?.success || !(caja as any)?.data?.hasOpenCaja)) {
         showToast('Caja Cerrada', 'Abre una caja primero.');
       }
     } catch (error) {
@@ -280,10 +134,10 @@ export function useNuevaVenta() {
 
     dispatch({ type: 'SET_LOAD_SUBMITTING', payload: true });
     try {
-      const res = await apiClient('/clients/prepago', {
+      const res = await apiClientSafe('/clients/prepago', {
         method: 'POST',
         body: JSON.stringify({
-          cliente_id: loadingTargetClient.id_cliente || loadingTargetClient.id,
+          cliente_id: String(loadingTargetClient.id_cliente || loadingTargetClient.id),
           monto: Number(loadingAmount),
           tipo: 'CARGA',
           metodo_pago: loadMetodoPago,
@@ -291,7 +145,7 @@ export function useNuevaVenta() {
         }),
       });
 
-      if (res.success) {
+      if ((res as any).success) {
         showToast('Éxito', 'Saldo cargado correctamente', 'success');
         dispatch({ type: 'SET_LOAD_MODAL', visible: false });
         fetchInitialData(true);
@@ -309,7 +163,7 @@ export function useNuevaVenta() {
           });
         }
       } else {
-        showToast('Error', res.message || 'Error al cargar saldo');
+        showToast('Error', (res as any).message || 'Error al cargar saldo');
       }
     } catch (error) {
       logger.captureException(error, { context: 'NuevaVenta:submitVenta' });
@@ -448,7 +302,7 @@ export function useNuevaVenta() {
               typeof a === 'object' ? a.id_usuario || a.id : a,
             ) || [],
         })),
-        cliente_id: selectedCliente?.id || selectedCliente?.id_cliente || null,
+        cliente_id: (selectedCliente?.id?.toString() || selectedCliente?.id_cliente?.toString() || null) as string | null,
         habitacion_id: hasCommissionItem
           ? selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null
           : null,
@@ -465,12 +319,12 @@ export function useNuevaVenta() {
         ),
       };
 
-      const res = await apiClient('/sales', { method: 'POST', body: JSON.stringify(payload) });
-      if (res.success) {
+      const res = await apiClientSafe('/sales', { method: 'POST', body: JSON.stringify(payload) });
+      if ((res as any).success) {
         showToast('Éxito', 'Venta realizada', 'success');
         refreshVentas();
         router.replace('/cajero/ventas');
-      } else showToast('Error', res.message || 'Error al vender');
+      } else showToast('Error', (res as any).message || 'Error al vender');
     } catch (error) {
       logger.captureException(error, { context: 'NuevaVenta:processVenta' });
       showToast('Error', 'Error de conexión');

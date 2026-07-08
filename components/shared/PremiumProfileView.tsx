@@ -196,7 +196,7 @@ export function PremiumProfileView({
 
   const renderHeader = (skeletonMode = false) => (
     <LinearGradient
-      colors={gradientColors as any}
+      colors={gradientColors as unknown as readonly [string, string, ...string[]]}
       style={[
         styles.header,
         {

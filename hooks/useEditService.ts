@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
-import { Timer } from '@/context/TimerContext';
+import { apiClientSafe } from '@/api/client';
+import type { Timer } from '@/context/types';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { parseDateSafe } from '@/utils/timeUtils';
 import logger from '@/utils/logger';
@@ -12,6 +12,21 @@ interface Anfitriona {
     apellido: string;
     nick: string;
     status?: number;
+}
+
+interface RoomRaw {
+    nombre?: string;
+    name?: string;
+    precio?: number;
+    price?: number;
+    tiempo?: number;
+    time?: number;
+    comision_anfitriona?: number;
+    [key: string]: unknown;
+}
+
+interface ServicioDetailRaw {
+    usuarios?: Anfitriona[];
 }
 
 export default function useEditService(timer: Timer | null, onSuccess: () => void, onClose: () => void) {
@@ -45,11 +60,11 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
 
     const fetchHabitacionSinComision = useCallback(async () => {
         try {
-            const res = await apiClient('/rooms');
+            const res = await apiClientSafe<RoomRaw[]>('/rooms');
             logger.info('[EditServiceModal] Respuesta habitaciones', { response: res });
 
             if (res.success && Array.isArray(res.data)) {
-                res.data.forEach((h: any, index: number) => {
+                res.data.forEach((h: RoomRaw, index: number) => {
                     logger.info(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
@@ -58,7 +73,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
                     });
                 });
 
-                const habitacionSinComision = res.data.find((h: any) => {
+                const habitacionSinComision = res.data.find((h: RoomRaw) => {
                     const precio = h.precio || h.price || 0;
                     const tiempo = h.tiempo || h.time || 0;
                     const comision = h.comision_anfitriona || 0;
@@ -77,8 +92,8 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
     const fetchAnfitrionas = useCallback(async () => {
         setLoadingAnfitrionas(true);
         try {
-            const disponiblesRes = await apiClient('/anfitrionas/disponibles');
-            const servicioRes = await apiClient(`/servicios/${timer?.servicioId}`);
+            const disponiblesRes = await apiClientSafe<Anfitriona[]>('/anfitrionas/disponibles');
+            const servicioRes = await apiClientSafe<ServicioDetailRaw>(`/servicios/${timer?.servicioId}`);
             let todasAnfitrionas: Anfitriona[] = [];
 
             if (disponiblesRes.success && Array.isArray(disponiblesRes.data)) {
@@ -170,7 +185,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
                 fecha_crea: parseDateSafe(new Date()).toISOString()
             };
 
-            const res = await apiClient('/servicios/temporal', {
+            const res = await apiClientSafe('/servicios/temporal', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });

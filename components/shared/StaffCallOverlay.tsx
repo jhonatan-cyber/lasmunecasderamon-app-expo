@@ -10,13 +10,21 @@ import {
 } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 import { getUserRole, isAdminRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 
 import logger from '@/utils/logger';
+
+interface PendingNotificationsResponse {
+    success: boolean;
+    notifications?: StaffCall[];
+    data?: StaffCall[];
+    message?: string;
+}
+
 interface StaffCall {
     id: number | string;
     anfitriona_id: number | string;
@@ -69,9 +77,10 @@ export function StaffCallOverlay() {
     const fetchPending = useCallback(async () => {
         if (!isStaff) return;
         try {
-            const res = await apiClient('/notifications/pending');
-            if (res.success) {
-                const pending = Array.isArray(res.notifications) ? res.notifications : Array.isArray(res.data) ? res.data : [];
+            const res = await apiClientSafe('/notifications/pending');
+            const pendingData = res as unknown as PendingNotificationsResponse;
+            if (pendingData.success) {
+                const pending = Array.isArray(pendingData.notifications) ? pendingData.notifications : Array.isArray(pendingData.data) ? pendingData.data : [];
                 const mapped = pending.map(mapPendingCall);
                 setPendingCalls(mapped);
             }
@@ -144,10 +153,10 @@ export function StaffCallOverlay() {
             const atendidoPorNombre =
                 user?.name ||
                 user?.username ||
-                `${(user as any)?.nombre || ''} ${(user as any)?.apellido || ''}`.trim() ||
+                `${user?.name || ''} ${user?.lastName || ''}`.trim() ||
                 'Staff';
 
-            const res = await apiClient('/notifications/assistance/accept', {
+            const res = await apiClientSafe('/notifications/assistance/accept', {
                 method: 'POST',
                 body: JSON.stringify({
                     id,

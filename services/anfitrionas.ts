@@ -1,9 +1,9 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const anfitrionasService = {
   list: () =>
-    apiClient('/anfitrionas'),
+    apiClientSafe('/anfitrionas'),
 
   listDisponibles: () =>
-    apiClient('/anfitrionas/disponibles'),
+    apiClientSafe('/anfitrionas/disponibles'),
 };

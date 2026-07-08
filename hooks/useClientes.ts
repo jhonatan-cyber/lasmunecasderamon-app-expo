@@ -5,6 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { clientesService } from '@/services';
+import type { PrepagoPayload } from '@/services/clientes';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import logger from '@/utils/logger';
 
@@ -63,10 +64,11 @@ export function useClientes() {
 
         try {
             const res = await clientesService.list();
+            const listData = res as unknown as { success: boolean; data: Client[] };
             if (Array.isArray(res)) {
-                setClients(res);
-            } else if (res?.success) {
-                setClients(res.data || []);
+                setClients(res as Client[]);
+            } else if (listData.success) {
+                setClients(listData.data || []);
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:fetchClients' });
@@ -143,12 +145,13 @@ export function useClientes() {
                 ? await clientesService.update(editingClient.id, payload)
                 : await clientesService.create(payload);
 
-            if (res.success || res.id || (editingClient && res.message)) {
+            const saveRes = res as unknown as { success: boolean; id?: string | number; message?: string };
+            if (saveRes.success || saveRes.id || (editingClient && saveRes.message)) {
                 Toast.show({ type: 'success', text1: 'Éxito', text2: editingClient ? 'Cliente actualizado' : 'Cliente creado' });
                 setClientModalVisible(false);
                 fetchClients(true);
             } else {
-                Toast.show({ type: 'error', text1: 'Error', text2: res.message || 'Error al guardar' });
+                Toast.show({ type: 'error', text1: 'Error', text2: saveRes.message || 'Error al guardar' });
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:saveClient' });
@@ -170,8 +173,9 @@ export function useClientes() {
     const fetchHistory = async (clientId: string | number) => {
         try {
             const res = await clientesService.getHistory(clientId);
-            if (res.success && Array.isArray(res.data)) {
-                setHistoryData(res.data);
+            const historyRes = res as unknown as { success: boolean; data: any[] };
+            if (historyRes.success && Array.isArray(historyRes.data)) {
+                setHistoryData(historyRes.data);
             } else if (Array.isArray(res)) {
                 setHistoryData(res);
             }
@@ -219,7 +223,7 @@ export function useClientes() {
 
         setSubmitting(true);
         try {
-            const body: any = {
+            const body: PrepagoPayload = {
                 cliente_id: editingClient.id,
                 monto: Number(rawAmount),
                 tipo: 'CARGA',
@@ -237,13 +241,14 @@ export function useClientes() {
             }
 
             const res = await clientesService.prepago(body);
+            const prepagoRes = res as unknown as { success: boolean; message?: string };
 
-            if (res.success) {
+            if (prepagoRes.success) {
                 Toast.show({ type: 'success', text1: 'Éxito', text2: 'Saldo cargado correctamente' });
                 setLoadModalVisible(false);
                 await fetchClients(true);
             } else {
-                Toast.show({ type: 'error', text1: 'Error', text2: res.message || 'Error al cargar saldo' });
+                Toast.show({ type: 'error', text1: 'Error', text2: prepagoRes.message || 'Error al cargar saldo' });
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:loadBalance' });
@@ -265,7 +270,8 @@ export function useClientes() {
                     onPress: async () => {
                         try {
                             const res = await clientesService.delete(client.id);
-                            if (res.success || res.message) {
+                            const delRes = res as unknown as { success: boolean; message?: string };
+                            if (delRes.success || delRes.message) {
                                 Toast.show({ type: 'success', text1: 'Eliminado', text2: 'Cliente eliminado correctamente' });
                                 fetchClients(true);
                             }

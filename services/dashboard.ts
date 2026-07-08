@@ -1,9 +1,9 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const dashboardService = {
   stats: () =>
-    apiClient('/dashboard/stats', { method: 'GET' }),
+    apiClientSafe('/dashboard/stats', { method: 'GET' }),
 
   salesChart: () =>
-    apiClient('/dashboard/sales-chart', { method: 'GET' }),
+    apiClientSafe('/dashboard/sales-chart', { method: 'GET' }),
 };

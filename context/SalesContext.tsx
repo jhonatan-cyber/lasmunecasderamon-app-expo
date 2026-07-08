@@ -1,4 +1,4 @@
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { REALTIME_EVENT_NAMES, shouldRefreshSalesFromSse } from "@/utils/realtime";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useEffect } from "react";
@@ -36,7 +36,7 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
-      const data = await apiClient("/sales?limit=50");
+      const data = await apiClientSafe<Venta[]>("/sales?limit=50");
       return data.success && Array.isArray(data.data) ? data.data : [];
     },
     staleTime: 1000 * 60 * 2,

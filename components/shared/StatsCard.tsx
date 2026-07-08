@@ -39,7 +39,7 @@ export const StatCard: React.FC<StatsCardProps> = ({
       >
         <View style={styles.header}>
           <View style={[styles.iconContainer, { backgroundColor: color + "15" }]}>
-            <Ionicons name={icon as any} size={20} color={color} />
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color={color} />
           </View>
           {subtitle ? (
             <View style={styles.trendBadge}>

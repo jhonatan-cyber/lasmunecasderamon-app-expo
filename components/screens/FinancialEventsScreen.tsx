@@ -17,7 +17,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useFinancialEvents } from '@/hooks/useFinancialEvents';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { parseDateSafe } from "@/utils/timeUtils";
 
 
@@ -70,12 +70,12 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
         try {
             if (type === 'propinas') {
-                const tipRes = await apiClient(`/tips/${item.propina_id}`);
-                if (tipRes.success) {
-                    setParentPropina(tipRes.data);
-                    if (tipRes.data.venta_id) {
-                        const saleRes = await apiClient(`/ventas/${tipRes.data.venta_id}`);
-                        if (saleRes && !saleRes.error) setSaleDetail(saleRes.data || saleRes);
+                const tipRes = await apiClientSafe(`/tips/${item.propina_id}`);
+                if ((tipRes as any).success) {
+                    setParentPropina((tipRes as any).data);
+                    if ((tipRes as any).data?.venta_id) {
+                        const saleRes = await apiClientSafe(`/ventas/${(tipRes as any).data.venta_id}`);
+                        if (saleRes && !(saleRes as any).error) setSaleDetail((saleRes as any).data || saleRes);
                     }
                 }
             } else {

@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { apiClient } from "@/api/client";
-import { useAuthStore } from "@/store/authStore";
+import { apiClientSafe } from "@/api/client";
+import { useAuthStore, type User } from "@/store/authStore";
+import type { UserProfileResponse } from "@/types/api";
 
 import logger from "@/utils/logger";
 
@@ -26,8 +27,8 @@ export function useProfile() {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const res = await apiClient("/users/profile");
-      const profile = res?.data;
+      const res = await apiClientSafe<UserProfileResponse>("/users/profile");
+      const profile = res.data;
       if (res.success && profile) {
         await updateProfile(profile);
         setFormData((prev) => ({
@@ -137,22 +138,22 @@ export function useProfile() {
         } as any);
       }
 
-      const res = await apiClient("/users", {
+      const res = await apiClientSafe<UserProfileResponse>("/users", {
         method: "PUT",
         body: form,
       });
 
       if (res.success) {
-        const updatedData = res.data || {};
-        const updatedUser = {
-          ...user,
-          nick: updatedData.nick || formData.nick,
-          phone: updatedData.phone || formData.phone,
-          address: updatedData.address || formData.address,
-          estado_civil: updatedData.maritalStatus || formData.estadoCivil,
-          ...(updatedData.foto ? { foto: updatedData.foto } : {}),
+        const d = res.data || {};
+        const updatedUser: Partial<User> = {
+          ...(user ?? {}),
+          nick: d.nick || formData.nick,
+          phone: d.phone || formData.phone,
+          address: d.address || formData.address,
+          estado_civil: d.maritalStatus || formData.estadoCivil,
+          ...(d.foto ? { foto: d.foto } : {}),
         };
-        await updateProfile(updatedUser as any);
+        await updateProfile(updatedUser);
         return { success: true, message: "Perfil actualizado correctamente" };
       } else {
         throw new Error(res.message || "Error al actualizar perfil");

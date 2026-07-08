@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { DeviceEventEmitter, Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
@@ -38,11 +38,11 @@ export function useAnticipos() {
     try {
       setError('');
       const [solicitudesRes, pagosRes] = await Promise.all([
-        apiClient('/anticipos/solicitudes'),
-        apiClient('/anticipos/user'),
+        apiClientSafe('/anticipos/solicitudes'),
+        apiClientSafe('/anticipos/user'),
       ]);
-      if (solicitudesRes.success) setSolicitudes(solicitudesRes.data || []);
-      if (pagosRes.success) setPagos(pagosRes.data || []);
+      if (solicitudesRes.success) setSolicitudes((solicitudesRes.data || []) as Anticipo[]);
+      if (pagosRes.success) setPagos((pagosRes.data || []) as any[]);
       
       if (isManual) {
         Toast.show({ type: 'success', text1: 'Éxito', text2: 'Datos actualizados' });
@@ -57,14 +57,15 @@ export function useAnticipos() {
 
   const fetchMaximo = useCallback(async () => {
     try {
-      const response = await apiClient('/anticipos/maximo');
+      const response = await apiClientSafe('/anticipos/maximo');
       if (response.success && response.data) {
-        setMontoAsistencia(response.data.monto_asistencia || 0);
-        setMontoComisiones(response.data.monto_comisiones || 0);
-        setMontoPropinas(response.data.monto_propinas || 0);
-        setMontoMaximo(response.data.monto_maximo || 0);
-        setTieneSolicitudPendiente(response.data.tiene_solicitud_pendiente || false);
-        return response.data;
+        const d = response.data as { monto_asistencia?: number; monto_comisiones?: number; monto_propinas?: number; monto_maximo?: number; tiene_solicitud_pendiente?: boolean };
+        setMontoAsistencia(d.monto_asistencia || 0);
+        setMontoComisiones(d.monto_comisiones || 0);
+        setMontoPropinas(d.monto_propinas || 0);
+        setMontoMaximo(d.monto_maximo || 0);
+        setTieneSolicitudPendiente(d.tiene_solicitud_pendiente || false);
+        return d;
       }
     } catch (e) {
       logger.captureException(e, { context: 'useAnticipos:fetchMaximo' });
@@ -84,7 +85,7 @@ export function useAnticipos() {
     const { monto: montoVal, motivo: motivoVal } = validation.data;
 
     try {
-      const response = await apiClient('/anticipos/solicitudes', {
+      const response = await apiClientSafe('/anticipos/solicitudes', {
         method: 'POST',
         body: JSON.stringify({ monto: montoVal, motivo: motivoVal }),
       });

@@ -14,7 +14,7 @@ interface PedidosSkeletonProps {
 export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientColors, insets }) => (
     <View style={{ flex: 1, backgroundColor: bg }}>
         <LinearGradient
-            colors={gradientColors as any}
+            colors={gradientColors as unknown as readonly [string, string, ...string[]]}
             style={{
                 paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
                 paddingBottom: 25,

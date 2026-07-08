@@ -77,22 +77,25 @@ export function useCaja() {
         try {
             const [statusRes, statsRes] = await Promise.all([
                 cajaService.status().catch(() => ({ success: false, data: null })),
-                cajaService.resumen().catch(() => null)
+                cajaService.resumen().catch(() => ({ success: false, data: null }))
             ]);
 
-            const newData = { status: statusRes?.data, stats: statsRes?.data };
+            const statusData = statusRes as unknown as { success: boolean; data?: { hasOpenCaja: boolean; cajaInfo: any } };
+            const statsData = statsRes as unknown as { success: boolean; data?: any };
+
+            const newData = { status: statusData.data, stats: statsData.data };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (statusRes.success && statusRes.data) {
-                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: statusRes.data.hasOpenCaja, info: statusRes.data.cajaInfo } });
+            if (statusData.success && statusData.data) {
+                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: statusData.data.hasOpenCaja, info: statusData.data.cajaInfo } });
             } else {
                 dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: false, info: null } });
             }
 
-            if (statsRes && statsRes.success && statsRes.data) {
-                dispatch({ type: 'SET_STATS', payload: statsRes.data });
+            if (statsData.success && statsData.data) {
+                dispatch({ type: 'SET_STATS', payload: statsData.data });
             }
 
             if (isManual) {

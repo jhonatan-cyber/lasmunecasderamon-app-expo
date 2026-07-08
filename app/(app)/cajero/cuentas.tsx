@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+import FlashList from "@/components/shared/FlashList";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback } from "react";
@@ -23,8 +23,6 @@ import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCuentasScreen } from '@/hooks/useCuentasScreen';
 import { CuentaCard } from '@/components/cajero/cuentas/CuentaCard';
-
-const FlashList = ShopifyFlashList as any;
 
 export default function CuentasScreen() {
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();

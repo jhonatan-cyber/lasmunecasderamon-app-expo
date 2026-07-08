@@ -16,7 +16,7 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -247,20 +247,21 @@ export default function AgregarCuentaScreen() {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
             const requests: Promise<any>[] = [
-                apiClient('/anfitrionas'),
-                apiClient('/categories'),
-                apiClient('/rooms'),
+                apiClientSafe('/anfitrionas'),
+                apiClientSafe('/categories'),
+                apiClientSafe('/rooms'),
             ];
             if (cuentaOriginal?.id_cuenta) {
-                requests.push(apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`));
+                requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`));
             }
             const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
-            const rawHabitaciones = roomsRes?.success ? roomsRes.data : [];
+            const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
+            const rawHabitaciones = roomsData.success ? roomsData.data : [];
             dispatch({
                 type: 'SET_INITIAL_DATA', payload: {
-                    anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : (anfitrionasRes.success ? anfitrionasRes.data : []),
-                    categories: categoriesRes.success ? (categoriesRes.data || []) : [],
+                    anfitrionas: Array.isArray(anfitrionasRes) ? anfitrionasRes : ((anfitrionasRes as unknown as { success: boolean; data: any[] }).success ? (anfitrionasRes as unknown as { success: boolean; data: any[] }).data : []),
+                    categories: (categoriesRes as unknown as { success: boolean; data: any[] }).success ? ((categoriesRes as unknown as { success: boolean; data: any[] }).data || []) : [],
                     habitaciones: rawHabitaciones.map((room: any) => ({
                         ...room,
                         nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
@@ -297,7 +298,7 @@ export default function AgregarCuentaScreen() {
         dispatch({ type: 'SET_MODAL_LOADING', payload: true });
         dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: true });
         try {
-            const res = await apiClient(`/products?category_id=${cat.id}`);
+            const res = await apiClientSafe<any[]>(`/products?category_id=${cat.id}`);
             if (res.success) {
                 dispatch({ type: 'OPEN_CATEGORY_MODAL', category: cat, products: res.data || [] });
             } else {
@@ -418,7 +419,7 @@ export default function AgregarCuentaScreen() {
                 cuentaData.tiempo = selectedTime;
             }
             refreshTimers?.();
-            const res = await apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`, {
+            const res = await apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`, {
                 method: 'PUT',
                 body: JSON.stringify(cuentaData),
             });

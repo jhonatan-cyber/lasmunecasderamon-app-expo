@@ -1,12 +1,12 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const eventsService = {
   getUserEvents: (params?: string) =>
-    apiClient(`/events/user${params ? `?${params}` : ''}`),
+    apiClientSafe(`/events/user${params ? `?${params}` : ''}`),
 
   stats: () =>
-    apiClient('/events/stats'),
+    apiClientSafe('/events/stats'),
 
   detail: (id: string | number, type: string) =>
-    apiClient(`/events/detail/${id}?type=${type}`),
+    apiClientSafe(`/events/detail/${id}?type=${type}`),
 };

@@ -4,7 +4,7 @@ import { MotiView } from "moti";
 import { useRouter } from "expo-router";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import type { CuentaDetalle } from "@/hooks/types/cuentaTypes";
-import type { Timer } from "@/context/TimerContext";
+import type { Timer } from "@/context/types";
 import { CuentaCardHeader } from "./CuentaCardHeader";
 import { CuentaCardDetails } from "./CuentaCardDetails";
 import { CuentaCardTimer } from "./CuentaCardTimer";

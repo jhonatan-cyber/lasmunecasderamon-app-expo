@@ -4,7 +4,7 @@ import Toast from 'react-native-toast-message';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { tipsService } from '@/services';
 import logger from '@/utils/logger';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 
 export interface Propina {
     id_detalle_propina: string;
@@ -54,11 +54,11 @@ export function usePropinasScreen() {
         try {
             setError('');
             const data = await tipsService.userDetail();
-            if (data.success) {
-                const serialized = JSON.stringify(data.data);
+            if ((data as any).success) {
+                const serialized = JSON.stringify((data as any).data);
                 const hasChanges = dataRef.current !== serialized;
                 dataRef.current = serialized;
-                setPropinas(data.data || []);
+                setPropinas((data as any).data || []);
 
                 if (isManual) {
                     Toast.show({
@@ -69,12 +69,12 @@ export function usePropinasScreen() {
                     });
                 }
             } else {
-                setError(data.message || 'Error al cargar propinas');
+                setError((data as any).message || 'Error al cargar propinas');
                 if (isManual) {
                     Toast.show({
                         type: 'error',
                         text1: 'Error',
-                        text2: data.message || 'Error al cargar propinas',
+                        text2: (data as any).message || 'Error al cargar propinas',
                         visibilityTime: 3000
                     });
                 }
@@ -115,15 +115,15 @@ export function usePropinasScreen() {
 
         try {
             
-            const tipRes = await apiClient<{ success: boolean; data: any }>(`/tips/${item.propina_id}`);
-            if (tipRes.success) {
-                setParentPropina(tipRes.data);
+            const tipRes = await apiClientSafe(`/tips/${item.propina_id}`);
+            if ((tipRes as any).success) {
+                setParentPropina((tipRes as any).data as any);
 
                 
-                if (tipRes.data.venta_id) {
-                    const saleRes = await apiClient<{ success: boolean; data: any }>(`/ventas/${tipRes.data.venta_id}`);
-                    if (saleRes && saleRes.success) {
-                        setSaleDetail(saleRes.data);
+                if ((tipRes as any).data?.venta_id) {
+                    const saleRes = await apiClientSafe(`/ventas/${(tipRes as any).data.venta_id}`);
+                    if (saleRes && (saleRes as any).success) {
+                        setSaleDetail((saleRes as any).data);
                     }
                 }
             }

@@ -1,4 +1,4 @@
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from '@/api/client-safe';
 import type { Venta, VentaDetail, VentaResumen } from "@/components/cajero/ventas/types";
 import logger from "@/utils/logger";
 
@@ -15,20 +15,20 @@ export async function fetchSalesList(
   try {
     const timestamp = Date.now();
     const [resSales, resResumen] = await Promise.all([
-      apiClient(`/sales?limit=${limit}&_t=${timestamp}`).catch(() => ({
+      apiClientSafe(`/sales?limit=${limit}&_t=${timestamp}`).catch(() => ({
         success: false as const,
         data: [],
       })),
-      apiClient(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
+      apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
         success: false as const,
         data: null,
       })),
     ]);
 
     const ventas: Venta[] = Array.isArray(resSales.data)
-      ? resSales.data
-      : Array.isArray(resSales.data?.data)
-        ? resSales.data.data
+      ? (resSales.data as Venta[])
+      : Array.isArray((resSales.data as any)?.data)
+        ? (resSales.data as any).data as Venta[]
         : [];
 
     const resumen: VentaResumen | null = resResumen.success
@@ -46,7 +46,7 @@ export async function fetchVentaDetail(
   id: string | number,
 ): Promise<VentaDetail | null> {
   try {
-    const res = await apiClient(`/ventas/${id}`);
+    const res = await apiClientSafe(`/ventas/${id}`);
     if (res?.success && res.data) {
       return res.data as VentaDetail;
     }
@@ -63,7 +63,7 @@ export async function finalizarVenta(
   if (!ventaId) return { success: false, message: "ID de venta no válido" };
 
   try {
-    const res = await apiClient(`/ventas/${ventaId}`, {
+    const res = await apiClientSafe(`/ventas/${ventaId}`, {
       method: "PUT",
       body: JSON.stringify({ estado: 1 }),
     });
@@ -90,7 +90,7 @@ export async function enviarSolicitudAnulacion(
   }
 
   try {
-    const res = await apiClient("/ventas/anulacion", {
+    const res = await apiClientSafe("/ventas/anulacion", {
       method: "POST",
       body: JSON.stringify({ ventaId, motivo, monto }),
     });

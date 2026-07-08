@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
@@ -36,12 +36,13 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
   const fetchData = useCallback(async (isManual = false) => {
     try {
       setError('');
-      const res = await apiClient(endpoint);
+      const res = await apiClientSafe(endpoint);
       if (res.success) {
         
+        const rawData = (res.data || []) as any[];
         const filteredData = type === 'comisiones' 
-            ? (res.data || []).filter((c: any) => c.tipo === 'venta')
-            : (res.data || []);
+            ? rawData.filter((c: any) => c.tipo === 'venta')
+            : rawData;
             
         const serialized = JSON.stringify(filteredData);
         const hasChanges = dataRef.current !== serialized;

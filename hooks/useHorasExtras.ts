@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import Toast from "react-native-toast-message";
 import * as Haptics from "expo-haptics";
 
@@ -24,9 +24,9 @@ export function useHorasExtras() {
   const fetchData = useCallback(async (isManual = false) => {
     try {
       setError('');
-      const res = await apiClient('/overtime/user');
-      if (res.success) {
-        setData(res.data || []);
+      const res = await apiClientSafe('/overtime/user');
+      if ((res as any).success) {
+        setData((res as any).data || []);
         if (isManual) {
           Toast.show({
             type: 'success',
@@ -35,7 +35,7 @@ export function useHorasExtras() {
           });
         }
       } else {
-        setError(res.message || 'Error al cargar horas extras');
+        setError((res as any).message || 'Error al cargar horas extras');
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');

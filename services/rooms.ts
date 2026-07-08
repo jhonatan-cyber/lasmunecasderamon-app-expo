@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const roomsService = {
   list: (params?: string) =>
-    apiClient(`/rooms${params ? `?${params}` : ''}`),
+    apiClientSafe(`/rooms${params ? `?${params}` : ''}`),
 };

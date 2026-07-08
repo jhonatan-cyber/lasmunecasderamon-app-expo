@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const categoriesService = {
   list: () =>
-    apiClient('/categories'),
+    apiClientSafe('/categories'),
 };

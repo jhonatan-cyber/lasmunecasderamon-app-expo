@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+import FlashList from "@/components/shared/FlashList";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -29,8 +29,6 @@ import {
   VentasSkeleton,
   VentaCardSkeleton,
 } from '@/components/cajero/ventas';
-
-const FlashList = ShopifyFlashList as any;
 
 export default function VentasScreen() {
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();

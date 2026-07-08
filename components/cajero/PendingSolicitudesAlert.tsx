@@ -10,7 +10,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { isAdminRole, isCajeroRole } from '@/utils/userRole';
@@ -32,9 +32,9 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
     const fetchCounts = useCallback(async () => {
         if (!isCajeroOrAdmin) return;
         try {
-            const res = await apiClient('/notifications/pending-count');
-            if (res.success) {
-                const newCount = res.count || 0;
+            const res = await apiClientSafe('/notifications/pending-count');
+            if ((res as any).success) {
+                const newCount = (res as any).count || 0;
                 let shouldShake = false;
                 setPendingCount((currentCount) => {
                     if (newCount > currentCount) {

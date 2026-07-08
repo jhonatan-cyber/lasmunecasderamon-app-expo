@@ -1,21 +1,21 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const notificationsService = {
   pending: () =>
-    apiClient('/notifications/pending'),
+    apiClientSafe('/notifications/pending'),
 
   pendingCount: () =>
-    apiClient('/notifications/pending-count'),
+    apiClientSafe('/notifications/pending-count'),
 
-  assistance: (payload: any) =>
-    apiClient('/notifications/assistance', {
+  assistance: (data: Record<string, unknown>) =>
+    apiClientSafe('/notifications/assistance', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  acceptAssistance: (payload: any) =>
-    apiClient('/notifications/assistance/accept', {
+  acceptAssistance: (data: Record<string, unknown>) =>
+    apiClientSafe('/notifications/assistance/accept', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

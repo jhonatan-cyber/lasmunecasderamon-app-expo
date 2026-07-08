@@ -18,7 +18,7 @@ export function EventDetailHeader({ iconName, iconColor, eventLabel, amount, isA
         <>
             <View style={styles.header}>
                 <View style={[styles.iconBox, { backgroundColor: `${iconColor}20` }]}>
-                    <Ionicons name={iconName as any} size={32} color={iconColor} />
+                    <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={32} color={iconColor} />
                 </View>
                 <Pressable onPress={onClose} style={styles.closeBtn}>
                     <Ionicons name="close" size={24} color={textPrimary} />

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { calculateRemainingTime } from "@/utils/timeUtils";
-import type { Timer } from "@/context/TimerContext";
+import type { Timer } from "@/context/types";
 
 type TimerPillProps = {
   timer: Timer;

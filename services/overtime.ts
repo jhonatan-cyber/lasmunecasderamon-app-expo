@@ -1,9 +1,9 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const overtimeService = {
   list: () =>
-    apiClient('/overtime'),
+    apiClientSafe('/overtime'),
 
   user: () =>
-    apiClient('/overtime/user'),
+    apiClientSafe('/overtime/user'),
 };

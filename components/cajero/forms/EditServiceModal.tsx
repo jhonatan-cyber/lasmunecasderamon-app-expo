@@ -11,9 +11,9 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { Timer } from '@/context/TimerContext';
+import type { Timer } from '@/context/types';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
 import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { TimeSelector } from '@/components/ui/TimeSelector';
@@ -26,6 +26,21 @@ interface Anfitriona {
     apellido: string;
     nick: string;
     status?: number;
+}
+
+interface RoomRaw {
+    nombre?: string;
+    name?: string;
+    precio?: number;
+    price?: number;
+    tiempo?: number;
+    time?: number;
+    comision_anfitriona?: number;
+    [key: string]: unknown;
+}
+
+interface ServicioDetailRaw {
+    usuarios?: Anfitriona[];
 }
 
 interface EditServiceModalProps {
@@ -54,13 +69,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
     const fetchHabitacionSinComision = useCallback(async () => {
         try {
-            const res = await apiClient('/rooms');
+            const res = await apiClientSafe<RoomRaw[]>('/rooms');
             logger.info('[EditServiceModal] Respuesta habitaciones', { response: res });
 
             if (res.success && Array.isArray(res.data)) {
                 logger.info('[EditServiceModal] Total habitaciones', { count: res.data.length });
 
-                res.data.forEach((h: any, index: number) => {
+                res.data.forEach((h: RoomRaw, index: number) => {
                     logger.info(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
@@ -69,7 +84,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                     });
                 });
 
-                const habitacionSinComision = res.data.find((h: any) => {
+                const habitacionSinComision = res.data.find((h: RoomRaw) => {
                     const precio = h.precio || h.price || 0;
                     const tiempo = h.tiempo || h.time || 0;
                     const comision = h.comision_anfitriona || 0;
@@ -92,8 +107,8 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const fetchAnfitrionas = useCallback(async () => {
         setLoadingAnfitrionas(true);
         try {
-            const disponiblesRes = await apiClient('/anfitrionas/disponibles');
-            const servicioRes = await apiClient(`/servicios/${timer?.servicioId}`);
+            const disponiblesRes = await apiClientSafe<Anfitriona[]>('/anfitrionas/disponibles');
+            const servicioRes = await apiClientSafe<ServicioDetailRaw>(`/servicios/${timer?.servicioId}`);
             let todasAnfitrionas: Anfitriona[] = [];
 
             if (disponiblesRes.success && Array.isArray(disponiblesRes.data)) {
@@ -208,7 +223,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 clientes: timer.cliente_id ? [String(timer.cliente_id)] : [],
                 fecha_crea: parseDateSafe(new Date()).toISOString()
             };
-            const res = await apiClient('/servicios/temporal', {
+            const res = await apiClientSafe('/servicios/temporal', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });

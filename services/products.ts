@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const productsService = {
   getByCategory: (categoryId: string | number) =>
-    apiClient(`/products?category_id=${categoryId}`),
+    apiClientSafe(`/products?category_id=${categoryId}`),
 };

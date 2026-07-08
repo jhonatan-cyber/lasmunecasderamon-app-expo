@@ -4,9 +4,22 @@ import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import * as Speech from "expo-speech";
 import { Platform, Vibration } from "react-native";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from '@/api/client-safe';
 
 import logger from '@/utils/logger';
+
+/** Expo Constants extended with runtime app config fields not in the published types */
+interface ConstantsWithExpoConfig {
+  appOwnership: string | null;
+  easConfig?: { projectId?: string };
+  expoConfig?: {
+    extra?: {
+      eas?: {
+        projectId?: string;
+      };
+    };
+  };
+}
 export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
@@ -34,9 +47,10 @@ export async function registerForPushNotificationsAsync(): Promise<
       return null;
     }
 
+    const constants = Constants as unknown as ConstantsWithExpoConfig;
     const projectId =
-      (Constants as any).expoConfig?.extra?.eas?.projectId ||
-      Constants.easConfig?.projectId;
+      constants.expoConfig?.extra?.eas?.projectId ||
+      constants.easConfig?.projectId;
 
     if (!projectId) {
       
@@ -72,7 +86,7 @@ export async function registerForPushNotificationsAsync(): Promise<
 
 async function saveTokenToServer(token: string) {
   try {
-    const response = await apiClient("/notifications", {
+    const response = await apiClientSafe("/notifications", {
       method: "POST",
       body: JSON.stringify({
         token,
@@ -83,7 +97,7 @@ async function saveTokenToServer(token: string) {
     if (response.success) {
       
     } else {
-      logger.error("❌ Error registrando push token:", response.message);
+      logger.error("❌ Error registrando push token:", { message: response.message });
     }
   } catch (error) {
     logger.captureException(error, { context: 'PushNotifications:saveToken' });

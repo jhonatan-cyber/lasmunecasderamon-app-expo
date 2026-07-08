@@ -1,30 +1,48 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
+
+export interface OpenCajaPayload {
+  monto_apertura: number;
+  usuario_id_apertura: string | number;
+}
+
+export interface CloseCajaPayload {
+  id_caja: string | number;
+  monto_cierre: number;
+  usuario_id_cierre: string | number;
+}
+
+export interface RetiroCajaPayload {
+  id_caja: string | number;
+  monto: number;
+  motivo: string;
+  usuario_id: string | number;
+}
 
 export const cajaService = {
   status: () =>
-    apiClient('/cashregister/status'),
+    apiClientSafe('/cashregister/status'),
 
-  open: (payload: any) =>
-    apiClient('/cashregister', {
+  open: (data: OpenCajaPayload) =>
+    apiClientSafe('/cashregister', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  close: (payload: any) =>
-    apiClient('/cashregister', {
+  close: (data: CloseCajaPayload) =>
+    apiClientSafe('/cashregister', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   resumen: () =>
-    apiClient('/cashregister?resumen=1'),
+    apiClientSafe('/cashregister?resumen=1'),
 
-  retiros: (payload: any) =>
-    apiClient('/cashregister/retiros', {
+  retiros: (data: RetiroCajaPayload) =>
+    apiClientSafe('/cashregister/retiros', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   stats: () =>
-    apiClient('/caja/stats'),
+    apiClientSafe('/caja/stats'),
 };

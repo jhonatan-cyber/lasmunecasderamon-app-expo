@@ -1,27 +1,27 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const anticiposService = {
   list: () =>
-    apiClient('/anticipos'),
+    apiClientSafe('/anticipos'),
 
-  update: (id: string | number, payload: any) =>
-    apiClient(`/anticipos/${id}`, {
+  update: (id: string | number, data: Record<string, unknown>) =>
+    apiClientSafe(`/anticipos/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   solicitudes: () =>
-    apiClient('/anticipos/solicitudes'),
+    apiClientSafe('/anticipos/solicitudes'),
 
-  createSolicitud: (payload: any) =>
-    apiClient('/anticipos/solicitudes', {
+  createSolicitud: (data: Record<string, unknown>) =>
+    apiClientSafe('/anticipos/solicitudes', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   getUserAnticipos: () =>
-    apiClient('/anticipos/user'),
+    apiClientSafe('/anticipos/user'),
 
   getMaximo: () =>
-    apiClient('/anticipos/maximo'),
+    apiClientSafe('/anticipos/maximo'),
 };

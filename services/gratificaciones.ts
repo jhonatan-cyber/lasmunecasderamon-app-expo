@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const gratificacionesService = {
   me: () =>
-    apiClient('/gratificaciones/me'),
+    apiClientSafe('/gratificaciones/me'),
 };

@@ -2,11 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 
 import logger from '@/utils/logger';
+
+
 interface QueuedRequest {
     id: string;
     endpoint: string;
     method: string;
-    body: any;
+    body: Record<string, unknown>;
     timestamp: number;
     retries: number;
 }
@@ -57,7 +59,7 @@ class OfflineSyncManager {
         return this.isOnline;
     }
 
-    async queueRequest(endpoint: string, method: string, body: any): Promise<void> {
+    async queueRequest(endpoint: string, method: string, body: Record<string, unknown>): Promise<void> {
         const queue = await this.getQueue();
         
         const newRequest: QueuedRequest = {
@@ -107,15 +109,15 @@ class OfflineSyncManager {
                 return;
             }
 
-            const { apiClient } = await import('@/api/client');
+            const { apiClientSafe } = await import('@/api/client-safe');
             let successCount = 0;
             const failedRequests: QueuedRequest[] = [];
 
             for (const req of queue) {
                 try {
-                    await apiClient(req.endpoint, {
+                    await apiClientSafe(req.endpoint, {
                         method: req.method,
-                        body: req.body,
+                        body: JSON.stringify(req.body),
                         retries: 0
                     });
                     successCount++;
@@ -144,7 +146,7 @@ class OfflineSyncManager {
         }
     }
 
-    private async setSyncStatus(status: any): Promise<void> {
+    private async setSyncStatus(status: Record<string, unknown>): Promise<void> {
         await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(status));
     }
 
@@ -162,7 +164,7 @@ class OfflineSyncManager {
 
 export const offlineSync = new OfflineSyncManager();
 
-export const queueRequest = (endpoint: string, method: string, body: any) => {
+export const queueRequest = (endpoint: string, method: string, body: Record<string, unknown>) => {
     return offlineSync.queueRequest(endpoint, method, body);
 };
 

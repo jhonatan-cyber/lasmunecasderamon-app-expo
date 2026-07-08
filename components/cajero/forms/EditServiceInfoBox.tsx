@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { Timer } from '@/context/TimerContext';
+import type { Timer } from '@/context/types';
 
 interface Props {
     timer: Timer;

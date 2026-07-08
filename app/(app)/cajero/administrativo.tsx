@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client-safe";
 import logger from "@/utils/logger";
 import { EventDetailModal } from "@/components/shared/EventDetailModal";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
@@ -55,7 +55,7 @@ export default function AdministrativoScreen() {
         const startDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
         const endDate = `${year}-${String(month + 1).padStart(2, "0")}-${new Date(year, month + 1, 0).getDate()}`;
 
-        const eventsRes = await apiClient(
+        const eventsRes = await apiClientSafe<Event[]>(
           `/events/user?startDate=${startDate}&endDate=${endDate}`,
         );
 
@@ -150,7 +150,7 @@ export default function AdministrativoScreen() {
     if (["comision", "propina", "asistencia", "anticipo"].includes(item.type)) {
       setLoadingDetail(true);
       try {
-        const res = await apiClient(
+        const res = await apiClientSafe(
           `/events/detail/${item.id}?type=${item.type}`,
         );
         if (res.success && res.data) setEventDetail(res.data);

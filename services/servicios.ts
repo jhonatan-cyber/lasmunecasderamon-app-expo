@@ -1,30 +1,30 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const serviciosService = {
   list: (limit = 50, page = 1) =>
-    apiClient(`/servicios?all=true&limit=${limit}&page=${page}`),
+    apiClientSafe(`/servicios?all=true&limit=${limit}&page=${page}`),
 
   getUserServices: () =>
-    apiClient('/servicios/user'),
+    apiClientSafe('/servicios/user'),
 
   getById: (id: string | number) =>
-    apiClient(`/servicios/${id}`),
+    apiClientSafe(`/servicios/${id}`),
 
-  update: (id: string | number, payload: any) =>
-    apiClient(`/servicios/${id}`, {
+  update: (id: string | number, data: Record<string, unknown>) =>
+    apiClientSafe(`/servicios/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  create: (payload: any) =>
-    apiClient('/servicios', {
+  create: (data: Record<string, unknown>) =>
+    apiClientSafe('/servicios', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  createTemporal: (payload: any) =>
-    apiClient('/servicios/temporal', {
+  createTemporal: (data: Record<string, unknown>) =>
+    apiClientSafe('/servicios/temporal', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

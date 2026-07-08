@@ -1,4 +1,4 @@
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { ActiveServiceCard } from "@/components/anfitriona/ActiveServiceCard";
 import { CajeroActionGrid } from "@/components/cajero/CajeroActionGrid";
 import { CajeroStats } from "@/components/cajero/CajeroStats";
@@ -112,7 +112,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
     ) {
       setLoadingDetail(true);
       try {
-        const res = await apiClient(
+        const res = await apiClientSafe(
           `/events/detail/${item.id}?type=${item.type}`,
         );
         if (res.success) setEventDetail(res.data);
@@ -163,7 +163,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
         <LinearGradient
-          colors={gradientColors as any}
+          colors={gradientColors as unknown as readonly [string, string, ...string[]]}
           style={[styles.header, { paddingTop: insets.top + 10, paddingBottom: 25 }]}
         >
           <SkeletonLoader
@@ -206,7 +206,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
-        colors={gradientColors as any}
+        colors={gradientColors as unknown as readonly [string, string, ...string[]]}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
       >
         <PremiumHeaderActions
@@ -243,7 +243,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                   "¿Solicitar asistencia general?",
                   "warning",
                   () => {
-                    apiClient("/notifications/assistance", {
+                    apiClientSafe("/notifications/assistance", {
                       method: "POST",
                       body: JSON.stringify({ type: "Llamado" }),
                     });

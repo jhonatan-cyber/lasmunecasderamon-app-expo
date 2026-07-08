@@ -98,7 +98,7 @@ export function VentasSkeleton({ bg, cardBg, borderColor, gradientColors, insets
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
-        colors={gradientColors as any}
+        colors={gradientColors as unknown as readonly [string, string, ...string[]]}
         style={{
           paddingTop: insets.top + (isTablet ? 20 : 10),
           paddingBottom: 25,

@@ -1,12 +1,16 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
+
+export interface ResetPasswordPayload {
+  run: string;
+}
 
 export const authService = {
-  resetPassword: (payload: any) =>
-    apiClient('/auth/reset-password', {
+  resetPassword: (data: ResetPasswordPayload) =>
+    apiClientSafe('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   me: () =>
-    apiClient('/auth/me'),
+    apiClientSafe('/auth/me'),
 };

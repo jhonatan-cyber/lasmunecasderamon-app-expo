@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { DeviceEventEmitter } from "react-native";
 import { useRouter } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { useTimer } from "@/context/TimerContext";
 import logger from "@/utils/logger";
 import { CuentaState, CuentaAction, initialCuentaState, cuentaReducer } from "@/hooks/types/cuentaTypes";
@@ -17,6 +17,24 @@ import {
   normalizeAnfitrionas,
 } from "@/hooks/utils/cartUtils";
 import type { CuentaOriginal } from "@/hooks/types/cuentaTypes";
+
+interface CuentaUpdateDetalle {
+  producto_id: string | number;
+  precio: number;
+  cantidad: number;
+  sub_total: number;
+  comision: number;
+  hostesses: (string | number)[];
+  isChampagne?: boolean;
+}
+
+interface CuentaUpdatePayload {
+  detalles: CuentaUpdateDetalle[];
+  usuarios: (string | number)[];
+  extraTiempo?: number;
+  habitacion_id?: string | number;
+  tiempo?: number;
+}
 
 export type { CuentaState, CuentaAction };
 export { initialCuentaState, cuentaReducer, showToast, isChampagneProduct, getChampagneLimit, getHostessLimit, buildCommissionPreview };
@@ -66,12 +84,12 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
       if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
       try {
         const requests: Promise<any>[] = [
-          apiClient("/anfitrionas"),
-          apiClient("/categories"),
-          apiClient("/rooms"),
+          apiClientSafe("/anfitrionas"),
+          apiClientSafe("/categories"),
+          apiClientSafe("/rooms"),
         ];
         if (cuentaOriginal?.id_cuenta) {
-          requests.push(apiClient(`/cuentas/${cuentaOriginal.id_cuenta}`));
+          requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`));
         }
         const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
@@ -159,9 +177,9 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
       const timeToUse = selectedHabitacion ? selectedTime : 0;
       const isSameRoomSelection =
         Boolean(roomIdToUse) && Boolean(currentRoomId) && String(roomIdToUse) === String(currentRoomId);
-      const cuentaData: any = {
+      const cuentaData: CuentaUpdatePayload = {
         detalles: cart.map((item) => ({
-          producto_id: item.id_producto || item.id,
+          producto_id: item.id_producto || item.id || '',
           precio: item.precio,
           cantidad: item.cantidad,
           sub_total: item.precio * item.cantidad,
@@ -184,7 +202,7 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
         cuentaData.tiempo = selectedTime;
       }
       refreshTimers?.();
-      const res = await apiClient(`/cuentas/${cuentaOriginal?.id_cuenta}`, {
+      const res = await apiClientSafe(`/cuentas/${cuentaOriginal?.id_cuenta}`, {
         method: "PUT",
         body: JSON.stringify(cuentaData),
       });

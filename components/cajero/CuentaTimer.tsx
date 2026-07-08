@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
-import { Timer } from "@/context/TimerContext";
+import type { Timer } from "@/context/types";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 
 type CuentaTimerProps = {

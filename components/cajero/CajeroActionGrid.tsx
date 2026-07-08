@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Spacing } from "@/constants";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -99,7 +99,7 @@ export const CajeroActionGrid = ({
                 description={action.description}
                 icon={action.icon}
                 color={action.color}
-                onPress={() => router.push(action.route as any)}
+                onPress={() => router.push(action.route as Href)}
               />
             </View>
           ))}

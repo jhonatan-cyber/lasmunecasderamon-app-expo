@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { DonutChart } from "@/components/ui/DonutChart";
 import { LinearGradient } from "expo-linear-gradient";
@@ -48,7 +48,7 @@ const StatCard: React.FC<StatCardProps> = ({
           <View
             style={[styles.iconContainer, { backgroundColor: color + "15" }]}
           >
-            <Ionicons name={icon as any} size={20} color={color} />
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color={color} />
           </View>
           {subtitle ? (
             <View style={styles.trendBadge}>
@@ -118,18 +118,18 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
-    queryFn: async () => apiClient("/dashboard/stats", { method: "GET" }),
+    queryFn: async () => apiClientSafe("/dashboard/stats", { method: "GET" }),
     staleTime: 30000,
   });
 
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["sales-chart"],
-    queryFn: async () => apiClient("/dashboard/sales-chart", { method: "GET" }),
+    queryFn: async () => apiClientSafe("/dashboard/sales-chart", { method: "GET" }),
     staleTime: 60000,
   });
 
-  const stats = statsData?.data || {};
-  const salesChart = salesData?.data || { weekly: [], daily: [] };
+  const stats = (statsData as any)?.data || {};
+  const salesChart = (salesData as any)?.data || { weekly: [], daily: [] };
 
   const statusItems = [
     {

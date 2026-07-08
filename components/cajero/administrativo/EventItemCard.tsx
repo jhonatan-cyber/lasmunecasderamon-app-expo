@@ -56,7 +56,7 @@ export function EventItemCard({
         ]}
       >
         <Ionicons
-          name={iconName as any}
+          name={iconName as keyof typeof Ionicons.glyphMap}
           size={18}
           color={iconColor}
         />

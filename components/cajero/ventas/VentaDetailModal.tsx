@@ -102,7 +102,7 @@ export function VentaDetailModal({
                         <Text style={[styles.infoLabel, { color: textSecondary }]}>Método Pago</Text>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                           <Ionicons
-                            name={(payMethodIcons[selectedVenta.metodo_pago] || "wallet") as any}
+                            name={(payMethodIcons[selectedVenta.metodo_pago] || "wallet") as keyof typeof Ionicons.glyphMap}
                             size={16}
                             color={accentColor}
                           />

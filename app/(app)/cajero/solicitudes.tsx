@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList as ShopifyFlashList } from '@shopify/flash-list';
+import FlashList from "@/components/shared/FlashList";
 import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -23,10 +23,9 @@ import { SolicitudesSkeleton } from '@/components/cajero/solicitudes/Solicitudes
 import { CheckoutModal } from '@/components/cajero/CheckoutModal';
 import { ServiceModal } from '@/components/cajero/ServiceModal';
 import { SolicitudCard } from '@/components/cajero/SolicitudCard';
+import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
 import { useSolicitudes } from '@/hooks/useSolicitudes';
 import { useSolicitudesActions } from '@/hooks/useSolicitudesActions';
-
-const FlashList = ShopifyFlashList as any;
 
 export default function SolicitudesScreen() {
     const router = useRouter();
@@ -98,8 +97,8 @@ export default function SolicitudesScreen() {
             filtered = solicitudes.filter(s => s.tipoItem === activeFilter);
         }
         const total = filtered
-            .filter(s => s.tipoItem === 'anticipo' && s.estado !== 0)
-            .reduce((sum: number, s: any) => sum + (Number(s.monto) || 0), 0);
+            .filter((s: SolicitudItem) => s.tipoItem === 'anticipo' && s.estado !== 0)
+            .reduce((sum: number, s: SolicitudItem) => sum + (Number(s.monto) || 0), 0);
         return { totalAPagar: total, filteredSolicitudes: filtered };
     }, [solicitudes, activeFilter]);
 
@@ -214,8 +213,8 @@ export default function SolicitudesScreen() {
 
             <FlashList
                 data={filteredSolicitudes}
-                keyExtractor={(item: any) => item.id_unificado}
-                renderItem={({ item }: { item: any }) => (
+                keyExtractor={(item: SolicitudItem) => item.id_unificado}
+                renderItem={({ item }: { item: SolicitudItem }) => (
                     <View
                         style={[
                             styles.cardWrapper,

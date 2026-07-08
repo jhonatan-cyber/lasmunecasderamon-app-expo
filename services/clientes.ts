@@ -1,35 +1,59 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
+
+export interface CreateClientPayload {
+  name: string;
+  lastName: string;
+  run?: string;
+  phone?: string;
+}
+
+/** @see CreateClientPayload */
+export type UpdateClientPayload = CreateClientPayload;
+
+export interface PrepagoPayload {
+  cliente_id: string | number;
+  monto: number;
+  tipo: string;
+  metodo_pago: string;
+  motivo: string;
+  pago_mixto?: {
+    metodo_primario: string;
+    monto_primario: number;
+    metodo_secundario: string;
+    monto_secundario: number;
+  };
+}
 
 export const clientesService = {
   list: () =>
-    apiClient('/clients'),
+    apiClientSafe('/clients'),
 
   getById: (id: string | number) =>
-    apiClient(`/clients?id=${id}`),
+    apiClientSafe(`/clients?id=${id}`),
 
-  create: (payload: any) =>
-    apiClient('/clients', {
+  create: (data: CreateClientPayload) =>
+    apiClientSafe('/clients', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  update: (id: string | number, payload: any) =>
-    apiClient('/clients', {
+  update: (id: string | number, data: UpdateClientPayload) =>
+    apiClientSafe('/clients', {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   delete: (id: string | number) =>
-    apiClient(`/clients?id=${id}`, {
+    apiClientSafe(`/clients?id=${id}`, {
       method: 'DELETE',
     }),
 
   getHistory: (clienteId: string | number) =>
-    apiClient(`/clients/history?cliente_id=${clienteId}`),
+    apiClientSafe(`/clients/history?cliente_id=${clienteId}`),
 
-  prepago: (payload: any) =>
-    apiClient('/clients/prepago', {
+  prepago: (data: PrepagoPayload) =>
+    apiClientSafe('/clients/prepago', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

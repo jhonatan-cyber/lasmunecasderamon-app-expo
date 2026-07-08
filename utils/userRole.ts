@@ -1,6 +1,6 @@
-type RoleLike = string | { name?: unknown } | null | undefined;
+export type RoleLike = string | { name?: unknown } | null | undefined;
 
-type UserLike = {
+export type UserLike = {
   role?: RoleLike;
 } | null | undefined;
 

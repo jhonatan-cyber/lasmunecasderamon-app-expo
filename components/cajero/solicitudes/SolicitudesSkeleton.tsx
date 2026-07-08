@@ -22,7 +22,7 @@ export function SolicitudesSkeleton({
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
-        colors={gradientColors as any}
+        colors={gradientColors as unknown as readonly [string, string, ...string[]]}
         style={{
           paddingTop: insets.top + (isTablet ? 20 : 10),
           height: 160,

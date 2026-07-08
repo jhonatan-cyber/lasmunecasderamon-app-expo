@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { DeviceEventEmitter } from "react-native";
 import Toast from "react-native-toast-message";
 
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import { useTimer } from "@/context/TimerContext";
 import { formatAmountInput, parseAmountInput } from "@/utils/money";
@@ -136,7 +136,7 @@ export const useCuentasScreen = () => {
 
   const [state, dispatch] = useReducer(
     cuentasReducer,
-    initialCuentasState((params.tab as any) === "pendientes" ? "pendientes" : "historial"),
+    initialCuentasState(params.tab as string === "pendientes" ? "pendientes" : "historial"),
   );
 
   const {
@@ -167,18 +167,20 @@ export const useCuentasScreen = () => {
 
         const timestamp = Date.now();
         const [resCuentas, resResumen] = await Promise.all([
-          apiClient(`/cuentas?limit=50&_t=${timestamp}`),
-          apiClient(`/cuentas?tipo=resumen&_t=${timestamp}`),
+          apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`),
+          apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`),
         ]);
 
-        const actualCuentas = Array.isArray(resCuentas.data)
-          ? resCuentas.data
+        const actualCuentas: CuentaDetalle[] = Array.isArray(resCuentas.data)
+          ? (resCuentas.data as CuentaDetalle[])
           : Array.isArray(resCuentas)
-            ? resCuentas
+            ? (resCuentas as unknown as CuentaDetalle[])
             : [];
-        const actualResumen =
-          resResumen.data ||
-          (resResumen.total_por_cobrar !== undefined ? resResumen : null);
+        const actualResumen: CuentaResumen | null =
+          (resResumen.data as CuentaResumen | null) ||
+          ("total_por_cobrar" in resResumen
+            ? (resResumen as unknown as CuentaResumen)
+            : null);
 
         const newData = { cuentas: actualCuentas, resumen: actualResumen };
         const serialized = JSON.stringify(newData);
@@ -262,11 +264,11 @@ export const useCuentasScreen = () => {
 
   const fetchCuentaCompleta = useCallback(async (cuentaId: string | number) => {
     const timestamp = Date.now();
-    const res = await apiClient(`/cuentas/${cuentaId}?_t=${timestamp}`);
+    const res = await apiClientSafe(`/cuentas/${cuentaId}?_t=${timestamp}`);
     if (!res || res.error) {
       throw new Error(res?.message || "No se pudo obtener el detalle completo de la cuenta");
     }
-    return res;
+    return res as unknown as CuentaDetalle;
   }, []);
 
   const registrarVentaDesdeCuenta = useCallback(
@@ -294,7 +296,7 @@ export const useCuentasScreen = () => {
         usuarios: cuenta?.usuarios?.map((u) => String(u.usuario_id ?? u.id_usuario ?? u)) || [],
       };
 
-      return await apiClient("/sales", {
+      return await apiClientSafe("/sales", {
         method: "POST",
         body: JSON.stringify(ventaPayload),
       });
@@ -323,7 +325,7 @@ export const useCuentasScreen = () => {
         habitacion_id: selectedCuenta.habitacion_id || null,
       };
 
-      const res = await apiClient(`/cuentas/${selectedCuenta.id_cuenta}/cobrar`, {
+      const res = await apiClientSafe(`/cuentas/${selectedCuenta.id_cuenta}/cobrar`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -373,7 +375,7 @@ export const useCuentasScreen = () => {
             try {
               dispatch({ type: "SET_ALERT_VISIBLE", payload: false });
               dispatch({ type: "SET_ACTION_SHEET", visible: false });
-              const res = await apiClient(`/cuentas/${cuenta.id_cuenta}/stop`, {
+              const res = await apiClientSafe(`/cuentas/${cuenta.id_cuenta}/stop`, {
                 method: "PATCH",
               });
               if (res.success) {
@@ -422,7 +424,7 @@ export const useCuentasScreen = () => {
 
     try {
       setAnulacionSubmitting(true);
-      const res = await apiClient("/cuentas/anulacion", {
+      const res = await apiClientSafe("/cuentas/anulacion", {
         method: "POST",
         body: JSON.stringify({
           cuentaId: anulacionCuenta.id_cuenta,
@@ -455,9 +457,9 @@ export const useCuentasScreen = () => {
     dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
     try {
       const timestamp = Date.now();
-      const res = await apiClient(`/cuentas/${id}?_t=${timestamp}`);
+      const res = await apiClientSafe(`/cuentas/${id}?_t=${timestamp}`);
       if (res && !res.error) {
-        dispatch({ type: "SET_SELECTED_CUENTA", payload: res });
+        dispatch({ type: "SET_SELECTED_CUENTA", payload: res as unknown as CuentaDetalle });
       } else {
         showToast("Error", "No se pudo obtener el detalle de la cuenta");
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });

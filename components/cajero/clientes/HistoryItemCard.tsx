@@ -36,7 +36,7 @@ export function HistoryItemCard({ item, index, isDark, textPrimary, textSecondar
             {}
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: iconBg }}>
-                    <Ionicons name={iconName as any} size={22} color={iconColor} />
+                    <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={22} color={iconColor} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -157,7 +157,7 @@ export function HistoryItemCard({ item, index, isDark, textPrimary, textSecondar
                     backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
                 }}>
                     <Ionicons
-                        name={(PAYMENT_ICONS[item.metodo_pago] || 'wallet-outline') as any}
+                        name={(PAYMENT_ICONS[item.metodo_pago] || 'wallet-outline') as keyof typeof Ionicons.glyphMap}
                         size={12}
                         color={textSecondary}
                     />

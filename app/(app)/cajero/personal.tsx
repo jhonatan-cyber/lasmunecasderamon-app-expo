@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList as ShopifyFlashList } from "@shopify/flash-list";
+import FlashList from "@/components/shared/FlashList";
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -13,7 +13,7 @@ import {
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -24,8 +24,6 @@ import {
     PersonalCard,
     PersonalQRModal
 } from '@/components/cajero/personal';
-
-const FlashList = ShopifyFlashList as any;
 
 const { width } = Dimensions.get('window');
 const GRID_PADDING = 16;
@@ -50,7 +48,7 @@ export default function PersonalScreen() {
     const fetchUsers = useCallback(async (isManual = false) => {
         try {
             logger.info('[PersonalScreen] Fetching users with status=active...');
-            const data = await apiClient('/users?status=active');
+            const data = await apiClientSafe<any[]>('/users?status=active');
             logger.info('[PersonalScreen] Response:', data);
             
             if (data.success) {
@@ -104,8 +102,9 @@ export default function PersonalScreen() {
             fetchUsers(true),
             (async () => {
                 try {
-                    const res = await apiClient('/codigo/actual');
-                    if (res.success) setCodigoAsistencia(res.codigo);
+                    const res = await apiClientSafe('/codigo/actual');
+                    const codigoData = res as unknown as { success: boolean; codigo: string };
+                    if (codigoData.success) setCodigoAsistencia(codigoData.codigo);
                 } catch (e) {
                     logger.captureException(e, { context: 'Personal:onRefresh' });
                 }
@@ -116,12 +115,13 @@ export default function PersonalScreen() {
     const handleGenerateQR = useCallback(async (userId: string) => {
         try {
             setIsGenerating(true);
-            const data = await apiClient('/users/generate-qr', {
+            const data = await apiClientSafe('/users/generate-qr', {
                 method: 'POST',
                 body: JSON.stringify({ userId })
             });
+            const qrData = data as unknown as { success: boolean; qr_token: string };
 
-            if (data.success) {
+            if (qrData.success) {
                 Toast.show({
                     type: 'success',
                     text1: 'Éxito',
@@ -129,11 +129,11 @@ export default function PersonalScreen() {
                 });
                 
                 setUsers(prev => prev.map(u => 
-                    u.id === userId ? { ...u, qr_token: data.qr_token } : u
+                    u.id === userId ? { ...u, qr_token: qrData.qr_token } : u
                 ));
                 
                 if (selectedUser?.id === userId) {
-                    setSelectedUser(prev => prev ? { ...prev, qr_token: data.qr_token } : null);
+                    setSelectedUser(prev => prev ? { ...prev, qr_token: qrData.qr_token } : null);
                 }
             }
         } catch (error: any) {
@@ -158,11 +158,12 @@ export default function PersonalScreen() {
         
         const fetchUserData = async () => {
             try {
-                const data = await apiClient(`/users/${selectedUser.id}`);
-                if (data.success && data.user) {
-                    if (data.user.qr_token !== selectedUser.qr_token) {
-                        setSelectedUser(data.user);
-                        setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
+                const data = await apiClientSafe(`/users/${selectedUser.id}`);
+                const userData = data as unknown as { success: boolean; user: User };
+                if (userData.success && userData.user) {
+                    if (userData.user.qr_token !== selectedUser.qr_token) {
+                        setSelectedUser(userData.user);
+                        setUsers(prev => prev.map(u => u.id === userData.user.id ? userData.user : u));
                         
                         setSelectedUser(null);
                         Toast.show({
@@ -187,8 +188,9 @@ export default function PersonalScreen() {
         if (!selectedUser) return;
         const fetch = async () => {
             try {
-                const res = await apiClient('/codigo/actual');
-                if (res.success) setCodigoAsistencia(res.codigo);
+                const res = await apiClientSafe('/codigo/actual');
+                const codData = res as unknown as { success: boolean; codigo: string };
+                if (codData.success) setCodigoAsistencia(codData.codigo);
             } catch {}
         };
         fetch();

@@ -24,7 +24,7 @@ function ServiciosSkeleton({ bg, gradientColors, insets }: { bg: string; gradien
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
             <LinearGradient
-                colors={gradientColors as any}
+                colors={gradientColors as unknown as readonly [string, string, ...string[]]}
                 style={[styles.header, {
                     paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20),
                     paddingBottom: 25,

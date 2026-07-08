@@ -1,7 +1,5 @@
-import { Colors } from '@/constants/theme';
-import { apiClient } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
-import * as Speech from "expo-speech";
+
 import React, {
     createContext,
     useCallback,
@@ -10,78 +8,16 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { DeviceEventEmitter, Modal, View, Text, Pressable } from 'react-native';import { MetodoPago } from '../types/api';
-import type { TimerRawData, SSEPayload } from '../types/realtime';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {
-  emitRefreshCuentas,
-  emitRefreshRequests,
-  emitRefreshSales,
-  REALTIME_EVENT_NAMES,
-} from "@/utils/realtime";
-import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
-import { isCajeroRole } from "@/utils/userRole";
+import type { Timer, TimerContextType } from '@/context/types';
 
-import logger from '@/utils/logger';
-export interface Timer {
-  id: string;
-  servicioId: string;
-  roomId: string;
-  roomName: string;
-  duration: number; 
-  remainingTime: number; 
-  isActive: boolean;
-  isPaused: boolean;
-  startTime: Date;
-  servicioCode: string;
-  cliente_id?: string | null;
-  clienteNombre: string;
-  tipoTransaccion?: "servicio" | "venta" | "cuenta";
-  anfitrionas?: string;
-  precio_servicio?: number;
-  precio_habitacion?: number;
-  iva?: number;
-  total?: number;
-  metodo_pago?: MetodoPago;
-  waiter_name?: string;
-  waiter_foto?: string;
-  solicitante_name?: string;
-  solicitante_foto?: string;
-  habitacion_comision?: number;
-  anfitrionas_ids?: string[];
-  anfitrionas_fotos?: string[];
-  created_at?: string;
-  estado?: number;
-  total_usuarios?: number;
-  comision_individual?: number;
-  lastAnnouncedMinute?: number;
-  isOverdueNotified?: boolean;
-  
-  es_temporal?: boolean;
-  servicio_original_id?: string | null;
-}
-
-interface TimerContextType {
-  timers: Timer[];
-  serverOffset: number;
-  loading: boolean;
-  refreshTimers: () => Promise<void>;
-}
+import { ExpiredTimerModal } from '@/context/components/ExpiredTimerModal';
+import { useActiveTimersFetcher } from '@/context/hooks/useActiveTimersFetcher';
+import { useSSETimerHandler } from '@/context/hooks/useSSETimerHandler';
+import { useTimerVoiceAnnouncer } from '@/context/hooks/useTimerVoiceAnnouncer';
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 
-const announceVoice = async (message: string) => {
-  try {
-    Speech.speak(message, {
-      language: "es-ES",
-      rate: 0.9,
-      pitch: 1.0,
-    });
-  } catch (error) {
-    logger.captureException(error, { context: 'TimerContext:announceVoice' });
-  }
-};
 
 export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -93,339 +29,37 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
   const user = useAuthStore((state) => state.user);
   const timersRef = useRef<Timer[]>([]);
-  const fetchActiveTimersRef = useRef<() => Promise<void>>(async () => {});
 
-  
   useEffect(() => {
     timersRef.current = timers;
   }, [timers]);
 
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { fetchActiveTimers } = useActiveTimersFetcher({
+    setTimers,
+    setServerOffset,
+    serverOffsetRef,
+    setLoading,
+    timersRef,
+  });
 
-  const lastFetchTimeRef = useRef<number>(0);
+  // SSE event handling — delegated to the extracted hook
+  useSSETimerHandler({
+    fetchActiveTimers,
+    serverOffset,
+    setTimers,
+    setExpiredTimer,
+  });
 
-  const fetchActiveTimers = useCallback(async () => {
-    const nowTs = Date.now();
-    
-    if (nowTs - lastFetchTimeRef.current < 2000) {
-      logger.info('[TimerContext Mobile] Skipping fetchActiveTimers (debounced)');
-      return;
-    }
-    lastFetchTimeRef.current = nowTs;
+  // Voice announcements and overdue detection (5s polling) — delegated to extracted hook
+  useTimerVoiceAnnouncer({
+    timersRef,
+    serverOffset,
+    user,
+    setTimers,
+    setExpiredTimer,
+  });
 
-    try {
-      logger.info('[TimerContext Mobile] Calling fetchActiveTimers');
-      
-      const data = await apiClient("/timers/active?source=mobile", { timeout: 20000 });
-      if (data.success && Array.isArray(data.data)) {
-        if (data.serverTime) {
-          const serverDate = new Date(data.serverTime);
-          const localDate = new Date();
-          const offset = serverDate.getTime() - localDate.getTime();
-          setServerOffset(offset);
-          serverOffsetRef.current = offset;
-        }
-
-        
-        const currentTimersMap = new Map(timersRef.current.map(t => [t.id, t.isOverdueNotified]));
-
-        const activeTimers = data.data.map((t: TimerRawData) => ({
-          id: `${t.servicioId}-${t.roomId}`,
-          servicioId: String(t.servicioId),
-          roomId: String(t.roomId),
-          roomName: t.roomName || '',
-          duration: t.duration,
-          remainingTime: t.remainingTime || 0,
-          isActive: true,
-          isPaused: t.isPaused === 1 || t.estado === 3,
-          startTime: parseDateSafe(t.startTime),
-          servicioCode: t.codigo || '',
-          cliente_id: t.cliente_id,
-          clienteNombre: t.clienteNombre || '',
-          tipoTransaccion: t.tipoTransaccion,
-          anfitrionas: t.anfitrionas,
-          precio_servicio: t.precio_servicio,
-          precio_habitacion: t.precio_habitacion,
-          iva: t.iva,
-          total: t.total,
-          metodo_pago: t.metodo_pago as MetodoPago | undefined,
-          waiter_name: t.waiter_name,
-          waiter_foto: t.waiter_foto,
-          solicitante_name: t.solicitante_name,
-          solicitante_foto: t.solicitante_foto,
-          habitacion_comision: t.habitacion_comision || 0,
-          anfitrionas_ids: typeof t.anfitrionas_ids === 'string' ? t.anfitrionas_ids.split(',').filter(Boolean) : (t.anfitrionas_ids || []),
-          anfitrionas_fotos: t.anfitrionas_fotos || [],
-          created_at: t.created_at,
-          estado: t.estado,
-          total_usuarios: t.total_usuarios,
-          comision_individual: t.comision_individual,
-          isOverdueNotified: currentTimersMap.get(`${t.servicioId}-${t.roomId}`) || false,
-          es_temporal: t.es_temporal === 1 || t.es_temporal === true,
-          servicio_original_id: t.servicioOriginalId ? String(t.servicioOriginalId) : null,
-        }));
-
-        setTimers(activeTimers);
-      }
-    } catch {
-      
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = setTimeout(() => {
-        void fetchActiveTimersRef.current();
-      }, 5000);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchActiveTimersRef.current = fetchActiveTimers;
-  }, [fetchActiveTimers, serverOffset]);
-
-  const handleSSEEvent = useCallback((payload: SSEPayload) => {
-    switch (payload.type) {
-      case "timer_started": {
-        const newTimerData = payload.data as TimerRawData;
-        const start = parseDateSafe(newTimerData.startTime);
-        const now = new Date(Date.now() + serverOffsetRef.current);
-        const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
-        const durationMins = Number(newTimerData.duration || 0);
-        let remainingSeconds = Math.max(0, durationMins * 60 - elapsedSeconds);
-        
-        if (remainingSeconds === 0 && durationMins > 0 && elapsedSeconds < 120) {
-            remainingSeconds = durationMins * 60; 
-        }
-
-        const newTimer: Timer = {
-          id: `${newTimerData.servicioId}-${newTimerData.roomId}`,
-          servicioId: newTimerData.servicioId,
-          roomId: newTimerData.roomId,
-          roomName: newTimerData.roomName,
-          duration: durationMins,
-          remainingTime: remainingSeconds,
-          isActive: true,
-          isPaused: false,
-          startTime: start,
-          servicioCode: newTimerData.codigo || '',
-          cliente_id: newTimerData.cliente_id,
-          clienteNombre: newTimerData.clienteNombre || '',
-          tipoTransaccion: newTimerData.tipoTransaccion,
-          anfitrionas: newTimerData.anfitrionas,
-          precio_servicio: newTimerData.precio_servicio,
-          precio_habitacion: newTimerData.precio_habitacion,
-          iva: newTimerData.iva,
-          total: newTimerData.total,
-          metodo_pago: newTimerData.metodo_pago as MetodoPago | undefined,
-          waiter_name: newTimerData.waiter_name,
-          habitacion_comision: newTimerData.habitacion_comision || 0,
-          anfitrionas_ids: typeof newTimerData.anfitrionas_ids === 'string' 
-            ? newTimerData.anfitrionas_ids.split(',').filter(Boolean) 
-            : (newTimerData.anfitrionas_ids || []),
-          created_at: newTimerData.created_at || newTimerData.startTime,
-          estado: newTimerData.estado || 2,
-          total_usuarios: newTimerData.total_usuarios,
-          comision_individual: newTimerData.comision_individual,
-          isOverdueNotified: false,
-          es_temporal: newTimerData.es_temporal === 1 || newTimerData.es_temporal === true,
-          servicio_original_id: newTimerData.servicioOriginalId ? String(newTimerData.servicioOriginalId) : null,
-        };
-        setTimers((prev) => [
-          ...prev.filter((t) => !(String(t.servicioId) === String(newTimer.servicioId) && t.tipoTransaccion === newTimer.tipoTransaccion)),
-          newTimer,
-        ]);
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
-
-      case "timer_stopped":
-        const targetServicioId = payload.data.servicioId;
-        const stoppedTimerInfo = timersRef.current.find(
-          (t) => String(t.servicioId) === String(targetServicioId)
-        );
-
-        const roomNameForEvent =
-          stoppedTimerInfo?.roomName ||
-          payload.data?.roomName ||
-          payload.data?.habitacion_numero ||
-          payload.data?.habitacion_id ||
-          'asignada';
-
-        const targetTipo = payload.data.tipoTransaccion || 'servicio';
-
-        
-        
-        const originalId = stoppedTimerInfo?.servicio_original_id;
-
-        setTimers((prev) => {
-          let next = prev.filter((t) => !(String(t.servicioId) === String(targetServicioId) && (t.tipoTransaccion === targetTipo || !t.tipoTransaccion)));
-          
-          if (originalId) {
-            next = next.map((t) => {
-              if (String(t.servicioId) === String(originalId) && t.tipoTransaccion === targetTipo) {
-                return { ...t, isPaused: false, estado: 2, lastAnnouncedMinute: undefined };
-              }
-              return t;
-            });
-          }
-          
-          return next;
-        });
-
-        emitRefreshSales({
-          roomName: roomNameForEvent,
-          automatic: false,
-          reason: 'stopped',
-          servicioId: targetServicioId,
-          tipoTransaccion: targetTipo,
-        });
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-
-      case "timer_paused": {
-        const targetTipoP = payload.data.tipoTransaccion || 'servicio';
-        setTimers((prev) =>
-          prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoP) {
-              const currentRemaining = calculateRemainingTime(t, serverOffset);
-              return {
-                ...t,
-                isPaused: true,
-                estado: 3,
-                remainingTime: currentRemaining,
-              };
-            }
-            return t;
-          }),
-        );
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
-
-      case "timer_resumed": {
-        const targetTipoR = payload.data.tipoTransaccion || 'servicio';
-        setTimers((prev) =>
-          prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoR) {
-              return {
-                ...t,
-                isPaused: false,
-                estado: 2,
-                startTime: parseDateSafe(payload.data.newStartTime),
-                lastAnnouncedMinute: undefined,
-              };
-            }
-            return t;
-          }),
-        );
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
-
-      case "timer_updated": {
-        const targetTipoU = payload.data.tipoTransaccion || 'servicio';
-        setTimers((prev) =>
-          prev.map((t) => {
-            if (String(t.servicioId) === String(payload.data.servicioId) && t.tipoTransaccion === targetTipoU) {
-              return {
-                ...t,
-                ...payload.data,
-                duration: Number(payload.data.duration || t.duration),
-                startTime: payload.data.startTime ? parseDateSafe(payload.data.startTime) : t.startTime,
-                roomName: payload.data.roomName || t.roomName,
-                anfitrionas: payload.data.anfitrionas !== undefined ? payload.data.anfitrionas : t.anfitrionas,
-                anfitrionas_ids: typeof payload.data.anfitrionas_ids === 'string' 
-                  ? payload.data.anfitrionas_ids.split(',').filter(Boolean) 
-                  : (payload.data.anfitrionas_ids || t.anfitrionas_ids),
-                lastAnnouncedMinute: undefined,
-              };
-            }
-            return t;
-          }),
-        );
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
-      case "timers_updated": {
-        logger.info('[TimerContext Mobile] timers_updated received - syncing list');
-        fetchActiveTimers();
-        break;
-      }
-      case "user_status_updated": {
-        emitRefreshRequests();
-        break;
-      }
-    }
-  }, [fetchActiveTimers, serverOffset]);
-
-  useEffect(() => {
-    if (!isCajeroRole(user)) return;
-
-    const interval = setInterval(() => {
-      const currentTimers = timersRef.current;
-      currentTimers.forEach((timer) => {
-        if (!timer.isActive || timer.isPaused || timer.estado === 3) return;
-
-        const remSeconds = calculateRemainingTime(timer, serverOffset);
-
-        
-        let targetMinute: number | null = null;
-        if (remSeconds > 0) {
-            if (remSeconds <= 300 && remSeconds > 60 && timer.lastAnnouncedMinute !== 5) {
-                targetMinute = 5;
-            } else if (remSeconds <= 60 && timer.lastAnnouncedMinute !== 1) {
-                targetMinute = 1;
-            }
-        }
-
-        const start = timer.startTime instanceof Date ? timer.startTime : parseDateSafe(timer.startTime);
-        const elapsedSinceStart = Math.floor((new Date(Date.now() + serverOffset).getTime() - start.getTime()) / 1000);
-
-        if (targetMinute !== null) {
-          const mensajeStr = targetMinute === 1 ? 'quedan 1 minuto' : `quedan ${targetMinute} minutos`;
-          const mensaje = `Atención: ${mensajeStr} en la ${timer.roomName}`;
-          announceVoice(mensaje);
-
-          setTimers((prev) =>
-            prev.map((t) =>
-              t.id === timer.id ? { ...t, lastAnnouncedMinute: targetMinute! } : t,
-            ),
-          );
-        }
-
-        if (remSeconds <= 0 && !timer.isOverdueNotified && elapsedSinceStart > 10) {
-          emitRefreshSales({
-            roomName: timer.roomName,
-            automatic: true,
-            reason: 'ended',
-            servicioId: timer.servicioId,
-            tipoTransaccion: timer.tipoTransaccion,
-          });
-
-          setTimers((prev) =>
-            prev.map((t) =>
-              t.id === timer.id ? { ...t, isOverdueNotified: true } : t,
-            ),
-          );
-
-          
-          setExpiredTimer(timer);
-        }
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [user, serverOffset]);
-
-  
+  // Initial fetch
   useEffect(() => {
     const timeout = setTimeout(() => {
       void fetchActiveTimers();
@@ -433,18 +67,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => clearTimeout(timeout);
   }, [user?.id, fetchActiveTimers]);
-
-  
-  useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: unknown) => {
-      handleSSEEvent(payload as SSEPayload);
-    });
-
-    return () => {
-      subscription.remove();
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    };
-  }, [handleSSEEvent]);
 
   const handleDismissExpired = useCallback(() => {
     setExpiredTimer(null);
@@ -461,93 +83,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     >
       {children}
 
-      {}
-      <Modal visible={!!expiredTimer} animationType="fade" transparent onRequestClose={() => {}}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: Colors.dark.cardSecondary, borderRadius: 24, width: '100%', maxWidth: 380, overflow: 'hidden' }}>
-            {}
-            <View style={{ backgroundColor: Colors.dark.error, padding: 20, alignItems: 'center' }}>
-              <Text style={{ fontSize: 28, marginBottom: 4 }}>⏰</Text>
-              <Text style={{ color: Colors.dark.text, fontSize: 20, fontWeight: '800', textAlign: 'center' }}>¡Tiempo Terminado!</Text>
-              <Text style={{ color: Colors.dark.errorLight, fontSize: 13, marginTop: 2, textAlign: 'center' }}>
-                {expiredTimer?.tipoTransaccion === 'servicio'
-                  ? 'Servicio completado'
-                  : expiredTimer?.tipoTransaccion === 'venta'
-                    ? 'Venta completada'
-                    : 'Tiempo terminado'}
-              </Text>
-            </View>
-
-            {}
-            <View style={{ padding: 20, gap: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ fontSize: 18 }}>🛏️</Text>
-                <View>
-                  <Text style={{ color: Colors.dark.textMuted, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Habitación</Text>
-                  <Text style={{ color: Colors.dark.text, fontSize: 17, fontWeight: '700' }}>{expiredTimer?.roomName || '—'}</Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ fontSize: 18 }}>👤</Text>
-                <View>
-                  <Text style={{ color: Colors.dark.textMuted, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Cliente</Text>
-                  <Text style={{ color: Colors.dark.text, fontSize: 15 }}>{expiredTimer?.clienteNombre || '—'}</Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ fontSize: 18 }}>
-                  {expiredTimer?.tipoTransaccion === 'venta' ? '🛒' : '🏠'}
-                </Text>
-                <View>
-                  <Text style={{ color: Colors.dark.textMuted, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Tipo</Text>
-                  <Text style={{ color: Colors.dark.text, fontSize: 15, textTransform: 'capitalize' }}>
-                    {expiredTimer?.tipoTransaccion === 'servicio'
-                      ? 'Servicio'
-                      : expiredTimer?.tipoTransaccion === 'venta'
-                        ? 'Venta'
-                        : '—'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ fontSize: 18 }}>⏱️</Text>
-                <View>
-                  <Text style={{ color: Colors.dark.textMuted, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Duración</Text>
-                  <Text style={{ color: Colors.dark.text, fontSize: 15 }}>{expiredTimer?.duration || 0} minutos</Text>
-                </View>
-              </View>
-
-              <View style={{ borderTopWidth: 1, borderTopColor: Colors.dark.border, paddingTop: 12, marginTop: 4 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: Colors.dark.textMuted, fontSize: 12 }}>Código:</Text>
-                  <Text style={{ color: Colors.dark.text, fontSize: 13, fontFamily: 'monospace' }}>#{expiredTimer?.servicioCode || '—'}</Text>
-                </View>
-              </View>
-            </View>
-
-            {}
-            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: Colors.dark.border }}>
-              <Pressable
-                onPress={handleDismissExpired}
-                style={({ pressed }) => ({
-                  backgroundColor: pressed ? Colors.dark.error : '#DC2626',
-                  paddingVertical: 14,
-                  borderRadius: 999,
-                  alignItems: 'center',
-                })}
-              >
-                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Entendido</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
     </TimerContext.Provider>
   );
 };
+
+// Re-exported for backward compatibility — consumers import Timer from @/context/TimerContext
+export type { Timer } from '@/context/types';
 
 export const useTimer = () => {
   const context = useContext(TimerContext);

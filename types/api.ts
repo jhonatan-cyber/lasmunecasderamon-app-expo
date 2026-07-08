@@ -25,6 +25,29 @@ export interface DashboardStats {
   svcCount: number;
 }
 
+/** Active service from /servicios/user where estado === 2 */
+export interface ActiveService {
+  habitacion: string;
+  estado: number;
+  codigo?: string;
+  tiempo?: number;
+  clienteNombre?: string;
+  anfitrionas?: string;
+}
+
+/** Profile data returned by /users/profile and /users PUT */
+export interface UserProfileResponse {
+  nick?: string;
+  telefono?: string;
+  phone?: string;
+  direccion?: string;
+  address?: string;
+  estado_civil?: string;
+  maritalStatus?: string;
+  foto?: string;
+  status?: number;
+}
+
 export interface DashboardState {
   loading: boolean;
   refreshing: boolean;
@@ -33,6 +56,6 @@ export interface DashboardState {
   userStatus: number;
   hasNewAlert: boolean;
   selectedDates: string[];
-  activeService: any | null;
+  activeService: ActiveService | null;
   pendingCount: number;
 }

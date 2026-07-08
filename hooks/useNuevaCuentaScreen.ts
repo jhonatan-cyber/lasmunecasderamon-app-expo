@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { useRouter } from "expo-router";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import logger from "@/utils/logger";
 import type { Categoria, Producto } from "@lasmunecasderamon/types";
@@ -48,24 +48,24 @@ export function useNuevaCuentaScreen() {
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.all([
-          apiClient("/cashregister/status"),
-          apiClient("/anfitrionas"),
-          apiClient("/rooms"),
-          apiClient("/clients"),
-          apiClient("/categories"),
+          apiClientSafe("/cashregister/status"),
+          apiClientSafe("/anfitrionas"),
+          apiClientSafe("/rooms"),
+          apiClientSafe("/clients"),
+          apiClientSafe("/categories"),
         ]);
 
       const fetchedData: Partial<CuentaState> & { cajaAbierta: boolean | null } = {
-        cajaAbierta: cajaRes.success && cajaRes.data.hasOpenCaja,
+        cajaAbierta: (cajaRes as any).success && (cajaRes as any).data?.hasOpenCaja,
         anfitrionas: normalizeAnfitrionas(anfitrionasRes),
-        habitaciones: (roomsRes.success ? roomsRes.data : []).map(normalizeRoom),
-        categories: categoriesRes.success ? categoriesRes.data || [] : [],
+        habitaciones: ((roomsRes as any).success ? (roomsRes as any).data : []).map(normalizeRoom),
+        categories: (categoriesRes as any).success ? (categoriesRes as any).data || [] : [],
         clientes: normalizeClients(clientsRes),
       };
 
       dispatch({ type: "SET_INITIAL_DATA", payload: fetchedData });
 
-      if (!cajaRes.success || !cajaRes.data.hasOpenCaja) {
+      if (!(cajaRes as any).success || !(cajaRes as any).data?.hasOpenCaja) {
         showToast("Caja Cerrada", "Debes abrir una caja antes de registrar consumos.", "error");
       }
     } catch (error) {
@@ -176,16 +176,16 @@ export function useNuevaCuentaScreen() {
         ],
       };
 
-      const res = await apiClient("/cuentas", {
+      const res = await apiClientSafe("/cuentas", {
         method: "POST",
         body: JSON.stringify(cuentaData),
       });
 
-      if (res.success) {
+      if ((res as any).success) {
         showToast("Éxito", "Cuenta registrada correctamente", "success");
         setTimeout(() => router.replace("/cajero/cuentas"), 1500);
       } else {
-        showToast("Error", res.message || "No se pudo crear la cuenta");
+        showToast("Error", (res as any).message || "No se pudo crear la cuenta");
       }
     } catch (error) {
       logger.captureException(error, { context: "NuevaCuenta:createCuenta" });

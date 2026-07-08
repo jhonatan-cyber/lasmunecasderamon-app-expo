@@ -18,7 +18,7 @@ export function ProfileHeader({ gradientColors, insetsTop, isTablet, isDark, rol
 
   return (
     <LinearGradient
-      colors={gradientColors as any}
+      colors={gradientColors as unknown as readonly [string, string, ...string[]]}
       style={[
         styles.header,
         { paddingTop: insetsTop + (isTablet ? 20 : 10), paddingBottom: 25, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },

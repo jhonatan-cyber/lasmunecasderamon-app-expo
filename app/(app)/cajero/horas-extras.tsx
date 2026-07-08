@@ -9,7 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -40,7 +40,7 @@ export default function HorasExtrasScreen() {
     const fetchData = useCallback(async (isManual = false) => {
         try {
             setError('');
-            const res = await apiClient('/overtime');
+            const res = await apiClientSafe<OvertimeRecord[]>('/overtime');
             if (res.success) {
                 const serialized = JSON.stringify(res.data);
                 dataRef.current = serialized;

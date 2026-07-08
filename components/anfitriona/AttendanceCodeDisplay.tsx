@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform, DeviceEventEmitter, Pressable, Modal,
 import QRCode from 'react-native-qrcode-svg';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole, isCajeroRole } from '@/utils/userRole';
@@ -23,13 +23,13 @@ export const AttendanceCodeDisplay = () => {
     const fetchCodigo = useCallback(async () => {
         if (!canSeeCode) return;
         try {
-            const res = await apiClient('/codigo/actual', {
+            const res = await apiClientSafe('/codigo/actual', {
                 headers: {
                     'x-user-role': role
                 }
             });
             if (res.success) {
-                setCodigo(res.codigo);
+                setCodigo((res as any).codigo);
             }
         } catch (error) {
             if (error instanceof Error && ['NetworkError', 'TimeoutError', 'UnauthorizedError'].includes(error.name)) {

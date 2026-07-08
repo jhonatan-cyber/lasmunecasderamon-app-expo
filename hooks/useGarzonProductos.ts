@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { CartItem, Product, Anfitriona, Room } from '@/components/shared/ProductCard';
@@ -57,10 +57,10 @@ export function useGarzonProductos() {
         try {
             setError('');
             const [prodRes, anfRes, roomRes, clientRes] = await Promise.allSettled([
-                apiClient(`/products?category_id=${categoryId}`),
-                apiClient('/anfitrionas'),
-                apiClient('/rooms?status=1'),
-                apiClient('/clients'),
+                apiClientSafe(`/products?category_id=${categoryId}`),
+                apiClientSafe('/anfitrionas'),
+                apiClientSafe('/rooms?status=1'),
+                apiClientSafe('/clients'),
             ]);
 
             const prodData = prodRes.status === 'fulfilled' ? prodRes.value : null;
@@ -71,30 +71,30 @@ export function useGarzonProductos() {
             logger.info('Anfitrionas response', { data: anfData });
 
             const newData = { 
-                products: prodData?.data, 
-                anfitrionas: anfData?.data || (Array.isArray(anfData) ? anfData : null), 
-                rooms: roomData?.data, 
-                clients: clientData?.data || clientData 
+                products: (prodData as any)?.data, 
+                anfitrionas: (anfData as any)?.data || (Array.isArray(anfData) ? anfData : null), 
+                rooms: (roomData as any)?.data, 
+                clients: (clientData as any)?.data || clientData 
             };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (prodData?.success) {
-                const active = (prodData.data || []).filter((p: Product) => p.status === 1);
+            if ((prodData as any)?.success) {
+                const active = ((prodData as any).data || []).filter((p: Product) => p.status === 1);
                 setProducts(active);
             }
-            if (anfData?.success) {
-                setAnfitrionas(anfData.data || []);
+            if ((anfData as any)?.success) {
+                setAnfitrionas((anfData as any).data || []);
             } else if (Array.isArray(anfData)) {
                 setAnfitrionas(anfData);
             }
-            if (roomData?.success) setRooms(roomData.data || []);
+            if ((roomData as any)?.success) setRooms((roomData as any).data || []);
             
             if (Array.isArray(clientData)) {
                 setClients(clientData);
-            } else if (clientData?.success) {
-                setClients(clientData.data || []);
+            } else if ((clientData as any)?.success) {
+                setClients((clientData as any).data || []);
             }
 
             if (isManual) {
@@ -202,8 +202,8 @@ export function useGarzonProductos() {
 
             logger.info('[DEBUG] Enviando pedido', { orderData });
 
-            const res = await apiClient('/orders', { method: 'POST', body: JSON.stringify(orderData) });
-            if (res.success) {
+            const res = await apiClientSafe('/orders', { method: 'POST', body: JSON.stringify(orderData) });
+            if ((res as any).success) {
                 Toast.show({
                     type: 'success',
                     text1: 'Pedido Enviado',
@@ -212,7 +212,7 @@ export function useGarzonProductos() {
                 clearCart();
                 router.back();
             } else {
-                throw new Error(res.message || 'Error al enviar pedido');
+                throw new Error((res as any).message || 'Error al enviar pedido');
             }
 
         } catch (err: any) {

@@ -1,30 +1,34 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
+
+export interface GenerateQRPayload {
+  userId: string | number;
+}
 
 export const usersService = {
   list: (params?: string) =>
-    apiClient(`/users${params ? `?${params}` : ''}`),
+    apiClientSafe(`/users${params ? `?${params}` : ''}`),
 
   status: () =>
-    apiClient('/users/status'),
+    apiClientSafe('/users/status'),
 
   meStats: () =>
-    apiClient('/users/me/stats'),
+    apiClientSafe('/users/me/stats'),
 
   getProfile: () =>
-    apiClient('/users/profile'),
+    apiClientSafe('/users/profile'),
 
-  updateProfile: (payload: any) =>
-    apiClient('/users', {
+  updateProfile: (data: Record<string, unknown>) =>
+    apiClientSafe('/users', {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   getById: (id: string | number) =>
-    apiClient(`/users/${id}`),
+    apiClientSafe(`/users/${id}`),
 
-  generateQR: (payload: any) =>
-    apiClient('/users/generate-qr', {
+  generateQR: (data: GenerateQRPayload) =>
+    apiClientSafe('/users/generate-qr', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

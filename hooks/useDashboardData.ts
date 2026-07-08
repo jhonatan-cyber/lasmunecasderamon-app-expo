@@ -1,10 +1,11 @@
 import { DeviceEventEmitter } from "react-native";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
+import type { ApiRes } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
 import Toast from "react-native-toast-message";
-import { DashboardEvent, DashboardStats, UserRole } from "@/types/api";
+import { DashboardEvent, DashboardStats, UserRole, type ActiveService, type UserProfileResponse } from "@/types/api";
 import {
   emitRefreshRequests,
   REALTIME_EVENT_NAMES,
@@ -12,11 +13,41 @@ import {
 } from "@/utils/realtime";
 
 import logger from '@/utils/logger';
+
+/* Interfaces de respuesta para endpoints no-estándar */
+interface AuthMeResponse {
+  success: boolean;
+  user?: UserProfileResponse & { id?: number };
+}
+
+interface UserStatusResponse {
+  success: boolean;
+  status: number;
+}
+
+interface PendingCountResponse {
+  success: boolean;
+  count: number;
+}
+
+interface ServicioRaw {
+  estado: number;
+  [key: string]: unknown;
+}
+
+interface CashStatusData {
+  hasOpenCaja: boolean;
+}
+
+interface MeStatsData {
+  stats: { montoAnticipoMaximo: number };
+}
+
 export interface DashboardData {
   events: DashboardEvent[];
   stats: DashboardStats;
   userStatus: number;
-  activeService: any | null;
+  activeService: ActiveService | null;
   pendingCount: number;
   payoutTotal: number;
 }
@@ -38,22 +69,22 @@ export function useDashboardData(role: UserRole) {
     queryKey: ['dashboard', role],
     queryFn: async () => {
       const endpoints = [
-        apiClient("/events/user"),
-        apiClient("/auth/me"),
-        apiClient("/users/status"),
-        apiClient("/users/me/stats"),
+        apiClientSafe<DashboardEvent[]>("/events/user"),
+        apiClientSafe("/auth/me"),
+        apiClientSafe("/users/status"),
+        apiClientSafe<MeStatsData>("/users/me/stats"),
       ];
 
       
       if (role === 'anfitriona') {
-        endpoints.push(apiClient("/events/stats"));
-        endpoints.push(apiClient("/servicios/user"));
+        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
+        endpoints.push(apiClientSafe<ServicioRaw[]>("/servicios/user"));
       } else if (role === 'garzon') {
-        endpoints.push(apiClient("/events/stats"));
-        endpoints.push(apiClient("/cashregister/status"));
+        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
+        endpoints.push(apiClientSafe<CashStatusData>("/cashregister/status"));
       } else if (role === 'cajero') {
-        endpoints.push(apiClient("/caja/stats"));
-        endpoints.push(apiClient("/solicitudes-servicios/pending-count"));
+        endpoints.push(apiClientSafe<Record<string, unknown>>("/caja/stats"));
+        endpoints.push(apiClientSafe("/solicitudes-servicios/pending-count"));
       }
 
       const results = await Promise.all(endpoints.map(p => p.catch(e => {
@@ -67,31 +98,37 @@ export function useDashboardData(role: UserRole) {
       const meStatsRes = results[3];
       
       let roleStats = null;
-      let extraData: any = {};
+      let extraData: Record<string, unknown> = {};
 
-      if (results[0]?.success) {
+      if (eventsRes.success) {
+        const me = meRes as unknown as AuthMeResponse;
+        const status = statusRes as unknown as UserStatusResponse;
+
         if (role === 'anfitriona') {
-            roleStats = results[4]?.data;
-            const services = results[5];
-            extraData.activeService = services?.success ? services.data.find((s: any) => s.estado === 2) : null;
+            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+            roleStats = eventsStatsRes.data;
+            const serviciosRes = results[5] as ApiRes<ServicioRaw[]>;
+            extraData.activeService = serviciosRes.success ? serviciosRes.data.find(s => s.estado === 2) ?? null : null;
         } else if (role === 'garzon') {
-            roleStats = results[4]?.data;
-            extraData.hasOpenCaja = results[5]?.data?.hasOpenCaja ?? true;
+            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+            roleStats = eventsStatsRes.data;
+            const cashRes = results[5] as ApiRes<CashStatusData>;
+            extraData.hasOpenCaja = cashRes.success ? cashRes.data.hasOpenCaja : true;
         } else if (role === 'cajero') {
-            roleStats = results[4]?.success ? results[4] : null; 
-            extraData.pendingCount = results[5]?.count || 0;
+            roleStats = results[4];
+            const pendingRes = results[5] as unknown as PendingCountResponse;
+            extraData.pendingCount = pendingRes.count || 0;
         }
 
-        
-        if (meRes?.success && meRes?.user) {
-            useAuthStore.getState().updateProfile(meRes.user);
+        if (me.success && me.user) {
+            useAuthStore.getState().updateProfile(me.user as any);
         }
 
         return {
-            events: eventsRes?.data || [],
+            events: eventsRes.data || [],
             stats: roleStats || initialStats,
-            userStatus: statusRes?.status || meRes?.user?.status || 1,
-            payoutTotal: Number(meStatsRes?.data?.stats?.montoAnticipoMaximo || 0),
+            userStatus: status.status || me.user?.status || 1,
+            payoutTotal: Number((meStatsRes as ApiRes<MeStatsData>).data?.stats?.montoAnticipoMaximo || 0),
             ...extraData
         } as DashboardData;
       }

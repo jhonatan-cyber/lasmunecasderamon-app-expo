@@ -51,7 +51,7 @@ export function PremiumHeader({
 
     return (
         <LinearGradient
-            colors={gradientColors as any}
+            colors={gradientColors as unknown as readonly [string, string, ...string[]]}
             style={[
                 styles.header,
                 {

@@ -3,12 +3,54 @@ import { useCallback, useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 import * as Haptics from "expo-haptics";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import { MetodoPago } from "@/types/api";
+import type { Cliente } from '@lasmunecasderamon/types';
+import type { PedidoItem, SolicitudItem, PendingAutoOpen } from "@/hooks/types/solicitudesTypes";
 import logger from "@/utils/logger";
 
-type SolicitudItem = any;
-type PendingAutoOpen = { id: string; type: string } | null;
+interface PedidoDetalle {
+  producto_id: string;
+  cantidad: number;
+  precio: number;
+  subtotal_detalle?: number;
+  cliente_id?: string | number | null;
+  habitacion_id?: string | number | null;
+  propina?: number;
+}
+
+interface DetallePago {
+  producto_id: string;
+  cantidad: number;
+  precio: number;
+  sub_total: number;
+}
+
+interface SalesSubmitPayload {
+  id_pedido: string;
+  cliente_id: string | number | null;
+  metodo_pago: string;
+  metodo_pago_adicional?: string;
+  monto_prepago: number;
+  duracion_habitacion: number;
+  detalles: DetallePago[];
+  sub_total: number;
+  total: number;
+  ganancia_tipo: string;
+  ganancia_monto: number;
+  comision_por_cliente: boolean;
+  recompensa_binario: boolean;
+  recompensa_activos: boolean;
+  recompensa_activos_monto: number;
+  ganancia_anfitriona: number;
+  ganancia_garzon: number;
+  ganancia_local: number;
+  ganancia_empresa: number;
+  total_comision: number;
+  tiempo: number;
+  usuarios: never[];
+  propina?: number;
+}
 
 interface UseSolicitudesActionsParams {
   solicitudes: SolicitudItem[];
@@ -35,13 +77,13 @@ export const useSolicitudesActions = ({
   const [processedOpenId, setProcessedOpenId] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(0);
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
-  const [selectedPedido, setSelectedPedido] = useState<any>(null);
-  const [pedidoDetails, setPedidoDetails] = useState<any[]>([]);
+  const [selectedPedido, setSelectedPedido] = useState<SolicitudItem | null>(null);
+  const [pedidoDetails, setPedidoDetails] = useState<PedidoDetalle[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingClient, setLoadingClient] = useState(false);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("");
   const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<MetodoPago>("");
-  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [agregarPropina, setAgregarPropina] = useState(false);
   const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30);
   const [submittingCheckout, setSubmittingCheckout] = useState(false);
@@ -53,7 +95,7 @@ export const useSolicitudesActions = ({
     onConfirm?: () => void;
   }>({ visible: false, title: "", message: "", type: "info" });
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedService, setSelectedService] = useState<SolicitudItem | null>(null);
   const showToast = useCallback((title: string, message: string, type: "success" | "error" = "error") => {
     if (type === "success") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -77,7 +119,7 @@ export const useSolicitudesActions = ({
     setSelectedMinutesPedido(30);
   }, []);
 
-  const handleAprobar = useCallback(async (id: string, tipo: string, itemInfo?: any) => {
+  const handleAprobar = useCallback(async (id: string, tipo: "pedido" | "solicitud" | "anticipo", itemInfo?: SolicitudItem) => {
     logger.info("[handleAprobar] id:", { arg0: id, arg1: "tipo:", arg2: tipo, arg3: "itemInfo:", arg4: itemInfo });
     if (!cajaAbierta) {
       showToast("Caja Cerrada", "No puedes aprobar servicios ni pedidos porque no hay una caja abierta.", "error");
@@ -94,12 +136,12 @@ export const useSolicitudesActions = ({
       setSelectedMinutesPedido(30);
 
       try {
-        const res = await apiClient(`/orders/detail?id=${id}`);
+        const res = await apiClientSafe<PedidoDetalle[]>(`/orders/detail?id=${id}`);
         if (res.success) {
           setPedidoDetails(res.data);
           const cId = res.data?.[0]?.cliente_id || itemInfo.id_cliente || itemInfo.cliente_id;
           if (cId) {
-            const cRes = await apiClient(`/clients?id=${cId}`).catch(() => ({ success: false }));
+            const cRes = await apiClientSafe<Cliente>(`/clients?id=${cId}`).catch(() => ({ success: false, data: undefined }));
             if (cRes.success && cRes.data) {
               setSelectedClient(cRes.data);
               if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
@@ -107,7 +149,7 @@ export const useSolicitudesActions = ({
           } else {
             setSelectedClient(null);
           }
-          if (res.data?.[0]?.propina > 0) setAgregarPropina(true);
+          if (res.data.length > 0 && (res.data[0].propina ?? 0) > 0) setAgregarPropina(true);
         } else {
           showToast("Error", "No se pudieron cargar los detalles", "error");
           closeCheckout();
@@ -121,19 +163,19 @@ export const useSolicitudesActions = ({
       return;
     }
 
-    if (tipo === "anticipo") {
-      const anticipoEstado = Number(itemInfo?.estado);
+    if (tipo === "anticipo" && itemInfo) {
+      const anticipoEstado = Number(itemInfo.estado);
       const requiereAprobacion = anticipoEstado === 2;
       setAlertConfig({
         visible: true,
         title: requiereAprobacion ? "Aprobar y Pagar Anticipo" : "Pagar Anticipo",
-        message: `¿Confirmas que has entregado el efectivo de $${itemInfo.monto.toLocaleString()} a ${itemInfo.usuario}?`,
+        message: `¿Confirmas que has entregado el efectivo de $${(itemInfo.monto ?? 0).toLocaleString()} a ${itemInfo.usuario ?? ''}?`,
         type: "success",
         onConfirm: async () => {
           setAlertConfig(prev => ({ ...prev, visible: false }));
           try {
             if (requiereAprobacion) {
-              const approveRes = await apiClient(`/anticipos/${id}`, {
+              const approveRes = await apiClientSafe(`/anticipos/${id}`, {
                 method: "PUT",
                 body: JSON.stringify({ estado: 1 }),
               });
@@ -145,7 +187,7 @@ export const useSolicitudesActions = ({
               }
             }
 
-            const res = await apiClient(`/anticipos/${id}`, {
+            const res = await apiClientSafe(`/anticipos/${id}`, {
               method: "PUT",
               body: JSON.stringify({ estado: 0 }),
             });
@@ -171,7 +213,7 @@ export const useSolicitudesActions = ({
       const executeAprobacion = async () => {
         removeSolicitudLocally(id, "solicitud");
         try {
-          const res = await apiClient(`/solicitudes-servicios/${id}/aprobar`, {
+          const res = await apiClientSafe(`/solicitudes-servicios/${id}/aprobar`, {
             method: "PATCH",
             body: JSON.stringify({
               metodo_pago: metodoPago || itemInfo?.metodo_pago || "efectivo",
@@ -212,7 +254,7 @@ export const useSolicitudesActions = ({
     }
   }, [cajaAbierta, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, removeSolicitudLocally, serviceModalVisible, showToast]);
 
-  const handleRechazar = useCallback((id: string, tipo: string) => {
+  const handleRechazar = useCallback((id: string, tipo: "pedido" | "solicitud" | "anticipo") => {
     setAlertConfig({
       visible: true,
       title: "Rechazar",
@@ -223,7 +265,7 @@ export const useSolicitudesActions = ({
         removeSolicitudLocally(id, tipo === "solicitud" ? "solicitud" : "pedido");
         try {
           const endpoint = tipo === "solicitud" ? `/solicitudes-servicios/${id}/rechazar` : `/orders/${id}`;
-          const res = await apiClient(endpoint, {
+          const res = await apiClientSafe(endpoint, {
             method: tipo === "solicitud" ? "PATCH" : "PUT",
             body: JSON.stringify(tipo === "solicitud" ? { motivo_rechazo: "Caja" } : { estado: 2 }),
           });
@@ -246,9 +288,10 @@ export const useSolicitudesActions = ({
     if (!selectedPedido) return;
     setSubmittingCheckout(true);
 
-    const propinaOriginal = Number(selectedPedido.propina || pedidoDetails?.[0]?.propina || 0);
+    const pedidoItem = selectedPedido as PedidoItem;
+    const propinaOriginal = Number(pedidoItem.propina || pedidoDetails?.[0]?.propina || 0);
     const subtotalBase = Number(
-      selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - propinaOriginal),
+      pedidoItem.subtotal ?? Math.max(0, Number(pedidoItem.total || 0) - propinaOriginal),
     );
     const propinaFinal = propinaOriginal > 0 ? propinaOriginal : (agregarPropina ? subtotalBase * 0.10 : 0);
     const totalConPropina = subtotalBase + propinaFinal;
@@ -261,14 +304,14 @@ export const useSolicitudesActions = ({
 
     const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
 
-    const payload: any = {
-      id_pedido: selectedPedido.id_pedido,
-      cliente_id: clienteId,
+    const payload: SalesSubmitPayload = {
+      id_pedido: (selectedPedido as PedidoItem).id_pedido ?? '',
+      cliente_id: clienteId ?? null,
       metodo_pago: metodoPago,
       metodo_pago_adicional: metodoPagoAdicional || undefined,
       monto_prepago: montoPrepago,
       duracion_habitacion: selectedMinutesPedido,
-      detalles: pedidoDetails.map((d: any) => ({
+      detalles: pedidoDetails.map((d) => ({
         producto_id: d.producto_id,
         cantidad: d.cantidad,
         precio: d.precio,
@@ -296,14 +339,14 @@ export const useSolicitudesActions = ({
     }
 
     try {
-      const res = await apiClient("/sales", {
+      const res = await apiClientSafe("/sales", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
       if (res.success) {
         showToast("Éxito", "Pedido cobrado y cerrado.", "success");
-        removeSolicitudLocally(selectedPedido.id_pedido, "pedido");
+        removeSolicitudLocally(pedidoItem.id_pedido ?? '', "pedido");
         closeCheckout();
         DeviceEventEmitter.emit("refresh_requests");
       } else {
@@ -351,14 +394,14 @@ export const useSolicitudesActions = ({
         detalles,
       };
 
-      const res = await apiClient("/cuentas", {
+      const res = await apiClientSafe("/cuentas", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
       if (res.success) {
         showToast("Éxito", `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, "success");
-        removeSolicitudLocally(selectedPedido.id_pedido, "pedido");
+        removeSolicitudLocally((selectedPedido as PedidoItem).id_pedido ?? '', "pedido");
         closeCheckout();
         DeviceEventEmitter.emit("refresh_requests");
       } else {
@@ -442,7 +485,7 @@ export const useSolicitudesActions = ({
 
     const t = setTimeout(() => {
       setLoadingClient(true);
-      apiClient(`/clients?id=${cId}`)
+      apiClientSafe<Cliente>(`/clients?id=${cId}`)
         .then((res) => {
           if (res.success) setSelectedClient(res.data);
         })

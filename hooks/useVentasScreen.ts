@@ -2,10 +2,13 @@ import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/api/client";
+import { apiClientSafe } from "@/api/client";
 import {
   initialVentasState,
   ventasReducer,
+  type Venta,
+  type VentaDetail,
+  type VentaResumen,
 } from "@/components/cajero/ventas/types";
 import type { AlertConfig } from "@/components/cajero/ventas/types";
 import { useTimer } from "@/context/TimerContext";
@@ -46,20 +49,20 @@ export const useVentasScreen = () => {
       if (isManual) dispatch({ type: "SET_LOADING_SALES", payload: true });
       const timestamp = Date.now();
       const [resSales, resResumen] = await Promise.all([
-        apiClient(`/sales?limit=50&_t=${timestamp}`).catch(() => ({
+        apiClientSafe(`/sales?limit=50&_t=${timestamp}`).catch(() => ({
           success: false,
           data: [],
         })),
-        apiClient(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
+        apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
           success: false,
           data: null,
         })),
       ]);
 
-      const salesPayload = Array.isArray(resSales.data)
-        ? resSales.data
-        : Array.isArray(resSales.data?.data)
-          ? resSales.data.data
+      const salesPayload: Venta[] = Array.isArray(resSales.data)
+        ? (resSales.data as Venta[])
+        : Array.isArray((resSales.data as any)?.data)
+          ? (resSales.data as any).data as Venta[]
           : [];
       const newData = { sales: salesPayload, resumen: resResumen.data };
       const serialized = JSON.stringify(newData);
@@ -70,7 +73,7 @@ export const useVentasScreen = () => {
         dispatch({ type: "SET_VENTAS", payload: salesPayload });
       }
       if (resResumen.success) {
-        dispatch({ type: "SET_RESUMEN", payload: resResumen.data });
+        dispatch({ type: "SET_RESUMEN", payload: resResumen.data as VentaResumen | null });
       }
 
       if (isManual) {
@@ -181,9 +184,9 @@ export const useVentasScreen = () => {
       dispatch({ type: "SET_LOADING_DETAIL", payload: true });
       dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
       try {
-        const res = await apiClient(`/ventas/${id}`);
+        const res = await apiClientSafe(`/ventas/${id}`);
         if (res?.success && res.data) {
-          dispatch({ type: "SET_SELECTED_VENTA", payload: res.data });
+          dispatch({ type: "SET_SELECTED_VENTA", payload: res.data as VentaDetail });
         } else {
           showToast("Error", res?.message || "No se pudo obtener el detalle de la venta");
           dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
@@ -209,7 +212,7 @@ export const useVentasScreen = () => {
         onConfirm: async () => {
           try {
             const ventaId = getVentaId(venta);
-            const res = await apiClient(`/ventas/${ventaId}`, {
+            const res = await apiClientSafe(`/ventas/${ventaId}`, {
               method: "PUT",
               body: JSON.stringify({ estado: 1 }),
             });
@@ -275,7 +278,7 @@ export const useVentasScreen = () => {
 
     try {
       dispatch({ type: "SET_ANULANDO_VENTA", payload: true });
-      const res = await apiClient("/ventas/anulacion", {
+      const res = await apiClientSafe("/ventas/anulacion", {
         method: "POST",
         body: JSON.stringify({ ventaId, motivo, monto }),
       });

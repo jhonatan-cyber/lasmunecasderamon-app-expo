@@ -8,8 +8,8 @@ export type ExportFormat = 'pdf' | 'csv' | 'html';
 interface ReportConfig {
     title: string;
     headers: string[];
-    rows: any[];
-    summary?: Record<string, any>;
+    rows: Record<string, unknown>[];
+    summary?: Record<string, unknown>;
     dateRange?: { start: string; end: string };
 }
 
@@ -47,7 +47,7 @@ class ReportService {
         }
     }
 
-    async exportToCSV(data: any[], filename: string): Promise<string | null> {
+    async exportToCSV(data: Record<string, unknown>[], filename: string): Promise<string | null> {
         try {
             if (data.length === 0) return null;
 
@@ -94,7 +94,7 @@ class ReportService {
 
     private generateSalesHTML(config: ReportConfig): string {
         const { title, headers, rows, summary, dateRange } = config;
-        const total = rows.reduce((sum: number, row: any) => sum + (row.total || row.monto || 0), 0);
+        const total = rows.reduce((sum: number, row: Record<string, unknown>) => sum + ((row.total as number) || (row.monto as number) || 0), 0);
         
         return `
         <!DOCTYPE html>
@@ -129,14 +129,14 @@ class ReportService {
                     <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                 </thead>
                 <tbody>
-                    ${rows.map((row: any) => `
+                    ${rows.map((row: Record<string, unknown>) => `
                         <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
                     `).join('')}
                 </tbody>
             </table>
             <div class="summary">
                 <div>Total Ventas: <span class="total">S/ ${total.toFixed(2)}</span></div>
-                ${summary ? `<div>Transacciones: ${summary.totalTransactions || rows.length}</div>` : ''}
+                ${summary ? `<div>Transacciones: ${(summary as Record<string, unknown>).totalTransactions || rows.length}</div>` : ''}
             </div>
             <div class="footer">Generado el ${new Date().toLocaleString('es-PE')}</div>
         </body>
@@ -175,7 +175,7 @@ class ReportService {
                     <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                 </thead>
                 <tbody>
-                    ${rows.map((row: any) => `
+                    ${rows.map((row: Record<string, unknown>) => `
                         <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
                     `).join('')}
                 </tbody>
@@ -216,7 +216,7 @@ class ReportService {
                     <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                 </thead>
                 <tbody>
-                    ${rows.map((row: any) => `
+                    ${rows.map((row: Record<string, unknown>) => `
                         <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
                     `).join('')}
                 </tbody>

@@ -1,12 +1,12 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const attendanceService = {
   userDetail: (startDate: string, endDate: string) =>
-    apiClient(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`),
+    apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`),
 
-  register: (payload: any) =>
-    apiClient('/attendance/register', {
+  register: (data: Record<string, unknown>) =>
+    apiClientSafe('/attendance/register', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

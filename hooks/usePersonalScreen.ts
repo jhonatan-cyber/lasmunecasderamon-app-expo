@@ -35,8 +35,8 @@ export function usePersonalScreen() {
             const data = await usersService.list('status=active');
             logger.info('[PersonalScreen] Response:', data);
             
-            if (data.success) {
-                const allUsers = data.data || [];
+            if ((data as any).success) {
+                const allUsers = (data as any).data || [];
                 const staff = allUsers.filter((u: User) => {
                     const r = u.role?.toLowerCase() || '';
                     if (r.includes('administrador') || r.includes('admin')) return false;
@@ -87,7 +87,7 @@ export function usePersonalScreen() {
             (async () => {
                 try {
                     const res = await codigoService.actual();
-                    if (res.success) setCodigoAsistencia(res.codigo);
+                    if ((res as any).success) setCodigoAsistencia((res as any).codigo);
                 } catch (e) {
                     logger.captureException(e, { context: 'Personal:onRefresh' });
                 }
@@ -100,7 +100,7 @@ export function usePersonalScreen() {
             setIsGenerating(true);
             const data = await usersService.generateQR({ userId });
 
-            if (data.success) {
+            if ((data as any).success) {
                 Toast.show({
                     type: 'success',
                     text1: 'Éxito',
@@ -108,11 +108,11 @@ export function usePersonalScreen() {
                 });
                 
                 setUsers(prev => prev.map(u => 
-                    u.id === userId ? { ...u, qr_token: data.qr_token } : u
+                    u.id === userId ? { ...u, qr_token: (data as any).qr_token } : u
                 ));
                 
                 if (selectedUser?.id === userId) {
-                    setSelectedUser(prev => prev ? { ...prev, qr_token: data.qr_token } : null);
+                    setSelectedUser(prev => prev ? { ...prev, qr_token: (data as any).qr_token } : null);
                 }
             }
         } catch (error: any) {
@@ -141,10 +141,10 @@ export function usePersonalScreen() {
         const fetchUserData = async () => {
             try {
                 const data = await usersService.getById(selectedUser.id);
-                if (data.success && data.user) {
-                    if (data.user.qr_token !== selectedUser.qr_token) {
-                        setSelectedUser(data.user);
-                        setUsers(prev => prev.map(u => u.id === data.user.id ? data.user : u));
+                if ((data as any).success && (data as any).user) {
+                    if ((data as any).user.qr_token !== selectedUser.qr_token) {
+                        setSelectedUser((data as any).user);
+                        setUsers(prev => prev.map(u => u.id === (data as any).user.id ? (data as any).user : u));
                         setSelectedUser(null);
                         Toast.show({
                             type: 'info',
@@ -170,7 +170,7 @@ export function usePersonalScreen() {
         const fetchCode = async () => {
             try {
                 const res = await codigoService.actual();
-                if (res.success) setCodigoAsistencia(res.codigo);
+                if ((res as any).success) setCodigoAsistencia((res as any).codigo);
             } catch {}
         };
         fetchCode();

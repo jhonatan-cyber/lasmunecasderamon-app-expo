@@ -3,10 +3,11 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { parseDateSafe } from '@/utils/timeUtils';
+import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
 
 import logger from '@/utils/logger';
 interface SolicitudCardProps {
-    item: any;
+    item: SolicitudItem;
     accentColor: string;
     textPrimary: string;
     textSecondary: string;
@@ -14,9 +15,9 @@ interface SolicitudCardProps {
     borderColor: string;
     serverOffset: number;
     cajaAbierta: boolean;
-    onAprobar: (id: string, tipo: string, item: any) => void;
-    onRechazar: (id: string, tipo: string) => void;
-    onShowServiceModal: (item: any) => void;
+    onAprobar: (id: string, tipo: "pedido" | "solicitud" | "anticipo", item: SolicitudItem) => void;
+    onRechazar: (id: string, tipo: "pedido" | "solicitud" | "anticipo") => void;
+    onShowServiceModal: (item: SolicitudItem) => void;
     nowTick?: number; 
 }
 
@@ -182,7 +183,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                             style={[styles.btnAction, { backgroundColor: accentColor, flex: 1.5 }]}
                             onPress={(e) => {
                                 e.stopPropagation();
-                                const idAEnviar = tipoItem === 'solicitud' ? item.id_solicitud : tipoItem === 'anticipo' ? item.id_anticipo : item.id_pedido;
+                                const idAEnviar = (tipoItem === 'solicitud' ? item.id_solicitud : tipoItem === 'anticipo' ? item.id_anticipo : item.id_pedido) ?? '';
                                 logger.info('[SolicitudCard] APROBAR - tipoItem:', { arg0: tipoItem, arg1: 'idCalculado:', arg2: idAEnviar, arg3: 'id_pedido:', arg4: item.id_pedido, arg5: 'id_solicitud:', arg6: item.id_solicitud });
                                 onAprobar(idAEnviar, tipoItem, item);
                             }}

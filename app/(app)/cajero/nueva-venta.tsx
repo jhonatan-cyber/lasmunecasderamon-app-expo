@@ -35,6 +35,7 @@ export default function NuevaVentaScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
+
   const {
     state,
     dispatch,
@@ -178,8 +179,7 @@ export default function NuevaVentaScreen() {
             selectedMethod={metodoPago}
             onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as any })}
             showPrepago={!!selectedCliente}
-            showMixto={true}
-            disabled={(selectedCliente?.saldo || 0) > 0 && metodoPago !== 'mixto'}
+            showMixto={true}                      disabled={(selectedCliente?.saldo || 0) > 0 && metodoPago !== 'mixto'}
             disabledMethods={selectedCliente && Number(selectedCliente.saldo || 0) <= 0 ? ['prepago'] : []}
           />
 

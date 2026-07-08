@@ -1,41 +1,41 @@
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
 
 export const cuentasService = {
   list: (limit = 50) =>
-    apiClient(`/cuentas?limit=${limit}&_t=${Date.now()}`),
+    apiClientSafe(`/cuentas?limit=${limit}&_t=${Date.now()}`),
 
   resumen: () =>
-    apiClient(`/cuentas?tipo=resumen&_t=${Date.now()}`),
+    apiClientSafe(`/cuentas?tipo=resumen&_t=${Date.now()}`),
 
   getById: (id: string | number) =>
-    apiClient(`/cuentas/${id}?_t=${Date.now()}`),
+    apiClientSafe(`/cuentas/${id}?_t=${Date.now()}`),
 
-  create: (payload: any) =>
-    apiClient('/cuentas', {
+  create: (data: Record<string, unknown>) =>
+    apiClientSafe('/cuentas', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  update: (id: string | number, payload: any) =>
-    apiClient(`/cuentas/${id}`, {
+  update: (id: string | number, data: Record<string, unknown>) =>
+    apiClientSafe(`/cuentas/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
-  cobrar: (id: string | number, payload: any) =>
-    apiClient(`/cuentas/${id}/cobrar`, {
+  cobrar: (id: string | number, data: Record<string, unknown>) =>
+    apiClientSafe(`/cuentas/${id}/cobrar`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 
   stopTimer: (id: string | number) =>
-    apiClient(`/cuentas/${id}/stop`, {
+    apiClientSafe(`/cuentas/${id}/stop`, {
       method: 'PATCH',
     }),
 
-  solicitarAnulacion: (payload: any) =>
-    apiClient('/cuentas/anulacion', {
+  solicitarAnulacion: (data: Record<string, unknown>) =>
+    apiClientSafe('/cuentas/anulacion', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     }),
 };

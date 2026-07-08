@@ -69,7 +69,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
 
     return (
         <LinearGradient
-            colors={gradientColors as any}
+            colors={gradientColors as unknown as readonly [string, string, ...string[]]}
             style={[styles.tabBarContainer, { paddingBottom: insets.bottom, borderTopColor: borderColor }]}
         >
             {}

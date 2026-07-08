@@ -11,11 +11,17 @@ import {
     View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
+
+interface AttendanceRegisterResponse {
+    success: boolean;
+    alreadyRegistered?: boolean;
+    message?: string;
+}
 
 interface RegistroAsistenciaModalProps {
     visible: boolean;
@@ -60,18 +66,19 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
         setLoading(true);
         try {
-            const res = await apiClient('/attendance/register', {
+            const res = await apiClientSafe('/attendance/register', {
                 method: 'POST',
                 body: JSON.stringify({ qr_data: validation.data.qrData })
             });
+            const attData = res as unknown as AttendanceRegisterResponse;
 
-            if (res.success) {
-                if (res.alreadyRegistered) {
+            if (attData.success) {
+                if (attData.alreadyRegistered) {
                     
                     Toast.show({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
-                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                        text2: attData.message || 'Ya tenías asistencia registrada hoy'
                     });
                     onRegistered(); 
                 } else {
@@ -79,12 +86,12 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                     Toast.show({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
-                        text2: res.message || 'Tu asistencia ha sido registrada correctamente'
+                        text2: attData.message || 'Tu asistencia ha sido registrada correctamente'
                     });
                     onRegistered();
                 }
             } else {
-                throw new Error(res.message || 'Código inválido');
+                throw new Error(attData.message || 'Código inválido');
             }
         } catch (error: any) {
             Toast.show({
@@ -113,18 +120,19 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
         setShowScanner(false);
         setLoading(true);
         try {
-            const res = await apiClient('/attendance/register', {
+            const res = await apiClientSafe('/attendance/register', {
                 method: 'POST',
                 body: JSON.stringify({ qr_data: validation.data.qrData })
             });
+            const attData = res as unknown as AttendanceRegisterResponse;
 
-if (res.success) {
-                if (res.alreadyRegistered) {
+            if (attData.success) {
+                if (attData.alreadyRegistered) {
                     
                     Toast.show({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
-                        text2: res.message || 'Ya tenías asistencia registrada hoy'
+                        text2: attData.message || 'Ya tenías asistencia registrada hoy'
                     });
                     onRegistered(); 
                 } else {
@@ -132,12 +140,12 @@ if (res.success) {
                     Toast.show({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
-                        text2: res.message || 'Tu asistencia ha sido registrada correctamente'
+                        text2: attData.message || 'Tu asistencia ha sido registrada correctamente'
                     });
-onRegistered();
+                    onRegistered();
                 }
             } else {
-                throw new Error(res.message || 'Código QR inválido');
+                throw new Error(attData.message || 'Código QR inválido');
             }
         } catch (error: any) {
             Toast.show({

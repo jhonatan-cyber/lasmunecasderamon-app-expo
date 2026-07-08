@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -99,7 +99,7 @@ export const PremiumHeaderActions = ({
                 </Pressable>
             )}
             <Pressable
-                onPress={() => router.push(profilePath as any)}
+                onPress={() => router.push(profilePath as Href)}
                 style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
             >
                 <Ionicons name="settings-outline" size={20} color={iconColor} />
