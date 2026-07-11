@@ -1,7 +1,7 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
 import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
@@ -121,7 +121,7 @@ const showToast = (
   message: string,
   type: "success" | "error" | "info" = "error",
 ) => {
-  Toast.show({ type: type as any, text1: title, text2: message, visibilityTime: 4000 });
+  showToastLazy({ type: type as any, text1: title, text2: message, visibilityTime: 4000 });
 };
 
 export const useCuentasScreen = () => {
@@ -159,7 +159,7 @@ export const useCuentasScreen = () => {
   } = state;
 
   const fetchCuentas = useCallback(
-    async (isManual = false) => {
+    async (isManual = false, signal?: AbortSignal) => {
       try {
         if (isManual && !refreshing) {
           dispatch({ type: "SET_LOADING", payload: true });
@@ -167,8 +167,8 @@ export const useCuentasScreen = () => {
 
         const timestamp = Date.now();
         const [resCuentas, resResumen] = await Promise.all([
-          apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`),
-          apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`),
+          apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
+          apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
         ]);
 
         const actualCuentas: CuentaDetalle[] = Array.isArray(resCuentas.data)
@@ -237,8 +237,10 @@ export const useCuentasScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchCuentas();
+      const ac = new AbortController();
+      fetchCuentas(false, ac.signal);
       refreshTimers?.();
+      return () => ac.abort();
     }, [fetchCuentas, refreshTimers]),
   );
 

@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
-  FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
-  Pressable,
 } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -177,19 +177,20 @@ export default function ServiciosScreen() {
         </View>
       ) : null}
 
-      <FlatList
+      <FlashList
         data={filteredData}
-        keyExtractor={(item) =>
+        keyExtractor={(item: Servicio) =>
           item?.id_servicio?.toString() || `fallback-${Math.random()}`
         }
-        renderItem={({ item, index }) => (
+        renderItem={useCallback(({ item, index }: { item: Servicio; index: number }) => (
           <ServiceCard
             item={item}
             index={index}
             onPress={handlePressItem}
             onAssistance={onConfirmAssistance}
           />
-        )}
+        ), [handlePressItem, onConfirmAssistance])}
+        estimatedItemSize={150}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -214,7 +215,7 @@ export default function ServiciosScreen() {
         servicio={selectedServicio}
         onClose={() => setModalVisible(false)}
         onEdit={() => {
-          logger.info("Editar servicio", {
+          logger.debug("Editar servicio", {
             servicioId: selectedServicio?.id_servicio,
           });
         }}

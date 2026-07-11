@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { GratificacionItem } from '@/hooks/useGratificaciones';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 const estadoConfig: Record<number, { label: string; color: string; bg: string }> = {
   0: { label: 'Pagado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -31,6 +32,7 @@ export function GratificacionCard({
   textPrimary,
   textSecondary
 }: GratificacionCardProps) {
+  useRenderCount('GratificacionCard', { id: item.id, estado: item.estado });
   const status = estadoConfig[item.estado] || estadoConfig[2];
   return (
     <View

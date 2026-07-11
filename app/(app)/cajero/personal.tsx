@@ -12,7 +12,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -47,9 +47,9 @@ export default function PersonalScreen() {
 
     const fetchUsers = useCallback(async (isManual = false) => {
         try {
-            logger.info('[PersonalScreen] Fetching users with status=active...');
+            logger.debug('[PersonalScreen] Fetching users with status=active...');
             const data = await apiClientSafe<any[]>('/users?status=active');
-            logger.info('[PersonalScreen] Response:', data);
+            logger.debug('[PersonalScreen] Response:', data);
             
             if (data.success) {
                 const allUsers = data.data || [];
@@ -70,7 +70,7 @@ export default function PersonalScreen() {
                 }
 
                 if (isManual) {
-                    Toast.show({
+                    showToast({
                         type: 'success',
                         text1: 'Actualizado',
                         text2: 'Lista de personal al día',
@@ -79,7 +79,7 @@ export default function PersonalScreen() {
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Personal:fetchUsers' });
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo cargar el personal',
@@ -122,7 +122,7 @@ export default function PersonalScreen() {
             const qrData = data as unknown as { success: boolean; qr_token: string };
 
             if (qrData.success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Éxito',
                     text2: 'Token QR generado correctamente',
@@ -137,7 +137,7 @@ export default function PersonalScreen() {
                 }
             }
         } catch (error: any) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo generar el token',
@@ -166,7 +166,7 @@ export default function PersonalScreen() {
                         setUsers(prev => prev.map(u => u.id === userData.user.id ? userData.user : u));
                         
                         setSelectedUser(null);
-                        Toast.show({
+                        showToast({
                             type: 'info',
                             text1: '📱 Código QR usado',
                             text2: 'El usuario ya registró su asistencia'
@@ -179,9 +179,7 @@ export default function PersonalScreen() {
         };
 
         fetchUserData();
-
-        const interval = setInterval(fetchUserData, 5000); 
-        return () => clearInterval(interval);
+        // SSE updates via sse_event listener below — no more polling
     }, [selectedUser, selectedUser?.id]);
 
     useEffect(() => {
@@ -197,6 +195,26 @@ export default function PersonalScreen() {
         const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
+            }
+            // Real-time update via SSE cuando se genera/usa un QR — reemplaza polling
+            if (payload.type === 'qr_token_updated' && payload.data?.userId === selectedUser.id) {
+                apiClientSafe(`/users/${selectedUser.id}`)
+                    .then((data: any) => {
+                        if (data.success && data.user) {
+                            const newUser = data.user as User;
+                            if (newUser.qr_token !== selectedUser.qr_token) {
+                                setSelectedUser(newUser);
+                                setUsers(prev => prev.map(u => u.id === newUser.id ? newUser : u));
+                                setSelectedUser(null);
+                                showToast({
+                                    type: 'info',
+                                    text1: '📱 Código QR usado',
+                                    text2: 'El usuario ya registró su asistencia'
+                                });
+                            }
+                        }
+                    })
+                    .catch(e => logger.captureException(e, { context: 'Personal:sseQRUpdate' }));
             }
         });
 

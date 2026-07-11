@@ -1,7 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import type { AlertConfig, TabType, Venta } from "@/components/cajero/ventas/types";
 import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
 import { useTimer } from "@/context/TimerContext";
@@ -19,11 +19,11 @@ export function useVentasList(
   const { refreshTimers } = useTimer();
   const dataRef = useRef<string>("");
 
-  const fetchVentas = useCallback(async (isManual = false) => {
+  const fetchVentas = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       if (isManual) dispatch({ type: "SET_LOADING_SALES", payload: true });
 
-      const { ventas, resumen } = await fetchSalesList();
+      const { ventas, resumen } = await fetchSalesList(50, signal);
 
       const serialized = JSON.stringify({ ventas, resumen });
       const hasChanges = dataRef.current !== serialized;
@@ -33,7 +33,7 @@ export function useVentasList(
       dispatch({ type: "SET_RESUMEN", payload: resumen });
 
       if (isManual) {
-        Toast.show({
+        showToast({
           type: hasChanges ? "success" : "info",
           text1: hasChanges ? "Éxito" : "Información",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
@@ -43,7 +43,7 @@ export function useVentasList(
     } catch (error) {
       logger.captureException(error, { context: "Ventas:fetchData" });
       if (isManual) {
-        Toast.show({
+        showToast({
           type: "error",
           text1: "Error",
           text2: "No se pudo actualizar",
@@ -59,14 +59,18 @@ export function useVentasList(
 
   
   useEffect(() => {
-    void fetchVentas();
+    const ac = new AbortController();
+    fetchVentas(false, ac.signal);
+    return () => ac.abort();
   }, [fetchVentas]);
 
   
   useFocusEffect(
     useCallback(() => {
-      fetchVentas();
+      const ac = new AbortController();
+      fetchVentas(false, ac.signal);
       refreshTimers();
+      return () => ac.abort();
     }, [fetchVentas, refreshTimers]),
   );
 
@@ -75,7 +79,7 @@ export function useVentasList(
     const subscription = DeviceEventEmitter.addListener(
       REALTIME_EVENT_NAMES.refreshSales,
       () => {
-        logger.info("[useVentasList] refresh_sales received");
+        logger.debug("[useVentasList] refresh_sales received");
         fetchVentas();
         refreshTimers();
       },
@@ -120,7 +124,7 @@ export function useVentasList(
 
             if (res.success) {
               dispatch({ type: "ALERT_DISMISS" });
-              Toast.show({
+              showToast({
                 type: "success",
                 text1: "Venta Finalizada",
                 text2: "La venta ha finalizado con éxito.",
@@ -129,7 +133,7 @@ export function useVentasList(
               refreshTimers();
             } else {
               dispatch({ type: "ALERT_DISMISS" });
-              Toast.show({
+              showToast({
                 type: "error",
                 text1: "Error",
                 text2: res.message || "No se pudo finalizar la venta",
@@ -137,7 +141,7 @@ export function useVentasList(
             }
           } catch {
             dispatch({ type: "ALERT_DISMISS" });
-            Toast.show({
+            showToast({
               type: "error",
               text1: "Error",
               text2: "Error al procesar la finalización de la venta",

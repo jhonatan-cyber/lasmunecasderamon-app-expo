@@ -166,9 +166,9 @@ export default function NuevaVentaScreen() {
                   <Text style={{ fontSize: 13, color: accentColor, fontWeight: '700', marginTop: 2 }}>
                     Saldo Prepago: ${Number(selectedCliente.saldo || 0).toLocaleString()}
                   </Text>
-                  {selectedCliente.metodo_pago && (
+                  {(selectedCliente as any).metodo_pago && (
                     <Text style={{ fontSize: 12, color: textSecondary, fontWeight: '600', marginTop: 1 }}>
-                      Cargado con: {selectedCliente.metodo_pago.toUpperCase()}
+                      Cargado con: {String((selectedCliente as any).metodo_pago).toUpperCase()}
                     </Text>
                   )}
                 </View>
@@ -207,7 +207,7 @@ export default function NuevaVentaScreen() {
           )}
         </View>
 
-        <CartList items={cart} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
+        <CartList items={cart as any} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
 
         <View style={[styles.summaryCard, dynamicStyles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.summaryRow}>
@@ -271,7 +271,7 @@ export default function NuevaVentaScreen() {
         selectedRoomId={selectedHabitacion?.id || selectedHabitacion?.id_habitacion}
         onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
         onSelect={(room) => {
-          dispatch({ type: 'SET_SELECTED_HABITACION', payload: room });
+          dispatch({ type: 'SET_SELECTED_HABITACION', payload: room as any });
           dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
         }}
       />
@@ -281,10 +281,10 @@ export default function NuevaVentaScreen() {
         selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
         max={1}
         onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
-        onLoadBalance={(client) => dispatch({ type: 'SET_LOAD_MODAL', visible: true, client })}
+        onLoadBalance={(client) => dispatch({ type: 'SET_LOAD_MODAL', visible: true, client: client as any })}
         onToggle={(id) => {
           const cl = clientes.find((c) => String(c.id_cliente || c.id) === String(id));
-          dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl });
+          dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl || null });
           dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
         }}
       />

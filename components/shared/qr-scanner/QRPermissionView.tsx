@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 
 interface QRPermissionViewProps {
   visible: boolean;
@@ -40,7 +40,7 @@ export const QRPermissionView: React.FC<QRPermissionViewProps> = ({
                 style={styles.btn}
                 onPress={() => {
                   Linking.openSettings().catch(() => {
-                    Toast.show({
+                    showToast({
                       type: 'error',
                       text1: 'No se pudo abrir Ajustes',
                       text2: 'Abre Ajustes manualmente y habilita la cámara para esta app.'

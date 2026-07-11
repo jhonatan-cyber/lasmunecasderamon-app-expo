@@ -1,7 +1,7 @@
 import { apiClientSafe } from '@/api/client';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 
 export interface GratificacionItem {
   id: string;
@@ -41,13 +41,13 @@ export function useGratificaciones() {
     status: item.status ?? item.estado ?? 1
   });
 
-  const fetchData = useCallback(async (isManual = false) => {
+  const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
 
       const [gratificacionesRes, usersRes] = await Promise.all([
-        apiClientSafe('/gratificaciones'),
-        apiClientSafe('/users?status=active')
+        apiClientSafe('/gratificaciones', { signal }),
+        apiClientSafe('/users?status=active', { signal })
       ]);
 
       const gratificacionesData = (gratificacionesRes as any)?.data || [];
@@ -61,7 +61,7 @@ export function useGratificaciones() {
         });
 
       setGratificaciones(
-        gratificacionesData.map(item => ({
+        gratificacionesData.map((item: any) => ({
           id: String(item.id),
           usuario: item.usuario,
           usuario_id: String(item.id_usuario ?? item.usuario_id),
@@ -76,13 +76,13 @@ export function useGratificaciones() {
       setEmployees(filteredEmployees);
 
       if (isManual) {
-        Toast.show({ type: 'success', text1: 'Éxito', text2: 'Gratificaciones actualizadas' });
+        showToast({ type: 'success', text1: 'Éxito', text2: 'Gratificaciones actualizadas' });
       }
     } catch (err: any) {
       const message = err?.message || 'Error al cargar gratificaciones';
       setError(message);
       if (isManual) {
-        Toast.show({ type: 'error', text1: 'Error', text2: message });
+        showToast({ type: 'error', text1: 'Error', text2: message });
       }
     } finally {
       setLoading(false);
@@ -104,7 +104,7 @@ export function useGratificaciones() {
         }
 
         await fetchData();
-        Toast.show({
+        showToast({
           type: 'success',
           text1: 'Solicitud enviada',
           text2:
@@ -116,7 +116,7 @@ export function useGratificaciones() {
         return response;
       } catch (err: any) {
         const message = err?.message || 'Error al crear la gratificación';
-        Toast.show({ type: 'error', text1: 'Error', text2: message });
+        showToast({ type: 'error', text1: 'Error', text2: message });
         throw err;
       } finally {
         setSubmitting(false);
@@ -132,7 +132,9 @@ export function useGratificaciones() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      const ac = new AbortController();
+      fetchData(false, ac.signal);
+      return () => ac.abort();
     }, [fetchData])
   );
 

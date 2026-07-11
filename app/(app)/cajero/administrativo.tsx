@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client-safe";
 import logger from "@/utils/logger";
 import { EventDetailModal } from "@/components/shared/EventDetailModal";
@@ -68,7 +68,7 @@ export default function AdministrativoScreen() {
         }
 
         if (isManual) {
-          Toast.show({
+          showToast({
             type: hasChanges ? "success" : "info",
             text1: hasChanges ? "Éxito" : "Información",
             text2: hasChanges
@@ -80,7 +80,7 @@ export default function AdministrativoScreen() {
       } catch (error) {
         logger.captureException(error, { context: "Administrativo:fetchData" });
         if (isManual) {
-          Toast.show({
+          showToast({
             type: "error",
             text1: "Error",
             text2: "No se pudo actualizar el resumen",

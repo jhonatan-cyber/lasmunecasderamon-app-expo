@@ -6,7 +6,7 @@ import {
     View 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { User } from '@/hooks/usePersonalScreen';
 import { PersonalQRUserView } from './PersonalQRUserView';
 import { PersonalQRNoCodeView } from './PersonalQRNoCodeView';
@@ -51,7 +51,7 @@ export function PersonalQRModal({
         >
             <View style={styles.modalOverlay}>
                 <Pressable style={styles.modalDismiss} onPress={onClose} />
-                <MotiView 
+                <AnimatedView 
                     from={{ opacity: 0, scale: 0.9, translateY: 50 }}
                     animate={{ opacity: 1, scale: 1, translateY: 0 }}
                     transition={{ type: 'spring', damping: 20 }}
@@ -82,7 +82,7 @@ export function PersonalQRModal({
                             onGenerate={() => handleGenerateQR(selectedUser.id)}
                         />
                     )}
-                </MotiView>
+                </AnimatedView>
             </View>
         </Modal>
     );

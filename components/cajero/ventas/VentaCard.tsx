@@ -1,8 +1,9 @@
 import React from "react";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { parseDateSafe } from "@/utils/timeUtils";
 import { rotateColor } from "@/utils/colors";
+import { useRenderCount } from "@/hooks/useRenderCount";
 import { TimerPill } from "./TimerPill";
 import { statusColors } from "./constants";
 import { VentaCardDetails } from "./VentaCardDetails";
@@ -38,6 +39,7 @@ export function VentaCard({
   serverOffset,
   getVentaId,
 }: VentaCardProps) {
+  useRenderCount('VentaCard', { ventaId: getVentaId(item), estado: item.estado });
   const productCount = item.item_count || 0;
   const ventaId = getVentaId(item);
   const itemAccent = rotateColor(accentColor, ((Number(ventaId) || 0) % 10) * 36);
@@ -60,7 +62,7 @@ export function VentaCard({
     });
 
   return (
-    <MotiView
+    <AnimatedView
       from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 400 }}
@@ -121,7 +123,7 @@ export function VentaCard({
           />
         </View>
       </Pressable>
-    </MotiView>
+    </AnimatedView>
   );
 }
 

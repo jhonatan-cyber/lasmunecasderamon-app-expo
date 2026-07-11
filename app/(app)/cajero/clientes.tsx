@@ -223,7 +223,6 @@ export default function ClientesScreen() {
             data={filteredClients}
             renderItem={renderClientCard}
             keyExtractor={(item: Client) => String(item.id)}
-            estimatedItemSize={180}
             numColumns={isTablet ? 2 : 1}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -233,6 +232,10 @@ export default function ClientesScreen() {
                 tintColor={accentColor}
               />
             }
+            windowSize={10}
+            maxToRenderPerBatch={7}
+            initialNumToRender={5}
+            removeClippedSubviews={true}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
                 <Ionicons

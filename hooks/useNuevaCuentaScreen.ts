@@ -43,16 +43,16 @@ export function useNuevaCuentaScreen() {
     selectedHabitacion,
   } = state;
 
-  const fetchInitialData = useCallback(async (isRefreshing = false) => {
+  const fetchInitialData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
     if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.all([
-          apiClientSafe("/cashregister/status"),
-          apiClientSafe("/anfitrionas"),
-          apiClientSafe("/rooms"),
-          apiClientSafe("/clients"),
-          apiClientSafe("/categories"),
+          apiClientSafe("/cashregister/status", { signal }),
+          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/rooms", { signal }),
+          apiClientSafe("/clients", { signal }),
+          apiClientSafe("/categories", { signal }),
         ]);
 
       const fetchedData: Partial<CuentaState> & { cajaAbierta: boolean | null } = {
@@ -78,7 +78,9 @@ export function useNuevaCuentaScreen() {
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
+    const ac = new AbortController();
+    fetchInitialData(false, ac.signal);
+    return () => ac.abort();
   }, [fetchInitialData]);
 
   const onRefresh = useCallback(() => {

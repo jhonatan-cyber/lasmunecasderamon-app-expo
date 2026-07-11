@@ -71,8 +71,8 @@ export function ventaReducer(state: VentaState, action: VentaAction): VentaState
               ? [
                   {
                     metodo: 'prepago' as PaymentMethod,
-                    monto: Number(state.selectedCliente.saldo),
-                    display: Number(state.selectedCliente.saldo).toLocaleString('es-CL'),
+                    monto: Number(state.selectedCliente?.saldo || 0),
+                    display: Number(state.selectedCliente?.saldo || 0).toLocaleString('es-CL'),
                   },
                 ]
               : []

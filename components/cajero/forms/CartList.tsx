@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 import type { CartItem as SharedCartItem } from '@lasmunecasderamon/types';
 
@@ -15,13 +16,14 @@ interface CartListProps {
     hideQuantityControls?: boolean;
 }
 
-export const CartList: React.FC<CartListProps> = ({
+export const CartList = React.memo(({
     items,
     onUpdateQuantity,
     onRemove,
     title = '3. Carrito',
     hideQuantityControls = false
-}) => {
+}: CartListProps) => {
+    useRenderCount('CartList', { itemsCount: items.length });
     const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
@@ -111,7 +113,8 @@ export const CartList: React.FC<CartListProps> = ({
             ))}
         </View>
     );
-};
+});
+CartList.displayName = 'CartList';
 
 const styles = StyleSheet.create({
     section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },

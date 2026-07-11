@@ -1,28 +1,20 @@
-import * as Sentry from '@sentry/react-native';
+import { addBreadcrumb, captureException, captureMessage } from '@/utils/sentry';
 import { formatPayload, makeLogEntry } from '@lasmunecasderamon/utils';
 
 const captureBreadcrumb = (message: string, category: string, data?: Record<string, any>) => {
-  try {
-    Sentry.addBreadcrumb({
-      message,
-      category,
-      level: 'info',
-      data: formatPayload(data) as Record<string, any> | undefined,
-    });
-  } catch {
-    
-  }
+  addBreadcrumb({
+    message,
+    category,
+    level: 'info',
+    data: formatPayload(data) as Record<string, any> | undefined,
+  });
 };
 
 const handleSentryError = (error: any) => {
-  try {
-    if (error instanceof Error) {
-      Sentry.captureException(error);
-    } else {
-      Sentry.captureMessage(JSON.stringify(formatPayload(error)));
-    }
-  } catch {
-    
+  if (error instanceof Error) {
+    captureException(error);
+  } else {
+    captureMessage(JSON.stringify(formatPayload(error)));
   }
 };
 

@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
 
 export interface Servicio {
@@ -41,7 +41,7 @@ export function useServicios() {
       if ((res as any).success) {
         setServicios((res as any).data || []);
         if (isManual) {
-          Toast.show({ type: 'success', text1: 'Sincronizado', text2: 'Datos actualizados desde el servidor' });
+          showToast({ type: 'success', text1: 'Sincronizado', text2: 'Datos actualizados desde el servidor' });
         }
       } else {
         setError((res as any).message || 'Error al cargar servicios');
@@ -49,7 +49,7 @@ export function useServicios() {
     } catch (err: any) {
       const msg = err.name === 'AbortError' ? 'Tiempo de espera agotado' : (err.message || 'Error de conexión');
       setError(msg);
-      if (isManual) Toast.show({ type: 'error', text1: 'Fallo de conexión', text2: msg });
+      if (isManual) showToast({ type: 'error', text1: 'Fallo de conexión', text2: msg });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,11 +75,11 @@ export function useServicios() {
         body: JSON.stringify({ servicioId, roomName, type })
       });
       if ((res as any).success) {
-        Toast.show({ type: 'success', text1: 'Solicitud enviada', text2: `Se ha solicitado ${type} para la habitación ${roomName}` });
+        showToast({ type: 'success', text1: 'Solicitud enviada', text2: `Se ha solicitado ${type} para la habitación ${roomName}` });
         return true;
       }
     } catch {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo enviar la solicitud' });
+      showToast({ type: 'error', text1: 'Error', text2: 'No se pudo enviar la solicitud' });
     }
     return false;
   };

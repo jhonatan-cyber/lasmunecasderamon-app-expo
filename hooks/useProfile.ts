@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { DeviceEventEmitter } from "react-native";
 import { apiClientSafe } from "@/api/client";
 import { useAuthStore, type User } from "@/store/authStore";
 import type { UserProfileResponse } from "@/types/api";
@@ -25,9 +26,9 @@ export function useProfile() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await apiClientSafe<UserProfileResponse>("/users/profile");
+      const res = await apiClientSafe<UserProfileResponse>("/users/profile", { signal });
       const profile = res.data;
       if (res.success && profile) {
         await updateProfile(profile);
@@ -47,27 +48,35 @@ export function useProfile() {
   }, [updateProfile]);
 
   useEffect(() => {
+    if (!user) return;
+
     let active = true;
+    const abortController = new AbortController();
 
-    if (user) {
-      const loadData = async () => {
+    const loadData = async () => {
+      if (active) {
+        await fetchProfile(abortController.signal);
+      }
+    };
+    loadData();
+
+    // Real-time profile updates via SSE — reemplaza polling
+    const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+      if (
+        payload.type === 'profile_updated' &&
+        payload.data?.userId == user.id
+      ) {
         if (active) {
-          await fetchProfile();
+          fetchProfile(abortController.signal);
         }
-      };
-      loadData();
+      }
+    });
 
-      const interval = setInterval(() => {
-        if (active) {
-          fetchProfile();
-        }
-      }, 60000);
-
-      return () => {
-        active = false;
-        clearInterval(interval);
-      };
-    }
+    return () => {
+      active = false;
+      abortController.abort();
+      sub.remove();
+    };
   }, [user, fetchProfile]);
 
   const takePhoto = useCallback(async () => {

@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 
@@ -68,13 +68,13 @@ export function useGarzonServiciosScreen() {
   const [clientModalVisible, setClientModalVisible] = useState(false);
 
   
-  const fetchData = useCallback(async (isRefreshing = false) => {
+  const fetchData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
     try {
       if (!isRefreshing) setLoading(true);
       const [roomRes, anfRes, clientRes] = await Promise.allSettled([
-        apiClientSafe("/rooms"),
-        apiClientSafe("/users?anfitrionas=1"),
-        apiClientSafe("/clients"),
+        apiClientSafe("/rooms", { signal }),
+        apiClientSafe("/users?anfitrionas=1", { signal }),
+        apiClientSafe("/clients", { signal }),
       ]);
 
       const roomData = roomRes.status === "fulfilled" ? roomRes.value : null;
@@ -116,7 +116,7 @@ export function useGarzonServiciosScreen() {
       setClients(deduplicate(rawClients, "id_cliente"));
 
       if (isRefreshing) {
-        Toast.show({
+        showToast({
           type: hasChanges ? "success" : "info",
           text1: hasChanges ? "Éxito" : "Información",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
@@ -125,7 +125,7 @@ export function useGarzonServiciosScreen() {
       }
     } catch (err: any) {
       logger.captureException(err, { context: "Servicios:fetchServicios" });
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: isRefreshing
@@ -140,10 +140,9 @@ export function useGarzonServiciosScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const run = async () => {
-        await fetchData();
-      };
-      void run();
+      const ac = new AbortController();
+      fetchData(false, ac.signal);
+      return () => ac.abort();
     }, [fetchData]),
   );
 
@@ -177,7 +176,7 @@ export function useGarzonServiciosScreen() {
       next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
     } else {
       if (selectedHostesses.length >= maxHostesses) {
-        Toast.show({
+        showToast({
           type: "info",
           text1: "Límite alcanzado",
           text2: `Máximo ${maxHostesses} anfitrionas permitidas`,
@@ -204,7 +203,7 @@ export function useGarzonServiciosScreen() {
       next = selectedClients.filter((id) => String(id) !== String(clientId));
     } else {
       if (selectedClients.length >= maxClients) {
-        Toast.show({
+        showToast({
           type: "info",
           text1: "Límite alcanzado",
           text2: `Máximo ${maxClients} clientes permitidos`,
@@ -369,7 +368,7 @@ export function useGarzonServiciosScreen() {
       });
 
       if ((res as any).success) {
-        Toast.show({
+        showToast({
           type: "success",
           text1: "Solicitud Enviada",
           text2: "La solicitud de servicio ha sido enviada a caja",

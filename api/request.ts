@@ -9,6 +9,37 @@ import {
 } from "./errors";
 import { delay, shouldRetry } from "./retry";
 import { ensureTokenInMemory, notifyUnauthorized } from "./token";
+
+/**
+ * Combina un AbortSignal externo con un controller interno.
+ * Cuando cualquiera de los dos se aborta, el combinedSignal también se aborta.
+ */
+function combineSignals(
+  externalSignal: AbortSignal | null | undefined,
+  internalController: AbortController,
+): { signal: AbortSignal; cleanup: () => void } {
+  if (!externalSignal) {
+    return { signal: internalController.signal, cleanup: () => {} };
+  }
+
+  // Si el external ya está abortado, abortamos el interno inmediatamente
+  if (externalSignal.aborted) {
+    internalController.abort();
+    return { signal: internalController.signal, cleanup: () => {} };
+  }
+
+  const onExternalAbort = () => internalController.abort();
+  const onInternalAbort = () => {}; // No necesitamos abortar el external
+
+  externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+
+  return {
+    signal: internalController.signal,
+    cleanup: () => {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    },
+  };
+}
 const logApiCall = (
   endpoint: string,
   attempt: number,
@@ -104,12 +135,19 @@ export const apiClient = async <T = ApiRes<unknown>>(
       customTimeout ?? 10000,
     );
 
+    // Combinar signal externo (de AbortController del hook) con timeout interno
+    const { signal: combinedSignal, cleanup: cleanupSignals } = combineSignals(
+      (config as any).signal,
+      controller,
+    );
+
     try {
       const response = await fetch(url, {
         ...config,
-        signal: controller.signal,
+        signal: combinedSignal,
       });
       clearTimeout(timeoutId);
+      cleanupSignals();
       const durationMs = Date.now() - startTime;
 
       const data = await response.json().catch(() => ({}));
@@ -172,6 +210,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
       return data as T;
     } catch (err: any) {
       clearTimeout(timeoutId);
+      cleanupSignals();
       const durationMs = Date.now() - startTime;
       lastError = err;
 

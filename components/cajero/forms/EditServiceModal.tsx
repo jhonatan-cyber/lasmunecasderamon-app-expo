@@ -10,7 +10,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import type { Timer } from '@/context/types';
@@ -70,13 +70,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     const fetchHabitacionSinComision = useCallback(async () => {
         try {
             const res = await apiClientSafe<RoomRaw[]>('/rooms');
-            logger.info('[EditServiceModal] Respuesta habitaciones', { response: res });
+            logger.debug('[EditServiceModal] Respuesta habitaciones', { response: res });
 
             if (res.success && Array.isArray(res.data)) {
-                logger.info('[EditServiceModal] Total habitaciones', { count: res.data.length });
+                logger.debug('[EditServiceModal] Total habitaciones', { count: res.data.length });
 
                 res.data.forEach((h: RoomRaw, index: number) => {
-                    logger.info(`[EditServiceModal] Habitación ${index}:`, {
+                    logger.debug(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
                         tiempo: h.tiempo || h.time,
@@ -126,7 +126,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
             setAnfitrionasDisponibles(todasAnfitrionas);
         } catch {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
+            showToast({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
         } finally {
             setLoadingAnfitrionas(false);
         }
@@ -179,12 +179,12 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         if (!timer) return;
         const timeVal = tiempo;
         if (!timeVal || timeVal <= 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'El tiempo debe ser mayor a 0' });
+            showToast({ type: 'error', text1: 'Error', text2: 'El tiempo debe ser mayor a 0' });
             return;
         }
 
         if (anfitrionasSeleccionadas.length === 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Debe seleccionar al menos una anfitriona' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Debe seleccionar al menos una anfitriona' });
             return;
         }
 
@@ -229,7 +229,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             });
 
             if (res.success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Éxito',
                     text2: 'Nuevo servicio iniciado (Principal pausado)'
@@ -237,14 +237,14 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 onSuccess();
                 onClose();
             } else {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Error',
                     text2: res.message || 'No se pudo crear el servicio temporal'
                 });
             }
         } catch {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
         } finally {
             setLoading(false);
         }

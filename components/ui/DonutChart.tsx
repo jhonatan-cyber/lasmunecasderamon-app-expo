@@ -1,9 +1,9 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Circle, Svg } from 'react-native-svg';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 
-interface DonutChartProps {
+export interface DonutChartProps {
     percent: number;
     color: string;
     size?: number;
@@ -20,7 +20,7 @@ export const DonutChart = ({ percent, color, size = 140, strokeWidth = 10, label
     const textSecondary = isDark ? '#94A3B8' : '#64748B';
 
     return (
-        <MotiView
+        <AnimatedView
             from={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'timing', duration: 800 }}
@@ -61,6 +61,6 @@ export const DonutChart = ({ percent, color, size = 140, strokeWidth = 10, label
                     </Text>
                 ) : null}
             </View>
-        </MotiView>
+        </AnimatedView>
     );
 };

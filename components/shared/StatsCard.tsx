@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Ionicons } from "@expo/vector-icons";
 
 interface StatsCardProps {
@@ -24,7 +24,7 @@ export const StatCard: React.FC<StatsCardProps> = ({
   const isDark = theme === "dark";
 
   return (
-    <MotiView
+    <AnimatedView
       from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 500 }}
@@ -58,7 +58,7 @@ export const StatCard: React.FC<StatsCardProps> = ({
           </Text>
         </View>
       </LinearGradient>
-    </MotiView>
+    </AnimatedView>
   );
 };
 

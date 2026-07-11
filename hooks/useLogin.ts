@@ -2,7 +2,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services';
 import { resetPasswordSchema } from '@lasmunecasderamon/validations';
@@ -128,7 +128,7 @@ export default function useLogin() {
                 router.push('/(auth)/verify-code');
             } else {
                 if (res.asistenciaRegistrada) {
-                    Toast.show({
+                    showToast({
                         type: 'success',
                         text1: 'Asistencia Registrada',
                         text2: 'Tu asistencia ha sido registrada automáticamente',
@@ -184,7 +184,7 @@ export default function useLogin() {
             const res = await login('', '', undefined, data);
 
             if (res.asistenciaRegistrada) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: '¡Bienvenido/a!',
                     text2: 'Tu asistencia ha sido registrada automáticamente',

@@ -211,7 +211,6 @@ export default function CuentasScreen() {
           extraData={timers}
           renderItem={renderCuentaCard}
           numColumns={numColumns}
-          estimatedItemSize={150}
           contentContainerStyle={[
             styles.listContainer,
             isTablet ? { paddingHorizontal: 12 } : undefined,
@@ -226,6 +225,10 @@ export default function CuentasScreen() {
               tintColor={accentColor}
             />
           }
+          windowSize={10}
+          maxToRenderPerBatch={7}
+          initialNumToRender={5}
+          removeClippedSubviews={true}
           ListEmptyComponent={
             <View style={[styles.emptyCard, { borderColor }]}>
               <Ionicons name="receipt-outline" size={64} color={textSecondary} />

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import { useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { cajaService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
@@ -59,7 +59,7 @@ function cajaReducer(state: CajaState, action: CajaAction): CajaState {
 }
 
 const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-    Toast.show({ type, text1: title, text2: message, visibilityTime: 4000 });
+    showToastLazy({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
 export function useCaja() {
@@ -99,7 +99,7 @@ export function useCaja() {
             }
 
             if (isManual) {
-                Toast.show({
+                showToastLazy({
                     type: hasChanges ? 'success' : 'info',
                     text1: hasChanges ? 'Actualizado' : 'Sin cambios',
                     text2: hasChanges ? 'Datos de caja actualizados' : 'Los datos no han cambiado',

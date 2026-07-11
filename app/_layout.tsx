@@ -3,7 +3,7 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { SalesProvider } from "@/context/SalesContext";
 import { TimerProvider } from "@/context/TimerContext";
 import { useAuthStore } from "@/store/authStore";
-import * as Sentry from "@sentry/react-native";
+import { initSentry } from "@/utils/sentry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { Slot } from "expo-router";
@@ -20,12 +20,16 @@ LogBox.ignoreLogs([
   "The final value for the useLayoutEffect",
 ]);
 
-Sentry.init({
-  dsn:
-    process.env.EXPO_PUBLIC_SENTRY_DSN ||
-    "https://placeholder@example.ingest.sentry.io/placeholder",
-  tracesSampleRate: 1.0,
-});
+// Init Sentry lazily — deferred out of the critical render path.
+// The SDK (~1.8 MB) is loaded asynchronously on first idle.
+setTimeout(() => {
+  void initSentry({
+    dsn:
+      process.env.EXPO_PUBLIC_SENTRY_DSN ||
+      "https://placeholder@example.ingest.sentry.io/placeholder",
+    tracesSampleRate: 0,
+  });
+}, 0);
 
 const queryClient = new QueryClient({
   defaultOptions: {

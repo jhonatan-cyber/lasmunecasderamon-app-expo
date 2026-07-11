@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
 
 export interface HoraExtra {
@@ -21,14 +21,14 @@ export function useHorasExtras() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchData = useCallback(async (isManual = false) => {
+  const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
-      const res = await apiClientSafe('/overtime/user');
+      const res = await apiClientSafe('/overtime/user', { signal });
       if ((res as any).success) {
         setData((res as any).data || []);
         if (isManual) {
-          Toast.show({
+          showToast({
             type: 'success',
             text1: 'Éxito',
             text2: 'Datos actualizados',
@@ -47,7 +47,9 @@ export function useHorasExtras() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      const ac = new AbortController();
+      fetchData(false, ac.signal);
+      return () => ac.abort();
     }, [fetchData])
   );
 

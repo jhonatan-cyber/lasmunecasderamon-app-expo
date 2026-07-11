@@ -1,5 +1,7 @@
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface Props {
     item: any;
@@ -17,7 +19,8 @@ const PAYMENT_ICONS: Record<string, string> = {
     mixto: 'layers-outline',
 };
 
-export function HistoryItemCard({ item, index, isDark, textPrimary, textSecondary }: Props) {
+export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index, isDark, textPrimary, textSecondary }: Props) {
+    useRenderCount('HistoryItemCard', { itemId: item.id, category: item.category });
     const isCarga = item.category === 'CARGA';
     const isServicio = item.category === 'SERVICIO';
     const isConsumo = item.category === 'CONSUMO';
@@ -168,7 +171,8 @@ export function HistoryItemCard({ item, index, isDark, textPrimary, textSecondar
             </View>
         </View>
     );
-}
+});
+HistoryItemCard.displayName = 'HistoryItemCard';
 
 function DetailLabel({ text, color }: { text: string; color: string }) {
     return (

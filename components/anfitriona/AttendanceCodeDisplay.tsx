@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, DeviceEventEmitter, Pressable, Modal, useWindowDimensions, ActivityIndicator } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
-import { MotiView, AnimatePresence } from 'moti';
+import { LazyQRCode } from '@/components/ui/LazyQRCode';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Ionicons } from '@expo/vector-icons';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -99,13 +99,10 @@ export const AttendanceCodeDisplay = () => {
             >
                 <View style={[styles.modalOverlay, { backgroundColor: bgModal }]}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowQR(false)} />
-                    
-                    <AnimatePresence>
-                        {showQR && (
-                            <MotiView
+                    {showQR && (
+                            <AnimatedView
                                 from={{ opacity: 0, scale: 0.8, translateY: 50 }}
                                 animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                                exit={{ opacity: 0, scale: 0.8, translateY: 50 }}
                                 transition={{ type: 'spring', damping: 20 }}
                                 style={[styles.modalContent, { backgroundColor: cardBg }]}
                             >
@@ -131,7 +128,7 @@ export const AttendanceCodeDisplay = () => {
                                         {loading ? (
                                             <ActivityIndicator size="large" color={accentColor} />
                                         ) : codigo ? (
-                                            <QRCode
+                                            <LazyQRCode
                                                 value={codigo}
                                                 size={width * 0.7}
                                                 color={accentColor}
@@ -155,9 +152,8 @@ export const AttendanceCodeDisplay = () => {
                                         Se actualiza automáticamente cada mañana
                                     </Text>
                                 </View>
-                            </MotiView>
+                            </AnimatedView>
                         )}
-                    </AnimatePresence>
                 </View>
             </Modal>
         </>

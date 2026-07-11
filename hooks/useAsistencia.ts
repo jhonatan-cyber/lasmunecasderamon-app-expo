@@ -2,7 +2,7 @@ import { DeviceEventEmitter, Platform } from "react-native";
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
 
 import logger from '@/utils/logger';
@@ -46,7 +46,7 @@ export function useAsistencia() {
     setCurrentDate(new Date());
   }, []);
 
-  const fetchAsistencias = useCallback(async (isManual = false) => {
+  const fetchAsistencias = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
       const year = currentDate.getFullYear();
@@ -55,7 +55,7 @@ export function useAsistencia() {
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
 
-      const data = await apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`);
+      const data = await apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`, { signal });
       if (data.success) {
         const serialized = JSON.stringify(data.data);
         const hasChanges = dataRef.current !== serialized;
@@ -63,7 +63,7 @@ export function useAsistencia() {
         setAsistencias((data.data || []) as Asistencia[]);
 
         if (isManual) {
-          Toast.show({
+          showToast({
             type: hasChanges ? 'success' : 'info',
             text1: hasChanges ? 'Éxito' : 'Información',
             text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
@@ -73,6 +73,7 @@ export function useAsistencia() {
         setError(data.message || 'Error al cargar asistencias');
       }
     } catch (err: any) {
+      if ((err as any)?.name === 'AbortError') return;
       setError(err.message || 'Error de conexión');
     } finally {
       setLoading(false);
@@ -80,21 +81,24 @@ export function useAsistencia() {
     }
   }, [currentDate]);
 
-  const fetchGratificaciones = useCallback(async (isManual = false) => {
+  const fetchGratificaciones = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
-      const data = await apiClientSafe('/gratificaciones/me');
+      const data = await apiClientSafe('/gratificaciones/me', { signal });
       if (Array.isArray(data)) {
         setGratificaciones(data);
       }
     } catch (err) {
+      if ((err as any)?.name === 'AbortError') return;
       logger.captureException(err, { context: 'useAsistencia:fetchGratificaciones' });
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchAsistencias();
-      fetchGratificaciones();
+      const ac = new AbortController();
+      fetchAsistencias(false, ac.signal);
+      fetchGratificaciones(false, ac.signal);
+      return () => ac.abort();
     }, [fetchAsistencias, fetchGratificaciones])
   );
 

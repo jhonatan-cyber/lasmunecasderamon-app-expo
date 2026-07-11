@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
 
 export interface FinancialEvent {
@@ -33,10 +33,10 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
 
   const endpoint = type === 'comisiones' ? '/commissions/user' : '/tips?tipo=detalle';
 
-  const fetchData = useCallback(async (isManual = false) => {
+  const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
-      const res = await apiClientSafe(endpoint);
+      const res = await apiClientSafe(endpoint, { signal });
       if (res.success) {
         
         const rawData = (res.data || []) as any[];
@@ -50,7 +50,7 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
         setData(filteredData);
 
         if (isManual) {
-          Toast.show({
+          showToast({
             type: hasChanges ? 'success' : 'info',
             text1: hasChanges ? 'Éxito' : 'Información',
             text2: hasChanges ? 'Datos actualizados' : 'Sin cambios detectados',
@@ -69,7 +69,9 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      const ac = new AbortController();
+      fetchData(false, ac.signal);
+      return () => ac.abort();
     }, [fetchData])
   );
 

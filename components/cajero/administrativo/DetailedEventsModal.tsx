@@ -1,8 +1,10 @@
 import React from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 import { Ionicons } from "@expo/vector-icons";
 import { Event } from "@/hooks/useAdministrativoScreen";
 import { EventItemCard } from "./EventItemCard";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 type DetailedEventsModalProps = {
   visible: boolean;
@@ -21,7 +23,7 @@ type DetailedEventsModalProps = {
   getStatusLabel: (item: Event) => string;
 };
 
-export function DetailedEventsModal({
+export const DetailedEventsModal = React.memo(function DetailedEventsModal({
   visible,
   onClose,
   selectedDatesCount,
@@ -37,6 +39,7 @@ export function DetailedEventsModal({
   getEventLabel,
   getStatusLabel,
 }: DetailedEventsModalProps) {
+  useRenderCount('DetailedEventsModal', { visible, eventCount: selectedEvents.length });
   return (
     <Modal
       visible={visible}
@@ -74,10 +77,10 @@ export function DetailedEventsModal({
             </Pressable>
           </View>
 
-          <FlatList
+          <FlashList
             data={selectedEvents}
-            keyExtractor={(item, index) => `${item.type}-${item.id}-${index}`}
-            renderItem={({ item }) => (
+            keyExtractor={(item: Event, index: number) => `${item.type}-${item.id}-${index}`}
+            renderItem={({ item }: { item: Event }) => (
               <EventItemCard
                 item={item}
                 cardBg={cardBg}
@@ -89,6 +92,7 @@ export function DetailedEventsModal({
                 getStatusLabel={getStatusLabel}
               />
             )}
+            estimatedItemSize={80}
             contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
             ListEmptyComponent={
               <View style={styles.emptyEvents}>
@@ -132,10 +136,10 @@ export function DetailedEventsModal({
             </Pressable>
           </View>
         </View>
-      </View>
-    </Modal>
+      </View>      </Modal>
   );
-}
+});
+DetailedEventsModal.displayName = 'DetailedEventsModal';
 
 const styles = StyleSheet.create({
   modalOverlayBottom: {

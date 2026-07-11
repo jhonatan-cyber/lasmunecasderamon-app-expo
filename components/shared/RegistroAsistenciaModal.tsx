@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,7 +10,7 @@ import {
     TextInput,
     View
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -56,7 +56,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
         const validation = AttendanceRegisterSchema.safeParse({ qrData: codigo });
 
         if (!validation.success) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: validation.error.issues[0]?.message || 'Por favor ingresa el código de asistencia'
@@ -75,7 +75,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             if (attData.success) {
                 if (attData.alreadyRegistered) {
                     
-                    Toast.show({
+                    showToast({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: attData.message || 'Ya tenías asistencia registrada hoy'
@@ -83,7 +83,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                     onRegistered(); 
                 } else {
                     
-                    Toast.show({
+                    showToast({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
                         text2: attData.message || 'Tu asistencia ha sido registrada correctamente'
@@ -94,7 +94,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 throw new Error(attData.message || 'Código inválido');
             }
         } catch (error: any) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo registrar la asistencia'
@@ -108,7 +108,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
         const validation = AttendanceRegisterSchema.safeParse({ qrData: data });
 
         if (!validation.success) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: validation.error.issues[0]?.message || 'Código QR inválido'
@@ -129,7 +129,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
             if (attData.success) {
                 if (attData.alreadyRegistered) {
                     
-                    Toast.show({
+                    showToast({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: attData.message || 'Ya tenías asistencia registrada hoy'
@@ -137,7 +137,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                     onRegistered(); 
                 } else {
                     
-                    Toast.show({
+                    showToast({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
                         text2: attData.message || 'Tu asistencia ha sido registrada correctamente'
@@ -148,7 +148,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 throw new Error(attData.message || 'Código QR inválido');
             }
         } catch (error: any) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo registrar la asistencia'
@@ -167,7 +167,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 onRequestClose={onClose}
             >
                 <View style={styles.overlay}>
-                    <MotiView 
+                    <AnimatedView 
                         from={{ translateY: 300, opacity: 0 }}
                         animate={{ translateY: 0, opacity: 1 }}
                         transition={{ type: 'spring', damping: 20 }}
@@ -256,7 +256,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                                 Continuar sin asistencia
                             </Text>
                         </Pressable>
-                    </MotiView>
+                    </AnimatedView>
                 </View>
             </Modal>
 

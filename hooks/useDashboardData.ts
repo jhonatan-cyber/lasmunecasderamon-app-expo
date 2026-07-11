@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClientSafe } from "@/api/client";
 import type { ApiRes } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import { DashboardEvent, DashboardStats, UserRole, type ActiveService, type UserProfileResponse } from "@/types/api";
 import {
   emitRefreshRequests,
@@ -144,13 +144,13 @@ export function useDashboardData(role: UserRole) {
     });
     
     const sseSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
-        logger.info('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
+        logger.debug('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
         if (shouldInvalidateDashboardFromSse(payload?.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
             
             
             if (payload.type === 'new_order' || payload.type === 'new_service_request') {
-                logger.info('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
+                logger.debug('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
                 emitRefreshRequests(payload);
             }
         }
@@ -165,9 +165,9 @@ export function useDashboardData(role: UserRole) {
   const onRefresh = useCallback(async () => {
     try {
         await refetch();
-        Toast.show({ type: "success", text1: "Éxito", text2: "Datos actualizados" });
+        showToast({ type: "success", text1: "Éxito", text2: "Datos actualizados" });
     } catch {
-        Toast.show({ type: "error", text1: "Error", text2: "Fallo al refrescar" });
+        showToast({ type: "error", text1: "Error", text2: "Fallo al refrescar" });
     }
   }, [refetch]);
 

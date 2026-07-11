@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Client } from '@/hooks/useClientes';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface ClientCardProps {
     item: Client;
@@ -25,6 +26,7 @@ export function ClientCard({
     handleOpenEdit,
     confirmDelete
 }: ClientCardProps) {
+    useRenderCount('ClientCard', { clientId: item.id, saldo: item.saldo });
     const bg = isDark ? "#1A1A1A" : "#FFFFFF";
     const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { BASE_URL } from '@/api/client';
 import { User } from '@/hooks/usePersonalScreen';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface PersonalCardProps {
     item: User;
@@ -30,11 +31,12 @@ export function PersonalCard({
     textPrimary,
     textSecondary,
 }: PersonalCardProps) {
+    useRenderCount('PersonalCard', { userId: item.id });
     const photoUrl = item.foto ? `${BASE_URL}/img/users/${item.foto}` : null;
     const hasQR = !!item.qr_token;
 
     return (
-        <MotiView
+        <AnimatedView
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 40 }}
@@ -107,7 +109,7 @@ export function PersonalCard({
                     </View>
                 </View>
             </Pressable>
-        </MotiView>
+        </AnimatedView>
     );
 }
 

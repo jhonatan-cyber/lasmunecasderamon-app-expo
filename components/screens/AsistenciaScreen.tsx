@@ -3,8 +3,10 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAsistencia } from '@/hooks/useAsistencia';
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from "@shopify/flash-list";
-import { MotiView } from 'moti';
+import { FlatList, FlatList as FlashList } from "react-native";
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useCallback } from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
     Pressable,
     RefreshControl,
@@ -39,7 +41,7 @@ export default function AsistenciaScreen() {
         return String(estado ?? '');
     };
 
-    const formatDate = (dateStr: string) => {
+    const formatDate = useCallback((dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
         try {
             const date = new Date(dateStr);
@@ -49,7 +51,7 @@ export default function AsistenciaScreen() {
             const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
-    };
+    }, []);
 
     const currentData = activeTab === 'asistencias' ? asistencias : gratificaciones;
     const filteredData = activeTab === 'asistencias'
@@ -69,7 +71,7 @@ export default function AsistenciaScreen() {
     const totalAporte = activeTab === 'asistencias' ? pendientes.reduce((sum, a: any) => sum + (a.aporte || 0), 0) : 0;
     const totalACobrar = totalSueldo - totalAporte;
 
-    const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const renderItem = useStableCallback(({ item, index }: { item: any; index: number }) => {
         const estado = normalizeEstado(item.estado);
         const isPendiente = estado === 'pendiente';
         const isPagado = estado === 'pagado';
@@ -78,7 +80,7 @@ export default function AsistenciaScreen() {
         const timeStr = isAsistencia ? item.hora : (!isAsistencia && item.fecha_hora ? item.fecha_hora.split(' ')[1] : '');
 
         return (
-            <MotiView from={{ opacity: 0, translateY: 30 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', delay: index * 100 }}>
+            <AnimatedView from={{ opacity: 0, translateY: 30 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', delay: index * 100 }}>
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.cardHeader}>
                         <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
@@ -140,9 +142,9 @@ export default function AsistenciaScreen() {
                         ) : null}
                     </View>
                 </View>
-            </MotiView>
+            </AnimatedView>
         );
-    };
+    });
 
     if (loading) return (
         <View style={[styles.container, { backgroundColor: bg }]}>

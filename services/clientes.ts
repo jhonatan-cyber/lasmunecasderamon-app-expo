@@ -25,11 +25,11 @@ export interface PrepagoPayload {
 }
 
 export const clientesService = {
-  list: () =>
-    apiClientSafe('/clients'),
+  list: (signal?: AbortSignal) =>
+    apiClientSafe('/clients', { signal }),
 
-  getById: (id: string | number) =>
-    apiClientSafe(`/clients?id=${id}`),
+  getById: (id: string | number, signal?: AbortSignal) =>
+    apiClientSafe(`/clients?id=${id}`, { signal }),
 
   create: (data: CreateClientPayload) =>
     apiClientSafe('/clients', {
@@ -48,8 +48,8 @@ export const clientesService = {
       method: 'DELETE',
     }),
 
-  getHistory: (clienteId: string | number) =>
-    apiClientSafe(`/clients/history?cliente_id=${clienteId}`),
+  getHistory: (clienteId: string | number, signal?: AbortSignal) =>
+    apiClientSafe(`/clients/history?cliente_id=${clienteId}`, { signal }),
 
   prepago: (data: PrepagoPayload) =>
     apiClientSafe('/clients/prepago', {

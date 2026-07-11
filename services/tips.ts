@@ -1,12 +1,12 @@
 import { apiClientSafe } from '@/api/client-safe';
 
 export const tipsService = {
-  userDetail: () =>
-    apiClientSafe('/tips/user?tipo=detalle'),
+  userDetail: (signal?: AbortSignal) =>
+    apiClientSafe('/tips/user?tipo=detalle', { signal }),
 
-  allDetail: () =>
-    apiClientSafe('/tips?tipo=detalle'),
+  allDetail: (signal?: AbortSignal) =>
+    apiClientSafe('/tips?tipo=detalle', { signal }),
 
-  getById: (id: string | number) =>
-    apiClientSafe(`/tips/${id}`),
+  getById: (id: string | number, signal?: AbortSignal) =>
+    apiClientSafe(`/tips/${id}`, { signal }),
 };

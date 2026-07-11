@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
   ActivityIndicator,
   Modal,
@@ -105,7 +106,7 @@ export default function CajeroGratificacionesScreen() {
     resetForm();
   };
 
-  const renderItem = ({ item, index }: { item: GratificacionItem; index: number }) => {
+  const renderItem = useStableCallback(({ item, index }: { item: GratificacionItem; index: number }) => {
     const status = estadoConfig[item.estado] || estadoConfig[2];
     return (
       <View
@@ -139,7 +140,7 @@ export default function CajeroGratificacionesScreen() {
         </View>
       </View>
     );
-  };
+  });
 
   if (loading) {
     return (
@@ -211,7 +212,7 @@ export default function CajeroGratificacionesScreen() {
           <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
         </View>
       ) : (
-        <FlashList
+        <FlatList
           data={filteredData}
           keyExtractor={item => item.id}
           renderItem={renderItem}

@@ -1,12 +1,11 @@
 import * as Notifications from "expo-notifications";
-import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import React, { createContext, Suspense, useCallback, useContext, useEffect, useRef } from "react";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
-import Toast from "react-native-toast-message";
+import { showToast, ToastComponent } from '@/utils/toast-lazy';
 import { API_URL } from "@/api/client";
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
-import { toastConfig } from "@/utils/toast-config";
 import {
   emitRefreshAnticipos,
   emitRefreshCuentas,
@@ -71,28 +70,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const roleName = getUserRoleName(user);
     const lowerRole = getUserRole(user);
     const isCajeroOrAdmin = isCajeroOrAdminRole(user);
-    const isRequester = String(payload?.data?.usuario_id || "") === String(user?.id || "");
-
-    logger.info(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+    const data = (payload.data || {}) as any;
+    const isRequester = String(data.usuario_id || "") === String(user?.id || "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
     switch (payload.type) {
       case "new_order":
       case "new_service_request":
         if (isCajeroOrAdmin) {
           const isOrder = payload.type === "new_order";
-          const id = isOrder ? payload.data.id : payload.data.id_solicitud || payload.data.id;
+          const id = isOrder ? data.id : data.id_solicitud || data.id;
           
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Toast.show({
+          showToast({
             type: "order",
             text1: isOrder ? "¡Nuevo Pedido!" : "Solicitud de Servicio",
-            text2: isOrder ? `${payload.data.codigo} - ${payload.data.cliente}` : `ID: ${payload.data.id} - ${payload.data.descripcion || "Sin descripción"}`,
+            text2: isOrder ? `${data.codigo} - ${data.cliente}` : `ID: ${data.id} - ${data.descripcion || "Sin descripción"}`,
             visibilityTime: 6000,
           });
 
           showLocalNotification(
             isOrder ? "Nuevo Pedido" : "Solicitud de Servicio",
-            isOrder ? `Pedido: ${payload.data.codigo}` : payload.data.descripcion
+            isOrder ? `Pedido: ${data.codigo}` : data.descripcion
           );
           emitRefreshRequests(payload);
 
@@ -107,9 +105,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       case "new_anticipo_request":
         if (isCajeroOrAdmin) {
-          const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} solicito un anticipo por $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
+          const body = `${data.nick || data.empleado || "Empleado"} solicito un anticipo por $${Number(data.monto || 0).toLocaleString("es-ES")}`;
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Toast.show({
+          showToast({
             type: "info",
             text1: "Nueva solicitud de anticipo",
             text2: body,
@@ -131,7 +129,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               ? Haptics.NotificationFeedbackType.Success
               : Haptics.NotificationFeedbackType.Warning
           );
-          Toast.show({
+          showToast({
             type: approved ? "success" : "error",
             text1: title,
             text2: body,
@@ -154,7 +152,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isCajeroRole(user) || isRequester) {
           const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Toast.show({
+          showToast({
             type: "success",
             text1: "Anticipo entregado",
             text2: body,
@@ -184,10 +182,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       case "sale_updated":
       case "sale_cancelled":
         if (isCajeroOrAdmin) {
-          Toast.show({
+          const saleData = (payload.data || {}) as any;
+          showToast({
             type: "success",
             text1: "Venta Actualizada",
-            text2: `Código: ${payload.data?.codigo || 'N/A'} - $${payload.data?.total?.toLocaleString('es-ES') || '0'}`,
+            text2: `Código: ${saleData.codigo || 'N/A'} - $${Number(saleData.total || 0).toLocaleString('es-ES')}`,
             visibilityTime: 4000,
           });
           emitRefreshSales();
@@ -219,7 +218,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               ? Haptics.NotificationFeedbackType.Success
               : Haptics.NotificationFeedbackType.Warning
           );
-          Toast.show({
+          showToast({
             type: approved ? "success" : "error",
             text1: title,
             text2: body,
@@ -257,7 +256,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         try {
           const payload: SSEPayload = JSON.parse(event.data);
-          logger.info('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
+          logger.debug('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
           
           if (!isSseControlEvent(payload.type)) {
              emitSseEvent(payload);
@@ -271,7 +270,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       es.addEventListener("open", () => {
         logger.info('[NotificationContext] Conexión SSE establecida con éxito');
         setIsConnected(true);
-        Toast.show({
+        showToast({
             type: "info",
             text1: "SSE Conectado",
             text2: "Recibiendo notificaciones en tiempo real",
@@ -300,7 +299,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <NotificationContext.Provider value={{ showLocalNotification, isConnected }}>
       {children}
-      <Toast config={toastConfig} position="top" topOffset={60} />
+      <Suspense fallback={null}>
+        <ToastComponent position="top" topOffset={60} />
+      </Suspense>
     </NotificationContext.Provider>
   );
 };

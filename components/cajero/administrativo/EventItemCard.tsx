@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Event } from "@/hooks/useAdministrativoScreen";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 type EventItemCardProps = {
   item: Event;
@@ -24,6 +25,7 @@ export function EventItemCard({
   getEventLabel,
   getStatusLabel,
 }: EventItemCardProps) {
+  useRenderCount('EventItemCard', { eventId: item.id, eventType: item.type });
   const isAnticipo = item.type === "anticipo";
   const iconName =
     item.type === "venta"

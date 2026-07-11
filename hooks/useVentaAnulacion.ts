@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import type { Venta } from "@/components/cajero/ventas/types";
 import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
 import { enviarSolicitudAnulacion } from "@/services/ventasService";
@@ -76,7 +76,7 @@ export function useVentaAnulacion(
     const motivo = state.motivoAnulacion.trim();
 
     if (!ventaId) {
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: "No se pudo identificar la venta.",
@@ -85,7 +85,7 @@ export function useVentaAnulacion(
     }
 
     if (!monto || monto <= 0) {
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: "Debes ingresar un monto mayor a 0.",
@@ -94,7 +94,7 @@ export function useVentaAnulacion(
     }
 
     if (monto > Number(state.activeVenta.total || 0)) {
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: "El monto no puede ser mayor al total de la venta.",
@@ -103,7 +103,7 @@ export function useVentaAnulacion(
     }
 
     if (!motivo) {
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: "Debes ingresar el motivo de la anulación.",
@@ -117,7 +117,7 @@ export function useVentaAnulacion(
 
       if (res.success) {
         dispatch({ type: "RESET_ANULACION" });
-        Toast.show({
+        showToast({
           type: "success",
           text1: "Solicitud Enviada",
           text2:
@@ -125,14 +125,14 @@ export function useVentaAnulacion(
         });
         refreshVentas();
       } else {
-        Toast.show({
+        showToast({
           type: "error",
           text1: "Error",
           text2: res.message || "No se pudo solicitar la anulación",
         });
       }
     } catch {
-      Toast.show({
+      showToast({
         type: "error",
         text1: "Error",
         text2: "Error al procesar la solicitud de anulación",

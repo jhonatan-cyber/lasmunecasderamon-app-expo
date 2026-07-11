@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import { DeviceEventEmitter } from "react-native";
 import { Colors } from "@/constants/theme";
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { serviciosService } from "@/services";
 import type { ApiRes } from "@/types/api";
@@ -302,7 +302,7 @@ export function useServiciosScreen() {
           };
         });
         dispatch({ type: "SET_FINALIZADOS", payload: mapped });
-        if (isManual) Toast.show({ type: "success", text1: "Actualizado" });
+        if (isManual) showToastLazy({ type: "success", text1: "Actualizado" });
       }
     } catch (error) {
       logger.captureException(error, { context: "Servicios:fetchData" });
@@ -352,7 +352,7 @@ export function useServiciosScreen() {
     message: string,
     type: "success" | "error" = "error",
   ) => {
-    Toast.show({
+    showToastLazy({
       type,
       text1: title,
       text2: message,
@@ -385,11 +385,11 @@ export function useServiciosScreen() {
               });
               dispatch({ type: "CLOSE_ALERT" });
               if (res.success) {
-                Toast.show({ type: "success", text1: "Servicio Finalizado" });
+                showToastLazy({ type: "success", text1: "Servicio Finalizado" });
                 refreshTimers();
                 fetchFinalizados();
               } else {
-                Toast.show({
+                showToastLazy({
                   type: "error",
                   text1: "Error",
                   text2: res.message,
@@ -397,7 +397,7 @@ export function useServiciosScreen() {
               }
             } catch (err: any) {
               dispatch({ type: "CLOSE_ALERT" });
-              Toast.show({
+              showToastLazy({
                 type: "error",
                 text1: "Error",
                 text2: err.message || "Error al finalizar",

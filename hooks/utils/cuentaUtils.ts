@@ -1,8 +1,8 @@
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import type { Cliente, Anfitriona, Producto, CartItem, CommissionPreview } from "@lasmunecasderamon/types";
 
 export const showToast = (title: string, message: string, type: "success" | "error" | "info" = "error") => {
-  Toast.show({
+  showToastLazy({
     type,
     text1: title,
     text2: message,

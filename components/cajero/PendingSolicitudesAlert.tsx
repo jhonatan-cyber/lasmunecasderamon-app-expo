@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     DeviceEventEmitter,
@@ -96,7 +96,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                 { backgroundColor: cardBg, borderColor: accentColor },
             ]}
         >
-            <MotiView
+            <AnimatedView
                 from={{ opacity: 0.3, scale: 1 }}
                 animate={{ opacity: 0, scale: 1.15 }}
                 transition={{
@@ -126,7 +126,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                         Atención requerida: {pendingCount} pedido(s)
                     </Text>
                 </View>
-                <MotiView
+                <AnimatedView
                     from={{ translateX: 0 }}
                     animate={{ translateX: 5 }}
                     transition={{
@@ -137,7 +137,7 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                     }}
                 >
                     <Ionicons name="chevron-forward" size={20} color={isDark ? '#E11D48' : '#E11D48'} />
-                </MotiView>
+                </AnimatedView>
             </Pressable>
         </Animated.View>
     );

@@ -5,17 +5,17 @@ export interface GenerateQRPayload {
 }
 
 export const usersService = {
-  list: (params?: string) =>
-    apiClientSafe(`/users${params ? `?${params}` : ''}`),
+  list: (params?: string, signal?: AbortSignal) =>
+    apiClientSafe(`/users${params ? `?${params}` : ''}`, { signal }),
 
-  status: () =>
-    apiClientSafe('/users/status'),
+  status: (signal?: AbortSignal) =>
+    apiClientSafe('/users/status', { signal }),
 
-  meStats: () =>
-    apiClientSafe('/users/me/stats'),
+  meStats: (signal?: AbortSignal) =>
+    apiClientSafe('/users/me/stats', { signal }),
 
-  getProfile: () =>
-    apiClientSafe('/users/profile'),
+  getProfile: (signal?: AbortSignal) =>
+    apiClientSafe('/users/profile', { signal }),
 
   updateProfile: (data: Record<string, unknown>) =>
     apiClientSafe('/users', {
@@ -23,8 +23,8 @@ export const usersService = {
       body: JSON.stringify(data),
     }),
 
-  getById: (id: string | number) =>
-    apiClientSafe(`/users/${id}`),
+  getById: (id: string | number, signal?: AbortSignal) =>
+    apiClientSafe(`/users/${id}`, { signal }),
 
   generateQR: (data: GenerateQRPayload) =>
     apiClientSafe('/users/generate-qr', {

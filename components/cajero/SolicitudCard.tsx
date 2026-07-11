@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { parseDateSafe } from '@/utils/timeUtils';
 import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
 
 import logger from '@/utils/logger';
+import { useRenderCount } from '@/hooks/useRenderCount';
 interface SolicitudCardProps {
     item: SolicitudItem;
     accentColor: string;
@@ -35,6 +36,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
     onShowServiceModal,
     nowTick
 }) => {
+    useRenderCount('SolicitudCard', { id: item.id_solicitud || item.id_anticipo || item.id_pedido, tipo: item.tipoItem });
     const isSolicitud = item.tipoItem === 'solicitud';
     const isAnticipo = item.tipoItem === 'anticipo';
     const iconName = isSolicitud ? 'receipt' : isAnticipo ? 'cash' : 'beer';
@@ -58,12 +60,12 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
     const minutesElapsed = Math.floor((nowServerMs - recordTime.getTime()) / 60000);
 
     const isUrgent = minutesElapsed >= 5 && !isAnticipo;
-    const itemId = isSolicitud ? item.id_solicitud : isAnticipo ? item.id_anticipo : item.id_pedido;
+    const itemId = String(item.id_solicitud || item.id_anticipo || item.id_pedido || '');
     const tipoItem = item.tipoItem;
-    logger.info('[SolicitudCard] Render - itemId:', { arg0: itemId, arg1: 'id_solicitud:', arg2: item.id_solicitud, arg3: 'id_anticipo:', arg4: item.id_anticipo, arg5: 'id_pedido:', arg6: item.id_pedido, arg7: 'tipoItem:', arg8: tipoItem });
+    logger.debug('[SolicitudCard] Render - itemId:', { arg0: itemId, arg1: 'id_solicitud:', arg2: item.id_solicitud, arg3: 'id_anticipo:', arg4: item.id_anticipo, arg5: 'id_pedido:', arg6: item.id_pedido, arg7: 'tipoItem:', arg8: tipoItem });
 
     const handleCardPress = () => {
-        logger.info('[SolicitudCard] itemId:', { arg0: itemId, arg1: 'tipoItem:', arg2: item.tipoItem, arg3: 'item keys:', arg4: Object.keys(item) });
+        logger.debug('[SolicitudCard] itemId:', { arg0: itemId, arg1: 'tipoItem:', arg2: item.tipoItem, arg3: 'item keys:', arg4: Object.keys(item) });
         if (isSolicitud) {
             onShowServiceModal(item);
         } else if (isAnticipo) {
@@ -85,14 +87,14 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
             onPress={handleCardPress}
         >
             {isUrgent && (
-                <MotiView
+                <AnimatedView
                     from={{ opacity: 0.5 }}
                     animate={{ opacity: 1 }}
                     transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: true }}
                     style={styles.urgentBadge}
                 >
                     <Text style={styles.urgentBadgeText}>ATENCIÓN CRÍTICA</Text>
-                </MotiView>
+                </AnimatedView>
             )}
             <View style={styles.cardHeader}>
                 <View style={styles.badgeContainer}>
@@ -183,9 +185,8 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                             style={[styles.btnAction, { backgroundColor: accentColor, flex: 1.5 }]}
                             onPress={(e) => {
                                 e.stopPropagation();
-                                const idAEnviar = (tipoItem === 'solicitud' ? item.id_solicitud : tipoItem === 'anticipo' ? item.id_anticipo : item.id_pedido) ?? '';
-                                logger.info('[SolicitudCard] APROBAR - tipoItem:', { arg0: tipoItem, arg1: 'idCalculado:', arg2: idAEnviar, arg3: 'id_pedido:', arg4: item.id_pedido, arg5: 'id_solicitud:', arg6: item.id_solicitud });
-                                onAprobar(idAEnviar, tipoItem, item);
+                                logger.info('[SolicitudCard] APROBAR - tipoItem:', { arg0: tipoItem, arg1: 'idCalculado:', arg2: itemId, arg3: 'id_pedido:', arg4: item.id_pedido, arg5: 'id_solicitud:', arg6: item.id_solicitud });
+                                onAprobar(itemId, tipoItem, item);
                             }}
                             disabled={!cajaAbierta}
                         >

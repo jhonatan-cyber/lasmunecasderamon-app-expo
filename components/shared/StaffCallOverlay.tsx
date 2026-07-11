@@ -9,7 +9,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
@@ -135,7 +135,7 @@ export function StaffCallOverlay() {
                 }
 
                 if (isHostess && payload.data.anfitriona_id === user?.id) {
-                    logger.info('[StaffCallOverlay] Asistencia aceptada por:', payload.data.atendido_por_nombre);
+                    logger.debug('[StaffCallOverlay] Asistencia aceptada por:', payload.data.atendido_por_nombre);
                 }
             }
         });
@@ -170,18 +170,18 @@ export function StaffCallOverlay() {
             });
 
             if (res.success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Llamado atendido',
                     text2: `${atendidoPorNombre} • ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                 });
                 setPendingCalls(prev => prev.filter(c => c.id !== id));
             } else {
-                Toast.show({ type: 'error', text1: 'Atención', text2: res.message });
+                showToast({ type: 'error', text1: 'Atención', text2: res.message });
                 setPendingCalls(prev => prev.filter(c => c.id !== id));
             }
         } catch (error: any) {
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+            showToast({ type: 'error', text1: 'Error', text2: error.message });
             setPendingCalls(prev => prev.filter(c => c.id !== id));
         } finally {
             setAccepting(null);

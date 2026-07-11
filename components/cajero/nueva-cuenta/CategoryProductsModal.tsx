@@ -1,7 +1,9 @@
 import React from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 import { Ionicons } from '@expo/vector-icons';
 import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 interface CategoryProductsModalProps {
   visible: boolean;
@@ -21,7 +23,7 @@ interface CategoryProductsModalProps {
   isChampagneProduct: (product: any) => boolean;
 }
 
-export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
+export const CategoryProductsModal = React.memo(function CategoryProductsModal({
   visible,
   categoria,
   loading,
@@ -37,7 +39,9 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
   onSetHostessTarget,
   addProductToCart,
   isChampagneProduct,
-}) => (
+}: CategoryProductsModalProps) {
+  useRenderCount('CategoryProductsModal', { visible, productCount: products.length });
+  return (
   <Modal visible={visible} animationType="slide" transparent>
     <View style={styles.modalOverlay}>
       <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
@@ -53,10 +57,11 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
         {loading ? (
           <ActivityIndicator color={accentColor} size="large" />
         ) : (
-          <FlatList
+          <FlashList
             data={products}
-            keyExtractor={(item) => (item.id || item.id_producto).toString()}
-            renderItem={({ item }) => {
+            keyExtractor={(item: any) => (item.id || item.id_producto).toString()}
+            estimatedItemSize={80}
+            renderItem={({ item }: { item: any }) => {
               const id = item.id || item.id_producto;
               const qty = quantities[id] || 1;
               return (
@@ -123,7 +128,9 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
       </View>
     </View>
   </Modal>
-);
+  );
+});
+CategoryProductsModal.displayName = 'CategoryProductsModal';
 
 const styles = StyleSheet.create({
   modalOverlay: {

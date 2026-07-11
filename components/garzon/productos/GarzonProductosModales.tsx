@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { Anfitriona, CartItem, Room } from '@/components/shared/ProductCard';
@@ -119,7 +119,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                                                 } else if (current.length < maxHostesses) {
                                                     updateItemHostesses(activeConfigItem.productId, [...current, a.id]);
                                                 } else {
-                                                    Toast.show({
+                                                    showToast({
                                                         type: 'error',
                                                         text1: 'Límite',
                                                         text2: `Máximo ${maxHostesses} anfitriona(s) para este producto.`,

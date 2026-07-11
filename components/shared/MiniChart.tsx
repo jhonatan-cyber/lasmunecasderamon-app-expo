@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 
 interface MiniChartProps {
   data: { label: string; value: number }[];
@@ -19,20 +19,20 @@ export const MiniChart: React.FC<MiniChartProps> = ({ data, color, height = 120 
     <View style={[styles.container, { height }]}>
       {data.map((item, index) => (
         <View key={index} style={styles.barWrapper}>
-          <MotiView
-            from={{ height: 0, opacity: 0 }}
-            animate={{
-              height: `${(item.value / maxValue) * 100}%`,
-              opacity: 1,
-            }}
+          <AnimatedView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ type: "timing", duration: 1000, delay: index * 100 }}
-            style={styles.barContainer}
+            style={[
+              styles.barContainer,
+              { height: `${(item.value / maxValue) * 100}%` },
+            ]}
           >
             <LinearGradient
               colors={[color, color + "80"]}
               style={styles.barGradient}
             />
-          </MotiView>
+          </AnimatedView>
           <Text
             style={[styles.barLabel, { color: isDark ? "#94A3B8" : "#64748B" }]}
           >

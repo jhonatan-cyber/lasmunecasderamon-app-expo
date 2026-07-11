@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { DeviceEventEmitter } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { usersService, codigoService } from '@/services';
 import logger from '@/utils/logger';
@@ -29,11 +29,11 @@ export function usePersonalScreen() {
     const [codigoAsistencia, setCodigoAsistencia] = useState<string>('');
     const dataRef = useRef<string>('');
 
-    const fetchUsers = useCallback(async (isManual = false) => {
+    const fetchUsers = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
-            logger.info('[PersonalScreen] Fetching users with status=active...');
-            const data = await usersService.list('status=active');
-            logger.info('[PersonalScreen] Response:', data);
+            logger.debug('[PersonalScreen] Fetching users with status=active...');
+            const data = await usersService.list('status=active', signal);
+            logger.debug('[PersonalScreen] Response:', data);
             
             if ((data as any).success) {
                 const allUsers = (data as any).data || [];
@@ -54,7 +54,7 @@ export function usePersonalScreen() {
                 }
 
                 if (isManual) {
-                    Toast.show({
+                    showToast({
                         type: 'success',
                         text1: 'Actualizado',
                         text2: 'Lista de personal al día',
@@ -63,7 +63,7 @@ export function usePersonalScreen() {
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Personal:fetchUsers' });
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo cargar el personal',
@@ -76,7 +76,9 @@ export function usePersonalScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchUsers();
+            const ac = new AbortController();
+            fetchUsers(false, ac.signal);
+            return () => ac.abort();
         }, [fetchUsers])
     );
 
@@ -101,7 +103,7 @@ export function usePersonalScreen() {
             const data = await usersService.generateQR({ userId });
 
             if ((data as any).success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Éxito',
                     text2: 'Token QR generado correctamente',
@@ -116,7 +118,7 @@ export function usePersonalScreen() {
                 }
             }
         } catch (error: any) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: error.message || 'No se pudo generar el token',
@@ -138,15 +140,16 @@ export function usePersonalScreen() {
     useEffect(() => {
         if (!selectedUser) return;
         
+        const ac = new AbortController();
         const fetchUserData = async () => {
             try {
-                const data = await usersService.getById(selectedUser.id);
+                const data = await usersService.getById(selectedUser.id, ac.signal);
                 if ((data as any).success && (data as any).user) {
                     if ((data as any).user.qr_token !== selectedUser.qr_token) {
                         setSelectedUser((data as any).user);
                         setUsers(prev => prev.map(u => u.id === (data as any).user.id ? (data as any).user : u));
                         setSelectedUser(null);
-                        Toast.show({
+                        showToast({
                             type: 'info',
                             text1: '📱 Código QR usado',
                             text2: 'El usuario ya registró su asistencia'
@@ -159,9 +162,7 @@ export function usePersonalScreen() {
         };
 
         fetchUserData();
-
-        const interval = setInterval(fetchUserData, 5000);
-        return () => clearInterval(interval);
+        return () => ac.abort();
     }, [selectedUser, selectedUser?.id]);
 
     
@@ -177,6 +178,26 @@ export function usePersonalScreen() {
         const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
+            }
+            // Real-time update via SSE cuando se genera/usa un QR — reemplaza polling
+            if (payload.type === 'qr_token_updated' && payload.data?.userId === selectedUser.id) {
+                usersService.getById(selectedUser.id)
+                    .then((data: any) => {
+                        if (data.success && data.user) {
+                            const newUser = data.user as User;
+                            if (newUser.qr_token !== selectedUser.qr_token) {
+                                setSelectedUser(newUser);
+                                setUsers(prev => prev.map(u => u.id === newUser.id ? newUser : u));
+                                setSelectedUser(null);
+                                showToast({
+                                    type: 'info',
+                                    text1: '📱 Código QR usado',
+                                    text2: 'El usuario ya registró su asistencia'
+                                });
+                            }
+                        }
+                    })
+                    .catch(e => logger.captureException(e, { context: 'Personal:sseQRUpdate' }));
             }
         });
 

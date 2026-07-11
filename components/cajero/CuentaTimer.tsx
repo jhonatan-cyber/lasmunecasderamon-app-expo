@@ -2,6 +2,7 @@ import React from "react";
 import { Text } from "react-native";
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime } from "@/utils/timeUtils";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 type CuentaTimerProps = {
   timer: Timer;
@@ -10,6 +11,7 @@ type CuentaTimerProps = {
 };
 
 export const CuentaTimer = React.memo(({ timer, serverOffset, accentColor }: CuentaTimerProps) => {
+  useRenderCount('CuentaTimer', { timerId: timer?.id, remaining: timer?.duration });
   const [remaining, setRemaining] = React.useState(() =>
     calculateRemainingTime(timer, serverOffset),
   );

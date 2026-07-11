@@ -1,6 +1,6 @@
 import { formatCurrency } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -21,7 +21,7 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, textSecondary, index, isTablet, isFullWidth, subLabel }: StatCardProps) => (
-    <MotiView
+    <AnimatedView
         from={{ opacity: 0, scale: 0.9, translateY: 10 }}
         animate={{ opacity: 1, scale: 1, translateY: 0 }}
         transition={{ type: 'spring', delay: index * 80 }}
@@ -57,7 +57,7 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
         </View>
 
         {!isFullWidth && <View style={[styles.glowDot, { backgroundColor: color, top: isTablet ? 15 : 10, right: isTablet ? 15 : 10 }]} />}
-    </MotiView>
+    </AnimatedView>
 );
 
 interface CajeroStatsProps {

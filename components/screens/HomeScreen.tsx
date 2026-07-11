@@ -10,7 +10,7 @@ import { PremiumUserProfile } from "@/components/shared/PremiumUserProfile";
 import { RegistroAsistenciaModal } from "@/components/shared/RegistroAsistenciaModal";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
-import { DonutChart } from "@/components/ui/DonutChart";
+import { LazyDonutChart } from "@/components/ui/LazyDonutChart";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumCalendar } from "@/components/ui/PremiumCalendar";
 import { PremiumHeaderActions } from "@/components/ui/PremiumHeaderActions";
@@ -20,10 +20,10 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/format";
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
+import { FlatList } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useCallback, useMemo, useState } from "react";
 import {
   Modal,
@@ -35,7 +35,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 
 import logger from "@/utils/logger";
 interface HomeScreenProps {
@@ -230,7 +230,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         <PremiumUserProfile user={user} userStatus={userStatus} role={role} />
 
         {role === "anfitriona" && !activeService && (
-          <MotiView
+          <AnimatedView
             from={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{ marginTop: 15, alignItems: "center" }}
@@ -247,7 +247,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                       method: "POST",
                       body: JSON.stringify({ type: "Llamado" }),
                     });
-                    Toast.show({ type: "success", text1: "Enviado" });
+                    showToast({ type: "success", text1: "Enviado" });
                   },
                   true,
                 )
@@ -257,7 +257,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                 SOLICITAR SERVICIO
               </RNText>
             </AnimatedButton>
-          </MotiView>
+          </AnimatedView>
         )}
       </LinearGradient>
 
@@ -293,7 +293,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                   <RNText style={[styles.cardTitle, { color: textPrimary }]}>
                     Meta Semanal
                   </RNText>
-                  <DonutChart
+                  <LazyDonutChart
                     size={60}
                     percent={Math.min(
                       100,
@@ -387,7 +387,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
       </ScrollView>
 
       {selectedDates.length > 0 && (
-        <MotiView
+        <AnimatedView
           from={{ translateY: 100 }}
           animate={{ translateY: 0 }}
           style={[styles.selectionFloat, { backgroundColor: cardBg }]}
@@ -403,7 +403,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               DETALLES
             </RNText>
           </Pressable>
-        </MotiView>
+        </AnimatedView>
       )}
 
       <Modal visible={isModalVisible} animationType="slide" transparent>
@@ -417,7 +417,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                 <Ionicons name="close" size={28} color={textPrimary} />
               </Pressable>
             </View>
-            <FlashList<any>
+            <FlatList<any>
               data={selectedEvents}
               renderItem={({ item }) => (
                 <Pressable

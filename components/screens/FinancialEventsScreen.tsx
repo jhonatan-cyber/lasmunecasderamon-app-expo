@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
-import { useState } from 'react';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useState, useCallback } from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
     ActivityIndicator,
-    FlatList,
     Modal,
     Pressable,
     RefreshControl,
@@ -12,6 +12,7 @@ import {
     Text,
     View
 } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
@@ -40,7 +41,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
 
 
-    const formatDate = (dateStr: string) => {
+    const formatDate = useCallback((dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
         try {
             const date = parseDateSafe(dateStr);
@@ -50,18 +51,18 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
             const year = date.getUTCFullYear();
             return `${day} ${month} ${year}`;
         } catch { return 'Error'; }
-    };
+    }, []);
 
-    const formatTime = (dateStr: string) => {
+    const formatTime = useCallback((dateStr: string) => {
         if (!dateStr) return '';
         try {
             const date = parseDateSafe(dateStr);
             if (isNaN(date.getTime())) return '';
             return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         } catch { return ''; }
-    };
+    }, []);
 
-    const handleItemPress = async (item: any) => {
+    const handleItemPress = useCallback(async (item: any) => {
         setSelectedItem(item);
         setModalVisible(true);
         setLoadingDetail(true);
@@ -82,25 +83,25 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                 
             }
         } catch (e) { logger.captureException(e, { context: 'FinancialEventsScreen:fetchDetail' }); } finally { setLoadingDetail(false); }
-    };
+    }, [type]);
 
-    const filteredData = data.filter((a) => {
+    const filteredData = data.filter((a: any) => {
         if (filter === 'pendiente') return a.estado === 1;
         if (filter === 'pagado') return a.estado === 0;
         return true;
     });
 
-    const pendientes = data.filter((a) => a.estado === 1);
+    const pendientes = data.filter((a: any) => a.estado === 1);
     const totalPendiente = pendientes.reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
     const totalGeneral = data.reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
 
-    const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const renderItem = useStableCallback(({ item, index }: { item: any; index: number }) => {
         const isPendiente = item.estado === 1;
         const amount = item.comision || item.monto || 0;
         const code = item.codigo || item.codigo_venta;
 
         return (
-            <MotiView from={{ opacity: 0, translateY: 30 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', delay: index * 100 }}>
+            <AnimatedView from={{ opacity: 0, translateY: 30 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', delay: index * 100 }}>
                 <Pressable onPress={() => handleItemPress(item)} style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.8 : 1 }]}>
                     <View style={styles.cardHeader}>
                         <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
@@ -137,9 +138,9 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                         </View>
                     </View>
                 </Pressable>
-            </MotiView>
+            </AnimatedView>
         );
-    };
+    });
 
     if (loading) return (
         <View style={[styles.container, { backgroundColor: bg }]}>
@@ -173,7 +174,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                 ))}
             </View>
 
-            <FlatList data={filteredData} keyExtractor={(item) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} />
+            <FlashList data={filteredData} keyExtractor={(item: any) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} getItemLayout={(_, index) => ({ length: 180, offset: 180 * index, index })} windowSize={10} maxToRenderPerBatch={7} initialNumToRender={5} removeClippedSubviews={true} />
 
             {type === 'propinas' ? (
                 <TipDetailModal

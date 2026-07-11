@@ -1,10 +1,10 @@
 import { formatCurrency } from '@/utils/format';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { DonutChart } from '@/components/ui/DonutChart';
+import { LazyDonutChart } from '@/components/ui/LazyDonutChart';
 
 interface GarzonStatsProps {
     stats: any;
@@ -26,7 +26,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                 >
                     <View style={styles.premiumStatContent}>
                         <View style={styles.premiumIconWrapper}>
-                            <MaterialCommunityIcons name="hand-coin" size={26} color="#FFFFFF" />
+                            <Ionicons name="wallet-outline" size={26} color="#FFFFFF" />
                         </View>
                         <View style={styles.premiumTextGroup}>
                             <Text style={styles.premiumStatLabel}>TOTAL PROPINAS</Text>
@@ -58,7 +58,7 @@ export const GarzonStats = ({ stats, events }: GarzonStatsProps) => {
                 </View>
 
                 <View style={styles.goalContainer}>
-                    <DonutChart
+                    <LazyDonutChart
                         percent={Math.min(100, Math.round(((stats?.totalEarnings || 0) / 300000) * 100))}
                         color="#E11D48"
                         size={100}

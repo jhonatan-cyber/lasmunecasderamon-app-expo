@@ -1,6 +1,8 @@
 import React from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 import { Ionicons } from "@expo/vector-icons";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 type ProductsCategoryModalProps = {
   visible: boolean;
@@ -17,7 +19,7 @@ type ProductsCategoryModalProps = {
   onSelectProduct: (product: any) => void;
 };
 
-export function ProductsCategoryModal({
+export const ProductsCategoryModal = React.memo(function ProductsCategoryModal({
   visible,
   onClose,
   category,
@@ -31,6 +33,7 @@ export function ProductsCategoryModal({
   onSetQuantity,
   onSelectProduct,
 }: ProductsCategoryModalProps) {
+  useRenderCount('ProductsCategoryModal', { visible, productCount: products.length });
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
@@ -46,10 +49,11 @@ export function ProductsCategoryModal({
           {loading ? (
             <ActivityIndicator color={accentColor} size="large" />
           ) : (
-            <FlatList
+            <FlashList
               data={products}
-              keyExtractor={(item) => (item.id || item.id_producto).toString()}
-              renderItem={({ item }) => {
+              keyExtractor={(item: any) => (item.id || item.id_producto).toString()}
+              estimatedItemSize={80}
+              renderItem={({ item }: { item: any }) => {
                 const id = item.id || item.id_producto;
                 const qty = quantities[id] || 1;
 
@@ -122,10 +126,10 @@ export function ProductsCategoryModal({
             <Text style={styles.confirmModalBtnText}>Confirmar</Text>
           </Pressable>
         </View>
-      </View>
-    </Modal>
+      </View>      </Modal>
   );
-}
+});
+ProductsCategoryModal.displayName = 'ProductsCategoryModal';
 
 const styles = StyleSheet.create({
   modalOverlay: {

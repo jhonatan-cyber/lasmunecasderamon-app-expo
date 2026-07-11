@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Propina } from "@/hooks/usePropinasScreen";
 import { rotateColor } from "@/utils/colors";
 
@@ -44,7 +44,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
   );
 
   return (
-    <MotiView
+    <AnimatedView
       from={{ opacity: 0, translateY: 30 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "spring", delay: index * 100 }}
@@ -180,7 +180,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
           </View>
         </View>
       </Pressable>
-    </MotiView>
+    </AnimatedView>
   );
 };
 

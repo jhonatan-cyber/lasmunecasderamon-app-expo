@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 import { OvertimeCard } from "@/components/ui/OvertimeCard";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
@@ -33,7 +33,7 @@ export default function HorasExtrasScreen() {
     0,
   );
 
-  const renderItem = ({ item, index }: { item: HoraExtra; index: number }) => (
+  const renderItem = useCallback(({ item, index }: { item: HoraExtra; index: number }) => (
     <OvertimeCard
       item={item}
       index={index}
@@ -42,7 +42,7 @@ export default function HorasExtrasScreen() {
       compactDate={false}
       showPaymentDate={true}
     />
-  );
+  ), []);
 
   const renderHorasExtrasSkeleton = () => (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -181,10 +181,11 @@ export default function HorasExtrasScreen() {
         </View>
       ) : null}
 
-      <FlatList
+      <FlashList
         data={filteredData}
-        keyExtractor={(item) => item.id_hora_extra.toString()}
+        keyExtractor={(item: HoraExtra) => item.id_hora_extra.toString()}
         renderItem={renderItem}
+        estimatedItemSize={120}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={

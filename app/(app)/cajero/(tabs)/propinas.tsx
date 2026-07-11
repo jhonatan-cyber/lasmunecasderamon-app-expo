@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View
 } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
@@ -43,7 +44,7 @@ export default function PropinasScreen() {
 
 
 
-  const renderItem = ({ item, index }: { item: Propina; index: number }) => {
+  const renderItem = useStableCallback(({ item, index }: { item: Propina; index: number }) => {
     const isPendiente = item.estado === 1;
 
     const idNum = typeof item.id_detalle_propina === 'string'
@@ -52,7 +53,7 @@ export default function PropinasScreen() {
     const itemAccent = rotateColor(accentColor, ((Number(idNum) || index) % 10) * 36);
 
     return (
-      <MotiView
+      <AnimatedView
         from={{ opacity: 0, translateY: 30 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'spring', delay: index * 100 }}
@@ -116,9 +117,9 @@ export default function PropinasScreen() {
             </View>
           </View>
         </Pressable>
-      </MotiView>
+      </AnimatedView>
     );
-  };
+  });
 
   const renderPropinasSkeleton = () => (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -198,9 +199,9 @@ export default function PropinasScreen() {
         </View>
       ) : null}
 
-      <FlatList
+      <FlashList
         data={filteredData}
-        keyExtractor={(item, index) => item.id_detalle_propina?.toString() ?? index.toString()}
+        keyExtractor={(item: Propina, index: number) => item.id_detalle_propina?.toString() ?? index.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -211,6 +212,11 @@ export default function PropinasScreen() {
             <Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron propinas</Text>
           </View>
         }
+        getItemLayout={(_, index) => ({ length: 200, offset: 200 * index, index })}
+        windowSize={10}
+        maxToRenderPerBatch={7}
+        initialNumToRender={5}
+        removeClippedSubviews={true}
       />
 
       <TipDetailModal

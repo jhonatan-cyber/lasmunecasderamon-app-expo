@@ -3,12 +3,10 @@ import {
     RefreshControl,
     RefreshControlProps,
     ScrollView,
-    FlatList,
     View,
     StyleSheet,
-    NativeSyntheticEvent,
-    NativeScrollEvent,
 } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 
 interface UsePullToRefreshOptions {
     onRefresh: () => Promise<void>;
@@ -130,10 +128,11 @@ export function PullToRefreshList<T>({
     });
 
     return (
-        <FlatList
+        <FlashList
             data={data}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
+            estimatedItemSize={100}
             ListEmptyComponent={ListEmptyComponent}
             ListHeaderComponent={ListHeaderComponent}
             ListFooterComponent={ListFooterComponent}
@@ -146,10 +145,6 @@ export function PullToRefreshList<T>({
             onEndReached={onEndReached}
             onEndReachedThreshold={onEndReachedThreshold}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={10}
-            maxToRenderPerBatch={10}
-            windowSize={5}
-            removeClippedSubviews={true}
         />
     );
 }

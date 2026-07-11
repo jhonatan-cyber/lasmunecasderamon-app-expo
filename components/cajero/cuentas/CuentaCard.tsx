@@ -1,10 +1,11 @@
 import React from "react";
 import { Pressable } from "react-native";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useRouter } from "expo-router";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import type { CuentaDetalle } from "@/hooks/types/cuentaTypes";
 import type { Timer } from "@/context/types";
+import { useRenderCount } from "@/hooks/useRenderCount";
 import { CuentaCardHeader } from "./CuentaCardHeader";
 import { CuentaCardDetails } from "./CuentaCardDetails";
 import { CuentaCardTimer } from "./CuentaCardTimer";
@@ -57,6 +58,7 @@ export function CuentaCard({
   handleSolicitarAnulacion,
   setActionSheetVisible,
 }: CuentaCardProps) {
+  useRenderCount('CuentaCard', { cuentaId: item.id_cuenta, estado: item.estado });
   const productCount =
     item.total_detalles ||
     (item.detalles
@@ -97,7 +99,7 @@ export function CuentaCard({
   };
 
   return (
-    <MotiView
+    <AnimatedView
       from={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "timing", duration: 500 }}
@@ -178,6 +180,6 @@ export function CuentaCard({
           }
         />
       </Pressable>
-    </MotiView>
+    </AnimatedView>
   );
 }

@@ -1,16 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import React from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
     ActivityIndicator,
-    FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Product, ProductCard } from '@/components/shared/ProductCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -54,7 +55,7 @@ export default function ProductosScreen() {
         submitOrder,
     } = useGarzonProductos();
 
-    const renderItem = useCallback(({ item }: { item: Product }) => {
+    const renderItem = useStableCallback(({ item }: { item: Product }) => {
         const cartItem = cart.find((i) => i.product.id === item.id);
 
         return (
@@ -70,7 +71,7 @@ export default function ProductosScreen() {
                 rooms={rooms}
             />
         );
-    }, [cart, addToCart, removeFromCart, setActiveConfigItem, anfitrionas, rooms]);
+    });
 
     return (
         <View style={{ flex: 1, backgroundColor: bg }}>
@@ -100,10 +101,11 @@ export default function ProductosScreen() {
                     <ActivityIndicator size="large" color={accentColor} />
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={products}
-                    keyExtractor={(item) => String(item.id)}
+                    keyExtractor={(item: Product) => String(item.id)}
                     renderItem={renderItem}
+                    estimatedItemSize={150}
                     contentContainerStyle={[
                         styles.listContent,
                         { paddingBottom: cart.length > 0 ? 180 : 40 }

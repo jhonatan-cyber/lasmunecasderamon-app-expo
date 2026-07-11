@@ -15,7 +15,7 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
@@ -126,7 +126,7 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
 }
 
 const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-    Toast.show({
+    showToastLazy({
         type,
         text1: title,
         text2: message,

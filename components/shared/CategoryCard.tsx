@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface CategoryCardProps {
     item: {
@@ -15,6 +16,7 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
+    useRenderCount('CategoryCard', { itemId: item.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     return (

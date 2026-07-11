@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
 import { parseDateSafe } from '../../utils/timeUtils';
+import { useRenderCount } from '../../hooks/useRenderCount';
 
 export interface Anticipo {
     id_solicitud: number | string;
@@ -35,6 +36,7 @@ export function AdvanceCard({
     viewMode = 'solicitudes',
     normalizeEstado,
 }: AdvanceCardProps) {
+    useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     
@@ -100,7 +102,7 @@ export function AdvanceCard({
     };
 
     return (
-        <MotiView
+        <AnimatedView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'spring', delay: index * 100 }}
@@ -176,7 +178,7 @@ export function AdvanceCard({
                     )}
                 </View>
             </View>
-        </MotiView>
+        </AnimatedView>
     );
 }
 

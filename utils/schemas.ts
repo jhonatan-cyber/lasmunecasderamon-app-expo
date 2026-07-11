@@ -1,35 +1,34 @@
-import { z } from 'zod';
+import { object, string, number, boolean, date } from 'zod/v4';
+import type { z } from 'zod/v4';
 
-
-
-export const UserSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  nick: z.string(),
-  role: z.string().or(z.object({ id: z.number(), name: z.string() })),
-  status: z.number().optional(),
-  qr_token: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
+export const UserSchema = object({
+  id: number(),
+  name: string(),
+  nick: string(),
+  role: string().or(object({ id: number(), name: string() })),
+  status: number().optional(),
+  qr_token: string().nullable().optional(),
+  email: string().email().nullable().optional(),
 });
 
-export const RoomSchema = z.object({
-  id_habitacion: z.number(),
-  numero: z.string(),
-  estado: z.number(),
-  price: z.number().nullable().optional(),
-  time: z.number().nullable().optional(),
+export const RoomSchema = object({
+  id_habitacion: number(),
+  numero: string(),
+  estado: number(),
+  price: number().nullable().optional(),
+  time: number().nullable().optional(),
 });
 
-export const TimerSchema = z.object({
-  servicioId: z.number(),
-  roomId: z.number(),
-  roomName: z.string(),
-  duration: z.number(),
-  startTime: z.string().or(z.date()),
-  codigo: z.string(),
-  clienteNombre: z.string(),
-  isPaused: z.boolean().optional(),
-  anfitrionas: z.string().optional(),
+export const TimerSchema = object({
+  servicioId: number(),
+  roomId: number(),
+  roomName: string(),
+  duration: number(),
+  startTime: string().or(date()),
+  codigo: string(),
+  clienteNombre: string(),
+  isPaused: boolean().optional(),
+  anfitrionas: string().optional(),
 });
 
 export type UserType = z.infer<typeof UserSchema>;

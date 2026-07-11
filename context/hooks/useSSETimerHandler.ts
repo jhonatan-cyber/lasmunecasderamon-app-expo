@@ -230,7 +230,7 @@ export function useSSETimerHandler({
       }
 
       case "timers_updated": {
-        logger.info('[TimerContext Mobile] timers_updated received - syncing list');
+        logger.debug('[TimerContext Mobile] timers_updated received - syncing list');
         fetchActiveTimers();
         break;
       }

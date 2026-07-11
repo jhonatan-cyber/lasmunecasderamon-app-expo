@@ -3,8 +3,8 @@ import FlashList from "@/components/shared/FlashList";
 import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { MotiView } from 'moti';
-import React, { useState } from 'react';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import React, { useCallback, useState } from 'react';
 import {
     Pressable,
     RefreshControl,
@@ -144,19 +144,19 @@ export default function SolicitudesScreen() {
             />
 
             {isOffline && (
-                <MotiView
+                <AnimatedView
                     from={{ opacity: 0, translateY: -20 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     style={[styles.offlineBanner, { backgroundColor: '#EF4444' }]}
                 >
                     <Ionicons name="cloud-offline" size={20} color="#FFFFFF" />
                     <Text style={styles.offlineBannerText}>MODO OFFLINE - VIENDO DATOS GUARDADOS</Text>
-                </MotiView>
+                </AnimatedView>
             )}
 
             {}
             {totalAPagar > 0 && (
-                <MotiView
+                <AnimatedView
                     from={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     style={[styles.totalBanner, { backgroundColor: cardBg, borderColor, borderLeftColor: accentColor }]}
@@ -168,7 +168,7 @@ export default function SolicitudesScreen() {
                         <Text style={[styles.totalBannerLabel, { color: textSecondary }]}>TOTAL A PAGAR EN ANTICIPOS</Text>
                         <Text style={[styles.totalBannerValue, { color: accentColor }]}>${totalAPagar.toLocaleString()}</Text>
                     </View>
-                </MotiView>
+                </AnimatedView>
             )}
 
             {}
@@ -199,7 +199,7 @@ export default function SolicitudesScreen() {
             </View>
 
             {solicitudes.length > 0 && !isOffline && (
-                <MotiView
+                <AnimatedView
                     from={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     style={[styles.urgencyBar, { backgroundColor: accentColor, marginHorizontal: 16 }]}
@@ -208,13 +208,13 @@ export default function SolicitudesScreen() {
                     <Text style={styles.urgencyBarText}>
                         {filteredSolicitudes.length} {activeFilter === 'all' ? 'SOLICITUDES' : activeFilter.toUpperCase()} PENDIENTE{filteredSolicitudes.length !== 1 ? 'S' : ''}
                     </Text>
-                </MotiView>
+                </AnimatedView>
             )}
 
             <FlashList
                 data={filteredSolicitudes}
                 keyExtractor={(item: SolicitudItem) => item.id_unificado}
-                renderItem={({ item }: { item: SolicitudItem }) => (
+                renderItem={useCallback(({ item }: { item: SolicitudItem }) => (
                     <View
                         style={[
                             styles.cardWrapper,
@@ -240,7 +240,7 @@ export default function SolicitudesScreen() {
                             nowTick={nowTick}
                         />
                     </View>
-                )}
+                ), [accentColor, textPrimary, textSecondary, cardBg, borderColor, serverOffset, cajaAbierta, handleAprobar, handleRechazar, numColumns, nowTick, setSelectedService, setServiceModalVisible])}
                 extraData={`${nowTick}-${activeFilter}`}
                 estimatedItemSize={120}
                 numColumns={numColumns}
@@ -300,7 +300,7 @@ export default function SolicitudesScreen() {
                 metodoPagoAdicional={metodoPagoAdicional}
                 setMetodoPagoAdicional={setMetodoPagoAdicional}
                 allHostesses={allHostesses}
-                onAprobar={handleAprobar}
+                onAprobar={(id, tipo) => handleAprobar(id, tipo as any)}
                 isDark={isDark}
                 isTablet={isTablet}
                 accentColor={accentColor}

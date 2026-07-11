@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import { getEventLabel, getEventStatusLabel as getStatusLabel } from "@/utils/eventHelpers";
 import { eventsService } from '@/services';
 import logger from "@/utils/logger";
@@ -54,7 +54,7 @@ export function useAdministrativoScreen() {
         }
 
         if (isManual) {
-          Toast.show({
+          showToast({
             type: hasChanges ? "success" : "info",
             text1: hasChanges ? "Éxito" : "Información",
             text2: hasChanges
@@ -66,7 +66,7 @@ export function useAdministrativoScreen() {
       } catch (error) {
         logger.captureException(error, { context: "Administrativo:fetchData" });
         if (isManual) {
-          Toast.show({
+          showToast({
             type: "error",
             text1: "Error",
             text2: "No se pudo actualizar el resumen",

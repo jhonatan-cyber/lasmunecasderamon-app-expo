@@ -6,7 +6,6 @@ const config = getDefaultConfig(__dirname);
 const forcedTslibPath = path.resolve(__dirname, 'node_modules/tslib/tslib.es6.js');
 
 
-
 config.resolver.unstable_enablePackageExports = false;
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),

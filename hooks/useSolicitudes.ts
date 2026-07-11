@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
@@ -40,14 +40,14 @@ export const useSolicitudes = () => {
         loadCache();
     }, []);
 
-    const fetchSolicitudes = useCallback(async (isManual = false) => {
+    const fetchSolicitudes = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
             const [resSolicitudes, resOrders, resAnticipos, resStats, resAnfitrionas] = await Promise.all([
-                apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0').catch(() => ({ success: false, data: [] })),
-                apiClientSafe<SolicitudItem[]>('/orders').catch(() => ({ success: false, data: [] })),
-                apiClientSafe<SolicitudItem[]>('/anticipos').catch(() => ({ success: false, data: [] })),
-                apiClientSafe<{ cajas_abiertas: number }>('/caja/stats').catch(() => null),
-                apiClientSafe<Anfitriona[]>('/anfitrionas').catch(() => ({ success: false, data: [] }))
+                apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0', { signal }).catch(() => ({ success: false, data: [] })),
+                apiClientSafe<SolicitudItem[]>('/orders', { signal }).catch(() => ({ success: false, data: [] })),
+                apiClientSafe<SolicitudItem[]>('/anticipos', { signal }).catch(() => ({ success: false, data: [] })),
+                apiClientSafe<{ cajas_abiertas: number }>('/caja/stats', { signal }).catch(() => null),
+                apiClientSafe<Anfitriona[]>('/anfitrionas', { signal }).catch(() => ({ success: false, data: [] }))
             ]);
 
             const anfitrionasData = resAnfitrionas as unknown as { success: boolean; data: Anfitriona[] };
@@ -111,7 +111,7 @@ export const useSolicitudes = () => {
             AsyncStorage.setItem(CACHE_KEY, JSON.stringify(combined)).catch(() => null);
 
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: hasChanges ? 'success' : 'info',
                     text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
@@ -122,7 +122,7 @@ export const useSolicitudes = () => {
             logger.captureException(error, { context: 'useSolicitudes:fetchSolicitudes' });
             setIsOffline(true);
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Modo Offline',
                     text2: 'No se pudo conectar al servidor. Mostrando datos guardados.',
@@ -136,22 +136,24 @@ export const useSolicitudes = () => {
     }, []);
 
     useEffect(() => {
-        fetchSolicitudes();
+        const ac = new AbortController();
+        fetchSolicitudes(false, ac.signal);
+        return () => ac.abort();
     }, [fetchSolicitudes]);
 
     useEffect(() => {
         const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload: SSEPayload) => {
-            logger.info('[useSolicitudes] 📡 SSE event received:', payload as any);
+            logger.debug('[useSolicitudes] 📡 SSE event received:', payload as any);
             fetchSolicitudes();
             
             if (payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
-                logger.info('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
+                logger.debug('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
                 setPendingAutoOpen({
                     id: payload.data.id as string,
                     type: payload.type === 'new_order' ? 'pedido' : 'solicitud'
                 });
             } else {
-                logger.info('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id as any);
+                logger.debug('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id as any);
             }
         });
         return () => subscription.remove();

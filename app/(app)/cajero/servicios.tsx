@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import FlashList from "@/components/shared/FlashList";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useStableCallback } from "@/hooks/useStableCallback";
 import {
   DeviceEventEmitter,
   Pressable,
@@ -11,7 +12,7 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -274,7 +275,7 @@ export default function ServiciosActivosScreen() {
           };
         });
         dispatch({ type: 'SET_FINALIZADOS', payload: mapped });
-        if (isManual) Toast.show({ type: "success", text1: "Actualizado" });
+        if (isManual) showToastLazy({ type: "success", text1: "Actualizado" });
       }
     } catch (error) {
       logger.captureException(error, { context: 'Servicios:fetchData' });
@@ -318,7 +319,7 @@ export default function ServiciosActivosScreen() {
   }, [activeTab, refreshTimers, fetchFinalizados]);
 
   const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-    Toast.show({
+    showToastLazy({
       type,
       text1: title,
       text2: message,
@@ -343,15 +344,15 @@ export default function ServiciosActivosScreen() {
             const res = await apiClientSafe(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
             dispatch({ type: 'CLOSE_ALERT' });
             if (res.success) {
-              Toast.show({ type: "success", text1: "Servicio Finalizado" });
+              showToastLazy({ type: "success", text1: "Servicio Finalizado" });
               refreshTimers();
               fetchFinalizados();
             } else {
-              Toast.show({ type: "error", text1: "Error", text2: res.message });
+              showToastLazy({ type: "error", text1: "Error", text2: res.message });
             }
           } catch (err: any) {
             dispatch({ type: 'CLOSE_ALERT' });
-            Toast.show({ type: "error", text1: "Error", text2: err.message || "Error al finalizar" });
+            showToastLazy({ type: "error", text1: "Error", text2: err.message || "Error al finalizar" });
           }
         }
       }
@@ -362,7 +363,7 @@ export default function ServiciosActivosScreen() {
     dispatch({ type: 'SET_EDIT_MODAL', visible: true, timer });
   }, []);
 
-  const renderItem = useCallback(({ item }: { item: any }) => (
+  const renderItem = useStableCallback(({ item }: { item: any }) => (
     <ServiceCard
       item={item}
       activeTab={activeTab}
@@ -372,7 +373,7 @@ export default function ServiciosActivosScreen() {
       onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: formatServiceDetail(t) })}
       theme={theme}
     />
-  ), [activeTab, serverOffset, onFinalizar, onEditar, theme]);
+  ));
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -402,11 +403,14 @@ export default function ServiciosActivosScreen() {
           renderItem={renderItem}
           keyExtractor={(item: any) => item.id}
           numColumns={numColumns}
-          estimatedItemSize={200}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} colors={[accentColor]} />
           }
+          windowSize={10}
+          maxToRenderPerBatch={7}
+          initialNumToRender={5}
+          removeClippedSubviews={true}
           ListEmptyComponent={
             !(loadingActivos || loadingFinalizados) ? (
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>

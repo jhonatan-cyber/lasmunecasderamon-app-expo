@@ -11,15 +11,16 @@ export interface ApiResponse<T> {
 
 export async function fetchSalesList(
   limit = 50,
+  signal?: AbortSignal,
 ): Promise<{ ventas: Venta[]; resumen: VentaResumen | null }> {
   try {
     const timestamp = Date.now();
     const [resSales, resResumen] = await Promise.all([
-      apiClientSafe(`/sales?limit=${limit}&_t=${timestamp}`).catch(() => ({
+      apiClientSafe(`/sales?limit=${limit}&_t=${timestamp}`, { signal }).catch(() => ({
         success: false as const,
         data: [],
       })),
-      apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
+      apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`, { signal }).catch(() => ({
         success: false as const,
         data: null,
       })),
@@ -44,9 +45,10 @@ export async function fetchSalesList(
 
 export async function fetchVentaDetail(
   id: string | number,
+  signal?: AbortSignal,
 ): Promise<VentaDetail | null> {
   try {
-    const res = await apiClientSafe(`/ventas/${id}`);
+    const res = await apiClientSafe(`/ventas/${id}`, { signal });
     if (res?.success && res.data) {
       return res.data as VentaDetail;
     }

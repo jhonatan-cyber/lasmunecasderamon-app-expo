@@ -4,9 +4,9 @@ import { useTheme } from "@/context/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { apiClientSafe } from "@/api/client";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { DonutChart } from "@/components/ui/DonutChart";
+import { LazyDonutChart } from "@/components/ui/LazyDonutChart";
 import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Ionicons } from "@expo/vector-icons";
 import { formatCurrency } from "@/utils/format";
 
@@ -31,7 +31,7 @@ const StatCard: React.FC<StatCardProps> = ({
   const isDark = theme === "dark";
 
   return (
-    <MotiView
+    <AnimatedView
       from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 500 }}
@@ -69,7 +69,7 @@ const StatCard: React.FC<StatCardProps> = ({
           </Text>
         </View>
       </LinearGradient>
-    </MotiView>
+    </AnimatedView>
   );
 };
 
@@ -88,20 +88,20 @@ const MiniChart: React.FC<MiniChartProps> = ({ data, color, height = 120 }) => {
     <View style={[styles.miniChartContainer, { height }]}>
       {data.map((item, index) => (
         <View key={index} style={styles.barWrapper}>
-          <MotiView
-            from={{ height: 0, opacity: 0 }}
-            animate={{
-              height: `${(item.value / maxValue) * 100}%`,
-              opacity: 1,
-            }}
+          <AnimatedView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ type: "timing", duration: 1000, delay: index * 100 }}
-            style={styles.barContainer}
+            style={[
+              styles.barContainer,
+              { height: `${(item.value / maxValue) * 100}%` },
+            ]}
           >
             <LinearGradient
               colors={[color, color + "80"]}
               style={styles.barGradient}
             />
-          </MotiView>
+          </AnimatedView>
           <Text
             style={[styles.barLabel, { color: isDark ? "#94A3B8" : "#64748B" }]}
           >
@@ -249,7 +249,7 @@ export const AnalyticsDashboard: React.FC = () => {
             Servicios por Estado
           </Text>
           <View style={styles.chartRow}>
-            <DonutChart
+            <LazyDonutChart
               percent={completedPercent}
               color="#10B981"
               size={140}

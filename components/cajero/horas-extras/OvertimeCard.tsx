@@ -1,6 +1,8 @@
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useRenderCount } from '@/hooks/useRenderCount';
 import { OvertimeRecord } from '@/hooks/useHorasExtrasScreen';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
@@ -22,10 +24,10 @@ interface OvertimeCardProps {
     borderColor: string;
     textPrimary: string;
     textSecondary: string;
-    onPress: () => void;
+    onPress: (item: OvertimeRecord) => void;
 }
 
-export function OvertimeCard({
+export const OvertimeCard = React.memo(function OvertimeCard({
     item,
     index,
     accentColor,
@@ -35,17 +37,18 @@ export function OvertimeCard({
     textSecondary,
     onPress
 }: OvertimeCardProps) {
+    useRenderCount('OvertimeCard', { itemId: item.id_hora_extra, estado: item.estado });
     const status = statusConfig[item.estado] || statusConfig[1];
     const fecha = new Date(item.fecha_crea);
 
     return (
-        <MotiView
+        <AnimatedView
             from={{ opacity: 0, translateX: -10 }}
             animate={{ opacity: 1, translateX: 0 }}
             transition={{ delay: index * 30 }}
         >
             <Pressable
-                onPress={onPress}
+                onPress={() => onPress(item)}
                 style={[styles.card, { backgroundColor: cardBg, borderColor }]}
             >
                 <View style={styles.empHeader}>
@@ -97,9 +100,10 @@ export function OvertimeCard({
                     </View>
                 </View>
             </Pressable>
-        </MotiView>
+        </AnimatedView>
     );
-}
+});
+OvertimeCard.displayName = 'OvertimeCard';
 
 const styles = StyleSheet.create({
     card: { 

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
@@ -53,14 +53,14 @@ export function useGarzonProductos() {
         buildOrderPayload
     } = useCartStore();
 
-    const fetchData = useCallback(async (isManual = false) => {
+    const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
             setError('');
             const [prodRes, anfRes, roomRes, clientRes] = await Promise.allSettled([
-                apiClientSafe(`/products?category_id=${categoryId}`),
-                apiClientSafe('/anfitrionas'),
-                apiClientSafe('/rooms?status=1'),
-                apiClientSafe('/clients'),
+                apiClientSafe(`/products?category_id=${categoryId}`, { signal }),
+                apiClientSafe('/anfitrionas', { signal }),
+                apiClientSafe('/rooms?status=1', { signal }),
+                apiClientSafe('/clients', { signal }),
             ]);
 
             const prodData = prodRes.status === 'fulfilled' ? prodRes.value : null;
@@ -68,7 +68,7 @@ export function useGarzonProductos() {
             const roomData = roomRes.status === 'fulfilled' ? roomRes.value : null;
             const clientData = clientRes.status === 'fulfilled' ? clientRes.value : null;
 
-            logger.info('Anfitrionas response', { data: anfData });
+            logger.debug('Anfitrionas response', { data: anfData });
 
             const newData = { 
                 products: (prodData as any)?.data, 
@@ -98,7 +98,7 @@ export function useGarzonProductos() {
             }
 
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: hasChanges ? 'success' : 'info',
                     text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
@@ -109,7 +109,7 @@ export function useGarzonProductos() {
             logger.captureException(err, { context: 'Productos:fetchProductos' });
             setError(err.message || 'Error de conexión');
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Error',
                     text2: 'No se pudo actualizar la lista de productos',
@@ -123,8 +123,9 @@ export function useGarzonProductos() {
     }, [categoryId]);
 
     useEffect(() => {
-        const run = async () => { await fetchData(); };
-        void run();
+        const ac = new AbortController();
+        fetchData(false, ac.signal);
+        return () => ac.abort();
     }, [fetchData]);
 
     const onRefresh = useCallback(() => {
@@ -158,7 +159,7 @@ export function useGarzonProductos() {
         for (const item of cart) {
             const hasCommission = (item.product.commission || 0) > 0;
             if (hasCommission && item.selectedHostesses.length === 0) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Falta Anfitriona',
                     text2: `Debes asignar al menos una anfitriona a "${item.product.name}"`,
@@ -189,7 +190,7 @@ export function useGarzonProductos() {
             });
 
             if (!buildResult.success) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Datos inválidos',
                     text2: buildResult.errors.join('; '),
@@ -200,11 +201,11 @@ export function useGarzonProductos() {
 
             const orderData = buildResult.data;
 
-            logger.info('[DEBUG] Enviando pedido', { orderData });
+            logger.debug('[DEBUG] Enviando pedido', { orderData });
 
             const res = await apiClientSafe('/orders', { method: 'POST', body: JSON.stringify(orderData) });
             if ((res as any).success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Pedido Enviado',
                     text2: 'El pedido ha sido registrado correctamente',
@@ -216,7 +217,7 @@ export function useGarzonProductos() {
             }
 
         } catch (err: any) {
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error',
                 text2: err.message || 'Error de conexión',

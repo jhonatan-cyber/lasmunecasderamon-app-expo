@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { categoriesService } from '@/services';
 
 export interface Category {
@@ -37,7 +37,7 @@ export function usePedidosScreen() {
             }
 
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: hasChanges ? 'success' : 'info',
                     text1: hasChanges ? 'Éxito' : 'Información',
                     text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
@@ -47,7 +47,7 @@ export function usePedidosScreen() {
         } catch (err: any) {
             setError(err.message || 'Error de conexión');
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Error',
                     text2: 'No se pudo actualizar el catálogo',

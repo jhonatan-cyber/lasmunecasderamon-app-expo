@@ -1,14 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  FlatList,
   Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 export interface Room {
   id: string | number;
@@ -29,13 +30,14 @@ interface RoomSelectModalProps {
   selectedRoomId?: string | number;
 }
 
-export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
+export const RoomSelectModal = React.memo(function RoomSelectModal({
   visible,
   onClose,
   onSelect,
   rooms,
   selectedRoomId,
-}) => {
+}: RoomSelectModalProps) {
+  useRenderCount('RoomSelectModal', { visible, roomCount: rooms.length });
   const {
     accentColor: primaryColor,
     cardBg,
@@ -63,11 +65,11 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             </Pressable>
           </View>
 
-          <FlatList
+          <FlashList
             data={rooms}
-            extraData={selectedRoomId}
-            keyExtractor={(item) => (item.id_habitacion || item.id).toString()}
-            renderItem={({ item }) => {
+            keyExtractor={(item: Room) => (item.id_habitacion || item.id).toString()}
+            estimatedItemSize={80}
+            renderItem={({ item }: { item: Room }) => {
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
               const estaLibre = isLibre(item);
@@ -133,10 +135,10 @@ export const RoomSelectModal: React.FC<RoomSelectModalProps> = ({
             <Text style={styles.modalActionBtnText}>Listo</Text>
           </Pressable>
         </View>
-      </View>
-    </Modal>
+      </View>      </Modal>
   );
-};
+});
+RoomSelectModal.displayName = 'RoomSelectModal';
 
 const styles = StyleSheet.create({
   modalOverlay: {

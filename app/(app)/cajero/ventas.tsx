@@ -154,7 +154,6 @@ export default function VentasScreen() {
         }
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
-        estimatedItemSize={120}
         ListHeaderComponent={null}
         contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
@@ -164,6 +163,10 @@ export default function VentasScreen() {
             tintColor={accentColor}
           />
         }
+        windowSize={10}
+        maxToRenderPerBatch={7}
+        initialNumToRender={5}
+        removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={[styles.emptyCard, { borderColor }]}>
             <Ionicons name="receipt-outline" size={64} color={textSecondary} />

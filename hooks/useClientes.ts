@@ -2,7 +2,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { Alert, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { clientesService } from '@/services';
 import type { PrepagoPayload } from '@/services/clientes';
@@ -58,12 +58,12 @@ export function useClientes() {
     const [formRun, setFormRun] = useState("");
     const [formPhone, setFormPhone] = useState("");
 
-    const fetchClients = useCallback(async (showRefreshing = false) => {
+    const fetchClients = useCallback(async (showRefreshing = false, signal?: AbortSignal) => {
         if (showRefreshing) setRefreshing(true);
         else setLoading(true);
 
         try {
-            const res = await clientesService.list();
+            const res = await clientesService.list(signal);
             const listData = res as unknown as { success: boolean; data: Client[] };
             if (Array.isArray(res)) {
                 setClients(res as Client[]);
@@ -72,7 +72,7 @@ export function useClientes() {
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:fetchClients' });
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'No se pudieron descargar los clientes' });
+            showToast({ type: 'error', text1: 'Error', text2: error.message || 'No se pudieron descargar los clientes' });
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -81,7 +81,9 @@ export function useClientes() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchClients(true);
+            const ac = new AbortController();
+            fetchClients(true, ac.signal);
+            return () => ac.abort();
         }, [fetchClients])
     );
 
@@ -127,7 +129,7 @@ export function useClientes() {
 
     const handleSaveClient = async () => {
         if (!formName || !formLastName) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Nombre y apellido son obligatorios' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Nombre y apellido son obligatorios' });
             return;
         }
 
@@ -147,15 +149,15 @@ export function useClientes() {
 
             const saveRes = res as unknown as { success: boolean; id?: string | number; message?: string };
             if (saveRes.success || saveRes.id || (editingClient && saveRes.message)) {
-                Toast.show({ type: 'success', text1: 'Éxito', text2: editingClient ? 'Cliente actualizado' : 'Cliente creado' });
+                showToast({ type: 'success', text1: 'Éxito', text2: editingClient ? 'Cliente actualizado' : 'Cliente creado' });
                 setClientModalVisible(false);
                 fetchClients(true);
             } else {
-                Toast.show({ type: 'error', text1: 'Error', text2: saveRes.message || 'Error al guardar' });
+                showToast({ type: 'error', text1: 'Error', text2: saveRes.message || 'Error al guardar' });
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:saveClient' });
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
+            showToast({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
         } finally {
             setSubmitting(false);
         }
@@ -208,7 +210,7 @@ export function useClientes() {
     const handleLoadBalance = async () => {
         const rawAmount = unformatCurrency(loadingAmount);
         if (!editingClient || !rawAmount || isNaN(Number(rawAmount)) || Number(rawAmount) <= 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ingrese un monto válido' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Ingrese un monto válido' });
             return;
         }
 
@@ -216,7 +218,7 @@ export function useClientes() {
             const pAmount = Number(unformatCurrency(primaryAmount)) || 0;
             const sAmount = Number(unformatCurrency(secondaryAmount)) || 0;
             if (pAmount + sAmount !== Number(rawAmount)) {
-                Toast.show({ type: 'error', text1: 'Error', text2: `Los montos no coinciden con el total ($${Number(rawAmount).toLocaleString()})` });
+                showToast({ type: 'error', text1: 'Error', text2: `Los montos no coinciden con el total ($${Number(rawAmount).toLocaleString()})` });
                 return;
             }
         }
@@ -244,15 +246,15 @@ export function useClientes() {
             const prepagoRes = res as unknown as { success: boolean; message?: string };
 
             if (prepagoRes.success) {
-                Toast.show({ type: 'success', text1: 'Éxito', text2: 'Saldo cargado correctamente' });
+                showToast({ type: 'success', text1: 'Éxito', text2: 'Saldo cargado correctamente' });
                 setLoadModalVisible(false);
                 await fetchClients(true);
             } else {
-                Toast.show({ type: 'error', text1: 'Error', text2: prepagoRes.message || 'Error al cargar saldo' });
+                showToast({ type: 'error', text1: 'Error', text2: prepagoRes.message || 'Error al cargar saldo' });
             }
         } catch (error: any) {
             logger.captureException(error, { context: 'Clientes:loadBalance' });
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
+            showToast({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
         } finally {
             setSubmitting(false);
         }
@@ -272,11 +274,11 @@ export function useClientes() {
                             const res = await clientesService.delete(client.id);
                             const delRes = res as unknown as { success: boolean; message?: string };
                             if (delRes.success || delRes.message) {
-                                Toast.show({ type: 'success', text1: 'Eliminado', text2: 'Cliente eliminado correctamente' });
+                                showToast({ type: 'success', text1: 'Eliminado', text2: 'Cliente eliminado correctamente' });
                                 fetchClients(true);
                             }
                         } catch (error: any) {
-                            Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'No se pudo eliminar' });
+                            showToast({ type: 'error', text1: 'Error', text2: error.message || 'No se pudo eliminar' });
                         }
                     }
                 }

@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
-    FlatList,
     Pressable,
     RefreshControl,
     StyleSheet,
@@ -10,6 +9,7 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
+import FlashList from "@/components/shared/FlashList";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { CategoryCard } from '@/components/shared/CategoryCard';
@@ -32,7 +32,7 @@ export default function PedidosScreen() {
         onRefresh
     } = usePedidosScreen();
 
-    const renderItem = ({ item, index }: { item: Category, index: number }) => (
+    const renderItem = useCallback(({ item, index }: { item: Category, index: number }) => (
         <CategoryCard
             item={item}
             index={index}
@@ -43,7 +43,7 @@ export default function PedidosScreen() {
                 });
             }}
         />
-    );
+    ), [router]);
 
     if (loading) return <PedidosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 
@@ -70,10 +70,11 @@ export default function PedidosScreen() {
                 </View>
             ) : null}
 
-            <FlatList
+            <FlashList
                 data={categories}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item: Category) => item.id.toString()}
                 renderItem={renderItem}
+                estimatedItemSize={100}
                 contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}

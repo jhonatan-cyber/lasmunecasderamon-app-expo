@@ -35,13 +35,13 @@ export function useActiveTimersFetcher({
     const nowTs = Date.now();
 
     if (nowTs - lastFetchTimeRef.current < 2000) {
-      logger.info('[ActiveTimersFetcher] Skipping fetchActiveTimers (debounced)');
+      logger.debug('[ActiveTimersFetcher] Skipping fetchActiveTimers (debounced)');
       return;
     }
     lastFetchTimeRef.current = nowTs;
 
     try {
-      logger.info('[ActiveTimersFetcher] Calling fetchActiveTimers');
+      logger.debug('[ActiveTimersFetcher] Calling fetchActiveTimers');
 
       const raw = await apiClientSafe<TimerRawData[]>("/timers/active?source=mobile", { timeout: 20000 });
       const data = raw as unknown as ActiveTimersResponse;

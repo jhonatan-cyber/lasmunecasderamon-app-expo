@@ -112,14 +112,14 @@ export function useNuevoServicio() {
     );
   }, [selectedClients, clientes]);
 
-  const fetchInitialData = useCallback(async () => {
+  const fetchInitialData = useCallback(async (signal?: AbortSignal) => {
     dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all([
-        apiClientSafe('/cashregister/status'),
-        apiClientSafe('/anfitrionas'),
-        apiClientSafe('/rooms'),
-        apiClientSafe('/clients'),
+        apiClientSafe('/cashregister/status', { signal }),
+        apiClientSafe('/anfitrionas', { signal }),
+        apiClientSafe('/rooms', { signal }),
+        apiClientSafe('/clients', { signal }),
       ]);
 
       dispatch({
@@ -149,7 +149,9 @@ export function useNuevoServicio() {
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
+    const ac = new AbortController();
+    fetchInitialData(ac.signal);
+    return () => ac.abort();
   }, [fetchInitialData]);
 
   const toggleHostess = useCallback(
@@ -326,7 +328,7 @@ export function useNuevoServicio() {
           ? (anfitrionasDataRes.data as any[])
           : [];
       if (anfitrionasData.length > 0) {
-        logger.info('Anfitrionas fetched:', {
+        logger.debug('Anfitrionas fetched:', {
           arg0: anfitrionasData.length,
           arg1: 'entries. First one foto:',
           arg2: anfitrionasData[0]?.foto,

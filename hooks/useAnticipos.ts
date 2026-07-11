@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DeviceEventEmitter, Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
 
 import { AnticipoRequestSchema } from '@lasmunecasderamon/validations';
@@ -34,20 +34,21 @@ export function useAnticipos() {
   const [montoPropinas, setMontoPropinas] = useState(0);
   const [tieneSolicitudPendiente, setTieneSolicitudPendiente] = useState(false);
 
-  const fetchAnticipos = useCallback(async (isManual = false) => {
+  const fetchAnticipos = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
       const [solicitudesRes, pagosRes] = await Promise.all([
-        apiClientSafe('/anticipos/solicitudes'),
-        apiClientSafe('/anticipos/user'),
+        apiClientSafe('/anticipos/solicitudes', { signal }),
+        apiClientSafe('/anticipos/user', { signal }),
       ]);
       if (solicitudesRes.success) setSolicitudes((solicitudesRes.data || []) as Anticipo[]);
       if (pagosRes.success) setPagos((pagosRes.data || []) as any[]);
       
       if (isManual) {
-        Toast.show({ type: 'success', text1: 'Éxito', text2: 'Datos actualizados' });
+        showToast({ type: 'success', text1: 'Éxito', text2: 'Datos actualizados' });
       }
     } catch (err: any) {
+      if ((err as any)?.name === 'AbortError') return;
       setError(err.message || 'Error de conexión');
     } finally {
       setLoading(false);
@@ -55,9 +56,9 @@ export function useAnticipos() {
     }
   }, []);
 
-  const fetchMaximo = useCallback(async () => {
+  const fetchMaximo = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await apiClientSafe('/anticipos/maximo');
+      const response = await apiClientSafe('/anticipos/maximo', { signal });
       if (response.success && response.data) {
         const d = response.data as { monto_asistencia?: number; monto_comisiones?: number; monto_propinas?: number; monto_maximo?: number; tiene_solicitud_pendiente?: boolean };
         setMontoAsistencia(d.monto_asistencia || 0);
@@ -68,6 +69,7 @@ export function useAnticipos() {
         return d;
       }
     } catch (e) {
+      if ((e as any)?.name === 'AbortError') return null;
       logger.captureException(e, { context: 'useAnticipos:fetchMaximo' });
     }
     return null;
@@ -78,7 +80,7 @@ export function useAnticipos() {
 
     if (!validation.success) {
       const msg = validation.error.issues[0]?.message || 'Datos inválidos';
-      Toast.show({ type: 'warning', text1: 'Atención', text2: msg });
+      showToast({ type: 'warning', text1: 'Atención', text2: msg });
       return false;
     }
 
@@ -90,23 +92,25 @@ export function useAnticipos() {
         body: JSON.stringify({ monto: montoVal, motivo: motivoVal }),
       });
       if (response.success) {
-        Toast.show({ type: 'success', text1: 'Éxito', text2: 'Solicitud enviada correctamente' });
+        showToast({ type: 'success', text1: 'Éxito', text2: 'Solicitud enviada correctamente' });
         fetchAnticipos();
         return true;
       } else {
-        Toast.show({ type: 'warning', text1: 'Atención', text2: response.message || 'No se pudo enviar la solicitud' });
+        showToast({ type: 'warning', text1: 'Atención', text2: response.message || 'No se pudo enviar la solicitud' });
       }
     } catch (error: any) {
       const mensaje = error?.message || 'Error de conexión';
-      Toast.show({ type: 'error', text1: 'Error', text2: mensaje });
+      showToast({ type: 'error', text1: 'Error', text2: mensaje });
     }
     return false;
   };
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnticipos();
-      fetchMaximo();
+      const ac = new AbortController();
+      fetchAnticipos(false, ac.signal);
+      fetchMaximo(ac.signal);
+      return () => ac.abort();
     }, [fetchAnticipos, fetchMaximo])
   );
 

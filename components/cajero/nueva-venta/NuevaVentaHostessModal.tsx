@@ -10,7 +10,7 @@ type Hostess = {
 };
 
 type SelectionTarget = {
-  productId: string;
+  productId: string | number;
   max: number;
   product?: any;
 };

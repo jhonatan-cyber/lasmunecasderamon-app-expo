@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import Toast from "react-native-toast-message";
+import { showToast } from '@/utils/toast-lazy';
 import type { VentaDetail } from "@/components/cajero/ventas/types";
 import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
 import { fetchVentaDetail } from "@/services/ventasService";
@@ -19,7 +19,7 @@ export function useVentaDetail(
       if (detail) {
         dispatch({ type: "SET_SELECTED_VENTA", payload: detail });
       } else {
-        Toast.show({
+        showToast({
           type: "error",
           text1: "Error",
           text2: "No se pudo obtener el detalle de la venta",

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList } from 'react-native';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
 import {
     Pressable,
     RefreshControl,
@@ -65,6 +66,11 @@ export default function HorasExtrasScreen() {
         fetchData(true);
     }, [fetchData]);
 
+    const handleCardPress = useCallback((item: OvertimeRecord) => {
+        setSelectedRecord(item);
+        setModalVisible(true);
+    }, []);
+
     const employees = useMemo(() => {
         const map = new Map<number, { id: number; name: string }>();
         data.forEach(h => {
@@ -118,7 +124,7 @@ export default function HorasExtrasScreen() {
         return { totalRegistros, totalMonto, totalHoras, totalAPagar };
     }, [data]);
 
-    const renderItem = useCallback(({ item, index }: { item: OvertimeRecord; index: number }) => (
+    const renderItem = useStableCallback(({ item, index }: { item: OvertimeRecord; index: number }) => (
         <OvertimeCard
             item={item}
             index={index}
@@ -127,9 +133,9 @@ export default function HorasExtrasScreen() {
             borderColor={borderColor}
             textPrimary={textPrimary}
             textSecondary={textSecondary}
-            onPress={() => { setSelectedRecord(item); setModalVisible(true); }}
+            onPress={handleCardPress}
         />
-    ), [accentColor, cardBg, borderColor, textPrimary, textSecondary]);
+    ));
 
     if (loading) {
         return (
@@ -221,7 +227,7 @@ export default function HorasExtrasScreen() {
                     <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
                 </View>
             ) : (
-                <FlashList
+                <FlatList
                     data={filteredData}
                     keyExtractor={item => String(item.id_hora_extra)}
                     renderItem={renderItem}

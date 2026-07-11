@@ -80,16 +80,16 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
   }, [cart]);
 
   const fetchInitialData = useCallback(
-    async (isRefreshing = false) => {
+    async (isRefreshing = false, signal?: AbortSignal) => {
       if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
       try {
         const requests: Promise<any>[] = [
-          apiClientSafe("/anfitrionas"),
-          apiClientSafe("/categories"),
-          apiClientSafe("/rooms"),
+          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/categories", { signal }),
+          apiClientSafe("/rooms", { signal }),
         ];
         if (cuentaOriginal?.id_cuenta) {
-          requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`));
+          requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`, { signal }));
         }
         const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
@@ -114,11 +114,13 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
   );
 
   useEffect(() => {
-    fetchInitialData();
+    const ac = new AbortController();
+    fetchInitialData(false, ac.signal);
     if (!cuentaOriginal) {
       showToast("Error", "No se recibió la información de la cuenta");
       router.back();
     }
+    return () => ac.abort();
   }, [fetchInitialData, cuentaOriginal, router]);
 
   const onRefresh = useCallback(() => {

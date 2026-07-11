@@ -4,8 +4,8 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Anticipo, useAnticipos } from '@/hooks/useAnticipos';
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from "@shopify/flash-list";
-import { useState } from 'react';
+import { FlatList } from "react-native";
+import { useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -16,7 +16,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 
 export default function AnticiposScreen() {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -57,11 +57,11 @@ export default function AnticiposScreen() {
     const handleSolicitar = async () => {
         const montoNum = parseFloat(monto.replace(/\./g, ''));
         if (!montoNum || montoNum <= 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ingresa un monto válido' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Ingresa un monto válido' });
             return;
         }
         if (montoNum > montoMaximo) {
-            Toast.show({ type: 'error', text1: 'Error', text2: `El monto máximo es $${montoMaximo.toLocaleString()}` });
+            showToast({ type: 'error', text1: 'Error', text2: `El monto máximo es $${montoMaximo.toLocaleString()}` });
             return;
         }
         setSendingRequest(true);
@@ -81,11 +81,11 @@ export default function AnticiposScreen() {
         }
         
         if (tieneSolicitudPendiente) {
-            Toast.show({ type: 'info', text1: 'Solicitud pendiente', text2: 'Ya tienes una solicitud de anticipo en espera' });
+            showToast({ type: 'info', text1: 'Solicitud pendiente', text2: 'Ya tienes una solicitud de anticipo en espera' });
             return;
         }
         if (montoMaximo <= 0) {
-            Toast.show({ type: 'warning', text1: 'Sin saldo disponible', text2: 'No tienes monto disponible para solicitar anticipo' });
+            showToast({ type: 'warning', text1: 'Sin saldo disponible', text2: 'No tienes monto disponible para solicitar anticipo' });
             return;
         }
         setModalVisible(true);
@@ -110,7 +110,7 @@ export default function AnticiposScreen() {
     const totalEnCaja = solicitudes.filter((a) => normalizeEstado(a.estado) === 'confirmada').reduce((sum, a) => sum + Number(a.monto), 0);
     const totalPagado = pagos.filter((p) => normalizeEstado((p as any).estado) === 'pagada').reduce((sum, a) => sum + Number(a.monto), 0);
 
-    const renderItem = ({ item, index }: { item: Anticipo; index: number }) => (
+    const renderItem = useCallback(({ item, index }: { item: Anticipo; index: number }) => (
         <AdvanceCard
             item={item}
             index={index}
@@ -119,7 +119,7 @@ export default function AnticiposScreen() {
             viewMode={viewMode}
             normalizeEstado={normalizeEstado}
         />
-    );
+    ), [viewMode]);
 
     if (loading) {
         return (
@@ -171,7 +171,7 @@ export default function AnticiposScreen() {
                 </View>
             )}
 
-            <FlashList
+            <FlatList
                 data={filteredData}
                 keyExtractor={(item) => (item.id_solicitud || (item as any).id_anticipo).toString()}
                 renderItem={renderItem}

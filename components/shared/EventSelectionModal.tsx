@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList } from 'react-native';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface EventSelectionModalProps {
@@ -40,7 +40,7 @@ export function EventSelectionModal({
                             <Ionicons name="close" size={28} color={textPrimary} />
                         </Pressable>
                     </View>
-                    <FlashList<any>
+                    <FlatList<any>
                         data={selectedEvents}
                         renderItem={({ item }) => (
                             <Pressable

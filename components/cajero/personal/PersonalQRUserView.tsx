@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
+import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { BASE_URL } from '@/api/client';
 import { User } from '@/hooks/usePersonalScreen';
 
@@ -61,7 +61,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
 
       <View style={styles.qrContainer}>
         <View style={[styles.qrGlow, { backgroundColor: accentColor }]} />
-        <QRCode
+        <LazyQRCode
           value={user.qr_token || ''}
           size={width - 48}
           backgroundColor="white"

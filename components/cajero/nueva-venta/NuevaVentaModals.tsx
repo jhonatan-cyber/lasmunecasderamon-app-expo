@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import FlashList from "@/components/shared/FlashList";
 
 import { PaymentMethod, PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
 
@@ -80,10 +81,11 @@ export function NuevaVentaModals({
             {modalLoading ? (
               <ActivityIndicator size="large" color={accentColor} style={{ margin: 40 }} />
             ) : (
-              <FlatList
+              <FlashList
                 data={modalProducts}
-                keyExtractor={(item) => (item.id || item.id_producto).toString()}
-                renderItem={({ item }) => {
+                keyExtractor={(item: any) => (item.id || item.id_producto).toString()}
+                estimatedItemSize={80}
+                renderItem={({ item }: { item: any }) => {
                   const id = item.id || item.id_producto;
                   return (
                     <View style={[styles.productItem, { borderBottomColor: borderColor }]}>
@@ -142,11 +144,12 @@ export function NuevaVentaModals({
                 <Ionicons name="close" size={26} color={textPrimary} />
               </Pressable>
             </View>
-            <FlatList
+            <FlashList
               data={timeOptions}
-              keyExtractor={(item) => item.toString()}
+              keyExtractor={(item: number) => item.toString()}
+              estimatedItemSize={60}
               contentContainerStyle={{ paddingHorizontal: 24 }}
-              renderItem={({ item }) => (
+              renderItem={({ item }: { item: number }) => (
                 <TouchableOpacity
                   style={[styles.productItem, { borderBottomColor: borderColor }]}
                   onPress={() => {

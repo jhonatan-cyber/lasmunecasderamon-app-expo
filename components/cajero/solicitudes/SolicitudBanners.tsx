@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 
 interface SolicitudBannersProps {
     isOffline: boolean;
@@ -22,18 +22,18 @@ export const SolicitudBanners: React.FC<SolicitudBannersProps> = ({
 }) => (
     <>
         {isOffline && (
-            <MotiView
+            <AnimatedView
                 from={{ opacity: 0, translateY: -20 }}
                 animate={{ opacity: 1, translateY: 0 }}
                 style={[styles.offlineBanner, { backgroundColor: '#EF4444' }]}
             >
                 <Ionicons name="cloud-offline" size={20} color="#FFFFFF" />
                 <Text style={styles.offlineBannerText}>MODO OFFLINE - VIENDO DATOS GUARDADOS</Text>
-            </MotiView>
+            </AnimatedView>
         )}
 
         {totalAPagar > 0 && (
-            <MotiView
+            <AnimatedView
                 from={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 style={[styles.totalBanner, { backgroundColor: cardBg, borderColor, borderLeftColor: accentColor }]}
@@ -45,7 +45,7 @@ export const SolicitudBanners: React.FC<SolicitudBannersProps> = ({
                     <Text style={[styles.totalBannerLabel, { color: textSecondary }]}>TOTAL A PAGAR EN ANTICIPOS</Text>
                     <Text style={[styles.totalBannerValue, { color: accentColor }]}>${totalAPagar.toLocaleString()}</Text>
                 </View>
-            </MotiView>
+            </AnimatedView>
         )}
     </>
 );

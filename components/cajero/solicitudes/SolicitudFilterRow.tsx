@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 
 type FilterType = 'all' | 'anticipo' | 'pedido' | 'solicitud';
 
@@ -64,7 +64,7 @@ export const SolicitudFilterRow: React.FC<SolicitudFilterRowProps> = ({
         </View>
 
         {solicitudesCount > 0 && !isOffline && (
-            <MotiView
+            <AnimatedView
                 from={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 style={[styles.urgencyBar, { backgroundColor: accentColor, marginHorizontal: 16 }]}
@@ -73,7 +73,7 @@ export const SolicitudFilterRow: React.FC<SolicitudFilterRowProps> = ({
                 <Text style={styles.urgencyBarText}>
                     {filteredCount} {activeFilter === 'all' ? 'SOLICITUDES' : activeFilter.toUpperCase()} PENDIENTE{filteredCount !== 1 ? 'S' : ''}
                 </Text>
-            </MotiView>
+            </AnimatedView>
         )}
     </>
 );

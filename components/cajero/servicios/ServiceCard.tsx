@@ -1,9 +1,10 @@
 import { memo, useEffect, useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
-import { MotiView } from "moti";
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import { safeNumber } from "@/hooks/useServiciosScreen";
+import { useRenderCount } from "@/hooks/useRenderCount";
 import { ServiceCardHeader } from "./ServiceCardHeader";
 import { ServiceCardDetails } from "./ServiceCardDetails";
 import { ServiceCardTimer } from "./ServiceCardTimer";
@@ -39,6 +40,7 @@ export const ServiceCard = memo(
     onPress,
     theme,
   }: ServiceCardProps) => {
+    useRenderCount('ServiceCard', { itemId: item?.id, activeTab, estado: item?.estado });
     const [remaining, setRemaining] = useState(() =>
       calculateRemainingTime(item, serverOffset),
     );
@@ -100,7 +102,7 @@ export const ServiceCard = memo(
     };
 
     return (
-      <MotiView
+      <AnimatedView
         from={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "timing", duration: 500 }}
@@ -173,7 +175,7 @@ export const ServiceCard = memo(
             />
           )}
         </Pressable>
-      </MotiView>
+      </AnimatedView>
     );
   },
 );

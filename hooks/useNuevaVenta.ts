@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useRouter } from 'expo-router';
 import { apiClientSafe } from '@/api/client';
-import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { useSales } from '@/context/SalesContext';
 import {
   showToast,
@@ -22,11 +21,7 @@ export function useNuevaVenta() {
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
 
   const {
-    loadingInitial,
-    refreshing,
     anfitrionas,
-    habitaciones,
-    clientes,
     cajaAbierta,
     cart,
     selectedCliente,
@@ -35,22 +30,11 @@ export function useNuevaVenta() {
     pagosMixtos,
     enableTip,
     selectedTime,
-    categories,
-    modalOpen,
-    modalCategoria,
-    modalProducts,
-    modalLoading,
     modalQuantities,
     modalHostessSelections,
     hostessSelectionTarget,
-    hostessSubModalVisible,
-    roomModalVisible,
-    clientModalVisible,
-    submitting,
-    loadModalVisible,
     loadingAmount,
     loadingTargetClient,
-    loadSubmitting,
     loadMetodoPago,
   } = state;
 
@@ -71,16 +55,16 @@ export function useNuevaVenta() {
     );
   }, [cart]);
 
-  const fetchInitialData = useCallback(async (isRefreshing = false) => {
+  const fetchInitialData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
     if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.allSettled([
-          apiClientSafe('/cashregister/status'),
-          apiClientSafe('/anfitrionas'),
-          apiClientSafe('/rooms'),
-          apiClientSafe('/clients'),
-          apiClientSafe('/categories'),
+          apiClientSafe('/cashregister/status', { signal }),
+          apiClientSafe('/anfitrionas', { signal }),
+          apiClientSafe('/rooms', { signal }),
+          apiClientSafe('/clients', { signal }),
+          apiClientSafe('/categories', { signal }),
         ]);
 
       const caja = cajaRes.status === 'fulfilled' ? cajaRes.value : null;
@@ -113,7 +97,9 @@ export function useNuevaVenta() {
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
+    const ac = new AbortController();
+    fetchInitialData(false, ac.signal);
+    return () => ac.abort();
   }, [fetchInitialData]);
 
   const onRefresh = useCallback(() => {
@@ -358,7 +344,7 @@ export function useNuevaVenta() {
         newSelected = [...currentSelected, id];
       }
 
-      dispatch({ type: 'SET_MODAL_HOSTESSES', productId: pid, hostesses: newSelected });
+      dispatch({ type: 'SET_MODAL_HOSTESSES', productId: String(pid), hostesses: newSelected });
     },
     [hostessSelectionTarget, modalHostessSelections],
   );

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -55,7 +55,7 @@ export const QRScannerOverlay: React.FC<QRScannerOverlayProps> = ({
     </View>
 
     <View style={styles.scannerContainer}>
-      <MotiView
+      <AnimatedView
         from={{ scale: 0.9, opacity: 0.5 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ loop: true, duration: 2000, type: 'timing' }}
@@ -66,7 +66,7 @@ export const QRScannerOverlay: React.FC<QRScannerOverlayProps> = ({
         <View style={[styles.corner, styles.bottomLeft]} />
         <View style={[styles.corner, styles.bottomRight]} />
         {loading && <ActivityIndicator size="large" color="#60A5FA" />}
-      </MotiView>
+      </AnimatedView>
     </View>
 
     <View style={styles.footer}>

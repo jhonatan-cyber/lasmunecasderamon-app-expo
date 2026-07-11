@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
 
@@ -42,7 +42,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
     };
 
     return (
-        <MotiView 
+        <AnimatedView 
             from={{ opacity: 0, translateY: 20 }} 
             animate={{ opacity: 1, translateY: 0 }} 
             transition={{ type: 'spring', delay: index * 100 }}
@@ -116,7 +116,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                     )}
                 </View>
             </Pressable>
-        </MotiView>
+        </AnimatedView>
     );
 };
 

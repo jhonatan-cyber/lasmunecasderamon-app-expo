@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { tipsService } from '@/services';
 import logger from '@/utils/logger';
@@ -50,10 +50,10 @@ export function usePropinasScreen() {
     const [saleDetail, setSaleDetail] = useState<SaleDetail | null>(null);
     const [parentPropina, setParentPropina] = useState<any>(null);
 
-    const fetchData = useCallback(async (isManual = false) => {
+    const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
             setError('');
-            const data = await tipsService.userDetail();
+            const data = await tipsService.userDetail(signal);
             if ((data as any).success) {
                 const serialized = JSON.stringify((data as any).data);
                 const hasChanges = dataRef.current !== serialized;
@@ -61,7 +61,7 @@ export function usePropinasScreen() {
                 setPropinas((data as any).data || []);
 
                 if (isManual) {
-                    Toast.show({
+                    showToast({
                         type: hasChanges ? 'success' : 'info',
                         text1: hasChanges ? 'Éxito' : 'Información',
                         text2: hasChanges ? 'Datos actualizados' : 'Sin cambios en los datos',
@@ -71,7 +71,7 @@ export function usePropinasScreen() {
             } else {
                 setError((data as any).message || 'Error al cargar propinas');
                 if (isManual) {
-                    Toast.show({
+                    showToast({
                         type: 'error',
                         text1: 'Error',
                         text2: (data as any).message || 'Error al cargar propinas',
@@ -82,7 +82,7 @@ export function usePropinasScreen() {
         } catch (err: any) {
             setError(err.message || 'Error de conexión');
             if (isManual) {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Error',
                     text2: 'No se pudo actualizar',
@@ -97,7 +97,9 @@ export function usePropinasScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchData();
+            const ac = new AbortController();
+            fetchData(false, ac.signal);
+            return () => ac.abort();
         }, [fetchData])
     );
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Pressable, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface ActiveServiceCardProps {
@@ -35,7 +35,7 @@ export const ActiveServiceCard = ({ habitacion, tiempoRestante, onPress }: Activ
     }, [pulseAnim]);
 
     return (
-        <MotiView
+        <AnimatedView
             from={{ opacity: 0, scale: 0.9, translateY: -20 }}
             animate={{ opacity: 1, scale: 1, translateY: 0 }}
             transition={{ type: 'spring', damping: 15 }}
@@ -74,7 +74,7 @@ export const ActiveServiceCard = ({ habitacion, tiempoRestante, onPress }: Activ
                     </View>
                 </LinearGradient>
             </Pressable>
-        </MotiView>
+        </AnimatedView>
     );
 };
 

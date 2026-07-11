@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -93,7 +93,7 @@ export const QRScannerModal = ({
                                     style={styles.btn}
                                     onPress={() => {
                                         Linking.openSettings().catch(() => {
-                                            Toast.show({
+                                            showToast({
                                                 type: 'error',
                                                 text1: 'No se pudo abrir Ajustes',
                                                 text2: 'Abre Ajustes manualmente y habilita la cámara para esta app.'
@@ -132,7 +132,7 @@ export const QRScannerModal = ({
         } catch (error: any) {
             
             onClose();
-            Toast.show({
+            showToast({
                 type: 'error',
                 text1: 'Error de Lectura',
                 text2: error.message || 'No se pudo procesar el código QR.'
@@ -190,7 +190,7 @@ export const QRScannerModal = ({
                     </View>
 
                     <View style={styles.scannerContainer}>
-                        <MotiView
+                        <AnimatedView
                             from={{ scale: 0.9, opacity: 0.5 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ loop: true, duration: 2000, type: 'timing' }}
@@ -201,7 +201,7 @@ export const QRScannerModal = ({
                             <View style={[styles.corner, styles.bottomLeft]} />
                             <View style={[styles.corner, styles.bottomRight]} />
                             {loading && <ActivityIndicator size="large" color="#60A5FA" />}
-                        </MotiView>
+                        </AnimatedView>
                     </View>
 
                     <View style={styles.footer}>

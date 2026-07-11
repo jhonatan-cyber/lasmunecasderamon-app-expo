@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 export interface Product {
     id: string;
@@ -58,6 +59,7 @@ export const ProductCard = ({
     anfitrionas,
     rooms
 }: ProductCardProps) => {
+    useRenderCount('ProductCard', { productId: product.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const qty = cartItem?.quantity || 0;
 

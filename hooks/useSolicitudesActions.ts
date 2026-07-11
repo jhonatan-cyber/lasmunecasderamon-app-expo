@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 import * as Haptics from "expo-haptics";
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
 import { MetodoPago } from "@/types/api";
 import type { Cliente } from '@lasmunecasderamon/types';
@@ -100,7 +100,7 @@ export const useSolicitudesActions = ({
     if (type === "success") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-    Toast.show({
+    showToastLazy({
       type,
       text1: title,
       text2: message,
@@ -120,7 +120,7 @@ export const useSolicitudesActions = ({
   }, []);
 
   const handleAprobar = useCallback(async (id: string, tipo: "pedido" | "solicitud" | "anticipo", itemInfo?: SolicitudItem) => {
-    logger.info("[handleAprobar] id:", { arg0: id, arg1: "tipo:", arg2: tipo, arg3: "itemInfo:", arg4: itemInfo });
+    logger.debug("[handleAprobar] id:", { arg0: id, arg1: "tipo:", arg2: tipo, arg3: "itemInfo:", arg4: itemInfo });
     if (!cajaAbierta) {
       showToast("Caja Cerrada", "No puedes aprobar servicios ni pedidos porque no hay una caja abierta.", "error");
       return;
@@ -483,17 +483,24 @@ export const useSolicitudesActions = ({
       return () => clearTimeout(t);
     }
 
+    const ac = new AbortController();
     const t = setTimeout(() => {
       setLoadingClient(true);
-      apiClientSafe<Cliente>(`/clients?id=${cId}`)
+      apiClientSafe<Cliente>(`/clients?id=${cId}`, { signal: ac.signal })
         .then((res) => {
           if (res.success) setSelectedClient(res.data);
         })
-        .catch(() => setSelectedClient(null))
+        .catch((err) => {
+          if (err?.name === 'AbortError') return;
+          setSelectedClient(null);
+        })
         .finally(() => setLoadingClient(false));
     }, 0);
 
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      ac.abort();
+    };
   }, [selectedService, serviceModalVisible]);
 
   return {

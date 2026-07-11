@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import type { Timer } from '@/context/types';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
@@ -58,14 +58,14 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
             .join(', ') || 'Ninguna seleccionada';
     };
 
-    const fetchHabitacionSinComision = useCallback(async () => {
+    const fetchHabitacionSinComision = useCallback(async (signal?: AbortSignal) => {
         try {
-            const res = await apiClientSafe<RoomRaw[]>('/rooms');
-            logger.info('[EditServiceModal] Respuesta habitaciones', { response: res });
+            const res = await apiClientSafe<RoomRaw[]>('/rooms', { signal });
+            logger.debug('[EditServiceModal] Respuesta habitaciones', { response: res });
 
             if (res.success && Array.isArray(res.data)) {
                 res.data.forEach((h: RoomRaw, index: number) => {
-                    logger.info(`[EditServiceModal] Habitación ${index}:`, {
+                    logger.debug(`[EditServiceModal] Habitación ${index}:`, {
                         nombre: h.nombre || h.name,
                         precio: h.precio || h.price,
                         tiempo: h.tiempo || h.time,
@@ -89,11 +89,11 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
         }
     }, []);
 
-    const fetchAnfitrionas = useCallback(async () => {
+    const fetchAnfitrionas = useCallback(async (signal?: AbortSignal) => {
         setLoadingAnfitrionas(true);
         try {
-            const disponiblesRes = await apiClientSafe<Anfitriona[]>('/anfitrionas/disponibles');
-            const servicioRes = await apiClientSafe<ServicioDetailRaw>(`/servicios/${timer?.servicioId}`);
+            const disponiblesRes = await apiClientSafe<Anfitriona[]>('/anfitrionas/disponibles', { signal });
+            const servicioRes = await apiClientSafe<ServicioDetailRaw>(`/servicios/${timer?.servicioId}`, { signal });
             let todasAnfitrionas: Anfitriona[] = [];
 
             if (disponiblesRes.success && Array.isArray(disponiblesRes.data)) {
@@ -110,7 +110,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
 
             setAnfitrionasDisponibles(todasAnfitrionas);
         } catch {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
+            showToast({ type: 'error', text1: 'Error', text2: 'No se pudieron cargar las anfitrionas' });
         } finally {
             setLoadingAnfitrionas(false);
         }
@@ -118,6 +118,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
 
     useEffect(() => {
         if (timer) {
+            const ac = new AbortController();
             const timerId = setTimeout(() => {
                 setPrecioServicio('0');
                 setTiempo(30);
@@ -128,11 +129,14 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
                     ids = timer.anfitrionas_ids.map(id => String(id));
                 }
                 setAnfitrionasSeleccionadas(ids);
-                void fetchAnfitrionas();
-                void fetchHabitacionSinComision();
+                fetchAnfitrionas(ac.signal);
+                fetchHabitacionSinComision(ac.signal);
             }, 0);
 
-            return () => clearTimeout(timerId);
+            return () => {
+                clearTimeout(timerId);
+                ac.abort();
+            };
         }
     }, [timer, fetchAnfitrionas, fetchHabitacionSinComision]);
 
@@ -140,12 +144,12 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
         if (!timer) return;
         const timeVal = tiempo;
         if (!timeVal || timeVal <= 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'El tiempo debe ser mayor a 0' });
+            showToast({ type: 'error', text1: 'Error', text2: 'El tiempo debe ser mayor a 0' });
             return;
         }
 
         if (anfitrionasSeleccionadas.length === 0) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Debe seleccionar al menos una anfitriona' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Debe seleccionar al menos una anfitriona' });
             return;
         }
 
@@ -191,7 +195,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
             });
 
             if (res.success) {
-                Toast.show({
+                showToast({
                     type: 'success',
                     text1: 'Éxito',
                     text2: 'Nuevo servicio iniciado (Principal pausado)'
@@ -199,14 +203,14 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
                 onSuccess();
                 onClose();
             } else {
-                Toast.show({
+                showToast({
                     type: 'error',
                     text1: 'Error',
                     text2: res.message || 'No se pudo crear el servicio temporal'
                 });
             }
         } catch {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
+            showToast({ type: 'error', text1: 'Error', text2: 'Ocurrió un error inesperado' });
         } finally {
             setLoading(false);
         }

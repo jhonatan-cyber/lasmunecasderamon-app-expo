@@ -1,7 +1,7 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
-import Toast from "react-native-toast-message";
+import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
 import {
   initialVentasState,
@@ -32,7 +32,7 @@ export const useVentasScreen = () => {
 
   const showToast = useCallback(
     (title: string, message: string, type: "success" | "error" = "error") => {
-      Toast.show({
+      showToastLazy({
         type,
         text1: title,
         text2: message,
@@ -42,18 +42,18 @@ export const useVentasScreen = () => {
     [],
   );
 
-  const fetchVentas = useCallback(async (isManual = false) => {
+  const fetchVentas = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       if (!isManual && !initialVentasLoadedRef.current)
         dispatch({ type: "SET_LOADING", payload: true });
       if (isManual) dispatch({ type: "SET_LOADING_SALES", payload: true });
       const timestamp = Date.now();
       const [resSales, resResumen] = await Promise.all([
-        apiClientSafe(`/sales?limit=50&_t=${timestamp}`).catch(() => ({
+        apiClientSafe(`/sales?limit=50&_t=${timestamp}`, { signal }).catch(() => ({
           success: false,
           data: [],
         })),
-        apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`).catch(() => ({
+        apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`, { signal }).catch(() => ({
           success: false,
           data: null,
         })),
@@ -77,7 +77,7 @@ export const useVentasScreen = () => {
       }
 
       if (isManual) {
-        Toast.show({
+        showToastLazy({
           type: hasChanges ? "success" : "info",
           text1: hasChanges ? "Éxito" : "Información",
           text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
@@ -88,7 +88,7 @@ export const useVentasScreen = () => {
     } catch (error) {
       logger.captureException(error, { context: "Ventas:fetchData" });
       if (isManual) {
-        Toast.show({
+        showToastLazy({
           type: "error",
           text1: "Error",
           text2: "No se pudo actualizar",
@@ -104,19 +104,20 @@ export const useVentasScreen = () => {
   }, []);
 
   useEffect(() => {
-    const run = async () => {
-      await fetchVentas();
-    };
-    void run();
+    const ac = new AbortController();
+    fetchVentas(false, ac.signal);
+    return () => ac.abort();
   }, [fetchVentas]);
 
   useFocusEffect(
     useCallback(() => {
       isFocused.current = true;
-      fetchVentas();
+      const ac = new AbortController();
+      fetchVentas(false, ac.signal);
       refreshTimers();
       return () => {
         isFocused.current = false;
+        ac.abort();
       };
     }, [fetchVentas, refreshTimers]),
   );
@@ -125,7 +126,7 @@ export const useVentasScreen = () => {
     const subscription = DeviceEventEmitter.addListener(
       REALTIME_EVENT_NAMES.refreshSales,
       (data?: any) => {
-        logger.info("[VentasScreen] refresh_sales received", data);
+        logger.debug("[VentasScreen] refresh_sales received", data);
         fetchVentas();
         refreshTimers();
       },
@@ -219,7 +220,7 @@ export const useVentasScreen = () => {
 
             if (res.success || (res && !res.error)) {
               dispatch({ type: "ALERT_DISMISS" });
-              Toast.show({
+              showToastLazy({
                 type: "success",
                 text1: "Venta Finalizada",
                 text2: "La venta ha finalizado con éxito.",
