@@ -104,7 +104,12 @@
       "picomatch": "^2.3.2",
       "@xmldom/xmldom": ">=0.8.13",
       "fast-uri": ">=3.1.2"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@sentry/cli",
+      "esbuild",
+      "unrs-resolver"
+    ]
   },
   "packageManager": "pnpm@10.28.2"
 }
