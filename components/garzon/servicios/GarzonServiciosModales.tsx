@@ -15,7 +15,7 @@ interface GarzonServiciosModalesProps {
   hostessModalVisible: boolean;
   setHostessModalVisible: (visible: boolean) => void;
   anfitrionas: Anfitriona[];
-  selectedHostesses: (number | string)[];
+  selectedHostesses: number[];
   toggleHostess: (id: number | string) => void;
   maxHostesses: number;
 

@@ -2,9 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import FlashList from "@/components/shared/FlashList";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { useStableCallback } from "@/hooks/useStableCallback";
+import { useStableCallback } from "@/hooks/useStableCallback";import { eventBus } from "@/utils/eventBus";
 import {
-  DeviceEventEmitter,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -304,7 +303,7 @@ export default function ServiciosActivosScreen() {
   );
 
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener("refresh_sales", () => {
+    const sub = eventBus.addListener("refresh_sales", () => {
       refreshTimers();
       if (activeTab === "finalizados") fetchFinalizados();
     });

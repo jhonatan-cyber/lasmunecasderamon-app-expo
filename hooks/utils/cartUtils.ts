@@ -1,9 +1,14 @@
 import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 import type { Habitacion, Anfitriona, Cliente, Producto, Categoria, CartItem } from "@lasmunecasderamon/types";
-import { showToast, isChampagneProduct, getChampagneLimit, getHostessLimit, buildCommissionPreview } from "./cuentaUtils";
+import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
 
-export { showToast, isChampagneProduct, getChampagneLimit, getHostessLimit, buildCommissionPreview };
+export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
+
+// Alias para backward compat — getChampagneLimit == getHostessLimit
+export const getChampagneLimit = getHostessLimit;
+
+
 
 /** Generic API response shape */
 interface ApiListResponse<T> {
@@ -139,7 +144,7 @@ export const addProductToCartUtils = (
       comision: comm,
       cantidad: totalQty,
       subtotal: price * totalQty,
-      selectedHostesses: selectedHostesses,
+      selectedHostesses: selectedHostesses.map(h => Number(h)),
       hostessNames: hostessNames || null,
       isChampagne: isChampagneProduct(prod),
     });

@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
 import {
@@ -123,7 +123,7 @@ export const useVentasScreen = () => {
   );
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(
+    const subscription = eventBus.addListener(
       REALTIME_EVENT_NAMES.refreshSales,
       (data?: any) => {
         logger.debug("[VentasScreen] refresh_sales received", data);
@@ -185,7 +185,7 @@ export const useVentasScreen = () => {
       dispatch({ type: "SET_LOADING_DETAIL", payload: true });
       dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
       try {
-        const res = await apiClientSafe(`/ventas/${id}`);
+        const res = await apiClientSafe(`/sales/${id}`);
         if (res?.success && res.data) {
           dispatch({ type: "SET_SELECTED_VENTA", payload: res.data as VentaDetail });
         } else {
@@ -213,8 +213,8 @@ export const useVentasScreen = () => {
         onConfirm: async () => {
           try {
             const ventaId = getVentaId(venta);
-            const res = await apiClientSafe(`/ventas/${ventaId}`, {
-              method: "PUT",
+            const res = await apiClientSafe(`/sales/${ventaId}`, {
+              method: "PATCH",
               body: JSON.stringify({ estado: 1 }),
             });
 

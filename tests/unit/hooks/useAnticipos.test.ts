@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAnticipos } from '@/hooks/useAnticipos';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 
 const mockSolicitudes = [
     {
@@ -45,9 +45,9 @@ describe('useAnticipos', () => {
     });
 
     it('debe cargar solicitudes y pagos al montarse', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockPagos });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockMaximo);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockPagos });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce(mockMaximo);
 
         const { result } = renderHook(() => useAnticipos());
 
@@ -61,9 +61,9 @@ describe('useAnticipos', () => {
     });
 
     it('debe manejar error en fetchAnticipos', async () => {
-        vi.mocked(apiClient).mockRejectedValueOnce(new Error('Error de conexión'));
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockPagos });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockMaximo);
+        vi.mocked(apiClientSafe).mockRejectedValueOnce(new Error('Error de conexión'));
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockPagos });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce(mockMaximo);
 
         const { result } = renderHook(() => useAnticipos());
 
@@ -74,19 +74,17 @@ describe('useAnticipos', () => {
     });
 
     it('solicitarAnticipo debe hacer POST y refrescar datos', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockMaximo);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce(mockMaximo);
 
         const { result } = renderHook(() => useAnticipos());
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true });
-        
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockPagos });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: null });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockPagos });
 
         let res: boolean | undefined;
         await act(async () => {
@@ -94,22 +92,22 @@ describe('useAnticipos', () => {
         });
 
         expect(res).toBe(true);
-        const postCall = vi.mocked(apiClient).mock.calls.find(
+        const postCall = vi.mocked(apiClientSafe).mock.calls.find(
             (call: any) => call[0] === '/anticipos/solicitudes' && call[1]?.method === 'POST'
         );
         expect(postCall).toBeTruthy();
     });
 
     it('solicitarAnticipo debe retornar false si la API falla', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockMaximo);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce(mockMaximo);
 
         const { result } = renderHook(() => useAnticipos());
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: false, message: 'Error' });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: false, message: 'Error', data: null });
 
         let res: boolean | undefined;
         await act(async () => {
@@ -120,17 +118,17 @@ describe('useAnticipos', () => {
     });
 
     it('onRefresh debe llamar a fetchAnticipos con isManual=true', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockMaximo);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce(mockMaximo);
 
         const { result } = renderHook(() => useAnticipos());
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        vi.mocked(apiClient).mockClear();
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockPagos });
+        vi.mocked(apiClientSafe).mockClear();
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockSolicitudes });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockPagos });
 
         await act(async () => {
             result.current.onRefresh();

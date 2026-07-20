@@ -75,7 +75,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                 if ((tipRes as any).success) {
                     setParentPropina((tipRes as any).data);
                     if ((tipRes as any).data?.venta_id) {
-                        const saleRes = await apiClientSafe(`/ventas/${(tipRes as any).data.venta_id}`);
+                        const saleRes = await apiClientSafe(`/sales/${(tipRes as any).data.venta_id}`);
                         if (saleRes && !(saleRes as any).error) setSaleDetail((saleRes as any).data || saleRes);
                     }
                 }
@@ -174,7 +174,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
                 ))}
             </View>
 
-            <FlashList data={filteredData} keyExtractor={(item: any) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>} getItemLayout={(_, index) => ({ length: 180, offset: 180 * index, index })} windowSize={10} maxToRenderPerBatch={7} initialNumToRender={5} removeClippedSubviews={true} />
+            <FlashList data={filteredData} keyExtractor={(item: any) => (item.id_comision || item.id_detalle_propina || item.id || 'unknown').toString()} renderItem={renderItem} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />} ListEmptyComponent={<View style={[styles.emptyCard, { backgroundColor: cardBg }]}><Ionicons name="file-tray-outline" size={48} color={textSecondary} /><Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron registros</Text></View>}            getItemLayout={(_: any, index: number) => ({ length: 180, offset: 180 * index, index })} windowSize={10} maxToRenderPerBatch={7} initialNumToRender={5} removeClippedSubviews={true} />
 
             {type === 'propinas' ? (
                 <TipDetailModal

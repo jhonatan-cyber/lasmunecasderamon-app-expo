@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, DeviceEventEmitter, Pressable, Modal, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, Modal, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { eventBus } from '@/utils/eventBus';
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,7 +50,7 @@ export const AttendanceCodeDisplay = () => {
         const timer = setTimeout(() => {
             void fetchCodigo();
         }, 0);
-        const subscription = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+        const subscription = eventBus.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigo(payload.data.codigo);
             }

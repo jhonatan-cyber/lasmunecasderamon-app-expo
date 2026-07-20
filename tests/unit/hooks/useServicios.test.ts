@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useServicios } from '@/hooks/useServicios';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 
 const mockServicios = [
     {
@@ -36,7 +36,7 @@ describe('useServicios', () => {
     });
 
     it('debe cargar servicios al montarse', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockServicios });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockServicios });
 
         const { result } = renderHook(() => useServicios());
 
@@ -47,7 +47,7 @@ describe('useServicios', () => {
     });
 
     it('debe manejar error de conexión', async () => {
-        vi.mocked(apiClient).mockRejectedValueOnce(new Error('Error de conexión'));
+        vi.mocked(apiClientSafe).mockRejectedValueOnce(new Error('Error de conexión'));
 
         const { result } = renderHook(() => useServicios());
 
@@ -58,7 +58,7 @@ describe('useServicios', () => {
     });
 
     it('debe manejar error de API con mensaje', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: false, message: 'Error al cargar servicios' });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: false, message: 'Error al cargar servicios', data: null });
 
         const { result } = renderHook(() => useServicios());
 
@@ -68,14 +68,14 @@ describe('useServicios', () => {
     });
 
     it('onRefresh debe refrescar datos', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useServicios());
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        vi.mocked(apiClient).mockClear();
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockServicios });
+        vi.mocked(apiClientSafe).mockClear();
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockServicios });
 
         await act(async () => {
             result.current.onRefresh();
@@ -86,8 +86,8 @@ describe('useServicios', () => {
     });
 
     it('handleAssistance debe enviar solicitud de asistencia', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: null });
 
         const { result } = renderHook(() => useServicios());
 
@@ -99,15 +99,15 @@ describe('useServicios', () => {
         });
 
         expect(res).toBe(true);
-        expect(apiClient).toHaveBeenCalledWith('/notifications/assistance', {
+        expect(apiClientSafe).toHaveBeenCalledWith('/notifications/assistance', {
             method: 'POST',
             body: JSON.stringify({ servicioId: 1, roomName: 'VIP 1', type: 'limpieza' }),
         });
     });
 
     it('handleAssistance debe retornar false si falla', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockRejectedValueOnce(new Error('Error'));
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockRejectedValueOnce(new Error('Error'));
 
         const { result } = renderHook(() => useServicios());
 

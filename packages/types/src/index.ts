@@ -75,6 +75,7 @@ export interface Producto {
   precio?: number;
   commission?: number;
   comision?: number;
+  max_anfitrionas?: number | null;
   description?: string;
   status?: number;
   foto?: string;
@@ -100,7 +101,7 @@ export interface CartItem {
   comision: number;
   cantidad: number;
   subtotal: number;
-  selectedHostesses: (string | number)[];
+  selectedHostesses: number[];
   hostessNames: string | null;
   isChampagne: boolean;
 }
@@ -118,9 +119,9 @@ export interface CartItemVenta {
   quantity: number;
   cantidad?: number;
   sub_total?: number;
-  anfitrionas: (string | number)[];
+  anfitrionas: number[];
   hostessNames: string | null;
-  selectedHostesses?: (string | number)[];
+  selectedHostesses?: number[];
   isChampagne?: boolean;
   categoria?: string;
 }

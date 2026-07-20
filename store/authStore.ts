@@ -295,19 +295,24 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         updateProfile: async (partialUser) => {
             const currentUser = get().user;
-            if (currentUser) {
-                
-                const keys = Object.keys(partialUser) as (keyof User)[];
-                const hasChanges = keys.some(
-                    (key) => partialUser[key] !== currentUser[key]
-                );
+            if (!currentUser) return;
 
-                if (hasChanges) {
-                    const updatedUser = { ...currentUser, ...partialUser };
-                    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-                    set({ user: updatedUser });
-                }
-            }
+            const keys = Object.keys(partialUser) as (keyof User)[];
+            const hasChanges = keys.some(
+                (key) => partialUser[key] !== currentUser[key]
+            );
+            if (!hasChanges) return;
+
+            const updatedUser = { ...currentUser, ...partialUser };
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            set({ user: updatedUser });
+
+            apiClientSafe('/users', {
+                method: 'PUT',
+                body: JSON.stringify({ id: currentUser.id, ...partialUser }),
+            }).catch((err) =>
+                logger.captureException(err, { context: 'authStore:updateProfile' })
+            );
         }
     };
 });

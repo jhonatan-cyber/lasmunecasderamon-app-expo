@@ -8,7 +8,12 @@ import {
   UnauthorizedError,
 } from "./errors";
 import { delay, shouldRetry } from "./retry";
-import { ensureTokenInMemory, notifyUnauthorized } from "./token";
+import {
+  ensureTokenInMemory,
+  getTokenInMemory,
+  notifyUnauthorized,
+  refreshAccessToken
+} from "./token";
 
 /**
  * Combina un AbortSignal externo con un controller interno.
@@ -153,6 +158,20 @@ export const apiClient = async <T = ApiRes<unknown>>(
       const data = await response.json().catch(() => ({}));
 
       if (response.status === 401) {
+        // Intentar refresh token automático (excepto para el propio endpoint de refresh)
+        if (!endpoint.includes('/auth/refresh')) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            // Token renovado — actualizar header y reintentar
+            headers.set('Authorization', `Bearer ${getTokenInMemory()}`);
+            config.headers = headers;
+            logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
+            // Continuar al siguiente intento con el header actualizado
+            lastError = new Error('Token refreshed, retrying...');
+            continue;
+          }
+        }
+
         notifyUnauthorized();
         logApiCall(
           endpoint,

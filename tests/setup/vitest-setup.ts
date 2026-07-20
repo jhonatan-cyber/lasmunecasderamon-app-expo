@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 
 vi.mock('@/api/client', () => ({
     apiClient: vi.fn(),
+    apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: [] })),
     setTokenInMemory: vi.fn(),
     setUnauthorizedHandler: vi.fn(),
 }));
@@ -106,10 +107,7 @@ vi.mock('expo-haptics', () => ({
 
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios', select: vi.fn((obj: any) => obj?.ios ?? obj?.default) },
-    DeviceEventEmitter: {
-        addListener: vi.fn(() => ({ remove: vi.fn() })),
-        emit: vi.fn(),
-    },
+    // DeviceEventEmitter reemplazado por eventBus (utils/eventBus)
     NativeModules: {},
     NativeEventEmitter: vi.fn(() => ({ addListener: vi.fn(), remove: vi.fn() })),
 }));

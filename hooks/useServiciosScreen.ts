@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { useFocusEffect } from "expo-router";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { Colors } from "@/constants/theme";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -209,31 +209,13 @@ export function useServiciosScreen() {
   const fetchFinalizados = useCallback(async (isManual = false) => {
     dispatch({ type: "SET_LOADING_FINALIZADOS", payload: true });
     try {
-      let allData: any[] = [];
-      let page = 1;
-      const limit = 200;
-      let hasMore = true;
-
-      while (hasMore) {
-        const res = await serviciosService.list(limit, page);
-        const raw = Array.isArray((res as any)?.data?.data)
-          ? (res as any).data.data
-          : Array.isArray((res as any)?.data)
-            ? (res as any).data
-            : [];
-
-        if (!res.success || raw.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        allData = [...allData, ...raw];
-        const total = (res as any)?.data?.total || 0;
-        hasMore = allData.length < total && raw.length === limit;
-        page++;
-      }
-
-      const rawFinalizados = allData;
+      // OPTIMIZACIÓN: Single fetch con limit=1000 (antes paginación secuencial con while loop)
+      const res = await serviciosService.list(1000, 1);
+      const rawFinalizados = Array.isArray((res as any)?.data?.data)
+        ? (res as any).data.data
+        : Array.isArray((res as any)?.data)
+          ? (res as any).data
+          : [];
 
       if (Array.isArray(rawFinalizados)) {
         const mapped = rawFinalizados.map((sAny: any) => {
@@ -333,7 +315,7 @@ export function useServiciosScreen() {
   );
 
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener("refresh_sales", () => {
+    const sub = eventBus.addListener("refresh_sales", () => {
       refreshTimers();
       if (activeTab === "finalizados") fetchFinalizados();
     });

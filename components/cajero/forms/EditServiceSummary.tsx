@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
 
 interface Props {
     numAnfs: number;
@@ -58,7 +59,7 @@ export default function EditServiceSummary({
 
             {isTarjeta && (
                 <SummaryRow
-                    label="IVA (20%)"
+                    label={`IVA (${getIvaPercent()}%)`}
                     value={`$${iva.toLocaleString('es-CL')}`}
                     valueColor={accentColor}
                     textPrimary={textPrimary}

@@ -24,7 +24,7 @@ interface GarzonProductosModalesProps {
     anfitrionas: Anfitriona[];
     rooms: Room[];
     getMaxHostesses: (item: CartItem) => number;
-    updateItemHostesses: (productId: string, hostessIds: string[]) => void;
+    updateItemHostesses: (productId: string, hostessIds: number[]) => void;
     updateItemRoom: (productId: string, roomId: string | null) => void;
 
     insets: { bottom: number };
@@ -108,16 +108,16 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                         <ScrollView style={styles.modalList}>
                             {activeConfigItem?.type === 'hostess' ? (
                                 anfitrionas.map(a => {
-                                    const isSelected = !!currentConfigItem?.selectedHostesses?.includes(a.id);
+                                    const isSelected = !!currentConfigItem?.selectedHostesses?.includes(Number(a.id));
                                     return (
                                         <Pressable
                                             key={a.id}
                                             onPress={() => {
                                                 const current = currentConfigItem?.selectedHostesses || [];
                                                 if (isSelected) {
-                                                    updateItemHostesses(activeConfigItem.productId, current.filter(id => id !== a.id));
+                                                    updateItemHostesses(activeConfigItem.productId, current.filter((id: number) => id !== Number(a.id)));
                                                 } else if (current.length < maxHostesses) {
-                                                    updateItemHostesses(activeConfigItem.productId, [...current, a.id]);
+                                                    updateItemHostesses(activeConfigItem.productId, [...current, Number(a.id)]);
                                                 } else {
                                                     showToast({
                                                         type: 'error',

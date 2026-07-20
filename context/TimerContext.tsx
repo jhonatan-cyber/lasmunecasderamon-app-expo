@@ -59,6 +59,36 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setExpiredTimer,
   });
 
+  // ─── Tick loop local de 1s ──────────────────────────────────
+  // Decrementa remainingTime para timers activos no pausados.
+  // Así la UI muestra un countdown suave incluso si no llegan SSE events.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentTimers = timersRef.current;
+      let needsUpdate = false;
+
+      for (const timer of currentTimers) {
+        if (timer.isActive && !timer.isPaused && timer.remainingTime > 0) {
+          needsUpdate = true;
+          break;
+        }
+      }
+
+      if (!needsUpdate) return;
+
+      setTimers((prev) =>
+        prev.map((t) => {
+          if (t.isActive && !t.isPaused && t.remainingTime > 0) {
+            return { ...t, remainingTime: t.remainingTime - 1 };
+          }
+          return t;
+        }),
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     const timeout = setTimeout(() => {

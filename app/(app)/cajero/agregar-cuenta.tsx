@@ -1,10 +1,11 @@
+import { eventBus } from "@/utils/eventBus";
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import {
     ActivityIndicator,
-    DeviceEventEmitter,
+
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -15,7 +16,7 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import { showToast as showToastLazy } from '@/utils/toast-lazy';
+import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview } from '@/hooks/utils/cuentaUtils';
 import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
@@ -125,80 +126,7 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
     }
 }
 
-const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
-    showToastLazy({
-        type,
-        text1: title,
-        text2: message,
-        visibilityTime: 4000,
-    });
-};
-
-const isChampagneProduct = (producto: any) => {
-    const cat = (producto.categoria || '').toLowerCase();
-    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-};
-
-const getChampagneLimit = (precio: number) => {
-    if (precio >= 240000) return 5;
-    if (precio >= 200000) return 4;
-    if (precio >= 160000) return 3;
-    if (precio >= 120000) return 2;
-    return 1;
-};
-
-const buildCommissionPreview = (items: any[], hostesses: any[]) => {
-    const totalCommission = items.reduce((acc, item) => acc + (Number(item.comision || 0) * Number(item.cantidad || 0)), 0);
-    const distribution = new Map<string, { id: string; name: string; amount: number }>();
-
-    const addAmount = (hostessId: string | number, amount: number) => {
-        if (!hostessId || amount <= 0) return;
-        const key = String(hostessId);
-        const hostess = hostesses.find((item: any) => String(item.id_usuario || item.id) === key);
-        const current = distribution.get(key);
-        distribution.set(key, {
-            id: key,
-            name: hostess?.nick || `Anfitriona ${key}`,
-            amount: (current?.amount || 0) + amount,
-        });
-    };
-
-    items.forEach((item) => {
-        const selectedHostesses = Array.isArray(item.selectedHostesses) ? item.selectedHostesses.filter(Boolean) : [];
-        const itemCommission = Number(item.comision || 0) * Number(item.cantidad || 0);
-
-        if (itemCommission <= 0 || selectedHostesses.length === 0) return;
-
-        if (item.isChampagne) {
-            const totalRounded = Math.round(itemCommission);
-            const base = Math.floor(totalRounded / selectedHostesses.length);
-            const remainder = totalRounded % selectedHostesses.length;
-
-            selectedHostesses.forEach((hostessId: string | number, index: number) => {
-                addAmount(hostessId, base + (index === 0 ? remainder : 0));
-            });
-            return;
-        }
-
-        selectedHostesses.forEach((hostessId: string | number) => {
-            addAmount(hostessId, itemCommission);
-        });
-    });
-
-    return {
-        totalCommission,
-        assignedCommission: Array.from(distribution.values()).reduce((acc, item) => acc + item.amount, 0),
-        hostessDistribution: Array.from(distribution.values()).sort((a, b) => b.amount - a.amount),
-    };
-};
-
-const getHostessLimit = (prod: any, qty: number) => {
-    const price = prod.precio ?? prod.price ?? 0;
-    if (isChampagneProduct(prod)) {
-        return getChampagneLimit(price) * qty;
-    }
-    return qty;
-};
+// showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview imported from cuentaUtils
 
 export default function AgregarCuentaScreen() {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -425,7 +353,7 @@ export default function AgregarCuentaScreen() {
             });
             if (res.success) {
                 showToast('Éxito', 'Productos agregados correctamente', 'success');
-                DeviceEventEmitter.emit('refresh_cuentas');
+                eventBus.emit('refresh_cuentas');
                 setTimeout(() => router.back(), 1500);
             } else {
                 showToast('Error', res.message || 'No se pudo actualizar la cuenta');

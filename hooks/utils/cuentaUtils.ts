@@ -10,23 +10,58 @@ export const showToast = (title: string, message: string, type: "success" | "err
   });
 };
 
-export const isChampagneProduct = (producto: Pick<Producto, "categoria">) => {
-  const cat = (producto.categoria || "").toLowerCase();
-  return cat.includes("champaña") || cat.includes("shampaña") || cat.includes("champagne");
-};
-
-export const getChampagneLimit = (precio: number) => {
+const getChampagneTierLimit = (precio: number) => {
   if (precio >= 240000) return 5;
   if (precio >= 200000) return 4;
-  if (precio >= 160000) return 3;
+  if (precio >= 140000) return 3;
   if (precio >= 120000) return 2;
   return 1;
 };
 
-export const getHostessLimit = (prod: Producto, qty: number = 1) => {
+export let ivaRate = 0.19;
+
+export const setIvaRate = (rate: number) => { ivaRate = rate; };
+
+export const getIvaDecimal = () => ivaRate;
+
+export const getIvaPercent = () => Math.round(ivaRate * 100);
+
+export let expensiveDrinkThreshold = 30000;
+
+export const setExpensiveDrinkThreshold = (v: number) => { expensiveDrinkThreshold = v; };
+
+export const isExpensiveDrink = (producto: { precio?: number; price?: number }) => {
+  const precio = Number(producto.precio || producto.price || 0);
+  return precio >= expensiveDrinkThreshold;
+};
+
+export let cardSplitVenta = 0.51;
+export let cardSplitPropina = 0.49;
+
+const roundToThousand = (monto: number) => Math.round(monto / 1000) * 1000;
+
+export const setCardSplit = (ventaPct: number, propinaPct: number) => {
+  cardSplitVenta = ventaPct;
+  cardSplitPropina = propinaPct;
+};
+
+export const getCardSplit = (total: number) => {
+  const venta = roundToThousand(total * cardSplitVenta);
+  const propina = roundToThousand(Math.max(0, total * cardSplitPropina));
+  return { venta, propina };
+};
+
+export const isChampagneProduct = (producto: { categoria?: string }) => {
+  const cat = (producto.categoria || "").toLowerCase();
+  return cat.includes("champaña") || cat.includes("shampaña") || cat.includes("champagne");
+};
+
+export const getHostessLimit = (prod: { precio?: number; price?: number; max_anfitrionas?: number | null; categoria?: string }, qty: number = 1) => {
+  const max = prod.max_anfitrionas;
+  if (max !== null && max !== undefined && max > 0) return max * qty;
   const price = prod.precio ?? prod.price ?? 0;
   if (isChampagneProduct(prod)) {
-    return getChampagneLimit(price) * qty;
+    return getChampagneTierLimit(price) * qty;
   }
   return qty;
 };

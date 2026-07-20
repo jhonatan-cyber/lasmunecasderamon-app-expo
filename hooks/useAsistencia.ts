@@ -1,4 +1,5 @@
-import { DeviceEventEmitter, Platform } from "react-native";
+import { Platform } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
@@ -84,8 +85,9 @@ export function useAsistencia() {
   const fetchGratificaciones = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       const data = await apiClientSafe('/gratificaciones/me', { signal });
-      if (Array.isArray(data)) {
-        setGratificaciones(data);
+      const items = Array.isArray(data) ? data : (data as any)?.data;
+      if (Array.isArray(items)) {
+        setGratificaciones(items);
       }
     } catch (err) {
       if ((err as any)?.name === 'AbortError') return;

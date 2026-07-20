@@ -23,7 +23,7 @@ export type ServiceState = {
   habitaciones: any[];
   clientes: any[];
   cajaAbierta: boolean | null;
-  selectedHostesses: (number | string)[];
+  selectedHostesses: number[];
   selectedClients: (number | string)[];
   selectedHabitacion: any;
   precioServicio: string;
@@ -42,7 +42,7 @@ export type ServiceState = {
 export type ServiceAction =
   | { type: 'SET_LOADING_INITIAL'; payload: boolean }
   | { type: 'SET_INITIAL_DATA'; payload: { anfitrionas: any[]; habitaciones: any[]; clientes: any[]; cajaAbierta: boolean } }
-  | { type: 'SET_SELECTED_HOSTESSES'; payload: (number | string)[] }
+  | { type: 'SET_SELECTED_HOSTESSES'; payload: number[] }
   | { type: 'SET_SELECTED_CLIENTS'; payload: (number | string)[] }
   | { type: 'SET_SELECTED_HABITACION'; payload: any }
   | { type: 'SET_PRECIO_SERVICIO'; payload: string }

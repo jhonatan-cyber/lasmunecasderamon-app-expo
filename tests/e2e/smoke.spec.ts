@@ -44,13 +44,13 @@ async function bootstrapRoleSession(page: Page, role: Role) {
         const json = (() => {
             switch (path) {
                 case '/auth/me':
-                    return { success: true, user };
+                    return { success: true, data: { user } };
                 case '/caja/stats':
                     return { success: true, data: { ventas: 4, cuentas: 2, servicios: 3, caja: 1 } };
                 case '/solicitudes-servicios/pending-count':
-                    return { success: true, count: 2 };
+                    return { success: true, data: { count: 2, serviciosCount: 1, pedidosCount: 1 } };
                 case '/users/status':
-                    return { success: true, status: 1 };
+                    return { success: true, data: { status: 1, estado_servicio: 1, user: { id: '1', nick: 'test', name: 'Test', role: 'cajero', foto: '' } } };
                 case '/events/user':
                     return { success: true, data: [] };
                 case '/events/stats':
@@ -145,7 +145,7 @@ test('root redirects anfitriona users to the hostess dashboard', async ({ page }
 
     await expect(page).toHaveURL(/anfitriona/);
     await expect(page.locator('body')).toContainText('Meta Semanal');
-    await expect(page.locator('body')).toContainText('SOLICITAR PERSONAL');
+    await expect(page.locator('body')).toContainText('SOLICITAR SERVICIO');
 });
 
 test('cajero sales screen renders its critical module shell', async ({ page }) => {
@@ -172,5 +172,5 @@ test('anfitriona services screen renders its payout summary', async ({ page }) =
     await page.goto('/anfitriona/servicios');
 
     await expect(page.locator('body')).toContainText(/servicios/i);
-    await expect(page.locator('body')).toContainText(/total a cobrar/i);
+    await expect(page.locator('body')).toContainText(/comisiones por cobrar/i);
 });

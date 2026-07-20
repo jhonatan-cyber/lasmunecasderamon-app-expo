@@ -1,4 +1,4 @@
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClientSafe } from "@/api/client";
@@ -14,20 +14,16 @@ import {
 
 import logger from '@/utils/logger';
 
-/* Interfaces de respuesta para endpoints no-estándar */
-interface AuthMeResponse {
-  success: boolean;
-  user?: UserProfileResponse & { id?: number };
-}
-
-interface UserStatusResponse {
-  success: boolean;
+interface UserStatusData {
   status: number;
+  estado_servicio: number;
+  user: { id: string; nick: string; name: string; role: string; foto: string };
 }
 
-interface PendingCountResponse {
-  success: boolean;
+interface PendingCountData {
   count: number;
+  serviciosCount: number;
+  pedidosCount: number;
 }
 
 interface ServicioRaw {
@@ -101,8 +97,8 @@ export function useDashboardData(role: UserRole) {
       let extraData: Record<string, unknown> = {};
 
       if (eventsRes.success) {
-        const me = meRes as unknown as AuthMeResponse;
-        const status = statusRes as unknown as UserStatusResponse;
+        const meData = (meRes as ApiRes<{ user: Record<string, unknown> }>).data;
+        const statusData = (statusRes as ApiRes<UserStatusData>).data;
 
         if (role === 'anfitriona') {
             const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
@@ -116,18 +112,18 @@ export function useDashboardData(role: UserRole) {
             extraData.hasOpenCaja = cashRes.success ? cashRes.data.hasOpenCaja : true;
         } else if (role === 'cajero') {
             roleStats = results[4];
-            const pendingRes = results[5] as unknown as PendingCountResponse;
-            extraData.pendingCount = pendingRes.count || 0;
+            const pendingData = (results[5] as ApiRes<PendingCountData>).data;
+            extraData.pendingCount = pendingData?.count || 0;
         }
 
-        if (me.success && me.user) {
-            useAuthStore.getState().updateProfile(me.user as any);
+        if (meData?.user) {
+            useAuthStore.getState().updateProfile(meData.user as any);
         }
 
         return {
             events: eventsRes.data || [],
             stats: roleStats || initialStats,
-            userStatus: status.status || me.user?.status || 1,
+            userStatus: statusData?.status || 1,
             payoutTotal: Number((meStatsRes as ApiRes<MeStatsData>).data?.stats?.montoAnticipoMaximo || 0),
             ...extraData
         } as DashboardData;
@@ -139,11 +135,11 @@ export function useDashboardData(role: UserRole) {
 
   
   useEffect(() => {
-    const refreshSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.refreshRequests, () => {
+    const refreshSub = eventBus.addListener(REALTIME_EVENT_NAMES.refreshRequests, () => {
         queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
     });
     
-    const sseSub = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
+    const sseSub = eventBus.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
         logger.debug('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
         if (shouldInvalidateDashboardFromSse(payload?.type)) {
             queryClient.invalidateQueries({ queryKey: ['dashboard', role] });

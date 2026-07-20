@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAsistencia } from '@/hooks/useAsistencia';
-import { apiClient } from '@/api/client';
+import { apiClientSafe } from '@/api/client';
 
 const mockAsistencias = [
     {
@@ -30,8 +30,8 @@ describe('useAsistencia', () => {
     });
 
     it('debe cargar asistencias al montarse', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockAsistencias });
-        vi.mocked(apiClient).mockResolvedValueOnce([]); 
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockAsistencias });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useAsistencia());
 
@@ -46,8 +46,8 @@ describe('useAsistencia', () => {
             { id: '1', usuario_id: 1, monto: 10000, descripcion: 'Bono', fecha_hora: '2025-01-01', estado: 1 },
         ];
 
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockAsistencias });
-        vi.mocked(apiClient).mockResolvedValueOnce(mockGratificaciones);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockAsistencias });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockGratificaciones });
 
         const { result } = renderHook(() => useAsistencia());
 
@@ -58,8 +58,8 @@ describe('useAsistencia', () => {
     });
 
     it('debe manejar error en fetchAsistencias', async () => {
-        vi.mocked(apiClient).mockRejectedValueOnce(new Error('Error de conexión'));
-        vi.mocked(apiClient).mockResolvedValueOnce([]);
+        vi.mocked(apiClientSafe).mockRejectedValueOnce(new Error('Error de conexión'));
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useAsistencia());
 
@@ -69,8 +69,8 @@ describe('useAsistencia', () => {
     });
 
     it('debe permitir cambiar el tab activo', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce([]);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useAsistencia());
 
@@ -86,8 +86,8 @@ describe('useAsistencia', () => {
     });
 
     it('debe permitir cambiar el filtro', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce([]);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useAsistencia());
 
@@ -103,16 +103,16 @@ describe('useAsistencia', () => {
     });
 
     it('onRefresh debe refrescar asistencias y gratificaciones', async () => {
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: [] });
-        vi.mocked(apiClient).mockResolvedValueOnce([]);
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         const { result } = renderHook(() => useAsistencia());
 
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        vi.mocked(apiClient).mockClear();
-        vi.mocked(apiClient).mockResolvedValueOnce({ success: true, data: mockAsistencias });
-        vi.mocked(apiClient).mockResolvedValueOnce([]);
+        vi.mocked(apiClientSafe).mockClear();
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: mockAsistencias });
+        vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [] });
 
         await act(async () => {
             result.current.onRefresh();

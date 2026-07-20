@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
+import { getIvaDecimal } from '@/hooks/utils/cuentaUtils';
 import type { Timer } from '@/context/types';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { parseDateSafe } from '@/utils/timeUtils';
@@ -161,7 +162,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
             const precioHabitacionTotal = precioHabitacionSinComision * numAnfitrionas;
             let calculatedIva = 0;
             if (metodoPago === 'tarjeta') {
-                calculatedIva = Math.floor(precioServicioTotal * 0.20);
+                calculatedIva = Math.floor(precioServicioTotal * getIvaDecimal());
             }
 
             let totalGeneral = precioServicioTotal + precioHabitacionTotal + calculatedIva;
@@ -226,7 +227,7 @@ export default function useEditService(timer: Timer | null, onSuccess: () => voi
     const numAnfs = anfitrionasSeleccionadas.length;
     const totalServicio = numericPrecio * numAnfs;
     const totalHabitacion = precioHabitacionSinComision * numAnfs;
-    const iva = isTarjeta ? Math.floor(totalServicio * 0.20) : 0;
+    const iva = isTarjeta ? Math.floor(totalServicio * getIvaDecimal()) : 0;
     let total = totalServicio + totalHabitacion + iva;
     if (isTarjeta) {
         total = Math.ceil(total / 5000) * 5000;

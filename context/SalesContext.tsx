@@ -2,7 +2,7 @@ import { apiClientSafe } from "@/api/client";
 import { REALTIME_EVENT_NAMES, shouldRefreshSalesFromSse } from "@/utils/realtime";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useEffect } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { MetodoPago } from "../types/api";
 
 export interface Venta {
@@ -47,7 +47,7 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [refetch]);
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: { type?: string; data?: Venta }) => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: { type?: string; data?: Venta }) => {
       if (!shouldRefreshSalesFromSse(payload?.type)) {
         return;
       }

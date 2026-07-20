@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
+import { eventBus } from '@/utils/eventBus';
 import {
     ActivityIndicator,
-    DeviceEventEmitter,
+
     Pressable,
     StyleSheet,
     Text,
@@ -104,7 +105,7 @@ export function StaffCallOverlay() {
         }
 
         
-        const subscription = DeviceEventEmitter.addListener("sse_event", (payload: any) => {
+        const subscription = eventBus.addListener("sse_event", (payload: any) => {
             if (!payload) return;
 
             

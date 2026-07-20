@@ -50,6 +50,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const router = useRouter();
   const eventSourceRef = useRef<EventSource | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
+  
+  // ─── Reconexión SSE con exponential backoff ─────────────────
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+  
+  const INITIAL_RETRY_DELAY = 1000;   // 1 segundo
+  const MAX_RETRY_DELAY = 30000;      // 30 segundos
+  const BACKOFF_FACTOR = 2;
+  const JITTER_MAX = 0.3;             // 30% de jitter para evitar thundering herd
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
     try {
@@ -239,11 +249,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [router, showLocalNotification, user]);
 
-  useEffect(() => {
+  // ─── Conexión SSE ───────────────────────────────────────────
+  // Crea el EventSource, maneja mensajes, open y error.
+  // En error → cierra el EventSource y programa reconexión.
+  const connectSSE = useCallback(() => {
     if (!user?.id) return;
 
+    // Cerrar conexión anterior si existe
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
     const sseUrl = `${API_URL}/notifications/sse`;
-    logger.info('[NotificationContext] Intentando conectar SSE', { url: sseUrl });
+    logger.info('[NotificationContext] Conectando SSE', {
+      url: sseUrl,
+      attempt: retryCountRef.current + 1
+    });
+
     let es: EventSource | null = null;
     try {
       es = new EventSource(sseUrl);
@@ -257,7 +280,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const payload: SSEPayload = JSON.parse(event.data);
           logger.debug('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
-          
+
           if (!isSseControlEvent(payload.type)) {
              emitSseEvent(payload);
           }
@@ -268,33 +291,97 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       es.addEventListener("open", () => {
-        logger.info('[NotificationContext] Conexión SSE establecida con éxito');
+        if (!isMountedRef.current) return;
+        retryCountRef.current = 0; // Reset retry count on successful connection
         setIsConnected(true);
+        logger.info('[NotificationContext] Conexión SSE establecida con éxito');
         showToast({
-            type: "info",
-            text1: "SSE Conectado",
-            text2: "Recibiendo notificaciones en tiempo real",
+            type: "success",
+            text1: "Conectado",
+            text2: "Notificaciones en tiempo real activas",
             visibilityTime: 2000,
         });
       });
 
-      es.addEventListener("error", (err: unknown) => {
-        logger.warn('[NotificationContext] Error de conexión SSE', { error: JSON.stringify(err) });
+      es.addEventListener("error", () => {
+        if (!isMountedRef.current) return;
+        logger.warn('[NotificationContext] Error de conexión SSE, reconectando...', {
+          attempt: retryCountRef.current + 1
+        });
         setIsConnected(false);
+        // Cerramos el EventSource para evitar su reconexión automática
+        // y controlamos nosotros la reconexión con exponential backoff
+        if (es) {
+          es.close();
+        }
+        eventSourceRef.current = null;
+        scheduleReconnect();
       });
 
     } catch (err) {
        logger.captureException(err, { context: 'NotificationContext:connectSSE' });
+       if (!isMountedRef.current) return;
+       setIsConnected(false);
+       scheduleReconnect();
     }
+  }, [user?.id, handleServerEvent]);
+
+  // ─── Reconexión con exponential backoff ──────────────────────
+  // Función normal (no hook) para evitar stale closures.
+  // Siempre usa la última versión de connectSSE del closure.
+  function scheduleReconnect() {
+    if (!isMountedRef.current) return;
+
+    const attempt = retryCountRef.current + 1;
+    const delay = Math.min(
+      INITIAL_RETRY_DELAY * Math.pow(BACKOFF_FACTOR, retryCountRef.current),
+      MAX_RETRY_DELAY
+    );
+    // Agregar jitter: ±30% aleatorio para evitar thundering herd
+    const jitter = delay * JITTER_MAX * (Math.random() * 2 - 1);
+    const finalDelay = Math.round(delay + jitter);
+
+    retryCountRef.current = attempt;
+
+    logger.info('[NotificationContext] Programando reconexión SSE', {
+      attempt,
+      delayMs: finalDelay
+    });
+
+    retryTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        connectSSE();
+      }
+    }, finalDelay);
+  }
+
+  useEffect(() => {
+    // Marcamos como mounted al inicio
+    isMountedRef.current = true;
+    
+    if (!user?.id) return;
+    
+    // Conectar SSE con reconexión automática (exponential backoff)
+    connectSSE();
 
     return () => {
-      if (es) {
-        es.close();
-        eventSourceRef.current = null;
-        setIsConnected(false);
+      // Limpieza completa al desmontar
+      isMountedRef.current = false;
+      
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
+      
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      
+      retryCountRef.current = 0;
+      setIsConnected(false);
     };
-  }, [user?.id, handleServerEvent]);
+  }, [user?.id, connectSSE]);
 
   return (
     <NotificationContext.Provider value={{ showLocalNotification, isConnected }}>

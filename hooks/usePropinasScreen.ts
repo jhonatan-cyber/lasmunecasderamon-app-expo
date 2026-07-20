@@ -123,7 +123,7 @@ export function usePropinasScreen() {
 
                 
                 if ((tipRes as any).data?.venta_id) {
-                    const saleRes = await apiClientSafe(`/ventas/${(tipRes as any).data.venta_id}`);
+                    const saleRes = await apiClientSafe(`/sales/${(tipRes as any).data.venta_id}`);
                     if (saleRes && (saleRes as any).success) {
                         setSaleDetail((saleRes as any).data);
                     }

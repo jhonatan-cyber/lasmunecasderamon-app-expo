@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { DeviceEventEmitter } from 'react-native';
+import { eventBus } from '@/utils/eventBus';
 import { showToast } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { usersService, codigoService } from '@/services';
@@ -175,7 +175,7 @@ export function usePersonalScreen() {
             } catch {}
         };
         fetchCode();
-        const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+        const sub = eventBus.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
             }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { DeviceEventEmitter } from 'react-native';
+import { eventBus } from '@/utils/eventBus';
 import { useRouter } from 'expo-router';
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -158,7 +158,7 @@ export function useCaja() {
                     showToast('Turno Iniciado', 'Caja abierta correctamente', 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
-                    DeviceEventEmitter.emit('refresh_requests');
+                    eventBus.emit('refresh_requests');
                 } else {
                     showToast('Error', res.message || 'Error al abrir caja');
                 }
@@ -183,7 +183,7 @@ export function useCaja() {
                     showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
-                    DeviceEventEmitter.emit('refresh_requests');
+                    eventBus.emit('refresh_requests');
                 } else {
                     showToast('Error', res.message || 'Error al retirar efectivo');
                 }
@@ -202,7 +202,7 @@ export function useCaja() {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
-                    DeviceEventEmitter.emit('refresh_requests');
+                    eventBus.emit('refresh_requests');
                 } else {
                     showToast('Error', res.message || 'Error al cerrar caja');
                 }

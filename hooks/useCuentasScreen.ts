@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
@@ -245,7 +245,7 @@ export const useCuentasScreen = () => {
   );
 
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener("refresh_cuentas", () => {
+    const sub = eventBus.addListener("refresh_cuentas", () => {
       fetchCuentas();
     });
     return () => sub.remove();

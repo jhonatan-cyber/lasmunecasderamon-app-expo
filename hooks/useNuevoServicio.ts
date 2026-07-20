@@ -10,7 +10,7 @@ import {
   type ServicePayload,
 } from '@/components/cajero/nuevo-servicio/types';
 import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
-import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate } from '@/hooks/utils/cartUtils';
+import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate, getCardSplit, getIvaDecimal } from '@/hooks/utils/cartUtils';
 import { serviceReducer, initialServiceState } from '@/components/cajero/nuevo-servicio/reducer';
 
 export function useNuevoServicio() {
@@ -67,7 +67,7 @@ export function useNuevoServicio() {
 
     let calculatedIva = 0;
     if (metodoPago === 'tarjeta') {
-      calculatedIva = Math.floor(precioServicioActual * 0.2);
+      calculatedIva = Math.floor(precioServicioActual * getIvaDecimal());
     }
 
     let currentTotal = precioServicioActual + precioHabitacionActual + calculatedIva;
@@ -98,12 +98,7 @@ export function useNuevoServicio() {
     metodoPago,
   ]);
 
-  const desgloseTarjeta = useMemo(() => {
-    const redondearMiles = (monto: number) => Math.round(monto / 1000) * 1000;
-    const venta = redondearMiles(totals.total * 0.51);
-    const propina = redondearMiles(Math.max(0, totals.total * 0.49));
-    return { venta, propina };
-  }, [totals.total]);
+  const desgloseTarjeta = useMemo(() => getCardSplit(totals.total), [totals.total]);
 
   const selectedClientData = useMemo(() => {
     if (selectedClients.length === 0) return null;
@@ -173,7 +168,7 @@ export function useNuevoServicio() {
         next.find((id) => String(id) === idStr),
       );
 
-      dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: uniqueNext as (string | number)[] });
+      dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: uniqueNext.map((id) => Number(id)) });
     },
     [selectedHostesses, maxHostesses],
   );
@@ -318,21 +313,6 @@ export function useNuevoServicio() {
         showToast('Error de Validación', msg);
         dispatch({ type: 'SET_SUBMITTING', payload: false });
         return;
-      }
-
-      
-      const anfitrionasDataRes = await apiClientSafe('/anfitrionas');
-      const anfitrionasData = Array.isArray(anfitrionasDataRes)
-        ? anfitrionasDataRes
-        : anfitrionasDataRes.success
-          ? (anfitrionasDataRes.data as any[])
-          : [];
-      if (anfitrionasData.length > 0) {
-        logger.debug('Anfitrionas fetched:', {
-          arg0: anfitrionasData.length,
-          arg1: 'entries. First one foto:',
-          arg2: anfitrionasData[0]?.foto,
-        });
       }
 
       const res = await apiClientSafe('/servicios', {

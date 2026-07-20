@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
 
 type Props = {
   hasAnfitrionaComision: boolean;
@@ -91,7 +92,7 @@ export function ServiceSummaryCard({
       )}
       {metodoPago === 'tarjeta' && (
         <View style={summaryRow}>
-          <Text style={[summaryLabel, { color: textSecondary }]}>Impuesto IVA (20%)</Text>
+          <Text style={[summaryLabel, { color: textSecondary }]}>{`Impuesto IVA (${getIvaPercent()}%)`}</Text>
           <Text style={[summaryVal, { color: '#10B981' }]}>
             +${totals.iva.toLocaleString()}
           </Text>

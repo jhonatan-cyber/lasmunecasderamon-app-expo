@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import FlashList from "@/components/shared/FlashList";
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';import { eventBus } from "@/utils/eventBus";
 import {
-    DeviceEventEmitter,
     Dimensions,
     Pressable,
     RefreshControl,
@@ -192,7 +191,7 @@ export default function PersonalScreen() {
             } catch {}
         };
         fetch();
-        const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+        const sub = eventBus.addListener('sse_event', (payload: any) => {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
             }

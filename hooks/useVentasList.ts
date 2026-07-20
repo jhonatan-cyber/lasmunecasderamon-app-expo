@@ -1,6 +1,6 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { showToast } from '@/utils/toast-lazy';
 import type { AlertConfig, TabType, Venta } from "@/components/cajero/ventas/types";
 import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
@@ -76,7 +76,7 @@ export function useVentasList(
 
   
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(
+    const subscription = eventBus.addListener(
       REALTIME_EVENT_NAMES.refreshSales,
       () => {
         logger.debug("[useVentasList] refresh_sales received");

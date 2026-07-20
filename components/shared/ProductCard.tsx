@@ -3,6 +3,7 @@ import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { isExpensiveDrink } from '@/hooks/utils/cuentaUtils';
 
 export interface Product {
     id: string;
@@ -15,12 +16,13 @@ export interface Product {
     status: number;
     foto: string;
     categoria: string;
+    max_anfitrionas?: number | null;
 }
 
 export interface CartItem {
     product: Product;
     quantity: number;
-    selectedHostesses: string[];
+    selectedHostesses: number[];
     selectedRoom: string | null;
 }
 
@@ -64,7 +66,7 @@ export const ProductCard = ({
     const qty = cartItem?.quantity || 0;
 
     const hasCommission = (product.commission || 0) > 0;
-    const canSelectRoom = product.price >= 30000 && hasCommission;
+    const canSelectRoom = isExpensiveDrink(product) && hasCommission;
 
     return (
         <View style={[styles.productCard, { backgroundColor: cardBg, borderColor }]}>

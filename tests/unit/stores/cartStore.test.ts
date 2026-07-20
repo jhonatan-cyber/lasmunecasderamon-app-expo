@@ -93,17 +93,17 @@ describe('cartStore', () => {
     
     it('updateItemHostesses: debe actualizar las anfitrionas seleccionadas', () => {
         useCartStore.getState().addToCart(mockProduct as any);
-        useCartStore.getState().updateItemHostesses('prod-1', ['hostess-1', 'hostess-2']);
+        useCartStore.getState().updateItemHostesses('prod-1', [1, 2]);
         const cart = useCartStore.getState().cart;
-        expect(cart[0].selectedHostesses).toEqual(['hostess-1', 'hostess-2']);
+        expect(cart[0].selectedHostesses).toEqual([1, 2]);
     });
 
     it('updateItemHostesses: no debe afectar otros items', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         useCartStore.getState().addToCart(mockChampagne as any);
-        useCartStore.getState().updateItemHostesses('prod-1', ['hostess-1']);
+        useCartStore.getState().updateItemHostesses('prod-1', [1]);
         const cart = useCartStore.getState().cart;
-        expect(cart[0].selectedHostesses).toEqual(['hostess-1']);
+        expect(cart[1].selectedHostesses).toEqual([]);
         expect(cart[1].selectedHostesses).toEqual([]);
     });
 

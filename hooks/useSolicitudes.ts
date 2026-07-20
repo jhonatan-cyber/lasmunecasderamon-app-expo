@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { DeviceEventEmitter } from 'react-native';
+import { eventBus } from '@/utils/eventBus';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
@@ -142,7 +142,7 @@ export const useSolicitudes = () => {
     }, [fetchSolicitudes]);
 
     useEffect(() => {
-        const subscription = DeviceEventEmitter.addListener('refresh_requests', (payload: SSEPayload) => {
+        const subscription = eventBus.addListener('refresh_requests', (payload: SSEPayload) => {
             logger.debug('[useSolicitudes] 📡 SSE event received:', payload as any);
             fetchSolicitudes();
             

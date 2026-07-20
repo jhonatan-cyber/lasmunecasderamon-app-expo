@@ -13,6 +13,7 @@ import {
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { getIvaDecimal, getIvaPercent } from '@/hooks/utils/cuentaUtils';
 import type { Timer } from '@/context/types';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
 import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
@@ -196,7 +197,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             const precioHabitacionTotal = precioHabitacionSinComision * numAnfitrionas;
             let calculatedIva = 0;
             if (metodoPago === 'tarjeta') {
-                calculatedIva = Math.floor(precioServicioTotal * 0.20);
+                calculatedIva = Math.floor(precioServicioTotal * getIvaDecimal());
             }
 
             let totalGeneral = precioServicioTotal + precioHabitacionTotal + calculatedIva;
@@ -346,11 +347,11 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
                                 {metodoPago === 'tarjeta' && (
                                     <View style={styles.summaryRow}>
-                                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>IVA (20%)</Text>
+                                        <Text style={[styles.summaryLabel, { color: textSecondary }]}>{`IVA (${getIvaPercent()}%)`}</Text>
                                         <Text style={[styles.summaryValue, { color: accentColor }]}>
                                             ${(() => {
                                                 const totalServicio = (parseInt(precioServicio.replace(/\./g, '')) || 0) * anfitrionasSeleccionadas.length;
-                                                return Math.floor(totalServicio * 0.20).toLocaleString('es-CL');
+                                                return Math.floor(totalServicio * getIvaDecimal()).toLocaleString('es-CL');
                                             })()}
                                         </Text>
                                     </View>
@@ -366,7 +367,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                                             const totalHabitacion = precioHabitacionSinComision * anfitrionasSeleccionadas.length;
                                             let iva = 0;
                                             if (metodoPago === 'tarjeta') {
-                                                iva = Math.floor(totalServicio * 0.20);
+                                                iva = Math.floor(totalServicio * getIvaDecimal());
                                             }
                                             let total = totalServicio + totalHabitacion + iva;
                                             if (metodoPago === 'tarjeta') {

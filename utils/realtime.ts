@@ -1,4 +1,4 @@
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from '@/utils/eventBus';
 
 export const REALTIME_EVENT_NAMES = {
   sseEvent: "sse_event",
@@ -68,7 +68,7 @@ export const emitRealtimeEvent = (
   eventName: keyof typeof REALTIME_EVENT_NAMES,
   payload?: RealtimePayload,
 ) => {
-  DeviceEventEmitter.emit(REALTIME_EVENT_NAMES[eventName], payload);
+  eventBus.emit(REALTIME_EVENT_NAMES[eventName], payload);
 };
 
 export const emitSseEvent = (payload: RealtimePayload) => {

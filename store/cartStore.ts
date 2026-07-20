@@ -22,7 +22,7 @@ interface CartState {
     tipEnabled: boolean;
     addToCart: (product: Product) => void;
     removeFromCart: (productId: string) => void;
-    updateItemHostesses: (productId: string, hostessIds: string[]) => void;
+    updateItemHostesses: (productId: string, hostessIds: number[]) => void;
     updateItemRoom: (productId: string, roomId: string | null) => void;
     setTipEnabled: (enabled: boolean) => void;
     clearCart: () => void;
@@ -31,11 +31,6 @@ interface CartState {
     getTipAmount: () => number;
     buildOrderPayload: (params: BuildOrderParams) => BuildOrderResult;
 }
-
-const isChampagne = (product: Product) => {
-    const cat = (product.categoria || '').toLowerCase();
-    return cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-};
 
 export const useCartStore = create<CartState>((set, get) => ({
     cart: [],
@@ -130,7 +125,7 @@ export const useCartStore = create<CartState>((set, get) => ({
                 cantidad: item.quantity,
                 subtotal: item.product.price * item.quantity,
                 generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
-                hostessId: item.selectedHostesses.length === 1 ? item.selectedHostesses[0] : null,
+                hostessId: item.selectedHostesses.length === 1 ? String(item.selectedHostesses[0]) : null,
                 selectedHostesses: item.selectedHostesses.map(String),
                 roomId: item.selectedRoom,
             })),

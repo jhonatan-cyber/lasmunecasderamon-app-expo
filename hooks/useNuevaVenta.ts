@@ -6,6 +6,7 @@ import {
   showToast,
   isChampagneProduct,
   getHostessLimit,
+  isExpensiveDrink,
   openCategory,
   normalizeRoom,
   normalizeClients,
@@ -51,7 +52,7 @@ export function useNuevaVenta() {
     return cart.some(
       (item) =>
         Number(item.commission || item.comision || 0) > 0 ||
-        Number(item.precio || item.price || 0) >= 30000,
+        isExpensiveDrink(item),
     );
   }, [cart]);
 
@@ -212,7 +213,7 @@ export function useNuevaVenta() {
     (item: any) => {
       const hasComm =
         Number(item.comision || item.commission || 0) > 0 ||
-        Number(item.precio || item.price || 0) >= 30000;
+        isExpensiveDrink(item);
 
       if (hasComm) {
         dispatch({

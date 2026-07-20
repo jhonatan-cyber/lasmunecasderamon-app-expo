@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { DeviceEventEmitter, Platform } from "react-native";
+import { Platform } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { showToast } from '@/utils/toast-lazy';
@@ -115,7 +116,7 @@ export function useAnticipos() {
   );
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener('refresh_anticipos', () => {
+    const subscription = eventBus.addListener('refresh_anticipos', () => {
       fetchAnticipos();
     });
 

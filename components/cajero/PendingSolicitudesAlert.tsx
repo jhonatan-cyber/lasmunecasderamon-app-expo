@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { eventBus } from "@/utils/eventBus";
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    DeviceEventEmitter,
     Pressable,
     StyleSheet,
     Text,
@@ -59,11 +59,11 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
             void fetchCounts();
         }, 0);
 
-        const sub = DeviceEventEmitter.addListener('refresh_requests', () => {
+        const sub = eventBus.addListener('refresh_requests', () => {
             void fetchCounts();
         });
 
-        const sseSub = DeviceEventEmitter.addListener('sse_event', (payload) => {
+        const sseSub = eventBus.addListener('sse_event', (payload) => {
             const types = [
                 'new_order', 'new_service_request', 
                 'order_deleted', 'service_request_deleted',

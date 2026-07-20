@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { DeviceEventEmitter } from 'react-native';
+import { eventBus } from '@/utils/eventBus';
 import { Timer } from '@/context/types';
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import {
@@ -243,7 +243,7 @@ export function useSSETimerHandler({
   }, [fetchActiveTimers, setTimers]);
 
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: unknown) => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: unknown) => {
       handleSSEEvent(payload as SSEPayload);
     });
 

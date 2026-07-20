@@ -234,12 +234,10 @@ export function useClientes() {
             };
 
             if (loadMetodoPago === 'mixto') {
-                body.pago_mixto = {
-                    metodo_primario: primaryMethod,
-                    monto_primario: Number(unformatCurrency(primaryAmount)),
-                    metodo_secundario: secondaryMethod,
-                    monto_secundario: Number(unformatCurrency(secondaryAmount))
-                };
+                body.pagos_mixtos = [
+                    { metodo: primaryMethod, monto: Number(unformatCurrency(primaryAmount)) },
+                    { metodo: secondaryMethod, monto: Number(unformatCurrency(secondaryAmount)) }
+                ];
             }
 
             const res = await clientesService.prepago(body);

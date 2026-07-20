@@ -48,7 +48,7 @@ export async function fetchVentaDetail(
   signal?: AbortSignal,
 ): Promise<VentaDetail | null> {
   try {
-    const res = await apiClientSafe(`/ventas/${id}`, { signal });
+    const res = await apiClientSafe(`/sales/${id}`, { signal });
     if (res?.success && res.data) {
       return res.data as VentaDetail;
     }
@@ -65,8 +65,8 @@ export async function finalizarVenta(
   if (!ventaId) return { success: false, message: "ID de venta no válido" };
 
   try {
-    const res = await apiClientSafe(`/ventas/${ventaId}`, {
-      method: "PUT",
+    const res = await apiClientSafe(`/sales/${ventaId}`, {
+      method: "PATCH",
       body: JSON.stringify({ estado: 1 }),
     });
 

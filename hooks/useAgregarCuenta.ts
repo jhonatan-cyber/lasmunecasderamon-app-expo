@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { useRouter } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { useTimer } from "@/context/TimerContext";
@@ -210,7 +210,7 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
       });
       if (res.success) {
         showToast("Éxito", "Productos agregados correctamente", "success");
-        DeviceEventEmitter.emit("refresh_cuentas");
+        eventBus.emit("refresh_cuentas");
         setTimeout(() => router.back(), 1500);
       } else {
         showToast("Error", res.message || "No se pudo actualizar la cuenta");

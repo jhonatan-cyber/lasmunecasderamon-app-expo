@@ -212,7 +212,7 @@ export default function PropinasScreen() {
             <Text style={[styles.emptyText, { color: textSecondary }]}>No se encontraron propinas</Text>
           </View>
         }
-        getItemLayout={(_, index) => ({ length: 200, offset: 200 * index, index })}
+        getItemLayout={(_: any, index: number) => ({ length: 200, offset: 200 * index, index })}
         windowSize={10}
         maxToRenderPerBatch={7}
         initialNumToRender={5}

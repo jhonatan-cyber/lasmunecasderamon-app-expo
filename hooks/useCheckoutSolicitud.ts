@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { apiClientSafe } from "@/api/client";
 import { cuentasService } from '@/services';
 
@@ -130,7 +130,7 @@ export function useCheckoutSolicitud({
         showToast("Éxito", "Pedido cobrado y cerrado.", "success");
         removeSolicitudLocally(selectedPedido.id_pedido, "pedido");
         closeCheckout();
-        DeviceEventEmitter.emit("refresh_requests");
+        eventBus.emit("refresh_requests");
       } else {
         showToast("Error", res.message || "Error al procesar", "error");
         fetchSolicitudes();
@@ -182,7 +182,7 @@ export function useCheckoutSolicitud({
         showToast("Éxito", `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, "success");
         removeSolicitudLocally(selectedPedido.id_pedido, "pedido");
         closeCheckout();
-        DeviceEventEmitter.emit("refresh_requests");
+        eventBus.emit("refresh_requests");
       } else {
         showToast("Error", res.message || "Error al crear la cuenta", "error");
         fetchSolicitudes();

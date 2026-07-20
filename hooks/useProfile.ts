@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { apiClientSafe } from "@/api/client";
 import { useAuthStore, type User } from "@/store/authStore";
 import type { UserProfileResponse } from "@/types/api";
@@ -61,7 +61,7 @@ export function useProfile() {
     loadData();
 
     // Real-time profile updates via SSE — reemplaza polling
-    const sub = DeviceEventEmitter.addListener('sse_event', (payload: any) => {
+    const sub = eventBus.addListener('sse_event', (payload: any) => {
       if (
         payload.type === 'profile_updated' &&
         payload.data?.userId == user.id

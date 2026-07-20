@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
+import { getIvaDecimal } from '@/hooks/utils/cuentaUtils';
 import logger from "@/utils/logger";
 
 export interface Room {
@@ -53,9 +54,7 @@ export function useGarzonServiciosScreen() {
 
   
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [selectedHostesses, setSelectedHostesses] = useState<
-    (number | string)[]
-  >([]);
+  const [selectedHostesses, setSelectedHostesses] = useState<number[]>([]);
   const [selectedClients, setSelectedClients] = useState<(number | string)[]>(
     [],
   );
@@ -276,7 +275,7 @@ export function useGarzonServiciosScreen() {
     let currentIva = 0;
     if (paymentMethod === "tarjeta") {
       
-      currentIva = Math.floor(subtotal * 0.2);
+      currentIva = Math.floor(subtotal * getIvaDecimal());
     }
 
     let total = subtotal + totalHabitacion + currentIva;

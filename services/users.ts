@@ -17,10 +17,10 @@ export const usersService = {
   getProfile: (signal?: AbortSignal) =>
     apiClientSafe('/users/profile', { signal }),
 
-  updateProfile: (data: Record<string, unknown>) =>
+  updateProfile: (id: string | number, data: Record<string, unknown>) =>
     apiClientSafe('/users', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     }),
 
   getById: (id: string | number, signal?: AbortSignal) =>

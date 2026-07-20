@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import * as Haptics from "expo-haptics";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
@@ -194,8 +194,8 @@ export const useSolicitudesActions = ({
             if (res.success) {
               removeSolicitudLocally(id, "anticipo");
               showToast("Éxito", "Anticipo entregado y descontado de caja.", "success");
-              DeviceEventEmitter.emit("refresh_requests");
-              DeviceEventEmitter.emit("refresh_anticipos");
+              eventBus.emit("refresh_requests");
+              eventBus.emit("refresh_anticipos");
             } else {
               showToast("Error", res.message || "Error al procesar.", "error");
               fetchSolicitudes();
@@ -223,7 +223,7 @@ export const useSolicitudesActions = ({
 
           if (res.success) {
             showToast("Éxito", "Servicio aprobado correctamente.", "success");
-            DeviceEventEmitter.emit("refresh_requests");
+            eventBus.emit("refresh_requests");
             setMetodoPago("");
             setMetodoPagoAdicional("");
             setServiceModalVisible(false);
@@ -271,7 +271,7 @@ export const useSolicitudesActions = ({
           });
           if (res.success) {
             showToast("Éxito", "Solicitud eliminada.", "success");
-            DeviceEventEmitter.emit("refresh_requests");
+            eventBus.emit("refresh_requests");
           } else {
             showToast("Error", "No se pudo rechazar.", "error");
             fetchSolicitudes();
@@ -348,7 +348,7 @@ export const useSolicitudesActions = ({
         showToast("Éxito", "Pedido cobrado y cerrado.", "success");
         removeSolicitudLocally(pedidoItem.id_pedido ?? '', "pedido");
         closeCheckout();
-        DeviceEventEmitter.emit("refresh_requests");
+        eventBus.emit("refresh_requests");
       } else {
         showToast("Error", res.message || "Error al procesar", "error");
         fetchSolicitudes();
@@ -403,7 +403,7 @@ export const useSolicitudesActions = ({
         showToast("Éxito", `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, "success");
         removeSolicitudLocally((selectedPedido as PedidoItem).id_pedido ?? '', "pedido");
         closeCheckout();
-        DeviceEventEmitter.emit("refresh_requests");
+        eventBus.emit("refresh_requests");
       } else {
         showToast("Error", res.message || "Error al crear la cuenta", "error");
         fetchSolicitudes();

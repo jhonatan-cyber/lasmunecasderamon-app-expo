@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { DeviceEventEmitter } from "react-native";
+import { eventBus } from "@/utils/eventBus";
 import { useTimer } from "@/context/TimerContext";
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 
@@ -20,7 +20,7 @@ export function GlobalTimerAlert() {
     const { refreshTimers } = useTimer();
 
     useEffect(() => {
-        const sub = DeviceEventEmitter.addListener("refresh_sales", (data?: any) => {
+        const sub = eventBus.addListener("refresh_sales", (data?: any) => {
             
             if (data?.automatic && data?.reason === "ended" && data?.roomName) {
                 
@@ -43,7 +43,7 @@ export function GlobalTimerAlert() {
     const handleConfirm = async () => {
         setAlertConfig(prev => ({ ...prev, visible: false }));
         
-        DeviceEventEmitter.emit("timer_alert_closed");
+        eventBus.emit("timer_alert_closed");
         await refreshTimers();
     };
 

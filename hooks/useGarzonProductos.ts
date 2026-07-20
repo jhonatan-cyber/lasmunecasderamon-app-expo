@@ -4,6 +4,7 @@ import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
 import { CartItem, Product, Anfitriona, Room } from '@/components/shared/ProductCard';
 import logger from '@/utils/logger';
 
@@ -137,18 +138,7 @@ export function useGarzonProductos() {
     const cartTotal = getTotal();
 
     const getMaxHostesses = (item: CartItem) => {
-        const cat = (item.product.categoria || '').toLowerCase();
-        const isChampagne = cat.includes('champaña') || cat.includes('shampaña') || cat.includes('champagne');
-
-        if (isChampagne) {
-            const p = item.product.price;
-            if (p >= 240000) return 5;
-            if (p >= 200000) return 4;
-            if (p >= 140000) return 3;
-            if (p >= 120000) return 2;
-            return 1;
-        }
-        return item.quantity;
+        return getHostessLimit(item.product, item.quantity);
     };
 
     const submitOrder = async () => {
