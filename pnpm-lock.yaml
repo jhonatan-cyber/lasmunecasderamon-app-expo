@@ -26,6 +26,9 @@ importers:
       '@lasmunecasderamon/config':
         specifier: workspace:*
         version: link:packages/config
+      '@lasmunecasderamon/sale-totals':
+        specifier: workspace:*
+        version: link:packages/sale-totals
       '@lasmunecasderamon/types':
         specifier: workspace:*
         version: link:packages/types
@@ -218,6 +221,8 @@ importers:
         version: 4.1.8(@types/node@25.9.1)(happy-dom@20.9.0)(jsdom@29.1.1)(vite@7.3.3(@types/node@25.9.1)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))
 
   packages/config: {}
+
+  packages/sale-totals: {}
 
   packages/types: {}
 

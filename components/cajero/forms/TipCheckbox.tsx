@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useConfigValue } from '@/hooks/useConfigValue';
 
 interface TipCheckboxProps {
     enabled: boolean;
@@ -14,9 +15,11 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
     enabled,
     onToggle,
     tipAmount,
-    label = 'Propina (10%)'
+    label
 }) => {
     const { accentColor, isDark, textPrimary, textSecondary } = useAccentColor();
+    const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+    const resolvedLabel = label || `Propina (${propinaPct}%)`;
 
     return (
         <Pressable
@@ -32,7 +35,7 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
                     color={enabled ? accentColor : textSecondary}
                     style={{ marginRight: 8 }}
                 />
-                <Text style={[styles.label, { color: textSecondary }]}>{label}</Text>
+                <Text style={[styles.label, { color: textSecondary }]}>{resolvedLabel}</Text>
             </View>
             <Text style={[styles.val, { color: textPrimary }]}>${tipAmount.toLocaleString()}</Text>
         </Pressable>

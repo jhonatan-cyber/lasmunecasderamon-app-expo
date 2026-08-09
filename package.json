@@ -28,6 +28,7 @@
     "@expo/metro-runtime": "56.0.16",
     "@expo/vector-icons": "^15.0.3",
     "@lasmunecasderamon/config": "workspace:*",
+    "@lasmunecasderamon/sale-totals": "workspace:*",
     "@lasmunecasderamon/types": "workspace:*",
     "@lasmunecasderamon/utils": "workspace:*",
     "@lasmunecasderamon/validations": "workspace:*",

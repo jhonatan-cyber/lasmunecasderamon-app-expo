@@ -5,6 +5,7 @@ interface GarzonCartBarProps {
     tipEnabled: boolean;
     setTipEnabled: (enabled: boolean) => void;
     tipAmount: number;
+    tipPercentage?: number;
     cartTotal: number;
     submitting: boolean;
     submitOrder: () => void;
@@ -21,6 +22,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
     tipEnabled,
     setTipEnabled,
     tipAmount,
+    tipPercentage = 10,
     cartTotal,
     submitting,
     submitOrder,
@@ -35,7 +37,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
         <View style={[styles.cartBar, { backgroundColor: cardBg, borderTopColor: borderColor, paddingBottom: 16 + insets.bottom }]}>
             <View style={styles.cartTopRow}>
                 <View style={styles.tipControl}>
-                    <Text style={[styles.tipText, { color: textSecondary }]}>Propina (10%)</Text>
+                    <Text style={[styles.tipText, { color: textSecondary }]}>Propina ({tipPercentage}%)</Text>
                     <Switch
                         value={tipEnabled}
                         onValueChange={setTipEnabled}

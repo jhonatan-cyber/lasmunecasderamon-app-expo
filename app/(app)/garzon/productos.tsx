@@ -50,6 +50,7 @@ export default function ProductosScreen() {
         clearCart,
         tipAmount,
         cartTotal,
+        propinaPct,
         onRefresh,
         getMaxHostesses,
         submitOrder,
@@ -129,6 +130,7 @@ export default function ProductosScreen() {
                     tipEnabled={tipEnabled}
                     setTipEnabled={setTipEnabled}
                     tipAmount={tipAmount}
+                    tipPercentage={propinaPct}
                     cartTotal={cartTotal}
                     submitting={submitting}
                     submitOrder={submitOrder}

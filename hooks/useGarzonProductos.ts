@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
+import { useConfigValue } from '@/hooks/useConfigValue';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
@@ -48,11 +49,18 @@ export function useGarzonProductos() {
         updateItemRoom,
         tipEnabled,
         setTipEnabled,
+        setTipPercentage,
         clearCart,
         getTipAmount,
         getTotal,
         buildOrderPayload
     } = useCartStore();
+
+    const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+
+    useEffect(() => {
+        setTipPercentage(propinaPct);
+    }, [propinaPct, setTipPercentage]);
 
     const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
@@ -252,6 +260,7 @@ export function useGarzonProductos() {
         clearCart,
         tipAmount,
         cartTotal,
+        propinaPct,
 
         
         onRefresh,

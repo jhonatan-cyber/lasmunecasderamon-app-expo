@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { apiClientSafe } from "@/api/client";
+import { useConfigValue } from "@/hooks/useConfigValue";
+import { calcularPropina, calcularCargoTarjeta, calcularTotalVenta } from '@lasmunecasderamon/sale-totals';
 import { cuentasService } from '@/services';
 
 interface DetallePago {
@@ -34,6 +36,7 @@ interface SalesSubmitPayload {
   tiempo: number;
   usuarios: never[];
   propina?: number;
+  cargo_tarjeta?: number;
 }
 
 interface UseCheckoutSolicitudParams {
@@ -66,6 +69,8 @@ export function useCheckoutSolicitud({
   fetchSolicitudes,
 }: UseCheckoutSolicitudParams) {
   const [submittingCheckout, setSubmittingCheckout] = useState(false);
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
 
   const handleCheckoutSubmit = useCallback(async () => {
     if (!selectedPedido) return;
@@ -75,8 +80,17 @@ export function useCheckoutSolicitud({
     const subtotalBase = Number(
       selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - propinaOriginal),
     );
-    const propinaFinal = propinaOriginal > 0 ? propinaOriginal : (agregarPropina ? subtotalBase * 0.10 : 0);
-    const totalConPropina = subtotalBase + propinaFinal;
+    const propinaFinal = propinaOriginal > 0 ? propinaOriginal : calcularPropina(subtotalBase, propinaPct, agregarPropina);
+    // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total
+    // que paga el cliente pero NO se reparte (solo `propinaFinal` va como propina).
+    // Cálculo compartido con el dashboard: paquete @lasmunecasderamon/sale-totals.
+    const cargoTarjeta = calcularCargoTarjeta(subtotalBase, impuestoPropinaPct, metodoPago);
+    const totalConPropina = calcularTotalVenta({
+      subtotal: subtotalBase,
+      propina: propinaFinal,
+      impuestoPropinaPct,
+      metodoPago
+    });
     const saldoPrepago = selectedClient ? Number(selectedClient.saldo || 0) : 0;
 
     let montoPrepago = 0;
@@ -119,6 +133,9 @@ export function useCheckoutSolicitud({
     if (propinaFinal > 0) {
       payload.propina = propinaFinal;
     }
+    if (cargoTarjeta > 0) {
+      payload.cargo_tarjeta = cargoTarjeta;
+    }
 
     try {
       const res = await apiClientSafe("/sales", {
@@ -141,7 +158,7 @@ export function useCheckoutSolicitud({
     } finally {
       setSubmittingCheckout(false);
     }
-  }, [agregarPropina, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast]);
+  }, [agregarPropina, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast, propinaPct, impuestoPropinaPct]);
 
   const handleAddToCuenta = useCallback(async () => {
     if (!selectedPedido || !selectedClient) return;

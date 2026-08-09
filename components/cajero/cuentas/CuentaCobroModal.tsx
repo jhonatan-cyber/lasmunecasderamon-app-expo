@@ -38,6 +38,7 @@ export function CuentaCobroModal({
     cobroClienteSaldo,
     showPrepagoCobro,
     cobroTotals,
+    impuestoPropinaPct,
   } = screen;
 
   const selectedPaymentMethod = cobroMetodoPago || "efectivo";
@@ -76,6 +77,17 @@ export function CuentaCobroModal({
               </View>
 
               <TipCheckbox enabled={cobroEnableTip} onToggle={screen.setCobroEnableTip} tipAmount={cobroTotals.tip} />
+
+              {cobroMetodoPago === 'tarjeta' && cobroTotals.cargoTarjeta > 0 && (
+                <View style={styles.summaryRowCobro}>
+                  <Text style={[styles.summaryLabelCobro, { color: textSecondary }]}>
+                    Cargo tarjeta ({impuestoPropinaPct}%)
+                  </Text>
+                  <Text style={[styles.summaryValCobro, { color: accentColor }]}>
+                    +${cobroTotals.cargoTarjeta.toLocaleString()}
+                  </Text>
+                </View>
+              )}
 
               <View style={[styles.dividerCobro, { backgroundColor: borderColor }]} />
 

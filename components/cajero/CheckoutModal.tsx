@@ -2,6 +2,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { useConfigValue } from "@/hooks/useConfigValue";
+import { calcularPropina, calcularCargoTarjeta } from '@lasmunecasderamon/sale-totals';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MetodoPago } from '../../types/api';
 
@@ -40,14 +42,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   submittingCheckout, onCheckoutSubmit, onAddToCuenta,
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+
   if (!selectedPedido) return null;
 
   const existingTip = Number(selectedPedido.propina || pedidoDetails?.[0]?.propina || 0);
   const subtotalBase = Number(
     selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - existingTip)
   );
-  const tipAmount = existingTip > 0 ? existingTip : agregarPropina ? subtotalBase * 0.1 : 0;
-  const totalFinal = subtotalBase + tipAmount;
+  const tipAmount = existingTip > 0 ? existingTip : calcularPropina(subtotalBase, propinaPct, agregarPropina);
+  // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total
+  // que paga el cliente pero NO se reparte (solo `tipAmount` va como propina).
+  const cargoTarjeta = calcularCargoTarjeta(subtotalBase, impuestoPropinaPct, metodoPago);
+  const totalFinal = subtotalBase + tipAmount + cargoTarjeta;
 
   const mixedPaymentDetails = (() => {
     if (!selectedClient || metodoPago !== "prepago") return { isMixed: false, prepago: 0, adicional: 0 };
@@ -123,7 +131,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             <View style={[styles.totals, { backgroundColor: accentBg }]}>
               <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
-              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : 'Propina 10%'}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
+              {cargoTarjeta > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>Cargo tarjeta ({impuestoPropinaPct}%)</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${cargoTarjeta.toLocaleString()}</Text></View>}
+              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
               <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${totalFinal.toLocaleString()}</Text></View>
             </View>
           </ScrollView>

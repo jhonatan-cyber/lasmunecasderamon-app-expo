@@ -4,6 +4,8 @@ import { eventBus } from "@/utils/eventBus";
 import * as Haptics from "expo-haptics";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
+import { useConfigValue } from "@/hooks/useConfigValue";
+import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { MetodoPago } from "@/types/api";
 import type { Cliente } from '@lasmunecasderamon/types';
 import type { PedidoItem, SolicitudItem, PendingAutoOpen } from "@/hooks/types/solicitudesTypes";
@@ -74,6 +76,7 @@ export const useSolicitudesActions = ({
   queryType,
 }: UseSolicitudesActionsParams) => {
   const router = useRouter();
+  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const [processedOpenId, setProcessedOpenId] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(0);
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
@@ -293,7 +296,7 @@ export const useSolicitudesActions = ({
     const subtotalBase = Number(
       pedidoItem.subtotal ?? Math.max(0, Number(pedidoItem.total || 0) - propinaOriginal),
     );
-    const propinaFinal = propinaOriginal > 0 ? propinaOriginal : (agregarPropina ? subtotalBase * 0.10 : 0);
+    const propinaFinal = propinaOriginal > 0 ? propinaOriginal : calcularPropina(subtotalBase, propinaPct, agregarPropina);
     const totalConPropina = subtotalBase + propinaFinal;
     const saldoPrepago = selectedClient ? Number(selectedClient.saldo || 0) : 0;
 
@@ -359,7 +362,7 @@ export const useSolicitudesActions = ({
     } finally {
       setSubmittingCheckout(false);
     }
-  }, [agregarPropina, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast]);
+  }, [agregarPropina, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast, propinaPct]);
 
   const handleAddToCuenta = useCallback(async () => {
     if (!selectedPedido || !selectedClient) return;

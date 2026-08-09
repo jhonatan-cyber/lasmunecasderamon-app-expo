@@ -20,11 +20,13 @@ type BuildOrderResult = {
 interface CartState {
     cart: CartItem[];
     tipEnabled: boolean;
+    tipPercentage: number;
     addToCart: (product: Product) => void;
     removeFromCart: (productId: string) => void;
     updateItemHostesses: (productId: string, hostessIds: number[]) => void;
     updateItemRoom: (productId: string, roomId: string | null) => void;
     setTipEnabled: (enabled: boolean) => void;
+    setTipPercentage: (percentage: number) => void;
     clearCart: () => void;
     getTotal: () => number;
     getSubtotal: () => number;
@@ -35,6 +37,7 @@ interface CartState {
 export const useCartStore = create<CartState>((set, get) => ({
     cart: [],
     tipEnabled: false,
+    tipPercentage: 10,
 
     addToCart: (product) => {
         set((state) => {
@@ -86,6 +89,8 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     setTipEnabled: (enabled) => set({ tipEnabled: enabled }),
 
+    setTipPercentage: (percentage) => set({ tipPercentage: percentage }),
+
     clearCart: () => set({ cart: [], tipEnabled: false }),
 
     getSubtotal: () => {
@@ -94,7 +99,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     getTipAmount: () => {
         const subtotal = get().getSubtotal();
-        return get().tipEnabled ? subtotal * 0.1 : 0;
+        return get().tipEnabled ? Math.round((subtotal * get().tipPercentage) / 100) : 0;
     },
 
     getTotal: () => {

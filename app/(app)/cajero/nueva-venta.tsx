@@ -40,6 +40,7 @@ export default function NuevaVentaScreen() {
     state,
     dispatch,
     totals,
+    impuestoPropinaPct,
     hasCommissionItem,
     onRefresh,
     handleLoadPrepago,
@@ -214,6 +215,14 @@ export default function NuevaVentaScreen() {
             <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal</Text>
             <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
           </View>
+          {metodoPago === 'tarjeta' && totals.cargoTarjeta > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+                Cargo tarjeta ({impuestoPropinaPct}%)
+              </Text>
+              <Text style={[styles.summaryVal, { color: accentColor }]}>${totals.cargoTarjeta.toLocaleString()}</Text>
+            </View>
+          )}
           <TipCheckbox
             enabled={enableTip}
             onToggle={(val: boolean) => dispatch({ type: 'SET_ENABLE_TIP', payload: val })}

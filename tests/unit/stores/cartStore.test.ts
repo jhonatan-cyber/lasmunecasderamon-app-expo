@@ -30,7 +30,7 @@ const mockChampagne = {
 describe('cartStore', () => {
     beforeEach(() => {
         
-        useCartStore.setState({ cart: [], tipEnabled: false });
+        useCartStore.setState({ cart: [], tipEnabled: false, tipPercentage: 10 });
     });
 
     
@@ -166,6 +166,14 @@ describe('cartStore', () => {
         useCartStore.getState().addToCart(mockProduct as any);
         const tip = useCartStore.getState().getTipAmount();
         expect(tip).toBe(0);
+    });
+
+    it('getTipAmount: debe usar el porcentaje configurado (setTipPercentage)', () => {
+        useCartStore.getState().addToCart(mockProduct as any);
+        useCartStore.getState().setTipEnabled(true);
+        useCartStore.getState().setTipPercentage(15);
+        const tip = useCartStore.getState().getTipAmount();
+        expect(tip).toBe(2250);
     });
 
     
