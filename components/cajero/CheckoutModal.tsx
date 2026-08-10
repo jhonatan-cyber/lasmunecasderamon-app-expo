@@ -3,7 +3,8 @@ import { TimeSelector } from "@/components/ui/TimeSelector";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
-import { calcularPropina, calcularCargoTarjeta } from '@lasmunecasderamon/sale-totals';
+import { calcularPropina } from '@lasmunecasderamon/sale-totals';
+import { getCardSplit } from '@/hooks/utils/cuentaUtils';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MetodoPago } from '../../types/api';
 
@@ -43,7 +44,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
+  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
+  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
 
   if (!selectedPedido) return null;
 
@@ -52,10 +54,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - existingTip)
   );
   const tipAmount = existingTip > 0 ? existingTip : calcularPropina(subtotalBase, propinaPct, agregarPropina);
-  // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total
-  // que paga el cliente pero NO se reparte (solo `tipAmount` va como propina).
-  const cargoTarjeta = calcularCargoTarjeta(subtotalBase, impuestoPropinaPct, metodoPago);
-  const totalFinal = subtotalBase + tipAmount + cargoTarjeta;
+  const totalFinal = subtotalBase + tipAmount;
+  // Nota informativa del tarjetero: cómo dividir el cobro al pasar la tarjeta
+  // (51/49 por defecto). Solo es texto, no afecta a la caja.
+  const splitTarjeta = metodoPago === 'tarjeta' ? getCardSplit(totalFinal) : { venta: 0, propina: 0 };
 
   const mixedPaymentDetails = (() => {
     if (!selectedClient || metodoPago !== "prepago") return { isMixed: false, prepago: 0, adicional: 0 };
@@ -129,9 +131,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </View>
             )}
 
-            <View style={[styles.totals, { backgroundColor: accentBg }]}>
+            {metodoPago === 'tarjeta' && totalFinal > 0 && (
+              <View style={{ marginTop: 12, marginBottom: 4, padding: 12, borderRadius: 12, borderWidth: 1, backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A" }}>
+                <Text style={{ fontSize: 11, fontWeight: "900", textTransform: "uppercase", color: isDark ? "#FCD34D" : "#92400E", marginBottom: 4 }}>Tarjetero</Text>
+                <Text style={{ fontSize: 12, fontWeight: "600", lineHeight: 18, color: isDark ? "#FDE68A" : "#78350F" }}>
+                  Genera venta por ${splitTarjeta.venta.toLocaleString()} ({splitVentaPct}%) y propina por ${splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}%). Solo informativo, no afecta la caja.
+                </Text>
+              </View>
+            )}              <View style={[styles.totals, { backgroundColor: accentBg }]}>
               <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
-              {cargoTarjeta > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>Cargo tarjeta ({impuestoPropinaPct}%)</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${cargoTarjeta.toLocaleString()}</Text></View>}
               {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
               <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${totalFinal.toLocaleString()}</Text></View>
             </View>

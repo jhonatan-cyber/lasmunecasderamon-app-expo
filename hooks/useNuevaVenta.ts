@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useRouter } from 'expo-router';
 import { apiClientSafe } from '@/api/client';
 import { useConfigValue } from '@/hooks/useConfigValue';
-import { calcularPropina, calcularCargoTarjeta, calcularTotalVenta } from '@lasmunecasderamon/sale-totals';
+import { calcularPropina, calcularTotalVenta } from '@lasmunecasderamon/sale-totals';
 import { useSales } from '@/context/SalesContext';
 import {
   showToast,
@@ -42,7 +42,6 @@ export function useNuevaVenta() {
   } = state;
 
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
 
   const totals = useMemo(() => {
     const subtotal = cart.reduce(
@@ -50,13 +49,9 @@ export function useNuevaVenta() {
       0,
     );
     const tip = calcularPropina(subtotal, propinaPct, enableTip);
-    // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total
-    // que paga el cliente pero NO se reparte (solo `tip` va como propina).
-    // Cálculo compartido con el dashboard: paquete @lasmunecasderamon/sale-totals.
-    const cargoTarjeta = calcularCargoTarjeta(subtotal, impuestoPropinaPct, metodoPago);
-    const total = calcularTotalVenta({ subtotal, propina: tip, impuestoPropinaPct, metodoPago });
-    return { subtotal, tip, cargoTarjeta, total };
-  }, [cart, enableTip, propinaPct, impuestoPropinaPct, metodoPago]);
+    const total = calcularTotalVenta({ subtotal, propina: tip });
+    return { subtotal, tip, total };
+  }, [cart, enableTip, propinaPct]);
 
   const hasCommissionItem = useMemo(() => {
     return cart.some(
@@ -306,7 +301,6 @@ export function useNuevaVenta() {
         metodo_pago: metodoPago,
         pagos_mixtos: metodoPago === 'mixto' ? pagosMixtos : undefined,
         propina: totals.tip,
-        cargo_tarjeta: totals.cargoTarjeta,
         sub_total: totals.subtotal,
         total: totals.total,
         tiempo: selectedHabitacion ? selectedTime : 0,
@@ -365,7 +359,6 @@ export function useNuevaVenta() {
     state,
     dispatch,
     totals,
-    impuestoPropinaPct,
     hasCommissionItem,
     isTablet: false, 
     fetchInitialData,

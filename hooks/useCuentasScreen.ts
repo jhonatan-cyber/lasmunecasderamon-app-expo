@@ -5,7 +5,7 @@ import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
-import { calcularPropina, calcularCargoTarjeta } from '@lasmunecasderamon/sale-totals';
+import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import { useTimer } from "@/context/TimerContext";
 import { formatAmountInput, parseAmountInput } from "@/utils/money";
@@ -216,17 +216,13 @@ export const useCuentasScreen = () => {
   );
 
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const impuestoPropinaPct = Number(useConfigValue('facturacion', 'impuesto_propina', '10'));
 
   const cobroTotals = useMemo(() => {
-    if (!selectedCuenta) return { subtotal: 0, tip: 0, cargoTarjeta: 0, total: 0 };
+    if (!selectedCuenta) return { subtotal: 0, tip: 0, total: 0 };
     const subtotal = selectedCuenta.total || 0;
     const tip = calcularPropina(subtotal, propinaPct, cobroEnableTip);
-    // Cargo por pago con tarjeta: línea aparte en la boleta, se suma al total
-    // que paga el cliente pero NO se reparte (solo la propina va a TipRepository).
-    const cargoTarjeta = calcularCargoTarjeta(subtotal, impuestoPropinaPct, cobroMetodoPago);
-    return { subtotal, tip, cargoTarjeta, total: subtotal + tip + cargoTarjeta };
-  }, [selectedCuenta, cobroEnableTip, cobroMetodoPago, propinaPct, impuestoPropinaPct]);
+    return { subtotal, tip, total: subtotal + tip };
+  }, [selectedCuenta, cobroEnableTip, propinaPct]);
 
   const cobroClienteNombreCompleto = useMemo(() => {
     const nombre = String(selectedCuenta?.cliente_nombre || "").trim();
@@ -290,7 +286,6 @@ export const useCuentasScreen = () => {
         pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
         metodo_pago: cobroMetodoPago,
         propina: cobroTotals.tip,
-        cargo_tarjeta: cobroTotals.cargoTarjeta,
         sub_total: Number(cuenta?.sub_total ?? 0),
         total: Number(cobroTotals.total ?? cuenta?.total ?? 0),
         total_comision: Number(cuenta?.total_comision ?? 0),
@@ -332,10 +327,9 @@ export const useCuentasScreen = () => {
         cuenta_id: selectedCuenta.id_cuenta,
         metodo_pago: cobroMetodoPago,
         propina: cobroTotals.tip,
-        // Base de la cuenta: propina y cargo van por separado (el backend los
-        // suma al bucket correspondiente; evita duplicar la propina en la caja).
+        // Base de la cuenta: la propina va por separado (el backend la suma al
+        // bucket correspondiente; evita duplicarla en la caja).
         total_cobrado: cobroTotals.subtotal,
-        cargo_tarjeta: cobroTotals.cargoTarjeta,
         habitacion_id: selectedCuenta.habitacion_id || null,
       };
 
@@ -536,7 +530,6 @@ export const useCuentasScreen = () => {
     cobroClienteSaldo,
     showPrepagoCobro,
     cobroTotals,
-    impuestoPropinaPct,
     setActiveTab: (value: "historial" | "pendientes") =>
       dispatch({ type: "SET_ACTIVE_TAB", payload: value }),
     setSearch: (value: string) => dispatch({ type: "SET_SEARCH", payload: value }),

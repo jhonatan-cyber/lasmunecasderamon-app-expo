@@ -43,11 +43,10 @@ const setCart = (result: any, items: any[]) => {
   });
 };
 
-describe('useNuevaVenta totals (cargo tarjeta / propina)', () => {
+describe('useNuevaVenta totals (propina / total)', () => {
   beforeEach(() => {
     configValues.clear();
     configValues.set('propina_venta', '10');
-    configValues.set('impuesto_propina', '10');
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
       if (url === '/cashregister/status') {
         return { success: true, data: { hasOpenCaja: true } };
@@ -63,12 +62,11 @@ describe('useNuevaVenta totals (cargo tarjeta / propina)', () => {
     expect(result.current.totals).toEqual({
       subtotal: 0,
       tip: 0,
-      cargoTarjeta: 0,
       total: 0
     });
   });
 
-  it('con tarjeta suma el cargo por tarjeta al total sin mezclarlo con la propina', async () => {
+  it('sin propina el total es el subtotal (con cualquier método de pago)', async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
 
@@ -78,58 +76,38 @@ describe('useNuevaVenta totals (cargo tarjeta / propina)', () => {
     expect(result.current.totals).toEqual({
       subtotal: 10000,
       tip: 0,
-      cargoTarjeta: 1000,
-      total: 11000
+      total: 10000
     });
   });
 
-  it('con efectivo no aplica cargo por tarjeta', async () => {
+  it('con efectivo y propina activa el total es subtotal + propina', async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
 
     setCart(result, [{ id: 'p1', precio: 10000, quantity: 1 }]);
     setMetodoPago(result, 'efectivo');
-
-    expect(result.current.totals).toEqual({
-      subtotal: 10000,
-      tip: 0,
-      cargoTarjeta: 0,
-      total: 10000
-    });
-  });
-
-  it('con tarjeta y propina activa los tres conceptos van separados y el total cuadra', async () => {
-    const { result } = renderSaleHook();
-    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
-
-    setCart(result, [{ id: 'p1', precio: 10000, quantity: 1 }]);
-    setMetodoPago(result, 'tarjeta');
     setEnableTip(result, true);
 
     expect(result.current.totals).toEqual({
       subtotal: 10000,
       tip: 1000,
-      cargoTarjeta: 1000,
-      total: 12000
+      total: 11000
     });
   });
 
-  it('el cargo usa impuesto_propina y la propina usa propina_venta (no se mezclan)', async () => {
+  it('la propina usa el porcentaje configurado de propina_venta', async () => {
     configValues.set('propina_venta', '8');
-    configValues.set('impuesto_propina', '5');
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
 
     setCart(result, [{ id: 'p1', precio: 20000, quantity: 1 }]);
-    setMetodoPago(result, 'tarjeta');
     setEnableTip(result, true);
 
     expect(result.current.totals.tip).toBe(1600); // 8% de 20000
-    expect(result.current.totals.cargoTarjeta).toBe(1000); // 5% de 20000
-    expect(result.current.totals.total).toBe(22600); // 20000 + 1600 + 1000
+    expect(result.current.totals.total).toBe(21600); // 20000 + 1600
   });
 
-  it('el payload de la venta envía solo la propina al reparto y el total incluye el cargo', async () => {
+  it('el payload de la venta envía la propina (reparto) y el total sin cargo extra', async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
 
@@ -151,7 +129,8 @@ describe('useNuevaVenta totals (cargo tarjeta / propina)', () => {
     const payload = JSON.parse((postCall as any)[1].body);
     expect(payload.sub_total).toBe(10000);
     expect(payload.propina).toBe(1000); // solo la propina de venta se reparte
-    expect(payload.total).toBe(12000); // subtotal + propina + cargo tarjeta
+    expect(payload.total).toBe(11000); // subtotal + propina
     expect(payload.metodo_pago).toBe('tarjeta');
+    expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
   });
 });

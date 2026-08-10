@@ -26,6 +26,8 @@ import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useNuevaVenta } from '@/hooks/useNuevaVenta';
+import { useConfigValue } from '@/hooks/useConfigValue';
+import { getCardSplit } from '@/hooks/utils/cuentaUtils';
 import { NuevaVentaSkeleton } from '@/components/cajero/nueva-venta/NuevaVentaSkeleton';
 import { MixedPaymentPanel } from '@/components/cajero/nueva-venta/MixedPaymentPanel';
 
@@ -34,13 +36,14 @@ export default function NuevaVentaScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
+  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
 
 
   const {
     state,
     dispatch,
     totals,
-    impuestoPropinaPct,
     hasCommissionItem,
     onRefresh,
     handleLoadPrepago,
@@ -215,14 +218,6 @@ export default function NuevaVentaScreen() {
             <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal</Text>
             <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
           </View>
-          {metodoPago === 'tarjeta' && totals.cargoTarjeta > 0 && (
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-                Cargo tarjeta ({impuestoPropinaPct}%)
-              </Text>
-              <Text style={[styles.summaryVal, { color: accentColor }]}>${totals.cargoTarjeta.toLocaleString()}</Text>
-            </View>
-          )}
           <TipCheckbox
             enabled={enableTip}
             onToggle={(val: boolean) => dispatch({ type: 'SET_ENABLE_TIP', payload: val })}
@@ -232,6 +227,17 @@ export default function NuevaVentaScreen() {
             <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
             <Text style={[styles.totalValue, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
           </View>
+          {metodoPago === 'tarjeta' && totals.total > 0 && (() => {
+            const splitTarjeta = getCardSplit(totals.total);
+            return (
+              <View style={{ marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1, backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB', borderColor: isDark ? 'rgba(245,158,11,0.35)' : '#FDE68A' }}>
+                <Text style={{ fontSize: 11, fontWeight: '900', textTransform: 'uppercase', color: isDark ? '#FCD34D' : '#92400E', marginBottom: 4 }}>Tarjetero</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', lineHeight: 18, color: isDark ? '#FDE68A' : '#78350F' }}>
+                  Genera venta por ${splitTarjeta.venta.toLocaleString()} ({splitVentaPct}%) y propina por ${splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}%). Solo informativo, no afecta la caja.
+                </Text>
+              </View>
+            );
+          })()}
           <Pressable
             style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false) && { opacity: 0.7 }]}
             onPress={handleSubmit}
