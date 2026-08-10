@@ -22,6 +22,9 @@
     "build:web": "expo export --platform web",
     "build:analyze": "expo export --platform web --dump-sourcemap && node ./scripts/analyze-bundle.js",
     "smoke:web": "expo export --platform web --output-dir .expo-smoke",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
     "test:e2e:smoke": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
@@ -85,6 +88,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.2.16",
+    "@vitest/coverage-v8": "4.1.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~56.0.4",
     "happy-dom": "^20.9.0",
