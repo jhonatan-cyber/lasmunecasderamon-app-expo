@@ -42,10 +42,12 @@ const getRoleLabel = (role?: string) => {
 
 export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfileProps) => {
     const [imageError, setImageError] = useState(false);
+    const [prevFoto, setPrevFoto] = useState(user?.foto);
 
-    React.useEffect(() => {
+    if (prevFoto !== user?.foto) {
+        setPrevFoto(user?.foto);
         setImageError(false);
-    }, [user?.foto]);
+    }
 
     const avatarUri = useMemo(() => {
         if (imageError) {

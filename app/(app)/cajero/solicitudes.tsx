@@ -117,6 +117,35 @@ export default function SolicitudesScreen() {
     } = useAccentColor();
 
 
+    const renderSolicitud = useCallback(({ item }: { item: SolicitudItem }) => (
+        <View
+            style={[
+                styles.cardWrapper,
+                numColumns > 1 && styles.cardWrapperGrid,
+            ]}
+        >
+            <SolicitudCard 
+                item={item}
+                accentColor={accentColor}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                cardBg={cardBg}
+                borderColor={borderColor}
+                serverOffset={serverOffset}
+                cajaAbierta={cajaAbierta}
+                onAprobar={handleAprobar}
+                onRechazar={handleRechazar}
+                onShowServiceModal={(si) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setSelectedService(si);
+                    setServiceModalVisible(true);
+                }}
+                nowTick={nowTick}
+            />
+        </View>
+    ), [accentColor, textPrimary, textSecondary, cardBg, borderColor, serverOffset, cajaAbierta, handleAprobar, handleRechazar, numColumns, nowTick, setSelectedService, setServiceModalVisible]);
+
+
     if (loading) {
         return <SolicitudesSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} insets={insets} isTablet={isTablet} gradientColors={gradientColors} />;
     }
@@ -214,33 +243,7 @@ export default function SolicitudesScreen() {
             <FlashList
                 data={filteredSolicitudes}
                 keyExtractor={(item: SolicitudItem) => item.id_unificado}
-                renderItem={useCallback(({ item }: { item: SolicitudItem }) => (
-                    <View
-                        style={[
-                            styles.cardWrapper,
-                            numColumns > 1 && styles.cardWrapperGrid,
-                        ]}
-                    >
-                        <SolicitudCard 
-                            item={item}
-                            accentColor={accentColor}
-                            textPrimary={textPrimary}
-                            textSecondary={textSecondary}
-                            cardBg={cardBg}
-                            borderColor={borderColor}
-                            serverOffset={serverOffset}
-                            cajaAbierta={cajaAbierta}
-                            onAprobar={handleAprobar}
-                            onRechazar={handleRechazar}
-                            onShowServiceModal={(si) => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                setSelectedService(si);
-                                setServiceModalVisible(true);
-                            }}
-                            nowTick={nowTick}
-                        />
-                    </View>
-                ), [accentColor, textPrimary, textSecondary, cardBg, borderColor, serverOffset, cajaAbierta, handleAprobar, handleRechazar, numColumns, nowTick, setSelectedService, setServiceModalVisible])}
+                renderItem={renderSolicitud}
                 extraData={`${nowTick}-${activeFilter}`}
                 estimatedItemSize={120}
                 numColumns={numColumns}

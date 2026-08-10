@@ -102,6 +102,18 @@ export default function ServiciosScreen() {
     setModalVisible(true);
   };
 
+  const renderServicio = useCallback(
+    ({ item, index }: { item: Servicio; index: number }) => (
+      <ServiceCard
+        item={item}
+        index={index}
+        onPress={handlePressItem}
+        onAssistance={onConfirmAssistance}
+      />
+    ),
+    [handlePressItem, onConfirmAssistance],
+  );
+
   if (loading)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
@@ -182,14 +194,7 @@ export default function ServiciosScreen() {
         keyExtractor={(item: Servicio) =>
           item?.id_servicio?.toString() || `fallback-${Math.random()}`
         }
-        renderItem={useCallback(({ item, index }: { item: Servicio; index: number }) => (
-          <ServiceCard
-            item={item}
-            index={index}
-            onPress={handlePressItem}
-            onAssistance={onConfirmAssistance}
-          />
-        ), [handlePressItem, onConfirmAssistance])}
+        renderItem={renderServicio}
         estimatedItemSize={150}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
