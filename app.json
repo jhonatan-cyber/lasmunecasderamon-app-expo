@@ -11,7 +11,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/bdeebda1-fe58-443b-b59c-2f265ecb2eb5"
+      "url": "https://u.expo.dev/ef39814f-d1f7-444c-bc30-598055b8595e"
     },
     "ios": {
       "supportsTablet": true,
@@ -71,8 +71,7 @@
           "category": [
             "BROWSABLE",
             "DEFAULT"
-          ],
-          "label": "Abrir en app"
+          ]
         }
       ],
       "permissions": [
@@ -142,9 +141,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bdeebda1-fe58-443b-b59c-2f265ecb2eb5"
+        "projectId": "ef39814f-d1f7-444c-bc30-598055b8595e"
       }
     },
-    "owner": "lasmunecasderamon-app"
+    "owner": "nuwe"
   }
 }
