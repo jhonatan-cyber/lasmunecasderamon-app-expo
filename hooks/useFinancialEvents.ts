@@ -31,7 +31,10 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
   const [error, setError] = useState('');
   const dataRef = useRef<string>('');
 
-  const endpoint = type === 'comisiones' ? '/commissions/user' : '/tips?tipo=detalle';
+  // `?tipo=detalle`: filas por comisión (el default de /commissions/user es
+  // la fila agregada por usuario y no trae `tipo`, con lo que el filtro de
+  // abajo descartaba todo y la pantalla quedaba siempre vacía).
+  const endpoint = type === 'comisiones' ? '/commissions/user?tipo=detalle' : '/tips?tipo=detalle';
 
   const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
