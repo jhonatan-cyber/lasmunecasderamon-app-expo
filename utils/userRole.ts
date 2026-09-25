@@ -22,6 +22,8 @@ export const getUserRole = (user: UserLike) => getUserRoleName(user).trim().toLo
 
 export const isGarzonRole = (user: UserLike) => getUserRole(user).includes("garzon");
 
+export const isBarmanRole = (user: UserLike) => getUserRole(user).includes("barman");
+
 export const isHostessRole = (user: UserLike) => getUserRole(user).includes("anfitriona");
 
 export const isAdminRole = (user: UserLike) => getUserRole(user).includes("admin");

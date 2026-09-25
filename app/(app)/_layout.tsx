@@ -23,7 +23,8 @@ export default function AppLayout() {
 
     const isStaffMember = user?.role && 
         (user.role.toLowerCase().includes('garzon') || 
-         user.role.toLowerCase().includes('anfitriona'));
+         user.role.toLowerCase().includes('anfitriona') ||
+         user.role.toLowerCase().includes('barman'));
 
     
     useEffect(() => {

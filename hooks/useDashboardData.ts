@@ -81,6 +81,10 @@ export function useDashboardData(role: UserRole) {
       } else if (role === 'cajero') {
         endpoints.push(apiClientSafe<Record<string, unknown>>("/caja/stats"));
         endpoints.push(apiClientSafe("/solicitudes-servicios/pending-count"));
+      } else if (role === 'barman') {
+        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
+        endpoints.push(apiClientSafe<Record<string, unknown>>("/bar"));
+        endpoints.push(apiClientSafe<unknown[]>("/transfers/pending"));
       }
 
       const results = await Promise.all(endpoints.map(p => p.catch(e => {
@@ -114,6 +118,11 @@ export function useDashboardData(role: UserRole) {
             roleStats = results[4];
             const pendingData = (results[5] as ApiRes<PendingCountData>).data;
             extraData.pendingCount = pendingData?.count || 0;
+        } else if (role === 'barman') {
+            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+            roleStats = eventsStatsRes.data;
+            extraData.barStock = (results[5] as ApiRes<unknown>)?.data ?? null;
+            extraData.pendingTransfers = (results[6] as ApiRes<unknown>)?.data ?? null;
         }
 
         if (meData?.user) {

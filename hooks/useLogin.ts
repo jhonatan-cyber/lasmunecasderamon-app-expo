@@ -126,6 +126,13 @@ export default function useLogin() {
             if (res.requiereCodigo) {
                 setTempAuthData({ username: u, password: p, userTmp: res.user });
                 router.push('/(auth)/verify-code');
+            } else if (res.forcePasswordChange) {
+                showToast({
+                    type: 'info',
+                    text1: 'Cambio de contraseña obligatorio',
+                    text2: 'Debés cambiar tu contraseña antes de continuar',
+                });
+                router.replace('/(auth)/change-password');
             } else {
                 if (res.asistenciaRegistrada) {
                     showToast({

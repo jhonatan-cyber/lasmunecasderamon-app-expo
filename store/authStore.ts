@@ -21,6 +21,7 @@ export interface User {
     nick?: string;
     qr_token?: string;
     two_factor_enabled?: boolean;
+    forcePasswordChange?: boolean;
 }
 
 interface LoginPayload {
@@ -35,6 +36,7 @@ interface LoginResponse {
     requiereCodigo?: boolean;
     user?: User;
     token?: string;
+    refreshToken?: string;
     asistenciaRegistrada?: boolean;
     message?: string;
 }
@@ -49,6 +51,7 @@ interface LoginResult {
     requiereCodigo?: boolean;
     user?: User;
     asistenciaRegistrada?: boolean;
+    forcePasswordChange?: boolean;
 }
 
 interface AuthState {
@@ -60,6 +63,7 @@ interface AuthState {
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearSessionExpired: () => void;
+    clearForcePasswordChange: () => Promise<void>;
     tempAuthData: TempAuthData | null;
     setTempAuthData: (data: TempAuthData | null) => void;
     updateProfile: (partialUser: Partial<User>) => Promise<void>;
@@ -96,6 +100,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
         isBiometricAvailable: false,
 
         clearSessionExpired: () => set({ sessionExpired: false }),
+
+        clearForcePasswordChange: async () => {
+            const currentUser = get().user;
+            if (!currentUser?.forcePasswordChange) return;
+            const updatedUser = { ...currentUser, forcePasswordChange: false };
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            set({ user: updatedUser });
+        },
 
         tempAuthData: null,
         setTempAuthData: (data) => set({ tempAuthData: data }),
@@ -213,12 +225,20 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
                 const { token, user, asistenciaRegistrada = false } = authData;
                 await TokenStorage.saveToken(token!);
+                // Persiste el refresh token para que la sesión no caduque a los 15 min
+                if (authData.refreshToken) {
+                    await TokenStorage.saveRefreshToken(authData.refreshToken);
+                }
                 await AsyncStorage.setItem('user', JSON.stringify(user));
 
                 setTokenInMemory(token!);
                 set({ user: user!, token, tempAuthData: null });
 
-                return { requiereCodigo: false, asistenciaRegistrada };
+                return {
+                    requiereCodigo: false,
+                    asistenciaRegistrada,
+                    forcePasswordChange: user?.forcePasswordChange,
+                };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : 'Error desconocido en autenticación';
                 throw new Error(message);

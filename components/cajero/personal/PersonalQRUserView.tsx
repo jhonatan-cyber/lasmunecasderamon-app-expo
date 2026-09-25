@@ -77,7 +77,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
         <View style={styles.qrFooter}>
           <Ionicons name="shield-checkmark" size={14} color={accentColor} />
           <Text style={[styles.qrHint, { color: textSecondary, marginTop: 0 }]}>
-            Token de seguridad personal único
+            Código de un solo uso · vence en 2 minutos
           </Text>
         </View>
 

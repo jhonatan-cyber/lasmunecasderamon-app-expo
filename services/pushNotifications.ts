@@ -122,7 +122,7 @@ export async function triggerNotificationEffects(
 
     
     const roleLower = (role || "").toLowerCase();
-    if (roleLower === "cajero" || roleLower === "administrador" || roleLower === "garzon") {
+    if (roleLower === "cajero" || roleLower === "administrador" || roleLower === "garzon" || roleLower === "barman") {
       const textToSpeak = `${title}. ${body}`;
       Speech.speak(textToSpeak, {
         language: "es-ES", 

@@ -59,11 +59,15 @@ describe('usersService', () => {
     });
   });
 
-  it('generateQR: envía POST con payload', () => {
-    usersService.generateQR({ userId: 42 });
-    expect(mockApi()).toHaveBeenCalledWith('/users/generate-qr', {
+  it('generateQR: envía POST al desafío de asistencia', async () => {
+    mockApi().mockResolvedValue({
+      success: true,
+      data: { token: 'abc', expiraEn: '2026-09-24T12:00:00Z', ttlSegundos: 120 },
+    });
+    await usersService.generateQR({ userId: 42 });
+    expect(mockApi()).toHaveBeenCalledWith('/attendance/qr', {
       method: 'POST',
-      body: JSON.stringify({ userId: 42 })
+      body: JSON.stringify({ userId: 42 }),
     });
   });
 });

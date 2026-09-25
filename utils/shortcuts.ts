@@ -60,6 +60,22 @@ export const appShortcuts: Shortcut[] = [
             await Linking.openURL('lasmunecasderamon://garzon/propinas');
         },
     },
+    {
+        id: 'open_bar',
+        title: 'Abrir Bar',
+        subtitle: 'Stock y transferencias',
+        action: async () => {
+            await Linking.openURL('lasmunecasderamon://barman/bar');
+        },
+    },
+    {
+        id: 'view_bar_tips',
+        title: 'Propinas del Bar',
+        subtitle: 'Ver mis propinas',
+        action: async () => {
+            await Linking.openURL('lasmunecasderamon://barman/propinas');
+        },
+    },
 ];
 
 export const getShortcutFromIntent = async (): Promise<string | null> => {

@@ -18,6 +18,14 @@ export const resetPasswordSchema = object({
   run: string().trim().min(4, 'El RUN es obligatorio'),
 });
 
+export const changePasswordSchema = object({
+  password: string().trim().min(8, 'La contrasena debe tener al menos 8 caracteres'),
+  confirmPassword: string().min(1, 'Confirma la contrasena'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Las contrasenas no coinciden',
+  path: ['confirmPassword'],
+});
+
 export const AttendanceRegisterSchema = object({
   qrData: string().min(1, 'Codigo QR requerido'),
 });
@@ -61,10 +69,11 @@ export const ServiceCreateSchema = object({
   iva: number().min(0),
   sub_total: number().min(0),
   total: number().min(0),
-  tiempo: number().min(0),
+  // Alineado con lib/business/schemas/service.ts del dashboard (min(1))
+  tiempo: number().min(1, 'Tiempo es requerido'),
   fecha_crea: string().min(1, 'Fecha requerida'),
   metodo_pago: paymentMethodSchema,
-  usuarios: array(string()).optional().default([]),
+  usuarios: array(string()).min(1, 'Al menos una anfitriona es requerida'),
   pagos_mixtos: array(
     object({
       metodo: paymentMethodSchema,

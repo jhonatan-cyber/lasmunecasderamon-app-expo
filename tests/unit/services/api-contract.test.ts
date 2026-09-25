@@ -1,242 +1,217 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiClientSafe } from '@/api/client-safe';
+import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { join, relative, sep, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-vi.mock('@/api/client-safe', () => ({
-  apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: [] })),
-}));
+/**
+ * Test de contrato auto-verificativo: app services ↔ rutas REALES del dashboard.
+ *
+ * A diferencia del test anterior (que mockeaba apiClientSafe y se auto-verificaba),
+ * este:
+ *   1. extrae cada endpoint que llama `services/*.ts` vía `apiClientSafe(...)`,
+ *   2. lee las rutas reales del dashboard (route.ts bajo app/api/),
+ *   3. falla si la app llama a un endpoint que no existe (o si falta el método HTTP).
+ *
+ * Requiere el repo del dashboard como hermano de la app.
+ */
 
-const mockApi = () => vi.mocked(apiClientSafe);
+const APP_ROOT = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
+const CANDIDATES = [
+  join(APP_ROOT, '..', 'lasmunecasderamon-dashboard'),
+  join(process.cwd(), '..', 'lasmunecasderamon-dashboard'),
+  join(process.cwd(), 'lasmunecasderamon-dashboard'),
+];
+const DASHBOARD_ROOT = CANDIDATES.find((c) => existsSync(join(c, 'app', 'api')));
+const API_DIR = DASHBOARD_ROOT ? join(DASHBOARD_ROOT, 'app', 'api') : null;
 
-const expectCall = (expectedPath: RegExp | string, expectedMethod = 'GET') => {
-  const call = mockApi().mock.calls.find(([endpoint, opts]: [string, any?]) => {
-    const url = typeof expectedPath === 'string' ? endpoint.split('?')[0] : endpoint;
-    const matches = typeof expectedPath === 'string' ? url === expectedPath : expectedPath.test(endpoint);
-    return matches && (!opts || (opts.method || 'GET') === expectedMethod);
-  });
-  expect(call, `expected ${expectedMethod} ${expectedPath} call`).toBeDefined();
-};
+// ── Parsing de llamadas: string literals / template literals con interpolación ──
+function skipString(src: string, i: number): number {
+  const q = src[i];
+  i++;
+  while (i < src.length) {
+    if (src[i] === '\\') { i += 2; continue; }
+    if (src[i] === q) return i + 1;
+    i++;
+  }
+  return i;
+}
 
-describe('API contract: app services ↔ dashboard routes', () => {
-  beforeEach(() => {
-    mockApi().mockClear();
-  });
+function skipInterp(src: string, i: number): number {
+  let depth = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "'" || c === '"') { i = skipString(src, i); continue; }
+    if (c === '`') { i = skipTemplate(src, i); continue; }
+    if (c === '{') depth++;
+    else if (c === '}') { depth--; if (depth === 0) return i + 1; }
+    i++;
+  }
+  return i;
+}
 
-  describe('clientes', () => {
-    it('list → GET /clients', async () => {
-      const { clientesService } = await import('@/services/clientes');
-      await clientesService.list();
-      expectCall('/clients', 'GET');
+function skipTemplate(src: string, i: number): number {
+  i++;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '\\') { i += 2; continue; }
+    if (c === '$' && src[i + 1] === '{') { i = skipInterp(src, i + 1); continue; }
+    if (c === '`') return i + 1;
+    i++;
+  }
+  return i;
+}
+
+function skipCall(src: string, i: number): number {
+  let depth = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "'" || c === '"') { i = skipString(src, i); continue; }
+    if (c === '`') { i = skipTemplate(src, i); continue; }
+    if (c === '(') depth++;
+    else if (c === ')') { depth--; if (depth === 0) return i + 1; }
+    i++;
+  }
+  return i;
+}
+
+/** Normaliza el literal de un endpoint a una ruta limpia (`/cuentas/<dyn>/stop`). */
+function normalizeEndpoint(raw: string): string | null {
+  const open = (raw.match(/\$\{/g) || []).length;
+  const close = (raw.match(/\}/g) || []).length;
+  if (open > close) {
+    // Template incompleto (backticks anidados): nos quedamos con el prefijo literal.
+    raw = raw.split('${')[0];
+  } else {
+    // `${id}` en posición de segmento → comodín; el resto (query params) → fuera.
+    raw = raw.replace(/\$\{[^{}]*\}/g, (_m, off: number) => (raw[off - 1] === '/' ? '<dyn>' : ''));
+  }
+  if (raw.includes('${')) raw = raw.split('${')[0];
+  raw = raw.split('?')[0];
+  raw = raw.replace(/\/+/g, '/').replace(/\/$/, '');
+  if (!/^\/[A-Za-z0-9_\-\/<>.]+$/.test(raw)) return null;
+  if (!/[A-Za-z]/.test(raw)) return null;
+  return raw;
+}
+
+interface AppCall {
+  path: string;
+  method: string;
+  file: string;
+}
+
+function extractAppCalls(): AppCall[] {
+  const servicesDir = join(APP_ROOT, 'services');
+  const calls: AppCall[] = [];
+  const fn = 'apiClientSafe(';
+  for (const file of readdirSync(servicesDir).filter((n) => n.endsWith('.ts'))) {
+    const src = readFileSync(join(servicesDir, file), 'utf8');
+    let idx = 0;
+    while ((idx = src.indexOf(fn, idx)) !== -1) {
+      const paren = idx + fn.length - 1;
+      let i = paren + 1;
+      while (i < src.length && /\s/.test(src[i])) i++;
+      const q = src[i];
+      let end: number;
+      if (q === "'" || q === '"') end = skipString(src, i);
+      else if (q === '`') end = skipTemplate(src, i);
+      else { idx = i + 1; continue; }
+      const raw = src.slice(i + 1, end - 1);
+      const rest = src.slice(end, skipCall(src, paren));
+      const m = /method:\s*['"](\w+)['"]/.exec(rest);
+      const method = m ? m[1] : /method:\s*[A-Za-z_$]/.test(rest) ? 'UNKNOWN' : 'GET';
+      const path = normalizeEndpoint(raw);
+      if (path) calls.push({ path, method, file });
+      idx = end;
+    }
+  }
+  return calls;
+}
+
+// ── Rutas reales del dashboard ────────────────────────────────────────────────
+interface DashRoute {
+  path: string;
+  methods: string[];
+}
+
+function readDashboardRoutes(): DashRoute[] {
+  const routes: DashRoute[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (name === 'route.ts') {
+        const src = readFileSync(full, 'utf8');
+        const rel = relative(API_DIR!, full).split(sep).slice(0, -1).join('/');
+        const routePath = '/api' + (rel ? '/' + rel : '');
+        const methods = [
+          ...src.matchAll(
+            /export\s+(?:const|async function|function)\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS)\b/g
+          ),
+        ].map((x) => x[1]);
+        routes.push({ path: routePath, methods });
+      }
+    }
+  };
+  walk(API_DIR!);
+  return routes;
+}
+
+function routeToRegex(routePath: string): RegExp {
+  const parts = routePath
+    .split('/')
+    .filter(Boolean)
+    .map((s) => {
+      if (s.startsWith('[...')) return '<REST>';
+      if (s.startsWith('[[')) return '<REST0>';
+      if (s.startsWith('[')) return '<PARAM>';
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     });
+  const re = parts
+    .join('/')
+    .replace(/<REST>/g, '[^/]+')
+    .replace(/<REST0>/g, '(?:[^/]+)?')
+    .replace(/<PARAM>/g, '[^/]+');
+  return new RegExp('^/' + re + '$');
+}
 
-    it('create → POST /clients', async () => {
-      const { clientesService } = await import('@/services/clientes');
-      await clientesService.create({ name: 'a', lastName: 'b' });
-      expectCall('/clients', 'POST');
-    });
+describe('API contract: services/*.ts de la app ↔ rutas reales del dashboard', () => {
+  const appCalls = extractAppCalls();
+  const dashRoutes = API_DIR ? readDashboardRoutes() : [];
+  const patterns = dashRoutes.map((r) => ({ ...r, re: routeToRegex(r.path) }));
 
-    it('prepago → POST /clients/prepago with pagos_mixtos', async () => {
-      const { clientesService } = await import('@/services/clientes');
-      const body = { cliente_id: 1, monto: 5000, tipo: 'CARGA', metodo_pago: 'mixto', motivo: 'test', pagos_mixtos: [{ metodo: 'efectivo', monto: 3000 }, { metodo: 'tarjeta', monto: 2000 }] };
-      await clientesService.prepago(body);
-      const call = mockApi().mock.calls[0];
-      expect(call[0]).toBe('/clients/prepago');
-      expect(call[1]?.method).toBe('POST');
-      const sentBody = JSON.parse(call[1]?.body as string);
-      expect(sentBody.pagos_mixtos).toBeDefined();
-      expect(Array.isArray(sentBody.pagos_mixtos)).toBe(true);
-    });
-  });
-
-  describe('users', () => {
-    it('updateProfile → PUT /users with id', async () => {
-      const { usersService } = await import('@/services/users');
-      await usersService.updateProfile('42', { phone: '123' });
-      const call = mockApi().mock.calls[0];
-      expect(call[0]).toBe('/users');
-      expect(call[1]?.method).toBe('PUT');
-      const sentBody = JSON.parse(call[1]?.body as string);
-      expect(sentBody.id).toBe('42');
-    });
-
-    it('getProfile → GET /users/profile', async () => {
-      const { usersService } = await import('@/services/users');
-      await usersService.getProfile();
-      expectCall('/users/profile', 'GET');
-    });
-  });
-
-  describe('ventasService', () => {
-    it('finalizarVenta → PATCH /sales/{id}', async () => {
-      const { finalizarVenta } = await import('@/services/ventasService');
-      await finalizarVenta(99);
-      const call = mockApi().mock.calls[0];
-      expect(call[0]).toBe('/sales/99');
-      expect(call[1]?.method).toBe('PATCH');
-      const sentBody = JSON.parse(call[1]?.body as string);
-      expect(sentBody.estado).toBe(1);
-    });
-  });
-
-  describe('caja', () => {
-    it('open → POST /cashregister', async () => {
-      const { cajaService } = await import('@/services/caja');
-      await cajaService.open({ monto_apertura: 100000, usuario_id_apertura: '1' });
-      expectCall('/cashregister', 'POST');
-    });
-
-    it('close → PATCH /cashregister', async () => {
-      const { cajaService } = await import('@/services/caja');
-      await cajaService.close({ id_caja: 1, monto_cierre: 50000, usuario_id_cierre: '1' });
-      expectCall('/cashregister', 'PATCH');
-    });
-
-    it('stats → GET /caja/stats returns ApiRes', async () => {
-      const { cajaService } = await import('@/services/caja');
-      await cajaService.stats();
-      expectCall('/caja/stats', 'GET');
-    });
-  });
-
-  describe('cuentas', () => {
-    it('list → GET /cuentas with limit param', async () => {
-      const { cuentasService } = await import('@/services/cuentas');
-      await cuentasService.list();
-      expect(mockApi().mock.calls[0][0]).toMatch(/^\/cuentas\?limit=50/);
-    });
-
-    it('cobrar → POST /cuentas/{id}/cobrar', async () => {
-      const { cuentasService } = await import('@/services/cuentas');
-      await cuentasService.cobrar(1, { monto: 5000, metodo_pago: 'efectivo' });
-      expectCall('/cuentas/1/cobrar', 'POST');
-    });
-
-    it('stopTimer → PATCH /cuentas/{id}/stop', async () => {
-      const { cuentasService } = await import('@/services/cuentas');
-      await cuentasService.stopTimer(1);
-      expectCall('/cuentas/1/stop', 'PATCH');
-    });
-  });
-
-  describe('servicios', () => {
-    it('list → GET /servicios with all=true param', async () => {
-      const { serviciosService } = await import('@/services/servicios');
-      await serviciosService.list();
-      expect(mockApi().mock.calls[0][0]).toMatch(/^\/servicios\?all=true/);
-    });
-
-    it('create → POST /servicios', async () => {
-      const { serviciosService } = await import('@/services/servicios');
-      await serviciosService.create({} as any);
-      expectCall('/servicios', 'POST');
-    });
-  });
-
-  describe('auth', () => {
-    it('me → GET /auth/me', async () => {
-      const { authService } = await import('@/services/auth');
-      await authService.me();
-      expectCall('/auth/me', 'GET');
-    });
-  });
-
-  describe('commissions', () => {
-    it('user → GET /commissions/user', async () => {
-      const { commissionsService } = await import('@/services/commissions');
-      await commissionsService.user();
-      expectCall('/commissions/user', 'GET');
-    });
-  });
-
-  describe('dashboard', () => {
-    it('stats → GET /dashboard/stats with data', async () => {
-      const { dashboardService } = await import('@/services/dashboard');
-      mockApi().mockResolvedValueOnce({ success: true, data: { weeklyIncome: [1, 2, 3], badges: [], totalEarnings: 0, svcCount: 0 } });
-      const res = await dashboardService.stats();
-      expect(res).toHaveProperty('data');
-      expectCall('/dashboard/stats', 'GET');
-    });
-  });
-
-  describe('tips', () => {
-    it('userDetail → GET /tips/user?tipo=detalle', async () => {
-      const { tipsService } = await import('@/services/tips');
-      await tipsService.userDetail();
-      expect(mockApi().mock.calls[0][0]).toMatch(/^\/tips\/user\?tipo=detalle/);
-    });
-
-    it('allDetail → GET /tips?tipo=detalle', async () => {
-      const { tipsService } = await import('@/services/tips');
-      await tipsService.allDetail();
-      expect(mockApi().mock.calls[0][0]).toMatch(/^\/tips\?tipo=detalle/);
-    });
-  });
-
-  describe('attendance', () => {
-    it('userDetail → GET /attendance/user with tipo=detalle', async () => {
-      const { attendanceService } = await import('@/services/attendance');
-      await attendanceService.userDetail('2024-01-01', '2024-01-31');
-      expect(mockApi().mock.calls[0][0]).toMatch(/^\/attendance\/user\?tipo=detalle/);
-    });
-
-    it('register → POST /attendance/register', async () => {
-      const { attendanceService } = await import('@/services/attendance');
-      await attendanceService.register({} as any);
-      expectCall('/attendance/register', 'POST');
-    });
-  });
-
-  describe('anticipos', () => {
-    it('getUserAnticipos → GET /anticipos/user', async () => {
-      const { anticiposService } = await import('@/services/anticipos');
-      await anticiposService.getUserAnticipos();
-      expectCall('/anticipos/user', 'GET');
-    });
-
-    it('list → GET /anticipos', async () => {
-      const { anticiposService } = await import('@/services/anticipos');
-      await anticiposService.list();
-      expectCall('/anticipos', 'GET');
-    });
+  it('el walker encontró rutas en ambos lados (no falló en silencio)', () => {
+    expect(
+      API_DIR,
+      `No se encontró el repo del dashboard como hermano de la app. ` +
+        `Busqué en: ${CANDIDATES.join(' | ')}`
+    ).toBeTruthy();
+    expect(dashRoutes.length, 'dashboard: se esperaban >100 rutas app/api/**/route.ts').toBeGreaterThan(100);
+    expect(appCalls.length, 'app: se esperaban >40 llamadas apiClientSafe en services/').toBeGreaterThan(40);
   });
 
-  describe('gratificaciones', () => {
-    it('me → GET /gratificaciones/me returns ApiRes', async () => {
-      const { gratificacionesService } = await import('@/services/gratificaciones');
-      mockApi().mockResolvedValueOnce({ success: true, data: [] });
-      const res = await gratificacionesService.me();
-      expect(res).toHaveProperty('data');
-      expectCall('/gratificaciones/me', 'GET');
-    });
+  it('cada endpoint llamado por la app existe en el dashboard', () => {
+    const faltantes = appCalls
+      .filter((c) => !patterns.some((p) => p.re.test('/api' + c.path)))
+      .map((c) => `${c.path} (${c.file})`);
+    expect(
+      [...new Set(faltantes)],
+      `Endpoints de la app sin ruta en el dashboard: ${[...new Set(faltantes)].join(', ')}`
+    ).toEqual([]);
   });
 
-  describe('events', () => {
-    it('getUserEvents → GET /events/user', async () => {
-      const { eventsService } = await import('@/services/events');
-      await eventsService.getUserEvents();
-      expectCall('/events/user', 'GET');
-    });
-  });
-
-  describe('anfitrionas', () => {
-    it('list → GET /anfitrionas returns ApiRes', async () => {
-      const { anfitrionasService } = await import('@/services/anfitrionas');
-      mockApi().mockResolvedValueOnce({ success: true, data: [] });
-      const res = await anfitrionasService.list();
-      expect(res).toHaveProperty('data');
-      expectCall('/anfitrionas', 'GET');
-    });
-  });
-
-  describe('response wrapper consistency', () => {
-    it('responses always have success and data', () => {
-      const response = { success: true, data: [] };
-      expect(response).toHaveProperty('success');
-      expect(response).toHaveProperty('data');
-    });
-
-    it('unwrapped responses are detectable regression', () => {
-      const badResponse = { success: true, notifications: [] };
-      expect(badResponse).not.toHaveProperty('data');
-    });
+  it('el método HTTP que la app envía existe en la ruta del dashboard', () => {
+    const errores: string[] = [];
+    for (const call of appCalls) {
+      if (call.method === 'UNKNOWN') continue; // method dinámico: no verificable
+      const hits = patterns.filter((p) => p.re.test('/api' + call.path));
+      if (!hits.length) continue; // lo cubre el test anterior
+      if (!hits.some((h) => h.methods.includes(call.method))) {
+        errores.push(
+          `${call.method} /api${call.path} (${call.file}) — la ruta existe solo con: ` +
+            hits.map((h) => `${h.methods.join('/') || 'sin export'} (${h.path})`).join(', ')
+        );
+      }
+    }
+    expect([...new Set(errores)], [...new Set(errores)].join(' | ')).toEqual([]);
   });
 });

@@ -114,32 +114,35 @@ export default function PersonalScreen() {
     const handleGenerateQR = useCallback(async (userId: string) => {
         try {
             setIsGenerating(true);
-            const data = await apiClientSafe('/users/generate-qr', {
+            const data = await apiClientSafe('/attendance/qr', {
                 method: 'POST',
                 body: JSON.stringify({ userId })
             });
-            const qrData = data as unknown as { success: boolean; qr_token: string };
+            const challenge = data as unknown as {
+                success: boolean;
+                data?: { token: string; ttlSegundos: number };
+            };
 
-            if (qrData.success) {
+            if (challenge.success && challenge.data?.token) {
                 showToast({
                     type: 'success',
                     text1: 'Éxito',
-                    text2: 'Token QR generado correctamente',
+                    text2: `Código QR generado · vence en ${challenge.data.ttlSegundos ?? 120}s`,
                 });
                 
                 setUsers(prev => prev.map(u => 
-                    u.id === userId ? { ...u, qr_token: qrData.qr_token } : u
+                    u.id === userId ? { ...u, qr_token: challenge.data!.token } : u
                 ));
                 
                 if (selectedUser?.id === userId) {
-                    setSelectedUser(prev => prev ? { ...prev, qr_token: qrData.qr_token } : null);
+                    setSelectedUser(prev => prev ? { ...prev, qr_token: challenge.data!.token } : null);
                 }
             }
         } catch (error: any) {
             showToast({
                 type: 'error',
                 text1: 'Error',
-                text2: error.message || 'No se pudo generar el token',
+                text2: error.message || 'No se pudo generar el código',
             });
         } finally {
             setIsGenerating(false);
@@ -154,31 +157,13 @@ export default function PersonalScreen() {
 
     useEffect(() => {
         if (!selectedUser) return;
-        
-        const fetchUserData = async () => {
-            try {
-                const data = await apiClientSafe(`/users/${selectedUser.id}`);
-                const userData = data as unknown as { success: boolean; user: User };
-                if (userData.success && userData.user) {
-                    if (userData.user.qr_token !== selectedUser.qr_token) {
-                        setSelectedUser(userData.user);
-                        setUsers(prev => prev.map(u => u.id === userData.user.id ? userData.user : u));
-                        
-                        setSelectedUser(null);
-                        showToast({
-                            type: 'info',
-                            text1: '📱 Código QR usado',
-                            text2: 'El usuario ya registró su asistencia'
-                        });
-                    }
-                }
-            } catch (e) {
-                logger.captureException(e, { context: 'Personal:updatePersonal' });
-            }
-        };
-
-        fetchUserData();
-        // SSE updates via sse_event listener below — no more polling
+        // El servidor ya no almacena qr_token (desde la migración de desafíos):
+        // el código es un desafío de un solo uso, así que se emite al abrir el modal.
+        if (!selectedUser.qr_token) {
+            const timer = setTimeout(() => handleGenerateQR(selectedUser.id), 0);
+            return () => clearTimeout(timer);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedUser, selectedUser?.id]);
 
     useEffect(() => {
@@ -195,25 +180,15 @@ export default function PersonalScreen() {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
             }
-            // Real-time update via SSE cuando se genera/usa un QR — reemplaza polling
-            if (payload.type === 'qr_token_updated' && payload.data?.userId === selectedUser.id) {
-                apiClientSafe(`/users/${selectedUser.id}`)
-                    .then((data: any) => {
-                        if (data.success && data.user) {
-                            const newUser = data.user as User;
-                            if (newUser.qr_token !== selectedUser.qr_token) {
-                                setSelectedUser(newUser);
-                                setUsers(prev => prev.map(u => u.id === newUser.id ? newUser : u));
-                                setSelectedUser(null);
-                                showToast({
-                                    type: 'info',
-                                    text1: '📱 Código QR usado',
-                                    text2: 'El usuario ya registró su asistencia'
-                                });
-                            }
-                        }
-                    })
-                    .catch(e => logger.captureException(e, { context: 'Personal:sseQRUpdate' }));
+            // La asistencia registrada cierra el modal del QR (desafío canjeado)
+            if (payload.type === 'attendance_registered' && String(payload.data?.user?.id) === String(selectedUser.id)) {
+                setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, qr_token: undefined } : u));
+                setSelectedUser(null);
+                showToast({
+                    type: 'info',
+                    text1: '📱 Código QR usado',
+                    text2: 'El usuario ya registró su asistencia'
+                });
             }
         });
 

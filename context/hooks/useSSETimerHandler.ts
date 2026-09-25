@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { eventBus } from '@/utils/eventBus';
 import { Timer } from '@/context/types';
-import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
+import { parseDateSafe } from "@/utils/timeUtils";
 import {
   emitRefreshCuentas,
   emitRefreshRequests,
@@ -144,57 +144,8 @@ export function useSSETimerHandler({
         break;
       }
 
-      case "timer_paused": {
-        if (!payload.data) break;
-        const d = payload.data as unknown as TimerRawData;
-        const targetTipoP = d.tipoTransaccion || 'servicio';
-        setTimers((prev) => {
-          const next = prev.map((t) => {
-            if (String(t.servicioId) === String(d.servicioId) && t.tipoTransaccion === targetTipoP) {
-              const currentRemaining = calculateRemainingTime(t, serverOffsetRef.current);
-              return {
-                ...t,
-                isPaused: true,
-                estado: 3,
-                remainingTime: currentRemaining,
-              };
-            }
-            return t;
-          });
-          timersRef.current = next;
-          return next;
-        });
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
-
-      case "timer_resumed": {
-        if (!payload.data) break;
-        const d = payload.data as unknown as TimerRawData;
-        const targetTipoR = d.tipoTransaccion || 'servicio';
-        setTimers((prev) => {
-          const next = prev.map((t) => {
-            if (String(t.servicioId) === String(d.servicioId) && t.tipoTransaccion === targetTipoR) {
-              return {
-                ...t,
-                isPaused: false,
-                estado: 2,
-                startTime: parseDateSafe(d.newStartTime || d.startTime),
-                lastAnnouncedMinute: undefined,
-              };
-            }
-            return t;
-          });
-          timersRef.current = next;
-          return next;
-        });
-        emitRefreshSales();
-        emitRefreshRequests();
-        emitRefreshCuentas();
-        break;
-      }
+      // Pausa/reanudación no tiene eventos propios: el backend las sincroniza con
+      // timers_updated / timer_started (ver lib/api/sseEvents.ts del dashboard).
 
       case "timer_updated": {
         if (!payload.data) break;

@@ -4,6 +4,12 @@ export interface GenerateQRPayload {
   userId: string | number;
 }
 
+export interface AttendanceChallenge {
+  token: string;
+  expiraEn: string;
+  ttlSegundos: number;
+}
+
 export const usersService = {
   list: (params?: string, signal?: AbortSignal) =>
     apiClientSafe(`/users${params ? `?${params}` : ''}`, { signal }),
@@ -27,7 +33,7 @@ export const usersService = {
     apiClientSafe(`/users/${id}`, { signal }),
 
   generateQR: (data: GenerateQRPayload) =>
-    apiClientSafe('/users/generate-qr', {
+    apiClientSafe('/attendance/qr', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

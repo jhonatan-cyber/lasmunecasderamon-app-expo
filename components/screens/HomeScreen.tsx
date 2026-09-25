@@ -1,5 +1,7 @@
 import { apiClientSafe } from "@/api/client";
 import { ActiveServiceCard } from "@/components/anfitriona/ActiveServiceCard";
+import { BarmanActionGrid } from "@/components/barman/BarmanActionGrid";
+import { BarmanStats } from "@/components/barman/BarmanStats";
 import { CajeroActionGrid } from "@/components/cajero/CajeroActionGrid";
 import { CajeroStats } from "@/components/cajero/CajeroStats";
 import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
@@ -39,7 +41,7 @@ import { showToast } from '@/utils/toast-lazy';
 
 import logger from "@/utils/logger";
 interface HomeScreenProps {
-  role: "anfitriona" | "garzon" | "cajero";
+  role: "anfitriona" | "garzon" | "cajero" | "barman";
 }
 
 export function HomeScreen({ role }: HomeScreenProps) {
@@ -356,6 +358,15 @@ export function HomeScreen({ role }: HomeScreenProps) {
                 <CajeroStats stats={stats} fullWidth />
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <CajeroActionGrid fullWidth />
+                </View>
+              </>
+            )}
+
+            {role === "barman" && (
+              <>
+                <BarmanStats stats={stats} fullWidth />
+                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+                  <BarmanActionGrid fullWidth />
                 </View>
               </>
             )}

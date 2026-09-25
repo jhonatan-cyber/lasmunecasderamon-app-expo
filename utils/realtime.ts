@@ -14,18 +14,23 @@ export type RealtimePayload = {
   [key: string]: any;
 };
 
+// Listas alineadas con el catálogo único del dashboard:
+// lasemasderamon-dashboard/lib/api/sseEvents.ts (SSE_EVENTS).
 const DASHBOARD_REFRESH_EVENTS = new Set([
   "new_order",
   "new_service_request",
   "order_updated",
-  "service_request_approved",
-  "room_occupied",
+  "order_deleted",
+  "service_request_processed",
+  "service_request_deleted",
+  "service_changed",
+  "room_available",
 ]);
 
+// El backend no emite sale_created/sale_updated: las ventas se refrescan con
+// updateSales (cron de timers) y sale_cancelled (anulación).
 const SALE_REFRESH_EVENTS = new Set([
-  "sale_created",
-  "new_sale",
-  "sale_updated",
+  "updateSales",
   "sale_cancelled",
 ]);
 
@@ -34,11 +39,12 @@ const REQUEST_REFRESH_EVENTS = new Set([
   "new_service_request",
   "new_anticipo_request",
   "anticipo_processed",
+  "ANTICIPO_PROCESSED",
   "anticipo_delivered",
   "order_deleted",
   "order_updated",
-  "service_request_approved",
-  "service_request_rejected",
+  "service_request_processed",
+  "service_request_deleted",
   "anulacion_processed",
 ]);
 

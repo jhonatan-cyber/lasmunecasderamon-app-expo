@@ -7,6 +7,7 @@ import {
     getUserRole,
     getUserRoleName,
     isAdminRole,
+    isBarmanRole,
     isGarzonRole,
     isHostessRole,
 } from "@/utils/userRole";
@@ -32,12 +33,16 @@ export function useNotificationHandler() {
             case "timer_ended":
                 if (isAdminRole(user) || role === "cajero") {
                     router.push("/(app)/cajero/servicios");
+                } else if (isBarmanRole(user)) {
+                    router.push("/(app)/barman/servicios");
                 }
                 break;
 
             case "order_created":
                 if (isAdminRole(user) || role === "cajero") {
                     router.push("/(app)/cajero/ventas");
+                } else if (isBarmanRole(user)) {
+                    router.push("/(app)/barman/ventas");
                 }
                 break;
 

@@ -2,6 +2,7 @@ import { Redirect } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
 import {
   isAdminRole,
+  isBarmanRole,
   isCajeroRole,
   isGarzonRole,
   isHostessRole,
@@ -14,10 +15,16 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  if (user.forcePasswordChange) {
+    return <Redirect href="/(auth)/change-password" />;
+  }
+
   if (isGarzonRole(user)) {
     return <Redirect href="/(app)/garzon/(tabs)" />;
   } else if (isHostessRole(user)) {
     return <Redirect href="/(app)/anfitriona/(tabs)" />;
+  } else if (isBarmanRole(user)) {
+    return <Redirect href="/(app)/barman/(tabs)" />;
   } else if (isCajeroRole(user) || isAdminRole(user)) {
     return <Redirect href="/(app)/cajero/(tabs)" />;
   }

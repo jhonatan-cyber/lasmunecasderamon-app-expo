@@ -6,6 +6,7 @@ import { showToast, ToastComponent } from '@/utils/toast-lazy';
 import { API_URL } from "@/api/client";
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
+import { ensureTokenInMemory } from "@/api/token";
 import {
   emitRefreshAnticipos,
   emitRefreshCuentas,
@@ -81,7 +82,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const lowerRole = getUserRole(user);
     const isCajeroOrAdmin = isCajeroOrAdminRole(user);
     const data = (payload.data || {}) as any;
-    const isRequester = String(data.usuario_id || "") === String(user?.id || "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+    const isRequester =
+      data.usuario_id != null && String(data.usuario_id) === String(user?.id ?? "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
     switch (payload.type) {
       case "new_order":
@@ -128,10 +130,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
+      case "ANTICIPO_PROCESSED":
       case "anticipo_processed": {
-        const approved = payload.data?.status === "approved";
+        // Variantes de payload: `anticipo_processed` trae {status, nick|empleado,
+        // usuario_id}; `ANTICIPO_PROCESSED` (otorgado en caja) trae {estado, usuario}.
+        const approved =
+          payload.data?.status === "approved" || Number(payload.data?.estado) === 1;
         const title = approved ? "Anticipo aceptado" : "Anticipo rechazado";
-        const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
+        const who = payload.data?.nick || payload.data?.empleado || payload.data?.usuario || "Empleado";
+        const body = `${who} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
 
         if (isCajeroRole(user) || isRequester) {
           Haptics.notificationAsync(
@@ -180,34 +187,39 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
+      // Temporizadores y salas: los consume useSSETimerHandler / las pantallas
+      // de sala vía eventBus; acá solo se tragan para no caer en el default.
       case "timer_started":
       case "timer_stopped":
-      case "timer_resumed":
-      case "timer_paused":
       case "timer_updated":
-      case "room_occupied":
+      case "timers_updated":
+      case "timer_warning_5m":
+      case "timer_ended_event":
+      case "room_available":
         break;
 
-      case "sale_created":
-      case "sale_updated":
+      // updateSales: el cron de timers finaliza ventas/servicios → solo refresco.
+      // sale_cancelled: payload { ventaId, total, cajaId } → avisa y refresca.
+      case "updateSales":
       case "sale_cancelled":
         if (isCajeroOrAdmin) {
-          const saleData = (payload.data || {}) as any;
-          showToast({
-            type: "success",
-            text1: "Venta Actualizada",
-            text2: `Código: ${saleData.codigo || 'N/A'} - $${Number(saleData.total || 0).toLocaleString('es-ES')}`,
-            visibilityTime: 4000,
-          });
+          if (payload.type === "sale_cancelled") {
+            const saleData = (payload.data || {}) as any;
+            showToast({
+              type: "success",
+              text1: "Venta Anulada",
+              text2: `Total: $${Number(saleData.total || 0).toLocaleString('es-ES')}`,
+              visibilityTime: 4000,
+            });
+          }
           emitRefreshSales();
-          emitRefreshRequests(); 
+          emitRefreshRequests();
         }
         break;
 
       case "order_deleted":
       case "order_updated":
-      case "service_request_approved":
-      case "service_request_rejected":
+      case "service_request_processed":
         if (isCajeroOrAdmin) {
           emitRefreshRequests();
         }
@@ -244,6 +256,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
+      case "force_logout": {
+        // Cuenta eliminada/desactivada en el dashboard: cerrar sesión local ya.
+        const reason = data.message || "Tu cuenta fue eliminada.";
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        showToast({ type: "error", text1: "Sesión cerrada", text2: reason, visibilityTime: 5000 });
+        void showLocalNotification("Sesión cerrada", reason);
+        void useAuthStore.getState().logout();
+        break;
+      }
+
       default:
         logger.info('[NotificationContext] Evento SSE no manejado específicamente', { type: payload.type });
     }
@@ -252,7 +274,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   // ─── Conexión SSE ───────────────────────────────────────────
   // Crea el EventSource, maneja mensajes, open y error.
   // En error → cierra el EventSource y programa reconexión.
-  const connectSSE = useCallback(() => {
+  const connectSSE = useCallback(async () => {
     if (!user?.id) return;
 
     // Cerrar conexión anterior si existe
@@ -267,9 +289,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       attempt: retryCountRef.current + 1
     });
 
+    // El endpoint exige sesión (401 NO_TOKEN desde d0bba49): envía el access token.
+    const token = await ensureTokenInMemory();
+
     let es: EventSource | null = null;
     try {
-      es = new EventSource(sseUrl);
+      es = new EventSource(sseUrl, {
+        withCredentials: true,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       eventSourceRef.current = es;
 
       es.addEventListener("message", (event: { data?: string | null }) => {
@@ -350,7 +378,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     retryTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) {
-        connectSSE();
+        void connectSSE();
       }
     }, finalDelay);
   }
@@ -362,7 +390,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user?.id) return;
     
     // Conectar SSE con reconexión automática (exponential backoff)
-    connectSSE();
+    void connectSSE();
 
     return () => {
       // Limpieza completa al desmontar

@@ -12,8 +12,12 @@ const prefix = Linking.createURL('/');
 export const deepLinks: DeepLinkConfig = {
     prefixes: [
         'lasmunecasderamon://',
-        'https://xn--lasmuecasderamon-bub.com',
-        'https://lasmuñecasderamon.com',
+        // Universal links: mismo dominio declarado en app.json (intentFilters iOS/Android).
+        // El dashboard sirve /app/* como redirect (ver dashboard/app/app/page.tsx).
+        'https://dashboard.xn--lasmuecasderamon-bub.com/app',
+        'https://dashboard.lasmuñecasderamon.com/app',
+        'https://dashboard.xn--lasmuecasderamon-bub.com',
+        'https://dashboard.lasmuñecasderamon.com',
     ],
     screens: {
         home: '',
@@ -29,6 +33,10 @@ export const deepLinks: DeepLinkConfig = {
         anfitriona: 'anfitriona',
         anfitrionaServicios: 'anfitriona/servicios',
         anfitrionaComisiones: 'anfitriona/comisiones',
+        barman: 'barman',
+        barmanBar: 'barman/bar',
+        barmanVentas: 'barman/ventas',
+        barmanServicios: 'barman/servicios',
         perfil: 'perfil',
         asistencia: 'asistencia',
         anticipos: 'anticipos',
@@ -59,17 +67,30 @@ export const openDeepLink = async (url: string): Promise<boolean> => {
 export const handleDeepLink = (url: string): { screen: string; params?: Record<string, string> } | null => {
     try {
         const parsed = Linking.parse(url);
-        const path = parsed.path || '';
-        
-        for (const [screen, screenPath] of Object.entries(deepLinks.screens)) {
-            if (path.startsWith(screenPath) || path === screenPath.replace('/', '')) {
+        const rawPath = (parsed.path || '').replace(/^\/+/, '');
+
+        // Universal links llegan como https://dashboard.../app/<ruta>; el prefijo
+        // /app no es parte de las rutas de expo-router.
+        const path = rawPath === 'app' ? '' : rawPath.startsWith('app/') ? rawPath.slice(4) : rawPath;
+
+        if (!path) {
+            return { screen: 'home', params: parsed.queryParams as Record<string, string> };
+        }
+
+        // Rutas más largas primero: 'cajero/ventas' debe ganarle a 'cajero'.
+        const candidates = Object.entries(deepLinks.screens)
+            .filter(([, screenPath]) => screenPath !== '')
+            .sort(([, a], [, b]) => b.length - a.length);
+
+        for (const [screen, screenPath] of candidates) {
+            if (path === screenPath || path.startsWith(screenPath + '/')) {
                 return {
                     screen,
                     params: parsed.queryParams as Record<string, string>,
                 };
             }
         }
-        
+
         return null;
     } catch (error) {
         logger.captureException(error, { context: 'DeepLinks:parseDeepLink' });

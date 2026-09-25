@@ -67,8 +67,8 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
             const types = [
                 'new_order', 'new_service_request', 
                 'order_deleted', 'service_request_deleted',
-                'order_updated', 'sale_created', 'service_request_approved',
-                'service_request_rejected', 'timer_started', 'timer_stopped'
+                'order_updated', 'updateSales', 'service_request_processed',
+                'sale_cancelled', 'timer_started', 'timer_stopped'
             ];
             if (types.includes(payload.type)) {
                 if (payload.type.startsWith('new_')) {

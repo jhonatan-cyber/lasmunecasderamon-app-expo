@@ -2,6 +2,7 @@ export { anfitrionasService } from './anfitrionas';
 export { anticiposService } from './anticipos';
 export { attendanceService } from './attendance';
 export { authService } from './auth';
+export { barService } from './bar';
 export { cajaService } from './caja';
 export { categoriesService } from './categories';
 export { clientesService } from './clientes';

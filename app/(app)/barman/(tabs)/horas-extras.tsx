@@ -1,0 +1,278 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useState, useCallback } from "react";
+import {
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import FlashList from "@/components/shared/FlashList";
+import { OvertimeCard } from "@/components/ui/OvertimeCard";
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { useHorasExtras, HoraExtra } from "@/hooks/useHorasExtras";
+
+export default function HorasExtrasScreen() {
+  const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } = useAccentColor();
+  const { data: horasExtras, loading, refreshing, error, onRefresh, fetchData } = useHorasExtras();
+  const [filter, setFilter] = useState<"all" | "pendiente" | "pagado">("all");
+
+
+
+  const filteredData = horasExtras.filter((a) => {
+    if (filter === "pendiente") return a.estado === 1;
+    if (filter === "pagado") return a.estado === 0;
+    return true;
+  });
+
+  const pendientes = horasExtras.filter((a) => a.estado === 1);
+  const totalPendiente = pendientes.reduce(
+    (sum, a) => sum + (a.total || a.monto || 0),
+    0,
+  );
+
+  const renderItem = useCallback(({ item, index }: { item: HoraExtra; index: number }) => (
+    <OvertimeCard
+      item={item}
+      index={index}
+      showIndexBadge={false}
+      usePagadoLabel={true}
+      compactDate={false}
+      showPaymentDate={true}
+    />
+  ), []);
+
+  const renderHorasExtrasSkeleton = () => (
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <PremiumHeader
+        title="Horas Extras"
+        subtitle="Mi tiempo adicional laborado"
+      />
+      <View style={{ margin: 16 }}>
+        <Skeleton width="100%" height={140} borderRadius={16} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16 }}>
+        <Skeleton width="30%" height={35} borderRadius={20} />
+        <Skeleton width="30%" height={35} borderRadius={20} />
+        <Skeleton width="30%" height={35} borderRadius={20} />
+      </View>
+      <View style={{ padding: 16, gap: 10 }}>
+        {[1, 2, 3].map((i) => (
+          <View
+            key={i}
+            style={{
+              padding: 16,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor,
+              backgroundColor: cardBg,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 15,
+              }}
+            >
+              <Skeleton width={32} height={32} borderRadius={16} />
+              <Skeleton width={80} height={20} borderRadius={10} />
+            </View>
+            <Skeleton height={15} width="60%" style={{ marginBottom: 15 }} />
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-around" }}
+            >
+              <Skeleton width={80} height={30} />
+              <Skeleton width={80} height={30} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  if (loading) return renderHorasExtrasSkeleton();
+
+  return (
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <PremiumHeader
+        title="Horas Extras"
+        subtitle="Mi tiempo adicional laborado"
+      />
+
+      <View
+        style={[
+          styles.summaryCard,
+          { backgroundColor: cardBg, borderColor, shadowColor: accentColor },
+        ]}
+      >
+        <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+          HORAS EXTRAS PENDIENTES
+        </Text>
+        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+          ${totalPendiente.toLocaleString()}
+        </Text>
+        <View style={styles.summaryDetails}>
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Pendientes: {pendientes.length}
+          </Text>
+          <View
+            style={{
+              width: 1,
+              height: 12,
+              backgroundColor: borderColor,
+              alignSelf: "center",
+            }}
+          />
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Total Items: {horasExtras.length}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.filterRow}>
+        {(["all", "pendiente", "pagado"] as const).map((f) => (
+          <Pressable
+            key={f}
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor: filter === f ? accentColor : cardBg,
+                borderColor: filter === f ? accentColor : borderColor,
+              },
+            ]}
+            onPress={() => setFilter(f)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                { color: filter === f ? "#FFFFFF" : textSecondary },
+              ]}
+            >
+              {f === "all"
+                ? `Todas (${horasExtras.length})`
+                : f === "pendiente"
+                  ? `Pendientes (${pendientes.length})`
+                  : `Cobradas (${horasExtras.length - pendientes.length})`}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {error ? (
+        <View
+          style={[
+            styles.errorCard,
+            { backgroundColor: isDark ? "#1C1917" : "#FEF2F2" },
+          ]}
+        >
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <Pressable
+            onPress={() => fetchData()}
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.retryText}>Reintentar</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <FlashList
+        data={filteredData}
+        keyExtractor={(item: HoraExtra) => item.id_hora_extra.toString()}
+        renderItem={renderItem}
+        estimatedItemSize={120}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={accentColor}
+          />
+        }
+        ListEmptyComponent={
+          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
+            <Ionicons name="time-outline" size={48} color={textSecondary} />
+            <Text style={[styles.emptyText, { color: textSecondary }]}>
+              No se encontraron horas extras
+            </Text>
+          </View>
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  summaryCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  summaryAmount: { fontSize: 38, fontWeight: "900", marginBottom: 12 },
+  summaryDetails: { flexDirection: "row", gap: 12, alignItems: "center" },
+  summaryDetail: { fontSize: 13, fontWeight: "600" },
+  filterRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  filterText: { fontSize: 11, fontWeight: "600" },
+  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  errorCard: {
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 10,
+  },
+  retryButton: {
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 9999,
+  },
+  retryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
+  emptyCard: {
+    borderRadius: 16,
+    padding: 40,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  emptyText: { fontSize: 14, marginTop: 12, textAlign: "center" },
+});

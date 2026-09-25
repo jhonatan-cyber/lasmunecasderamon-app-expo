@@ -3,7 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
+import { isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 
 interface PremiumHeaderActionsProps {
     hasNewAlert?: boolean;
@@ -33,7 +33,7 @@ export const PremiumHeaderActions = ({
     const user = useAuthStore(state => state.user);
     const router = useRouter();
 
-    const isRestrictedRole = isGarzonRole(user) || isHostessRole(user);
+    const isRestrictedRole = isGarzonRole(user) || isHostessRole(user) || isBarmanRole(user);
     const canUseCajeroActions = isCajeroRole(user);
 
     

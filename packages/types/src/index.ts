@@ -5,7 +5,8 @@ export type UserRole =
   | 'cajero'
   | 'garzon'
   | 'mesero'
-  | 'anfitriona';
+  | 'anfitriona'
+  | 'barman';
 
 export type MetodoPago =
   | ''
@@ -13,8 +14,7 @@ export type MetodoPago =
   | 'tarjeta'
   | 'transferencia'
   | 'prepago'
-  | 'mixto'
-  | 'qr';
+  | 'mixto';
 
 // ─── Entity Types ───────────────────────────────────────────────
 

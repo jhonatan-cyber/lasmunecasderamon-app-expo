@@ -1,6 +1,6 @@
 import { apiClientSafe } from "@/api/client";
 import { REALTIME_EVENT_NAMES, shouldRefreshSalesFromSse } from "@/utils/realtime";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useEffect } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { MetodoPago } from "../types/api";
@@ -27,8 +27,6 @@ interface SalesContextType {
 const SalesContext = createContext<SalesContextType | undefined>(undefined);
 
 export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const queryClient = useQueryClient();
-
   const {
     data: ventas = [],
     isLoading: loading,
@@ -52,17 +50,15 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
-      if (payload.data && payload.type !== "sale_updated") {
-        queryClient.setQueryData<Venta[]>(["sales"], (prev) => [payload.data!, ...(prev || [])]);
-      } else {
-        void refetch();
-      }
+      // updateSales trae { id, type } y sale_cancelled trae { ventaId, total }:
+      // ninguno es una Venta completa, así que siempre se refetchea la lista.
+      void refetch();
     });
 
     return () => {
       subscription.remove();
     };
-  }, [queryClient, refetch]);
+  }, [refetch]);
 
   return (
     <SalesContext.Provider value={{ ventas, loading, refreshVentas }}>
