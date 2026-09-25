@@ -6,6 +6,7 @@ import type { ApiRes } from "@/types/api";
 import { useAuthStore } from "@/store/authStore";
 import { showToast } from '@/utils/toast-lazy';
 import { DashboardEvent, DashboardStats, UserRole, type ActiveService, type UserProfileResponse } from "@/types/api";
+import type { EnvaseResumen } from "@/hooks/useEnvasesScreen";
 import {
   emitRefreshRequests,
   REALTIME_EVENT_NAMES,
@@ -46,6 +47,8 @@ export interface DashboardData {
   activeService: ActiveService | null;
   pendingCount: number;
   payoutTotal: number;
+  /** Solo barman: contador de envases del bar (`null` si no cargó). */
+  containerSummary?: EnvaseResumen | null;
 }
 
 const initialStats: DashboardStats = { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 };
@@ -85,6 +88,7 @@ export function useDashboardData(role: UserRole) {
         endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
         endpoints.push(apiClientSafe<Record<string, unknown>>("/bar"));
         endpoints.push(apiClientSafe<unknown[]>("/transfers/pending"));
+        endpoints.push(apiClientSafe<EnvaseResumen>("/bar/containers/summary"));
       }
 
       const results = await Promise.all(endpoints.map(p => p.catch(e => {
@@ -123,6 +127,9 @@ export function useDashboardData(role: UserRole) {
             roleStats = eventsStatsRes.data;
             extraData.barStock = (results[5] as ApiRes<unknown>)?.data ?? null;
             extraData.pendingTransfers = (results[6] as ApiRes<unknown>)?.data ?? null;
+            // Contador de envases del home (la alerta SSE de almacén es de admin;
+            // el barman ve aquí sus pendientes de recepción).
+            extraData.containerSummary = (results[7] as ApiRes<EnvaseResumen>)?.data ?? null;
         }
 
         if (meData?.user) {
@@ -185,6 +192,7 @@ export function useDashboardData(role: UserRole) {
     activeService: data?.activeService || null,
     pendingCount: data?.pendingCount || 0,
     payoutTotal: data?.payoutTotal || 0,
+    containerSummary: data?.containerSummary ?? null,
     hasNewAlert,
     selectedDates,
     onRefresh,

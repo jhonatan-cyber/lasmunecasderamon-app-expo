@@ -1,7 +1,9 @@
 import { apiClientSafe } from '@/api/client';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { showToast } from '@/utils/toast-lazy';
+import { eventBus } from '@/utils/eventBus';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 
 export interface GratificacionItem {
   id: string;
@@ -128,6 +130,18 @@ export function useGratificaciones() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData(true);
+  }, [fetchData]);
+
+  // `new_gratificacion_request` / `gratificacion_processed` (SSE de admin):
+  // la lista abierta se refresca sin esperar al pull ni al reenfocado.
+  useEffect(() => {
+    const subscription = eventBus.addListener(
+      REALTIME_EVENT_NAMES.refreshGratificaciones,
+      () => {
+        void fetchData();
+      },
+    );
+    return () => subscription.remove();
   }, [fetchData]);
 
   useFocusEffect(

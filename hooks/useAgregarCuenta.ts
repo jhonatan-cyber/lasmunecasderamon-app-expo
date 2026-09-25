@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { eventBus } from "@/utils/eventBus";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { useRouter } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { useTimer } from "@/context/TimerContext";
@@ -122,6 +123,24 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
     }
     return () => ac.abort();
   }, [fetchInitialData, cuentaOriginal, router]);
+
+  // `categories_updated` (SSE): solo se refresca la lista de categorías; el
+  // carrito y la selección del modal quedan intactos.
+  useEffect(() => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
+      void (async () => {
+        try {
+          const res = await apiClientSafe("/categories");
+          if ((res as any)?.success) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: { categories: (res as any).data || [] } });
+          }
+        } catch (e) {
+          logger.captureException(e, { context: "AgregarCuenta:refreshCategories" });
+        }
+      })();
+    });
+    return () => subscription.remove();
+  }, []);
 
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });

@@ -15,6 +15,8 @@ import {
   normalizeAnfitrionas,
 } from '@/hooks/utils/cartUtils';
 import logger from '@/utils/logger';
+import { eventBus } from '@/utils/eventBus';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta/reducer';
 import type { VentaState } from '@/components/cajero/nueva-venta/types';
 
@@ -107,6 +109,24 @@ export function useNuevaVenta() {
     fetchInitialData(false, ac.signal);
     return () => ac.abort();
   }, [fetchInitialData]);
+
+  // `categories_updated` (SSE): el catálogo cambió en el dashboard; se refresca
+  // solo la lista — el carrito y la categoría seleccionada quedan intactos.
+  useEffect(() => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
+      void (async () => {
+        try {
+          const res = await apiClientSafe('/categories');
+          if ((res as any)?.success) {
+            dispatch({ type: 'SET_INITIAL_DATA', payload: { categories: (res as any).data || [] } });
+          }
+        } catch (e) {
+          logger.captureException(e, { context: 'NuevaVenta:refreshCategories' });
+        }
+      })();
+    });
+    return () => subscription.remove();
+  }, []);
 
   const onRefresh = useCallback(() => {
     dispatch({ type: 'SET_REFRESHING', payload: true });

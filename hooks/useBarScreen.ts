@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { barService } from '@/services/bar';
+import { eventBus } from '@/utils/eventBus';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
 import logger from '@/utils/logger';
 
@@ -114,6 +116,16 @@ export const useBarScreen = () => {
     })();
     return () => ac.abort();
   }, [fetchStock, fetchTransfers]);
+
+  // `bar_shot_alert` (SSE): una botella bajó del umbral de shots y su ml cambió:
+  // la pantalla Bar, si está abierta, refresca el stock sin esperar al pull.
+  useEffect(() => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshBar, () => {
+      logger.debug('[BarScreen] refresh_bar received');
+      void fetchStock();
+    });
+    return () => subscription.remove();
+  }, [fetchStock]);
 
   const loadMovements = useCallback(
     (signal?: AbortSignal) => {

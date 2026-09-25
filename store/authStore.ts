@@ -67,6 +67,8 @@ interface AuthState {
     tempAuthData: TempAuthData | null;
     setTempAuthData: (data: TempAuthData | null) => void;
     updateProfile: (partialUser: Partial<User>) => Promise<void>;
+    /** Reconsulta /auth/me y actualiza el usuario local; false si el servidor ya no lo resuelve. */
+    refreshUser: () => Promise<boolean>;
     isBiometricEnabled: boolean;
     setBiometricEnabled: (enabled: boolean) => Promise<void>;
     saveCredentials: (username: string, password: string) => Promise<void>;
@@ -313,6 +315,27 @@ export const useAuthStore = create<AuthState>((set, get) => {
             await SecureStore.deleteItemAsync('user_credentials');
         },
 
+        /**
+         * Reconsulta /auth/me y actualiza el usuario local. La app no cachea
+         * permisos (stateless), así que el refresh sirve para mantener el perfil
+         * al día y para detectar sesiones cuyo rol dejó de existir: si el
+         * servidor ya no resuelve al usuario, devuelve false.
+         */
+        refreshUser: async () => {
+            try {
+                const res = (await apiClientSafe('/auth/me')) as any;
+                const servidor = res?.user ?? res?.data?.user ?? res?.data;
+                const currentUser = get().user;
+                if (!res?.success || !servidor?.id || !currentUser) return false;
+                const updatedUser = { ...currentUser, ...servidor } as User;
+                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+                set({ user: updatedUser });
+                return true;
+            } catch (err) {
+                logger.captureException(err, { context: 'authStore:refreshUser' });
+                return false;
+            }
+        },
         updateProfile: async (partialUser) => {
             const currentUser = get().user;
             if (!currentUser) return;

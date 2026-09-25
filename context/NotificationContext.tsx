@@ -9,12 +9,16 @@ import { useAuthStore } from "@/store/authStore";
 import { ensureTokenInMemory } from "@/api/token";
 import {
   emitRefreshAnticipos,
+  emitRefreshBar,
   emitRefreshCuentas,
+  emitRefreshCategories,
+  emitRefreshGratificaciones,
   emitRefreshRequests,
   emitRefreshSales,
   emitSseEvent,
   isSseControlEvent,
 } from "@/utils/realtime";
+import { attendanceService } from "@/services/attendance";
 import type { SSEPayload } from '../types/realtime';
 import {
   getUserRole,
@@ -255,6 +259,177 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
         break;
+
+      // ─── Alertas del bar y del almacén ────────────────────────────────────
+      // `bar_shot_alert` (audiencia: barman + administrador, la define sseEvents.ts
+      // del dashboard): una botella abierta bajó del umbral de shots configurado
+      // en Configuraciones → Bar. El servidor ya manda `mensaje` armado.
+      case "bar_shot_alert": {
+        const alertas = Array.isArray(data.alertas) ? data.alertas : [];
+        const nombres = alertas
+          .map((a: any) => a?.nombre)
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(", ");
+        const body =
+          data.mensaje || (nombres ? `Por agotarse: ${nombres}` : "Revisa el stock del bar");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        showToast({
+          type: "warning",
+          text1: "Botella por agotarse",
+          text2: body,
+          visibilityTime: 6000,
+        });
+        showLocalNotification("Botella por agotarse", body);
+        // La pantalla Bar (si está abierta) refresca su stock con los ml actuales.
+        emitRefreshBar(payload);
+        break;
+      }
+
+      // `warehouse_container_alert` (audiencia: almacén + administrador): envases
+      // entregados por el bar hace más de 2 h sin recepción. Con `vencidos = 0` el
+      // servidor avisa que ya todo fue recibido: eso no es una alerta, se omite.
+      case "warehouse_container_alert": {
+        if (Number(data.vencidos || 0) > 0) {
+          const body =
+            data.mensaje ||
+            `${Number(data.pendientes || 0)} envase(s) esperan recepción en almacén.`;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          showToast({
+            type: "warning",
+            text1: "Envases sin recibir",
+            text2: body,
+            visibilityTime: 6000,
+          });
+          showLocalNotification("Envases sin recibir", body);
+        }
+        break;
+      }
+
+      // ─── Catálogo, asistencia, permisos y alertas ────────────────────────
+      // `categories_updated` (todo el personal): las pantallas de venta/cuenta
+      // abiertas refrescan solo la lista de categorías, sin tocar carrito ni
+      // la selección actual (consumen `refresh_categories`).
+      case "categories_updated":
+        emitRefreshCategories(payload);
+        break;
+
+      // `check_attendance` (cron de las 21:00, payload {roles, message}): igual
+      // que el dashboard, si el personal afectado no registró asistencia hoy se
+      // le pide re-ingresar — el login vuelve a registrarla.
+      case "check_attendance": {
+        const rolesAfectados = (Array.isArray(data.roles) ? data.roles : [])
+          .map((r: unknown) => String(r).toLowerCase());
+        if (rolesAfectados.length > 0 && !rolesAfectados.includes(lowerRole)) break;
+        void (async () => {
+          try {
+            const res = await attendanceService.hoy();
+            const filas = Array.isArray((res as any)?.data) ? (res as any).data : [];
+            const registrada = filas.some(
+              (f: any) => String(f?.id_usuario) === String(user?.id ?? ""),
+            );
+            if (registrada) return;
+            const body =
+              data.message || "No registraste tu asistencia hoy. Ingresa nuevamente para registrarla.";
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            showToast({
+              type: "warning",
+              text1: "Asistencia no registrada",
+              text2: body,
+              visibilityTime: 6000,
+            });
+            await showLocalNotification("Asistencia no registrada", body);
+            void useAuthStore.getState().logout();
+          } catch (e) {
+            // Sin red no se castiga: el próximo evento volverá a chequear.
+            logger.debug("[NotificationContext] check_attendance sin verificar", { e });
+          }
+        })();
+        break;
+      }
+
+      // `permissions-updated` (personal no administrador): la app no cachea
+      // permisos — el servidor los evalúa por petición y su caché de 60 s ya
+      // fue invalidada por el propio cambio. Con `roleId` el cambio es de un rol
+      // concreto y la app no guarda ese id: refresh en silencio; sin roleId es
+      // global y se avisa, igual que el dashboard web.
+      case "permissions-updated":
+        if (data.roleId) {
+          void useAuthStore.getState().refreshUser();
+        } else {
+          showToast({
+            type: "info",
+            text1: "Permisos actualizados",
+            text2: "Se aplicarán a tus próximas acciones",
+            visibilityTime: 4000,
+          });
+          void useAuthStore.getState().refreshUser();
+        }
+        break;
+
+      // `role-deleted` (payload {roleId}): la sesión de la app tampoco lleva
+      // roleId — por eso el servidor lo difunde a todo el personal (sseEvents).
+      // Se refresca la sesión; si el rol borrado era el del usuario, /auth/me
+      // deja de resolverlo y se cierra la sesión (redirect del dashboard web).
+      case "role-deleted":
+        void useAuthStore.getState().refreshUser().then((ok) => {
+          if (!ok) void useAuthStore.getState().logout();
+        });
+        break;
+
+      // ─── Gratificaciones (audiencia: solo administración) ───────────────────
+      case "new_gratificacion_request": {
+        const body = `${data.empleado || data.nick || "Empleado"} solicitó una gratificación de $${Number(data.monto || 0).toLocaleString("es-ES")}`;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        showToast({
+          type: "info",
+          text1: "Nueva solicitud de gratificación",
+          text2: body,
+          visibilityTime: 5000,
+        });
+        showLocalNotification("Nueva solicitud de gratificación", body);
+        emitRefreshGratificaciones(payload);
+        break;
+      }
+
+      case "gratificacion_processed": {
+        // estado: 1 = aprobada, 3 = rechazada; accion: 'approve' | 'reject'.
+        const aprobada = data.accion === "approve" || Number(data.estado) === 1;
+        const body = `${data.nick || data.empleado || "Empleado"} - $${Number(data.monto || 0).toLocaleString("es-ES")}`;
+        Haptics.notificationAsync(
+          aprobada
+            ? Haptics.NotificationFeedbackType.Success
+            : Haptics.NotificationFeedbackType.Warning,
+        );
+        showToast({
+          type: aprobada ? "success" : "error",
+          text1: aprobada ? "Gratificación aprobada" : "Gratificación rechazada",
+          text2: body,
+          visibilityTime: 5000,
+        });
+        showLocalNotification(aprobada ? "Gratificación aprobada" : "Gratificación rechazada", body);
+        emitRefreshGratificaciones(payload);
+        break;
+      }
+
+      // `security_alert` (solo administración): severidad high/critical en rojo.
+      case "security_alert": {
+        const critico = ["high", "critical"].includes(String(data.severity || "").toLowerCase());
+        const body = data.message || "Revisa la actividad reciente en el dashboard.";
+        Haptics.notificationAsync(
+          critico
+            ? Haptics.NotificationFeedbackType.Error
+            : Haptics.NotificationFeedbackType.Warning,
+        );
+        showToast({
+          type: critico ? "error" : "warning",
+          text1: "Alerta de seguridad",
+          text2: body,
+          visibilityTime: 7000,
+        });
+        showLocalNotification("Alerta de seguridad", body);
+        break;
+      }
 
       case "force_logout": {
         // Cuenta eliminada/desactivada en el dashboard: cerrar sesión local ya.

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useNuevaVenta } from '@/hooks/useNuevaVenta';
 import { apiClientSafe } from '@/api/client';
+import { emitRefreshCategories } from '@/utils/realtime';
 
 // ── Mocks ────────────────────────────────────────────────────────────────
 const configValues = vi.hoisted(() => new Map<string, string>());
@@ -132,5 +133,41 @@ describe('useNuevaVenta totals (propina / total)', () => {
     expect(payload.total).toBe(11000); // subtotal + propina
     expect(payload.metodo_pago).toBe('tarjeta');
     expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
+  });
+});
+
+describe('useNuevaVenta — refresh del catálogo por SSE (categories_updated)', () => {
+  beforeEach(() => {
+    configValues.clear();
+    vi.clearAllMocks();
+  });
+
+  it('refresca solo la lista de categorías y no toca el carrito', async () => {
+    let categoriasLlamada = 0;
+    vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
+      if (url === '/cashregister/status') {
+        return { success: true, data: { hasOpenCaja: true } };
+      }
+      if (url === '/categories') {
+        categoriasLlamada++;
+        return { success: true, data: [{ id: `c${categoriasLlamada}`, name: `Cat ${categoriasLlamada}` }] };
+      }
+      return { success: true, data: [] };
+    });
+
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.categories).toHaveLength(1));
+    expect(result.current.state.categories[0].id).toBe('c1');
+
+    setCart(result, [{ id: 'p1', precio: 10000, quantity: 1 }]);
+
+    // NotificationContext convierte categories_updated en este evento de bus.
+    act(() => {
+      emitRefreshCategories({ type: 'categories_updated' });
+    });
+
+    await waitFor(() => expect(result.current.state.categories[0].id).toBe('c2'));
+    // El carrito y la selección sobreviven al refresco del catálogo.
+    expect(result.current.state.cart).toHaveLength(1);
   });
 });

@@ -6,6 +6,9 @@ export const REALTIME_EVENT_NAMES = {
   refreshSales: "refresh_sales",
   refreshAnticipos: "refresh_anticipos",
   refreshCuentas: "refresh_cuentas",
+  refreshBar: "refresh_bar",
+  refreshCategories: "refresh_categories",
+  refreshGratificaciones: "refresh_gratificaciones",
 } as const;
 
 export type RealtimePayload = {
@@ -95,4 +98,19 @@ export const emitRefreshAnticipos = (payload?: RealtimePayload) => {
 
 export const emitRefreshCuentas = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshCuentas", payload);
+};
+
+/** Stock del bar: lo dispara `bar_shot_alert` cuando una botella se agota. */
+export const emitRefreshBar = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshBar", payload);
+};
+
+/** Catálogo de productos: lo dispara `categories_updated` (crud en el dashboard). */
+export const emitRefreshCategories = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshCategories", payload);
+};
+
+/** Lista de gratificaciones: la disparan `new_gratificacion_request` y `gratificacion_processed`. */
+export const emitRefreshGratificaciones = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshGratificaciones", payload);
 };

@@ -11,6 +11,7 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/utils/logger', () => ({
     default: {
+        debug: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),

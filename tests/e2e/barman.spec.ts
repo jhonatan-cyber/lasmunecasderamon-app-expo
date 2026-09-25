@@ -77,6 +77,7 @@ test('root redirects barman users to the barman dashboard', async ({ page }) => 
     await expect(page.locator('body')).toContainText('BAR');
     await expect(page.locator('body')).toContainText('VENTAS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
+    await expect(page.locator('body'), 'contador de envases del home').toContainText('Envases');
 });
 
 test('barman home renders its tab bar labels', async ({ page }) => {
@@ -130,6 +131,17 @@ test('barman bar screen renders stock and transfers shell', async ({ page }) => 
     await page.goto('/barman/bar');
 
     await expect(page.locator('body')).toContainText('unidades en barra');
+});
+
+test('barman bar screen exposes the container return tab', async ({ page }) => {
+    await bootstrapBarmanSession(page);
+
+    await page.goto('/barman/bar');
+
+    await page.getByText('Envases', { exact: true }).click();
+
+    await expect(page.locator('body')).toContainText('Escanea el envase vacío');
+    await expect(page.locator('body')).toContainText('Devoluciones registradas');
 });
 
 test('barman sales screen renders its shell without the cashier FAB', async ({ page }) => {

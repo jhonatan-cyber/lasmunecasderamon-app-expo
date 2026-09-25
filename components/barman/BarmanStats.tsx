@@ -62,10 +62,12 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
 
 interface BarmanStatsProps {
     stats: any;
+    /** Contador de envases del bar (`GET /bar/containers/summary`); null si no cargó. */
+    containers?: { pendientes: number; vencidos: number; umbral_horas?: number } | null;
     fullWidth?: boolean;
 }
 
-export const BarmanStats = ({ stats, fullWidth = false }: BarmanStatsProps) => {
+export const BarmanStats = ({ stats, containers, fullWidth = false }: BarmanStatsProps) => {
     const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
@@ -94,7 +96,26 @@ export const BarmanStats = ({ stats, fullWidth = false }: BarmanStatsProps) => {
             value: stats?.svcCount || 0,
             icon: 'briefcase' as const,
             color: accentColor
-        }
+        },
+        // Envases entregados que el almacén todavía no confirmó. La alerta SSE
+        // de almacén es de administración; el barman lo ve aquí y en su tab.
+        ...(containers != null
+            ? [{
+                label: 'Envases',
+                value: Number(containers.pendientes || 0),
+                icon: 'cube' as const,
+                color: Number(containers.vencidos || 0) > 0
+                    ? '#EF4444'
+                    : Number(containers.pendientes || 0) > 0
+                        ? '#F59E0B'
+                        : accentColor,
+                subLabel: Number(containers.vencidos || 0) > 0
+                    ? `${Number(containers.vencidos)} con más de ${Number(containers.umbral_horas || 2)} h`
+                    : Number(containers.pendientes || 0) > 0
+                        ? 'Pendientes de recepción'
+                        : 'Sin pendientes'
+            }]
+            : [])
     ];
 
     return (

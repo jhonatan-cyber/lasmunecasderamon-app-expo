@@ -61,6 +61,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
     activeService,
     pendingCount,
     payoutTotal,
+    containerSummary,
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
@@ -364,7 +365,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === "barman" && (
               <>
-                <BarmanStats stats={stats} fullWidth />
+                <BarmanStats stats={stats} containers={containerSummary} fullWidth />
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <BarmanActionGrid fullWidth />
                 </View>

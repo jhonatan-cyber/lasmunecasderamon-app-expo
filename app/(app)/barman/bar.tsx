@@ -6,12 +6,15 @@ import FlashList from '@/components/shared/FlashList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { BarStockList } from '@/components/barman/bar/BarStockList';
+import { ContainerReturnPanel } from '@/components/barman/bar/ContainerReturnPanel';
+import { EnvaseScannerModal } from '@/components/barman/bar/EnvaseScannerModal';
 import { MovementsList } from '@/components/barman/bar/MovementsList';
 import { TransferCard } from '@/components/barman/bar/TransferCard';
 import { useBarScreen } from '@/hooks/useBarScreen';
+import { useEnvasesScreen } from '@/hooks/useEnvasesScreen';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
-type TabId = 'stock' | 'pendientes' | 'historial';
+type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 
 export default function BarScreen() {
   const router = useRouter();
@@ -36,10 +39,35 @@ export default function BarScreen() {
     fetchTransfers,
   } = useBarScreen();
 
+  const {
+    devoluciones,
+    loading: loadingEnvases,
+    refreshing: refreshingEnvases,
+    error: errorEnvases,
+    codigo,
+    setCodigo,
+    verificando,
+    resultado,
+    sesion,
+    entregados,
+    rechazados,
+    fetchDevoluciones,
+    onRefresh: onRefreshEnvases,
+    enviarEscaneo,
+    limpiarSesion,
+  } = useEnvasesScreen();
+  const [scannerVisible, setScannerVisible] = useState(false);
+
   const onTabChange = (tabId: string) => {
     setActiveTab(tabId as TabId);
     if (tabId === 'historial') loadMovements();
     if (tabId === 'pendientes') fetchTransfers();
+    if (tabId === 'envases') fetchDevoluciones();
+  };
+
+  // El envase se procesa y el campo queda libre para la siguiente lectura.
+  const enviarEnvase = async () => {
+    if (await enviarEscaneo(codigo)) setCodigo('');
   };
 
   return (
@@ -58,6 +86,7 @@ export default function BarScreen() {
           { id: 'stock', label: 'Stock' },
           { id: 'pendientes', label: `Pendientes${transfers.length > 0 ? ` (${transfers.length})` : ''}` },
           { id: 'historial', label: 'Historial' },
+          { id: 'envases', label: 'Envases' },
         ]}
         activeTab={activeTab}
         onTabChange={onTabChange}
@@ -141,7 +170,37 @@ export default function BarScreen() {
             onRefresh={onRefresh}
           />
         )}
+
+        {activeTab === 'envases' && (
+          <ContainerReturnPanel
+            codigo={codigo}
+            setCodigo={setCodigo}
+            verificando={verificando}
+            resultado={resultado}
+            sesion={sesion}
+            entregados={entregados}
+            rechazados={rechazados}
+            devoluciones={devoluciones}
+            loading={loadingEnvases}
+            refreshing={refreshingEnvases}
+            error={errorEnvases}
+            onEnviar={enviarEnvase}
+            onLimpiarSesion={limpiarSesion}
+            onRefresh={onRefreshEnvases}
+            onAbrirScanner={() => setScannerVisible(true)}
+          />
+        )}
       </View>
+
+      <EnvaseScannerModal
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onScanned={async (codigoEscaneado) => {
+          const veredicto = await enviarEscaneo(codigoEscaneado);
+          if (veredicto) setCodigo('');
+          return veredicto;
+        }}
+      />
     </View>
   );
 }

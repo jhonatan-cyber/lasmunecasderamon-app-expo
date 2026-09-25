@@ -3,6 +3,8 @@ import { useRouter } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import logger from "@/utils/logger";
+import { eventBus } from "@/utils/eventBus";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import type { Categoria, Producto } from "@lasmunecasderamon/types";
 import { initialCuentaState, type CuentaState } from "@/components/cajero/nueva-cuenta/types";
 import { cuentaReducer } from "@/components/cajero/nueva-cuenta/reducer";
@@ -82,6 +84,24 @@ export function useNuevaCuentaScreen() {
     fetchInitialData(false, ac.signal);
     return () => ac.abort();
   }, [fetchInitialData]);
+
+  // `categories_updated` (SSE): solo se refresca la lista de categorías; el
+  // carrito y la selección del modal quedan intactos.
+  useEffect(() => {
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
+      void (async () => {
+        try {
+          const res = await apiClientSafe("/categories");
+          if ((res as any)?.success) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: { categories: (res as any).data || [] } });
+          }
+        } catch (e) {
+          logger.captureException(e, { context: "NuevaCuenta:refreshCategories" });
+        }
+      })();
+    });
+    return () => subscription.remove();
+  }, []);
 
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });
