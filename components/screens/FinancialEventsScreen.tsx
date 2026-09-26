@@ -87,7 +87,9 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
     const filteredData = data.filter((a: any) => {
         if (filter === 'pendiente') return a.estado === 1;
-        if (filter === 'pagado') return a.estado === 0;
+        // Pagado = todo lo que no está pendiente: 0 en propinas
+        // (PayrollRepository) y 2 en comisiones (CommissionRepository).
+        if (filter === 'pagado') return a.estado !== 1;
         return true;
     });
 

@@ -30,8 +30,12 @@ const DASHBOARD_REFRESH_EVENTS = new Set([
   "room_available",
 ]);
 
-// El backend no emite sale_created/sale_updated: las ventas se refrescan con
-// updateSales (cron de timers) y sale_cancelled (anulación).
+// Catálogo del dashboard (lib/api/sseEvents.ts): no existe `sale_created` ni
+// `sale_updated`; las ventas se refrescan con `updateSales` y `sale_cancelled`
+// (ambos STAFF_ONLY). `updateSales` se emite al crear la venta
+// (`SaleService.createSale`) y al pararse un timer de venta/servicio (cron
+// `check-timers`), con payload informativo `{ id, type }`; `sale_cancelled`, al
+// anular la venta (`SaleQueries`).
 const SALE_REFRESH_EVENTS = new Set([
   "updateSales",
   "sale_cancelled",
