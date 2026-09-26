@@ -73,6 +73,13 @@ export const CajeroActionGrid = ({
       color: accentColor,
       route: "/cajero/gratificaciones",
     },
+    {
+      title: "FINANCIERO",
+      description: "Eventos y propinas",
+      icon: "wallet" as const,
+      color: accentColor,
+      route: "/cajero/financieros",
+    },
   ];
 
   const rows = [];

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
+import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";
 import { PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
 import { TipCheckbox } from "@/components/cajero/forms/TipCheckbox";
 import { useCuentasScreen } from "@/hooks/useCuentasScreen";
@@ -38,7 +39,12 @@ export function CuentaCobroModal({
     cobroClienteSaldo,
     showPrepagoCobro,
     cobroTotals,
+    cajaAbierta,
   } = screen;
+
+  // El cobro registra una venta y escribe en caja: con caja cerrada el botón
+  // se deshabilita (mismo criterio que nueva venta; paridad con dashboard).
+  const cajaCerrada = cajaAbierta === false;
 
   const selectedPaymentMethod = cobroMetodoPago || "efectivo";
 
@@ -104,12 +110,20 @@ export function CuentaCobroModal({
               onSelect={screen.setCobroMetodoPago}
             />
 
+            {cajaCerrada && <CajaClosedBanner />}
+
             <Pressable
-              style={[styles.cobrarSubmitBtn, { backgroundColor: accentColor }, cobroSubmitting && { opacity: 0.7 }]}
+              style={[
+                styles.cobrarSubmitBtn,
+                { backgroundColor: accentColor },
+                (cobroSubmitting || cajaCerrada) && { opacity: 0.7 },
+              ]}
               onPress={screen.handleConfirmarCobro}
-              disabled={cobroSubmitting}
+              disabled={cobroSubmitting || cajaCerrada}
             >
-              <Text style={styles.cobrarSubmitText}>{cobroSubmitting ? "Procesando..." : "Confirmar cobro"}</Text>
+              <Text style={styles.cobrarSubmitText}>
+                {cobroSubmitting ? "Procesando..." : "Confirmar cobro"}
+              </Text>
             </Pressable>
 
             <Pressable

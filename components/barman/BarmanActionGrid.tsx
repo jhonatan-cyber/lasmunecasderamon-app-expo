@@ -38,6 +38,13 @@ export const BarmanActionGrid = ({
       color: accentColor,
       route: "/barman/servicios",
     },
+    {
+      title: "FINANCIERO",
+      description: "Eventos y propinas",
+      icon: "wallet" as const,
+      color: accentColor,
+      route: "/barman/financieros",
+    },
   ];
 
   const rows = [];

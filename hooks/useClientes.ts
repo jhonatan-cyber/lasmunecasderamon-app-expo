@@ -3,6 +3,7 @@ import { Alert, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { showToast } from '@/utils/toast-lazy';
+import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { clientesService } from '@/services';
 import type { PrepagoPayload } from '@/services/clientes';
@@ -31,6 +32,10 @@ export function useClientes() {
     const [refreshing, setRefreshing] = useState(false);
     const [clients, setClients] = useState<Client[]>([]);
     const [search, setSearch] = useState("");
+
+    // Estado de caja: la carga de saldo prepago mueve dinero en caja
+    // (deductFromCaja), así que se bloquea si no hay caja abierta.
+    const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null);
 
     
     const [clientModalVisible, setClientModalVisible] = useState(false);
@@ -79,12 +84,27 @@ export function useClientes() {
         }
     }, []);
 
+    const refreshCajaStatus = useCallback(async () => {
+        try {
+            const res = await apiClientSafe('/cashregister/status');
+            const data = (res as { success?: boolean; data?: { hasOpenCaja?: boolean } })?.data;
+            // Solo true/false confirmado; si falla, queda el último estado
+            // conocido (null al inicio = desconocido, no bloquea).
+            if ((res as { success?: boolean })?.success && typeof data?.hasOpenCaja === 'boolean') {
+                setCajaAbierta(data.hasOpenCaja);
+            }
+        } catch {
+            // Silencioso: estado desconocido no bloquea la carga de saldo.
+        }
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
             const ac = new AbortController();
             fetchClients(true, ac.signal);
+            refreshCajaStatus();
             return () => ac.abort();
-        }, [fetchClients])
+        }, [fetchClients, refreshCajaStatus])
     );
 
     const filteredClients = useMemo(() => {
@@ -214,6 +234,12 @@ export function useClientes() {
             return;
         }
 
+        // Guard de caja cerrada: el prepago descuenta de caja en el backend.
+        if (cajaAbierta === false) {
+            showToast({ type: 'error', text1: 'Caja Cerrada', text2: 'No se pueden realizar ventas sin una caja abierta.' });
+            return;
+        }
+
         if (loadMetodoPago === 'mixto') {
             const pAmount = Number(unformatCurrency(primaryAmount)) || 0;
             const sAmount = Number(unformatCurrency(secondaryAmount)) || 0;
@@ -294,6 +320,8 @@ export function useClientes() {
         clients,
         search,
         setSearch,
+        cajaAbierta,
+        refreshCajaStatus,
         clientModalVisible,
         setClientModalVisible,
         loadModalVisible,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,7 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { CartList } from '@/components/cajero/forms/CartList';
@@ -21,6 +21,8 @@ import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { NuevaVentaHostessModal } from '@/components/cajero/nueva-venta/NuevaVentaHostessModal';
 import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import { NuevaVentaModals } from '@/components/cajero/nueva-venta/NuevaVentaModals';
+import { NuevaVentaSearch } from '@/components/cajero/nueva-venta/NuevaVentaSearch';
+import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
@@ -46,6 +48,7 @@ export default function NuevaVentaScreen() {
     totals,
     hasCommissionItem,
     onRefresh,
+    refreshCajaStatus,
     handleLoadPrepago,
     handleOpenCategory,
     handlePressAddProduct,
@@ -54,6 +57,12 @@ export default function NuevaVentaScreen() {
     updateQuantity,
     handleSubmit,
     handleToggleHostess,
+    searchProducto,
+    setSearchProducto,
+    searchResults,
+    searchLoading,
+    handleSearchNow,
+    handleClearSearch,
   } = useNuevaVenta();
 
   const {
@@ -89,6 +98,19 @@ export default function NuevaVentaScreen() {
     loadMetodoPago,
   } = state;
 
+  const firstCajaFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      // El primer foco ya lo cubre fetchInitialData; después de visitar la
+      // pantalla de Caja solo se refresca el estado de caja.
+      if (firstCajaFocus.current) {
+        firstCajaFocus.current = false;
+        return;
+      }
+      void refreshCajaStatus();
+    }, [refreshCajaStatus]),
+  );
+
   const spacing = isTablet ? 24 : 16;
   const borderRadius = isTablet ? 28 : 24;
   const dynamicStyles = {
@@ -121,6 +143,24 @@ export default function NuevaVentaScreen() {
         contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
       >
+        {cajaAbierta === false && <CajaClosedBanner />}
+
+        <NuevaVentaSearch
+          searchProducto={searchProducto}
+          onSearchChange={setSearchProducto}
+          onSearchNow={handleSearchNow}
+          onClearSearch={handleClearSearch}
+          searchLoading={searchLoading}
+          searchResults={searchResults}
+          onAddProduct={handlePressAddProduct}
+          isDark={isDark}
+          accentColor={accentColor}
+          cardBg={cardBg}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+        />
+
         <CategorySelector categories={categories} onSelectCategory={handleOpenCategory} />
 
         <View style={[styles.section, dynamicStyles.section, { backgroundColor: cardBg, borderColor }]}>

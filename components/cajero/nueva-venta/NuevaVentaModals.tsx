@@ -105,7 +105,12 @@ export function NuevaVentaModals({
                         <Text style={[styles.modalQtyText, { color: textPrimary }]}>{modalQuantities[id] || 1}</Text>
                         <Pressable
                           style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
-                          onPress={() => onUpdateModalQuantity(id, (modalQuantities[id] || 1) + 1)}
+                          onPress={() => {
+                            const stockBar = Number(item.stock_bar ?? 0);
+                            const next = (modalQuantities[id] || 1) + 1;
+                            // Tope de stock en el bar (catálogo for_sale; legacy sin tope).
+                            onUpdateModalQuantity(id, stockBar > 0 ? Math.min(next, stockBar) : next);
+                          }}
                         >
                           <Ionicons name="add" size={16} color={textPrimary} />
                         </Pressable>

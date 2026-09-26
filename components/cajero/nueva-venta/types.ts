@@ -19,6 +19,12 @@ export type VentaCartItem = Producto & {
   cantidad?: number;
   anfitrionas?: (string | number)[];
   hostessNames?: string | null;
+  // Catálogo de venta (for_sale): identidad por presentación, stock en el bar
+  // y tipo de venta (botella por defecto, como el dashboard).
+  presentacion_id?: string;
+  producto_id?: string;
+  stock_bar?: number;
+  tipo_venta?: 'botella' | 'shot';
 };
 
 /** Hostess selection target for commission products */

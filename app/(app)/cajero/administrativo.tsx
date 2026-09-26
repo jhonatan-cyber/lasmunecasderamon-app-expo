@@ -225,6 +225,23 @@ export default function AdministrativoScreen() {
           />
         }
       >
+        <Pressable
+          onPress={() => router.push("/cajero/horas-extras")}
+          style={[
+            styles.horasExtrasBtn,
+            { backgroundColor: cardBg, borderColor },
+          ]}
+        >
+          <Ionicons name="time-outline" size={20} color={accentColor} />
+          <Text style={[styles.horasExtrasText, { color: textPrimary }]}>
+            Horas Extras
+          </Text>
+          <Text style={[styles.horasExtrasHint, { color: textSecondary }]}>
+            Control de jornada
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+        </Pressable>
+
         <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
           <PremiumLiquidationCard user={user} events={recentActivity} />
         </View>
@@ -295,6 +312,19 @@ export default function AdministrativoScreen() {
 }
 
 const styles = StyleSheet.create({
+  horasExtrasBtn: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  horasExtrasText: { fontSize: 14, fontWeight: "700", flexShrink: 1 },
+  horasExtrasHint: { fontSize: 12, flexShrink: 1 },
   backBtnRight: {
     flexDirection: "row",
     alignItems: "center",

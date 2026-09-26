@@ -34,6 +34,7 @@ export default function ClientesScreen() {
     refreshing,
     search,
     setSearch,
+    cajaAbierta,
     clientModalVisible,
     setClientModalVisible,
     loadModalVisible,
@@ -300,6 +301,7 @@ export default function ClientesScreen() {
         setLoadMetodoPago={setLoadMetodoPago}
         accentColor={accentColor}
         submitting={submitting}
+        cajaAbierta={cajaAbierta}
         primaryMethod={primaryMethod}
         setPrimaryMethod={setPrimaryMethod}
         secondaryMethod={secondaryMethod}

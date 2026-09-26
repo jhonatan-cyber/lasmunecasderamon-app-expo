@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Client } from '@/hooks/useClientes';
+import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 
 interface LoadBalanceModalProps {
@@ -23,6 +24,7 @@ interface LoadBalanceModalProps {
     setLoadMetodoPago: (method: PaymentMethod) => void;
     accentColor: string;
     submitting: boolean;
+    cajaAbierta: boolean | null;
     primaryMethod: PaymentMethod;
     setPrimaryMethod: (method: PaymentMethod) => void;
     secondaryMethod: PaymentMethod;
@@ -48,6 +50,7 @@ export function LoadBalanceModal({
     setLoadMetodoPago,
     accentColor,
     submitting,
+    cajaAbierta,
     primaryMethod,
     setPrimaryMethod,
     secondaryMethod,
@@ -82,6 +85,10 @@ export function LoadBalanceModal({
                     </View>
 
                     <View style={{ gap: 20 }}>
+                        {/* La carga de saldo mueve dinero en caja: con caja
+                            cerrada se avisa y se deshabilita la carga. */}
+                        {cajaAbierta === false && <CajaClosedBanner />}
+
                         <View>
                             <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>MONTO A CARGAR</Text>
                             <TextInput
@@ -175,9 +182,13 @@ export function LoadBalanceModal({
                         )}
 
                         <TouchableOpacity
-                            style={[styles.saveBtn, { backgroundColor: accentColor, height: 60, borderRadius: 20 }, submitting && { opacity: 0.7 }]}
+                            style={[
+                                styles.saveBtn,
+                                { backgroundColor: accentColor, height: 60, borderRadius: 20 },
+                                (submitting || cajaAbierta === false) && { opacity: 0.7 },
+                            ]}
                             onPress={handleLoadBalance}
-                            disabled={submitting}
+                            disabled={submitting || cajaAbierta === false}
                         >
                             {submitting ? <ActivityIndicator color="#FFF" /> : (
                                 <Text style={styles.saveBtnText}>CONFIRMAR CARGA</Text>

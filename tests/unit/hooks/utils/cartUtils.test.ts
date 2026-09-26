@@ -5,6 +5,10 @@ vi.mock('@/utils/toast-lazy', () => ({
   showToast: vi.fn()
 }));
 
+vi.mock('@/api/client', () => ({
+  apiClientSafe: vi.fn()
+}));
+
 vi.mock('@/hooks/utils/cuentaUtils', () => ({
   showToast: vi.fn(),
   isChampagneProduct: vi.fn(() => false),
@@ -24,8 +28,11 @@ import {
   normalizeClients,
   normalizeAnfitrionas,
   deduplicate,
-  addProductToCartUtils
+  addProductToCartUtils,
+  mapForSaleProduct,
+  openCategory
 } from '@/hooks/utils/cartUtils';
+import { apiClientSafe } from '@/api/client';
 import type { CartItem } from '@lasmunecasderamon/types';
 
 describe('cartUtils', () => {
@@ -191,6 +198,80 @@ describe('cartUtils', () => {
       expect(payload[0].subtotal).toBe(3000);
       expect(payload[0].hostessNames).toBeNull();
       expect(payload[0].selectedHostesses).toEqual([]);
+    });
+  });
+
+  describe('mapForSaleProduct (catálogo for_sale, paridad con el dashboard)', () => {
+    const raw = {
+      presentacion_id: 'pres-1',
+      presentacion_nombre: '710 ml',
+      producto_id: 'prod-1',
+      producto_nombre: 'Paceña',
+      categoria_nombre: 'Cerveza',
+      precio_venta: 20000,
+      comision: 5000,
+      stock_bar: 10
+    };
+
+    it('mapea al shape del carro: id = presentación, nombre compuesto, precio_venta', () => {
+      const item = mapForSaleProduct(raw);
+      expect(item.id).toBe('pres-1');
+      expect(item.presentacion_id).toBe('pres-1');
+      expect(item.producto_id).toBe('prod-1');
+      expect(item.id_producto).toBe('prod-1');
+      expect(item.nombre).toBe('Paceña 710 ml');
+      expect(item.name).toBe('Paceña 710 ml');
+      expect(item.precio).toBe(20000);
+      expect(item.price).toBe(20000);
+      expect(item.categoria).toBe('Cerveza');
+      expect(item.stock_bar).toBe(10);
+      expect(item.tipo_venta).toBe('botella');
+    });
+
+    it('venta simple (precio ≤ 10000) va sin comisión, como el dashboard', () => {
+      expect(mapForSaleProduct({ ...raw, precio_venta: 5000, comision: 900 }).comision).toBe(0);
+      expect(mapForSaleProduct({ ...raw, precio_venta: 20000, comision: 5000 }).comision).toBe(5000);
+    });
+  });
+
+  describe('openCategory — catálogo de venta', () => {
+    const rawRow = {
+      presentacion_id: 'pres-9',
+      presentacion_nombre: '330 ml',
+      producto_id: 'prod-9',
+      producto_nombre: 'Paceña',
+      categoria_nombre: 'Cerveza',
+      precio_venta: 5000,
+      comision: 0,
+      stock_bar: 5
+    };
+
+    it('con forSale pide /products?for_sale=1 y normaliza las filas', async () => {
+      const dispatch = vi.fn();
+      vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [rawRow] } as any);
+
+      await openCategory({ id: 7 } as any, dispatch as any, { forSale: true });
+
+      expect(apiClientSafe).toHaveBeenCalledWith('/products?for_sale=1&category_id=7');
+      const action = dispatch.mock.calls.find(
+        (call: any) => call[0]?.type === 'OPEN_CATEGORY_MODAL'
+      )?.[0];
+      expect(action.products).toHaveLength(1);
+      expect(action.products[0].id).toBe('pres-9');
+      expect(action.products[0].precio).toBe(5000);
+    });
+
+    it('sin forSale conserva el endpoint admin (flujos de cuentas)', async () => {
+      const dispatch = vi.fn();
+      vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [{ id: 'x' }] } as any);
+
+      await openCategory({ id: 7 } as any, dispatch as any);
+
+      expect(apiClientSafe).toHaveBeenCalledWith('/products?category_id=7');
+      const action = dispatch.mock.calls.find(
+        (call: any) => call[0]?.type === 'OPEN_CATEGORY_MODAL'
+      )?.[0];
+      expect(action.products).toEqual([{ id: 'x' }]);
     });
   });
 });

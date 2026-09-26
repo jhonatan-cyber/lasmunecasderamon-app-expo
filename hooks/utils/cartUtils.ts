@@ -62,21 +62,65 @@ export const deduplicate = <T extends Record<string, unknown> | Anfitriona | Cli
 };
 
 /**
+ * Normaliza una fila de `GET /products?for_sale=1` al shape del carro
+ * (espejo de `mapForSaleToCartItem` del dashboard): id = presentación,
+ * nombre = producto + presentación, precio = `precio_venta`, comisión 0 en
+ * venta simple (≤ umbral `umbral_simple_hasta`, default 10000) y stock en el
+ * bar para el tope de cantidad.
+ */
+export const mapForSaleProduct = (raw: any) => {
+  const presentacionId = String(raw?.presentacion_id ?? "");
+  const productoId = String(raw?.producto_id ?? raw?.id_producto ?? "");
+  const nombre = [String(raw?.producto_nombre ?? ""), String(raw?.presentacion_nombre ?? "")]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const precio = Number(raw?.precio_venta ?? 0);
+  const comision = precio <= 10000 ? 0 : Number(raw?.comision ?? 0);
+  return {
+    ...raw,
+    id: presentacionId,
+    presentacion_id: presentacionId,
+    producto_id: productoId,
+    id_producto: productoId,
+    nombre,
+    name: nombre,
+    precio,
+    price: precio,
+    comision,
+    commission: comision,
+    categoria: raw?.categoria_nombre || "",
+    stock_bar: Number(raw?.stock_bar ?? 0),
+    tipo_venta: "botella" as const,
+  };
+};
+
+/**
  * Opens a category modal and fetches its products.
+ * `forSale` usa el catálogo de venta del bar (presentaciones con stock real,
+ * el mismo endpoint que el dashboard); sin él se conserva el catálogo admin
+ * que usan los flujos de cuentas.
  */
 export const openCategory = async (
   cat: Categoria,
   dispatch: React.Dispatch<any>,
+  options?: { forSale?: boolean },
 ) => {
   dispatch({ type: "SET_MODAL_LOADING", payload: true });
   dispatch({ type: "SET_MODAL_VISIBLE", modal: "category", visible: true });
   try {
-    const res = await apiClientSafe(`/products?category_id=${cat.id}`);
+    const res = await apiClientSafe(
+      options?.forSale
+        ? `/products?for_sale=1&category_id=${cat.id}`
+        : `/products?category_id=${cat.id}`,
+    );
     if (res.success) {
+      const data = (res.data as any[]) || [];
+      const products = options?.forSale ? data.map(mapForSaleProduct) : data;
       dispatch({
         type: "OPEN_CATEGORY_MODAL",
         category: cat,
-        products: res.data || [],
+        products,
       });
     } else {
       showToast("Error", "No se pudieron cargar los productos");

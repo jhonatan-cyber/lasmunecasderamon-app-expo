@@ -1,5 +1,30 @@
 import { vi } from 'vitest';
 
+// Los módulos de Expo asumen el entorno de React Native (`__DEV__`).
+(globalThis as Record<string, unknown>).__DEV__ = true;
+
+// Paquetes de Expo usados por cadenas de import transversales (api/base-url,
+// TimerContext/voice announcer): se mockean para no cargar el runtime nativo.
+vi.mock('expo-constants', () => ({
+    default: { expoConfig: null, manifest: null, sessionId: 'test', installationId: 'test' },
+}));
+vi.mock('expo-speech', () => ({
+    speak: vi.fn(),
+    stop: vi.fn(),
+    isSpeakingAsync: vi.fn(() => Promise.resolve(false)),
+}));
+vi.mock('react-native-safe-area-context', () => ({
+    useSafeAreaInsets: vi.fn(() => ({ top: 0, bottom: 0, left: 0, right: 0 })),
+    SafeAreaProvider: ({ children }: { children: any }) => children,
+    SafeAreaView: ({ children }: { children: any }) => children,
+}));
+// Varios hooks de pantalla (useCuentasScreen, useSolicitudes) leen
+// timers/serverOffset: en tests unitarios basta un contexto vacío.
+vi.mock('@/context/TimerContext', () => ({
+    useTimer: vi.fn(() => ({ timers: [], serverOffset: 0, refreshTimers: vi.fn() })),
+    TimerProvider: ({ children }: { children: any }) => children,
+}));
+
 
 vi.mock('@/api/client', () => ({
     apiClient: vi.fn(),
@@ -111,6 +136,15 @@ vi.mock('react-native', () => ({
     // DeviceEventEmitter reemplazado por eventBus (utils/eventBus)
     NativeModules: {},
     NativeEventEmitter: vi.fn(() => ({ addListener: vi.fn(), remove: vi.fn() })),
+    // Usados por hooks de pantalla (useClientes: Alert, useWindowDimensions;
+    // useAccentColor: useColorScheme) en tests unitarios.
+    Alert: { alert: vi.fn() },
+    useWindowDimensions: vi.fn(() => ({ width: 390, height: 844, fontScale: 1 })),
+    useColorScheme: vi.fn(() => 'dark'),
+    StyleSheet: { create: (s: any) => s },
+    Text: ({ children }: { children: any }) => children,
+    View: ({ children }: { children: any }) => children,
+    ActivityIndicator: () => null,
 }));
 
 

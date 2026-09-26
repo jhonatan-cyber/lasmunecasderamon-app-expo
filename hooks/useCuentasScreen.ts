@@ -28,6 +28,7 @@ type CuentasState = {
   cobroMetodoPago: PaymentMethod;
   cobroEnableTip: boolean;
   cobroSubmitting: boolean;
+  cajaAbierta: boolean | null;
   alertConfig: {
     visible: boolean;
     title: string;
@@ -50,8 +51,8 @@ type CuentasAction =
   | { type: "SET_ACTION_SHEET"; visible: boolean; cuenta?: CuentaDetalle }
   | { type: "SET_COBRO_MODAL_VISIBLE"; payload: boolean }
   | { type: "SET_COBRO_METODO_PAGO"; payload: PaymentMethod }
-  | { type: "SET_COBRO_ENABLE_TIP"; payload: boolean }
-  | { type: "SET_COBRO_SUBMITTING"; payload: boolean }
+  | { type: "SET_COBRO_ENABLE_TIP"; payload: boolean }    | { type: "SET_COBRO_SUBMITTING"; payload: boolean }
+  | { type: "SET_CAJA_ABIERTA"; payload: boolean | null }
   | { type: "SET_ALERT_VISIBLE"; payload: boolean }
   | { type: "SET_ALERT"; payload: CuentasState["alertConfig"] };
 
@@ -71,6 +72,7 @@ const initialCuentasState = (tab: "historial" | "pendientes"): CuentasState => (
   cobroMetodoPago: "efectivo",
   cobroEnableTip: false,
   cobroSubmitting: false,
+  cajaAbierta: null,
   alertConfig: { visible: false, title: "", message: "", type: "info" },
 });
 
@@ -106,6 +108,8 @@ function cuentasReducer(state: CuentasState, action: CuentasAction): CuentasStat
       return { ...state, cobroEnableTip: action.payload };
     case "SET_COBRO_SUBMITTING":
       return { ...state, cobroSubmitting: action.payload };
+    case "SET_CAJA_ABIERTA":
+      return { ...state, cajaAbierta: action.payload };
     case "SET_ALERT_VISIBLE":
       return {
         ...state,
@@ -157,6 +161,7 @@ export const useCuentasScreen = () => {
     cobroMetodoPago,
     cobroEnableTip,
     cobroSubmitting,
+    cajaAbierta,
     alertConfig,
   } = state;
 
@@ -168,9 +173,12 @@ export const useCuentasScreen = () => {
         }
 
         const timestamp = Date.now();
-        const [resCuentas, resResumen] = await Promise.all([
+        const [resCuentas, resResumen, resCaja] = await Promise.all([
           apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
           apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
+          // Estado de caja para bloquear el cobro (paridad con el dashboard).
+          // Con error queda `null`: estado desconocido, no bloquea.
+          apiClientSafe('/cashregister/status', { signal }).catch(() => null),
         ]);
 
         const actualCuentas: CuentaDetalle[] = Array.isArray(resCuentas.data)
@@ -188,6 +196,19 @@ export const useCuentasScreen = () => {
         const serialized = JSON.stringify(newData);
         const hasChanges = dataRef.current !== serialized;
         dataRef.current = serialized;
+
+        if (
+          resCaja &&
+          typeof resCaja === 'object' &&
+          'success' in resCaja &&
+          (resCaja as { success?: boolean }).success &&
+          typeof (resCaja as { data?: { hasOpenCaja?: boolean } }).data?.hasOpenCaja === 'boolean'
+        ) {
+          dispatch({
+            type: "SET_CAJA_ABIERTA",
+            payload: Boolean((resCaja as { data: { hasOpenCaja: boolean } }).data.hasOpenCaja),
+          });
+        }
 
         dispatch({
           type: "SET_DATA",
@@ -266,6 +287,18 @@ export const useCuentasScreen = () => {
     dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: true });
     dispatch({ type: "SET_COBRO_METODO_PAGO", payload: "efectivo" });
     dispatch({ type: "SET_COBRO_ENABLE_TIP", payload: false });
+
+    // Revalida el estado de caja justo al abrir el modal (el cobro escribe en
+    // caja): si el cajero abrió/cerró caja desde otra pantalla, el modal lo
+    // refleja sin esperar al próximo refresco de la lista.
+    apiClientSafe('/cashregister/status')
+      .then((res) => {
+        const data = (res as { success?: boolean; data?: { hasOpenCaja?: boolean } })?.data;
+        if ((res as { success?: boolean })?.success && typeof data?.hasOpenCaja === 'boolean') {
+          dispatch({ type: "SET_CAJA_ABIERTA", payload: data.hasOpenCaja });
+        }
+      })
+      .catch(() => null);
   }, []);
 
   const fetchCuentaCompleta = useCallback(async (cuentaId: string | number) => {
@@ -312,6 +345,13 @@ export const useCuentasScreen = () => {
 
   const handleConfirmarCobro = useCallback(async () => {
     if (!selectedCuenta) return;
+
+    // Guard de caja cerrada (paridad con el dashboard y nueva venta): aunque el
+    // botón quede deshabilitado, se revalida antes del POST.
+    if (state.cajaAbierta === false) {
+      showToast("Caja Cerrada", "No se pueden realizar ventas sin una caja abierta.", "error");
+      return;
+    }
 
     if (cobroMetodoPago === "prepago") {
       const saldo = Number(selectedCuenta.cliente_saldo || 0);
@@ -368,6 +408,7 @@ export const useCuentasScreen = () => {
     fetchCuentaCompleta,
     registrarVentaDesdeCuenta,
     selectedCuenta,
+    state.cajaAbierta,
   ]);
 
   const handleFinalizarTemporizador = useCallback(
@@ -515,6 +556,7 @@ export const useCuentasScreen = () => {
     cobroMetodoPago,
     cobroEnableTip,
     cobroSubmitting,
+    cajaAbierta,
     alertConfig,
     anulacionModalVisible,
     anulacionCuenta,

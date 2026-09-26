@@ -265,6 +265,16 @@ export default function PersonalScreen() {
                 }
             />
 
+            <Pressable
+                onPress={() => router.push("/cajero/horas-extras")}
+                style={[styles.horasExtrasBtn, { backgroundColor: cardBg, borderColor }]}
+            >
+                <Ionicons name="time-outline" size={20} color={accentColor} />
+                <Text style={[styles.horasExtrasText, { color: textPrimary }]}>Horas Extras</Text>
+                <Text style={[styles.horasExtrasHint, { color: textSecondary }]}>Control de jornada</Text>
+                <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+            </Pressable>
+
             <View style={styles.searchBarContainer}>
                 <View style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]}>
                     <Ionicons name="search" size={20} color={textSecondary} />
@@ -330,6 +340,19 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap', 
         justifyContent: 'space-between' 
     },
+    horasExtrasBtn: {
+        marginHorizontal: 16,
+        marginTop: 4,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 20,
+        borderWidth: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    horasExtrasText: { fontSize: 14, fontWeight: "700", flexShrink: 1 },
+    horasExtrasHint: { fontSize: 12, flexShrink: 1 },
     searchBarContainer: { padding: 16 },
     searchBar: {
         flexDirection: 'row',

@@ -27,9 +27,15 @@ interface FinancialEventsScreenProps {
     title: string;
     subtitle: string;
     type: 'comisiones' | 'propinas';
+    /**
+     * Muestra el botón «Atrás» del PremiumHeader. Solo en las rutas
+     * empujadas desde el home (cajero/barman — paridad con Flutter);
+     * los tabs (garzón/anfitriona) no lo pasan.
+     */
+    onBack?: () => void;
 }
 
-export function FinancialEventsScreen({ title, subtitle, type }: FinancialEventsScreenProps) {
+export function FinancialEventsScreen({ title, subtitle, type, onBack }: FinancialEventsScreenProps) {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const { data, loading, refreshing, onRefresh } = useFinancialEvents(type as any);
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
@@ -146,7 +152,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
     if (loading) return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            <PremiumHeader title={title} />
+            <PremiumHeader title={title} onBack={onBack} />
             <View style={{ padding: 16 }}><SkeletonLoader width="100%" height={140} borderRadius={16} /></View>
             <View style={{ padding: 16, gap: 10 }}>{[1, 2].map(i => <SkeletonLoader key={i} width="100%" height={100} borderRadius={16} />)}</View>
         </View>
@@ -154,7 +160,7 @@ export function FinancialEventsScreen({ title, subtitle, type }: FinancialEvents
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            <PremiumHeader title={title} subtitle={subtitle} />
+            <PremiumHeader title={title} subtitle={subtitle} onBack={onBack} />
 
             <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>TOTAL PENDIENTE</Text>
