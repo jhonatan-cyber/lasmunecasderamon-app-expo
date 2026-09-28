@@ -16,6 +16,7 @@ import { CategoryCard } from '@/components/shared/CategoryCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { usePedidosScreen, Category } from '@/hooks/usePedidosScreen';
 import { PedidosSkeleton } from '@/components/garzon/pedidos/PedidosSkeleton';
+import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
 
 export default function PedidosScreen() {
     const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
@@ -28,6 +29,7 @@ export default function PedidosScreen() {
         loading,
         refreshing,
         error,
+        fromCache,
         fetchCategories,
         onRefresh
     } = usePedidosScreen();
@@ -51,7 +53,8 @@ export default function PedidosScreen() {
         <View style={[styles.container, { backgroundColor: bg }]}>
             <PremiumHeader 
                 title="Categorías"
-                subtitle="Selecciona una para ver los productos"
+                subtitle={fromCache ? 'Catálogo guardado en el dispositivo' : 'Selecciona una para ver los productos'}
+                connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
                 rightComponent={
                     <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -59,6 +62,8 @@ export default function PedidosScreen() {
                     </Pressable>
                 }
             />
+
+            <GarzonOfflineBanner />
 
             {error ? (
                 <View style={[styles.errorCard, { backgroundColor: isDark ? '#451a1a' : '#FEF2F2' }]}>

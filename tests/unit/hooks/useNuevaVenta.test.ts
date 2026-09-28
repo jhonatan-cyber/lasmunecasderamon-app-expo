@@ -296,12 +296,12 @@ describe('useNuevaVenta — búsqueda de productos con debounce (NewSaleSearch)'
   });
 
   it('espera 300 ms (debounce), pide for_sale=1&term= y mapea los resultados', async () => {
-    vi.useFakeTimers();
     const { result } = renderSaleHook();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(10);
-    });
-    expect(result.current.state.cajaAbierta).toBe(true);
+    // La carga inicial (con el espejo del modo offline) se espera con reloj
+    // real; los relojes falsos son solo para el debounce de la búsqueda.
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    vi.useFakeTimers();
 
     // Dos cambios seguidos: solo dispara una petición con el último término.
     act(() => {

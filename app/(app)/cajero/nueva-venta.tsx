@@ -23,6 +23,7 @@ import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSele
 import { NuevaVentaModals } from '@/components/cajero/nueva-venta/NuevaVentaModals';
 import { NuevaVentaSearch } from '@/components/cajero/nueva-venta/NuevaVentaSearch';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { TimeSelector } from '@/components/ui/TimeSelector';
 import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
 import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
@@ -47,6 +48,7 @@ export default function NuevaVentaScreen() {
     dispatch,
     totals,
     hasCommissionItem,
+    fromCache,
     onRefresh,
     refreshCajaStatus,
     handleLoadPrepago,
@@ -130,7 +132,10 @@ export default function NuevaVentaScreen() {
 
       <PremiumHeader
         title="Nueva Venta"
-        subtitle="Registrar productos y servicios"
+        subtitle={
+          fromCache ? 'Datos guardados en el dispositivo' : 'Registrar productos y servicios'
+        }
+        connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
         rightComponent={
           <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -138,6 +143,9 @@ export default function NuevaVentaScreen() {
           </Pressable>
         }
       />
+
+      {/* Fuera del scroll: el aviso de conexión y de cola tiene que verse siempre. */}
+      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}

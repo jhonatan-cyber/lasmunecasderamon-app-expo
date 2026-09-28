@@ -66,6 +66,113 @@ export const getHostessLimit = (prod: { precio?: number; price?: number; max_anf
   return qty;
 };
 
+/** Un detalle nuevo que se suma a una cuenta ya abierta. */
+export interface CuentaUpdateDetalle {
+  producto_id: string | number;
+  precio: number;
+  cantidad: number;
+  sub_total: number;
+  comision: number;
+  hostesses: (string | number)[];
+  isChampagne?: boolean;
+}
+
+/**
+ * Body de `PUT /cuentas/:id`: **incremento**, no reemplazo. El servidor suma
+ * estos detalles a los que ya tiene la cuenta, y por eso el reintento sin red
+ * tiene que ir con clave de idempotencia (si no, cargaría los productos dos
+ * veces).
+ */
+export interface CuentaUpdatePayload {
+  detalles: CuentaUpdateDetalle[];
+  usuarios: (string | number)[];
+  extraTiempo?: number;
+  habitacion_id?: string | number;
+  tiempo?: number;
+}
+
+export interface BuildConsumptionsInput {
+  cart: CartItem[];
+  cuentaDetalle: {
+    usuarios?: { usuario_id?: number | string; id_usuario?: number | string }[];
+    habitacion_id?: string | number | null;
+  } | null;
+  cuentaOriginal: { habitacion_id?: string | number | null } | null;
+  selectedHabitacion: { id_habitacion?: string | number; id?: string | number } | null;
+  selectedTime: number;
+  extraTiempo: number;
+  /** `true` si ya hay un temporizador corriendo para esta cuenta. */
+  hasExistingTimer: boolean;
+}
+
+const idUsuario = (valor: any): number | null => {
+  const id = valor?.usuario_id ?? valor?.id_usuario;
+  return id === undefined || id === null ? null : Number(id);
+};
+
+/**
+ * Arma el incremento de consumos de forma pura, para que el mismo body viaje
+ * por el camino directo y por la cola de intenciones.
+ */
+export function buildConsumptionsPayload(input: BuildConsumptionsInput): CuentaUpdatePayload {
+  const {
+    cart,
+    cuentaDetalle,
+    cuentaOriginal,
+    selectedHabitacion,
+    selectedTime,
+    extraTiempo,
+    hasExistingTimer,
+  } = input;
+
+  const mergedHostessIds = new Set<number>();
+  (cuentaDetalle?.usuarios || [])
+    .map(idUsuario)
+    .filter((id): id is number => id !== null)
+    .forEach(id => mergedHostessIds.add(id));
+
+  cart.forEach(item => {
+    (item.selectedHostesses || []).forEach(hId => {
+      if (hId) mergedHostessIds.add(Number(hId));
+    });
+  });
+
+  const hasRoom = !!cuentaOriginal?.habitacion_id;
+  const currentRoomId = cuentaDetalle?.habitacion_id ?? cuentaOriginal?.habitacion_id ?? null;
+  const roomIdToUse = selectedHabitacion?.id_habitacion || selectedHabitacion?.id || null;
+  const timeToUse = selectedHabitacion ? selectedTime : 0;
+  const isSameRoomSelection =
+    Boolean(roomIdToUse) && Boolean(currentRoomId) && String(roomIdToUse) === String(currentRoomId);
+
+  const payload: CuentaUpdatePayload = {
+    detalles: cart.map(item => ({
+      producto_id: item.id_producto || item.id || '',
+      precio: item.precio,
+      cantidad: item.cantidad,
+      sub_total: item.precio * item.cantidad,
+      comision: item.comision * (item.cantidad || 1),
+      hostesses: item.selectedHostesses || [],
+      isChampagne: item.isChampagne,
+    })),
+    usuarios: Array.from(mergedHostessIds),
+  };
+
+  if (extraTiempo > 0 && hasRoom) {
+    payload.extraTiempo = extraTiempo;
+  }
+  if (isSameRoomSelection && timeToUse > 0) {
+    payload.extraTiempo = Number(payload.extraTiempo || 0) + timeToUse;
+  } else if (!hasExistingTimer && roomIdToUse && timeToUse > 0) {
+    payload.habitacion_id = roomIdToUse;
+    payload.tiempo = timeToUse;
+  } else if (selectedHabitacion) {
+    payload.habitacion_id = selectedHabitacion.id_habitacion || selectedHabitacion.id;
+    payload.tiempo = selectedTime;
+  }
+
+  return payload;
+}
+
 export const buildCommissionPreview = (items: CartItem[], hostesses: Anfitriona[]): CommissionPreview => {
   const totalCommission = items.reduce(
     (acc, item) => acc + Number(item.comision || 0) * Number(item.cantidad || 0),

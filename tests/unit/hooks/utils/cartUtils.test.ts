@@ -30,6 +30,7 @@ import {
   deduplicate,
   addProductToCartUtils,
   mapForSaleProduct,
+  formatBotellaAbierta,
   openCategory
 } from '@/hooks/utils/cartUtils';
 import { apiClientSafe } from '@/api/client';
@@ -231,6 +232,26 @@ describe('cartUtils', () => {
     it('venta simple (precio ≤ 10000) va sin comisión, como el dashboard', () => {
       expect(mapForSaleProduct({ ...raw, precio_venta: 5000, comision: 900 }).comision).toBe(0);
       expect(mapForSaleProduct({ ...raw, precio_venta: 20000, comision: 5000 }).comision).toBe(5000);
+    });
+  });
+
+  describe('formatBotellaAbierta (misma línea que el buscador del dashboard)', () => {
+    it('muestra ml abiertos y shots aproximados con el ml por shot global', () => {
+      expect(formatBotellaAbierta(620, null, 50)).toBe('Botella abierta: 620 ml · ≈12 shots');
+    });
+
+    it('usa el ml por shot propio del producto cuando lo tiene', () => {
+      expect(formatBotellaAbierta(500, 40, 50)).toBe('Botella abierta: 500 ml · ≈12 shots');
+    });
+
+    it('sin botella abierta no devuelve línea', () => {
+      expect(formatBotellaAbierta(0, 50, 50)).toBeNull();
+      expect(formatBotellaAbierta(null, 50, 50)).toBeNull();
+      expect(formatBotellaAbierta(undefined, 50, 50)).toBeNull();
+    });
+
+    it('sin ml por shot (global 0) muestra solo los ml', () => {
+      expect(formatBotellaAbierta(300, 0, 0)).toBe('Botella abierta: 300 ml');
     });
   });
 

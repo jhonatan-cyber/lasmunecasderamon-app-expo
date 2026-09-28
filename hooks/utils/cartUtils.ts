@@ -1,9 +1,10 @@
 import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 import type { Habitacion, Anfitriona, Cliente, Producto, Categoria, CartItem } from "@lasmunecasderamon/types";
-import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
+import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
 
-export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
+export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
+export type { CuentaUpdateDetalle, CuentaUpdatePayload } from "./cuentaUtils";
 
 // Alias para backward compat — getChampagneLimit == getHostessLimit
 export const getChampagneLimit = getHostessLimit;
@@ -93,6 +94,25 @@ export const mapForSaleProduct = (raw: any) => {
     stock_bar: Number(raw?.stock_bar ?? 0),
     tipo_venta: "botella" as const,
   };
+};
+
+/**
+ * Etiqueta de la botella abierta de una presentación (espejo del buscador rápido
+ * del dashboard): ml que quedan en el bar y shots aproximados, con el ml por shot
+ * propio del producto o el global de Configuraciones (`bar.shot_ml`). Devuelve
+ * `null` cuando no hay botella abierta, para no pintar la línea.
+ */
+export const formatBotellaAbierta = (
+  mlAbierta: number | null | undefined,
+  mlShot: number | null | undefined,
+  globalShotMl: number,
+): string | null => {
+  const ml = Number(mlAbierta ?? 0);
+  if (!(ml > 0)) return null;
+  const mlPorShot = Number(mlShot ?? 0) > 0 ? Number(mlShot) : Number(globalShotMl ?? 0);
+  return mlPorShot > 0
+    ? `Botella abierta: ${ml} ml · ≈${Math.floor(ml / mlPorShot)} shots`
+    : `Botella abierta: ${ml} ml`;
 };
 
 /**

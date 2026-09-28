@@ -9,10 +9,21 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export interface SalesListResult {
+  ventas: Venta[];
+  resumen: VentaResumen | null;
+  /**
+   * `true` si el listado no se pudo traer (y `ventas` está vacío por eso, no
+   * porque no haya ventas). Sin esta distinción, un fallo de red se guardaría en
+   * el espejo como "no hay ventas" y borraría el dato bueno.
+   */
+  failed: boolean;
+}
+
 export async function fetchSalesList(
   limit = 50,
   signal?: AbortSignal,
-): Promise<{ ventas: Venta[]; resumen: VentaResumen | null }> {
+): Promise<SalesListResult> {
   try {
     const timestamp = Date.now();
     const [resSales, resResumen] = await Promise.all([
@@ -36,10 +47,10 @@ export async function fetchSalesList(
       ? (resResumen.data as VentaResumen)
       : null;
 
-    return { ventas, resumen };
+    return { ventas, resumen, failed: !resSales.success && ventas.length === 0 };
   } catch (error) {
     logger.captureException(error, { context: "VentasService:fetchSalesList" });
-    return { ventas: [], resumen: null };
+    return { ventas: [], resumen: null, failed: true };
   }
 }
 

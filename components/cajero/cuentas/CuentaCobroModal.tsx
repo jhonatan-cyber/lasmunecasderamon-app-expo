@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";
 import { PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
 import { TipCheckbox } from "@/components/cajero/forms/TipCheckbox";
+import { OfflineBlockedNotice } from "@/components/offline/OfflineBlockedNotice";
 import { useCuentasScreen } from "@/hooks/useCuentasScreen";
 
 type Screen = ReturnType<typeof useCuentasScreen>;
@@ -40,11 +41,16 @@ export function CuentaCobroModal({
     showPrepagoCobro,
     cobroTotals,
     cajaAbierta,
+    isOffline,
   } = screen;
 
   // El cobro registra una venta y escribe en caja: con caja cerrada el botón
   // se deshabilita (mismo criterio que nueva venta; paridad con dashboard).
   const cajaCerrada = cajaAbierta === false;
+  // Sin red sí se puede: el servidor cierra la cuenta y factura en una sola
+  // transacción, así que el cobro se encola como una intención y sale al
+  // reconectar. Lo único que no convence sin red es la caja.
+  const cobroBloqueado = cajaCerrada;
 
   const selectedPaymentMethod = cobroMetodoPago || "efectivo";
 
@@ -112,17 +118,24 @@ export function CuentaCobroModal({
 
             {cajaCerrada && <CajaClosedBanner />}
 
+            {isOffline && (
+              <OfflineBlockedNotice
+                accentColor={accentColor}
+                message="Sin conexión: el cobro se guarda en el dispositivo y se envía solo al volver la red. La cuenta sigue abierta hasta que el servidor lo confirme."
+              />
+            )}
+
             <Pressable
               style={[
                 styles.cobrarSubmitBtn,
                 { backgroundColor: accentColor },
-                (cobroSubmitting || cajaCerrada) && { opacity: 0.7 },
+                (cobroSubmitting || cobroBloqueado) && { opacity: 0.7 },
               ]}
               onPress={screen.handleConfirmarCobro}
-              disabled={cobroSubmitting || cajaCerrada}
+              disabled={cobroSubmitting || cobroBloqueado}
             >
               <Text style={styles.cobrarSubmitText}>
-                {cobroSubmitting ? "Procesando..." : "Confirmar cobro"}
+                {cobroSubmitting ? "Procesando..." : isOffline ? "Guardar cobro" : "Confirmar cobro"}
               </Text>
             </Pressable>
 

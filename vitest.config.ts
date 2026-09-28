@@ -7,7 +7,9 @@ export default defineConfig({
         environment: 'happy-dom',
         setupFiles: ['./tests/setup/vitest-setup.ts'],
         include: ['tests/**/*.test.{ts,tsx}'],
-        exclude: ['node_modules', 'tests/e2e/**'],
+        // Las de integración necesitan el dashboard y la base reales: se corren
+        // aparte con `pnpm test:integration` (vitest.integration.config.ts).
+        exclude: ['node_modules', 'tests/e2e/**', 'tests/integration/**'],
         testTimeout: 10000,
         coverage: {
             provider: 'v8',

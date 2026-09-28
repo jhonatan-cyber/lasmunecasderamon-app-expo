@@ -11,6 +11,9 @@ import {
     View
 } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
+import { OfflineBlockedNotice } from '@/components/offline/OfflineBlockedNotice';
+import { OFFLINE_BLOCKED_ACTIONS } from '@/utils/offlineGuard';
 import { useCaja } from '@/hooks/useCaja';
 import { CajaSkeleton, MetricCard, StatRow, CajaModales } from '@/components/cajero/caja';
 
@@ -34,6 +37,8 @@ export default function CajaScreen() {
         motivoRetiro,
         submitting,
         borderColor,
+        fromCache,
+        isOffline,
         dispatch,
         onRefresh,
         handleMontoChange,
@@ -48,9 +53,12 @@ export default function CajaScreen() {
 
             <PremiumHeader
                 title="Caja"
-                subtitle={cajaAbierta && cajaInfo?.fecha_apertura
-                    ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
-                    : 'Turno no iniciado'}
+                subtitle={fromCache
+                    ? 'Datos guardados en el dispositivo'
+                    : cajaAbierta && cajaInfo?.fecha_apertura
+                        ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
+                        : 'Turno no iniciado'}
+                connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
                 rightComponent={
                     <View style={styles.headerActions}>
                         <Pressable
@@ -72,6 +80,8 @@ export default function CajaScreen() {
                 }
             />
 
+            <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
+
             {loading ? (
                 <ScrollView style={{ flex: 1 }}>
                     <CajaSkeleton cardBg={cardBg} borderColor={borderColor} />
@@ -83,6 +93,13 @@ export default function CajaScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                     showsVerticalScrollIndicator={false}
                 >
+                    {/* Abrir, cerrar y retirar mueven el efectivo del turno y
+                        dependen del estado real del servidor: sin conexión se
+                        deshabilitan y se dice por qué. */}
+                    {isOffline && (
+                        <OfflineBlockedNotice message={OFFLINE_BLOCKED_ACTIONS.caja.message} />
+                    )}
+
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
                             <View style={[styles.statusPill, { backgroundColor: cajaAbierta ? '#10B98118' : '#EF444418' }]}>
@@ -95,17 +112,21 @@ export default function CajaScreen() {
                                 {cajaAbierta ? (
                                     <>
                                         <Pressable
-                                            style={[styles.actionBtn, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B40' }]}
+                                            style={[styles.actionBtn, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B40' }, isOffline && styles.actionBtnDisabled]}
                                             onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'retiro' })}
+                                            disabled={isOffline}
                                             accessibilityLabel="Retirar efectivo"
+                                            accessibilityState={{ disabled: isOffline }}
                                         >
                                             <Ionicons name="arrow-down-circle-outline" size={15} color="#F59E0B" />
                                             <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Retiro</Text>
                                         </Pressable>
                                         <Pressable
-                                            style={[styles.actionBtn, { backgroundColor: '#EF444420', borderColor: '#EF444440' }]}
+                                            style={[styles.actionBtn, { backgroundColor: '#EF444420', borderColor: '#EF444440' }, isOffline && styles.actionBtnDisabled]}
                                             onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' })}
+                                            disabled={isOffline}
                                             accessibilityLabel="Cerrar caja"
+                                            accessibilityState={{ disabled: isOffline }}
                                         >
                                             <Ionicons name="lock-closed-outline" size={15} color="#EF4444" />
                                             <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cerrar</Text>
@@ -113,9 +134,11 @@ export default function CajaScreen() {
                                     </>
                                 ) : (
                                     <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }]}
+                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }, isOffline && styles.actionBtnDisabled]}
                                         onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                        disabled={isOffline}
                                         accessibilityLabel="Abrir caja"
+                                        accessibilityState={{ disabled: isOffline }}
                                     >
                                         <Ionicons name="power-outline" size={15} color="#10B981" />
                                         <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Abrir Caja</Text>
@@ -315,6 +338,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 8,
         borderRadius: 12, borderWidth: 1
     },
+    actionBtnDisabled: { opacity: 0.45 },
     actionBtnText: { fontSize: 13, fontWeight: '700' },
     metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },

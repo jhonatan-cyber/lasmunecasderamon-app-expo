@@ -8,6 +8,28 @@ import { vi } from 'vitest';
 vi.mock('expo-constants', () => ({
     default: { expoConfig: null, manifest: null, sessionId: 'test', installationId: 'test' },
 }));
+// Conectividad: el monitor unificado (services/connectivity) y la cola de
+// sincronización leen el estado de red al importarse. Los tests que necesiten
+// otro estado usan `handleNetworkState` del monitor.
+vi.mock('expo-network', () => ({
+    getNetworkStateAsync: vi.fn(() =>
+        Promise.resolve({ isConnected: true, isInternetReachable: true, type: 'WIFI' })
+    ),
+    addNetworkStateListener: vi.fn(() => ({ remove: vi.fn() })),
+    NetworkStateType: { NONE: 'NONE', WIFI: 'WIFI', CELLULAR: 'CELLULAR' },
+}));
+// SQLite: el espejo y la cola de intenciones se testean con un driver real de
+// `node:sqlite` inyectado; acá solo hace falta que el módulo nativo no se cargue
+// (arrastra el runtime de desarrollo de Expo).
+vi.mock('expo-sqlite', () => ({
+    openDatabaseSync: vi.fn(() => ({
+        execSync: vi.fn(),
+        runSync: vi.fn(),
+        getFirstSync: vi.fn(() => null),
+        getAllSync: vi.fn(() => []),
+        withTransactionSync: vi.fn(),
+    })),
+}));
 vi.mock('expo-speech', () => ({
     speak: vi.fn(),
     stop: vi.fn(),
@@ -31,6 +53,8 @@ vi.mock('@/api/client', () => ({
     apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: [] })),
     setTokenInMemory: vi.fn(),
     setUnauthorizedHandler: vi.fn(),
+    setSessionConfirmedHandler: vi.fn(),
+    notifySessionConfirmed: vi.fn(),
 }));
 
 
@@ -49,6 +73,8 @@ vi.mock('@/utils/tokenStorage', () => ({
     TokenStorage: {
         saveToken: vi.fn(),
         getToken: vi.fn(() => Promise.resolve('mock-token')),
+        saveRefreshToken: vi.fn(),
+        getRefreshToken: vi.fn(() => Promise.resolve(null)),
         removeTokens: vi.fn(),
     },
 }));

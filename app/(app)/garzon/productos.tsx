@@ -17,6 +17,7 @@ import { Product, ProductCard } from '@/components/shared/ProductCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useGarzonProductos } from '@/hooks/useGarzonProductos';
 import { GarzonCartBar, GarzonProductosModales } from '@/components/garzon/productos';
+import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
 
 export default function ProductosScreen() {
     const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
@@ -34,6 +35,7 @@ export default function ProductosScreen() {
         loading,
         refreshing,
         submitting,
+        fromCache,
         clientModalVisible,
         setClientModalVisible,
         clearCartAlertVisible,
@@ -78,7 +80,8 @@ export default function ProductosScreen() {
         <View style={{ flex: 1, backgroundColor: bg }}>
             <PremiumHeader 
                 title={categoryName || 'Productos'}
-                subtitle="Seleccionar productos para el pedido"
+                subtitle={fromCache ? 'Catálogo guardado en el dispositivo' : 'Seleccionar productos para el pedido'}
+                connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
                 rightComponent={
                     <View style={styles.headerActions}>
                         {cart.length > 0 && (
@@ -96,6 +99,8 @@ export default function ProductosScreen() {
                     </View>
                 }
             />
+
+            <GarzonOfflineBanner />
 
             {loading && products.length === 0 ? (
                 <View style={styles.loadingContainer}>

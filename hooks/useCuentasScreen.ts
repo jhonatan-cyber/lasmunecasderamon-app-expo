@@ -4,6 +4,11 @@ import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
+import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
+import { getOutbox } from "@/services/outbox";
+import { buildCheckoutPayload, describeCheckout } from "@/hooks/utils/checkoutPayload";
+import { useConnectivity } from "@/hooks/useConnectivity";
+import { blockOffline } from "@/utils/offlineGuard";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
@@ -17,6 +22,9 @@ type CuentasState = {
   refreshing: boolean;
   cuentas: CuentaDetalle[];
   resumen: CuentaResumen | null;
+  /** `true` si las cuentas que se están viendo vienen del espejo local. */
+  fromCache: boolean;
+  syncedAt: number | null;
   selectedCuenta: CuentaDetalle | null;
   loadingDetail: boolean;
   modalVisible: boolean;
@@ -43,6 +51,7 @@ type CuentasAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_REFRESHING"; payload: boolean }
   | { type: "SET_DATA"; payload: Partial<Pick<CuentasState, "cuentas" | "resumen">> }
+  | { type: "SET_FROM_CACHE"; payload: { fromCache: boolean; syncedAt: number | null } }
   | { type: "SET_ACTIVE_TAB"; payload: "historial" | "pendientes" }
   | { type: "SET_SEARCH"; payload: string }
   | { type: "SET_MODAL_VISIBLE"; payload: boolean }
@@ -61,6 +70,8 @@ const initialCuentasState = (tab: "historial" | "pendientes"): CuentasState => (
   refreshing: false,
   cuentas: [],
   resumen: null,
+  fromCache: false,
+  syncedAt: null,
   selectedCuenta: null,
   loadingDetail: false,
   modalVisible: false,
@@ -83,6 +94,8 @@ function cuentasReducer(state: CuentasState, action: CuentasAction): CuentasStat
     case "SET_REFRESHING":
       return { ...state, refreshing: action.payload };
     case "SET_DATA":
+      return { ...state, ...action.payload };
+    case "SET_FROM_CACHE":
       return { ...state, ...action.payload };
     case "SET_ACTIVE_TAB":
       return { ...state, activeTab: action.payload };
@@ -133,6 +146,7 @@ const showToast = (
 export const useCuentasScreen = () => {
   const params = useLocalSearchParams();
   const dataRef = useRef<string>("");
+  const { isOnline, isOffline } = useConnectivity();
   const { timers, serverOffset, refreshTimers } = useTimer();
   const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
   const [anulacionCuenta, setAnulacionCuenta] = useState<CuentaDetalle | null>(null);
@@ -148,6 +162,8 @@ export const useCuentasScreen = () => {
   const {
     loading,
     refreshing,
+    fromCache,
+    syncedAt,
     cuentas,
     resumen,
     selectedCuenta,
@@ -173,13 +189,42 @@ export const useCuentasScreen = () => {
         }
 
         const timestamp = Date.now();
-        const [resCuentas, resResumen, resCaja] = await Promise.all([
-          apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
-          apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
+        // Red primero; sin red se muestran las cuentas guardadas en el
+        // dispositivo (con su antigüedad a la vista), que es lo único que
+        // permite trabajar en el salón cuando se cae la conexión.
+        const [cuentasResult, resumenResult, cajaResult] = await Promise.all([
+          getMirror().readThroughDetailed(
+            MIRROR_KEYS.openAccounts,
+            () => apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
+            { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+          ),
+          getMirror().readThroughDetailed(
+            MIRROR_KEYS.accountsSummary,
+            () => apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
+            { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+          ),
           // Estado de caja para bloquear el cobro (paridad con el dashboard).
           // Con error queda `null`: estado desconocido, no bloquea.
-          apiClientSafe('/cashregister/status', { signal }).catch(() => null),
+          getMirror()
+            .readThroughDetailed(
+              MIRROR_KEYS.cashregisterStatus,
+              () => apiClientSafe('/cashregister/status', { signal }),
+              { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+            )
+            .catch(() => null),
         ]);
+
+        dispatch({
+          type: "SET_FROM_CACHE",
+          payload: {
+            fromCache: cuentasResult.fromCache || resumenResult.fromCache,
+            syncedAt: cuentasResult.syncedAt,
+          },
+        });
+
+        const resCuentas = cuentasResult.data;
+        const resResumen = resumenResult.data;
+        const resCaja = cajaResult?.data ?? null;
 
         const actualCuentas: CuentaDetalle[] = Array.isArray(resCuentas.data)
           ? (resCuentas.data as CuentaDetalle[])
@@ -303,51 +348,27 @@ export const useCuentasScreen = () => {
 
   const fetchCuentaCompleta = useCallback(async (cuentaId: string | number) => {
     const timestamp = Date.now();
-    const res = await apiClientSafe(`/cuentas/${cuentaId}?_t=${timestamp}`);
-    if (!res || res.error) {
-      throw new Error(res?.message || "No se pudo obtener el detalle completo de la cuenta");
-    }
-    return res as unknown as CuentaDetalle;
+    const result = await getMirror().readThroughDetailed<CuentaDetalle>(
+      MIRROR_KEYS.accountDetail(cuentaId),
+      async () => {
+        // `GET /cuentas/:id` responde la cuenta cruda (sin el sobre `success`).
+        const res = await apiClientSafe<CuentaDetalle>(`/cuentas/${cuentaId}?_t=${timestamp}`);
+        if (!res || res.error) {
+          throw new Error(res?.message || "No se pudo obtener el detalle completo de la cuenta");
+        }
+        return res as unknown as CuentaDetalle;
+      },
+      { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+    );
+    return result.data;
   }, []);
-
-  const registrarVentaDesdeCuenta = useCallback(
-    async (cuenta: CuentaDetalle) => {
-      const ventaPayload = {
-        origen: "cuenta",
-        skip_client_prepago: true,
-        cliente_id: cuenta?.cliente_id != null ? String(cuenta.cliente_id) : null,
-        pedido_id: cuenta?.pedido_id != null ? String(cuenta.pedido_id) : null,
-        metodo_pago: cobroMetodoPago,
-        propina: cobroTotals.tip,
-        sub_total: Number(cuenta?.sub_total ?? 0),
-        total: Number(cobroTotals.total ?? cuenta?.total ?? 0),
-        total_comision: Number(cuenta?.total_comision ?? 0),
-        codigo: cuenta?.codigo,
-        detalles:
-          cuenta?.detalles?.map((d) => ({
-            producto_id: String(d.producto_id ?? d.id),
-            precio: Number(d.precio ?? 0),
-            cantidad: Number(d.cantidad ?? 1),
-            sub_total: Number(d.sub_total ?? 0),
-            comision: Number(d.comision ?? 0),
-            hostess_id: d.hostess_id != null ? String(d.hostess_id) : null,
-          })) || [],
-        usuarios: cuenta?.usuarios?.map((u) => String(u.usuario_id ?? u.id_usuario ?? u)) || [],
-      };
-
-      return await apiClientSafe("/sales", {
-        method: "POST",
-        body: JSON.stringify(ventaPayload),
-      });
-    },
-    [cobroMetodoPago, cobroTotals.tip, cobroTotals.total],
-  );
 
   const handleConfirmarCobro = useCallback(async () => {
     if (!selectedCuenta) return;
 
     // Guard de caja cerrada (paridad con el dashboard y nueva venta): aunque el
-    // botón quede deshabilitado, se revalida antes del POST.
+    // botón quede deshabilitado, se revalida antes de encolar. La caja abierta
+    // también la exige el servidor al aplicar el cobro.
     if (state.cajaAbierta === false) {
       showToast("Caja Cerrada", "No se pueden realizar ventas sin una caja abierta.", "error");
       return;
@@ -363,39 +384,46 @@ export const useCuentasScreen = () => {
 
     dispatch({ type: "SET_COBRO_SUBMITTING", payload: true });
     try {
-      const payload = {
-        cuenta_id: selectedCuenta.id_cuenta,
-        metodo_pago: cobroMetodoPago,
-        propina: cobroTotals.tip,
-        // Base de la cuenta: la propina va por separado (el backend la suma al
-        // bucket correspondiente; evita duplicarla en la caja).
-        total_cobrado: cobroTotals.subtotal,
-        habitacion_id: selectedCuenta.habitacion_id || null,
-      };
-
-      const res = await apiClientSafe(`/cuentas/${selectedCuenta.id_cuenta}/cobrar`, {
-        method: "POST",
-        body: JSON.stringify(payload),
+      // El servidor cierra la cuenta y factura en UNA transacción
+      // (`POST /cuentas/:id/cobrar-con-venta`), así que esto viaja como una sola
+      // intención de la cola: sin red queda guardado en el dispositivo y sale al
+      // reconectar, y si el envío se corta a medias, el servidor revierte todo
+      // junto o no revierte nada.
+      const intent = await getOutbox().enqueueAndSend({
+        type: "account.checkout",
+        payload: buildCheckoutPayload({
+          cuentaId: selectedCuenta.id_cuenta,
+          metodoPago: cobroMetodoPago,
+          // Base de la cuenta: la propina va por separado (el backend la suma al
+          // bucket correspondiente; evita duplicarla en la caja).
+          subtotal: cobroTotals.subtotal,
+          propina: cobroTotals.tip,
+          habitacionId: selectedCuenta.habitacion_id || null,
+        }),
+        label: describeCheckout({ codigo: selectedCuenta.codigo, total: cobroTotals.total }),
       });
 
-      if (res.success) {
-        const cuentaCompleta = await fetchCuentaCompleta(selectedCuenta.id_cuenta);
-        const ventaRes = await registrarVentaDesdeCuenta(cuentaCompleta);
-        if (!ventaRes.success) {
-          showToast(
-            "Error",
-            ventaRes.message || "La cuenta se cobró, pero no se pudo registrar la venta",
-            "error",
-          );
-          return;
-        }
-        dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false });
-        showToast("Éxito", "Cuenta cobrada correctamente", "success");
-        fetchCuentas();
-      } else {
-        showToast("Error", res.message || "Error al cobrar");
+      if (intent.status === "fallida") {
+        showToast("Error", intent.lastError || "Error al cobrar", "error");
+        return;
       }
-    } catch {
+
+      dispatch({ type: "SET_COBRO_MODAL_VISIBLE", payload: false });
+
+      if (intent.status === "aplicada") {
+        showToast("Éxito", "Cuenta cobrada correctamente", "success");
+      } else {
+        // Quedó pendiente: el cobro está guardado y sale al volver la red.
+        showToast(
+          "Cobro guardado en el dispositivo",
+          "Se enviará automáticamente cuando vuelva la conexión",
+          "info",
+        );
+      }
+
+      fetchCuentas();
+    } catch (error) {
+      logger.captureException(error, { context: "useCuentasScreen:handleConfirmarCobro" });
       showToast("Error", "Error de conexión al procesar el cobro");
     } finally {
       dispatch({ type: "SET_COBRO_SUBMITTING", payload: false });
@@ -404,15 +432,18 @@ export const useCuentasScreen = () => {
     cobroMetodoPago,
     cobroTotals.tip,
     cobroTotals.total,
+    cobroTotals.subtotal,
     fetchCuentas,
-    fetchCuentaCompleta,
-    registrarVentaDesdeCuenta,
     selectedCuenta,
     state.cajaAbierta,
   ]);
 
   const handleFinalizarTemporizador = useCallback(
     (cuenta: CuentaDetalle) => {
+      // El temporizador lo lleva el servidor y los demás dispositivos lo ven por
+      // SSE: sin red no se puede finalizar (se avisa antes de abrir el modal).
+      if (!blockOffline("temporizador", () => isOnline)) return;
+
       dispatch({
         type: "SET_ALERT",
         payload: {
@@ -442,16 +473,18 @@ export const useCuentasScreen = () => {
         },
       });
     },
-    [fetchCuentas, refreshTimers],
+    [fetchCuentas, refreshTimers, isOnline],
   );
 
   const handleSolicitarAnulacion = useCallback((cuenta: CuentaDetalle) => {
+    if (!blockOffline("anulacion", () => isOnline)) return;
+
     dispatch({ type: "SET_ACTION_SHEET", visible: false });
     setAnulacionCuenta(cuenta);
     setAnulacionMotivo("");
     setAnulacionMonto(formatAmountInput(String(Number(cuenta?.total || 0))));
     setAnulacionModalVisible(true);
-  }, []);
+  }, [isOnline]);
 
   const handleEnviarSolicitudAnulacion = useCallback(async () => {
     if (!anulacionCuenta) return;
@@ -500,26 +533,25 @@ export const useCuentasScreen = () => {
     }
   }, [anulacionCuenta, anulacionMotivo, anulacionMonto, fetchCuentas]);
 
-  const handleVerDetalles = useCallback(async (id: string) => {
-    dispatch({ type: "SET_ACTION_SHEET", visible: false });
-    dispatch({ type: "SET_LOADING_DETAIL", payload: true });
-    dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
-    try {
-      const timestamp = Date.now();
-      const res = await apiClientSafe(`/cuentas/${id}?_t=${timestamp}`);
-      if (res && !res.error) {
-        dispatch({ type: "SET_SELECTED_CUENTA", payload: res as unknown as CuentaDetalle });
-      } else {
+  const handleVerDetalles = useCallback(
+    async (id: string) => {
+      dispatch({ type: "SET_ACTION_SHEET", visible: false });
+      dispatch({ type: "SET_LOADING_DETAIL", payload: true });
+      dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
+      try {
+        // Con espejo: sin red se muestra el detalle guardado de esa cuenta en
+        // vez de un modal vacío.
+        const cuenta = await fetchCuentaCompleta(id);
+        dispatch({ type: "SET_SELECTED_CUENTA", payload: cuenta });
+      } catch {
         showToast("Error", "No se pudo obtener el detalle de la cuenta");
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
+      } finally {
+        dispatch({ type: "SET_LOADING_DETAIL", payload: false });
       }
-    } catch {
-      showToast("Error", "Error de conexión al cargar detalles");
-      dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
-    } finally {
-      dispatch({ type: "SET_LOADING_DETAIL", payload: false });
-    }
-  }, []);
+    },
+    [fetchCuentaCompleta],
+  );
 
   const filteredCuentas = useMemo(() => {
     let list = activeTab === "historial" ? cuentas : cuentas.filter((c) => Number(c.estado) === 1);
@@ -543,6 +575,9 @@ export const useCuentasScreen = () => {
   return {
     loading,
     refreshing,
+    isOffline,
+    fromCache,
+    syncedAt,
     cuentas,
     resumen,
     selectedCuenta,

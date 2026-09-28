@@ -4,6 +4,7 @@ import logger from "@/utils/logger";
 
 let tokenInMemory: string | null = null;
 let onUnauthorized: (() => void) | null = null;
+let onSessionConfirmed: (() => void) | null = null;
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
@@ -29,6 +30,19 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 export function notifyUnauthorized() {
   onUnauthorized?.();
+}
+
+/**
+ * Callback que se dispara cuando el servidor **aceptó** una petición
+ * autenticada. Es la señal de que la sesión sigue viva, así que reinicia la
+ * ventana de gracia offline (`utils/offlineSession`).
+ */
+export function setSessionConfirmedHandler(handler: () => void) {
+  onSessionConfirmed = handler;
+}
+
+export function notifySessionConfirmed() {
+  onSessionConfirmed?.();
 }
 
 /**

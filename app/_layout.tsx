@@ -2,6 +2,9 @@ import { DynamicSystemBars } from "@/components/ui/DynamicSystemBars";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SalesProvider } from "@/context/SalesContext";
 import { TimerProvider } from "@/context/TimerContext";
+import { connectivity } from "@/services/connectivity";
+import { initMirror } from "@/services/mirror";
+import { initOutbox } from "@/services/outbox";
 import { useAuthStore } from "@/store/authStore";
 import { initSentry } from "@/utils/sentry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -51,6 +54,14 @@ export default function RootLayout() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Cimientos del modo offline: estado de red unificado y espejo local.
+  // Ninguno de los dos lanza: si algo no está disponible, la app arranca igual.
+  useEffect(() => {
+    void connectivity.start();
+    initMirror();
+    initOutbox();
+  }, []);
 
   useEffect(() => {
     apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {

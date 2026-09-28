@@ -38,6 +38,10 @@ export default function CajeroLayout() {
         />
         <Stack.Screen name="solicitudes" options={{ title: "Solicitudes" }} />
         <Stack.Screen
+          name="pendientes"
+          options={{ title: "Pendientes", headerShown: false }}
+        />
+        <Stack.Screen
           name="nuevo-servicio"
           options={{ title: "Nuevo Servicio", headerShown: false }}
         />

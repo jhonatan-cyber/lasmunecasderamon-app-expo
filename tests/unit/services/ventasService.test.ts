@@ -77,7 +77,7 @@ describe('ventasService', () => {
 
       const result = await fetchSalesList();
 
-      expect(result).toEqual({ ventas: [], resumen: null });
+      expect(result).toEqual({ ventas: [], resumen: null, failed: true });
     });
   });
 

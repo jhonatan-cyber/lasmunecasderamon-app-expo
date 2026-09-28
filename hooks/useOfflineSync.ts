@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { offlineSync, isOnline, getPendingCount, triggerSync } from '@/services/offlineSync';
+import { offlineSync, getPendingCount, triggerSync } from '@/services/offlineSync';
+import { useConnectivity } from '@/hooks/useConnectivity';
 
 interface UseOfflineSyncReturn {
     isOnline: boolean;
@@ -10,17 +11,21 @@ interface UseOfflineSyncReturn {
     addOfflineListener: (callback: () => void) => () => void;
 }
 
+/**
+ * Estado de la cola de sincronización. La conectividad ya **no** vive acá: sale
+ * del monitor unificado (`services/connectivity`), que además nunca asume que
+ * hay red antes de que `expo-network` responda.
+ */
 export const useOfflineSync = (): UseOfflineSyncReturn => {
-    const [connected, setConnected] = useState(true);
+    const { isOnline } = useConnectivity();
     const [pending, setPending] = useState(0);
     const [syncing, setSyncing] = useState(false);
     const [lastSync, setLastSync] = useState<number | null>(null);
 
     useEffect(() => {
         const loadInitialState = async () => {
-            setConnected(isOnline());
             setPending(await getPendingCount());
-            
+
             const status = await offlineSync.getSyncStatus();
             if (status) {
                 setLastSync(status.lastSync);
@@ -30,9 +35,8 @@ export const useOfflineSync = (): UseOfflineSyncReturn => {
         loadInitialState();
 
         const unsubscribe = offlineSync.addListener(() => {
-            setConnected(isOnline());
             getPendingCount().then(setPending);
-            
+
             offlineSync.getSyncStatus().then((status) => {
                 if (status) setLastSync(status.lastSync);
             });
@@ -52,7 +56,7 @@ export const useOfflineSync = (): UseOfflineSyncReturn => {
     }, []);
 
     return {
-        isOnline: connected,
+        isOnline,
         pendingCount: pending,
         isSyncing: syncing,
         lastSync,
@@ -69,11 +73,12 @@ export const useOfflineAwareQuery = <T>(
         onError?: (error: Error) => void;
     }
 ) => {
-    const { isOnline } = useOfflineSync();
+    const { isOffline } = useConnectivity();
 
     const query = async (): Promise<T | null> => {
-        if (!isOnline) {
-  
+        // Solo se evita la petición cuando hay **confirmación** de que no hay
+        // red; en `unknown` (arranque) conviene intentar y dejar que falle.
+        if (isOffline) {
             return null;
         }
 
@@ -89,5 +94,3 @@ export const useOfflineAwareQuery = <T>(
 
     return query;
 };
-
-

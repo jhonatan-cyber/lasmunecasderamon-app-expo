@@ -12,6 +12,7 @@ import {
 import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
 import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate, getCardSplit, getIvaDecimal } from '@/hooks/utils/cartUtils';
 import { serviceReducer, initialServiceState } from '@/components/cajero/nuevo-servicio/reducer';
+import { blockOffline } from '@/utils/offlineGuard';
 
 export function useNuevoServicio() {
   const router = useRouter();
@@ -237,6 +238,10 @@ export function useNuevoServicio() {
       showToast('Caja Cerrada', 'Abre una caja primero.');
       return;
     }
+
+    // Crear un servicio abre cuenta, habitación y temporizador en el servidor:
+    // sin red se avisa en vez de intentar y fallar con un error genérico.
+    if (!blockOffline('cuenta')) return;
 
     const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
     if (esMixto) {

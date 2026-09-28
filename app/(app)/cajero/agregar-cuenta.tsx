@@ -16,12 +16,21 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview } from '@/hooks/utils/cuentaUtils';
+import {
+    showToast,
+    isChampagneProduct,
+    getHostessLimit,
+    buildCommissionPreview,
+    buildConsumptionsPayload,
+} from '@/hooks/utils/cuentaUtils';
 import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useTimer } from '@/context/TimerContext';
+import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
+import { getOutbox } from '@/services/outbox';
 import logger from '@/utils/logger';
 
 import {
@@ -36,6 +45,8 @@ import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
+    /** `true` si el catálogo que se está viendo viene del espejo local. */
+    fromCache: boolean;
     anfitrionas: any[];
     habitaciones: any[];
     categories: any[];
@@ -78,6 +89,7 @@ type CuentaAction =
 const initialCuentaState: CuentaState = {
     loadingInitial: true,
     refreshing: false,
+    fromCache: false,
     anfitrionas: [],
     habitaciones: [],
     categories: [],
@@ -149,7 +161,7 @@ export default function AgregarCuentaScreen() {
         loadingInitial, refreshing, anfitrionas, habitaciones, categories, modalOpen, modalCategoria,
         modalProducts, modalLoading, modalQuantities, modalHostessSelections, hostessSelectionTarget,
         hostessSubModalVisible, cart, submitting, extraTiempo, timeModalVisible, cuentaDetalle,
-        selectedHabitacion, selectedTime, roomModalVisible
+        selectedHabitacion, selectedTime, roomModalVisible, fromCache
     } = state;
 
     const hasRoom = !!(cuentaOriginal?.habitacion_id);
@@ -163,6 +175,16 @@ export default function AgregarCuentaScreen() {
     const isTablet = width >= 768;
     const { timers, refreshTimers } = useTimer();
 
+    /**
+     * Lectura con espejo: red primero y, si no hay, lo último guardado en el
+     * dispositivo.
+     */
+    const readThroughMirror = useCallback(
+        <T,>(key: string, fetcher: () => Promise<T>, maxAgeMs: number) =>
+            getMirror().readThroughDetailed<T>(key, fetcher, { maxAgeMs }),
+        []
+    );
+
 
 
     const spacing = isTablet ? 24 : 16;
@@ -174,15 +196,29 @@ export default function AgregarCuentaScreen() {
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
+            // Red primero y espejo después: cargar consumos sin conexión necesita
+            // el catálogo y —sobre todo— el detalle actual de la cuenta.
             const requests: Promise<any>[] = [
-                apiClientSafe('/anfitrionas'),
-                apiClientSafe('/categories'),
-                apiClientSafe('/rooms'),
+                readThroughMirror(MIRROR_KEYS.anfitrionas, () => apiClientSafe('/anfitrionas'), MIRROR_MAX_AGE_MS.catalogo),
+                readThroughMirror(MIRROR_KEYS.categories, () => apiClientSafe('/categories'), MIRROR_MAX_AGE_MS.catalogo),
+                readThroughMirror(MIRROR_KEYS.rooms, () => apiClientSafe('/rooms'), MIRROR_MAX_AGE_MS.catalogo),
             ];
             if (cuentaOriginal?.id_cuenta) {
-                requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`));
+                requests.push(
+                    readThroughMirror(
+                        MIRROR_KEYS.accountDetail(cuentaOriginal.id_cuenta),
+                        () => apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`),
+                        MIRROR_MAX_AGE_MS.dinero
+                    )
+                );
             }
-            const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
+            const [anfitrionasResult, categoriesResult, roomsResult, cuentaDetalleResult] =
+                await Promise.all(requests);
+
+            const anfitrionasRes = anfitrionasResult?.data;
+            const categoriesRes = categoriesResult?.data;
+            const roomsRes = roomsResult?.data;
+            const cuentaDetalleRes = cuentaDetalleResult?.data;
 
             const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
             const rawHabitaciones = roomsData.success ? roomsData.data : [];
@@ -198,6 +234,14 @@ export default function AgregarCuentaScreen() {
                         estado: room.estado ?? room.status ?? 0,
                     })),
                     cuentaDetalle: cuentaDetalleRes || null,
+                    // Va en el mismo dispatch que el catálogo: un solo render, y
+                    // el aviso de modo offline no necesita estado aparte.
+                    fromCache: [
+                        anfitrionasResult,
+                        categoriesResult,
+                        roomsResult,
+                        cuentaDetalleResult,
+                    ].some((resultado) => Boolean(resultado?.fromCache)),
                 }
             });
         } catch (error) {
@@ -207,10 +251,10 @@ export default function AgregarCuentaScreen() {
             dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
             dispatch({ type: 'SET_REFRESHING', payload: false });
         }
-    }, [cuentaOriginal]);
+    }, [cuentaOriginal, readThroughMirror]);
 
     useEffect(() => {
-        fetchInitialData();
+        void fetchInitialData();
         if (!cuentaOriginal) {
             showToast('Error', 'No se recibió la información de la cuenta');
             router.back();
@@ -293,78 +337,62 @@ export default function AgregarCuentaScreen() {
         }
         dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
-            const originalUserIds = (cuentaDetalle?.usuarios || [])
-                .map((u) => u.usuario_id || u.id_usuario)
-                .filter(Boolean) as number[];
-            const mergedHostessIds = new Set<number>(originalUserIds);
-            cart.forEach(item => {
-                if (item.selectedHostesses && Array.isArray(item.selectedHostesses)) {
-                    item.selectedHostesses.forEach((hId: number) => {
-                        if (hId) mergedHostessIds.add(hId);
-                    });
-                }
-            });
             const hasExistingTimer = timers.some(
                 timer =>
                     timer.tipoTransaccion === 'cuenta' &&
                     String(timer.servicioId) === String(cuentaOriginal.id_cuenta)
             );
-            const currentRoomId =
-                cuentaDetalle?.habitacion_id ||
-                cuentaOriginal?.habitacion_id ||
-                null;
-            const roomIdToUse =
-                selectedHabitacion?.id_habitacion ||
-                selectedHabitacion?.id ||
-                null;
-            const timeToUse = selectedHabitacion ? selectedTime : 0;
-            const isSameRoomSelection =
-                Boolean(roomIdToUse) &&
-                Boolean(currentRoomId) &&
-                String(roomIdToUse) === String(currentRoomId);
-            const cuentaData: any = {
-                detalles: cart.map((item) => ({
-                    producto_id: item.id_producto || item.id,
-                    precio: item.precio,
-                    cantidad: item.cantidad,
-                    sub_total: item.precio * item.cantidad,
-                    comision: item.comision * (item.cantidad || 1),
-                    hostesses: item.selectedHostesses || [],
-                    isChampagne: item.isChampagne
-                })),
-                usuarios: Array.from(mergedHostessIds)
-            };
-            if (extraTiempo > 0 && hasRoom) {
-                cuentaData.extraTiempo = extraTiempo;
-            }
-            if (isSameRoomSelection && timeToUse > 0) {
-                cuentaData.extraTiempo = Number(cuentaData.extraTiempo || 0) + timeToUse;
-            } else if (!hasExistingTimer && roomIdToUse && timeToUse > 0) {
-                cuentaData.habitacion_id = roomIdToUse;
-                cuentaData.tiempo = timeToUse;
-            } else if (selectedHabitacion) {
-                cuentaData.habitacion_id = selectedHabitacion.id_habitacion || selectedHabitacion.id;
-                cuentaData.tiempo = selectedTime;
-            }
-            refreshTimers?.();
-            const res = await apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`, {
-                method: 'PUT',
-                body: JSON.stringify(cuentaData),
+
+            const cuentaData = buildConsumptionsPayload({
+                cart,
+                cuentaDetalle,
+                cuentaOriginal,
+                selectedHabitacion,
+                selectedTime,
+                extraTiempo,
+                hasExistingTimer,
             });
-            if (res.success) {
+
+            refreshTimers?.();
+
+            const items = cart.reduce((acc, item) => acc + Number(item.cantidad || 0), 0);
+
+            // Los consumos se encolan SIEMPRE, haya red o no: una sola ruta de
+            // código. El id de la intención viaja como clave de idempotencia, así
+            // que el `PUT` de incremento no carga los productos dos veces.
+            const intent = await getOutbox().enqueueAndSend({
+                type: 'account.consumptions',
+                payload: { id_cuenta: cuentaOriginal.id_cuenta, consumos: cuentaData },
+                label: `${cuentaOriginal?.codigo || 'Cuenta'} · ${items} ítem(s)`,
+            });
+
+            if (intent.status === 'aplicada') {
                 showToast('Éxito', 'Productos agregados correctamente', 'success');
                 eventBus.emit('refresh_cuentas');
                 setTimeout(() => router.back(), 1500);
-            } else {
-                showToast('Error', res.message || 'No se pudo actualizar la cuenta');
+                return;
             }
+
+            if (intent.status === 'fallida') {
+                showToast('Error', intent.lastError || 'No se pudo actualizar la cuenta');
+                return;
+            }
+
+            // Quedó pendiente: el trabajo está guardado y sale al volver la red.
+            showToast(
+                'Consumos guardados en el dispositivo',
+                'Se enviarán automáticamente cuando vuelva la conexión',
+                'info'
+            );
+            eventBus.emit('refresh_cuentas');
+            setTimeout(() => router.back(), 1500);
         } catch (error) {
             logger.captureException(error, { context: 'AgregarCuenta:addCuenta' });
             showToast('Error', 'Ocurrió un error al procesar la cuenta.');
         } finally {
             dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
-    }, [cart, cuentaOriginal, router, extraTiempo, hasRoom, cuentaDetalle, selectedHabitacion, selectedTime, timers, refreshTimers]);
+    }, [cart, cuentaOriginal, router, extraTiempo, cuentaDetalle, selectedHabitacion, selectedTime, timers, refreshTimers]);
 
     if (loadingInitial) {
         return (
@@ -384,7 +412,8 @@ export default function AgregarCuentaScreen() {
 
             <PremiumHeader 
                 title="Agregar Productos"
-                subtitle={`Cuenta ${cuentaOriginal?.codigo}`}
+                subtitle={fromCache ? 'Datos guardados en el dispositivo' : `Cuenta ${cuentaOriginal?.codigo}`}
+                connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
                 rightComponent={
                     <Pressable
                         onPress={() => router.back()}
@@ -396,6 +425,8 @@ export default function AgregarCuentaScreen() {
                     </Pressable>
                 }
             />
+
+            <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}

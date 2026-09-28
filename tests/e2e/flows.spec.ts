@@ -34,18 +34,34 @@ const cliente = {
   saldo: 50000,
 }
 
+// Forma de `/products?for_sale=1`: el buscador arma el nombre con
+// `producto_nombre` + `presentacion_nombre` y el precio con `precio_venta`
+// (ver `mapForSaleProduct`). Se conservan los alias viejos por comodidad.
 const product = {
+  id: 'pres-1',
   id_producto: 'p1',
+  producto_id: 'p1',
+  presentacion_id: 'pres-1',
+  producto_nombre: 'Whisky',
+  presentacion_nombre: '750ml',
   nombre: 'Whisky',
+  name: 'Whisky',
+  precio_venta: 25000,
   precio: 25000,
   comision: 0,
   commission: 0,
+  stock_bar: 5,
+  estado: 1,
+  status: 1,
 }
 
 const category = {
   id: '10',
   name: 'Bebidas',
   total_products: 1,
+  // La pantalla solo muestra categorías activas con productos (mismo filtro
+  // que `filterSaleCategories`): sin `status` la categoría no llegaba al DOM.
+  status: 1,
 }
 
 async function mockAllApi(page: Page) {

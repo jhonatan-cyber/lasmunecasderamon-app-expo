@@ -2,6 +2,7 @@ import type { ApiRes } from "@/types/api";
 import logger from "@/utils/logger";
 import { API_URL } from "./base-url";
 import {
+  attachHttpDetails,
   NetworkError,
   RetryExhaustedError,
   TimeoutError,
@@ -11,6 +12,7 @@ import { delay, shouldRetry } from "./retry";
 import {
   ensureTokenInMemory,
   getTokenInMemory,
+  notifySessionConfirmed,
   notifyUnauthorized,
   refreshAccessToken
 } from "./token";
@@ -199,7 +201,12 @@ export const apiClient = async <T = ApiRes<unknown>>(
 
           const serverMessage =
             data.message || data.error || `Error ${response.status}`;
-          throw new Error(serverMessage);
+          // El status y el cuerpo viajan con el error: `message` suele ser el
+          // genérico ("Error de validación") y el motivo útil está adentro.
+          throw attachHttpDetails(new Error(serverMessage), {
+            status: response.status,
+            body: data,
+          });
         }
         lastError = new Error(
           data.error || data.message || "Error en la petición API",
@@ -226,6 +233,9 @@ export const apiClient = async <T = ApiRes<unknown>>(
         undefined,
         durationMs,
       );
+      // Respuesta 2xx: el servidor reconoció la sesión. Es lo que reinicia la
+      // ventana de gracia del modo offline (no el mero paso del tiempo).
+      notifySessionConfirmed();
       return data as T;
     } catch (err: any) {
       clearTimeout(timeoutId);

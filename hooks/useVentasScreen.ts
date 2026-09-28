@@ -1,8 +1,16 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
+import {
+  getMirror,
+  MIRROR_KEYS,
+  MIRROR_MAX_AGE_MS,
+  OfflineCacheMissError,
+} from "@/services/mirror";
+import { blockOffline } from "@/utils/offlineGuard";
+import { useConnectivity } from "@/hooks/useConnectivity";
 import {
   initialVentasState,
   ventasReducer,
@@ -19,7 +27,10 @@ const initialVentasLoadedRef = { current: false };
 
 export const useVentasScreen = () => {
   const { refreshTimers } = useTimer();
+  const { isOnline } = useConnectivity();
   const params = useLocalSearchParams();
+  /** `true` si el listado que se está viendo viene del espejo local. */
+  const [fromCache, setFromCache] = useState(false);
   const initialTab: "historial" | "proceso" =
     (params.tab as any) === "proceso" ? "proceso" : "historial";
   const [state, dispatch] = useReducer(ventasReducer, initialVentasState, () => ({
@@ -48,16 +59,27 @@ export const useVentasScreen = () => {
         dispatch({ type: "SET_LOADING", payload: true });
       if (isManual) dispatch({ type: "SET_LOADING_SALES", payload: true });
       const timestamp = Date.now();
-      const [resSales, resResumen] = await Promise.all([
-        apiClientSafe(`/sales?limit=50&_t=${timestamp}`, { signal }).catch(() => ({
-          success: false,
-          data: [],
-        })),
-        apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`, { signal }).catch(() => ({
-          success: false,
-          data: null,
-        })),
+      // Red primero; sin red se muestra el listado del turno guardado en el
+      // dispositivo, con la antigüedad a la vista en la pantalla.
+      const [salesResult, resumenResult] = await Promise.all([
+        getMirror().readThroughDetailed(
+          MIRROR_KEYS.salesList,
+          () => apiClientSafe(`/sales?limit=50&_t=${timestamp}`, { signal }),
+          { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+        ),
+        getMirror()
+          .readThroughDetailed(
+            MIRROR_KEYS.salesSummary,
+            () => apiClientSafe(`/sales?tipo=resumen&_t=${timestamp}`, { signal }),
+            { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+          )
+          .catch(() => null),
       ]);
+
+      setFromCache(salesResult.fromCache || Boolean(resumenResult?.fromCache));
+
+      const resSales = salesResult.data;
+      const resResumen = resumenResult?.data ?? { success: false, data: null };
 
       const salesPayload: Venta[] = Array.isArray(resSales.data)
         ? (resSales.data as Venta[])
@@ -185,15 +207,27 @@ export const useVentasScreen = () => {
       dispatch({ type: "SET_LOADING_DETAIL", payload: true });
       dispatch({ type: "SET_MODAL_VISIBLE", payload: true });
       try {
-        const res = await apiClientSafe(`/sales/${id}`);
-        if (res?.success && res.data) {
-          dispatch({ type: "SET_SELECTED_VENTA", payload: res.data as VentaDetail });
-        } else {
-          showToast("Error", res?.message || "No se pudo obtener el detalle de la venta");
-          dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
-        }
+        // El detalle se espeja por venta, así que sin red se abre con lo último
+        // guardado en vez de quedarse en un modal vacío.
+        const result = await getMirror().readThroughDetailed<VentaDetail>(
+          MIRROR_KEYS.saleDetail(id),
+          async () => {
+            const res = await apiClientSafe<VentaDetail>(`/sales/${id}`);
+            if (!res?.success || !res.data) {
+              throw new Error(res?.message || "No se pudo obtener el detalle de la venta");
+            }
+            return res.data;
+          },
+          { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
+        );
+        dispatch({ type: "SET_SELECTED_VENTA", payload: result.data });
       } catch (error: any) {
-        showToast("Error", error?.message || "Error al cargar detalles");
+        showToast(
+          "Error",
+          error instanceof OfflineCacheMissError
+            ? "Sin conexión y sin detalle guardado de esta venta."
+            : error?.message || "Error al cargar detalles",
+        );
         dispatch({ type: "SET_MODAL_VISIBLE", payload: false });
       } finally {
         dispatch({ type: "SET_LOADING_DETAIL", payload: false });
@@ -204,6 +238,9 @@ export const useVentasScreen = () => {
 
   const handleFinalizarVenta = useCallback(
     (venta: any) => {
+      // Finalizar libera la habitación y detiene el temporizador en el servidor.
+      if (!blockOffline("temporizador", () => isOnline)) return;
+
       const alertConfig: AlertConfig = {
         visible: true,
         title: "Finalizar Venta",
@@ -245,11 +282,12 @@ export const useVentasScreen = () => {
       };
       dispatch({ type: "SET_ALERT_CONFIG", payload: alertConfig });
     },
-    [fetchVentas, getVentaId, refreshTimers, showToast],
+    [fetchVentas, getVentaId, refreshTimers, showToast, isOnline],
   );
 
   const handleAnularVenta = useCallback(async () => {
     if (!state.activeVenta) return;
+    if (!blockOffline("anulacion", () => isOnline)) return;
     const ventaId = getVentaId(state.activeVenta);
     const monto = parseMontoInput(state.montoAnulacion);
     const motivo = state.motivoAnulacion.trim();
@@ -310,11 +348,14 @@ export const useVentasScreen = () => {
     getVentaId,
     parseMontoInput,
     showToast,
+    isOnline,
   ]);
 
   return {
     loading: state.loading,
     refreshing: state.refreshing,
+    isOffline: !isOnline,
+    fromCache,
     ventas: state.ventas,
     ventasList: Array.isArray(state.ventas) ? state.ventas : [],
     resumen: state.resumen,

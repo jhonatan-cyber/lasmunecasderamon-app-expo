@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
 import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
@@ -38,6 +39,7 @@ export default function CuentasScreen() {
     refreshing,
     cuentas,
     resumen,
+    fromCache,
     activeTab,
     search,
     filteredCuentas,
@@ -120,7 +122,14 @@ export default function CuentasScreen() {
 
       <PremiumHeader
         title="Cuentas"
-        subtitle={activeTab === "historial" ? "Historial de transacciones" : "Cuentas por cobrar"}
+        subtitle={
+          fromCache
+            ? "Datos guardados en el dispositivo"
+            : activeTab === "historial"
+              ? "Historial de transacciones"
+              : "Cuentas por cobrar"
+        }
+        connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
         rightComponent={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
             <TouchableOpacity onPress={() => fetchCuentas(true)} style={styles.backBtnRight}>
@@ -133,6 +142,8 @@ export default function CuentasScreen() {
           </View>
         }
       />
+
+      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <View style={styles.content}>
         <View style={[styles.searchOuter, { backgroundColor: isDark ? "#111111" : "#FFFFFF" }]}>

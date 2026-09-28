@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Network from 'expo-network';
 
+import { connectivity } from '@/services/connectivity';
+import { createQueueId } from '@/utils/ids';
 import logger from '@/utils/logger';
+
+export { createQueueId };
 
 
 interface QueuedRequest {
@@ -18,32 +21,18 @@ const SYNC_STATUS_KEY = 'offline_sync_status';
 const MAX_RETRIES = 3;
 
 class OfflineSyncManager {
-    private isOnline: boolean = true;
     private syncInProgress: boolean = false;
     private listeners: Set<() => void> = new Set();
 
     constructor() {
-        this.initNetworkListener();
-    }
-
-    private async initNetworkListener() {
-        try {
-            const state = await Network.getNetworkStateAsync();
-            this.isOnline = state.isConnected ?? false;
-            
-            Network.addNetworkStateListener((state) => {
-                const wasOffline = !this.isOnline;
-                this.isOnline = state.isConnected ?? false;
-                
-                if (wasOffline && this.isOnline) {
-                    this.triggerSync();
-                }
-                
-                this.notifyListeners();
-            });
-        } catch (e) {
-            logger.captureException(e, { context: 'OfflineSync:initListener' });
-        }
+        // Drena al volver la red. La conectividad es la unificada
+        // (services/connectivity), no un listener propio: antes había dos
+        // estados de red que podían contradecirse.
+        connectivity.subscribe(state => {
+            if (state === 'online') this.triggerSync();
+            this.notifyListeners();
+        });
+        void connectivity.start();
     }
 
     addListener(callback: () => void) {
@@ -56,14 +45,14 @@ class OfflineSyncManager {
     }
 
     isConnected(): boolean {
-        return this.isOnline;
+        return connectivity.isOnline();
     }
 
     async queueRequest(endpoint: string, method: string, body: Record<string, unknown>): Promise<void> {
         const queue = await this.getQueue();
         
         const newRequest: QueuedRequest = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: createQueueId(),
             endpoint,
             method,
             body,
@@ -76,7 +65,7 @@ class OfflineSyncManager {
         
         this.notifyListeners();
         
-        if (this.isOnline) {
+        if (connectivity.isOnline()) {
             this.triggerSync();
         }
     }
@@ -97,7 +86,7 @@ class OfflineSyncManager {
     }
 
     async triggerSync(): Promise<void> {
-        if (!this.isOnline || this.syncInProgress) return;
+        if (!connectivity.isOnline() || this.syncInProgress) return;
         
         this.syncInProgress = true;
         

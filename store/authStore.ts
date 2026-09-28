@@ -1,5 +1,20 @@
-import { apiClient, apiClientSafe, setTokenInMemory, setUnauthorizedHandler } from '@/api/client';
+import {
+    apiClient,
+    apiClientSafe,
+    setSessionConfirmedHandler,
+    setTokenInMemory,
+    setUnauthorizedHandler,
+} from '@/api/client';
 import logger from '@/utils/logger';
+import {
+    createOfflineSession,
+    isOfflineSessionValid,
+    OFFLINE_SESSION_STORAGE_KEY,
+    parseOfflineSession,
+    serializeOfflineSession,
+    shouldRefreshOfflineSession,
+    type OfflineSession,
+} from '@/utils/offlineSession';
 import { TokenStorage } from '@/utils/tokenStorage';
 import { loginSchema } from '@lasmunecasderamon/validations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,10 +74,19 @@ interface AuthState {
     token: string | null;
     isLoading: boolean;
     sessionExpired: boolean;
+    /** Última vez que el servidor confirmó la sesión (ventana offline). */
+    offlineSession: OfflineSession | null;
     login: (username: string, password: string, codigo?: string, qr_token?: string) => Promise<LoginResult>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
     clearSessionExpired: () => void;
+    /** Lee el marcador persistido y lo descarta si es de otro usuario. */
+    loadOfflineSession: () => Promise<OfflineSession | null>;
+    /** Marca "el servidor confirmó la sesión ahora" (login o petición 2xx). */
+    startOfflineSession: (now?: number) => Promise<void>;
+    clearOfflineSession: () => Promise<void>;
+    /** ¿Se puede seguir operando sin red dentro de la ventana de gracia? */
+    canWorkOffline: (now?: number) => boolean;
     clearForcePasswordChange: () => Promise<void>;
     tempAuthData: TempAuthData | null;
     setTempAuthData: (data: TempAuthData | null) => void;
@@ -92,16 +116,77 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
     });
 
+    // Cada respuesta 2xx del API confirma que la sesión sigue viva, así que
+    // reinicia la ventana de gracia offline (con un intervalo mínimo para no
+    // escribir en disco en cada petición).
+    setSessionConfirmedHandler(() => {
+        const { user, offlineSession } = get();
+        if (shouldRefreshOfflineSession(offlineSession, user?.id)) {
+            void get().startOfflineSession();
+        }
+    });
+
     return {
         user: null,
         token: null,
         isLoading: true,
         sessionExpired: false,
+        offlineSession: null,
         isBiometricEnabled: false,
         biometricType: null,
         isBiometricAvailable: false,
 
         clearSessionExpired: () => set({ sessionExpired: false }),
+
+        loadOfflineSession: async () => {
+            try {
+                const raw = await AsyncStorage.getItem(OFFLINE_SESSION_STORAGE_KEY);
+                const parsed = parseOfflineSession(raw);
+                const currentUser = get().user;
+
+                // Un marcador de otro usuario (o de una sesión ya cerrada) no vale.
+                if (parsed && currentUser && parsed.userId !== currentUser.id) {
+                    await AsyncStorage.removeItem(OFFLINE_SESSION_STORAGE_KEY);
+                    set({ offlineSession: null });
+                    return null;
+                }
+
+                set({ offlineSession: parsed });
+                return parsed;
+            } catch (error) {
+                logger.captureException(error, { context: 'authStore:loadOfflineSession' });
+                return null;
+            }
+        },
+
+        startOfflineSession: async (now = Date.now()) => {
+            const session = createOfflineSession(get().user?.id, now);
+            if (!session) return;
+
+            try {
+                await AsyncStorage.setItem(
+                    OFFLINE_SESSION_STORAGE_KEY,
+                    serializeOfflineSession(session)
+                );
+            } catch (error) {
+                logger.captureException(error, { context: 'authStore:startOfflineSession' });
+            }
+
+            // Aunque falle el disco, en memoria queda: la app no se bloquea por
+            // no poder escribir el marcador.
+            set({ offlineSession: session });
+        },
+
+        clearOfflineSession: async () => {
+            try {
+                await AsyncStorage.removeItem(OFFLINE_SESSION_STORAGE_KEY);
+            } catch (error) {
+                logger.captureException(error, { context: 'authStore:clearOfflineSession' });
+            }
+            set({ offlineSession: null });
+        },
+
+        canWorkOffline: (now = Date.now()) => isOfflineSessionValid(get().offlineSession, now),
 
         clearForcePasswordChange: async () => {
             const currentUser = get().user;
@@ -235,6 +320,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
                 setTokenInMemory(token!);
                 set({ user: user!, token, tempAuthData: null });
+                // El login acaba de confirmar la sesión contra el servidor.
+                await get().startOfflineSession();
 
                 return {
                     requiereCodigo: false,
@@ -255,6 +342,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             }
             await TokenStorage.removeTokens();
             await AsyncStorage.removeItem('user');
+            await get().clearOfflineSession();
             setTokenInMemory(null);
             set({ user: null, token: null, sessionExpired: false });
         },
@@ -281,6 +369,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     setTokenInMemory(token);
                     const parsedUser = JSON.parse(userStr) as User;
                     set({ token, user: parsedUser });
+
+                    // Carga el marcador offline; si la instalación es anterior a
+                    // esta función, se crea una vez para no dejar a nadie fuera
+                    // hasta el próximo contacto con el servidor.
+                    const session = await get().loadOfflineSession();
+                    if (!session) {
+                        await get().startOfflineSession();
+                    }
                 }
 
                 const biometricEnabled = await AsyncStorage.getItem('biometricEnabled');
@@ -330,6 +426,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const updatedUser = { ...currentUser, ...servidor } as User;
                 await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
                 set({ user: updatedUser });
+                // /auth/me respondió: sesión confirmada, ventana offline al día.
+                await get().startOfflineSession();
                 return true;
             } catch (err) {
                 logger.captureException(err, { context: 'authStore:refreshUser' });

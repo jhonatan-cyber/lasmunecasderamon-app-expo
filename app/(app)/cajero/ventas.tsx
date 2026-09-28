@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { useTimer } from '@/context/TimerContext';
 import { useVentasScreen } from '@/hooks/useVentasScreen';
@@ -69,6 +70,7 @@ export default function VentasScreen() {
     closeAnulacionModal,
     formatMontoInput,
     getVentaId,
+    fromCache,
   } = useVentasScreen();
 
   const C = Colors[isDark ? 'dark' : 'light'];
@@ -112,7 +114,14 @@ export default function VentasScreen() {
       <StatusBar style={isDark ? 'dark' : 'light'} />
       <PremiumHeader
         title="Ventas"
-        subtitle={activeTab === "historial" ? "Historial de transacciones" : "Ventas activas en tiempo real"}
+        subtitle={
+          fromCache
+            ? "Datos guardados en el dispositivo"
+            : activeTab === "historial"
+              ? "Historial de transacciones"
+              : "Ventas activas en tiempo real"
+        }
+        connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
         rightComponent={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
             <TouchableOpacity onPress={onRefresh} style={styles.backBtnRight}>
@@ -125,6 +134,8 @@ export default function VentasScreen() {
           </View>
         }
       />
+
+      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <VentaTabs
         activeTab={activeTab}

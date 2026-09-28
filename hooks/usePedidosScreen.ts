@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/utils/toast-lazy';
 import { categoriesService } from '@/services';
+import {
+    getMirror,
+    MIRROR_KEYS,
+    MIRROR_MAX_AGE_MS,
+    OfflineCacheMissError,
+} from '@/services/mirror';
+import logger from '@/utils/logger';
 
 export interface Category {
     id: string;
@@ -16,12 +23,25 @@ export function usePedidosScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
+    /** `true` si el catálogo que se está viendo viene del espejo local. */
+    const [fromCache, setFromCache] = useState(false);
+    const [syncedAt, setSyncedAt] = useState<number | null>(null);
     const dataRef = useRef<string>('');
 
     const fetchCategories = useCallback(async (isManual = false) => {
         try {
             setError('');
-            const data = await categoriesService.list();
+
+            // Red primero; si no hay, el espejo local de la Fase 0 y el usuario
+            // ve el catálogo guardado en vez de una pantalla vacía.
+            const result = await getMirror().readThroughDetailed(
+                MIRROR_KEYS.categories,
+                () => categoriesService.list(),
+                { maxAgeMs: MIRROR_MAX_AGE_MS.catalogo }
+            );
+            const data = result.data;
+            setFromCache(result.fromCache);
+            setSyncedAt(result.syncedAt);
 
             const serialized = JSON.stringify((data as any).data || []);
             const hasChanges = dataRef.current !== serialized;
@@ -45,7 +65,14 @@ export function usePedidosScreen() {
                 });
             }
         } catch (err: any) {
-            setError(err.message || 'Error de conexión');
+            if (err instanceof OfflineCacheMissError) {
+                setError('Sin conexión y sin catálogo guardado en este dispositivo.');
+            } else {
+                setError(err.message || 'Error de conexión');
+            }
+
+            logger.captureException(err, { context: 'PedidosScreen:fetchCategories' });
+
             if (isManual) {
                 showToast({
                     type: 'error',
@@ -69,5 +96,5 @@ export function usePedidosScreen() {
         fetchCategories(true);
     }, [fetchCategories]);
 
-    return { categories, loading, refreshing, error, fetchCategories, onRefresh };
+    return { categories, loading, refreshing, error, fromCache, syncedAt, fetchCategories, onRefresh };
 }

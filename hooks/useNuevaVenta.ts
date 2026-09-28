@@ -18,6 +18,10 @@ import {
 import logger from '@/utils/logger';
 import { eventBus } from '@/utils/eventBus';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
+import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
+import { getOutbox } from '@/services/outbox';
+import { blockOffline } from '@/utils/offlineGuard';
+import { buildSalePayload } from '@/hooks/utils/salePayload';
 import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta/reducer';
 import type { VentaState } from '@/components/cajero/nueva-venta/types';
 
@@ -36,6 +40,8 @@ export function useNuevaVenta() {
   const router = useRouter();
   const { refreshVentas } = useSales();
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
+  /** `true` si lo que se está viendo viene del espejo local. */
+  const [fromCache, setFromCache] = useState(false);
 
   const {
     anfitrionas,
@@ -75,23 +81,60 @@ export function useNuevaVenta() {
     );
   }, [cart]);
 
+  /**
+   * Lectura con espejo: red primero y, si no hay, lo último guardado. Vender sin
+   * red necesita de este espejo el catálogo, los clientes y —sobre todo— el
+   * estado de caja: `cajaAbierta` decide si se puede vender.
+   */
+  const readThroughMirror = useCallback(
+    <T,>(key: string, fetcher: () => Promise<T>, maxAgeMs: number) =>
+      getMirror().readThroughDetailed<T>(key, fetcher, { maxAgeMs }),
+    [],
+  );
+
   const fetchInitialData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
     if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
     try {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.allSettled([
-          apiClientSafe('/cashregister/status', { signal }),
-          apiClientSafe('/anfitrionas', { signal }),
-          apiClientSafe('/rooms', { signal }),
-          apiClientSafe('/clients', { signal }),
-          apiClientSafe('/categories', { signal }),
+          readThroughMirror(
+            MIRROR_KEYS.cashregisterStatus,
+            () => apiClientSafe('/cashregister/status', { signal }),
+            MIRROR_MAX_AGE_MS.dinero,
+          ),
+          readThroughMirror(
+            MIRROR_KEYS.anfitrionas,
+            () => apiClientSafe('/anfitrionas', { signal }),
+            MIRROR_MAX_AGE_MS.catalogo,
+          ),
+          readThroughMirror(
+            MIRROR_KEYS.rooms,
+            () => apiClientSafe('/rooms', { signal }),
+            MIRROR_MAX_AGE_MS.catalogo,
+          ),
+          readThroughMirror(
+            MIRROR_KEYS.clients,
+            () => apiClientSafe('/clients', { signal }),
+            MIRROR_MAX_AGE_MS.catalogo,
+          ),
+          readThroughMirror(
+            MIRROR_KEYS.categories,
+            () => apiClientSafe('/categories', { signal }),
+            MIRROR_MAX_AGE_MS.catalogo,
+          ),
         ]);
 
-      const caja = cajaRes.status === 'fulfilled' ? cajaRes.value : null;
-      const anfitrionasVal = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value : null;
-      const rooms = roomsRes.status === 'fulfilled' ? roomsRes.value : null;
-      const clients = clientsRes.status === 'fulfilled' ? clientsRes.value : null;
-      const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value : null;
+      setFromCache(
+        [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes].some(
+          resultado => resultado.status === 'fulfilled' && resultado.value.fromCache,
+        ),
+      );
+
+      const caja = cajaRes.status === 'fulfilled' ? cajaRes.value.data : null;
+      const anfitrionasVal = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value.data : null;
+      const rooms = roomsRes.status === 'fulfilled' ? roomsRes.value.data : null;
+      const clients = clientsRes.status === 'fulfilled' ? clientsRes.value.data : null;
+      const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value.data : null;
 
       const fetchedData: Partial<VentaState> = {
         cajaAbierta:
@@ -116,7 +159,7 @@ export function useNuevaVenta() {
       dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
       dispatch({ type: 'SET_REFRESHING', payload: false });
     }
-  }, []);
+  }, [readThroughMirror]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -155,15 +198,20 @@ export function useNuevaVenta() {
   // carrito (el reducer mezcla el parcial con SET_INITIAL_DATA).
   const refreshCajaStatus = useCallback(async () => {
     try {
-      const res = await apiClientSafe('/cashregister/status');
-      const hasOpenCaja = (res as any)?.data?.hasOpenCaja;
-      if ((res as any)?.success && typeof hasOpenCaja === 'boolean') {
+      const result = await readThroughMirror(
+        MIRROR_KEYS.cashregisterStatus,
+        () => apiClientSafe('/cashregister/status'),
+        MIRROR_MAX_AGE_MS.dinero,
+      );
+      const res = result.data as any;
+      const hasOpenCaja = res?.data?.hasOpenCaja;
+      if (res?.success && typeof hasOpenCaja === 'boolean') {
         dispatch({ type: 'SET_INITIAL_DATA', payload: { cajaAbierta: hasOpenCaja } });
       }
     } catch (error) {
       logger.captureException(error, { context: 'NuevaVenta:refreshCajaStatus' });
     }
-  }, []);
+  }, [readThroughMirror]);
 
   const handleLoadPrepago = useCallback(async () => {
     if (
@@ -342,50 +390,58 @@ export function useNuevaVenta() {
       return showToast('Error', 'Seleccione un cliente para pagar con prepago');
     }
 
+    // El saldo prepago vive en el servidor y no se puede descontar en el
+    // dispositivo: una venta prepago sin red podría sobregirar al cliente. Se
+    // bloquea en vez de encolarse.
+    if (metodoPago === 'prepago' && !blockOffline('prepago')) return;
+
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
-      const payload = {
-        detalles: cart.map((item: any) => ({
-          // FK real + presentación vendida (paridad con el payload del
-          // dashboard: consume stock en el bar) y venta por botella por
-          // defecto, como `mapForSaleToCartItem`.
-          producto_id: item.producto_id || item.id_producto || item.id,
-          presentacion_id: item.presentacion_id || null,
-          tipo_venta: item.presentacion_id ? 'botella' : undefined,
-          cantidad: item.quantity || item.cantidad || 1,
-          precio: item.precio || item.price || 0,
-          sub_total: (item.precio || item.price || 0) * (item.quantity || item.cantidad || 1),
-          comision:
-            Number(item.comision || item.commission || 0) *
-            (item.quantity || item.cantidad || 1),
-          hostesses:
-            item.anfitrionas?.map((a: any) =>
-              typeof a === 'object' ? a.id_usuario || a.id : a,
-            ) || [],
-        })),
-        cliente_id: (selectedCliente?.id?.toString() || selectedCliente?.id_cliente?.toString() || null) as string | null,
-        habitacion_id: hasCommissionItem
-          ? selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null
-          : null,
-        metodo_pago: metodoPago,
-        pagos_mixtos: metodoPago === 'mixto' ? pagosMixtos : undefined,
-        propina: totals.tip,
-        sub_total: totals.subtotal,
-        total: totals.total,
-        tiempo: selectedHabitacion ? selectedTime : 0,
-        usuarios: cart.flatMap((item: any) =>
-          item.anfitrionas?.map((a: any) =>
-            typeof a === 'object' ? a.id_usuario || a.id : a,
-          ) || [],
-        ),
-      };
+      const payload = buildSalePayload({
+        cart,
+        selectedCliente,
+        selectedHabitacion,
+        metodoPago,
+        pagosMixtos,
+        totals,
+        selectedTime,
+        hasCommissionItem,
+      });
 
-      const res = await apiClientSafe('/sales', { method: 'POST', body: JSON.stringify(payload) });
-      if ((res as any).success) {
+      const items = cart.reduce(
+        (acc: number, item: any) => acc + Number(item.quantity || item.cantidad || 0),
+        0,
+      );
+
+      // La venta se encola SIEMPRE, haya red o no: una sola ruta de código. El
+      // id de la intención viaja como clave de idempotencia, así que un corte
+      // después de cobrar no duplica la venta al reintentar.
+      const intent = await getOutbox().enqueueAndSend({
+        type: 'sale.create',
+        payload,
+        label: `Venta $${Number(totals.total || 0).toLocaleString('es-CL')} · ${items} ítem(s)`,
+      });
+
+      if (intent.status === 'aplicada') {
         showToast('Éxito', 'Venta realizada', 'success');
         refreshVentas();
         router.replace('/cajero/ventas');
-      } else showToast('Error', (res as any).message || 'Error al vender');
+        return;
+      }
+
+      if (intent.status === 'fallida') {
+        showToast('Error', intent.lastError || 'Error al vender');
+        return;
+      }
+
+      // Quedó pendiente: la venta está guardada y sale al volver la red.
+      showToast(
+        'Venta guardada en el dispositivo',
+        'Se enviará automáticamente cuando vuelva la conexión',
+        'info',
+      );
+      refreshVentas();
+      router.replace('/cajero/ventas');
     } catch (error) {
       logger.captureException(error, { context: 'NuevaVenta:processVenta' });
       showToast('Error', 'Error de conexión');
@@ -490,14 +546,13 @@ export function useNuevaVenta() {
     setSearchProducto('');
     setSearchResults([]);
     setSearchLoading(false);
-  }, []);
-
-  return {
-    state,
-    dispatch,
-    totals,
-    hasCommissionItem,
-    isTablet: false, 
+  }, []);    return {
+      state,
+      dispatch,
+      totals,
+      hasCommissionItem,
+      fromCache,
+      isTablet: false,  
     fetchInitialData,
     onRefresh,
     refreshCajaStatus,
