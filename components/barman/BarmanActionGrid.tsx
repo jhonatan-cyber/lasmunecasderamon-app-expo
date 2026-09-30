@@ -2,6 +2,7 @@ import { useRouter, type Href } from "expo-router";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Spacing } from "@/constants";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useOutbox } from "@/hooks/useOutbox";
 import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
 
 export const BarmanActionGrid = ({
@@ -12,6 +13,7 @@ export const BarmanActionGrid = ({
   const { accentColor } = useAccentColor();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { pendingCount, failedCount, isOffline } = useOutbox();
   const isTablet = width >= 768;
 
   const cols = isTablet ? 3 : 2;
@@ -45,6 +47,19 @@ export const BarmanActionGrid = ({
       color: accentColor,
       route: "/barman/financieros",
     },
+    // Solo aparece cuando hay algo que resolver: sin conexión o trabajo que el
+    // servidor todavía no confirmó.
+    ...(isOffline || pendingCount > 0 || failedCount > 0
+      ? [
+          {
+            title: "PENDIENTES",
+            description: "Operaciones sin enviar",
+            icon: "cloud-offline" as const,
+            color: accentColor,
+            route: "/barman/pendientes",
+          },
+        ]
+      : []),
   ];
 
   const rows = [];

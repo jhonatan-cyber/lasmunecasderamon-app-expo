@@ -20,6 +20,8 @@ import type { Timer } from '@/context/types';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
+import { blockOffline } from '@/utils/offlineGuard';
 import logger from '@/utils/logger';
 
 import {
@@ -327,6 +329,8 @@ export default function ServiciosActivosScreen() {
   };
 
   const onFinalizar = useCallback((timer: Timer) => {
+    // Finalizar factura el servicio en el servidor: sin red no se puede.
+    if (!blockOffline('temporizador')) return;
     dispatch({
       type: 'SET_ALERT', payload: {
         visible: true,
@@ -359,6 +363,7 @@ export default function ServiciosActivosScreen() {
   }, [refreshTimers, fetchFinalizados]);
 
   const onEditar = useCallback((timer: Timer) => {
+    if (!blockOffline('servicio')) return;
     dispatch({ type: 'SET_EDIT_MODAL', visible: true, timer });
   }, []);
 
@@ -395,6 +400,8 @@ export default function ServiciosActivosScreen() {
         activeTab={activeTab}
         onTabChange={(tabId: string) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId as any })}
       />
+
+      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <View style={{ flex: 1 }}>
         <FlashList

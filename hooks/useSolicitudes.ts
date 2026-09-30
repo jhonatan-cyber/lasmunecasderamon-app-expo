@@ -3,6 +3,7 @@ import { eventBus } from '@/utils/eventBus';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
+import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
 import type { Anfitriona } from '@lasmunecasderamon/types';
@@ -42,73 +43,94 @@ export const useSolicitudes = () => {
 
     const fetchSolicitudes = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
-            const [resSolicitudes, resOrders, resAnticipos, resStats, resAnfitrionas] = await Promise.all([
-                apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0', { signal }).catch(() => ({ success: false, data: [] })),
-                apiClientSafe<SolicitudItem[]>('/orders', { signal }).catch(() => ({ success: false, data: [] })),
-                apiClientSafe<SolicitudItem[]>('/anticipos', { signal }).catch(() => ({ success: false, data: [] })),
-                apiClientSafe<{ cajas_abiertas: number }>('/caja/stats', { signal }).catch(() => null),
-                apiClientSafe<Anfitriona[]>('/anfitrionas', { signal }).catch(() => ({ success: false, data: [] }))
+            // Red primero; sin red se sirve la lista del turno guardada en el
+            // dispositivo (espejo), que es lo único que deja ver qué falta
+            // resolver cuando se cae la conexión.
+            const [lectura, resAnfitrionas] = await Promise.all([
+                getMirror().readThroughDetailed(
+                    MIRROR_KEYS.serviceRequests,
+                    async () => {
+                        const [resSolicitudes, resOrders, resAnticipos, resStats] = await Promise.all([
+                            apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0', { signal }).catch(() => ({ success: false, data: [] })),
+                            apiClientSafe<SolicitudItem[]>('/orders', { signal }).catch(() => ({ success: false, data: [] })),
+                            apiClientSafe<SolicitudItem[]>('/anticipos', { signal }).catch(() => ({ success: false, data: [] })),
+                            apiClientSafe<{ cajas_abiertas: number }>('/caja/stats', { signal }).catch(() => null),
+                        ]);
+
+                        let combined: SolicitudItem[] = [];
+
+                        if (resSolicitudes.success) {
+                            const arr: SolicitudItem[] = (resSolicitudes.data as any[] || []).map((s: Record<string, unknown>) => ({
+                                ...s,
+                                tipoItem: 'solicitud' as const,
+                                id_unificado: `solicitud_${s.id_solicitud}`,
+                                fecha_orden: parseDateSafe(s.fecha_solicitud as string).getTime()
+                            } as SolicitudItem));
+                            combined = [...combined, ...arr];
+                        }
+
+                        if (resOrders.success) {
+                            const arr: SolicitudItem[] = (resOrders.data as any[] || []).map((o: Record<string, unknown>) => ({
+                                ...o,
+                                id_pedido: o.id_pedido || o.id,
+                                tipoItem: 'pedido' as const,
+                                id_unificado: `pedido_${o.id_pedido || o.id}`,
+                                fecha_orden: parseDateSafe(o.fecha_crea as string).getTime()
+                            } as SolicitudItem));
+                            combined = [...combined, ...arr];
+                        }
+
+                        if (resAnticipos.success) {
+                            const arr: SolicitudItem[] = (resAnticipos.data as any[] || [])
+                                .filter((a: Record<string, unknown>) => a.estado === 1 || a.estado === 2)
+                                .map((a: Record<string, unknown>) => ({
+                                    ...a,
+                                    codigo: (a.codigo as string) || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,
+                                    usuario: (a.usuario as string) || (a.nick as string) || `${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`.trim(),
+                                    tipoItem: 'anticipo' as const,
+                                    id_unificado: `anticipo_${a.id_anticipo}`,
+                                    fecha_orden: parseDateSafe(a.fecha_crea as string).getTime()
+                                } as SolicitudItem));
+                            combined = [...combined, ...arr];
+                        }
+
+                        combined.sort((a, b) => b.fecha_orden - a.fecha_orden);
+
+                        return {
+                            items: combined,
+                            cajaAbierta:
+                                resStats?.data && typeof resStats.data.cajas_abiertas !== 'undefined'
+                                    ? resStats.data.cajas_abiertas > 0
+                                    : null,
+                        };
+                    },
+                    { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
+                ),
+                apiClientSafe<Anfitriona[]>('/anfitrionas', { signal }).catch(() => null),
             ]);
 
             const anfitrionasData = resAnfitrionas as unknown as { success: boolean; data: Anfitriona[] };
             if (Array.isArray(resAnfitrionas)) {
                 setAllHostesses(resAnfitrionas);
-            } else if (anfitrionasData.success) {
+            } else if (anfitrionasData?.success) {
                 setAllHostesses(anfitrionasData.data || []);
             }
 
-            const newData = { solicitudes: resSolicitudes.data, orders: resOrders.data, stats: resStats };
+            const newData = { solicitudes: lectura.data.items };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (resStats?.data && typeof resStats.data.cajas_abiertas !== 'undefined') {
-                setCajaAbierta(resStats.data.cajas_abiertas > 0);
+            if (lectura.data.cajaAbierta !== null) {
+                setCajaAbierta(lectura.data.cajaAbierta);
             }
 
-            let combined: SolicitudItem[] = [];
+            setSolicitudes(lectura.data.items);
+            // `fromCache` es la verdad de la pantalla: si el dato vino del
+            // espejo, el usuario está viendo datos guardados.
+            setIsOffline(lectura.fromCache);
 
-            if (resSolicitudes.success) {
-                const arr: SolicitudItem[] = (resSolicitudes.data as any[] || []).map((s: Record<string, unknown>) => ({
-                    ...s,
-                    tipoItem: 'solicitud' as const,
-                    id_unificado: `solicitud_${s.id_solicitud}`,
-                    fecha_orden: parseDateSafe(s.fecha_solicitud as string).getTime()
-                } as SolicitudItem));
-                combined = [...combined, ...arr];
-            }
-
-            if (resOrders.success) {
-                const arr: SolicitudItem[] = (resOrders.data as any[] || []).map((o: Record<string, unknown>) => ({
-                    ...o,
-                    id_pedido: o.id_pedido || o.id,
-                    tipoItem: 'pedido' as const,
-                    id_unificado: `pedido_${o.id_pedido || o.id}`,
-                    fecha_orden: parseDateSafe(o.fecha_crea as string).getTime()
-                } as SolicitudItem));
-                combined = [...combined, ...arr];
-            }
-
-            if (resAnticipos.success) {
-                const arr: SolicitudItem[] = (resAnticipos.data as any[] || [])
-                    .filter((a: Record<string, unknown>) => a.estado === 1 || a.estado === 2)
-                    .map((a: Record<string, unknown>) => ({
-                        ...a,
-                        codigo: (a.codigo as string) || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,
-                        usuario: (a.usuario as string) || (a.nick as string) || `${a.nombre || a.name || ''} ${a.apellido || a.lastName || ''}`.trim(),
-                        tipoItem: 'anticipo' as const,
-                        id_unificado: `anticipo_${a.id_anticipo}`,
-                        fecha_orden: parseDateSafe(a.fecha_crea as string).getTime()
-                    } as SolicitudItem));
-                combined = [...combined, ...arr];
-            }
-
-            combined.sort((a, b) => b.fecha_orden - a.fecha_orden);
-            setSolicitudes(combined);
-            setIsOffline(false);
-
-            
-            AsyncStorage.setItem(CACHE_KEY, JSON.stringify(combined)).catch(() => null);
+            AsyncStorage.setItem(CACHE_KEY, JSON.stringify(lectura.data.items)).catch(() => null);
 
             if (isManual) {
                 showToast({
@@ -137,7 +159,11 @@ export const useSolicitudes = () => {
 
     useEffect(() => {
         const ac = new AbortController();
-        fetchSolicitudes(false, ac.signal);
+        // La lectura inicial corre en su propia tarea: el efecto no debe
+        // disparar setState de forma síncrona.
+        void (async () => {
+            await fetchSolicitudes(false, ac.signal);
+        })();
         return () => ac.abort();
     }, [fetchSolicitudes]);
 

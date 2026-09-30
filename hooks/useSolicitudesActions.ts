@@ -9,6 +9,7 @@ import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { MetodoPago } from "@/types/api";
 import type { Cliente } from '@lasmunecasderamon/types';
 import type { PedidoItem, SolicitudItem, PendingAutoOpen } from "@/hooks/types/solicitudesTypes";
+import { blockOffline } from "@/utils/offlineGuard";
 import logger from "@/utils/logger";
 
 interface PedidoDetalle {
@@ -128,6 +129,9 @@ export const useSolicitudesActions = ({
       showToast("Caja Cerrada", "No puedes aprobar servicios ni pedidos porque no hay una caja abierta.", "error");
       return;
     }
+
+    // Aprobar factura y mueve dinero: es decisión del servidor.
+    if (!blockOffline("solicitud")) return;
 
     if (tipo === "pedido" && itemInfo) {
       setSelectedPedido(itemInfo);
@@ -258,6 +262,7 @@ export const useSolicitudesActions = ({
   }, [cajaAbierta, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, removeSolicitudLocally, serviceModalVisible, showToast]);
 
   const handleRechazar = useCallback((id: string, tipo: "pedido" | "solicitud" | "anticipo") => {
+    if (!blockOffline("solicitud")) return;
     setAlertConfig({
       visible: true,
       title: "Rechazar",
@@ -289,6 +294,8 @@ export const useSolicitudesActions = ({
 
   const handleCheckoutSubmit = useCallback(async () => {
     if (!selectedPedido) return;
+    // El checkout del pedido crea la venta en el servidor.
+    if (!blockOffline("solicitud")) return;
     setSubmittingCheckout(true);
 
     const pedidoItem = selectedPedido as PedidoItem;
@@ -370,6 +377,9 @@ export const useSolicitudesActions = ({
       showToast("Caja Cerrada", "No puedes crear cuentas sin una caja abierta.", "error");
       return;
     }
+
+    // Crear la cuenta escribe en caja: necesita el servidor.
+    if (!blockOffline("cuenta")) return;
 
     setSubmittingCheckout(true);
     try {

@@ -27,7 +27,7 @@ const initialVentasLoadedRef = { current: false };
 
 export const useVentasScreen = () => {
   const { refreshTimers } = useTimer();
-  const { isOnline } = useConnectivity();
+  const { isOffline } = useConnectivity();
   const params = useLocalSearchParams();
   /** `true` si el listado que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
@@ -127,7 +127,11 @@ export const useVentasScreen = () => {
 
   useEffect(() => {
     const ac = new AbortController();
-    fetchVentas(false, ac.signal);
+    // La lectura inicial corre en su propia tarea: el efecto no debe disparar
+    // setState de forma síncrona.
+    void (async () => {
+      await fetchVentas(false, ac.signal);
+    })();
     return () => ac.abort();
   }, [fetchVentas]);
 
@@ -239,7 +243,7 @@ export const useVentasScreen = () => {
   const handleFinalizarVenta = useCallback(
     (venta: any) => {
       // Finalizar libera la habitación y detiene el temporizador en el servidor.
-      if (!blockOffline("temporizador", () => isOnline)) return;
+      if (!blockOffline("temporizador", () => !isOffline)) return;
 
       const alertConfig: AlertConfig = {
         visible: true,
@@ -282,12 +286,12 @@ export const useVentasScreen = () => {
       };
       dispatch({ type: "SET_ALERT_CONFIG", payload: alertConfig });
     },
-    [fetchVentas, getVentaId, refreshTimers, showToast, isOnline],
+    [fetchVentas, getVentaId, refreshTimers, showToast, isOffline],
   );
 
   const handleAnularVenta = useCallback(async () => {
     if (!state.activeVenta) return;
-    if (!blockOffline("anulacion", () => isOnline)) return;
+    if (!blockOffline("anulacion", () => !isOffline)) return;
     const ventaId = getVentaId(state.activeVenta);
     const monto = parseMontoInput(state.montoAnulacion);
     const motivo = state.motivoAnulacion.trim();
@@ -348,13 +352,13 @@ export const useVentasScreen = () => {
     getVentaId,
     parseMontoInput,
     showToast,
-    isOnline,
+    isOffline,
   ]);
 
   return {
     loading: state.loading,
     refreshing: state.refreshing,
-    isOffline: !isOnline,
+    isOffline,
     fromCache,
     ventas: state.ventas,
     ventasList: Array.isArray(state.ventas) ? state.ventas : [],

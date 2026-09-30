@@ -5,6 +5,7 @@ import { Colors } from "@/constants/theme";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { serviciosService } from "@/services";
+import { blockOffline } from "@/utils/offlineGuard";
 import type { ApiRes } from "@/types/api";
 import { useTimer } from "@/context/TimerContext";
 import type { Timer } from '@/context/types';
@@ -344,6 +345,8 @@ export function useServiciosScreen() {
 
   const onFinalizar = useCallback(
     (timer: Timer) => {
+      // Finalizar factura el servicio en el servidor: sin red no se puede.
+      if (!blockOffline("temporizador")) return;
       dispatch({
         type: "SET_ALERT",
         payload: {
@@ -393,6 +396,7 @@ export function useServiciosScreen() {
   );
 
   const onEditar = useCallback((timer: Timer) => {
+    if (!blockOffline("servicio")) return;
     dispatch({ type: "SET_EDIT_MODAL", visible: true, timer });
   }, []);
 

@@ -27,21 +27,28 @@ export const CartList = React.memo(({
     const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
-        const ObjectGroups: Record<number, { id: number | string; name: string; precio: number; totalQty: number; subItems: (CartItem & { originalIndex: number })[] }> = {};
+        const ObjectGroups: Record<string, { id: number | string; name: string; precio: number; totalQty: number; badge: string | null; subItems: (CartItem & { originalIndex: number })[] }> = {};
 
         items.forEach((item, idx) => {
             const id = item.id || item.id_producto || idx;
-            if (!ObjectGroups[id as number]) {
-                ObjectGroups[id as number] = {
+            // Una misma presentación vendida de forma distinta (botella, shot de
+            // cliente o shot de anfitriona) es un grupo aparte: cambia precio y reporte.
+            const tipo = (item as any).tipo_venta === 'shot' ? 'shot' : 'botella';
+            const badge =
+                tipo === 'shot' ? ((item as any).shot_anfitriona ? 'Shot anfitriona' : 'Shot cliente') : null;
+            const key = `${id}-${tipo}-${(item as any).shot_anfitriona ? 'anf' : ''}`;
+            if (!ObjectGroups[key]) {
+                ObjectGroups[key] = {
                     id,
                     name: item.nombre || 'Producto',
                     precio: item.precio || 0,
                     totalQty: 0,
+                    badge,
                     subItems: []
                 };
             }
-            ObjectGroups[id as number].totalQty += (item.cantidad || 1);
-            ObjectGroups[id as number].subItems.push({ ...item, originalIndex: idx });
+            ObjectGroups[key].totalQty += (item.cantidad || 1);
+            ObjectGroups[key].subItems.push({ ...item, originalIndex: idx });
         });
 
         return Object.values(ObjectGroups);
@@ -56,10 +63,17 @@ export const CartList = React.memo(({
                 <View key={groupIdx} style={[styles.cartItem, { borderBottomColor: 'rgba(155,155,155,0.1)' }]}>
                     <View style={{ flex: 1 }}>
                         <View style={styles.groupHeader}>
-                            <Text style={[styles.itemName, { color: textPrimary }]}>
-                                {group.name}{'  '}
-                                <Text style={{ fontWeight: '900', color: '#10B981' }}>x{group.totalQty}</Text>
-                            </Text>
+                            <View style={styles.groupTitleRow}>
+                                <Text style={[styles.itemName, { color: textPrimary }]}>
+                                    {group.name}{'  '}
+                                    <Text style={{ fontWeight: '900', color: '#10B981' }}>x{group.totalQty}</Text>
+                                </Text>
+                                {group.badge && (
+                                    <View style={[styles.saleBadge, { borderColor: accentColor }]}>
+                                        <Text style={[styles.saleBadgeText, { color: accentColor }]}>{group.badge}</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={[styles.itemSub, { color: textSecondary }]}>
                                 ${(group.precio).toLocaleString()} c/u
                             </Text>
@@ -127,6 +141,9 @@ const styles = StyleSheet.create({
     qtyText: { marginHorizontal: 12, fontSize: 14, fontWeight: '900' },
     deleteBtnOnly: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
     groupHeader: { marginBottom: 8 },
+    groupTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    saleBadge: { borderWidth: 1, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
+    saleBadgeText: { fontSize: 10, fontWeight: '900' },
     subItemsContainer: { paddingLeft: 8, marginTop: 4, borderLeftWidth: 2, borderLeftColor: 'rgba(155,155,155,0.2)' },
     subItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }
 });

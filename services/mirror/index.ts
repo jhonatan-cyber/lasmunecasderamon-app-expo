@@ -40,6 +40,10 @@ export const MIRROR_KEYS = {
     salesReport: 'ventas.reporte',
     barStock: 'bar.stock',
     barMovements: 'bar.movimientos',
+    /** Recepciones de transferencia que el barman aún no resolvió. */
+    barTransfers: 'bar.transferencias',
+    /** Historial de envases entregados por el bar. */
+    barContainers: 'bar.envases',
     serviceRequests: 'solicitudes.listado',
     adminDashboard: 'admin.dashboard',
     adminFinancialEvents: 'admin.eventos-financieros',

@@ -5,6 +5,7 @@ import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 're
 import FlashList from '@/components/shared/FlashList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
+import { BarmanOfflineBanner } from '@/components/barman/BarmanOfflineBanner';
 import { BarStockList } from '@/components/barman/bar/BarStockList';
 import { ContainerReturnPanel } from '@/components/barman/bar/ContainerReturnPanel';
 import { EnvaseScannerModal } from '@/components/barman/bar/EnvaseScannerModal';
@@ -91,6 +92,8 @@ export default function BarScreen() {
         activeTab={activeTab}
         onTabChange={onTabChange}
       />
+
+      <BarmanOfflineBanner />
 
       {activeTab === 'stock' && (
         <View style={[styles.searchWrap, { backgroundColor: cardBg, borderColor }]}>

@@ -13,6 +13,7 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BarmanOfflineBanner } from '@/components/barman/BarmanOfflineBanner';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useTimer } from '@/context/TimerContext';
@@ -124,6 +125,8 @@ export default function VentasScreen() {
           </View>
         }
       />
+
+      <BarmanOfflineBanner />
 
       <VentaTabs
         activeTab={activeTab}

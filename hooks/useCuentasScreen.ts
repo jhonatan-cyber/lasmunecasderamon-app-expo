@@ -146,7 +146,7 @@ const showToast = (
 export const useCuentasScreen = () => {
   const params = useLocalSearchParams();
   const dataRef = useRef<string>("");
-  const { isOnline, isOffline } = useConnectivity();
+  const { isOffline } = useConnectivity();
   const { timers, serverOffset, refreshTimers } = useTimer();
   const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
   const [anulacionCuenta, setAnulacionCuenta] = useState<CuentaDetalle | null>(null);
@@ -442,7 +442,7 @@ export const useCuentasScreen = () => {
     (cuenta: CuentaDetalle) => {
       // El temporizador lo lleva el servidor y los demás dispositivos lo ven por
       // SSE: sin red no se puede finalizar (se avisa antes de abrir el modal).
-      if (!blockOffline("temporizador", () => isOnline)) return;
+      if (!blockOffline("temporizador", () => !isOffline)) return;
 
       dispatch({
         type: "SET_ALERT",
@@ -473,18 +473,18 @@ export const useCuentasScreen = () => {
         },
       });
     },
-    [fetchCuentas, refreshTimers, isOnline],
+    [fetchCuentas, refreshTimers, isOffline],
   );
 
   const handleSolicitarAnulacion = useCallback((cuenta: CuentaDetalle) => {
-    if (!blockOffline("anulacion", () => isOnline)) return;
+    if (!blockOffline("anulacion", () => !isOffline)) return;
 
     dispatch({ type: "SET_ACTION_SHEET", visible: false });
     setAnulacionCuenta(cuenta);
     setAnulacionMotivo("");
     setAnulacionMonto(formatAmountInput(String(Number(cuenta?.total || 0))));
     setAnulacionModalVisible(true);
-  }, [isOnline]);
+  }, [isOffline]);
 
   const handleEnviarSolicitudAnulacion = useCallback(async () => {
     if (!anulacionCuenta) return;

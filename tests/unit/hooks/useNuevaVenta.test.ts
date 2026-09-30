@@ -484,3 +484,210 @@ describe('useNuevaVenta — refresh de caja al volver de la pantalla de Caja', (
     expect(result.current.state.categories).toBe(categoriesBefore);
   });
 });
+
+describe('useNuevaVenta — selector de forma de venta (shot cliente / anfitriona)', () => {
+  // Botella barata (no dispara la regla de bebida cara) y con precio de shot
+  // para las dos audiencias: es lo que ofrece `opciones_venta` del catálogo.
+  const conShot = {
+    id: 'pres-1',
+    presentacion_id: 'pres-1',
+    producto_id: 'prod-1',
+    id_producto: 'prod-1',
+    nombre: 'Fernet 750 ml',
+    precio: 25000,
+    price: 25000,
+    comision: 0,
+    commission: 0,
+    stock_bar: 4,
+    opciones_venta: [
+      { tipo: 'botella', precio: 25000, comision: 0 },
+      { tipo: 'shot', precio: 6000, comision: 0, precio_anfitriona: 3500 },
+    ],
+  };
+
+  const conShotComision = {
+    ...conShot,
+    id: 'pres-2',
+    presentacion_id: 'pres-2',
+    producto_id: 'prod-2',
+    id_producto: 'prod-2',
+    nombre: 'Whisky 750 ml',
+    opciones_venta: [
+      { tipo: 'botella', precio: 25000, comision: 0 },
+      { tipo: 'shot', precio: 6000, comision: 1000, precio_anfitriona: 3500 },
+    ],
+  };
+
+  beforeEach(() => {
+    configValues.clear();
+    configValues.set('propina_venta', '10');
+    vi.clearAllMocks();
+    vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
+      if (url === '/cashregister/status') {
+        return { success: true, data: { hasOpenCaja: true } };
+      }
+      return { success: true, data: [] };
+    });
+  });
+
+  it('recuerda la forma de venta elegida por presentación', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handleSetSaleChoice('pres-1', 'shot_anfitriona');
+    });
+
+    expect(result.current.saleChoices['pres-1']).toBe('shot_anfitriona');
+    expect(result.current.state.saleChoices['pres-1']).toBe('shot_anfitriona');
+  });
+
+  it('agrega shot y botella como líneas separadas, cada una con su precio', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handlePressAddProduct(conShot);
+    });
+    // Cada toque es un evento aparte: la elección ya está renderizada al agregar.
+    act(() => {
+      result.current.handleSetSaleChoice('pres-1', 'shot_anfitriona');
+    });
+    act(() => {
+      result.current.handlePressAddProduct(conShot);
+    });
+
+    const cart = result.current.state.cart;
+    expect(cart).toHaveLength(2);
+    expect(cart[0]).toMatchObject({
+      tipo_venta: 'botella',
+      shot_anfitriona: false,
+      precio: 25000,
+      quantity: 1,
+    });
+    expect(cart[1]).toMatchObject({
+      tipo_venta: 'shot',
+      shot_anfitriona: true,
+      precio: 3500,
+      quantity: 1,
+    });
+
+    // Repetir el mismo shot suma en su línea; la botella no se mezcla.
+    act(() => {
+      result.current.handlePressAddProduct(conShot);
+    });
+    expect(result.current.state.cart).toHaveLength(2);
+    expect(result.current.state.cart[1].quantity).toBe(2);
+  });
+
+  it('el shot de cliente se agrega con el precio de cliente', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handleSetSaleChoice('pres-1', 'shot');
+    });
+    act(() => {
+      result.current.handlePressAddProduct(conShot);
+    });
+
+    expect(result.current.state.cart[0]).toMatchObject({
+      tipo_venta: 'shot',
+      shot_anfitriona: false,
+      precio: 6000,
+    });
+  });
+
+  it('el shot con comisión pide anfitriona con la comisión y el precio del shot', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handleSetSaleChoice('pres-2', 'shot_anfitriona');
+    });
+    act(() => {
+      result.current.handlePressAddProduct(conShotComision);
+    });
+
+    const target = result.current.state.hostessSelectionTarget;
+    expect(target).toBeTruthy();
+    // La botella no tiene comisión: no debe heredarse al shot.
+    expect(target!.product).toMatchObject({
+      tipo_venta: 'shot',
+      shot_anfitriona: true,
+      precio: 3500,
+      comision: 1000,
+    });
+    expect(result.current.state.cart).toHaveLength(0);
+  });
+
+  it('el shot no gasta botellas: tope 99 aunque stock_bar sea menor', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    setCart(result, [
+      { ...conShot, tipo_venta: 'shot', shot_anfitriona: false, precio: 6000, quantity: 98 },
+    ]);
+
+    act(() => {
+      result.current.updateQuantity(0, 1);
+    });
+    expect(result.current.state.cart[0].quantity).toBe(99);
+
+    act(() => {
+      result.current.updateQuantity(0, 50);
+    });
+    expect(result.current.state.cart[0].quantity).toBe(99);
+  });
+
+  it('la botella sigue respetando el stock del bar', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    setCart(result, [{ ...conShot, quantity: 3 }]);
+
+    act(() => {
+      result.current.updateQuantity(0, 5);
+    });
+    expect(result.current.state.cart[0].quantity).toBe(4); // stock_bar
+  });
+
+  it('el payload envía tipo_venta shot y shot_anfitriona', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    setCart(result, [
+      {
+        ...conShot,
+        tipo_venta: 'shot',
+        shot_anfitriona: true,
+        precio: 3500,
+        quantity: 2,
+        anfitrionas: [],
+      },
+    ]);
+    setMetodoPago(result, 'efectivo');
+
+    vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: { id: 'v1' } } as any);
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    const postCall = vi.mocked(apiClientSafe).mock.calls.find(
+      (call: any) => call[0] === '/sales' && call[1]?.method === 'POST'
+    );
+    expect(postCall).toBeTruthy();
+
+    const payload = JSON.parse((postCall as any)[1].body);
+    expect(payload.detalles[0]).toMatchObject({
+      producto_id: 'prod-1',
+      presentacion_id: 'pres-1',
+      tipo_venta: 'shot',
+      shot_anfitriona: true,
+      cantidad: 2,
+      precio: 3500,
+      sub_total: 7000,
+    });
+  });
+});

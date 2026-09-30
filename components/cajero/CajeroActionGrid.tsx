@@ -80,6 +80,13 @@ export const CajeroActionGrid = ({
       color: accentColor,
       route: "/cajero/financieros",
     },
+    {
+      title: "ANALÍTICAS",
+      description: "Métricas y ventas",
+      icon: "analytics" as const,
+      color: accentColor,
+      route: "/cajero/analytics",
+    },
   ];
 
   const rows = [];

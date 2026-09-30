@@ -61,7 +61,20 @@ const sinBotellaAbierta = {
   stock_bar: 12
 };
 
-const renderSearch = (searchResults: any[], onAddProduct = vi.fn()) => {
+const conShot = {
+  id: 'pres-3',
+  nombre: 'Fernet 750 ml',
+  categoria: 'Destilados',
+  precio: 25000,
+  comision: 0,
+  stock_bar: 4,
+  opciones_venta: [
+    { tipo: 'botella', precio: 25000, comision: 0 },
+    { tipo: 'shot', precio: 6000, comision: 0, precio_anfitriona: 3500 }
+  ]
+};
+
+const renderSearch = (searchResults: any[], onAddProduct = vi.fn(), extra: Record<string, any> = {}) => {
   render(
     <NuevaVentaSearch
       searchProducto="black"
@@ -77,6 +90,7 @@ const renderSearch = (searchResults: any[], onAddProduct = vi.fn()) => {
       textPrimary="#000000"
       textSecondary="#666666"
       borderColor="#EEEEEE"
+      {...extra}
     />
   );
   return onAddProduct;
@@ -108,5 +122,48 @@ describe('NuevaVentaSearch (vista móvil)', () => {
     fireEvent.click(screen.getByLabelText('Agregar producto'));
 
     expect(onAddProduct).toHaveBeenLastCalledWith(conBotellaAbierta);
+  });
+
+  it('sin precio de shot no muestra el selector de forma de venta', () => {
+    renderSearch([sinBotellaAbierta]);
+
+    expect(screen.queryByLabelText('Vender como Botella')).toBeNull();
+    expect(screen.queryByLabelText('Vender como Shot cliente')).toBeNull();
+  });
+
+  it('muestra Botella, Shot cliente y Shot anfitriona cuando el producto los ofrece', () => {
+    renderSearch([conShot]);
+
+    expect(screen.getByLabelText('Vender como Botella')).toBeDefined();
+    expect(screen.getByLabelText('Vender como Shot cliente')).toBeDefined();
+    expect(screen.getByLabelText('Vender como Shot anfitriona')).toBeDefined();
+    // Por defecto se vende botella.
+    expect(screen.getByText(`$${(25000).toLocaleString()}`)).toBeDefined();
+  });
+
+  it('avisa al hook del cambio de forma de venta y pinta el precio elegido', () => {
+    const onSaleChoiceChange = vi.fn();
+    renderSearch([conShot], vi.fn(), {
+      saleChoices: { 'pres-3': 'shot_anfitriona' },
+      onSaleChoiceChange
+    });
+
+    // La fila muestra el precio de anfitriona, no el de botella.
+    expect(screen.getByText(`$${(3500).toLocaleString()}`)).toBeDefined();
+
+    fireEvent.click(screen.getByLabelText('Vender como Shot cliente'));
+
+    expect(onSaleChoiceChange).toHaveBeenCalledWith('pres-3', 'shot');
+  });
+
+  it('el botón agregar manda el producto crudo: el hook resuelve la forma de venta', () => {
+    const onAddProduct = renderSearch([conShot], vi.fn(), {
+      saleChoices: { 'pres-3': 'shot_anfitriona' },
+      onSaleChoiceChange: vi.fn()
+    });
+
+    fireEvent.click(screen.getByLabelText('Agregar producto'));
+
+    expect(onAddProduct).toHaveBeenLastCalledWith(conShot);
   });
 });

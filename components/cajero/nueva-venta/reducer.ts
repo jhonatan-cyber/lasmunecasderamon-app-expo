@@ -23,6 +23,7 @@ export const initialVentaState: VentaState = {
   modalLoading: false,
   modalQuantities: {},
   modalHostessSelections: {},
+  saleChoices: {},
   hostessSelectionTarget: null,
   hostessSubModalVisible: false,
   hostessModalVisible: false,
@@ -120,6 +121,11 @@ export function ventaReducer(state: VentaState, action: VentaAction): VentaState
       return {
         ...state,
         modalQuantities: { ...state.modalQuantities, [action.productId]: action.quantity },
+      };
+    case 'SET_SALE_CHOICE':
+      return {
+        ...state,
+        saleChoices: { ...state.saleChoices, [action.productId]: action.choice },
       };
     case 'SET_MODAL_HOSTESSES':
       return {

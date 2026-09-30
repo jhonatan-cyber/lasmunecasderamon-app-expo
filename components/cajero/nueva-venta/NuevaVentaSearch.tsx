@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { formatBotellaAbierta } from '@/hooks/utils/cartUtils';
+import { resolverVentaProducto, type SaleChoice } from '@/hooks/utils/saleChoice';
+import { SaleTypeChips } from '@/components/cajero/nueva-venta/SaleTypeChips';
 
 interface NuevaVentaSearchProps {
   searchProducto: string;
@@ -12,6 +14,9 @@ interface NuevaVentaSearchProps {
   searchLoading: boolean;
   searchResults: any[];
   onAddProduct: (item: any) => void;
+  /** Forma de venta elegida por presentación y callback para cambiarla. */
+  saleChoices?: { [key: string]: SaleChoice };
+  onSaleChoiceChange?: (productId: string, choice: SaleChoice) => void;
   isDark: boolean;
   accentColor: string;
   cardBg: string;
@@ -26,7 +31,9 @@ interface NuevaVentaSearchProps {
  * «Buscando...» y «No hay resultados», más el botón «Limpiar».
  *
  * Cada resultado muestra —como el buscador del dashboard— la botella abierta
- * en el bar y los shots aproximados que quedan en ella.
+ * en el bar, los shots aproximados que quedan en ella y, si la presentación
+ * ofrece más de una forma de venta, el selector Botella / Shot cliente /
+ * Shot anfitriona.
  */
 export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
   searchProducto,
@@ -36,6 +43,8 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
   searchLoading,
   searchResults,
   onAddProduct,
+  saleChoices = {},
+  onSaleChoiceChange,
   isDark,
   accentColor,
   cardBg,
@@ -99,8 +108,11 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
             </Text>
           ) : (
             searchResults.map((producto: any, idx: number) => {
-              const precio = Number(producto.precio || producto.price || 0);
-              const comision = Number(producto.comision || producto.commission || 0);
+              const id = String(producto.id || producto.id_producto || idx);
+              // Precio, comisión y opciones según la forma de venta elegida.
+              const venta = resolverVentaProducto(producto, saleChoices[id]);
+              const precio = venta.precio;
+              const comision = venta.comision;
               const categoria = String(producto.categoria || '');
               const botellaAbierta = formatBotellaAbierta(
                 producto.ml_abierta,
@@ -124,6 +136,14 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                         {botellaAbierta}
                       </Text>
                     )}
+                    <SaleTypeChips
+                      opciones={venta.opciones}
+                      value={venta.tipoVenta}
+                      onChange={(choice) => onSaleChoiceChange?.(id, choice)}
+                      accentColor={accentColor}
+                      textPrimary={textPrimary}
+                      borderColor={borderColor}
+                    />
                   </View>
                   <Text style={[styles.resultPrice, { color: accentColor }]}>
                     ${precio.toLocaleString()}

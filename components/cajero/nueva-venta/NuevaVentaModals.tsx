@@ -3,6 +3,8 @@ import { ActivityIndicator, Modal, Pressable, Text, TextInput, TouchableOpacity,
 import FlashList from "@/components/shared/FlashList";
 
 import { PaymentMethod, PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
+import { SaleTypeChips } from "@/components/cajero/nueva-venta/SaleTypeChips";
+import { resolverVentaProducto, type SaleChoice } from "@/hooks/utils/saleChoice";
 
 type Props = {
   styles: Record<string, any>;
@@ -17,6 +19,9 @@ type Props = {
   modalProducts: any[];
   modalLoading: boolean;
   modalQuantities: Record<string, number>;
+  /** Forma de venta elegida por presentación y callback para cambiarla. */
+  saleChoices?: Record<string, SaleChoice>;
+  onSaleChoiceChange?: (productId: string, choice: SaleChoice) => void;
   selectedTime: number;
   timeModalVisible: boolean;
   loadModalVisible: boolean;
@@ -50,6 +55,8 @@ export function NuevaVentaModals({
   modalProducts,
   modalLoading,
   modalQuantities,
+  saleChoices = {},
+  onSaleChoiceChange,
   selectedTime,
   timeModalVisible,
   loadModalVisible,
@@ -87,13 +94,23 @@ export function NuevaVentaModals({
                 estimatedItemSize={80}
                 renderItem={({ item }: { item: any }) => {
                   const id = item.id || item.id_producto;
+                  // Precio, comisión y tope de unidades según la forma de venta elegida.
+                  const venta = resolverVentaProducto(item, saleChoices[String(id)]);
                   return (
                     <View style={[styles.productItem, { borderBottomColor: borderColor }]}>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.productName, { color: textPrimary }]}>{item.name || item.nombre}</Text>
                         <Text style={[styles.productPrice, { color: textSecondary }]}>
-                          ${(item.precio || item.price || 0).toLocaleString()}
+                          ${(venta.precio || item.precio || item.price || 0).toLocaleString()}
                         </Text>
+                        <SaleTypeChips
+                          opciones={venta.opciones}
+                          value={venta.tipoVenta}
+                          onChange={(choice) => onSaleChoiceChange?.(String(id), choice)}
+                          accentColor={accentColor}
+                          textPrimary={textPrimary}
+                          borderColor={borderColor}
+                        />
                       </View>
                       <View style={styles.modalQuantityActions}>
                         <Pressable
@@ -106,10 +123,11 @@ export function NuevaVentaModals({
                         <Pressable
                           style={[styles.modalQtyBtn, { backgroundColor: cardBg, borderColor }]}
                           onPress={() => {
-                            const stockBar = Number(item.stock_bar ?? 0);
                             const next = (modalQuantities[id] || 1) + 1;
-                            // Tope de stock en el bar (catálogo for_sale; legacy sin tope).
-                            onUpdateModalQuantity(id, stockBar > 0 ? Math.min(next, stockBar) : next);
+                            // Tope: 99 para el shot (no gasta botellas) y stock en
+                            // el bar para la botella (catálogo for_sale; legacy sin tope).
+                            const max = venta.maxCantidad > 0 ? venta.maxCantidad : next;
+                            onUpdateModalQuantity(id, Math.min(next, max));
                           }}
                         >
                           <Ionicons name="add" size={16} color={textPrimary} />

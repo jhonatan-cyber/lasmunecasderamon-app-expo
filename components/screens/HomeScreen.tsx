@@ -332,6 +332,29 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
+            {role === "anfitriona" && (
+              <Pressable
+                onPress={() => router.push("/anfitriona/analytics")}
+                style={({ pressed }) => [
+                  styles.analyticsLink,
+                  { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <View style={[styles.analyticsLinkIcon, { backgroundColor: `${accentColor}1F` }]}>
+                  <Ionicons name="stats-chart" size={18} color={accentColor} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <RNText style={{ color: textPrimary, fontSize: 14, fontWeight: "800" }}>
+                    Analíticas
+                  </RNText>
+                  <RNText style={{ color: textSecondary, fontSize: 11 }}>
+                    Métricas y tendencias
+                  </RNText>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+              </Pressable>
+            )}
+
             {role === "garzon" && (
               <>
                 <GarzonStats stats={stats} events={events} />
@@ -349,6 +372,16 @@ export function HomeScreen({ role }: HomeScreenProps) {
                     icon="bed"
                     color="#10B981"
                     onPress={() => router.push("/garzon/servicios")}
+                  />
+                </View>
+                {/* Paridad con Flutter: acceso a Analíticas desde el home */}
+                <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+                  <GarzonActionCard
+                    title="ANALÍTICAS"
+                    description="Métricas y ventas"
+                    icon="stats-chart"
+                    color="#8B5CF6"
+                    onPress={() => router.push("/garzon/analytics")}
                   />
                 </View>
               </>
@@ -517,8 +550,18 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     elevation: 4,
-  },
-  analyticsRow: { flexDirection: "row", gap: 12, marginTop: 10 },
+  },    analyticsRow: { flexDirection: "row", gap: 12, marginTop: 10 },
+    // Acceso a Analíticas (paridad con Flutter: /anfitriona/analytics)
+    analyticsLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 12,
+      padding: 14,
+      borderRadius: 20,
+      borderWidth: 1,
+    },
+    analyticsLinkIcon: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   glassCard: {
     flex: 1,
     padding: 16,

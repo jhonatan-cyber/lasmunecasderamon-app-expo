@@ -126,6 +126,8 @@ test('root redirects cajero users to the cashier dashboard', async ({ page }) =>
     await expect(page).toHaveURL(/cajero/);
     await expect(page.locator('body')).toContainText('VENTAS');
     await expect(page.locator('body')).toContainText('CUENTAS');
+    // Paridad con Flutter: la acción ANALÍTICAS vive en el home del cajero
+    await expect(page.locator('body')).toContainText('ANALÍTICAS');
 });
 
 test('root redirects garzon users to the waiter dashboard', async ({ page }) => {
@@ -136,6 +138,7 @@ test('root redirects garzon users to the waiter dashboard', async ({ page }) => 
     await expect(page).toHaveURL(/garzon/);
     await expect(page.locator('body')).toContainText('PEDIDOS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
+    await expect(page.locator('body')).toContainText('ANALÍTICAS');
 });
 
 test('root redirects anfitriona users to the hostess dashboard', async ({ page }) => {
@@ -146,6 +149,7 @@ test('root redirects anfitriona users to the hostess dashboard', async ({ page }
     await expect(page).toHaveURL(/anfitriona/);
     await expect(page.locator('body')).toContainText('Meta Semanal');
     await expect(page.locator('body')).toContainText('SOLICITAR SERVICIO');
+    await expect(page.locator('body')).toContainText('Analíticas');
 });
 
 test('cajero sales screen renders its critical module shell', async ({ page }) => {
@@ -164,6 +168,50 @@ test('garzon orders screen renders categories', async ({ page }) => {
 
     await expect(page.locator('body')).toContainText(/categor/i);
     await expect(page.locator('body')).toContainText('Bebidas');
+});
+
+test('cajero home opens the analytics screen with real KPIs and charts', async ({ page }) => {
+    await bootstrapRoleSession(page, 'cajero');
+
+    // Se registra DESPUÉS del mock global de bootstrap: Playwright da
+    // prioridad a la última ruta registrada para la misma URL.
+    await page.route('**/api/stats/**', async (route) => {
+        const isSummary = new URL(route.request().url()).pathname.endsWith('/dashboard-summary');
+        const json = isSummary
+            ? {
+                  success: true,
+                  data: { totalACobrar: 13500, totalServicios: 5, totalComisiones: 3, totalPropinas: 7 },
+              }
+            : {
+                  success: true,
+                  data: {
+                      startDate: '2026-09-21',
+                      endDate: '2026-09-27',
+                      data: [
+                          { dia_semana: 'Monday', dia_espanol: 'Lunes', orden: 1, total: 5200, cantidad: 3 },
+                          { dia_semana: 'Tuesday', dia_espanol: 'Martes', orden: 2, total: 4800, cantidad: 2 },
+                      ],
+                      summary: { totalVentas: 10000, promedioDiario: 5000 },
+                  },
+              };
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(json),
+        });
+    });
+
+    await page.goto('/cajero');
+    await expect(page).toHaveURL(/cajero/);
+
+    await page.getByText('ANALÍTICAS', { exact: true }).first().click();
+
+    await expect(page).toHaveURL(/analytics/);
+    await expect(page.locator('body')).toContainText('Ventas Semanales');
+    await expect(page.locator('body')).toContainText('Distribución');
+    await expect(page.locator('body')).toContainText('A cobrar');
+    await expect(page.locator('body')).toContainText('$13.500');
+    await expect(page.locator('body')).toContainText('Lunes');
 });
 
 test('anfitriona services screen renders its payout summary', async ({ page }) => {

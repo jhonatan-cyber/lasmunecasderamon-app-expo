@@ -101,9 +101,15 @@ export function CajaModales({
                                         <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.total_devoluciones || 0).toLocaleString()}</Text>
                                     </View>
                                 )}
+                                {(stats.prepago_pendiente_clientes || 0) > 0 && (
+                                    <View style={styles.breakdownItem}>
+                                        <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Saldos clientes (no están en caja)</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.prepago_pendiente_clientes || 0).toLocaleString()}</Text>
+                                    </View>
+                                )}
                                 <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', marginTop: 8, paddingTop: 8 }]}>
-                                    <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>BALANCE TOTAL</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: '#E11D48', fontWeight: '900', fontSize: 20 }]}>${(stats.balance_total || 0).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>MONTO DE CIERRE</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: '#E11D48', fontWeight: '900', fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
                                 </View>
                             </View>
                         )}
@@ -113,7 +119,7 @@ export function CajaModales({
                             <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC', justifyContent: 'center' }]}>
                                 <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
                                 <Text style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}>
-                                    {(stats?.balance_total || 0).toLocaleString()}
+                                    {(stats?.monto_cierre_previsto ?? stats?.balance_total ?? 0).toLocaleString()}
                                 </Text>
                             </View>
                         ) : (
@@ -142,6 +148,16 @@ export function CajaModales({
                                     placeholder="Motivo del retiro"
                                     placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
                                 />
+                            </View>
+                        )}
+
+                        {}
+                        {modalType === 'cerrar' && (
+                            <View style={[styles.infoBox, { backgroundColor: `${modalConfig.color}12` }]}>
+                                <Ionicons name="shield-checkmark-outline" size={18} color={modalConfig.color} />
+                                <Text style={{ color: modalConfig.color, fontSize: 12, fontWeight: '700', marginLeft: 8, flex: 1 }}>
+                                    Se envía el pedido por WhatsApp al administrador. La caja sigue abierta hasta que autorice.
+                                </Text>
                             </View>
                         )}
 

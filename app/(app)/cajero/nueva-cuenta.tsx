@@ -16,9 +16,11 @@ import {
 import { showToast, isChampagneProduct, buildCommissionPreview } from '@/hooks/utils/cuentaUtils';
 import { apiClientSafe } from "@/api/client-safe";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
 import { CartList } from "@/components/cajero/forms/CartList";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { blockOffline } from "@/utils/offlineGuard";
 import logger from "@/utils/logger";
 
 import {
@@ -266,6 +268,10 @@ export default function NuevaCuentaScreen() {
       return;
     }
 
+    // Abrir una cuenta escribe en caja: sin el servidor no se puede validar ni
+    // registrar, y encolarla daría una confirmación falsa.
+    if (!blockOffline("cuenta")) return;
+
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const selectedRoomId =
@@ -427,6 +433,8 @@ export default function NuevaCuentaScreen() {
           </Pressable>
         }
       />
+
+      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <ScrollView
         contentContainerStyle={[

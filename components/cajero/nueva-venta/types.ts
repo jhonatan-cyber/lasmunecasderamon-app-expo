@@ -1,4 +1,5 @@
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import type { SaleChoice } from '@/hooks/utils/saleChoice';
 import type {
   Anfitriona,
   Habitacion,
@@ -24,7 +25,10 @@ export type VentaCartItem = Producto & {
   presentacion_id?: string;
   producto_id?: string;
   stock_bar?: number;
+  // Cómo se vendió (espejo del dashboard): 'shot' va acompañado de
+  // `shot_anfitriona` para separar el shot de cliente del de anfitriona.
   tipo_venta?: 'botella' | 'shot';
+  shot_anfitriona?: boolean;
 };
 
 /** Hostess selection target for commission products */
@@ -57,6 +61,8 @@ export type VentaState = {
   modalLoading: boolean;
   modalQuantities: { [key: string]: number };
   modalHostessSelections: { [key: string]: string[] };
+  /** Forma de venta elegida por presentación (botella, shot cliente, shot anfitriona). */
+  saleChoices: { [key: string]: SaleChoice };
   hostessSelectionTarget: VentaHostessTarget | null;
   hostessSubModalVisible: boolean;
   hostessModalVisible: boolean;
@@ -90,6 +96,7 @@ export type VentaAction =
   | { type: 'OPEN_CATEGORY_MODAL'; category: Categoria; products: Producto[] }
   | { type: 'SET_MODAL_LOADING'; payload: boolean }
   | { type: 'SET_MODAL_QUANTITY'; productId: string; quantity: number }
+  | { type: 'SET_SALE_CHOICE'; productId: string; choice: SaleChoice }
   | { type: 'SET_MODAL_HOSTESSES'; productId: string; hostesses: string[] }
   | { type: 'SET_HOSTESS_TARGET'; target: VentaHostessTarget | null }
   | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }

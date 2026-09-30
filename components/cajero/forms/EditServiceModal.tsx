@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
+import { blockOffline } from '@/utils/offlineGuard';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { getIvaDecimal, getIvaPercent } from '@/hooks/utils/cuentaUtils';
 import type { Timer } from '@/context/types';
@@ -188,6 +189,9 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             showToast({ type: 'error', text1: 'Error', text2: 'Debe seleccionar al menos una anfitriona' });
             return;
         }
+
+        // Modificar un servicio factura de nuevo en el servidor.
+        if (!blockOffline('servicio')) return;
 
         setLoading(true);
         try {

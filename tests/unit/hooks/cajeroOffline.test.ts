@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClientSafe } from '@/api/client';
+import { attachHttpDetails } from '@/api/errors';
 import { setMirrorForTests } from '@/services/mirror';
 import { createMirrorRepository } from '@/services/mirror/repository';
 import { ensureMirrorSchema } from '@/services/mirror/schema';
@@ -65,7 +66,9 @@ const cajaServiceMock = vi.hoisted(() => ({
   resumen: vi.fn(),
   stats: vi.fn(),
   open: vi.fn(),
-  close: vi.fn(),
+  // Desde el teléfono no se cierra directo: se pide el cierre al administrador.
+  solicitarCierre: vi.fn(),
+  reenviarAvisoCierre: vi.fn(),
   retiros: vi.fn(),
 }));
 
@@ -274,7 +277,8 @@ describe('useCaja · modo offline', () => {
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => responseFor(url) as never);
     cajaServiceMock.status.mockReset();
     cajaServiceMock.resumen.mockReset();
-    cajaServiceMock.close.mockReset();
+    cajaServiceMock.solicitarCierre.mockReset();
+    cajaServiceMock.reenviarAvisoCierre.mockReset();
     cajaServiceMock.open.mockReset();
     cajaServiceMock.retiros.mockReset();
     cajaServiceMock.status.mockResolvedValue(cajaAbiertaResponse);
@@ -322,10 +326,209 @@ describe('useCaja · modo offline', () => {
       await result.current.handleSubmit();
     });
 
-    expect(cajaServiceMock.close).not.toHaveBeenCalled();
+    expect(cajaServiceMock.solicitarCierre).not.toHaveBeenCalled();
     expect(result.current.modalVisible).toBe(true);
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'error', text2: expect.stringContaining('cerrar la caja') })
+    );
+  });
+
+  it('debe pedir el cierre y avisar que la caja sigue abierta hasta que el admin autorice', async () => {
+    cajaServiceMock.solicitarCierre.mockResolvedValue({
+      success: true,
+      data: {
+        estado: 'pendiente',
+        token: 'token-1',
+        monto_cierre_calculado: 38000,
+        saldo_clientes_descontado: 12000,
+        caja: { id_caja: 'caja1' },
+      },
+    });
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' });
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(cajaServiceMock.solicitarCierre).toHaveBeenCalledWith({
+      id_caja: 'caja1',
+      motivo: 'Cierre de turno',
+    });
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text2: expect.stringContaining('12.000') })
+    );
+    expect(result.current.modalVisible).toBe(false);
+  });
+
+  it('debe distinguir el cierre efectivo del administrador', async () => {
+    cajaServiceMock.solicitarCierre.mockResolvedValue({
+      success: true,
+      data: {
+        estado: 'cerrada',
+        token: null,
+        monto_cierre_calculado: 38000,
+        saldo_clientes_descontado: 12000,
+        caja: { id_caja: 'caja1' },
+      },
+    });
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' });
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text1: 'Turno Cerrado' })
+    );
+  });
+
+  it('debe reenviar el aviso del cierre pendiente al administrador', async () => {
+    cajaServiceMock.reenviarAvisoCierre.mockResolvedValue({
+      success: true,
+      data: { ultimo_aviso_en: '2026-09-28 16:35:00', esperar_segundos: 60 },
+    });
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handleReenviarAviso();
+    });
+
+    expect(cajaServiceMock.reenviarAvisoCierre).toHaveBeenCalledWith({ id_caja: 'caja1' });
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text1: 'Aviso reenviado' })
+    );
+    expect(result.current.reenviandoAviso).toBe(false);
+  });
+
+  it('debe explicar el enfriamiento en vez de tratarlo como un error', async () => {
+    cajaServiceMock.reenviarAvisoCierre.mockRejectedValue(
+      attachHttpDetails(
+        new Error('El aviso salió hace menos de un minuto. Podrás reenviarlo en 42 s.'),
+        {
+          status: 429,
+          body: { message: 'El aviso salió hace menos de un minuto. Podrás reenviarlo en 42 s.' },
+        }
+      )
+    );
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handleReenviarAviso();
+    });
+
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'warning',
+        text1: 'Espera un momento',
+        text2: expect.stringContaining('42 s'),
+      })
+    );
+  });
+
+  it('no debe reenviar el aviso sin red', async () => {
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    goOffline();
+    showToast.mockClear();
+
+    await act(async () => {
+      await result.current.handleReenviarAviso();
+    });
+
+    expect(cajaServiceMock.reenviarAvisoCierre).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', text2: expect.stringContaining('servidor') })
+    );
+  });
+
+  it('debe pedir el cierre de nuevo cuando el administrador no respondió', async () => {
+    cajaServiceMock.solicitarCierre.mockResolvedValue({
+      success: true,
+      data: {
+        estado: 'pendiente',
+        token: 'token-2',
+        monto_cierre_calculado: 38000,
+        saldo_clientes_descontado: 12000,
+        caja: { id_caja: 'caja1' },
+      },
+    });
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handleReabrirCierre();
+    });
+
+    // El segundo pedido es un cierre nuevo para el servidor: mismo endpoint, token nuevo.
+    expect(cajaServiceMock.solicitarCierre).toHaveBeenCalledWith({
+      id_caja: 'caja1',
+      motivo: 'Segundo pedido de cierre',
+    });
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text1: 'Cierre pedido de nuevo' })
+    );
+    expect(result.current.reabriendoCierre).toBe(false);
+  });
+
+  it('debe decir «todavía no» cuando el servidor frena el segundo pedido con 409', async () => {
+    cajaServiceMock.solicitarCierre.mockRejectedValue(
+      attachHttpDetails(
+        new Error('Ya hay una solicitud de cierre de esta caja esperando autorización'),
+        {
+          status: 409,
+          body: { message: 'Ya hay una solicitud de cierre de esta caja esperando autorización' },
+        }
+      )
+    );
+
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handleReabrirCierre();
+    });
+
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'warning',
+        text1: 'Todavía no',
+        text2: expect.stringContaining('esperando autorización'),
+      })
+    );
+  });
+
+  it('no debe pedir el cierre de nuevo sin red', async () => {
+    const { result } = renderHook(() => useCaja());
+    await waitFor(() => expect(result.current.cajaAbierta).toBe(true));
+
+    goOffline();
+    showToast.mockClear();
+
+    await act(async () => {
+      await result.current.handleReabrirCierre();
+    });
+
+    expect(cajaServiceMock.solicitarCierre).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', text2: expect.stringContaining('servidor') })
     );
   });
 

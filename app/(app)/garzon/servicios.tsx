@@ -19,6 +19,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useGarzonServiciosScreen } from '@/hooks/useGarzonServiciosScreen';
 import { GarzonServicioSummary, GarzonServiciosModales } from '@/components/garzon/servicios';
+import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
 
 function ServiciosSkeleton({ bg, gradientColors, insets }: { bg: string; gradientColors: string[]; insets: { top: number } }) {
     return (
@@ -117,6 +118,8 @@ export default function ServiciosScreen() {
                         </Pressable>
                     }
                 />
+
+                <GarzonOfflineBanner />
 
                 <View style={{ padding: 20 }}>
 

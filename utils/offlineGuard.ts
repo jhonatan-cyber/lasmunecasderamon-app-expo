@@ -30,20 +30,42 @@ export const OFFLINE_BLOCKED_ACTIONS = {
     title: 'Sin conexión',
     message: 'Crear o modificar una cuenta necesita el servidor.',
   },
+  transferencia: {
+    title: 'Sin conexión',
+    message: 'Aceptar o rechazar una transferencia necesita el servidor.',
+  },
+  envase: {
+    title: 'Sin conexión',
+    message: 'Verificar un envase necesita el servidor.',
+  },
+  solicitud: {
+    title: 'Sin conexión',
+    message: 'Resolver o facturar una solicitud necesita el servidor.',
+  },
+  servicio: {
+    title: 'Sin conexión',
+    message: 'Modificar un servicio necesita el servidor.',
+  },
 } as const;
 
 export type OfflineBlockedAction = keyof typeof OFFLINE_BLOCKED_ACTIONS;
 
 /**
- * ¿Se puede hacer ahora? Cuando no hay red confirmada avisa con un toast —el
- * motivo, no solo "error"— y devuelve `false` para cortar la operación.
+ * ¿Se puede hacer ahora? Bloquea solo con **offline confirmado** y avisa con un
+ * toast —el motivo, no solo "error"— devolviendo `false` para cortar la
+ * operación.
  *
- * Con la conectividad en `unknown` deja pasar: es preferible que el servidor
- * rechace a que el usuario quede bloqueado por un estado sin confirmar.
+ * En `unknown` (arranque, antes de que `expo-network` responda) deja pasar: es
+ * preferible que el servidor rechace a que el usuario quede bloqueado por un
+ * estado sin confirmar. La misma regla aplica a los predicados que pasan las
+ * pantallas: `() => !isOffline`, nunca `() => isOnline`.
+ *
+ * El segundo parámetro existe para los tests; en producción siempre se lee el
+ * monitor unificado (`connectivity`).
  */
 export function blockOffline(
   action: OfflineBlockedAction,
-  isOnline: () => boolean = () => connectivity.isOnline(),
+  isOnline: () => boolean = () => !connectivity.isOffline(),
 ): boolean {
   if (isOnline()) return true;
 

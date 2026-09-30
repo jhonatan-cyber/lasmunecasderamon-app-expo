@@ -36,6 +36,8 @@ export default function CajaScreen() {
         monto,
         motivoRetiro,
         submitting,
+        reenviandoAviso,
+        reabriendoCierre,
         borderColor,
         fromCache,
         isOffline,
@@ -43,6 +45,8 @@ export default function CajaScreen() {
         onRefresh,
         handleMontoChange,
         handleSubmit,
+        handleReenviarAviso,
+        handleReabrirCierre,
         modalConfig
     } = useCaja();
 
@@ -100,6 +104,77 @@ export default function CajaScreen() {
                         <OfflineBlockedNotice message={OFFLINE_BLOCKED_ACTIONS.caja.message} />
                     )}
 
+                    {/* Cierre ya pedido: la caja sigue abierta esperando al
+                        administrador, y eso hay que verlo sin abrir el modal. */}
+                    {cajaAbierta && stats?.cierre_pendiente && (
+                        <View
+                            style={[
+                                styles.pendingNotice,
+                                {
+                                    backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB',
+                                    borderColor: isDark ? 'rgba(245,158,11,0.40)' : '#FDE68A',
+                                },
+                            ]}
+                            accessibilityRole="alert"
+                        >
+                            <Ionicons name="time-outline" size={16} color="#D97706" />
+                            <Text style={[styles.pendingNoticeText, { color: isDark ? '#FCD34D' : '#B45309' }]}>
+                                Cierre pendiente de autorización: el administrador tiene el link por
+                                WhatsApp y la caja sigue abierta hasta que responda.
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* El aviso puede no llegar o quedarse sin respuesta: si el cierre sigue
+                        pendiente, se puede insistir sin abrir el modal ni crear otra solicitud. */}
+                    {cajaAbierta && stats?.cierre_pendiente && (
+                        <Pressable
+                            style={[
+                                styles.resendBtn,
+                                {
+                                    backgroundColor: isDark ? 'rgba(245,158,11,0.18)' : '#FEF3C7',
+                                    borderColor: isDark ? 'rgba(245,158,11,0.45)' : '#FCD34D',
+                                },
+                                (isOffline || reenviandoAviso) && styles.actionBtnDisabled,
+                            ]}
+                            onPress={handleReenviarAviso}
+                            disabled={isOffline || reenviandoAviso}
+                            accessibilityRole="button"
+                            accessibilityLabel="Reenviar aviso de cierre al administrador"
+                            accessibilityState={{ disabled: isOffline || reenviandoAviso }}
+                        >
+                            <Ionicons name="send-outline" size={15} color="#B45309" />
+                            <Text style={styles.resendBtnText}>
+                                {reenviandoAviso ? 'Reenviando…' : 'Reenviar aviso al administrador'}
+                            </Text>
+                        </Pressable>
+                    )}
+
+                    {/* Nadie contestó el cierre: pasado el plazo se puede pedir de nuevo, lo
+                        que expira la solicitud vieja y vuelve a avisar desde cero. */}
+                    {cajaAbierta && stats?.cierre_pendiente && stats?.cierre_estancado && (
+                        <Pressable
+                            style={[
+                                styles.resendBtn,
+                                {
+                                    backgroundColor: isDark ? 'rgba(245,158,11,0.18)' : '#FEF3C7',
+                                    borderColor: isDark ? 'rgba(245,158,11,0.45)' : '#FCD34D',
+                                },
+                                (isOffline || reabriendoCierre) && styles.actionBtnDisabled,
+                            ]}
+                            onPress={handleReabrirCierre}
+                            disabled={isOffline || reabriendoCierre}
+                            accessibilityRole="button"
+                            accessibilityLabel="Pedir el cierre de nuevo al administrador"
+                            accessibilityState={{ disabled: isOffline || reabriendoCierre }}
+                        >
+                            <Ionicons name="refresh-outline" size={15} color="#B45309" />
+                            <Text style={styles.resendBtnText}>
+                                {reabriendoCierre ? 'Pidiendo…' : 'Pedir cierre de nuevo'}
+                            </Text>
+                        </Pressable>
+                    )}
+
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
                             <View style={[styles.statusPill, { backgroundColor: cajaAbierta ? '#10B98118' : '#EF444418' }]}>
@@ -125,11 +200,11 @@ export default function CajaScreen() {
                                             style={[styles.actionBtn, { backgroundColor: '#EF444420', borderColor: '#EF444440' }, isOffline && styles.actionBtnDisabled]}
                                             onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' })}
                                             disabled={isOffline}
-                                            accessibilityLabel="Cerrar caja"
+                                            accessibilityLabel="Pedir cierre de caja"
                                             accessibilityState={{ disabled: isOffline }}
                                         >
                                             <Ionicons name="lock-closed-outline" size={15} color="#EF4444" />
-                                            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cerrar</Text>
+                                            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cierre</Text>
                                         </Pressable>
                                     </>
                                 ) : (
@@ -340,6 +415,19 @@ const styles = StyleSheet.create({
     },
     actionBtnDisabled: { opacity: 0.45 },
     actionBtnText: { fontSize: 13, fontWeight: '700' },
+    pendingNotice: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10,
+        marginBottom: 12
+    },
+    pendingNoticeText: { fontSize: 12, fontWeight: '700', flex: 1, lineHeight: 17 },
+    resendBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+        borderWidth: 1, borderRadius: 14,
+        paddingHorizontal: 12, paddingVertical: 10,
+        marginBottom: 12
+    },
+    resendBtnText: { fontSize: 12, fontWeight: '800', color: '#B45309' },
     metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
     breakdownTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },

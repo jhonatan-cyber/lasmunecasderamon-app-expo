@@ -7,6 +7,7 @@ import { cajaService } from '@/services';
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { useConnectivity } from '@/hooks/useConnectivity';
 import { blockOffline } from '@/utils/offlineGuard';
+import { httpDetailsOf } from '@/api/errors';
 import { useAuthStore } from '@/store/authStore';
 
 export type CajaState = {
@@ -66,7 +67,7 @@ function cajaReducer(state: CajaState, action: CajaAction): CajaState {
     }
 }
 
-const showToast = (title: string, message: string, type: 'success' | 'error' = 'error') => {
+const showToast = (title: string, message: string, type: 'success' | 'error' | 'warning' = 'error') => {
     showToastLazy({ type, text1: title, text2: message, visibilityTime: 4000 });
 };
 
@@ -79,7 +80,13 @@ export function useCaja() {
     const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
     const { loading, refreshing, fromCache, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
-    const { isOnline, isOffline } = useConnectivity();
+    const { isOffline } = useConnectivity();
+    // Reenvío del aviso del cierre pendiente: estado propio para girar solo ese botón y
+    // no bloquear el resto de la pantalla.
+    const [reenviandoAviso, setReenviandoAviso] = useState(false);
+    // Segundo pedido del cierre (el administrador no respondió): estado propio, igual que el
+    // reenvío, para no bloquear el resto de la pantalla mientras está en vuelo.
+    const [reabriendoCierre, setReabriendoCierre] = useState(false);
 
     /**
      * Lectura con espejo: el estado de caja y su resumen se guardan tras cada
@@ -164,11 +171,13 @@ export function useCaja() {
     const handleSubmit = async () => {
         // Abrir, cerrar la caja y los retiros mueven el efectivo del turno y
         // dependen del estado real del servidor: no se encolan nunca.
-        if (!blockOffline('caja', () => isOnline)) return;
+        if (!blockOffline('caja', () => !isOffline)) return;
 
         let numericMonto = 0;
         if (modalType === 'cerrar') {
-            numericMonto = stats?.balance_total || 0;
+            // Lo que importa es el monto con que se va a cerrar: descuenta los
+            // saldos prepago que los clientes todavía tienen cargados.
+            numericMonto = stats?.monto_cierre_previsto ?? stats?.balance_total ?? 0;
         } else {
             const cleanMonto = monto.replace(/\./g, '');
             if (!cleanMonto || isNaN(Number(cleanMonto))) {
@@ -228,12 +237,27 @@ export function useCaja() {
                     dispatch({ type: 'SET_SUBMITTING', payload: false });
                     return;
                 }
-                const res = await cajaService.close({
+                const res = await cajaService.solicitarCierre({
                         id_caja: cajaInfo.id_caja,
-                        monto_cierre: numericMonto,
-                        usuario_id_cierre: user?.id || 1
+                        motivo: 'Cierre de turno'
                     });
-                if (res.success) {
+                const cierre = res.data;
+                if (!cierre) {
+                    showToast('Error', res.message || 'Error al cerrar caja');
+                } else if (cierre.estado === 'pendiente') {
+                    // La caja sigue abierta: el administrador tiene que autorizar.
+                    const saldos = Number(cierre.saldo_clientes_descontado || 0);
+                    showToast(
+                        'Cierre enviado',
+                        saldos > 0
+                            ? `Se pidió autorización al administrador. Se descontarán $${saldos.toLocaleString()} de saldos de clientes.`
+                            : 'Se pidió autorización al administrador por WhatsApp. La caja sigue abierta.',
+                        'success'
+                    );
+                    dispatch({ type: 'CLOSE_MODAL' });
+                    fetchData();
+                    eventBus.emit('refresh_requests');
+                } else if (cierre.estado === 'cerrada') {
                     showToast('Turno Cerrado', 'Caja cerrada correctamente', 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
@@ -249,10 +273,110 @@ export function useCaja() {
         }
     };
 
+    /**
+     * Reenvía al administrador el aviso del cierre que quedó pendiente.
+     *
+     * El cierre se puede quedar en silencio (el WhatsApp no llegó, el admin no lo vio) y el
+     * servidor solo admite una solicitud por turno: sin esto la única salida sería que un
+     * administrador cerrara desde el dashboard. Manda el mismo link, no una solicitud nueva.
+     */
+    const handleReenviarAviso = async () => {
+        if (!blockOffline('caja', () => !isOffline)) return;
+        if (!cajaInfo?.id_caja) {
+            showToast('Error', 'No se encontró la caja con cierre pendiente');
+            return;
+        }
+
+        setReenviandoAviso(true);
+        try {
+            const res = await cajaService.reenviarAvisoCierre({ id_caja: cajaInfo.id_caja });
+
+            if (res.success) {
+                showToast(
+                    'Aviso reenviado',
+                    'Se volvió a avisar al administrador por WhatsApp. La caja sigue abierta.',
+                    'success'
+                );
+                fetchData();
+                return;
+            }
+
+            showToast('Error', res.message || 'No se pudo reenviar el aviso');
+        } catch (e: any) {
+            const detalles = httpDetailsOf(e);
+            const mensaje =
+                (detalles?.body as { message?: string } | undefined)?.message ||
+                e?.message ||
+                'No se pudo reenviar el aviso';
+
+            // 429: el enfriamiento del servidor. No es un fallo, es "todavía no"; se dice con
+            // los segundos que faltan en vez de tratar al cajero de error.
+            if (detalles?.status === 429) {
+                showToast('Espera un momento', mensaje, 'warning');
+            } else {
+                showToast('Error', mensaje);
+            }
+        } finally {
+            setReenviandoAviso(false);
+        }
+    };
+
+    /**
+     * Pide el cierre de nuevo cuando el administrador no respondió.
+     *
+     * A diferencia del reenvío, esto **sí crea una solicitud nueva**: el servidor expira la
+     * vieja (nadie contestó dentro de la ventana de recordatorios) y emite otro token, así el
+     * aviso al administrador vuelve a salir desde cero. Si todavía no pasó la ventana, el
+     * servidor contesta 409 y se dice con "Todavía no", no como error del cajero.
+     */
+    const handleReabrirCierre = async () => {
+        if (!blockOffline('caja', () => !isOffline)) return;
+        if (!cajaInfo?.id_caja) {
+            showToast('Error', 'No se encontró la caja con cierre pendiente');
+            return;
+        }
+
+        setReabriendoCierre(true);
+        try {
+            const res = await cajaService.solicitarCierre({
+                id_caja: cajaInfo.id_caja,
+                motivo: 'Segundo pedido de cierre'
+            });
+
+            if (res.data) {
+                showToast(
+                    'Cierre pedido de nuevo',
+                    'Se volvió a avisar al administrador. La caja sigue abierta hasta que responda.',
+                    'success'
+                );
+                fetchData();
+                return;
+            }
+
+            showToast('Error', res.message || 'No se pudo pedir el cierre de nuevo');
+        } catch (e: any) {
+            const detalles = httpDetailsOf(e);
+            const mensaje =
+                (detalles?.body as { message?: string } | undefined)?.message ||
+                e?.message ||
+                'No se pudo pedir el cierre de nuevo';
+
+            // 409: el administrador todavía está dentro del plazo para responder. No es un
+            // fallo, es "todavía no"; se avisa como advertencia en vez de como error.
+            if (detalles?.status === 409) {
+                showToast('Todavía no', mensaje, 'warning');
+            } else {
+                showToast('Error', mensaje);
+            }
+        } finally {
+            setReabriendoCierre(false);
+        }
+    };
+
     const modalConfig = {
         abrir: { title: 'Apertura de Turno', subtitle: 'Ingresa el monto base para iniciar el turno', icon: 'wallet-outline' as const, color: '#10B981', btnText: 'Abrir Caja' },
         retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline' as const, color: '#F59E0B', btnText: 'Realizar Retiro' },
-        cerrar: { title: 'Cierre de Turno', subtitle: 'Confirma el cierre con el monto total calculado', icon: 'lock-closed-outline' as const, color: '#EF4444', btnText: 'Cerrar Caja' },
+        cerrar: { title: 'Cierre de Turno', subtitle: 'Se pide autorización al administrador; la caja sigue abierta hasta que responda', icon: 'lock-closed-outline' as const, color: '#EF4444', btnText: 'Pedir Cierre' },
     }[modalType];
 
     return {
@@ -271,8 +395,12 @@ export function useCaja() {
         monto,
         motivoRetiro,
         submitting,
+        reenviandoAviso,
+        reabriendoCierre,
         dispatch,
         fetchData,
+        handleReenviarAviso,
+        handleReabrirCierre,
         onRefresh,
         handleMontoChange,
         handleSubmit,

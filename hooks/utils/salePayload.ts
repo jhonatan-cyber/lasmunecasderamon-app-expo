@@ -4,8 +4,9 @@
  * Vive fuera del hook porque ahora hay dos caminos que lo necesitan: la venta
  * que se manda en el momento y la que se encola sin red. Tenerlo en un solo
  * lugar evita que el offline y el online se desincronicen (paridad con el
- * payload del dashboard: consume stock en el bar y vende por botella por
- * defecto, como `mapForSaleToCartItem`).
+ * payload del dashboard: consume stock en el bar, vende por botella por
+ * defecto como `mapForSaleToCartItem` y marca `tipo_venta`/`shot_anfitriona`
+ * en los detalles, que es como `SaleService` guarda cómo se vendió).
  */
 export interface SalePayloadInput {
     cart: any[];
@@ -22,7 +23,9 @@ export interface SaleCreatePayload {
     detalles: {
         producto_id: string | number;
         presentacion_id: string | number | null;
-        tipo_venta?: 'botella';
+        tipo_venta?: 'botella' | 'shot';
+        /** Solo en líneas de shot: true cuando se cobró al precio de anfitriona. */
+        shot_anfitriona?: boolean;
         cantidad: number;
         precio: number;
         sub_total: number;
@@ -58,11 +61,19 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
     return {
         detalles: cart.map(item => {
             const cantidad = item.quantity || item.cantidad || 1;
+            // Cómo se vendió queda en el detalle (espejo del dashboard): un shot
+            // puede ser a precio de cliente o de anfitriona y no se deduce después.
+            const esShot = item.tipo_venta === 'shot';
 
             return {
                 producto_id: item.producto_id || item.id_producto || item.id,
                 presentacion_id: item.presentacion_id || null,
-                tipo_venta: item.presentacion_id ? ('botella' as const) : undefined,
+                tipo_venta: esShot
+                    ? ('shot' as const)
+                    : item.presentacion_id
+                      ? ('botella' as const)
+                      : undefined,
+                shot_anfitriona: esShot ? Boolean(item.shot_anfitriona) : undefined,
                 cantidad,
                 precio: item.precio || item.price || 0,
                 sub_total: (item.precio || item.price || 0) * cantidad,

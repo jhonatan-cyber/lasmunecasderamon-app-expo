@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { barService } from '@/services/bar';
+import {
+  getMirror,
+  MIRROR_KEYS,
+  MIRROR_MAX_AGE_MS,
+  OfflineCacheMissError,
+} from '@/services/mirror';
+import { blockOffline } from '@/utils/offlineGuard';
 import { eventBus } from '@/utils/eventBus';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
@@ -70,24 +77,44 @@ export const useBarScreen = () => {
 
   const fetchStock = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = (await barService.stock(signal)) as ApiList<BarStockItem>;
+      // Red primero; sin red se sirve el stock guardado en el dispositivo: el
+      // barman sigue viendo la barra aunque caiga la conexión.
+      const lectura = await getMirror().readThroughDetailed(
+        MIRROR_KEYS.barStock,
+        async () => (await barService.stock(signal)) as ApiList<BarStockItem>,
+        { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
+      );
+      const res = lectura.data;
       if (res?.success !== false) setStock(unwrapList<BarStockItem>(res));
     } catch (e) {
-      if (!signal?.aborted) logger.captureException(e, { context: 'BarScreen:fetchStock' });
+      if (signal?.aborted) return;
+      if (e instanceof OfflineCacheMissError) {
+        setError(e.message);
+        return;
+      }
+      logger.captureException(e, { context: 'BarScreen:fetchStock' });
     }
   }, []);
 
   const fetchTransfers = useCallback(async (signal?: AbortSignal) => {
     setLoadingTransfers(true);
     try {
-      const res = (await barService.pendingTransfers(signal)) as ApiList<BarTransfer>;
-      const all = unwrapList<BarTransfer>(res);
+      const lectura = await getMirror().readThroughDetailed(
+        MIRROR_KEYS.barTransfers,
+        async () => (await barService.pendingTransfers(signal)) as ApiList<BarTransfer>,
+        { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
+      );
+      const all = unwrapList<BarTransfer>(lectura.data);
       setTransfers(all.filter((t) => t.estado === 'pendiente'));
       setError(null);
     } catch (e) {
       if (!signal?.aborted) {
-        logger.captureException(e, { context: 'BarScreen:fetchTransfers' });
-        setError('No se pudieron cargar las recepciones');
+        if (e instanceof OfflineCacheMissError) {
+          setError(e.message);
+        } else {
+          logger.captureException(e, { context: 'BarScreen:fetchTransfers' });
+          setError('No se pudieron cargar las recepciones');
+        }
       }
     } finally {
       if (!signal?.aborted) setLoadingTransfers(false);
@@ -97,10 +124,16 @@ export const useBarScreen = () => {
   const fetchMovements = useCallback(async (signal?: AbortSignal) => {
     setLoadingMovements(true);
     try {
-      const res = (await barService.movements(100, signal)) as ApiList<BarMovement>;
-      setMovements(unwrapList<BarMovement>(res));
+      const lectura = await getMirror().readThroughDetailed(
+        MIRROR_KEYS.barMovements,
+        async () => (await barService.movements(100, signal)) as ApiList<BarMovement>,
+        { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
+      );
+      setMovements(unwrapList<BarMovement>(lectura.data));
     } catch (e) {
-      if (!signal?.aborted) logger.captureException(e, { context: 'BarScreen:fetchMovements' });
+      if (signal?.aborted) return;
+      if (e instanceof OfflineCacheMissError) return;
+      logger.captureException(e, { context: 'BarScreen:fetchMovements' });
     } finally {
       if (!signal?.aborted) setLoadingMovements(false);
     }
@@ -143,6 +176,10 @@ export const useBarScreen = () => {
 
   const resolver = useCallback(
     async (id: string, accion: 'aprobar' | 'rechazar') => {
+      // Aprobar mueve stock entre almacén y bar: es decisión del servidor, no
+      // se encola ni se confirma en el dispositivo.
+      if (!blockOffline('transferencia')) return;
+
       setResolvingId(id);
       try {
         const res =

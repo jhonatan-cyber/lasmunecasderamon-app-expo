@@ -55,6 +55,8 @@ export default function NuevaVentaScreen() {
     handleOpenCategory,
     handlePressAddProduct,
     addProductToCart,
+    handleSetSaleChoice,
+    saleChoices,
     removeFromCart,
     updateQuantity,
     handleSubmit,
@@ -161,6 +163,8 @@ export default function NuevaVentaScreen() {
           searchLoading={searchLoading}
           searchResults={searchResults}
           onAddProduct={handlePressAddProduct}
+          saleChoices={saleChoices}
+          onSaleChoiceChange={handleSetSaleChoice}
           isDark={isDark}
           accentColor={accentColor}
           cardBg={cardBg}
@@ -311,6 +315,8 @@ export default function NuevaVentaScreen() {
         modalProducts={modalProducts}
         modalLoading={modalLoading}
         modalQuantities={modalQuantities}
+        saleChoices={saleChoices}
+        onSaleChoiceChange={handleSetSaleChoice}
         selectedTime={selectedTime}
         timeModalVisible={false}
         loadModalVisible={loadModalVisible}

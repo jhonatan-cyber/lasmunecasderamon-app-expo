@@ -21,6 +21,7 @@ import { SolicitudesSkeleton } from '@/components/cajero/solicitudes/Solicitudes
 
 
 import { CheckoutModal } from '@/components/cajero/CheckoutModal';
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { ServiceModal } from '@/components/cajero/ServiceModal';
 import { SolicitudCard } from '@/components/cajero/SolicitudCard';
 import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
@@ -172,16 +173,7 @@ export default function SolicitudesScreen() {
                 }
             />
 
-            {isOffline && (
-                <AnimatedView
-                    from={{ opacity: 0, translateY: -20 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    style={[styles.offlineBanner, { backgroundColor: '#EF4444' }]}
-                >
-                    <Ionicons name="cloud-offline" size={20} color="#FFFFFF" />
-                    <Text style={styles.offlineBannerText}>MODO OFFLINE - VIENDO DATOS GUARDADOS</Text>
-                </AnimatedView>
-            )}
+            <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
             {}
             {totalAPagar > 0 && (
@@ -403,24 +395,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '900',
         letterSpacing: 0.5,
-    },
-    offlineBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        gap: 10,
-        margin: 16,
-        marginBottom: 0,
-        borderRadius: 12,
-        elevation: 4,
-    },
-    offlineBannerText: {
-        color: '#FFFFFF',
-        fontSize: 11,
-        fontWeight: '900',
-        letterSpacing: 1,
     },
 });
 

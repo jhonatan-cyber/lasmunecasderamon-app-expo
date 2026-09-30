@@ -1,6 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { barService } from '@/services/bar';
+import {
+  getMirror,
+  MIRROR_KEYS,
+  MIRROR_MAX_AGE_MS,
+  OfflineCacheMissError,
+} from '@/services/mirror';
+import { blockOffline } from '@/utils/offlineGuard';
 import { showToast } from '@/utils/toast-lazy';
 import logger from '@/utils/logger';
 
@@ -12,6 +19,7 @@ export const MOTIVO_ENVASE: Record<string, string> = {
   no_es_nuestro: 'No es nuestro',
   no_esta_vacia: 'No está vacío',
   ya_devuelto: 'Ya entregado',
+  venta_entera: 'Se vendió entera',
   no_entregado: 'El bar no lo entregó',
   ya_confirmado: 'Ya confirmado',
 };
@@ -88,7 +96,9 @@ const horaAhora = () =>
  * no puede confirmar su propia entrega).
  *
  * A diferencia del dashboard (cola offline en localStorage), aquí cada lectura
- * se verifica en línea: si no hay red se muestra el error y se reintenta.
+ * se verifica en línea: sin red el escaneo se rechaza con un aviso claro
+ * («Verificar un envase necesita el servidor») en vez de dejar una entrega sin
+ * confirmar, y el historial se sigue viendo desde el espejo local.
  */
 export const useEnvasesScreen = () => {
   const [devoluciones, setDevoluciones] = useState<EnvaseDevolucion[]>([]);
@@ -106,15 +116,27 @@ export const useEnvasesScreen = () => {
   const fetchDevoluciones = useCallback(async () => {
     if (!cargado.current) setLoading(true);
     try {
-      const res = await barService.containers();
-      const data = res?.data;
+      // Red primero; sin red se sirve el historial guardado, que es lo que
+      // permite revisar lo entregado aunque caiga la conexión.
+      const lectura = await getMirror().readThroughDetailed(
+        MIRROR_KEYS.barContainers,
+        async () => (await barService.containers()) as { data?: EnvaseDevolucion[] | null },
+        { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
+      );
+      const data = lectura.data?.data;
       if (Array.isArray(data)) {
-        setDevoluciones(data as EnvaseDevolucion[]);
+        setDevoluciones(data);
         setError(null);
         cargado.current = true;
       }
     } catch (e) {
-      if (!cargado.current) setError('No se pudieron cargar los envases');
+      if (!cargado.current) {
+        setError(
+          e instanceof OfflineCacheMissError
+            ? e.message
+            : 'No se pudieron cargar los envases',
+        );
+      }
       logger.captureException(e, { context: 'useEnvasesScreen:fetchDevoluciones' });
     } finally {
       setLoading(false);
@@ -138,6 +160,12 @@ export const useEnvasesScreen = () => {
     async (valor: string): Promise<EnvaseVeredicto | null> => {
       const escaneo = valor.trim().toUpperCase();
       if (!escaneo || enCurso.current) return null;
+
+      // El veredicto (es nuestro, está vacío, no se devolvió antes) sólo lo da
+      // el servidor, así que sin red no se puede verificar: avisar es mejor
+      // que encolar una lectura que nadie podrá confirmar.
+      if (!blockOffline('envase')) return null;
+
       enCurso.current = true;
       setVerificando(true);
       try {

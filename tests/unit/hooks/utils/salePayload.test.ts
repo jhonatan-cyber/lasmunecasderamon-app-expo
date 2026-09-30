@@ -50,6 +50,62 @@ describe('buildSalePayload', () => {
         expect(payload.detalles[0].tipo_venta).toBeUndefined();
     });
 
+    it('debe declarar tipo_venta shot y la audiencia elegida (cliente o anfitriona)', () => {
+        const shotAnfitriona = buildSalePayload({
+            ...base,
+            cart: [
+                {
+                    producto_id: 'prod-1',
+                    presentacion_id: 'pres-1',
+                    tipo_venta: 'shot',
+                    shot_anfitriona: true,
+                    precio: 8000,
+                    quantity: 3,
+                    comision: 1000,
+                    anfitrionas: ['a-1'],
+                },
+            ],
+        } as any);
+
+        expect(shotAnfitriona.detalles[0]).toEqual({
+            producto_id: 'prod-1',
+            presentacion_id: 'pres-1',
+            tipo_venta: 'shot',
+            shot_anfitriona: true,
+            cantidad: 3,
+            precio: 8000,
+            sub_total: 24000,
+            comision: 3000,
+            hostesses: ['a-1'],
+        });
+
+        const shotCliente = buildSalePayload({
+            ...base,
+            cart: [
+                {
+                    producto_id: 'prod-1',
+                    presentacion_id: 'pres-1',
+                    tipo_venta: 'shot',
+                    shot_anfitriona: false,
+                    precio: 15000,
+                    quantity: 1,
+                    comision: 1000,
+                    anfitrionas: [],
+                },
+            ],
+        } as any);
+
+        expect(shotCliente.detalles[0].shot_anfitriona).toBe(false);
+        expect(shotCliente.detalles[0].precio).toBe(15000);
+    });
+
+    it('una línea de botella no declara shot_anfitriona', () => {
+        const payload = buildSalePayload(base as any);
+
+        expect(payload.detalles[0].tipo_venta).toBe('botella');
+        expect(payload.detalles[0].shot_anfitriona).toBeUndefined();
+    });
+
     it('solo debe mandar habitación si hay comisión (paridad con el dashboard)', () => {
         const conComision = buildSalePayload(base as any);
         const sinComision = buildSalePayload({ ...base, hasCommissionItem: false } as any);

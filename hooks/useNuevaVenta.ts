@@ -22,6 +22,7 @@ import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { getOutbox } from '@/services/outbox';
 import { blockOffline } from '@/utils/offlineGuard';
 import { buildSalePayload } from '@/hooks/utils/salePayload';
+import { resolverVentaProducto, type SaleChoice } from '@/hooks/utils/saleChoice';
 import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta/reducer';
 import type { VentaState } from '@/components/cajero/nueva-venta/types';
 
@@ -55,6 +56,7 @@ export function useNuevaVenta() {
     selectedTime,
     modalQuantities,
     modalHostessSelections,
+    saleChoices,
     hostessSelectionTarget,
     loadingAmount,
     loadingTargetClient,
@@ -274,11 +276,11 @@ export function useNuevaVenta() {
   const addProductToCart = useCallback(
     (prod: any) => {
       const id = prod.id || prod.id_producto;
-      // Tope de stock en el bar (máximo que acepta el dashboard): con
-      // presentacion_id el backend consume unidades y revierte la venta si
-      // no alcanza. stock_bar ausente (catálogo legacy) = sin tope.
+      // El shot sale de la botella abierta: no gasta unidades del bar, así que
+      // su tope es el máximo del dashboard (99) y no `stock_bar`.
+      const esShot = prod?.tipo_venta === 'shot';
       const stockBar = Number(prod.stock_bar ?? 0);
-      const maxQty = stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
+      const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
       const qty = Math.min(modalQuantities[id] || 1, maxQty);
       const hostesses = modalHostessSelections[id] || [];
       const newCart = [...cart];
@@ -300,7 +302,14 @@ export function useNuevaVenta() {
         const currentH = item.anfitrionas || [];
         const sortedCurrent = [...currentH].sort().join(',');
         const sortedNew = [...itemHostesses].sort().join(',');
-        return itemId === id && sortedCurrent === sortedNew;
+        // Misma presentación vendida de forma distinta (botella / shot cliente /
+        // shot anfitriona) son líneas aparte en el carrito y en el reporte.
+        return (
+          itemId === id &&
+          sortedCurrent === sortedNew &&
+          (item.tipo_venta === 'shot') === esShot &&
+          Boolean(item.shot_anfitriona) === Boolean(prod?.shot_anfitriona)
+        );
       });
 
       if (existingItemIndex >= 0) {
@@ -311,6 +320,8 @@ export function useNuevaVenta() {
       } else {
         newCart.push({
           ...prod,
+          tipo_venta: esShot ? ('shot' as const) : ('botella' as const),
+          shot_anfitriona: esShot ? Boolean(prod?.shot_anfitriona) : false,
           quantity: Math.min(qty, maxQty),
           anfitrionas: itemHostesses,
           hostessNames: hostessNames || null,
@@ -323,28 +334,51 @@ export function useNuevaVenta() {
     [cart, modalQuantities, modalHostessSelections, anfitrionas],
   );
 
+  /**
+   * Qué forma de venta se eligió para una presentación (botella, shot cliente o
+   * shot anfitriona); vive en el estado para que el buscador y el modal de
+   * categoría compartan la misma elección.
+   */
+  const handleSetSaleChoice = useCallback((productId: string | number, choice: SaleChoice) => {
+    dispatch({ type: 'SET_SALE_CHOICE', productId: String(productId), choice });
+  }, []);
+
   const handlePressAddProduct = useCallback(
     (item: any) => {
-      const hasComm =
-        Number(item.comision || item.commission || 0) > 0 ||
-        isExpensiveDrink(item);
+      // Precio, comisión y tope salen de la forma de venta elegida: un shot no
+      // hereda la comisión de la botella (regla del dashboard).
+      const id = String(item.id || item.id_producto);
+      const venta = resolverVentaProducto(item, saleChoices[id]);
+      const producto = {
+        ...item,
+        tipo_venta: venta.esShot ? ('shot' as const) : ('botella' as const),
+        shot_anfitriona: venta.tipoVenta === 'shot_anfitriona',
+        precio: venta.precio,
+        price: venta.precio,
+        comision: venta.comision,
+        commission: venta.comision,
+      };
+
+      const hasComm = venta.esShot
+        ? venta.comision > 0
+        : Number(venta.comision) > 0 || isExpensiveDrink(producto);
 
       if (hasComm) {
         dispatch({
           type: 'SET_HOSTESS_TARGET',
           target: {
             productId: item.id || item.id_producto,
-            product: item,
-            max: getHostessLimit(item),
+            product: producto,
+            max: getHostessLimit(producto),
             isChampagne: isChampagneProduct(item),
           },
         });
         return;
       }
 
-      addProductToCart(item);
+      addProductToCart(producto);
     },
-    [addProductToCart],
+    [addProductToCart, saleChoices],
   );
 
   const removeFromCart = useCallback(
@@ -360,10 +394,12 @@ export function useNuevaVenta() {
     (index: number, delta: number) => {
       const newCart = [...cart];
       let newQty = Math.max(1, (newCart[index].quantity || 1) + delta);
-      // Tope de stock en el bar (catálogo for_sale; legacy sin tope).
+      // Tope de stock en el bar (catálogo for_sale; legacy sin tope); el shot
+      // no gasta botellas y usa el máximo del dashboard, como al agregar.
+      const esShot = newCart[index].tipo_venta === 'shot';
       const stockBar = Number(newCart[index].stock_bar ?? 0);
-      if (stockBar > 0) newQty = Math.min(newQty, stockBar);
-      newCart[index].quantity = newQty;
+      const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
+      newCart[index].quantity = Math.min(newQty, maxQty);
       dispatch({ type: 'SET_CART', payload: newCart });
     },
     [cart],
@@ -560,6 +596,8 @@ export function useNuevaVenta() {
     handleOpenCategory,
     handlePressAddProduct,
     addProductToCart,
+    handleSetSaleChoice,
+    saleChoices,
     removeFromCart,
     updateQuantity,
     handleSubmit,

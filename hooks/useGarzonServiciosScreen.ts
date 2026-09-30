@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
+import { blockOffline } from "@/utils/offlineGuard";
 import { getIvaDecimal } from '@/hooks/utils/cuentaUtils';
 import logger from "@/utils/logger";
 
@@ -331,6 +332,10 @@ export function useGarzonServiciosScreen() {
     if (!hasComision && (!servicePrice || servicePrice === "0")) {
       return Alert.alert("Error", "Ingresa el precio del servicio");
     }
+
+    // La solicitud nace en caja: sin el servidor no se puede registrar ni
+    // validar, así que se avisa en vez de enviarla a ciegas.
+    if (!blockOffline("solicitud")) return;
 
     const generateCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
