@@ -27,6 +27,17 @@ corepack pnpm typecheck
 
 ## Desarrollo movil
 
+- Para ver cambios en vivo usando la API remota, instala una vez el APK del
+  perfil `development` (`pnpm android:dev`). Luego ejecuta `pnpm start:remote`,
+  conecta el telefono a la misma red que la computadora y abre el proyecto
+  desde el QR de Expo. Fast Refresh actualiza pantallas, estilos y logica al guardar.
+- `pnpm start:remote --tunnel` permite conectar Metro desde otra red.
+  El comando usa la URL remota definida en `eas.json` sin modificar `.env`.
+- El tunel de Metro no expone la API local. Para probar cambios del backend
+  local, usa `pnpm start` y levanta el dashboard en una direccion accesible
+  desde el telefono.
+- Si cambia una dependencia nativa, genera e instala otro APK de desarrollo.
+  Los APK de `preview_apk` y `production` no se conectan a Metro para Fast Refresh.
 - `corepack pnpm start` arranca Metro en modo `dev-client`.
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.

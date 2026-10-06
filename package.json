@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --dev-client",
+    "start:remote": "node scripts/start-dev-remote.js",
     "start:go": "expo start",
     "start:tunnel": "expo start --dev-client --tunnel",
     "reset-project": "node ./scripts/reset-project.js",

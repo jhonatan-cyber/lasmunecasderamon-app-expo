@@ -1,3 +1,11 @@
+export class InvalidResponseError extends Error {
+  code = "INVALID_RESPONSE";
+  constructor(message = "El servidor devolvió una respuesta JSON inválida.") {
+    super(message);
+    this.name = "InvalidResponseError";
+  }
+}
+
 export class UnauthorizedError extends Error {
   code = "UNAUTHORIZED";
   constructor(message = "Sesión inválida o expirada") {

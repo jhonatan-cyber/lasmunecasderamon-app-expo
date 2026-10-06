@@ -7,7 +7,14 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "22.19.0"
+      "node": "22.19.0",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",

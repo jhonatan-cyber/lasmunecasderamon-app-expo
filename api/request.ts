@@ -3,6 +3,7 @@ import logger from "@/utils/logger";
 import { API_URL } from "./base-url";
 import {
   attachHttpDetails,
+  InvalidResponseError,
   NetworkError,
   RetryExhaustedError,
   TimeoutError,
@@ -36,7 +37,6 @@ function combineSignals(
   }
 
   const onExternalAbort = () => internalController.abort();
-  const onInternalAbort = () => {}; // No necesitamos abortar el external
 
   externalSignal.addEventListener('abort', onExternalAbort, { once: true });
 
@@ -133,6 +133,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
   };
 
   let lastError: any = null;
+  let sessionRetried = false;
   const startTime = Date.now();
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -153,23 +154,30 @@ export const apiClient = async <T = ApiRes<unknown>>(
         ...config,
         signal: combinedSignal,
       });
-      clearTimeout(timeoutId);
-      cleanupSignals();
       const durationMs = Date.now() - startTime;
 
-      const data = await response.json().catch(() => ({}));
+      const data = response.status === 204 ? {} : await response.json().catch((error: unknown) => {
+        if ((error as Error)?.name === 'AbortError') throw error;
+        if (response.ok) throw new InvalidResponseError();
+        return {};
+      });
+      clearTimeout(timeoutId);
+      cleanupSignals();
 
       if (response.status === 401) {
         // Intentar refresh token automático (excepto para el propio endpoint de refresh)
-        if (!endpoint.includes('/auth/refresh')) {
-          const refreshed = await refreshAccessToken();
+        if (!sessionRetried && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
+          const currentToken = getTokenInMemory();
+          const refreshed = (currentToken && headers.get('Authorization') !== `Bearer ${currentToken}`)
+            || await refreshAccessToken();
           if (refreshed) {
+            sessionRetried = true;
             // Token renovado — actualizar header y reintentar
             headers.set('Authorization', `Bearer ${getTokenInMemory()}`);
             config.headers = headers;
             logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
-            // Continuar al siguiente intento con el header actualizado
-            lastError = new Error('Token refreshed, retrying...');
+            // El reenvío de sesión tiene su propio presupuesto, incluso con retries=0.
+            attempt--;
             continue;
           }
         }

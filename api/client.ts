@@ -2,6 +2,7 @@ export { BASE_URL, API_URL, resolveBaseUrl } from "./base-url";
 export {
   attachHttpDetails,
   httpDetailsOf,
+  InvalidResponseError,
   NetworkError,
   RetryExhaustedError,
   TimeoutError,

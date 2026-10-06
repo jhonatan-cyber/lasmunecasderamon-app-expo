@@ -1,6 +1,7 @@
 import { API_URL } from "./base-url";
 import { TokenStorage } from "@/utils/tokenStorage";
 import logger from "@/utils/logger";
+import { attachHttpDetails, InvalidResponseError, NetworkError, TimeoutError } from './errors';
 
 let tokenInMemory: string | null = null;
 let onUnauthorized: (() => void) | null = null;
@@ -48,7 +49,8 @@ export function notifySessionConfirmed() {
 /**
  * Intenta renovar el access token usando el refresh token almacenado.
  * Usa un mutex para evitar múltiples refresh simultáneos.
- * Retorna true si se renovó exitosamente, false si falló.
+ * Retorna false si no hay sesión renovable o el servidor la rechazó.
+ * Los fallos temporales lanzan un error y conservan las credenciales.
  */
 export async function refreshAccessToken(): Promise<boolean> {
   // Si ya hay un refresh en curso, esperar a que termine
@@ -58,6 +60,8 @@ export async function refreshAccessToken(): Promise<boolean> {
 
   isRefreshing = true;
   refreshPromise = (async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
       const storedRefreshToken = await TokenStorage.getRefreshToken();
       if (!storedRefreshToken) {
@@ -67,6 +71,7 @@ export async function refreshAccessToken(): Promise<boolean> {
 
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           'x-refresh-token': storedRefreshToken
@@ -77,12 +82,18 @@ export async function refreshAccessToken(): Promise<boolean> {
         logger.warn('[refreshAccessToken] Error al refrescar token', {
           status: response.status
         });
-        await TokenStorage.removeTokens();
-        return false;
+        if (response.status === 401 || response.status === 403) {
+          await TokenStorage.removeTokens();
+          tokenInMemory = null;
+          return false;
+        }
+        throw attachHttpDetails(new NetworkError('No se pudo renovar la sesión. Intenta nuevamente.'), {
+          status: response.status, body: null
+        });
       }
 
       const data = await response.json();
-      if (data.success && data.token) {
+      if (data?.success === true && typeof data.token === 'string' && data.token.length > 0) {
         // Guardar nuevo access token
         tokenInMemory = data.token;
         await TokenStorage.saveToken(data.token);
@@ -97,14 +108,17 @@ export async function refreshAccessToken(): Promise<boolean> {
       }
 
       logger.warn('[refreshAccessToken] Respuesta inválida del servidor');
-      await TokenStorage.removeTokens();
-      return false;
+      throw new InvalidResponseError('El servidor devolvió una respuesta inválida al renovar la sesión.');
     } catch (error) {
       logger.captureException(error, {
         context: 'refreshAccessToken'
       });
-      return false;
+      if ((error as Error)?.name === 'AbortError') throw new TimeoutError();
+      if (error instanceof SyntaxError) throw new InvalidResponseError();
+      if (error instanceof TypeError) throw new NetworkError();
+      throw error;
     } finally {
+      clearTimeout(timeoutId);
       isRefreshing = false;
       refreshPromise = null;
     }
