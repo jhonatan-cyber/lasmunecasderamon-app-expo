@@ -250,7 +250,7 @@ export function useCaja() {
                     showToast(
                         'Cierre enviado',
                         saldos > 0
-                            ? `Se pidió autorización al administrador. Se descontarán $${saldos.toLocaleString()} de saldos de clientes.`
+                            ? `Se pidió autorización al administrador. Se descontarán $${saldos.toLocaleString('es-CL')} de saldos de clientes.`
                             : 'Se pidió autorización al administrador por WhatsApp. La caja sigue abierta.',
                         'success'
                     );
