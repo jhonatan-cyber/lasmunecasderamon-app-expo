@@ -3,6 +3,8 @@ import {
   string,
   number,
   array,
+  union,
+  unknown as zUnknown,
   enum as zEnum,
 } from 'zod/v4';
 import type { z } from 'zod/v4';
@@ -88,6 +90,29 @@ export const ServiceCreateSchema = object({
 export const AnticipoRequestSchema = object({
   monto: number().positive('Monto invalido'),
   motivo: string().trim().min(1, 'Motivo requerido'),
+}).passthrough();
+
+/**
+ * Respuestas del servidor (borde API → app). El backend puede cambiar tipos
+ * (id numérico vs string) o mandar null ante un deploy a medias: validar evita
+ * que un `undefined` se propague al store y rompa pantallas.
+ */
+
+/** Usuario tal como lo devuelve /auth/me (el id manda; el resto es libre). */
+export const serverUserSchema = object({
+  id: union([string(), number()]),
+}).passthrough();
+
+/** /configurations: solo se leen estos grupos; lo demás se ignora. */
+export const configurationsSchema = object({
+  comisiones: object({
+    threshold_producto_caro: zUnknown().optional(),
+    split_tarjeta_venta: zUnknown().optional(),
+    split_tarjeta_propina: zUnknown().optional(),
+  }).passthrough().optional(),
+  facturacion: object({
+    impuesto_iva: zUnknown().optional(),
+  }).passthrough().optional(),
 }).passthrough();
 
 export type LoginInput = z.infer<typeof loginSchema>;

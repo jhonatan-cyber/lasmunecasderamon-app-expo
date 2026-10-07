@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { apiClient } from '@/api/request';
 import { getTokenInMemory, setTokenInMemory, setUnauthorizedHandler, setSessionConfirmedHandler, refreshAccessToken } from '@/api/token';
-import { InvalidResponseError, NetworkError, TimeoutError, UnauthorizedError } from '@/api/errors';
+import { InvalidResponseError, NetworkError, TimeoutError, UnauthorizedError, httpDetailsOf } from '@/api/errors';
 import { TokenStorage } from '@/utils/tokenStorage';
 
 vi.mock('@/api/base-url', () => ({ API_URL: 'http://dashboard.test/api' }));
@@ -126,5 +126,52 @@ describe('renovación y almacenamiento', () => {
     await vi.advanceTimersByTimeAsync(10000);
     await pending;
     expect(TokenStorage.removeTokens).not.toHaveBeenCalled();
+  });
+});
+
+describe('respuesta 403 (autenticado pero sin permiso)', () => {
+  it('no renueva token, no borra sesión y adjunta el status', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ success: false, message: 'Sin permiso' }, 403));
+    vi.stubGlobal('fetch', fetchMock);
+    const error = await apiClient('/admin/panel', { retries: 0 }).catch(e => e);
+    expect(httpDetailsOf(error)?.status).toBe(403);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(TokenStorage.removeTokens).not.toHaveBeenCalled();
+    expect(getTokenInMemory()).toBe('viejo');
+    expect(unauthorized).not.toHaveBeenCalled();
+  });
+});
+
+describe('clave de idempotencia global', () => {
+  it('envía x-idempotency-key estable entre reintentos', async () => {
+    const seen: (string | null)[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, options: RequestInit) => {
+      seen.push(new Headers(options.headers).get('x-idempotency-key'));
+      return seen.length === 1 ? json({}, 500) : json({ success: true });
+    }));
+    await expect(apiClient('/orders', {
+      method: 'POST', retries: 1, body: JSON.stringify({ total: 100 }),
+    })).resolves.toEqual({ success: true });
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBeTruthy();
+    expect(seen[1]).toBe(seen[0]);
+  });
+
+  it('respeta una clave ya puesta (la del outbox manda)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    await apiClient('/orders', {
+      method: 'POST', retries: 0,
+      headers: { 'x-idempotency-key': 'intent-1' },
+      body: JSON.stringify({ total: 100 }),
+    });
+    expect(new Headers(fetchMock.mock.calls[0][1].headers).get('x-idempotency-key')).toBe('intent-1');
+  });
+
+  it('no la pone en GET', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    await apiClient('/orders', { retries: 0 });
+    expect(new Headers(fetchMock.mock.calls[0][1].headers).get('x-idempotency-key')).toBeNull();
   });
 });

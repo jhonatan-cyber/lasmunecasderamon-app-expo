@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -34,6 +34,9 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Expo doctor
+        run: pnpm doctor
 
       - name: Unit Tests
         run: pnpm test:unit
@@ -64,7 +67,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 

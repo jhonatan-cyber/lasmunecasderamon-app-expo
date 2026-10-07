@@ -137,7 +137,7 @@ export const useEnvasesScreen = () => {
             : 'No se pudieron cargar los envases',
         );
       }
-      logger.captureException(e, { context: 'useEnvasesScreen:fetchDevoluciones' });
+      logger.fetchError(e, { context: 'useEnvasesScreen:fetchDevoluciones' });
     } finally {
       setLoading(false);
       setRefreshing(false);

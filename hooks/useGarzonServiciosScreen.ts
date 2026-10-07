@@ -124,7 +124,7 @@ export function useGarzonServiciosScreen() {
         });
       }
     } catch (err: any) {
-      logger.captureException(err, { context: "Servicios:fetchServicios" });
+      logger.fetchError(err, { context: "Servicios:fetchServicios" });
       showToast({
         type: "error",
         text1: "Error",

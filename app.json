@@ -8,7 +8,7 @@
     "scheme": "lasmunecasderamon",
     "userInterfaceStyle": "automatic",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/ef39814f-d1f7-444c-bc30-598055b8595e"
@@ -22,8 +22,7 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
-        "applinks:dashboard.xn--lasmuecasderamon-bub.com",
-        "applinks:dashboard.lasmuñecasderamon.com"
+        "applinks:dashboard.xn--lasmuecasderamon-bub.com"
       ]
     },
     "android": {
@@ -47,25 +46,6 @@
               "scheme": "https",
               "host": "dashboard.xn--lasmuecasderamon-bub.com",
               "pathPrefix": "/app"
-            },
-            {
-              "scheme": "https",
-              "host": "dashboard.lasmuñecasderamon.com",
-              "pathPrefix": "/app"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "dashboard.xn--lasmuecasderamon-bub.com"
             }
           ],
           "category": [
@@ -77,8 +57,7 @@
       "permissions": [
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -87,17 +66,7 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "2.1.20",
-            "extraGradleProperties": {
-              "ksp.allow.any.kotlin.version": "true"
-            }
-          }
-        }
-      ],
+      "expo-build-properties",
       [
         "expo-notifications",
         {
@@ -132,7 +101,9 @@
       "@sentry/react-native",
       "expo-font",
       "expo-sharing",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

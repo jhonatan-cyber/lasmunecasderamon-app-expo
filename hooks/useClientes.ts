@@ -76,7 +76,7 @@ export function useClientes() {
                 setClients(listData.data || []);
             }
         } catch (error: any) {
-            logger.captureException(error, { context: 'Clientes:fetchClients' });
+            logger.fetchError(error, { context: 'Clientes:fetchClients' });
             showToast({ type: 'error', text1: 'Error', text2: error.message || 'No se pudieron descargar los clientes' });
         } finally {
             setLoading(false);
@@ -202,7 +202,7 @@ export function useClientes() {
                 setHistoryData(res);
             }
         } catch (error) {
-            logger.captureException(error, { context: 'Clientes:fetchHistory' });
+            logger.fetchError(error, { context: 'Clientes:fetchHistory' });
         } finally {
             setHistoryLoading(false);
             setRefreshingHistory(false);
@@ -277,7 +277,7 @@ export function useClientes() {
                 showToast({ type: 'error', text1: 'Error', text2: prepagoRes.message || 'Error al cargar saldo' });
             }
         } catch (error: any) {
-            logger.captureException(error, { context: 'Clientes:loadBalance' });
+            logger.fetchError(error, { context: 'Clientes:loadBalance' });
             showToast({ type: 'error', text1: 'Error', text2: error.message || 'Error de conexión' });
         } finally {
             setSubmitting(false);

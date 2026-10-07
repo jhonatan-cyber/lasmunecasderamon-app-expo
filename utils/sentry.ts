@@ -28,17 +28,26 @@ function loadSentry(): Promise<SentryModule> {
 
 // ── Public API ─────────────────────────────────────────────────────────
 
+let _sentryEnabled = false;
+
+/** True si initSentry llegó a inicializar el SDK (hay DSN configurado). */
+export function isSentryEnabled(): boolean {
+  return _sentryEnabled;
+}
+
 /** Lazy-init Sentry. Safe to call multiple times — subsequent calls are no-ops. */
 export async function initSentry(options?: {
   dsn?: string;
   tracesSampleRate?: number;
 }) {
+  const dsn = options?.dsn ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
+  // Sin DSN no hay a dónde reportar: no se carga el SDK (~1.8 MB) ni se
+  // inicializa contra el placeholder (antes apuntaba a example.ingest…).
+  if (!dsn || _sentryEnabled) return;
   const Sentry = await loadSentry();
+  _sentryEnabled = true;
   Sentry.init({
-    dsn:
-      options?.dsn ??
-      process.env.EXPO_PUBLIC_SENTRY_DSN ??
-      'https://placeholder@example.ingest.sentry.io/placeholder',
+    dsn,
 
     // ── Performance ────────────────────────────────────────────────
     // Disabled — we only use Sentry for error+crash reporting, not
@@ -58,6 +67,11 @@ export async function initSentry(options?: {
     // Disable automatic session lifecycle — we don't use session
     // health or user metrics.
     enableAutoSessionTracking: false,
+
+    // ── Breadcrumbs ────────────────────────────────────────────────
+    // Tope explícito: con el trail de SSE bastan 50 para reconstruir un
+    // error sin inflar cada evento.
+    maxBreadcrumbs: 50,
 
     // ── Native-only features (no effect on web) ────────────────────
     // Screenshots & view hierarchy adds overhead on native; we only

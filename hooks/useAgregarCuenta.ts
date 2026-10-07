@@ -104,7 +104,7 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
           },
         });
       } catch (error) {
-        logger.captureException(error, { context: "AgregarCuenta:fetchInitialData" });
+        logger.fetchError(error, { context: "AgregarCuenta:fetchInitialData" });
         showToast("Error", "No se pudo cargar la información necesaria.");
       } finally {
         dispatch({ type: "SET_LOADING_INITIAL", payload: false });
@@ -135,7 +135,7 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
             dispatch({ type: "SET_INITIAL_DATA", payload: { categories: (res as any).data || [] } });
           }
         } catch (e) {
-          logger.captureException(e, { context: "AgregarCuenta:refreshCategories" });
+          logger.fetchError(e, { context: "AgregarCuenta:refreshCategories" });
         }
       })();
     });

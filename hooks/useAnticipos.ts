@@ -71,7 +71,7 @@ export function useAnticipos() {
       }
     } catch (e) {
       if ((e as any)?.name === 'AbortError') return null;
-      logger.captureException(e, { context: 'useAnticipos:fetchMaximo' });
+      logger.fetchError(e, { context: 'useAnticipos:fetchMaximo' });
     }
     return null;
   }, []);

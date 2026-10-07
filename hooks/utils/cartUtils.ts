@@ -146,7 +146,7 @@ export const openCategory = async (
       showToast("Error", "No se pudieron cargar los productos");
     }
   } catch (error) {
-    logger.captureException(error, {
+    logger.fetchError(error, {
       context: "CartUtils:handleOpenCategory",
     });
   } finally {

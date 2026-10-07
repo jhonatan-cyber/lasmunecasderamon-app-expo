@@ -35,7 +35,7 @@ export const useSolicitudes = () => {
                     setSolicitudes(parsed);
                 }
             } catch (err) {
-                logger.captureException(err, { context: 'useSolicitudes:loadCache' });
+                logger.fetchError(err, { context: 'useSolicitudes:loadCache' });
             }
         };
         loadCache();
@@ -141,7 +141,7 @@ export const useSolicitudes = () => {
                 });
             }
         } catch (error) {
-            logger.captureException(error, { context: 'useSolicitudes:fetchSolicitudes' });
+            logger.fetchError(error, { context: 'useSolicitudes:fetchSolicitudes' });
             setIsOffline(true);
             if (isManual) {
                 showToast({

@@ -13,7 +13,8 @@ vi.mock('@/hooks/useConfigValue', () => ({
 }));
 
 vi.mock('@/context/SalesContext', () => ({
-  useSales: () => ({ refreshVentas: vi.fn() })
+  useSales: () => ({ refreshVentas: vi.fn() }),
+  useSalesActions: () => ({ refreshVentas: vi.fn() }),
 }));
 
 vi.mock('expo-router', () => ({

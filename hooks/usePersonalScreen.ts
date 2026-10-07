@@ -62,7 +62,7 @@ export function usePersonalScreen() {
                 }
             }
         } catch (error: any) {
-            logger.captureException(error, { context: 'Personal:fetchUsers' });
+            logger.fetchError(error, { context: 'Personal:fetchUsers' });
             showToast({
                 type: 'error',
                 text1: 'Error',
@@ -91,7 +91,7 @@ export function usePersonalScreen() {
                     const res = await codigoService.actual();
                     if ((res as any).success) setCodigoAsistencia((res as any).codigo);
                 } catch (e) {
-                    logger.captureException(e, { context: 'Personal:onRefresh' });
+                    logger.fetchError(e, { context: 'Personal:onRefresh' });
                 }
             })()
         ]);

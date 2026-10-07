@@ -8,6 +8,7 @@ import {
     describeIntentError,
     isRetryableError,
     MAX_OUTBOX_ATTEMPTS,
+    orderFlushable,
 } from '@/services/outbox/service';
 import type { OutboxIntent } from '@/services/outbox/types';
 import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
@@ -516,5 +517,41 @@ describe('outbox · servicio', () => {
 
         expect(outbox.getSnapshot().map(intent => intent.id)).toEqual(['id-1']);
         expect(outbox.pendingCount()).toBe(1);
+    });
+});
+
+describe('orderFlushable', () => {
+    const intent = (overrides: Partial<OutboxIntent> & { id: string }): OutboxIntent => ({
+        type: 'order.create',
+        payload: {},
+        label: '',
+        createdAt: NOW,
+        updatedAt: NOW,
+        status: 'pendiente',
+        attempts: 0,
+        lastError: null,
+        appliedAt: null,
+        response: null,
+        ...overrides,
+    });
+
+    it('pone los consumos antes que el cobro de la misma cuenta', () => {
+        const checkout = intent({
+            id: 'checkout', type: 'account.checkout',
+            payload: { id_cuenta: 7 }, createdAt: NOW,
+        });
+        const consumos = intent({
+            id: 'consumos', type: 'account.consumptions',
+            payload: { id_cuenta: 7, consumos: {} }, createdAt: NOW + 1,
+        });
+
+        expect(orderFlushable([checkout, consumos]).map(i => i.id)).toEqual(['consumos', 'checkout']);
+    });
+
+    it('conserva el FIFO entre cuentas distintas', () => {
+        const a = intent({ id: 'a', type: 'account.checkout', payload: { id_cuenta: 1 }, createdAt: NOW });
+        const b = intent({ id: 'b', type: 'account.consumptions', payload: { id_cuenta: 2, consumos: {} }, createdAt: NOW + 1 });
+
+        expect(orderFlushable([a, b]).map(i => i.id)).toEqual(['a', 'b']);
     });
 });

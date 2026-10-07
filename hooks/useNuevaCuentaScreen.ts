@@ -96,7 +96,7 @@ export function useNuevaCuentaScreen() {
             dispatch({ type: "SET_INITIAL_DATA", payload: { categories: (res as any).data || [] } });
           }
         } catch (e) {
-          logger.captureException(e, { context: "NuevaCuenta:refreshCategories" });
+          logger.fetchError(e, { context: "NuevaCuenta:refreshCategories" });
         }
       })();
     });

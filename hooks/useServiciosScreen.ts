@@ -288,7 +288,7 @@ export function useServiciosScreen() {
         if (isManual) showToastLazy({ type: "success", text1: "Actualizado" });
       }
     } catch (error) {
-      logger.captureException(error, { context: "Servicios:fetchData" });
+      logger.fetchError(error, { context: "Servicios:fetchData" });
     } finally {
       dispatch({ type: "SET_LOADING_FINALIZADOS", payload: false });
     }

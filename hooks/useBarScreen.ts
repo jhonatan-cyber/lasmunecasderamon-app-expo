@@ -92,7 +92,7 @@ export const useBarScreen = () => {
         setError(e.message);
         return;
       }
-      logger.captureException(e, { context: 'BarScreen:fetchStock' });
+      logger.fetchError(e, { context: 'BarScreen:fetchStock' });
     }
   }, []);
 
@@ -112,7 +112,7 @@ export const useBarScreen = () => {
         if (e instanceof OfflineCacheMissError) {
           setError(e.message);
         } else {
-          logger.captureException(e, { context: 'BarScreen:fetchTransfers' });
+          logger.fetchError(e, { context: 'BarScreen:fetchTransfers' });
           setError('No se pudieron cargar las recepciones');
         }
       }
@@ -133,7 +133,7 @@ export const useBarScreen = () => {
     } catch (e) {
       if (signal?.aborted) return;
       if (e instanceof OfflineCacheMissError) return;
-      logger.captureException(e, { context: 'BarScreen:fetchMovements' });
+      logger.fetchError(e, { context: 'BarScreen:fetchMovements' });
     } finally {
       if (!signal?.aborted) setLoadingMovements(false);
     }

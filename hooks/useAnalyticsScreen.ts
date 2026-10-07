@@ -63,7 +63,7 @@ export function useAnalyticsScreen() {
 
       loadedRef.current = true;
     } catch (e: any) {
-      logger.captureException?.(e, { context: 'useAnalyticsScreen:fetchData' });
+      logger.fetchError?.(e, { context: 'useAnalyticsScreen:fetchData' });
       if (!loadedRef.current) setError(e?.message || 'Error al cargar las analíticas');
     } finally {
       setLoading(false);

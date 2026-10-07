@@ -71,7 +71,7 @@ export function usePedidosScreen() {
                 setError(err.message || 'Error de conexión');
             }
 
-            logger.captureException(err, { context: 'PedidosScreen:fetchCategories' });
+            logger.fetchError(err, { context: 'PedidosScreen:fetchCategories' });
 
             if (isManual) {
                 showToast({

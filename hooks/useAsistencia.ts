@@ -91,7 +91,7 @@ export function useAsistencia() {
       }
     } catch (err) {
       if ((err as any)?.name === 'AbortError') return;
-      logger.captureException(err, { context: 'useAsistencia:fetchGratificaciones' });
+      logger.fetchError(err, { context: 'useAsistencia:fetchGratificaciones' });
     }
   }, []);
 

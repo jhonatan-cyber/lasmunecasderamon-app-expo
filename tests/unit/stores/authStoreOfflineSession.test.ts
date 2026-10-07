@@ -145,15 +145,20 @@ describe('authStore · sesión offline', () => {
     });
 
     describe('checkAuth', () => {
-        it('debe crear el marcador cuando la instalación es anterior a la función', async () => {
+        it('NO debe crear el marcador sin contacto con el servidor (solo cargarlo)', async () => {
+            // Sin validación del backend, regalar 12h de gracia offline con un
+            // token quizás revocado es peor que arrancar sin ventana: esta se
+            // abre con el primer 2xx (setSessionConfirmedHandler) o el login.
             const { TokenStorage } = await import('@/utils/tokenStorage');
             vi.mocked(TokenStorage.getToken).mockResolvedValue('token-de-prueba');
             await AsyncStorage.setItem('user', JSON.stringify(USER));
 
             await useAuthStore.getState().checkAuth();
 
-            expect(useAuthStore.getState().offlineSession?.userId).toBe('u-1');
-            expect(await readStoredSession()).not.toBeNull();
+            expect(useAuthStore.getState().offlineSession).toBeNull();
+            expect(await readStoredSession()).toBeNull();
+            // ...y por tanto no se puede operar offline hasta el primer 2xx.
+            expect(useAuthStore.getState().canWorkOffline()).toBe(false);
         });
 
         it('debe respetar el marcador ya guardado', async () => {

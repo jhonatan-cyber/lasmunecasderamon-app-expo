@@ -137,7 +137,7 @@ export function useNuevoServicio() {
         showToast('Caja Cerrada', 'Debes abrir una caja antes de crear servicios.', 'error');
       }
     } catch (error) {
-      logger.captureException(error, { context: 'NuevoServicio:fetchInitialData' });
+      logger.fetchError(error, { context: 'NuevoServicio:fetchInitialData' });
       showToast('Error', 'No se pudo cargar la información necesaria.');
     } finally {
       dispatch({ type: 'SET_LOADING_INITIAL', payload: false });

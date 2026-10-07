@@ -64,7 +64,7 @@ export function useAdministrativoScreen() {
           });
         }
       } catch (error) {
-        logger.captureException(error, { context: "Administrativo:fetchData" });
+        logger.fetchError(error, { context: "Administrativo:fetchData" });
         if (isManual) {
           showToast({
             type: "error",
@@ -115,7 +115,7 @@ export function useAdministrativoScreen() {
         const detailRes = res as unknown as { success: boolean; data: any };
         if (detailRes.success && detailRes.data) setEventDetail(detailRes.data);
       } catch (e) {
-        logger.captureException(e, {
+        logger.fetchError(e, {
           context: "Administrativo:handleSelectEvent",
         });
       } finally {

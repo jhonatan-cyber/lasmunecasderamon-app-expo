@@ -83,4 +83,29 @@ describe('offlineSync y la conectividad unificada', () => {
             expect.objectContaining({ method: 'POST' })
         );
     });
+
+    it('conserva los agotados en fallidos en vez de descartarlos en silencio', async () => {
+        const { apiClientSafe } = await import('@/api/client-safe');
+        connectivity.handleNetworkState({ isConnected: false });
+        await offlineSync.clearQueue();
+        await offlineSync.clearFailed();
+        await offlineSync.queueRequest('/orders', 'POST', { codigo: 'AGOTADO' });
+
+        connectivity.handleNetworkState({ isConnected: true });
+        vi.mocked(apiClientSafe).mockClear();
+        vi.mocked(apiClientSafe).mockRejectedValue(new Error('servidor caído'));
+
+        // Cada flush consume un reintento: tras agotar el tope pasa a fallidos.
+        // Se cede el turno entre pasadas porque el propio cambio de red dispara
+        // un sync de fondo que puede solaparse (syncInProgress lo serializa).
+        for (let i = 0; i < 10 && (await offlineSync.getFailed()).length === 0; i++) {
+            await offlineSync.triggerSync();
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        expect(await offlineSync.getPendingCount()).toBe(0);
+        const failed = await offlineSync.getFailed();
+        expect(failed).toHaveLength(1);
+        expect(failed[0].endpoint).toBe('/orders');
+    });
 });

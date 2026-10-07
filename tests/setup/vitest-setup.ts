@@ -53,8 +53,11 @@ vi.mock('@/api/client', () => ({
     apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: [] })),
     setTokenInMemory: vi.fn(),
     setUnauthorizedHandler: vi.fn(),
+    setForbiddenHandler: vi.fn(),
     setSessionConfirmedHandler: vi.fn(),
     notifySessionConfirmed: vi.fn(),
+    notifyForbidden: vi.fn(),
+    refreshAccessToken: vi.fn(() => Promise.resolve(false)),
 }));
 
 
@@ -65,6 +68,7 @@ vi.mock('@/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn(),
         captureException: vi.fn(),
+        fetchError: vi.fn(),
     },
 }));
 

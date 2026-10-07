@@ -130,7 +130,7 @@ export function usePropinasScreen() {
                 }
             }
         } catch (err: any) {
-            logger.captureException(err, { context: 'Propinas:fetchTips' });
+            logger.fetchError(err, { context: 'Propinas:fetchTips' });
         } finally {
             setLoadingDetail(false);
         }

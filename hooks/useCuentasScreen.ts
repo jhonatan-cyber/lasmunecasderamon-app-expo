@@ -271,7 +271,7 @@ export const useCuentasScreen = () => {
           );
         }
       } catch (error) {
-        logger.captureException(error, { context: "Cuentas:fetchCuentas" });
+        logger.fetchError(error, { context: "Cuentas:fetchCuentas" });
         if (isManual) showToast("Error", "No se pudo actualizar");
       } finally {
         dispatch({ type: "SET_LOADING", payload: false });

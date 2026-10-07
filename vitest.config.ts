@@ -15,11 +15,13 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             reportsDirectory: './coverage',
+            // Ratchet 2026-10-07 (medido: 60.7/69.6/77.6/76.8): si agregás código
+            // sin tests, el CI te lo cobra acá.
             thresholds: {
-                branches: 45,
-                functions: 60,
-                lines: 65,
-                statements: 65
+                branches: 55,
+                functions: 65,
+                lines: 72,
+                statements: 72
             },
             exclude: ['node_modules/', 'tests/', '**/*.d.ts', '**/*.config.*', '.expo/', '**/types/**']
         },
