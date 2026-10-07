@@ -13,6 +13,7 @@ export {
     INTENT_SENDERS,
     MAX_OUTBOX_ATTEMPTS,
     isRetryableError,
+    orderFlushable,
     stampDeviceDate,
 } from './service';
 

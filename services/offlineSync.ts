@@ -1,3 +1,12 @@
+/**
+ * @deprecated Cola offline legacy. No encolar nada nuevo aquí: usar
+ * `services/outbox` (SQLite, idempotente, con estados visibles).
+ *
+ * Se conserva el drenado para no varar colas ya guardadas en dispositivos
+ * (`offline_request_queue`). El envío pasa por `apiClientSafe`, que desde la
+ * Fase 1 añade `x-idempotency-key` global, así que el drenado legacy también
+ * quedó idempotente.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { connectivity } from '@/services/connectivity';
@@ -17,12 +26,24 @@ interface QueuedRequest {
 }
 
 const QUEUE_KEY = 'offline_request_queue';
+const FAILED_QUEUE_KEY = 'offline_request_failed_queue';
 const SYNC_STATUS_KEY = 'offline_sync_status';
 const MAX_RETRIES = 3;
+/** Tope de fallidos conservados para conciliar (el resto se descarta con log). */
+const MAX_FAILED_KEPT = 50;
 
 class OfflineSyncManager {
     private syncInProgress: boolean = false;
     private listeners: Set<() => void> = new Set();
+    /** Mutex en memoria: serializa las escrituras read-modify-write. */
+    private writeChain: Promise<void> = Promise.resolve();
+
+    private async withWriteLock<T>(fn: () => Promise<T>): Promise<T> {
+        const run = this.writeChain.then(fn);
+        // La cadena nunca se rompe por un fallo: el siguiente igual entra.
+        this.writeChain = run.then(() => {}, () => {});
+        return run;
+    }
 
     constructor() {
         // Drena al volver la red. La conectividad es la unificada
@@ -48,23 +69,27 @@ class OfflineSyncManager {
         return connectivity.isOnline();
     }
 
+    /** @deprecated Usar `outbox.enqueue`. Solo se mantiene por compatibilidad. */
     async queueRequest(endpoint: string, method: string, body: Record<string, unknown>): Promise<void> {
-        const queue = await this.getQueue();
-        
-        const newRequest: QueuedRequest = {
-            id: createQueueId(),
-            endpoint,
-            method,
-            body,
-            timestamp: Date.now(),
-            retries: 0
-        };
+        logger.warn('offlineSync.queueRequest está deprecado: migrar a outbox.enqueue', { endpoint });
+        await this.withWriteLock(async () => {
+            const queue = await this.getQueue();
 
-        queue.push(newRequest);
-        await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-        
+            const newRequest: QueuedRequest = {
+                id: createQueueId(),
+                endpoint,
+                method,
+                body,
+                timestamp: Date.now(),
+                retries: 0
+            };
+
+            queue.push(newRequest);
+            await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+        });
+
         this.notifyListeners();
-        
+
         if (connectivity.isOnline()) {
             this.triggerSync();
         }
@@ -78,6 +103,20 @@ class OfflineSyncManager {
     async getPendingCount(): Promise<number> {
         const queue = await this.getQueue();
         return queue.length;
+    }
+
+    /** Fallidos que agotaron reintentos (para conciliar, no se reintentan solos). */
+    async getFailed(): Promise<QueuedRequest[]> {
+        try {
+            const data = await AsyncStorage.getItem(FAILED_QUEUE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    async clearFailed(): Promise<void> {
+        await AsyncStorage.removeItem(FAILED_QUEUE_KEY);
     }
 
     async clearQueue(): Promise<void> {
@@ -101,24 +140,42 @@ class OfflineSyncManager {
             const { apiClientSafe } = await import('@/api/client-safe');
             let successCount = 0;
             const failedRequests: QueuedRequest[] = [];
+            const exhaustedRequests: QueuedRequest[] = [];
 
             for (const req of queue) {
                 try {
+                    // apiClientSafe añade x-idempotency-key: el reenvío no duplica.
                     await apiClientSafe(req.endpoint, {
                         method: req.method,
                         body: JSON.stringify(req.body),
                         retries: 0
                     });
                     successCount++;
-                } catch {
+                } catch (err) {
                     if (req.retries < MAX_RETRIES) {
                         req.retries++;
                         failedRequests.push(req);
+                    } else {
+                        // Antes se descartaba en silencio: ahora queda en la
+                        // lista de fallidos para conciliar.
+                        logger.warn('offlineSync: petición agotó reintentos, pasa a fallidos', {
+                            endpoint: req.endpoint,
+                            id: req.id,
+                            error: err instanceof Error ? err.message : String(err),
+                        });
+                        exhaustedRequests.push(req);
                     }
                 }
             }
 
-            await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(failedRequests));
+            await this.withWriteLock(async () => {
+                await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(failedRequests));
+                if (exhaustedRequests.length > 0) {
+                    const prev = await this.getFailed();
+                    const merged = [...exhaustedRequests, ...prev].slice(0, MAX_FAILED_KEPT);
+                    await AsyncStorage.setItem(FAILED_QUEUE_KEY, JSON.stringify(merged));
+                }
+            });
             
             await this.setSyncStatus({
                 lastSync: Date.now(),
@@ -162,4 +219,7 @@ export const getPendingCount = () => offlineSync.getPendingCount();
 export const triggerSync = () => offlineSync.triggerSync();
 
 export const isOnline = () => offlineSync.isConnected();
+
+/** @deprecated Solo lectura de fallidos legacy para conciliar. */
+export const getFailedRequests = () => offlineSync.getFailed();
 

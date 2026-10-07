@@ -14,6 +14,32 @@ export const MAX_OUTBOX_ATTEMPTS = 6;
 export type IntentSender = (intent: OutboxIntent) => Promise<unknown>;
 
 /**
+ * Orden dentro de la misma cuenta: los consumos van antes que el cobro (el
+ * cobro cierra la cuenta). El resto conserva el FIFO por created_at del SQL.
+ */
+const ACCOUNT_TYPE_ORDER: Partial<Record<OutboxIntentType, number>> = {
+    'account.consumptions': 0,
+    'account.checkout': 1,
+};
+
+function intentAccountKey(intent: OutboxIntent): string | null {
+    if (intent.type !== 'account.consumptions' && intent.type !== 'account.checkout') return null;
+    const id = (intent.payload as { id_cuenta?: unknown } | null)?.id_cuenta;
+    return id === undefined || id === null ? null : String(id);
+}
+
+export function orderFlushable(intents: OutboxIntent[]): OutboxIntent[] {
+    return [...intents].sort((a, b) => {
+        const keyA = intentAccountKey(a);
+        const keyB = intentAccountKey(b);
+        if (keyA !== null && keyA === keyB) {
+            return (ACCOUNT_TYPE_ORDER[a.type] ?? 0) - (ACCOUNT_TYPE_ORDER[b.type] ?? 0);
+        }
+        return 0; // sort estable: conserva el FIFO por created_at
+    });
+}
+
+/**
  * Cabecera con la que el servidor deduplica. El id de la intención es estable
  * durante toda su vida, así que un reintento tras un timeout no duplica nada.
  */
@@ -366,7 +392,8 @@ export function createOutboxService(
         const summary: FlushSummary = { skipped: false, sent: 0, pending: 0, failed: 0 };
 
         try {
-            for (const intent of repository.listFlushable(maxAttempts)) {
+            // Ordenado por cuenta: consumos antes que el cobro de la misma cuenta.
+            for (const intent of orderFlushable(repository.listFlushable(maxAttempts))) {
                 await send(intent);
 
                 const estado = repository.get(intent.id)?.status;
@@ -378,6 +405,13 @@ export function createOutboxService(
             logger.captureException(error, { context: 'outbox:flush' });
         } finally {
             flushing = false;
+            // Purga barata del historial resuelto en cada flush: evita que la
+            // tabla crezca sin límite (aplicadas >7d, fallidas >30d, cap 500).
+            try {
+                repository.pruneResolved();
+            } catch {
+                // La purga nunca debe romper el flush.
+            }
             notify();
         }
 

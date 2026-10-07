@@ -35,7 +35,25 @@ export interface OutboxRepository {
     remove(id: string): void;
     clear(): void;
     countUnresolved(): number;
+    /**
+     * Purga historial resuelto: aplicadas hace más de `appliedOlderThanMs`
+     * (def. 7d) y fallidas hace más de `failedOlderThanMs` (def. 30d).
+     * Retorna nº de filas borradas. Sin esto la tabla crece sin límite.
+     */
+    pruneResolved(appliedOlderThanMs?: number, failedOlderThanMs?: number): number;
+    /** Tope de seguridad: nº total de filas (para cap). */
+    countAll(): number;
 }
+
+/** Retención por defecto del historial resuelto. */
+export const OUTBOX_PRUNE_DEFAULTS = {
+    /** Aplicadas: 7 días. */
+    appliedOlderThanMs: 7 * 24 * 60 * 60 * 1000,
+    /** Fallidas: 30 días (dan tiempo a conciliar). */
+    failedOlderThanMs: 30 * 24 * 60 * 60 * 1000,
+    /** Tope total de filas antes de podar las aplicadas más viejas. */
+    maxRows: 500,
+} as const;
 
 const ESTADOS: OutboxIntentStatus[] = ['pendiente', 'enviando', 'aplicada', 'fallida'];
 
@@ -196,6 +214,50 @@ export function createOutboxRepository(
             const row = driver.getFirst<{ total: number }>(
                 "SELECT COUNT(*) AS total FROM outbox WHERE status IN ('pendiente', 'enviando', 'fallida')"
             );
+            return Number(row?.total ?? 0);
+        },
+
+        pruneResolved: (
+            appliedOlderThanMs: number = OUTBOX_PRUNE_DEFAULTS.appliedOlderThanMs,
+            failedOlderThanMs: number = OUTBOX_PRUNE_DEFAULTS.failedOlderThanMs,
+        ) => {
+            const countTotal = (): number => {
+                const row = driver.getFirst<{ total: number }>('SELECT COUNT(*) AS total FROM outbox');
+                return Number(row?.total ?? 0);
+            };
+            const before = countTotal();
+            try {
+                driver.run(
+                    'DELETE FROM outbox WHERE status = ? AND COALESCE(applied_at, updated_at) < ?',
+                    ['aplicada', now() - appliedOlderThanMs]
+                );
+                driver.run(
+                    'DELETE FROM outbox WHERE status = ? AND COALESCE(applied_at, updated_at) < ?',
+                    ['fallida', now() - failedOlderThanMs]
+                );
+                // Cap de seguridad: si aún hay demasiadas filas, se podan las
+                // aplicadas más viejas (nunca pendientes/enviando/fallidas recientes).
+                const total = countTotal();
+                if (total > OUTBOX_PRUNE_DEFAULTS.maxRows) {
+                    driver.run(
+                        `DELETE FROM outbox WHERE id IN (
+                           SELECT id FROM outbox WHERE status = 'aplicada'
+                           ORDER BY COALESCE(applied_at, updated_at) ASC LIMIT ?
+                         )`,
+                        [total - OUTBOX_PRUNE_DEFAULTS.maxRows]
+                    );
+                }
+                const deleted = Math.max(0, before - countTotal());
+                logger.debug('Outbox: purga de historial resuelto', { deleted });
+                return deleted;
+            } catch (e) {
+                logger.fetchError(e, { context: 'Outbox:pruneResolved' });
+                return 0;
+            }
+        },
+
+        countAll: () => {
+            const row = driver.getFirst<{ total: number }>('SELECT COUNT(*) AS total FROM outbox');
             return Number(row?.total ?? 0);
         },
     };
