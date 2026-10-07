@@ -12,6 +12,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   useWindowDimensions,
@@ -24,6 +25,7 @@ import { useAuthStore } from "@/store/authStore";
 import { THEME_OPTIONS, useThemeStore } from "@/store/themeStore";
 import { useProfile } from "@/hooks/useProfile";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { isVoiceAlertsEnabled, setVoiceAlertsEnabled } from "@/services/pushNotifications";
 
 interface PremiumProfileViewProps {
   roleLabel?: string;
@@ -116,6 +118,22 @@ export function PremiumProfileView({
 
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
   const [civilPickerVisible, setCivilPickerVisible] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void isVoiceAlertsEnabled().then((v) => {
+      if (active) setVoiceEnabled(v);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleToggleVoice = useCallback((value: boolean) => {
+    setVoiceEnabled(value);
+    void setVoiceAlertsEnabled(value);
+  }, []);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
@@ -538,6 +556,25 @@ export function PremiumProfileView({
             </View>
           </View>
 
+          <View style={[styles.divider, { backgroundColor: borderColor }]} />
+
+          <View style={[styles.settingRow, { backgroundColor: cardBg, borderColor }]}>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: textPrimary }]}>
+                Alertas por voz
+              </Text>
+              <Text style={[styles.settingSubtitle, { color: textSecondary }]}>
+                Anuncia en voz alta pedidos y llamados
+              </Text>
+            </View>
+            <Switch
+              value={voiceEnabled}
+              onValueChange={handleToggleVoice}
+              trackColor={{ false: "#767577", true: accentColor }}
+              thumbColor="#FFF"
+            />
+          </View>
+
           <View style={styles.actionContainer}>
             <Pressable
               style={[
@@ -752,6 +789,19 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, fontWeight: "600" },
   divider: { height: 1, width: "100%", marginVertical: 30, opacity: 0.2 },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+  },
+  settingText: { flex: 1, marginRight: 12 },
+  settingTitle: { fontSize: 16, fontWeight: "700" },
+  settingSubtitle: { fontSize: 13, fontWeight: "500", marginTop: 2 },
   actionContainer: { marginTop: 10, gap: 16 },
   saveBtn: {
     height: 60,

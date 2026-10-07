@@ -1,12 +1,12 @@
-import * as Notifications from "expo-notifications";
-import React, { createContext, Suspense, useCallback, useContext, useEffect, useRef } from "react";
+import React, { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
 import { showToast, ToastComponent } from '@/utils/toast-lazy';
 import { API_URL } from "@/api/client";
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from "@/store/authStore";
-import { ensureTokenInMemory } from "@/api/token";
+import { ensureTokenInMemory, refreshAccessToken } from "@/api/token";
+import { connectivity } from "@/services/connectivity";
 import {
   emitRefreshAnticipos,
   emitRefreshBar,
@@ -28,16 +28,11 @@ import {
 } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
+import { configureNotifications, scheduleLocalNotificationAsync } from '@/services/pushNotifications';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// NOTA: no llamar a expo-notifications aquí a nivel de módulo (crashea en
+// Expo Go SDK 53+). Se configura perezosamente dentro del Provider.
+
 
 interface NotificationContextType {
   showLocalNotification: (title: string, body: string) => Promise<void>;
@@ -60,34 +55,69 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
-  
+  /** Último connectSSE (para que el backoff siempre use la versión vigente). */
+  const connectSSERef = useRef<() => Promise<void>>(async () => {});
+  /** Errores seguidos sin ningún open/message (para detectar sesión muerta). */
+  const consecutiveErrorsRef = useRef(0);
+  /** Ya se intentó un refresh en esta racha de fallos (uno por racha, no loop). */
+  const refreshTriedRef = useRef(false);
+
   const INITIAL_RETRY_DELAY = 1000;   // 1 segundo
   const MAX_RETRY_DELAY = 30000;      // 30 segundos
   const BACKOFF_FACTOR = 2;
   const JITTER_MAX = 0.3;             // 30% de jitter para evitar thundering herd
+  /** Tras cuántos errores seguidos se intenta renovar la sesión una vez. */
+  const ERRORS_BEFORE_REFRESH = 3;
+
+  // ─── scheduleReconnect estable ─────────────────────────────────
+  // useCallback [] + ref: misma semántica que la función re-creada de antes
+  // (siempre llama al connectSSE vigente) pero sin invalidar efectos.
+  const scheduleReconnect = useCallback(() => {
+    if (!isMountedRef.current) return;
+
+    const attempt = retryCountRef.current + 1;
+    const delay = Math.min(
+      INITIAL_RETRY_DELAY * Math.pow(BACKOFF_FACTOR, retryCountRef.current),
+      MAX_RETRY_DELAY
+    );
+    // Agregar jitter: ±30% aleatorio para evitar thundering herd
+    const jitter = delay * JITTER_MAX * (Math.random() * 2 - 1);
+    const finalDelay = Math.round(delay + jitter);
+
+    retryCountRef.current = attempt;
+
+    logger.info('[NotificationContext] Programando reconexión SSE', {
+      attempt,
+      delayMs: finalDelay
+    });
+
+    retryTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        void connectSSERef.current();
+      }
+    }, finalDelay);
+  }, []);
+
+  useEffect(() => {
+    // No-op en Expo Go / web: configureNotifications() ya es seguro.
+    configureNotifications();
+  }, []);
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: { data: "local" },
-        },
-        trigger: null,
-      });
-    } catch {
-
-    }
+    // Seguro en Expo Go: no-op si push no disponible (el toast ya avisa).
+    await scheduleLocalNotificationAsync(title, body);
   }, []);
 
   const handleServerEvent = useCallback((payload: SSEPayload) => {
-    const roleName = getUserRoleName(user);
-    const lowerRole = getUserRole(user);
-    const isCajeroOrAdmin = isCajeroOrAdminRole(user);
+    // Se lee el usuario fresco del store (no del closure): así el callback es
+    // estable y un updateProfile (nuevo objeto user) no corta el SSE.
+    const freshUser = useAuthStore.getState().user;
+    const roleName = getUserRoleName(freshUser);
+    const lowerRole = getUserRole(freshUser);
+    const isCajeroOrAdmin = isCajeroOrAdminRole(freshUser);
     const data = (payload.data || {}) as any;
     const isRequester =
-      data.usuario_id != null && String(data.usuario_id) === String(user?.id ?? "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+      data.usuario_id != null && String(data.usuario_id) === String(freshUser?.id ?? "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
     switch (payload.type) {
       case "new_order":
@@ -144,7 +174,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         const who = payload.data?.nick || payload.data?.empleado || payload.data?.usuario || "Empleado";
         const body = `${who} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
 
-        if (isCajeroRole(user) || isRequester) {
+        if (isCajeroRole(freshUser) || isRequester) {
           Haptics.notificationAsync(
             approved
               ? Haptics.NotificationFeedbackType.Success
@@ -159,7 +189,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           showLocalNotification(title, body);
         }
 
-        if (isCajeroRole(user)) {
+        if (isCajeroRole(freshUser)) {
           emitRefreshRequests(payload);
         }
 
@@ -170,7 +200,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       case "anticipo_delivered":
-        if (isCajeroRole(user) || isRequester) {
+        if (isCajeroRole(freshUser) || isRequester) {
           const body = `${payload.data?.nick || payload.data?.empleado || "Empleado"} - $${Number(payload.data?.monto || 0).toLocaleString("es-ES")}`;
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           showToast({
@@ -182,7 +212,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           showLocalNotification("Anticipo entregado", body);
         }
 
-        if (isCajeroRole(user)) {
+        if (isCajeroRole(freshUser)) {
           emitRefreshRequests(payload);
         }
 
@@ -326,7 +356,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             const res = await attendanceService.hoy();
             const filas = Array.isArray((res as any)?.data) ? (res as any).data : [];
             const registrada = filas.some(
-              (f: any) => String(f?.id_usuario) === String(user?.id ?? ""),
+              (f: any) => String(f?.id_usuario) === String(freshUser?.id ?? ""),
             );
             if (registrada) return;
             const body =
@@ -444,13 +474,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       default:
         logger.info('[NotificationContext] Evento SSE no manejado específicamente', { type: payload.type });
     }
-  }, [router, showLocalNotification, user]);
+    // Estable: solo cambia con router/showLocalNotification (estables).
+    // El usuario se lee fresco del store adentro (getState).
+  }, [router, showLocalNotification]);
 
   // ─── Conexión SSE ───────────────────────────────────────────
   // Crea el EventSource, maneja mensajes, open y error.
   // En error → cierra el EventSource y programa reconexión.
   const connectSSE = useCallback(async () => {
     if (!user?.id) return;
+
+    // Sin red confirmada no se crea un EventSource condenado al error: se
+    // espera al evento 'online' (lo reintenta la suscripción de abajo).
+    // Sin setState aquí: el estado ya es false y el lint prohíbe setStates
+    // síncronos en el path del efecto.
+    if (connectivity.isOffline()) {
+      logger.debug('[NotificationContext] SSE en pausa: sin red confirmada');
+      return;
+    }
 
     // Cerrar conexión anterior si existe
     if (eventSourceRef.current) {
@@ -480,6 +521,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           logger.info('[NotificationContext] Evento SSE vacío');
           return;
         }
+        // Tráfico = conexión viva: corta la racha de errores.
+        consecutiveErrorsRef.current = 0;
+        refreshTriedRef.current = false;
         try {
           const payload: SSEPayload = JSON.parse(event.data);
           logger.debug('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
@@ -496,21 +540,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       es.addEventListener("open", () => {
         if (!isMountedRef.current) return;
         retryCountRef.current = 0; // Reset retry count on successful connection
+        consecutiveErrorsRef.current = 0;
+        refreshTriedRef.current = false;
         setIsConnected(true);
-        logger.info('[NotificationContext] Conexión SSE establecida con éxito');
-        showToast({
-            type: "success",
-            text1: "Conectado",
-            text2: "Notificaciones en tiempo real activas",
-            visibilityTime: 2000,
-        });
+        // Sin toast: en cada reconexión spameaba "Conectado". Solo debug.
+        logger.debug('[NotificationContext] Conexión SSE establecida con éxito');
       });
 
       es.addEventListener("error", () => {
         if (!isMountedRef.current) return;
-        logger.warn('[NotificationContext] Error de conexión SSE, reconectando...', {
-          attempt: retryCountRef.current + 1
-        });
+        consecutiveErrorsRef.current += 1;
         setIsConnected(false);
         // Cerramos el EventSource para evitar su reconexión automática
         // y controlamos nosotros la reconexión con exponential backoff
@@ -518,6 +557,42 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           es.close();
         }
         eventSourceRef.current = null;
+
+        // Sin red: backoff silencioso (el evento 'online' reconecta).
+        if (connectivity.isOffline()) {
+          logger.debug('[NotificationContext] SSE caído sin red; espera a online');
+          scheduleReconnect();
+          return;
+        }
+
+        logger.warn('[NotificationContext] Error de conexión SSE, reconectando...', {
+          attempt: retryCountRef.current + 1
+        });
+
+        // ¿Sesión muerta (401)? El error SSE no trae status, así que tras
+        // varios fallos seguidos se intenta UNA renovación de token por racha:
+        // si revive, se reconecta ya; si no, sigue el backoff normal (el 401
+        // real lo gestiona el authStore vía notifyUnauthorized).
+        if (consecutiveErrorsRef.current >= ERRORS_BEFORE_REFRESH && !refreshTriedRef.current) {
+          refreshTriedRef.current = true;
+          void refreshAccessToken().then((ok) => {
+            if (!isMountedRef.current) return;
+            if (ok) {
+              logger.info('[NotificationContext] Sesión renovada tras fallo SSE, reconectando');
+              consecutiveErrorsRef.current = 0;
+              retryCountRef.current = 0;
+              // Vía ref: autorreferencia directa aquí dispararía el lint
+              // (uso en su propio inicializador) aunque en runtime es segura.
+              void connectSSERef.current();
+            } else {
+              scheduleReconnect();
+            }
+          }).catch(() => {
+            if (isMountedRef.current) scheduleReconnect();
+          });
+          return;
+        }
+
         scheduleReconnect();
       });
 
@@ -527,43 +602,47 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
        setIsConnected(false);
        scheduleReconnect();
     }
-  }, [user?.id, handleServerEvent]);
+  }, [user?.id, handleServerEvent, scheduleReconnect]);
 
-  // ─── Reconexión con exponential backoff ──────────────────────
-  // Función normal (no hook) para evitar stale closures.
-  // Siempre usa la última versión de connectSSE del closure.
-  function scheduleReconnect() {
-    if (!isMountedRef.current) return;
+  // El ref siempre apunta al connectSSE vigente (asignación en efecto,
+  // nunca durante el render).
+  useEffect(() => {
+    connectSSERef.current = connectSSE;
+  });
 
-    const attempt = retryCountRef.current + 1;
-    const delay = Math.min(
-      INITIAL_RETRY_DELAY * Math.pow(BACKOFF_FACTOR, retryCountRef.current),
-      MAX_RETRY_DELAY
-    );
-    // Agregar jitter: ±30% aleatorio para evitar thundering herd
-    const jitter = delay * JITTER_MAX * (Math.random() * 2 - 1);
-    const finalDelay = Math.round(delay + jitter);
-
-    retryCountRef.current = attempt;
-
-    logger.info('[NotificationContext] Programando reconexión SSE', {
-      attempt,
-      delayMs: finalDelay
-    });
-
-    retryTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
+  useEffect(() => {
+    if (!user?.id) return;
+    void connectivity.start();
+    const unsubscribe = connectivity.subscribe((state) => {
+      if (!isMountedRef.current) return;
+      if (state === 'offline') {
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
+        setIsConnected(false);
+      } else if (state === 'online') {
+        retryCountRef.current = 0;
+        consecutiveErrorsRef.current = 0;
+        refreshTriedRef.current = false;
         void connectSSE();
       }
-    }, finalDelay);
-  }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [user?.id, connectSSE]);
 
   useEffect(() => {
     // Marcamos como mounted al inicio
     isMountedRef.current = true;
-    
+
     if (!user?.id) return;
-    
+
     // Conectar SSE con reconexión automática (exponential backoff)
     void connectSSE();
 
@@ -586,8 +665,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [user?.id, connectSSE]);
 
+  // showLocalNotification es estable; solo isConnected invalida el value.
+  const contextValue = useMemo(
+    () => ({ showLocalNotification, isConnected }),
+    [showLocalNotification, isConnected],
+  );
+
   return (
-    <NotificationContext.Provider value={{ showLocalNotification, isConnected }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
       <Suspense fallback={null}>
         <ToastComponent position="top" topOffset={60} />

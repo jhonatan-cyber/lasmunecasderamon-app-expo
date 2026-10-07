@@ -22,6 +22,7 @@ import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import useLogin from "@/hooks/useLogin";
 import LoginForm from "@/components/auth/LoginForm";
 import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
+import logger from "@/utils/logger";
 
 export default function LoginScreen() {
   const {
@@ -72,10 +73,7 @@ export default function LoginScreen() {
             void setButtonStyleAsync(isDark ? "light" : "dark");
           }
         } catch (error) {
-          console.warn(
-            "Failed to update navigation bar button style on login screen",
-            error,
-          );
+          logger.warn("Failed to update navigation bar button style on login screen", { error });
         }
       }
     }, [isDark]),

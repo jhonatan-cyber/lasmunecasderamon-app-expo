@@ -12,6 +12,7 @@ import {
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
 import { useAuthStore } from '@/store/authStore';
 import { isAdminRole, isCajeroRole } from '@/utils/userRole';
 
@@ -48,9 +49,27 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
                 }
             }
         } catch (error) {
-            logger.captureException(error, { context: 'PendingSolicitudesAlert:fetchPending' });
+            logger.fetchError(error, { context: 'PendingSolicitudesAlert:fetchPending' });
         }
     }, [isCajeroOrAdmin, triggerShake]);
+
+    // Fetches con debounce: `refresh_requests` + `sse_event` del mismo pedido
+    // llegaban juntos y disparaban 2 fetches (N+1 en ráfagas).
+    useDebouncedEventListener('refresh_requests', () => {
+        void fetchCounts();
+    }, 500, isCajeroOrAdmin);
+
+    useDebouncedEventListener('sse_event', (payload: any) => {
+        const types = [
+            'new_order', 'new_service_request',
+            'order_deleted', 'service_request_deleted',
+            'order_updated', 'updateSales', 'service_request_processed',
+            'sale_cancelled', 'timer_started', 'timer_stopped'
+        ];
+        if (types.includes(payload?.type)) {
+            void fetchCounts();
+        }
+    }, 500, isCajeroOrAdmin);
 
     useEffect(() => {
         if (!isCajeroOrAdmin) return;
@@ -59,28 +78,15 @@ export function PendingSolicitudesAlert({ isInline = false }: { isInline?: boole
             void fetchCounts();
         }, 0);
 
-        const sub = eventBus.addListener('refresh_requests', () => {
-            void fetchCounts();
-        });
-
+        // Shake inmediato (UI): no se debouncea.
         const sseSub = eventBus.addListener('sse_event', (payload) => {
-            const types = [
-                'new_order', 'new_service_request', 
-                'order_deleted', 'service_request_deleted',
-                'order_updated', 'updateSales', 'service_request_processed',
-                'sale_cancelled', 'timer_started', 'timer_stopped'
-            ];
-            if (types.includes(payload.type)) {
-                if (payload.type.startsWith('new_')) {
-                    triggerShake();
-                }
-                void fetchCounts();
+            if (typeof payload?.type === 'string' && payload.type.startsWith('new_')) {
+                triggerShake();
             }
         });
 
         return () => {
             clearTimeout(timer);
-            sub.remove();
             sseSub.remove();
         };
     }, [isCajeroOrAdmin, fetchCounts, triggerShake]);

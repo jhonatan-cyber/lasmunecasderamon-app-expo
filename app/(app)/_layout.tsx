@@ -12,13 +12,13 @@ import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaM
 import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
-import { configureNotifications } from '@/services/pushNotifications';
 
 export default function AppLayout() {
     const user = useAuthStore((state) => state.user);
     const sessionExpired = useAuthStore((state) => state.sessionExpired);
     const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
     const logout = useAuthStore((state) => state.logout);
+    const refreshUser = useAuthStore((state) => state.refreshUser);
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
     const isStaffMember = user?.role && 
@@ -54,12 +54,8 @@ export default function AppLayout() {
     
     useNotificationHandler();
 
-    useEffect(() => {
-        if (user) {
-            
-            configureNotifications();
-        }
-    }, [user]);
+    // configureNotifications() vive en NotificationProvider (único dueño):
+    // llamarlo aquí era duplicado (es idempotente, pero con doble ownership).
 
     if (!user) {
         return <Redirect href="/(auth)/login" />;
@@ -68,6 +64,16 @@ export default function AppLayout() {
     const handleLogout = async () => {
         clearSessionExpired();
         await logout();
+    };
+
+    // "Reintentar" revalida contra /auth/me: si el 401 fue un bache (token
+    // rotado, backend reiniciado), la sesión se recupera sin relogin. Si no
+    // se recupera, se cierra igual (modo offline/cache sigue disponible y el
+    // próximo 401 reabre el modal). Nunca se fuerza logout aquí: sin red el
+    // refresh falla aunque los tokens locales sigan siendo válidos.
+    const handleContinueWithoutLogout = async () => {
+        await refreshUser().catch(() => false);
+        clearSessionExpired();
     };
 
     return (
@@ -100,9 +106,9 @@ export default function AppLayout() {
                         <TouchableOpacity style={styles.btn} onPress={handleLogout}>
                             <Text style={styles.btnText}>Iniciar sesión</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.btnSecondary} onPress={clearSessionExpired}>
-                            <Text style={styles.btnSecondaryText}>Continuar sin cerrar sesión</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity style={styles.btnSecondary} onPress={handleContinueWithoutLogout}>
+                                <Text style={styles.btnSecondaryText}>Reintentar sesión</Text>
+                            </TouchableOpacity>
                     </View>
                 </View>
             </Modal>

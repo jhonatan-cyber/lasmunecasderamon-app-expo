@@ -5,6 +5,8 @@
  * Usa un Map<string, Set<Listener>> internamente, sin depender de native modules.
  */
 
+import logger from './logger';
+
 type Listener = (...args: any[]) => void;
 
 interface Subscription {
@@ -38,7 +40,9 @@ class EventBus {
       try {
         listener(...args);
       } catch (err) {
-        console.error(`[EventBus] Error en listener para "${event}":`, err);
+        // Vía logger para que llegue a Sentry/breadcrumbs (console directo
+        // es invisible en prod).
+        logger.captureException(err, { context: `EventBus:${event}` });
       }
     }
   }

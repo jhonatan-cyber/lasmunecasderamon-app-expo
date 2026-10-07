@@ -86,7 +86,7 @@ export function StaffCallOverlay() {
                 setPendingCalls(mapped);
             }
         } catch (error) {
-            logger.captureException(error, { context: 'StaffCallOverlay:fetchPending' });
+            logger.fetchError(error, { context: 'StaffCallOverlay:fetchPending' });
         }
     }, [isStaff, mapPendingCall]);
 

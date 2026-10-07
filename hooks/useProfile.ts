@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import * as ImagePicker from "expo-image-picker";
 import { eventBus } from "@/utils/eventBus";
 import { apiClientSafe } from "@/api/client";
 import { useAuthStore, type User } from "@/store/authStore";
@@ -41,7 +40,9 @@ export function useProfile() {
         }));
       }
     } catch (error) {
-      logger.captureException(error, { context: "useProfile:fetchProfile" });
+      // Refresh de fondo: sin red/timeout/401 usa los datos cacheados del
+      // store en silencio (fetchError solo reporta lo inesperado).
+      logger.fetchError(error, { context: "useProfile:fetchProfile" });
     } finally {
       setLoading(false);
     }
@@ -80,6 +81,8 @@ export function useProfile() {
   }, [user, fetchProfile]);
 
   const takePhoto = useCallback(async () => {
+    // Import perezoso: expo-image-picker no entra al path de arranque.
+    const ImagePicker = await import("expo-image-picker");
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted")
       return { success: false, message: "Se requiere acceso a la cámara" };
@@ -98,6 +101,7 @@ export function useProfile() {
   }, [updateField]);
 
   const pickImage = useCallback(async () => {
+    const ImagePicker = await import("expo-image-picker");
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted")
       return { success: false, message: "Se requiere acceso a la galería" };
