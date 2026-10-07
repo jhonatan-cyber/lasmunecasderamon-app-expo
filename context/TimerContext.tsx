@@ -5,6 +5,7 @@ import React, {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -16,6 +17,16 @@ import { useSSETimerHandler } from '@/context/hooks/useSSETimerHandler';
 import { useTimerVoiceAnnouncer } from '@/context/hooks/useTimerVoiceAnnouncer';
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
+
+/**
+ * Acciones estables (no cambian con el tick de 1s): quien solo necesita
+ * `refreshTimers` usa `useTimerActions()` y NO re-renderiza cada segundo.
+ */
+interface TimerActionsContextType {
+  refreshTimers: () => Promise<void>;
+}
+
+const TimerActionsContext = createContext<TimerActionsContextType | undefined>(undefined);
 
 
 
@@ -89,8 +100,13 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Initial fetch
+  // Initial fetch solo con sesión (antes fetcheaba pre-login y cosechaba 401).
   useEffect(() => {
+    if (!user?.id) {
+      // Diferido un tick: setState síncrono en el efecto dispara renders en cascada.
+      const timeout = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timeout);
+    }
     const timeout = setTimeout(() => {
       void fetchActiveTimers();
     }, 0);
@@ -102,19 +118,30 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setExpiredTimer(null);
   }, []);
 
-  return (
-    <TimerContext.Provider
-      value={{
-        timers,
-        serverOffset,
-        loading,
-        refreshTimers: fetchActiveTimers,
-      }}
-    >
-      {children}
+  // Memoizados por separado: el tick de 1s solo invalida `dataValue`;
+  // `actionsValue` es estable (fetchActiveTimers no cambia).
+  const dataValue = useMemo(
+    () => ({ timers, serverOffset, loading }),
+    [timers, serverOffset, loading],
+  );
+  const actionsValue = useMemo(
+    () => ({ refreshTimers: fetchActiveTimers }),
+    [fetchActiveTimers],
+  );
 
-      <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
-    </TimerContext.Provider>
+  return (
+    <TimerActionsContext.Provider value={actionsValue}>
+      <TimerContext.Provider
+        value={{
+          ...dataValue,
+          refreshTimers: actionsValue.refreshTimers,
+        }}
+      >
+        {children}
+
+        <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
+      </TimerContext.Provider>
+    </TimerActionsContext.Provider>
   );
 };
 
@@ -123,6 +150,18 @@ export type { Timer } from '@/context/types';
 
 export const useTimer = () => {
   const context = useContext(TimerContext);
+  if (context === undefined) {
+    throw new Error("uso dentro de TimerProvider");
+  }
+  return context;
+};
+
+/**
+ * Solo acciones (estable): para pantallas/hooks que disparan `refreshTimers`
+ * pero no muestran el countdown. No re-renderiza con el tick de 1s.
+ */
+export const useTimerActions = () => {
+  const context = useContext(TimerActionsContext);
   if (context === undefined) {
     throw new Error("uso dentro de TimerProvider");
   }

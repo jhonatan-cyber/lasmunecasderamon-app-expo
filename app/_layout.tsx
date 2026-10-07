@@ -12,9 +12,10 @@ import "expo-dev-client";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect } from "react";
-import { ActivityIndicator, LogBox, View } from "react-native";
+import { ActivityIndicator, InteractionManager, LogBox, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
+import { configurationsSchema } from "@lasmunecasderamon/validations";
 import { setExpensiveDrinkThreshold, setCardSplit, setIvaRate } from "@/hooks/utils/cuentaUtils";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
@@ -26,14 +27,9 @@ LogBox.ignoreLogs([
 ]);
 
 // Init Sentry lazily — deferred out of the critical render path.
-// The SDK (~1.8 MB) is loaded asynchronously on first idle.
+// Sin EXPO_PUBLIC_SENTRY_DSN, initSentry es no-op (no carga el SDK de ~1.8 MB).
 setTimeout(() => {
-  void initSentry({
-    dsn:
-      process.env.EXPO_PUBLIC_SENTRY_DSN ||
-      "https://placeholder@example.ingest.sentry.io/placeholder",
-    tracesSampleRate: 0,
-  });
+  void initSentry({ tracesSampleRate: 0 });
 }, 0);
 
 const queryClient = new QueryClient({
@@ -55,33 +51,40 @@ export default function RootLayout() {
     checkAuth();
   }, [checkAuth]);
 
-  // Cimientos del modo offline: estado de red unificado y espejo local.
-  // Ninguno de los dos lanza: si algo no está disponible, la app arranca igual.
+  // Post-splash: primero se muestra la UI, después el trabajo pesado
+  // (SQLite, outbox, red, /configurations) fuera del path crítico de arranque.
   useEffect(() => {
-    void connectivity.start();
-    initMirror();
-    initOutbox();
-  }, []);
+    if (isLoading) return;
+    SplashScreen.hideAsync().catch(() => {});
 
-  useEffect(() => {
-    apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
-      if (res?.success && res?.data?.comisiones) {
-        const c = res.data.comisiones;
-        if (c.threshold_producto_caro) setExpensiveDrinkThreshold(Number(c.threshold_producto_caro));
-        if (c.split_tarjeta_venta && c.split_tarjeta_propina) {
-          setCardSplit(Number(c.split_tarjeta_venta) / 100, Number(c.split_tarjeta_propina) / 100);
+    const task = InteractionManager.runAfterInteractions(() => {
+      // Cimientos del modo offline: ninguno lanza; si algo no está
+      // disponible, la app sigue funcionando igual.
+      void connectivity.start();
+      initMirror();
+      initOutbox();
+
+      apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
+        // Validado con zod: ante un deploy a medias el backend puede mandar
+        // null/formas raras; se ignora en vez de romper umbrales con NaN.
+        if (!res?.success) return;
+        const parsed = configurationsSchema.safeParse(res.data);
+        if (!parsed.success) return;
+        const data = parsed.data;
+        if (data?.comisiones) {
+          const c = data.comisiones;
+          if (c.threshold_producto_caro) setExpensiveDrinkThreshold(Number(c.threshold_producto_caro));
+          if (c.split_tarjeta_venta && c.split_tarjeta_propina) {
+            setCardSplit(Number(c.split_tarjeta_venta) / 100, Number(c.split_tarjeta_propina) / 100);
+          }
         }
-      }
-      if (res?.success && res?.data?.facturacion?.impuesto_iva) {
-        setIvaRate(Number(res.data.facturacion.impuesto_iva) / 100);
-      }
-    }).catch(() => {});
-  }, []);
+        if (data?.facturacion?.impuesto_iva) {
+          setIvaRate(Number(data.facturacion.impuesto_iva) / 100);
+        }
+      }).catch(() => {});
+    });
 
-  useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
+    return () => task.cancel();
   }, [isLoading]);
 
   if (isLoading) {

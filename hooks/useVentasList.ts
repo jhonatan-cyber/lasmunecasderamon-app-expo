@@ -4,7 +4,7 @@ import { eventBus } from "@/utils/eventBus";
 import { showToast } from '@/utils/toast-lazy';
 import type { AlertConfig, TabType, Venta } from "@/components/cajero/ventas/types";
 import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
-import { useTimer } from "@/context/TimerContext";
+import { useTimerActions } from "@/context/TimerContext";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 import {
@@ -16,7 +16,7 @@ export function useVentasList(
   state: VentasState,
   dispatch: React.Dispatch<VentasAction>,
 ) {
-  const { refreshTimers } = useTimer();
+  const { refreshTimers } = useTimerActions();
   const dataRef = useRef<string>("");
 
   const fetchVentas = useCallback(async (isManual = false, signal?: AbortSignal) => {
@@ -41,7 +41,7 @@ export function useVentasList(
         });
       }
     } catch (error) {
-      logger.captureException(error, { context: "Ventas:fetchData" });
+      logger.fetchError(error, { context: "Ventas:fetchData" });
       if (isManual) {
         showToast({
           type: "error",

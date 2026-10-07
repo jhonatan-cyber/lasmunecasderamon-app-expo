@@ -19,14 +19,14 @@ import {
   type VentaResumen,
 } from "@/components/cajero/ventas/types";
 import type { AlertConfig } from "@/components/cajero/ventas/types";
-import { useTimer } from "@/context/TimerContext";
+import { useTimerActions } from "@/context/TimerContext";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 
 const initialVentasLoadedRef = { current: false };
 
 export const useVentasScreen = () => {
-  const { refreshTimers } = useTimer();
+  const { refreshTimers } = useTimerActions();
   const { isOffline } = useConnectivity();
   const params = useLocalSearchParams();
   /** `true` si el listado que se está viendo viene del espejo local. */
@@ -108,7 +108,7 @@ export const useVentasScreen = () => {
       }
       dispatch({ type: "SET_ALERT_CONFIG", payload: { visible: false, title: "", message: "", type: "info", showCancel: true } });
     } catch (error) {
-      logger.captureException(error, { context: "Ventas:fetchData" });
+      logger.fetchError(error, { context: "Ventas:fetchData" });
       if (isManual) {
         showToastLazy({
           type: "error",

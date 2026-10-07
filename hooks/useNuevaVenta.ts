@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { apiClientSafe } from '@/api/client';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { calcularPropina, calcularTotalVenta } from '@lasmunecasderamon/sale-totals';
-import { useSales } from '@/context/SalesContext';
+import { useSalesActions } from '@/context/SalesContext';
 import {
   showToast,
   isChampagneProduct,
@@ -39,7 +39,7 @@ const filterSaleCategories = (categories: any[]) =>
 
 export function useNuevaVenta() {
   const router = useRouter();
-  const { refreshVentas } = useSales();
+  const { refreshVentas } = useSalesActions();
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
@@ -183,7 +183,7 @@ export function useNuevaVenta() {
             });
           }
         } catch (e) {
-          logger.captureException(e, { context: 'NuevaVenta:refreshCategories' });
+          logger.fetchError(e, { context: 'NuevaVenta:refreshCategories' });
         }
       })();
     });
@@ -211,7 +211,7 @@ export function useNuevaVenta() {
         dispatch({ type: 'SET_INITIAL_DATA', payload: { cajaAbierta: hasOpenCaja } });
       }
     } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:refreshCajaStatus' });
+      logger.fetchError(error, { context: 'NuevaVenta:refreshCajaStatus' });
     }
   }, [readThroughMirror]);
 
@@ -535,7 +535,7 @@ export function useNuevaVenta() {
         setSearchResults((res as any).data.map(mapForSaleProduct));
       }
     } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:searchProducts' });
+      logger.fetchError(error, { context: 'NuevaVenta:searchProducts' });
     } finally {
       if (seq === searchSeq.current) setSearchLoading(false);
     }

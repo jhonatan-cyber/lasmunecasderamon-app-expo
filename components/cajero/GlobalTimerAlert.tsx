@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
-import { useTimer } from "@/context/TimerContext";
+import { useTimerActions } from "@/context/TimerContext";
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 
 export function GlobalTimerAlert() {
@@ -17,7 +17,7 @@ export function GlobalTimerAlert() {
     });
 
     const lastNotifiedId = useRef<number | null>(null);
-    const { refreshTimers } = useTimer();
+    const { refreshTimers } = useTimerActions();
 
     useEffect(() => {
         const sub = eventBus.addListener("refresh_sales", (data?: any) => {

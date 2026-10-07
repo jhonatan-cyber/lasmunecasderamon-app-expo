@@ -1,5 +1,5 @@
-import { eventBus } from "@/utils/eventBus";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClientSafe } from "@/api/client";
 import type { ApiRes } from "@/types/api";
@@ -150,29 +150,29 @@ export function useDashboardData(role: UserRole) {
   });
 
   
-  useEffect(() => {
-    const refreshSub = eventBus.addListener(REALTIME_EVENT_NAMES.refreshRequests, () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
-    });
-    
-    const sseSub = eventBus.addListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
-        logger.debug('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
-        if (shouldInvalidateDashboardFromSse(payload?.type)) {
-            queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
-            
-            
-            if (payload.type === 'new_order' || payload.type === 'new_service_request') {
-                logger.debug('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
-                emitRefreshRequests(payload);
-            }
-        }
-    });
-    
-    return () => {
-      refreshSub.remove();
-      sseSub.remove();
-    };
-  }, [role, queryClient]);
+  // Invalidación con debounce (un timer por canal): una ráfaga SSE (4-8
+  // endpoints por refetch) colapsa en vez de un refetch por evento.
+  const invalidateDashboard = useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
+  }, [queryClient, role]);
+
+  useDebouncedEventListener(
+    REALTIME_EVENT_NAMES.refreshRequests,
+    invalidateDashboard,
+    500,
+  );
+
+  useDebouncedEventListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
+      logger.debug('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
+      if (shouldInvalidateDashboardFromSse(payload?.type)) {
+          invalidateDashboard();
+          // El re-emit es inmediato: aguas abajo hay overlays/shakes urgentes.
+          if (payload.type === 'new_order' || payload.type === 'new_service_request') {
+              logger.debug('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
+              emitRefreshRequests(payload);
+          }
+      }
+  }, 500);
 
   const onRefresh = useCallback(async () => {
     try {
