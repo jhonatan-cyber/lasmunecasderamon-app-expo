@@ -14,8 +14,11 @@ export { apiClientSafe } from "./client-safe";
 export {
   ensureTokenInMemory,
   getTokenInMemory,
+  notifyForbidden,
   notifySessionConfirmed,
   notifyUnauthorized,
+  refreshAccessToken,
+  setForbiddenHandler,
   setSessionConfirmedHandler,
   setTokenInMemory,
   setUnauthorizedHandler,

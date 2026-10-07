@@ -1,4 +1,5 @@
 import type { ApiRes } from "@/types/api";
+import { createQueueId } from "@/utils/ids";
 import logger from "@/utils/logger";
 import { API_URL } from "./base-url";
 import {
@@ -13,6 +14,7 @@ import { delay, shouldRetry } from "./retry";
 import {
   ensureTokenInMemory,
   getTokenInMemory,
+  notifyForbidden,
   notifySessionConfirmed,
   notifyUnauthorized,
   refreshAccessToken
@@ -107,6 +109,19 @@ export const apiClient = async <T = ApiRes<unknown>>(
     logger.debug("API token loaded", { hasToken: false });
   }
 
+  // Idempotencia global: todo POST/PUT/PATCH lleva x-idempotency-key estable
+  // durante sus reintentos. Si el timeout deja la respuesta en el aire y el
+  // retry reenvía, el servidor deduplica en vez de cobrar dos veces. No se
+  // pisa una clave ya puesta (outbox pone la suya por intención).
+  // FormData queda fuera: el upload con reintento lo gestiona su propio flujo.
+  if (
+    ["POST", "PUT", "PATCH"].includes(fetchOptions.method?.toUpperCase() || "") &&
+    !isFormData &&
+    !headers.has("x-idempotency-key")
+  ) {
+    headers.set("x-idempotency-key", createQueueId());
+  }
+
   let finalBody = fetchOptions.body;
   if (
     ["POST", "PUT", "PATCH"].includes(options.method?.toUpperCase() || "") &&
@@ -194,6 +209,20 @@ export const apiClient = async <T = ApiRes<unknown>>(
         throw new UnauthorizedError(
           data.error || data.message || "Sesión inválida o expirada",
         );
+      }
+
+      if (response.status === 403) {
+        // Autenticado pero sin permiso: no es un token vencido (no se reintenta
+        // ni se renueva), suele ser rol revocado/borrado. Se avisa para que el
+        // authStore revalide la sesión contra /auth/me.
+        logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
+        notifyForbidden();
+        const serverMessage =
+          data.message || data.error || "Sin permiso para esta acción";
+        throw attachHttpDetails(new Error(serverMessage), {
+          status: response.status,
+          body: data,
+        });
       }
 
       if (!response.ok) {

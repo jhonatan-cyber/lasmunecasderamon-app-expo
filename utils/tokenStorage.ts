@@ -67,12 +67,18 @@ export const TokenStorage = {
   },
 
   async removeTokens() {
-    try {
-      await storage.deleteItem(TOKEN_KEY);
-      await storage.deleteItem(REFRESH_TOKEN_KEY);
-    } catch (error) {
-      logger.error('TokenStorage.removeTokens failed', { error });
-      throw error;
+    // allSettled: si falla el primero, el segundo igual se borra (evita
+    // refresh_token huérfano que reviviría una sesión a medio cerrar).
+    const results = await Promise.allSettled([
+      storage.deleteItem(TOKEN_KEY),
+      storage.deleteItem(REFRESH_TOKEN_KEY),
+    ]);
+    const failed = results.find((r) => r.status === 'rejected');
+    if (failed) {
+      logger.error('TokenStorage.removeTokens failed', {
+        error: (failed as PromiseRejectedResult).reason,
+      });
+      throw (failed as PromiseRejectedResult).reason;
     }
   },
 };

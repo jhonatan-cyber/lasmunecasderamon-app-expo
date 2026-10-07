@@ -5,6 +5,7 @@ import { attachHttpDetails, InvalidResponseError, NetworkError, TimeoutError } f
 
 let tokenInMemory: string | null = null;
 let onUnauthorized: (() => void) | null = null;
+let onForbidden: (() => void) | null = null;
 let onSessionConfirmed: (() => void) | null = null;
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
@@ -31,6 +32,19 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 export function notifyUnauthorized() {
   onUnauthorized?.();
+}
+
+/**
+ * Callback para 403 (autenticado pero sin permiso): suele ser rol revocado
+ * o borrado. No implica renovar el token, sino revalidar la sesión contra
+ * /auth/me (lo registra el authStore).
+ */
+export function setForbiddenHandler(handler: () => void) {
+  onForbidden = handler;
+}
+
+export function notifyForbidden() {
+  onForbidden?.();
 }
 
 /**
@@ -65,7 +79,9 @@ export async function refreshAccessToken(): Promise<boolean> {
     try {
       const storedRefreshToken = await TokenStorage.getRefreshToken();
       if (!storedRefreshToken) {
-        logger.warn('[refreshAccessToken] No hay refresh token almacenado');
+        // Estado normal sin sesión (instalación fresca / logout): no es un
+        // warning. Se loguea en debug para no disparar la caja amarilla de Expo.
+        logger.debug('[refreshAccessToken] No hay refresh token almacenado');
         return false;
       }
 
@@ -79,10 +95,12 @@ export async function refreshAccessToken(): Promise<boolean> {
       });
 
       if (!response.ok) {
-        logger.warn('[refreshAccessToken] Error al refrescar token', {
-          status: response.status
-        });
         if (response.status === 401 || response.status === 403) {
+          // Sesión expirada/revocada: flujo esperado, no warning (evita la
+          // caja amarilla de Expo al abrir la app sin sesión válida).
+          logger.debug('[refreshAccessToken] Sesión no renovable', {
+            status: response.status
+          });
           await TokenStorage.removeTokens();
           tokenInMemory = null;
           return false;
