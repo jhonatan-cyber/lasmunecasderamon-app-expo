@@ -31,7 +31,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (incluye .env con IPs de LAN: no trackear)
+.env
 .env*.local
 
 # typescript
