@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import FlashList from "@/components/shared/FlashList";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Product, ProductCard } from '@/components/shared/ProductCard';
+import { ProductCard } from '@/components/shared/ProductCard';
+import type { Product } from '@/types/cart';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useGarzonProductos } from '@/hooks/useGarzonProductos';
 import { GarzonCartBar, GarzonProductosModales } from '@/components/garzon/productos';

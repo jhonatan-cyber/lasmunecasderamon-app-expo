@@ -1,6 +1,7 @@
 import {
     apiClient,
     apiClientSafe,
+    setForbiddenHandler,
     setSessionConfirmedHandler,
     setTokenInMemory,
     setUnauthorizedHandler,
@@ -16,7 +17,7 @@ import {
     type OfflineSession,
 } from '@/utils/offlineSession';
 import { TokenStorage } from '@/utils/tokenStorage';
-import { loginSchema } from '@lasmunecasderamon/validations';
+import { loginSchema, serverUserSchema } from '@lasmunecasderamon/validations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
@@ -90,7 +91,8 @@ interface AuthState {
     clearForcePasswordChange: () => Promise<void>;
     tempAuthData: TempAuthData | null;
     setTempAuthData: (data: TempAuthData | null) => void;
-    updateProfile: (partialUser: Partial<User>) => Promise<void>;
+    /** Aplica local (optimista) y confirma en el servidor; false si no se pudo confirmar. */
+    updateProfile: (partialUser: Partial<User>) => Promise<boolean>;
     /** Reconsulta /auth/me y actualiza el usuario local; false si el servidor ya no lo resuelve. */
     refreshUser: () => Promise<boolean>;
     isBiometricEnabled: boolean;
@@ -114,6 +116,23 @@ export const useAuthStore = create<AuthState>((set, get) => {
         if (get().user !== null) {
             set({ sessionExpired: true });
         }
+    });
+
+    // 403 con sesión válida: suele ser rol revocado/borrado. Se revalida
+    // contra /auth/me; si el servidor ya no resuelve al usuario, se marca
+    // la sesión como expirada. Guarda anti-loop: el /auth/me del recheck no
+    // dispara otro recheck.
+    let forbiddenCheckInFlight = false;
+    setForbiddenHandler(() => {
+        if (get().user === null || forbiddenCheckInFlight) return;
+        forbiddenCheckInFlight = true;
+        void get().refreshUser().then((ok) => {
+            forbiddenCheckInFlight = false;
+            if (!ok) set({ sessionExpired: true });
+        }).catch(() => {
+            forbiddenCheckInFlight = false;
+            set({ sessionExpired: true });
+        });
     });
 
     // Cada respuesta 2xx del API confirma que la sesión sigue viva, así que
@@ -343,6 +362,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
             await TokenStorage.removeTokens();
             await AsyncStorage.removeItem('user');
             await get().clearOfflineSession();
+            // La credencial biométrica no debe sobrevivir al logout (ni al
+            // force_logout / rol borrado): si no, el login biométrico
+            // reviviría una sesión ya cerrada en el servidor.
+            await get().removeCredentials().catch(() => {});
             setTokenInMemory(null);
             set({ user: null, token: null, sessionExpired: false });
         },
@@ -354,35 +377,46 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     const timeoutPromise = new Promise<null>((_, reject) => {
                         timeoutHandle = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
                     });
-                    return Promise.race([
-                        promise.then(result => {
+                    return Promise.race([promise, timeoutPromise]).then(
+                        (result) => {
                             clearTimeout(timeoutHandle);
                             return result;
-                        }),
-                        timeoutPromise
-                    ]);
+                        },
+                        (err) => {
+                            clearTimeout(timeoutHandle);
+                            throw err;
+                        },
+                    );
                 };
 
-                const token = await withTimeout(TokenStorage.getToken(), 2000).catch(() => null);
-                const userStr = await withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null);
+                // Lecturas independientes en paralelo (antes seriales con peor
+                // caso >4s de splash). Cada una tolera su propio fallo.
+                const [token, userStr, biometricEnabled] = await Promise.all([
+                    withTimeout(TokenStorage.getToken(), 2000).catch(() => null),
+                    withTimeout(AsyncStorage.getItem('user'), 2000).catch(() => null),
+                    AsyncStorage.getItem('biometricEnabled').catch(() => null),
+                    get().checkBiometricAvailability().catch(() => undefined),
+                ]);
                 if (token && userStr) {
                     setTokenInMemory(token);
-                    const parsedUser = JSON.parse(userStr) as User;
-                    set({ token, user: parsedUser });
+                    try {
+                        const parsedUser = JSON.parse(userStr) as User;
+                        set({ token, user: parsedUser });
 
-                    // Carga el marcador offline; si la instalación es anterior a
-                    // esta función, se crea una vez para no dejar a nadie fuera
-                    // hasta el próximo contacto con el servidor.
-                    const session = await get().loadOfflineSession();
-                    if (!session) {
-                        await get().startOfflineSession();
+                        // Solo se carga el marcador: NO se crea. La ventana
+                        // offline nace del contacto real con el servidor
+                        // (login o primer 2xx vía setSessionConfirmedHandler).
+                        // Crear gracia aquí dejaba operar 12h con un token que
+                        // el backend ya pudo haber revocado.
+                        await get().loadOfflineSession();
+                    } catch {
+                        // user corrupto en disco: se arranca sin sesión.
+                        setTokenInMemory(null);
+                        set({ token: null, user: null });
                     }
                 }
 
-                const biometricEnabled = await AsyncStorage.getItem('biometricEnabled');
                 set({ isBiometricEnabled: biometricEnabled === 'true' });
-
-                await get().checkBiometricAvailability();
             } catch (e) {
                 logger.error('Error in checkAuth', { error: e });
             } finally {
@@ -403,8 +437,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
         },
 
         getCredentials: async () => {
-            const credentials = await SecureStore.getItemAsync('user_credentials');
-            return credentials ? JSON.parse(credentials) as { username: string; password: string } : null;
+            try {
+                const credentials = await SecureStore.getItemAsync('user_credentials');
+                if (!credentials) return null;
+                const parsed = JSON.parse(credentials) as { username?: string; password?: string };
+                if (typeof parsed?.username !== 'string' || typeof parsed?.password !== 'string') return null;
+                return { username: parsed.username, password: parsed.password };
+            } catch {
+                return null;
+            }
         },
 
         removeCredentials: async () => {
@@ -422,38 +463,52 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const res = (await apiClientSafe('/auth/me')) as any;
                 const servidor = res?.user ?? res?.data?.user ?? res?.data;
                 const currentUser = get().user;
-                if (!res?.success || !servidor?.id || !currentUser) return false;
-                const updatedUser = { ...currentUser, ...servidor } as User;
+                // El servidor puede mandar el id numérico o el objeto en otra
+                // forma tras un deploy: sin id válido no se toca la sesión.
+                const parsed = serverUserSchema.safeParse(servidor);
+                if (!res?.success || !parsed.success || !currentUser) {
+                    if (res?.success && !parsed.success) {
+                        logger.debug('authStore:refreshUser descartó /auth/me inválido');
+                    }
+                    return false;
+                }
+                const updatedUser = { ...currentUser, ...parsed.data } as User;
                 await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
                 set({ user: updatedUser });
                 // /auth/me respondió: sesión confirmada, ventana offline al día.
                 await get().startOfflineSession();
                 return true;
             } catch (err) {
-                logger.captureException(err, { context: 'authStore:refreshUser' });
+                logger.fetchError(err, { context: 'authStore:refreshUser' });
                 return false;
             }
         },
         updateProfile: async (partialUser) => {
             const currentUser = get().user;
-            if (!currentUser) return;
+            if (!currentUser) return false;
 
             const keys = Object.keys(partialUser) as (keyof User)[];
             const hasChanges = keys.some(
                 (key) => partialUser[key] !== currentUser[key]
             );
-            if (!hasChanges) return;
+            if (!hasChanges) return true;
 
             const updatedUser = { ...currentUser, ...partialUser };
             await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
             set({ user: updatedUser });
 
-            apiClientSafe('/users', {
-                method: 'PUT',
-                body: JSON.stringify({ id: currentUser.id, ...partialUser }),
-            }).catch((err) =>
-                logger.captureException(err, { context: 'authStore:updateProfile' })
-            );
+            // Optimista en local, pero se espera al servidor y se reporta:
+            // sin red el PUT falla y el llamador puede avisar/reintentar.
+            try {
+                const res = await apiClientSafe('/users', {
+                    method: 'PUT',
+                    body: JSON.stringify({ id: currentUser.id, ...partialUser }),
+                });
+                return res?.success !== false;
+            } catch (err) {
+                logger.fetchError(err, { context: 'authStore:updateProfile' });
+                return false;
+            }
         }
     };
 });

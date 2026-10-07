@@ -6,7 +6,7 @@ import { useConfigValue } from '@/hooks/useConfigValue';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
-import { CartItem, Product, Anfitriona, Room } from '@/components/shared/ProductCard';
+import type { CartItem, Product, Anfitriona, Room } from '@/types/cart';
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { getOutbox } from '@/services/outbox';
 import logger from '@/utils/logger';
@@ -142,7 +142,7 @@ export function useGarzonProductos() {
                 });
             }
         } catch (err: any) {
-            logger.captureException(err, { context: 'Productos:fetchProductos' });
+            logger.fetchError(err, { context: 'Productos:fetchProductos' });
             setError(err.message || 'Error de conexión');
             if (isManual) {
                 showToast({

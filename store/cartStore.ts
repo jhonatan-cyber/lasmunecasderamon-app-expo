@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CartItem, Product } from '@/components/shared/ProductCard';
+import type { CartItem, Product } from '@/types/cart';
 import { OrderCreateSchema, type OrderCreateType } from '@lasmunecasderamon/validations';
 
 interface BuildOrderParams {

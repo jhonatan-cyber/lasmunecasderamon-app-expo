@@ -4,43 +4,10 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { isExpensiveDrink } from '@/hooks/utils/cuentaUtils';
+import type { Anfitriona, CartItem, Product, Room } from '@/types/cart';
 
-export interface Product {
-    id: string;
-    code: string;
-    name: string;
-    category_id: string;
-    price: number;
-    commission: number;
-    description: string;
-    status: number;
-    foto: string;
-    categoria: string;
-    max_anfitrionas?: number | null;
-}
-
-export interface CartItem {
-    product: Product;
-    quantity: number;
-    selectedHostesses: number[];
-    selectedRoom: string | null;
-}
-
-export interface Anfitriona {
-    id: string;
-    nick: string;
-    name?: string;
-    lastName?: string;
-    foto?: string;
-}
-
-export interface Room {
-    id: string;
-    name: string;
-    price?: number;
-    time?: number;
-    status?: number;
-}
+// Re-export de compatibilidad: el hogar canónico es `@/types/cart`.
+export type { Anfitriona, CartItem, Product, Room };
 
 interface ProductCardProps {
     product: Product;

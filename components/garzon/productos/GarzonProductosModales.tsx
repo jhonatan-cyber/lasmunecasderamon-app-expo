@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { showToast } from '@/utils/toast-lazy';
 import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
-import { Anfitriona, CartItem, Room } from '@/components/shared/ProductCard';
+import type { Anfitriona, CartItem, Room } from '@/types/cart';
 import { Client } from '@/hooks/useGarzonProductos';
 
 interface GarzonProductosModalesProps {
