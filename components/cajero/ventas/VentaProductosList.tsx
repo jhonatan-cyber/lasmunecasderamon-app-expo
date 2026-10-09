@@ -17,10 +17,12 @@ interface VentaProductosListProps {
 function groupDetalles(dets: VentaDetalle[], fallbackNick: string): VentaDetalle[] {
     return dets.reduce((acc: VentaDetalle[], cur: VentaDetalle) => {
         const hNick = cur.hostess_nick || fallbackNick || "Sin Anfitriona";
-        const key = `${cur.producto_nombre}-${hNick}`;
+        const productoKey = `${cur.producto_id ?? cur.producto_nombre}-${cur.presentacion_id ?? ""}`;
+        const key = `${productoKey}-${hNick}`;
         const idx = acc.findIndex((i) => {
             const ihNick = i.hostess_nick || fallbackNick || "Sin Anfitriona";
-            return `${i.producto_nombre}-${ihNick}` === key;
+            const itemProductoKey = `${i.producto_id ?? i.producto_nombre}-${i.presentacion_id ?? ""}`;
+            return `${itemProductoKey}-${ihNick}` === key;
         });
         if (idx > -1) {
             acc[idx].cantidad += Number(cur.cantidad) || 0;
@@ -69,7 +71,7 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
                                 <Ionicons name="cube-outline" size={20} color={textSecondary} />
                             </View>
                         )}
-                        <Text style={[styles.productName, { color: textPrimary }]}>{det.producto_nombre}</Text>
+                        <Text style={[styles.productName, { color: textPrimary }]}>{det.producto_etiqueta || [det.categoria_nombre, det.producto_nombre, det.presentacion_nombre].filter(Boolean).join(" - ") || det.producto_nombre || "Producto"}</Text>
                     </View>
                     <View style={styles.totalRow}>
                         <Text style={[styles.productTotal, { color: textPrimary }]}>

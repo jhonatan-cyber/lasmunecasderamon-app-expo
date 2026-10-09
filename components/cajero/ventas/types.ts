@@ -150,11 +150,15 @@ export interface VentaDetalle {
   id?: string | number;
   venta_id?: string | number;
   producto_id?: string | number;
+  presentacion_id?: string | number | null;
   precio: number;
   comision: number;
   cantidad: number;
   sub_total: number;
   producto_nombre?: string;
+  categoria_nombre?: string | null;
+  presentacion_nombre?: string | null;
+  producto_etiqueta?: string;
   producto_foto?: string | null;
   hostess_id?: string | number | null;
   hostess_nick?: string | null;
