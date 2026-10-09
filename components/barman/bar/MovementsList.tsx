@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import FlashList from '@/components/shared/FlashList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -11,6 +11,7 @@ interface MovementsListProps {
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  onPressItem: (item: BarMovement) => void;
 }
 
 const estadoLabel = (m: BarMovement) => {
@@ -29,7 +30,7 @@ const estadoColor = (m: BarMovement) => {
   return '#6B7280';
 };
 
-export function MovementsList({ items, loading, refreshing, onRefresh }: MovementsListProps) {
+export function MovementsList({ items, loading, refreshing, onRefresh, onPressItem }: MovementsListProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
   if (loading) {
@@ -62,7 +63,12 @@ export function MovementsList({ items, loading, refreshing, onRefresh }: Movemen
       renderItem={({ item }: { item: BarMovement }) => {
         const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
         return (
-          <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Ver detalle de ${item.tipo} de ${item.producto_nombre || 'producto'}`}
+            onPress={() => onPressItem(item)}
+            style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.78 : 1 }]}
+          >
             <View style={styles.cardHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
@@ -104,7 +110,11 @@ export function MovementsList({ items, loading, refreshing, onRefresh }: Movemen
                 </Text>
               )}
             </View>
-          </View>
+            <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
+              <Text style={[styles.detailHintText, { color: accentColor }]}>Ver detalle completo</Text>
+              <Ionicons name="chevron-forward" size={16} color={accentColor} />
+            </View>
+          </Pressable>
         );
       }}
     />
@@ -123,6 +133,8 @@ const styles = StyleSheet.create({
   amount: { fontSize: 13, fontWeight: '700' },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
   footerText: { fontSize: 11, fontWeight: '600' },
+  detailHint: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 10, paddingTop: 9, borderTopWidth: StyleSheet.hairlineWidth },
+  detailHintText: { fontSize: 11, fontWeight: '800' },
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyText: { fontSize: 14, fontWeight: '600' },
 });

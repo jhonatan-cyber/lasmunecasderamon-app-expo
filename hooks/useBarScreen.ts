@@ -17,10 +17,14 @@ export interface BarStockItem {
   id: string;
   producto_id: string;
   producto_nombre: string;
+  producto_foto?: string | null;
   nombre: string;
   codigo_barras: string | null;
   precio_venta: number;
   comision: number;
+  opciones_venta?: SaleOption[] | string | null;
+  ml_shot?: number | null;
+  ml_shot_anfitriona?: number | null;
   stock: number;
   stock_bar?: number;
   ml_abierta?: number;
@@ -40,6 +44,11 @@ export interface BarTransfer {
   opciones_venta?: SaleOption[] | string | null;
   ml_shot?: number | null;
   ml_shot_anfitriona?: number | null;
+  producto_id?: string | null;
+  categoria_nombre?: string | null;
+  aceptado_nombre?: string | null;
+  aceptado_por?: string | null;
+  fecha_aceptacion?: string | null;
 }
 
 export interface BarMovement {
@@ -55,6 +64,18 @@ export interface BarMovement {
   presentacion_nombre: string | null;
   usuario_nombre: string | null;
   usuario_nick: string | null;
+  producto_id?: string | null;
+  presentacion_id?: string | null;
+  producto_foto?: string | null;
+  codigo_barras?: string | null;
+  categoria_nombre?: string | null;
+  aceptado_nombre?: string | null;
+  aceptado_por?: string | null;
+  fecha_aceptacion?: string | null;
+  referencia?: string | null;
+  opciones_venta?: SaleOption[] | string | null;
+  ml_shot?: number | null;
+  ml_shot_anfitriona?: number | null;
 }
 
 type ApiList<T> = { success?: boolean; data?: T[] | { data?: T[] } | null };
@@ -70,6 +91,7 @@ export const useBarScreen = () => {
   const [stock, setStock] = useState<BarStockItem[]>([]);
   const [transfers, setTransfers] = useState<BarTransfer[]>([]);
   const [movements, setMovements] = useState<BarMovement[]>([]);
+  const [transferHistory, setTransferHistory] = useState<BarTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingTransfers, setLoadingTransfers] = useState(false);
@@ -143,6 +165,18 @@ export const useBarScreen = () => {
     }
   }, []);
 
+  const fetchTransferHistory = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await barService.transfers(signal) as {
+        success?: boolean;
+        data?: { history?: BarTransfer[] };
+      };
+      if (response?.success !== false) setTransferHistory(response?.data?.history ?? []);
+    } catch (e) {
+      if (!signal?.aborted) logger.fetchError(e, { context: 'BarScreen:fetchTransferHistory' });
+    }
+  }, []);
+
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
@@ -175,9 +209,9 @@ export const useBarScreen = () => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStock(), fetchTransfers(), fetchMovements()]);
+    await Promise.all([fetchStock(), fetchTransfers(), fetchMovements(), fetchTransferHistory()]);
     setRefreshing(false);
-  }, [fetchStock, fetchTransfers, fetchMovements]);
+  }, [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory]);
 
   const resolver = useCallback(
     async (id: string, accion: 'aprobar' | 'rechazar') => {
@@ -198,7 +232,7 @@ export const useBarScreen = () => {
           type: 'success',
           text1: accion === 'aprobar' ? 'Transferencia aprobada' : 'Transferencia rechazada',
         });
-        await Promise.all([fetchStock(), fetchTransfers(), fetchMovements()]);
+        await Promise.all([fetchStock(), fetchTransfers(), fetchMovements(), fetchTransferHistory()]);
         return true;
       } catch (e) {
         showToast({
@@ -211,7 +245,7 @@ export const useBarScreen = () => {
         setResolvingId(null);
       }
     },
-    [fetchStock, fetchTransfers, fetchMovements],
+    [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory],
   );
 
   const filteredStock = stock.filter((i) => (i.stock_bar ?? 0) > 0).filter((i) => {
@@ -231,6 +265,7 @@ export const useBarScreen = () => {
     allStock: stock,
     transfers,
     movements,
+    transferHistory,
     loading,
     refreshing,
     loadingTransfers,
@@ -243,6 +278,7 @@ export const useBarScreen = () => {
     onRefresh,
     resolver,
     loadMovements,
+    fetchTransferHistory,
     fetchTransfers,
   };
 };

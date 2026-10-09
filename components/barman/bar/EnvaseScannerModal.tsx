@@ -13,20 +13,18 @@ import {
   View,
 } from 'react-native';
 import { showToast } from '@/utils/toast-lazy';
-import type { EnvaseVeredicto } from '@/hooks/useEnvasesScreen';
+import type { EnvaseResultadoLote, EnvaseVeredicto } from '@/hooks/useEnvasesScreen';
 
 interface EnvaseScannerModalProps {
   visible: boolean;
   onClose: () => void;
   /**
-   * Procesa la lectura. Devuelve el veredicto para mostrarlo en pantalla, o
-   * `null` si no se procesó (el código queda para reintentar a mano).
+   * Envía todos los códigos escaneados y devuelve el veredicto individual.
    */
-  onScanned: (data: string) => Promise<EnvaseVeredicto | null>;
+  onSubmitBatch: (codes: string[]) => Promise<EnvaseResultadoLote[] | null>;
 }
 
 /** Pausa tras cada lectura para que la misma imagen no se relee en bucle. */
-const COOLDOWN_MS = 1200;
 /** Cuánto queda visible el veredicto antes de volver a escanear. */
 const FEEDBACK_MS = 2500;
 
@@ -36,12 +34,14 @@ const FEEDBACK_MS = 2500;
  * de cada lectura (patrón de escaneo continuo del dashboard, con su feedback
  * aquí en pantalla en vez de sonido).
  */
-export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScannerModalProps) => {
+export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseScannerModalProps) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const [torch, setTorch] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [feedback, setFeedback] = useState<EnvaseVeredicto | null>(null);
+  const [codes, setCodes] = useState<string[]>([]);
+  const [batchResults, setBatchResults] = useState<EnvaseResultadoLote[] | null>(null);
   const busyRef = useRef(false);
   const cooldownRef = useRef(false);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,6 +57,8 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
       setCameraActive(false);
       setBusy(false);
       setFeedback(null);
+      setCodes([]);
+      setBatchResults(null);
       busyRef.current = false;
       cooldownRef.current = false;
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
@@ -70,7 +72,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
     feedbackTimer.current = setTimeout(() => {
       setFeedback(null);
       cooldownRef.current = false;
-    }, veredicto.ok ? COOLDOWN_MS : FEEDBACK_MS);
+    }, FEEDBACK_MS);
   }, []);
 
   const handleBarCodeScanned = useCallback(
@@ -82,11 +84,15 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
       setBusy(true);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       try {
-        const veredicto = await onScanned(codigo);
-        if (veredicto) {
-          cooldownRef.current = true;
-          mostrarFeedback(veredicto);
-        }
+        const repetido = codes.includes(codigo.toUpperCase());
+        if (!repetido) setCodes((prev) => [...prev, codigo.toUpperCase()]);
+        cooldownRef.current = true;
+        mostrarFeedback({
+          ok: !repetido,
+          texto: repetido
+            ? 'Ese código ya está en el lote.'
+            : `Código agregado (${codes.length + 1}). Escanea el siguiente.`,
+        });
       } catch {
         cooldownRef.current = true;
         mostrarFeedback({ ok: false, texto: 'No se pudo procesar la lectura. Intenta de nuevo.' });
@@ -95,8 +101,28 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
         setBusy(false);
       }
     },
-    [onScanned, mostrarFeedback],
+    [codes, mostrarFeedback],
   );
+
+  const enviarLote = async () => {
+    if (codes.length === 0 || busyRef.current || batchResults) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      const results = await onSubmitBatch(codes);
+      if (results) {
+        setBatchResults(results);
+        setCameraActive(false);
+        setFeedback({
+          ok: results.every((result) => result.ok),
+          texto: `${results.filter((result) => result.ok).length} de ${results.length} envases entregados.`,
+        });
+      }
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
 
   if (!visible) return null;
 
@@ -186,6 +212,16 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
           </View>
 
           <View style={styles.footer}>
+            {!batchResults && <Text style={styles.countText}>{codes.length} códigos en el lote</Text>}
+            {batchResults && (
+              <View style={styles.resultsList}>
+                {batchResults.map((result) => (
+                  <Text key={result.codigo} style={[styles.resultLine, { color: result.ok ? '#86EFAC' : '#FCA5A5' }]} numberOfLines={2}>
+                    {result.ok ? '✓' : '×'} {result.codigo}: {result.texto}
+                  </Text>
+                ))}
+              </View>
+            )}
             {feedback && (
               <View
                 style={[
@@ -205,12 +241,29 @@ export const EnvaseScannerModal = ({ visible, onClose, onScanned }: EnvaseScanne
                 </Text>
               </View>
             )}
-            <Text style={styles.footerText}>
-              Apunta al código del envase a unos 15–25 cm. La cámara sigue activa para el siguiente.
-            </Text>
-            <TouchableOpacity style={styles.cerrarBtn} onPress={onClose}>
-              <Text style={styles.cerrarBtnText}>Listo</Text>
-            </TouchableOpacity>
+            {!batchResults && (
+              <Text style={styles.footerText}>
+                Apunta a cada código. Al terminar, envía el lote completo.
+              </Text>
+            )}
+            {!batchResults ? (
+              <TouchableOpacity
+                style={[styles.cerrarBtn, styles.sendBtn, (!codes.length || busy) && styles.disabledBtn]}
+                onPress={enviarLote}
+                disabled={!codes.length || busy}
+              >
+                {busy ? <ActivityIndicator color="#FFF" /> : <Text style={styles.cerrarBtnText}>Enviar {codes.length} códigos</Text>}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.cerrarBtn} onPress={onClose}>
+                <Text style={styles.cerrarBtnText}>Listo</Text>
+              </TouchableOpacity>
+            )}
+            {!batchResults && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+                <Text style={styles.cerrarBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -326,6 +379,9 @@ const styles = StyleSheet.create({
   },
   feedbackText: { flex: 1, color: '#FFF', fontSize: 13, fontWeight: '700' },
   footerText: { color: '#D1D5DB', fontSize: 12, textAlign: 'center' },
+  countText: { color: '#FFF', fontSize: 14, fontWeight: '900' },
+  resultsList: { maxHeight: 160, alignSelf: 'stretch', gap: 5 },
+  resultLine: { fontSize: 11, fontWeight: '700' },
   cerrarBtn: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 28,
@@ -333,4 +389,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   cerrarBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  sendBtn: { backgroundColor: '#2563EB', minWidth: 200, alignItems: 'center' },
+  cancelBtn: { paddingHorizontal: 20, paddingVertical: 8 },
+  disabledBtn: { opacity: 0.45 },
 });

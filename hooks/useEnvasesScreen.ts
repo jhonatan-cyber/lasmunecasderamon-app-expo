@@ -80,6 +80,12 @@ export interface EnvaseVeredicto {
   texto: string;
 }
 
+export interface EnvaseResultadoLote {
+  codigo: string;
+  ok: boolean;
+  texto: string;
+}
+
 /** Cuántos escaneos de la sesión se conservan en pantalla. */
 const MAXIMO_SESION = 50;
 
@@ -215,6 +221,61 @@ export const useEnvasesScreen = () => {
     [fetchDevoluciones],
   );
 
+  const enviarLoteEscaneos = useCallback(async (codigos: string[]): Promise<EnvaseResultadoLote[] | null> => {
+    const unicos = [...new Set(codigos.map((codigo) => codigo.trim().toUpperCase()).filter(Boolean))];
+    if (unicos.length === 0 || enCurso.current) return null;
+    if (!blockOffline('envase')) return null;
+
+    enCurso.current = true;
+    setVerificando(true);
+    try {
+      const respuesta = await barService.returnContainers(unicos) as {
+        data?: { resultados?: EnvaseResultado[] };
+        success?: boolean;
+        message?: string;
+      };
+      const resultados = respuesta?.data?.resultados;
+      if (!Array.isArray(resultados) || resultados.length !== unicos.length) {
+        throw new Error(respuesta?.message || 'El servidor no devolvió el resultado completo del lote');
+      }
+      const lote = resultados.map((veredicto, index) => ({
+        codigo: unicos[index],
+        ok: veredicto.ok,
+        texto: veredicto.ok ? veredicto.mensaje : MOTIVO_ENVASE[veredicto.motivo ?? ''] || veredicto.mensaje,
+      }));
+      setResultado(resultados.at(-1) ?? null);
+      setSesion((previa) => [
+        ...lote.map((resultadoCodigo) => ({
+          id: `${Date.now()}-${resultadoCodigo.codigo}-${consecutivo.current++}`,
+          codigo: resultadoCodigo.codigo,
+          ok: resultadoCodigo.ok,
+          motivo: resultadoCodigo.ok ? null : (resultados[unicos.indexOf(resultadoCodigo.codigo)]?.motivo ?? null),
+          mensaje: resultadoCodigo.texto,
+          hora: horaAhora(),
+        })),
+        ...previa,
+      ].slice(0, MAXIMO_SESION));
+      void Haptics.notificationAsync(
+        lote.some((resultadoCodigo) => !resultadoCodigo.ok)
+          ? Haptics.NotificationFeedbackType.Warning
+          : Haptics.NotificationFeedbackType.Success,
+      );
+      if (lote.some((resultadoCodigo) => resultadoCodigo.ok)) void fetchDevoluciones();
+      return lote;
+    } catch (e) {
+      logger.captureException(e, { context: 'useEnvasesScreen:enviarLoteEscaneos' });
+      showToast({
+        type: 'error',
+        text1: 'No se pudo enviar el lote',
+        text2: e instanceof Error ? e.message : 'Revisa tu conexión e intenta de nuevo',
+      });
+      return null;
+    } finally {
+      enCurso.current = false;
+      setVerificando(false);
+    }
+  }, [fetchDevoluciones]);
+
   const limpiarSesion = useCallback(() => setSesion([]), []);
 
   const entregados = sesion.filter((e) => e.ok).length;
@@ -237,6 +298,7 @@ export const useEnvasesScreen = () => {
     fetchDevoluciones,
     onRefresh,
     enviarEscaneo,
+    enviarLoteEscaneos,
     limpiarSesion,
   };
 };

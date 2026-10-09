@@ -78,15 +78,6 @@ export function ContainerReturnPanel({
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor }]}>
-        <Ionicons name="scan-outline" size={16} color={accentColor} />
-        <Text style={[styles.infoText, { color: textSecondary }]}>
-          Escanea el envase vacío (EAN-13 o SKU LM-…) antes de entregarlo al almacén: se verifica que
-          es nuestro, que está vacío y que no se entregó antes. La recepción la confirma el almacén
-          desde el dashboard.
-        </Text>
-      </View>
-
       <View style={styles.inputRow}>
         <View style={[styles.inputWrap, { backgroundColor: cardBg, borderColor }]}>
           <TextInput
@@ -260,17 +251,6 @@ export function ContainerReturnPanel({
 }
 
 const styles = StyleSheet.create({
-  infoCard: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  infoText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: '600' },
   inputRow: {
     flexDirection: 'row',
     gap: 8,

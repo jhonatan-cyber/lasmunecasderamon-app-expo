@@ -8,6 +8,7 @@ vi.mock('@/services/bar', () => ({
   barService: {
     containers: vi.fn(),
     returnContainer: vi.fn(),
+    returnContainers: vi.fn(),
   },
 }));
 
@@ -107,6 +108,36 @@ describe('useEnvasesScreen', () => {
     expect(result.current.rechazados).toBe(1);
     expect(result.current.resultado?.motivo).toBe('ya_devuelto');
     expect(barService.containers).not.toHaveBeenCalled();
+  });
+
+  it('envía varios códigos juntos y registra el resultado individual de cada uno', async () => {
+    vi.mocked(barService.containers).mockResolvedValue({ success: true, data: [registro] } as never);
+    vi.mocked(barService.returnContainers).mockResolvedValue({
+      success: true,
+      data: {
+        resultados: [
+          { ok: true, mensaje: 'Entregado', unidad: { id: 'u1', codigo: 'LM-000042' } },
+          { ok: false, motivo: 'ya_devuelto', mensaje: 'Ya fue devuelto', unidad: null },
+        ],
+        entregados: 1,
+        rechazados: 1,
+      },
+    } as never);
+
+    const { result } = renderHook(() => useEnvasesScreen());
+    await act(async () => {
+      const lote = await result.current.enviarLoteEscaneos([' lm-000042 ', 'EAN-00002', 'LM-000042']);
+      expect(lote).toEqual([
+        { codigo: 'LM-000042', ok: true, texto: 'Entregado' },
+        { codigo: 'EAN-00002', ok: false, texto: 'Ya entregado' },
+      ]);
+    });
+
+    expect(barService.returnContainers).toHaveBeenCalledWith(['LM-000042', 'EAN-00002']);
+    expect(result.current.sesion).toHaveLength(2);
+    expect(result.current.entregados).toBe(1);
+    expect(result.current.rechazados).toBe(1);
+    await waitFor(() => expect(barService.containers).toHaveBeenCalledTimes(1));
   });
 
   it('ignora un código vacío sin llamar al servidor', async () => {

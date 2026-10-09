@@ -12,8 +12,9 @@ import { EnvaseScannerModal } from '@/components/barman/bar/EnvaseScannerModal';
 import { MovementsList } from '@/components/barman/bar/MovementsList';
 import { TransferCard } from '@/components/barman/bar/TransferCard';
 import { TransferDetailModal } from '@/components/barman/bar/TransferDetailModal';
+import { MovementDetailModal } from '@/components/barman/bar/MovementDetailModal';
 import { useBarScreen } from '@/hooks/useBarScreen';
-import type { BarTransfer } from '@/hooks/useBarScreen';
+import type { BarMovement, BarTransfer } from '@/hooks/useBarScreen';
 import { useEnvasesScreen } from '@/hooks/useEnvasesScreen';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -25,6 +26,7 @@ export default function BarScreen() {
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const [activeTab, setActiveTab] = useState<TabId>(params.tab === 'pendientes' ? 'pendientes' : 'stock');
   const [selectedTransfer, setSelectedTransfer] = useState<BarTransfer | null>(null);
+  const [selectedMovement, setSelectedMovement] = useState<BarMovement | null>(null);
   const {
     stock,
     transfers,
@@ -42,6 +44,8 @@ export default function BarScreen() {
     resolver,
     loadMovements,
     fetchTransfers,
+    transferHistory,
+    fetchTransferHistory,
   } = useBarScreen();
 
   const {
@@ -59,6 +63,7 @@ export default function BarScreen() {
     fetchDevoluciones,
     onRefresh: onRefreshEnvases,
     enviarEscaneo,
+    enviarLoteEscaneos,
     limpiarSesion,
   } = useEnvasesScreen();
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -66,6 +71,7 @@ export default function BarScreen() {
   const onTabChange = (tabId: string) => {
     setActiveTab(tabId as TabId);
     if (tabId === 'historial') loadMovements();
+    if (tabId === 'historial') fetchTransferHistory();
     if (tabId === 'pendientes') fetchTransfers();
     if (tabId === 'envases') fetchDevoluciones();
   };
@@ -173,6 +179,7 @@ export default function BarScreen() {
             loading={loadingMovements}
             refreshing={refreshing}
             onRefresh={onRefresh}
+            onPressItem={setSelectedMovement}
           />
         )}
 
@@ -200,10 +207,10 @@ export default function BarScreen() {
       <EnvaseScannerModal
         visible={scannerVisible}
         onClose={() => setScannerVisible(false)}
-        onScanned={async (codigoEscaneado) => {
-          const veredicto = await enviarEscaneo(codigoEscaneado);
-          if (veredicto) setCodigo('');
-          return veredicto;
+        onSubmitBatch={async (codigosEscaneados) => {
+          const resultadosLote = await enviarLoteEscaneos(codigosEscaneados);
+          if (resultadosLote) setCodigo('');
+          return resultadosLote;
         }}
       />
 
@@ -222,6 +229,12 @@ export default function BarScreen() {
             setSelectedTransfer(null);
           }
         }}
+      />
+      <MovementDetailModal
+        visible={selectedMovement !== null}
+        movement={selectedMovement}
+        transfer={transferHistory.find((transfer) => transfer.id === selectedMovement?.id)}
+        onClose={() => setSelectedMovement(null)}
       />
     </View>
   );

@@ -59,6 +59,15 @@ export function useNotificationHandler() {
                 }
                 break;
 
+            case "container_return_pending":
+                if (isAdminRole(user) || role === "cajero") {
+                    router.push({
+                        pathname: "/(app)/envases-pendientes",
+                        params: { batchId: String(data?.batchId || "") },
+                    } as any);
+                }
+                break;
+
             case "service_request_approved":
                 if (isGarzonRole(user)) router.push("/(app)/garzon" as any);
                 if (isHostessRole(user)) router.push("/(app)/anfitriona" as any);

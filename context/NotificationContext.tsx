@@ -369,6 +369,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
 
+      case "container_return_pending": {
+        if (!isCajeroOrAdminRole(user)) break;
+        const aprobables = Number(data.aprobables || 0);
+        const rechazados = Number(data.rechazados || 0);
+        const body = data.mensaje || `Hay ${aprobables} devolución(es) para aprobar y ${rechazados} código(s) rechazado(s).`;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        showToast({
+          type: "warning",
+          text1: "Lote de envases para revisar",
+          text2: body,
+          visibilityTime: 7000,
+        });
+        void scheduleLocalNotificationAsync("Lote de envases para revisar", body, {
+          type: "container_return_pending",
+          batchId: data.batchId,
+        });
+        break;
+      }
+
       // ─── Catálogo, asistencia, permisos y alertas ────────────────────────
       // `categories_updated` (todo el personal): las pantallas de venta/cuenta
       // abiertas refrescan solo la lista de categorías, sin tocar carrito ni

@@ -6,6 +6,8 @@ export const barService = {
   movements: (limit = 100, signal?: AbortSignal) =>
     apiClientSafe(`/bar/movements?limit=${limit}`, { signal }),
 
+  transfers: (signal?: AbortSignal) => apiClientSafe('/transfers', { signal }),
+
   /** Historial de envases entregados por el bar (devoluciones al almacén). */
   containers: (signal?: AbortSignal) => apiClientSafe('/bar/containers', { signal }),
 
@@ -17,6 +19,12 @@ export const barService = {
     apiClientSafe('/bar/containers', {
       method: 'POST',
       body: JSON.stringify({ codigo }),
+    }),
+
+  returnContainers: (codigos: string[]) =>
+    apiClientSafe('/bar/containers', {
+      method: 'POST',
+      body: JSON.stringify({ codigos }),
     }),
 
   pendingTransfers: (signal?: AbortSignal) =>

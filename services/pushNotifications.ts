@@ -224,12 +224,13 @@ export function configureNotifications() {
 export async function scheduleLocalNotificationAsync(
   title: string,
   body: string,
+  data?: Record<string, unknown>,
 ): Promise<void> {
   const N = getNotifications();
   if (!N) return;
   try {
     await N.scheduleNotificationAsync({
-      content: { title, body, data: { data: "local" } },
+      content: { title, body, data: data ?? { data: "local" } },
       trigger: null,
     });
   } catch {
