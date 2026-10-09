@@ -599,6 +599,19 @@ describe('useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
     });
   });
 
+  it('no abre selector de anfitrionas para una botella cara sin comisión', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handlePressAddProduct({ ...conShot, precio: 50000, price: 50000 }, 'botella', 1);
+    });
+
+    expect(result.current.state.hostessSelectionTarget).toBeNull();
+    expect(result.current.state.cart).toHaveLength(1);
+    expect(result.current.state.cart[0].anfitrionas).toEqual([]);
+  });
+
   it('permite combinar formatos y productos distintos en una sola venta móvil', async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));

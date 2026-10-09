@@ -21,6 +21,7 @@ const registro: EnvaseDevolucion = {
   codigo: 'LM-000042',
   codigo_barras: '2912345678901',
   estado: 'vendida',
+  ml_merma: 0,
   fecha_devolucion: '2026-09-25 10:00:00',
   fecha_confirmacion: null,
   producto_nombre: 'Vino Blanco',

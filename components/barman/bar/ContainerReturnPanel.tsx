@@ -232,6 +232,12 @@ export function ContainerReturnPanel({
                 </Text>
               </View>
 
+              {(item.ml_merma ?? 0) > 0 && (
+                <Text style={[styles.footerText, { color: '#F59E0B', marginTop: 5 }]}>
+                  Merma registrada: {item.ml_merma} ml
+                </Text>
+              )}
+
               {!item.pendiente_confirmacion && (
                 <View style={styles.footer}>
                   <Ionicons name="checkmark-done-outline" size={13} color="#10B981" />

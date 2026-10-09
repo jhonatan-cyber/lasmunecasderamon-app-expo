@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 
 import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal";
-import { isExpensiveDrink } from "@/hooks/utils/cuentaUtils";
 
 type Hostess = {
   id_usuario?: string | number;
@@ -67,8 +66,7 @@ export function NuevaVentaHostessModal({
     if (!selectionTarget) return;
 
     const hasComm =
-      Number(selectionTarget.product?.comision || selectionTarget.product?.commission || 0) > 0 ||
-      isExpensiveDrink(selectionTarget.product);
+      Number(selectionTarget.product?.comision ?? selectionTarget.product?.commission ?? 0) > 0;
     if (hasComm && selectedIds.length === 0) {
       showToast("Asignacion", "Debes escoger al menos 1 anfitriona", "error");
       return;

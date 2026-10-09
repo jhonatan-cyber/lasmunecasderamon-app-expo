@@ -151,10 +151,26 @@ export function BarStockList({ items, loading, refreshing, onRefresh }: BarStock
             <Text style={[styles.served, { color: '#F59E0B' }]}>Abierta: {item.ml_abierta} ml</Text>
           )}
 
+          {(item.botellas_abiertas?.length ?? 0) > 0 && (
+            <View style={[styles.bottleDetails, { borderColor }]}>
+              <Text style={[styles.bottleDetailsTitle, { color: textSecondary }]}>Contenido por botella</Text>
+              {item.botellas_abiertas?.map((bottle) => (
+                <Text key={bottle.id} style={[styles.bottleDetailsRow, { color: textPrimary }]} numberOfLines={1}>
+                  {bottle.codigo}: {bottle.ml_restante} ml
+                </Text>
+              ))}
+            </View>
+          )}
+
           {(item.botellas_vacias_shots ?? 0) > 0 && (
-            <Text style={[styles.served, { color: '#F59E0B' }]}>
-              Vacías por shots: {item.botellas_vacias_shots} · pendientes de devolución
-            </Text>
+            <View style={[styles.returnDetails, { borderColor }]}>
+              <Text style={[styles.returnDetailsTitle, { color: '#F59E0B' }]}>Para devolver ({item.botellas_vacias_shots})</Text>
+              {item.botellas_por_devolver?.map((bottle) => (
+                <Text key={bottle.id} style={[styles.bottleDetailsRow, { color: textPrimary }]} numberOfLines={1}>
+                  {bottle.codigo}: {bottle.ml_restante > 0 ? `${bottle.ml_restante} ml de merma` : 'vacía'}
+                </Text>
+              ))}
+            </View>
           )}
 
           {(item.ml_servidos ?? 0) > 0 && (
@@ -192,6 +208,11 @@ const styles = StyleSheet.create({
   commission: { fontSize: 10, fontWeight: '700', marginTop: 2 },
   shotSize: { fontSize: 10, fontWeight: '600', marginTop: 6 },
   served: { fontSize: 11, fontWeight: '700', marginTop: 8, textTransform: 'uppercase' },
+  bottleDetails: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 7, gap: 3 },
+  bottleDetailsTitle: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
+  bottleDetailsRow: { fontSize: 10, fontWeight: '700' },
+  returnDetails: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 7, gap: 3 },
+  returnDetailsTitle: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyText: { fontSize: 14, fontWeight: '600' },
 });

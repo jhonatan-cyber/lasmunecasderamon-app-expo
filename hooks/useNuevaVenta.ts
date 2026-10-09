@@ -42,7 +42,9 @@ export function useNuevaVenta() {
   const { refreshVentas } = useSalesActions();
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
   const cartRef = useRef(state.cart);
-  cartRef.current = state.cart;
+  useEffect(() => {
+    cartRef.current = state.cart;
+  }, [state.cart]);
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
 
@@ -167,7 +169,9 @@ export function useNuevaVenta() {
 
   useEffect(() => {
     const ac = new AbortController();
-    fetchInitialData(false, ac.signal);
+    queueMicrotask(() => {
+      if (!ac.signal.aborted) void fetchInitialData(false, ac.signal);
+    });
     return () => ac.abort();
   }, [fetchInitialData]);
 
@@ -334,7 +338,7 @@ export function useNuevaVenta() {
       cartRef.current = newCart;
       showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
     },
-    [cart, modalQuantities, modalHostessSelections, anfitrionas],
+    [modalQuantities, modalHostessSelections, anfitrionas],
   );
 
   /**
@@ -363,9 +367,7 @@ export function useNuevaVenta() {
         quantity,
       };
 
-      const hasComm = venta.esShot
-        ? venta.comision > 0
-        : Number(venta.comision) > 0 || isExpensiveDrink(producto);
+      const hasComm = Number(venta.comision) > 0;
 
       if (hasComm) {
         dispatch({
@@ -390,6 +392,7 @@ export function useNuevaVenta() {
       const newCart = [...cart];
       newCart.splice(index, 1);
       dispatch({ type: 'SET_CART', payload: newCart });
+      cartRef.current = newCart;
     },
     [cart],
   );
@@ -405,6 +408,7 @@ export function useNuevaVenta() {
       const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
       newCart[index].quantity = Math.min(newQty, maxQty);
       dispatch({ type: 'SET_CART', payload: newCart });
+      cartRef.current = newCart;
     },
     [cart],
   );
@@ -527,6 +531,18 @@ export function useNuevaVenta() {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchSeq = useRef(0);
+  const setSearchProductoInput = useCallback((value: string) => {
+    setSearchProducto(value);
+    if (value.trim()) {
+      setSearchLoading(true);
+      return;
+    }
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = null;
+    searchSeq.current++;
+    setSearchResults([]);
+    setSearchLoading(false);
+  }, []);
 
   const executeSearch = useCallback(async (term: string, seq: number) => {
     try {
@@ -550,12 +566,7 @@ export function useNuevaVenta() {
     const seq = ++searchSeq.current;
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = null;
-    if (!term) {
-      setSearchResults([]);
-      setSearchLoading(false);
-      return;
-    }
-    setSearchLoading(true);
+    if (!term) return;
     searchTimeout.current = setTimeout(() => {
       searchTimeout.current = null;
       void executeSearch(term, seq);
@@ -580,13 +591,10 @@ export function useNuevaVenta() {
   }, [searchProducto, executeSearch]);
 
   const handleClearSearch = useCallback(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = null;
-    searchSeq.current++;
-    setSearchProducto('');
-    setSearchResults([]);
-    setSearchLoading(false);
-  }, []);    return {
+    setSearchProductoInput('');
+  }, [setSearchProductoInput]);
+
+  return {
       state,
       dispatch,
       totals,
@@ -607,7 +615,7 @@ export function useNuevaVenta() {
     handleSubmit,
     handleToggleHostess,
     searchProducto,
-    setSearchProducto,
+    setSearchProducto: setSearchProductoInput,
     searchResults,
     searchLoading,
     handleSearchNow,

@@ -31,6 +31,8 @@ export interface EnvaseUnidad {
   codigo: string;
   codigo_barras: string | null;
   estado: string;
+  /** Residuo reconocido como merma al devolver una botella dentro de tolerancia. */
+  ml_merma: number;
   fecha_devolucion: string | null;
   fecha_confirmacion: string | null;
   producto_nombre: string | null;
