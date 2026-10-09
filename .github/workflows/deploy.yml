@@ -42,5 +42,7 @@ jobs:
         run: pnpm lint
 
       - name: 🚀 Publish Update (CD)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: eas update --branch production --message "${{ github.event.head_commit.message }}" --auto
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
+        env:
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message || 'Manual production update' }}
+        run: eas update --branch production --message "$UPDATE_MESSAGE" --auto
