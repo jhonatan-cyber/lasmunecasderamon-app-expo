@@ -74,7 +74,10 @@ export default function EnvasesPendientesScreen() {
     }
   }, [allowed, batchId]);
 
-  useEffect(() => { void cargar(); }, [cargar]);
+  useEffect(() => {
+    const timer = setTimeout(() => { void cargar(); }, 0);
+    return () => clearTimeout(timer);
+  }, [cargar]);
 
   const aceptar = async (item: PendingContainer) => {
     setConfirmando(item.id);

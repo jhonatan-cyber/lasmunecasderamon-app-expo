@@ -24,7 +24,7 @@ jobs:
       - name: 🍏 Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -40,7 +40,6 @@ jobs:
 
       - name: 🔍 Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: 🚀 Publish Update (CD)
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
