@@ -17,13 +17,15 @@ vi.mock('react-native', () => ({
   Pressable: ({
     children,
     onPress,
-    accessibilityLabel
+    accessibilityLabel,
+    disabled
   }: {
     children?: React.ReactNode;
     onPress?: () => void;
     accessibilityLabel?: string;
+    disabled?: boolean;
   }) => (
-    <button onClick={onPress} aria-label={accessibilityLabel}>
+    <button onClick={onPress} aria-label={accessibilityLabel} disabled={disabled}>
       {children}
     </button>
   )
@@ -48,6 +50,7 @@ const conBotellaAbierta = {
   categoria: 'Whisky',
   precio: 180000,
   comision: 0,
+  stock_bar: 3,
   ml_abierta: 620,
   ml_shot: null
 };
@@ -84,7 +87,6 @@ const renderSearch = (searchResults: any[], onAddProduct = vi.fn(), extra: Recor
       searchLoading={false}
       searchResults={searchResults}
       onAddProduct={onAddProduct}
-      isDark={false}
       accentColor="#000000"
       cardBg="#FFFFFF"
       textPrimary="#000000"
@@ -116,54 +118,46 @@ describe('NuevaVentaSearch (vista móvil)', () => {
     expect(screen.getByText('Corona 330 ml')).toBeDefined();
   });
 
-  it('sigue mandando el producto al carrito desde el botón agregar', () => {
+  it('permite agregar la cantidad elegida de botella', () => {
     const onAddProduct = renderSearch([conBotellaAbierta]);
-
-    fireEvent.click(screen.getByLabelText('Agregar producto'));
-
-    expect(onAddProduct).toHaveBeenLastCalledWith(conBotellaAbierta);
+    fireEvent.click(screen.getByLabelText('Botella: aumentar cantidad'));
+    fireEvent.click(screen.getByLabelText('Agregar Botella'));
+    expect(onAddProduct).toHaveBeenLastCalledWith(conBotellaAbierta, 'botella', 1);
   });
 
   it('sin precio de shot no muestra el selector de forma de venta', () => {
     renderSearch([sinBotellaAbierta]);
 
-    expect(screen.queryByLabelText('Vender como Botella')).toBeNull();
-    expect(screen.queryByLabelText('Vender como Shot cliente')).toBeNull();
+    expect(screen.getByLabelText('Botella: aumentar cantidad')).toBeDefined();
+    expect(screen.queryByLabelText(/Shot/)).toBeNull();
   });
 
   it('muestra Botella, Shot cliente y Shot anfitriona cuando el producto los ofrece', () => {
     renderSearch([conShot]);
 
-    expect(screen.getByLabelText('Vender como Botella')).toBeDefined();
-    expect(screen.getByLabelText('Vender como Shot cliente')).toBeDefined();
-    expect(screen.getByLabelText('Vender como Shot anfitriona')).toBeDefined();
-    // Por defecto se vende botella.
-    expect(screen.getByText(`$${(25000).toLocaleString()}`)).toBeDefined();
+    expect(screen.getByLabelText('Botella: aumentar cantidad')).toBeDefined();
+    expect(screen.getByLabelText('Shot cliente · 50 ml: aumentar cantidad')).toBeDefined();
+    expect(screen.getByLabelText('Shot anfitriona · 50 ml: aumentar cantidad')).toBeDefined();
+    expect(screen.getByText(/\$25[.,]000/)).toBeDefined();
   });
 
-  it('avisa al hook del cambio de forma de venta y pinta el precio elegido', () => {
-    const onSaleChoiceChange = vi.fn();
-    renderSearch([conShot], vi.fn(), {
-      saleChoices: { 'pres-3': 'shot_anfitriona' },
-      onSaleChoiceChange
-    });
-
-    // La fila muestra el precio de anfitriona, no el de botella.
-    expect(screen.getByText(`$${(3500).toLocaleString()}`)).toBeDefined();
-
-    fireEvent.click(screen.getByLabelText('Vender como Shot cliente'));
-
-    expect(onSaleChoiceChange).toHaveBeenCalledWith('pres-3', 'shot');
+  it('mantiene cantidades independientes para los tres formatos del mismo producto', () => {
+    const onAddProduct = renderSearch([conShot]);
+    fireEvent.click(screen.getByLabelText('Botella: aumentar cantidad'));
+    fireEvent.click(screen.getByLabelText('Shot cliente · 50 ml: aumentar cantidad'));
+    fireEvent.click(screen.getByLabelText('Shot anfitriona · 50 ml: aumentar cantidad'));
+    fireEvent.click(screen.getByLabelText('Agregar Botella'));
+    fireEvent.click(screen.getByLabelText('Agregar Shot cliente · 50 ml'));
+    fireEvent.click(screen.getByLabelText('Agregar Shot anfitriona · 50 ml'));
+    expect(onAddProduct).toHaveBeenNthCalledWith(1, conShot, 'botella', 1);
+    expect(onAddProduct).toHaveBeenNthCalledWith(2, conShot, 'shot', 1);
+    expect(onAddProduct).toHaveBeenNthCalledWith(3, conShot, 'shot_anfitriona', 1);
   });
 
-  it('el botón agregar manda el producto crudo: el hook resuelve la forma de venta', () => {
-    const onAddProduct = renderSearch([conShot], vi.fn(), {
-      saleChoices: { 'pres-3': 'shot_anfitriona' },
-      onSaleChoiceChange: vi.fn()
-    });
-
-    fireEvent.click(screen.getByLabelText('Agregar producto'));
-
-    expect(onAddProduct).toHaveBeenLastCalledWith(conShot);
+  it('el formato agrega una unidad de producto como línea independiente', () => {
+    const onAddProduct = renderSearch([conShot]);
+    fireEvent.click(screen.getByLabelText('Shot anfitriona · 50 ml: aumentar cantidad'));
+    fireEvent.click(screen.getByLabelText('Agregar Shot anfitriona · 50 ml'));
+    expect(onAddProduct).toHaveBeenLastCalledWith(conShot, 'shot_anfitriona', 1);
   });
 });

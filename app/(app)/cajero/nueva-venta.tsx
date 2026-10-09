@@ -55,8 +55,6 @@ export default function NuevaVentaScreen() {
     handleOpenCategory,
     handlePressAddProduct,
     addProductToCart,
-    handleSetSaleChoice,
-    saleChoices,
     removeFromCart,
     updateQuantity,
     handleSubmit,
@@ -88,7 +86,6 @@ export default function NuevaVentaScreen() {
     modalCategoria,
     modalProducts,
     modalLoading,
-    modalQuantities,
     modalHostessSelections,
     hostessSelectionTarget,
     hostessSubModalVisible,
@@ -163,9 +160,6 @@ export default function NuevaVentaScreen() {
           searchLoading={searchLoading}
           searchResults={searchResults}
           onAddProduct={handlePressAddProduct}
-          saleChoices={saleChoices}
-          onSaleChoiceChange={handleSetSaleChoice}
-          isDark={isDark}
           accentColor={accentColor}
           cardBg={cardBg}
           textPrimary={textPrimary}
@@ -314,9 +308,6 @@ export default function NuevaVentaScreen() {
         modalCategoria={modalCategoria}
         modalProducts={modalProducts}
         modalLoading={modalLoading}
-        modalQuantities={modalQuantities}
-        saleChoices={saleChoices}
-        onSaleChoiceChange={handleSetSaleChoice}
         selectedTime={selectedTime}
         timeModalVisible={false}
         loadModalVisible={loadModalVisible}
@@ -326,7 +317,6 @@ export default function NuevaVentaScreen() {
         loadSubmitting={loadSubmitting}
         onCloseCategoryModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
         onPressAddProduct={handlePressAddProduct}
-        onUpdateModalQuantity={(productId, quantity) => dispatch({ type: 'SET_MODAL_QUANTITY', productId, quantity })}
         onCloseTimeModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}
         onSelectTime={(time) => dispatch({ type: 'SET_SELECTED_TIME', payload: time })}
         onCloseLoadModal={() => dispatch({ type: 'SET_LOAD_MODAL', visible: false })}

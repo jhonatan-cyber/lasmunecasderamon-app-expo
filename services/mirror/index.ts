@@ -21,6 +21,7 @@ export { MIRROR_DATABASE_NAME, MIRROR_SCHEMA_VERSION };
  */
 export const MIRROR_KEYS = {
     categories: 'catalog.categories',
+    saleCategories: 'catalog.sale-categories',
     productsByCategory: (categoryId: string) => `catalog.products.${categoryId}`,
     anfitrionas: 'catalog.anfitrionas',
     rooms: 'catalog.rooms',

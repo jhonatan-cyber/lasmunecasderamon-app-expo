@@ -151,6 +151,12 @@ export function BarStockList({ items, loading, refreshing, onRefresh }: BarStock
             <Text style={[styles.served, { color: '#F59E0B' }]}>Abierta: {item.ml_abierta} ml</Text>
           )}
 
+          {(item.botellas_vacias_shots ?? 0) > 0 && (
+            <Text style={[styles.served, { color: '#F59E0B' }]}>
+              Vacías por shots: {item.botellas_vacias_shots} · pendientes de devolución
+            </Text>
+          )}
+
           {(item.ml_servidos ?? 0) > 0 && (
             <Text style={[styles.served, { color: textSecondary }]}>
               Servido: {item.ml_servidos} ml

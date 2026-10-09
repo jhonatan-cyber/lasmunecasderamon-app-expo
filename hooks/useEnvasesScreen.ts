@@ -9,6 +9,7 @@ import {
 } from '@/services/mirror';
 import { blockOffline } from '@/utils/offlineGuard';
 import { showToast } from '@/utils/toast-lazy';
+import { emitRefreshBar } from '@/utils/realtime';
 import logger from '@/utils/logger';
 
 /**
@@ -202,8 +203,11 @@ export const useEnvasesScreen = () => {
             ...previa,
           ].slice(0, MAXIMO_SESION),
         );
-        // Un envase entregado ya aparece en el historial del almacén: refresca.
-        if (veredicto.ok) void fetchDevoluciones();
+        // Refresca historial y el contador de botellas vacías en la pestaña Bar.
+        if (veredicto.ok) {
+          void fetchDevoluciones();
+          emitRefreshBar({ type: 'container_returned' });
+        }
         return { ok: veredicto.ok, texto };
       } catch (e) {
         logger.captureException(e, { context: 'useEnvasesScreen:enviarEscaneo' });
@@ -260,7 +264,10 @@ export const useEnvasesScreen = () => {
           ? Haptics.NotificationFeedbackType.Warning
           : Haptics.NotificationFeedbackType.Success,
       );
-      if (lote.some((resultadoCodigo) => resultadoCodigo.ok)) void fetchDevoluciones();
+      if (lote.some((resultadoCodigo) => resultadoCodigo.ok)) {
+        void fetchDevoluciones();
+        emitRefreshBar({ type: 'container_returned' });
+      }
       return lote;
     } catch (e) {
       logger.captureException(e, { context: 'useEnvasesScreen:enviarLoteEscaneos' });

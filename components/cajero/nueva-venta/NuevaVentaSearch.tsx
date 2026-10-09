@@ -3,8 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { formatBotellaAbierta } from '@/hooks/utils/cartUtils';
-import { resolverVentaProducto, type SaleChoice } from '@/hooks/utils/saleChoice';
-import { SaleTypeChips } from '@/components/cajero/nueva-venta/SaleTypeChips';
+import { resolverVentaProducto } from '@/hooks/utils/saleChoice';
+import { SaleFormatSelector } from '@/components/cajero/nueva-venta/SaleFormatSelector';
 
 interface NuevaVentaSearchProps {
   searchProducto: string;
@@ -13,11 +13,7 @@ interface NuevaVentaSearchProps {
   onClearSearch: () => void;
   searchLoading: boolean;
   searchResults: any[];
-  onAddProduct: (item: any) => void;
-  /** Forma de venta elegida por presentación y callback para cambiarla. */
-  saleChoices?: { [key: string]: SaleChoice };
-  onSaleChoiceChange?: (productId: string, choice: SaleChoice) => void;
-  isDark: boolean;
+  onAddProduct: (item: any, choice: any, quantity: number) => void;
   accentColor: string;
   cardBg: string;
   textPrimary: string;
@@ -43,9 +39,6 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
   searchLoading,
   searchResults,
   onAddProduct,
-  saleChoices = {},
-  onSaleChoiceChange,
-  isDark,
   accentColor,
   cardBg,
   textPrimary,
@@ -108,11 +101,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
             </Text>
           ) : (
             searchResults.map((producto: any, idx: number) => {
-              const id = String(producto.id || producto.id_producto || idx);
-              // Precio, comisión y opciones según la forma de venta elegida.
-              const venta = resolverVentaProducto(producto, saleChoices[id]);
-              const precio = venta.precio;
-              const comision = venta.comision;
+              const venta = resolverVentaProducto(producto);
               const categoria = String(producto.categoria || '');
               const botellaAbierta = formatBotellaAbierta(
                 producto.ml_abierta,
@@ -129,34 +118,25 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                       {producto.nombre || producto.name || 'Producto'}
                     </Text>
                     <Text style={[styles.resultMeta, { color: textSecondary }]} numberOfLines={1}>
-                      {[categoria, `Comisión $${comision.toLocaleString()}`].filter(Boolean).join(' · ')}
+                      {categoria}
                     </Text>
                     {botellaAbierta && (
                       <Text style={styles.resultOpenBottle} numberOfLines={1}>
                         {botellaAbierta}
                       </Text>
                     )}
-                    <SaleTypeChips
-                      opciones={venta.opciones}
-                      value={venta.tipoVenta}
-                      onChange={(choice) => onSaleChoiceChange?.(id, choice)}
+                    <SaleFormatSelector
+                      product={producto}
+                      options={venta.opciones}
+                      shotMl={shotMl}
                       accentColor={accentColor}
                       textPrimary={textPrimary}
+                      textSecondary={textSecondary}
                       borderColor={borderColor}
+                      cardBg={cardBg}
+                      onAdd={(choice, quantity) => onAddProduct(producto, choice, quantity)}
                     />
                   </View>
-                  <Text style={[styles.resultPrice, { color: accentColor }]}>
-                    ${precio.toLocaleString()}
-                  </Text>
-                  <Pressable
-                    onPress={() => onAddProduct(producto)}
-                    style={[styles.addBtn, { backgroundColor: accentColor }]}
-                    accessibilityLabel="Agregar producto"
-                    accessibilityRole="button"
-                    hitSlop={8}
-                  >
-                    <Ionicons name="add" size={20} color="#FFFFFF" />
-                  </Pressable>
                 </View>
               );
             })
@@ -261,16 +241,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
     color: '#F59E0B',
-  },
-  resultPrice: {
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 9999,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

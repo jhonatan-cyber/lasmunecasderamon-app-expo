@@ -27,8 +27,8 @@ import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta
 import type { VentaState } from '@/components/cajero/nueva-venta/types';
 
 /**
- * Categorías vendibles (paridad con el filtro del dashboard:
- * `estado === 1 && productCount > 0`).
+ * El endpoint de categorías de venta ya devuelve solo categorías activas con
+ * unidades activas disponibles en el bar; se valida de nuevo por robustez.
  */
 const filterSaleCategories = (categories: any[]) =>
   (Array.isArray(categories) ? categories : []).filter((c: any) => {
@@ -41,6 +41,8 @@ export function useNuevaVenta() {
   const router = useRouter();
   const { refreshVentas } = useSalesActions();
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
+  const cartRef = useRef(state.cart);
+  cartRef.current = state.cart;
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
 
@@ -120,8 +122,8 @@ export function useNuevaVenta() {
             MIRROR_MAX_AGE_MS.catalogo,
           ),
           readThroughMirror(
-            MIRROR_KEYS.categories,
-            () => apiClientSafe('/categories', { signal }),
+            MIRROR_KEYS.saleCategories,
+            () => apiClientSafe('/categories?for_sale=1', { signal }),
             MIRROR_MAX_AGE_MS.catalogo,
           ),
         ]);
@@ -175,7 +177,7 @@ export function useNuevaVenta() {
     const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
       void (async () => {
         try {
-          const res = await apiClientSafe('/categories');
+          const res = await apiClientSafe('/categories?for_sale=1');
           if ((res as any)?.success) {
             dispatch({
               type: 'SET_INITIAL_DATA',
@@ -281,9 +283,9 @@ export function useNuevaVenta() {
       const esShot = prod?.tipo_venta === 'shot';
       const stockBar = Number(prod.stock_bar ?? 0);
       const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
-      const qty = Math.min(modalQuantities[id] || 1, maxQty);
+      const qty = Math.min(Number(prod.quantity ?? modalQuantities[id] ?? 1), maxQty);
       const hostesses = modalHostessSelections[id] || [];
-      const newCart = [...cart];
+      const newCart = [...cartRef.current];
 
       const itemHostesses = hostesses.length > 0 ? hostesses : [];
       const hostessNames =
@@ -329,6 +331,7 @@ export function useNuevaVenta() {
       }
 
       dispatch({ type: 'SET_CART', payload: newCart });
+      cartRef.current = newCart;
       showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
     },
     [cart, modalQuantities, modalHostessSelections, anfitrionas],
@@ -344,11 +347,11 @@ export function useNuevaVenta() {
   }, []);
 
   const handlePressAddProduct = useCallback(
-    (item: any) => {
+    (item: any, choice?: SaleChoice, quantity = 1) => {
       // Precio, comisión y tope salen de la forma de venta elegida: un shot no
       // hereda la comisión de la botella (regla del dashboard).
       const id = String(item.id || item.id_producto);
-      const venta = resolverVentaProducto(item, saleChoices[id]);
+      const venta = resolverVentaProducto(item, choice || saleChoices[id]);
       const producto = {
         ...item,
         tipo_venta: venta.esShot ? ('shot' as const) : ('botella' as const),
@@ -357,6 +360,7 @@ export function useNuevaVenta() {
         price: venta.precio,
         comision: venta.comision,
         commission: venta.comision,
+        quantity,
       };
 
       const hasComm = venta.esShot

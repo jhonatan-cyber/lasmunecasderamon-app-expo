@@ -27,6 +27,8 @@ export interface BarStockItem {
   ml_shot_anfitriona?: number | null;
   stock: number;
   stock_bar?: number;
+  /** Botellas agotadas por shots que siguen en el bar pendientes de devolución. */
+  botellas_vacias_shots?: number;
   ml_abierta?: number;
   ml_servidos?: number;
 }
@@ -248,7 +250,9 @@ export const useBarScreen = () => {
     [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory],
   );
 
-  const filteredStock = stock.filter((i) => (i.stock_bar ?? 0) > 0).filter((i) => {
+  const filteredStock = stock.filter((i) =>
+    (i.stock_bar ?? 0) > 0 || (i.botellas_vacias_shots ?? 0) > 0,
+  ).filter((i) => {
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return (

@@ -97,6 +97,23 @@ afterEach(() => {
 });
 
 describe('useBarScreen — sin red', () => {
+  it('mantiene visibles botellas agotadas por shots mientras esperan devolución', async () => {
+    vi.mocked(barService.stock).mockResolvedValue({
+      success: true,
+      data: [{ ...STOCK_ITEM, stock_bar: 0, botellas_vacias_shots: 2 }],
+    } as never);
+    vi.mocked(barService.pendingTransfers).mockResolvedValue({ success: true, data: [] } as never);
+    goOnline();
+
+    const { result } = renderHook(() => useBarScreen());
+    await waitFor(() => expect(result.current.stock).toHaveLength(1));
+
+    expect(result.current.stock[0]).toMatchObject({
+      stock_bar: 0,
+      botellas_vacias_shots: 2,
+    });
+  });
+
   it('sirve el stock y las transferencias guardados cuando se corta la conexión', async () => {
     vi.mocked(barService.stock).mockResolvedValue({ success: true, data: [STOCK_ITEM] } as never);
     vi.mocked(barService.pendingTransfers).mockResolvedValue({

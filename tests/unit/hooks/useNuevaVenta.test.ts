@@ -154,7 +154,7 @@ describe('useNuevaVenta — refresh del catálogo por SSE (categories_updated)',
       if (url === '/cashregister/status') {
         return { success: true, data: { hasOpenCaja: true } };
       }
-      if (url === '/categories') {
+      if (url === '/categories?for_sale=1') {
         categoriasLlamada++;
         return {
           success: true,
@@ -197,7 +197,7 @@ describe('useNuevaVenta — catálogo de venta (paridad con el dashboard)', () =
       if (url === '/cashregister/status') {
         return { success: true, data: { hasOpenCaja: true } };
       }
-      if (url === '/categories') {
+      if (url === '/categories?for_sale=1') {
         return {
           success: true,
           data: [
@@ -411,7 +411,7 @@ describe('useNuevaVenta — check de caja cerrada (banner, paridad con el dashbo
       if (url === '/cashregister/status') {
         return { success: true, data: { hasOpenCaja: false } };
       }
-      if (url === '/categories') {
+      if (url === '/categories?for_sale=1') {
         return {
           success: true,
           data: [{ id: 'c1', name: 'Cerveza', status: 1, total_products: 2 }],
@@ -454,7 +454,7 @@ describe('useNuevaVenta — refresh de caja al volver de la pantalla de Caja', (
       if (url === '/cashregister/status') {
         return { success: true, data: { hasOpenCaja: openCaja } };
       }
-      if (url === '/categories') {
+      if (url === '/categories?for_sale=1') {
         return {
           success: true,
           data: [{ id: 'c1', name: 'Cerveza', status: 1, total_products: 2 }],
@@ -597,6 +597,26 @@ describe('useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
       shot_anfitriona: false,
       precio: 6000,
     });
+  });
+
+  it('permite combinar formatos y productos distintos en una sola venta móvil', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handlePressAddProduct(conShot, 'botella', 2);
+      result.current.handlePressAddProduct(conShot, 'shot', 3);
+      result.current.handlePressAddProduct(conShot, 'shot_anfitriona', 4);
+      result.current.handlePressAddProduct(conShotComision, 'botella', 1);
+    });
+
+    expect(result.current.state.cart).toHaveLength(4);
+    expect(result.current.state.cart.map(item => [item.producto_id, item.tipo_venta, item.shot_anfitriona, item.quantity])).toEqual([
+      ['prod-1', 'botella', false, 2],
+      ['prod-1', 'shot', false, 3],
+      ['prod-1', 'shot', true, 4],
+      ['prod-2', 'botella', false, 1],
+    ]);
   });
 
   it('el shot con comisión pide anfitriona con la comisión y el precio del shot', async () => {
