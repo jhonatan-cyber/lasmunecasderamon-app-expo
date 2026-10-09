@@ -9,7 +9,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
-// El `.env` real apunta a localhost: es el caso que rompía el emulador Android.
+// Caso local usado para comprobar la resolución de hosts en desarrollo.
 const ENV_LOCAL = 'http://localhost:3000';
 
 describe('base-url — host de desarrollo por dispositivo', () => {
@@ -87,6 +87,17 @@ describe('base-url — host de desarrollo por dispositivo', () => {
       ).toBe('https://staging.midominio.com');
     });
 
+    it('en desarrollo mantiene la API de producción cuando está configurada', () => {
+      expect(
+        pickBaseUrl({
+          isDev: true,
+          envUrl: PROD_API_BASE_URL,
+          platform: 'android',
+          devServerHost: '192.168.1.50',
+        }),
+      ).toBe(PROD_API_BASE_URL);
+    });
+
     it('en web usa el host del navegador', () => {
       expect(
         pickBaseUrl({
@@ -115,8 +126,8 @@ describe('base-url — host de desarrollo por dispositivo', () => {
     });
   });
 
-  // La regresión que motivó todo esto: el .env del repo apunta a localhost y en un
-  // dispositivo real eso es el propio dispositivo, no la máquina de desarrollo.
+  // Con un .env local, un teléfono debe resolver la API mediante la IP del servidor
+  // Metro, no mediante el loopback del propio dispositivo.
   describe('BASE_URL resuelta al cargar el módulo', () => {
     const cargarConDispositivo = async (platform: string, hostUri: string | null) => {
       vi.resetModules();

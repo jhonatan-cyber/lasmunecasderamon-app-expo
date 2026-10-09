@@ -6,17 +6,20 @@ import type { BarTransfer } from '@/hooks/useBarScreen';
 
 interface TransferCardProps {
   item: BarTransfer;
-  resolving: boolean;
-  onAccept: () => void;
-  onReject: () => void;
+  onPress: () => void;
 }
 
-export function TransferCard({ item, resolving, onAccept, onReject }: TransferCardProps) {
+export function TransferCard({ item, onPress }: TransferCardProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
 
   return (
-    <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ver detalle del traspaso de ${item.producto_nombre}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.8 : 1 }]}
+    >
       <View style={styles.cardHeader}>
         <View style={[styles.iconWrapper, { backgroundColor: `${accentColor}20` }]}>
           <Ionicons name="swap-horizontal" size={18} color={accentColor} />
@@ -58,8 +61,11 @@ export function TransferCard({ item, resolving, onAccept, onReject }: TransferCa
         </Text>
       </View>
 
-      <TransferActions resolving={resolving} onAccept={onAccept} onReject={onReject} />
-    </View>
+      <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
+        <Text style={[styles.detailHintText, { color: accentColor }]}>Ver detalle</Text>
+        <Ionicons name="chevron-forward" size={16} color={accentColor} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -114,6 +120,8 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, fontWeight: '600' },
   amountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   amount: { fontSize: 12, fontWeight: '700' },
+  detailHint: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  detailHintText: { fontSize: 12, fontWeight: '800' },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   actionBtn: {
     flex: 1,

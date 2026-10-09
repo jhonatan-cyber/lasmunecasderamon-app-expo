@@ -1,7 +1,6 @@
 import { apiClientSafe } from "@/api/client";
 import { ActiveServiceCard } from "@/components/anfitriona/ActiveServiceCard";
 import { BarmanActionGrid } from "@/components/barman/BarmanActionGrid";
-import { BarmanStats } from "@/components/barman/BarmanStats";
 import { CajeroActionGrid } from "@/components/cajero/CajeroActionGrid";
 import { CajeroStats } from "@/components/cajero/CajeroStats";
 import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
@@ -61,7 +60,6 @@ export function HomeScreen({ role }: HomeScreenProps) {
     activeService,
     pendingCount,
     payoutTotal,
-    containerSummary,
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
@@ -398,8 +396,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === "barman" && (
               <>
-                <BarmanStats stats={stats} containers={containerSummary} fullWidth />
-                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+                <View style={{ marginTop: 0, paddingHorizontal: 16 }}>
                   <BarmanActionGrid fullWidth />
                 </View>
               </>

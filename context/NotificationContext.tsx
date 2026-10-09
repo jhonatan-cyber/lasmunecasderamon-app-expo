@@ -25,10 +25,15 @@ import {
   getUserRoleName,
   isCajeroOrAdminRole,
   isCajeroRole,
+  isBarmanRole,
 } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
-import { configureNotifications, scheduleLocalNotificationAsync } from '@/services/pushNotifications';
+import {
+  configureNotifications,
+  registerForPushNotificationsAsync,
+  scheduleLocalNotificationAsync,
+} from '@/services/pushNotifications';
 
 // NOTA: no llamar a expo-notifications aquí a nivel de módulo (crashea en
 // Expo Go SDK 53+). Se configura perezosamente dentro del Provider.
@@ -102,6 +107,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     // No-op en Expo Go / web: configureNotifications() ya es seguro.
     configureNotifications();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void registerForPushNotificationsAsync().catch((error) => {
+      logger.debug('[NotificationContext] No se pudo registrar push', { error });
+    });
+  }, [user?.id]);
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
     // Seguro en Expo Go: no-op si push no disponible (el toast ya avisa).
@@ -250,6 +262,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           emitRefreshRequests();
         }
         break;
+
+      case "transfers_updated": {
+        // El mismo evento refresca el panel Bar; solo se notifica al barman
+        // cuando el almacén crea un traspaso que requiere su aprobación.
+        emitRefreshBar(payload);
+        if (data.action === "created" && isBarmanRole(freshUser)) {
+          const cantidad = Number(data.cantidad || 0);
+          const body = cantidad > 0
+            ? `${cantidad} unidad(es) esperan tu aprobación en el bar.`
+            : "Tienes un nuevo traspaso pendiente de aprobación.";
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          showToast({
+            type: "info",
+            text1: "Nuevo traspaso pendiente",
+            text2: body,
+            visibilityTime: 7000,
+          });
+          void showLocalNotification("Nuevo traspaso pendiente", body);
+        }
+        break;
+      }
 
       case "order_deleted":
       case "order_updated":

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import FlashList from '@/components/shared/FlashList';
@@ -11,7 +11,9 @@ import { ContainerReturnPanel } from '@/components/barman/bar/ContainerReturnPan
 import { EnvaseScannerModal } from '@/components/barman/bar/EnvaseScannerModal';
 import { MovementsList } from '@/components/barman/bar/MovementsList';
 import { TransferCard } from '@/components/barman/bar/TransferCard';
+import { TransferDetailModal } from '@/components/barman/bar/TransferDetailModal';
 import { useBarScreen } from '@/hooks/useBarScreen';
+import type { BarTransfer } from '@/hooks/useBarScreen';
 import { useEnvasesScreen } from '@/hooks/useEnvasesScreen';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -19,8 +21,10 @@ type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 
 export default function BarScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
-  const [activeTab, setActiveTab] = useState<TabId>('stock');
+  const [activeTab, setActiveTab] = useState<TabId>(params.tab === 'pendientes' ? 'pendientes' : 'stock');
+  const [selectedTransfer, setSelectedTransfer] = useState<BarTransfer | null>(null);
   const {
     stock,
     transfers,
@@ -157,9 +161,7 @@ export default function BarScreen() {
               renderItem={({ item }: { item: (typeof transfers)[number] }) => (
                 <TransferCard
                   item={item}
-                  resolving={resolvingId === item.id}
-                  onAccept={() => resolver(item.id, 'aprobar')}
-                  onReject={() => resolver(item.id, 'rechazar')}
+                  onPress={() => setSelectedTransfer(item)}
                 />
               )}
             />
@@ -202,6 +204,23 @@ export default function BarScreen() {
           const veredicto = await enviarEscaneo(codigoEscaneado);
           if (veredicto) setCodigo('');
           return veredicto;
+        }}
+      />
+
+      <TransferDetailModal
+        visible={selectedTransfer !== null}
+        item={selectedTransfer}
+        resolving={selectedTransfer !== null && resolvingId === selectedTransfer.id}
+        onClose={() => setSelectedTransfer(null)}
+        onAccept={async () => {
+          if (selectedTransfer && await resolver(selectedTransfer.id, 'aprobar')) {
+            setSelectedTransfer(null);
+          }
+        }}
+        onReject={async () => {
+          if (selectedTransfer && await resolver(selectedTransfer.id, 'rechazar')) {
+            setSelectedTransfer(null);
+          }
         }}
       />
     </View>

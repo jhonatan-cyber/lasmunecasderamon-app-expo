@@ -50,6 +50,15 @@ export function useNotificationHandler() {
                 }
                 break;
 
+            case "transfer_created":
+                if (isBarmanRole(user)) {
+                    router.push({
+                        pathname: "/(app)/barman/bar",
+                        params: { tab: "pendientes" },
+                    } as any);
+                }
+                break;
+
             case "service_request_approved":
                 if (isGarzonRole(user)) router.push("/(app)/garzon" as any);
                 if (isHostessRole(user)) router.push("/(app)/anfitriona" as any);

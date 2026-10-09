@@ -221,7 +221,7 @@ export const PremiumCalendar = ({
                 isSelected && { backgroundColor: accentColor },
               ]}
               onPress={() => handleDatePress(d.day, d.month, d.year)}
-              accessibilityLabel={`Día ${d.day} de ${currentMonth.toLocaleDateString("es-ES", { month: "long" })}`}
+              accessibilityLabel={`Día ${d.day} de ${new Date(d.year, d.month, d.day).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`}
               accessibilityRole="button"
             >
               <Text

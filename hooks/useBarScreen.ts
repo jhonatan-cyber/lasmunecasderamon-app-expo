@@ -11,6 +11,7 @@ import { eventBus } from '@/utils/eventBus';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
 import logger from '@/utils/logger';
+import type { SaleOption } from '@/hooks/utils/saleChoice';
 
 export interface BarStockItem {
   id: string;
@@ -36,6 +37,9 @@ export interface BarTransfer {
   usuario_nombre: string;
   precio_venta: number;
   comision: number;
+  opciones_venta?: SaleOption[] | string | null;
+  ml_shot?: number | null;
+  ml_shot_anfitriona?: number | null;
 }
 
 export interface BarMovement {
@@ -153,12 +157,13 @@ export const useBarScreen = () => {
   // `bar_shot_alert` (SSE): una botella bajó del umbral de shots y su ml cambió:
   // la pantalla Bar, si está abierta, refresca el stock sin esperar al pull.
   useEffect(() => {
-    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshBar, () => {
-      logger.debug('[BarScreen] refresh_bar received');
+    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshBar, (payload) => {
+      logger.debug('[BarScreen] refresh_bar received', { type: payload?.type });
       void fetchStock();
+      if (payload?.type === 'transfers_updated') void fetchTransfers();
     });
     return () => subscription.remove();
-  }, [fetchStock]);
+  }, [fetchStock, fetchTransfers]);
 
   const loadMovements = useCallback(
     (signal?: AbortSignal) => {
@@ -178,7 +183,7 @@ export const useBarScreen = () => {
     async (id: string, accion: 'aprobar' | 'rechazar') => {
       // Aprobar mueve stock entre almacén y bar: es decisión del servidor, no
       // se encola ni se confirma en el dispositivo.
-      if (!blockOffline('transferencia')) return;
+      if (!blockOffline('transferencia')) return false;
 
       setResolvingId(id);
       try {
@@ -194,12 +199,14 @@ export const useBarScreen = () => {
           text1: accion === 'aprobar' ? 'Transferencia aprobada' : 'Transferencia rechazada',
         });
         await Promise.all([fetchStock(), fetchTransfers(), fetchMovements()]);
+        return true;
       } catch (e) {
         showToast({
           type: 'error',
           text1: 'Error',
           text2: e instanceof Error ? e.message : 'No se pudo resolver la solicitud',
         });
+        return false;
       } finally {
         setResolvingId(null);
       }

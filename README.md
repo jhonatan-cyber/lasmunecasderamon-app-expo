@@ -2,6 +2,10 @@
 
 Aplicacion `Expo Router` para operacion interna, con soporte `android`, `ios` y `web`.
 
+El proyecto usa **Expo SDK 57** y React Native 0.86.3. Para abrirlo en Expo Go,
+instala la [version compatible con SDK 57](https://expo.dev/go?sdkVersion=57&platform=android&device=true).
+Expo Go para SDK 58 no puede abrir este proyecto.
+
 Para desarrollo en dispositivo fisico o emulador, usa `expo-dev-client` en vez de Expo Go.
 
 ## Inicio rapido
@@ -42,7 +46,10 @@ corepack pnpm typecheck
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.
 - Si quieres una prueba mas cercana a preproduccion, instala `corepack pnpm android:preview`.
-- Si quieres seguir usando Expo Go, usa `corepack pnpm start:go`, pero esta app puede requerir una version de Expo Go mas nueva que la instalada en tu telefono.
+- Si quieres seguir usando Expo Go, usa `corepack pnpm start:go` con Expo Go para SDK 57.
+- Las actualizaciones OTA usan `runtimeVersion.policy: fingerprint`: un cambio de SDK
+  requiere un nuevo APK de desarrollo o distribucion antes de publicar actualizaciones
+  compatibles con ese runtime.
 
 ## Calidad
 

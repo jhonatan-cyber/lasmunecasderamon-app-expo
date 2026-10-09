@@ -40,6 +40,17 @@ describe('useBarScreen — refresh en vivo por bar_shot_alert', () => {
     await waitFor(() => expect(barService.stock).toHaveBeenCalledTimes(2));
   });
 
+  it('refresca las transferencias pendientes cuando se crea un traspaso', async () => {
+    renderHook(() => useBarScreen());
+    await waitFor(() => expect(barService.pendingTransfers).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      emitRefreshBar({ type: 'transfers_updated', data: { action: 'created' } });
+    });
+
+    await waitFor(() => expect(barService.pendingTransfers).toHaveBeenCalledTimes(2));
+  });
+
   it('deja de escuchar refresh_bar al desmontar', async () => {
     const { unmount } = renderHook(() => useBarScreen());
     await waitFor(() => expect(barService.stock).toHaveBeenCalledTimes(1));
