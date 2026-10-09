@@ -1,4 +1,4 @@
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { SQLInputValue } from 'node:sqlite';
 
 import type { MirrorDriver, MirrorParam } from '@/services/mirror/driver';
 
@@ -8,6 +8,7 @@ import type { MirrorDriver, MirrorParam } from '@/services/mirror/driver';
  * `MirrorDriver` es de tipo, así que `expo-sqlite` no se carga nunca aquí.
  */
 export function createNodeSqliteMirrorDriver(): MirrorDriver & { close: () => void } {
+    const { DatabaseSync } = process.getBuiltinModule('node:sqlite') as typeof import('node:sqlite');
     const db = new DatabaseSync(':memory:');
 
     const bind = (params: MirrorParam[] = []): SQLInputValue[] =>

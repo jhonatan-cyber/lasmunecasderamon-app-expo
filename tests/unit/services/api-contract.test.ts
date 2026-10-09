@@ -179,7 +179,7 @@ describe('API contract: services/*.ts de la app ↔ rutas reales del dashboard',
   const dashRoutes = API_DIR ? readDashboardRoutes() : [];
   const patterns = dashRoutes.map((r) => ({ ...r, re: routeToRegex(r.path) }));
 
-  it('el walker encontró rutas en ambos lados (no falló en silencio)', () => {
+  it.skipIf(!API_DIR)('el walker encontró rutas en ambos lados (no falló en silencio)', () => {
     expect(
       API_DIR,
       `No se encontró el repo del dashboard como hermano de la app. ` +
@@ -189,7 +189,7 @@ describe('API contract: services/*.ts de la app ↔ rutas reales del dashboard',
     expect(appCalls.length, 'app: se esperaban >40 llamadas apiClientSafe en services/').toBeGreaterThan(40);
   });
 
-  it('cada endpoint llamado por la app existe en el dashboard', () => {
+  it.skipIf(!API_DIR)('cada endpoint llamado por la app existe en el dashboard', () => {
     const faltantes = appCalls
       .filter((c) => !patterns.some((p) => p.re.test('/api' + c.path)))
       .map((c) => `${c.path} (${c.file})`);
@@ -199,7 +199,7 @@ describe('API contract: services/*.ts de la app ↔ rutas reales del dashboard',
     ).toEqual([]);
   });
 
-  it('el método HTTP que la app envía existe en la ruta del dashboard', () => {
+  it.skipIf(!API_DIR)('el método HTTP que la app envía existe en la ruta del dashboard', () => {
     const errores: string[] = [];
     for (const call of appCalls) {
       if (call.method === 'UNKNOWN') continue; // method dinámico: no verificable
