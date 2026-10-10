@@ -1,6 +1,7 @@
 name: App Quality
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches:
@@ -22,12 +23,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.19.0
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -36,7 +37,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Expo doctor
-        run: pnpm doctor
+        run: pnpm run doctor
 
       - name: Unit Tests
         run: pnpm test:unit
@@ -67,12 +68,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.19.0
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Audit production dependencies (informativo)
         run: pnpm audit --prod || true

@@ -1,48 +1,77 @@
 name: App CI/CD
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  workflow_run:
+    workflows: ['App Quality']
+    types: [completed]
+    branches: [master]
   workflow_dispatch:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🏗 Checkout
-        uses: actions/checkout@v4
+permissions:
+  contents: read
 
-      - name: 📦 Setup pnpm
+concurrency:
+  group: expo-production-update
+  cancel-in-progress: false
+
+jobs:
+  verify-manual-deploy:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/quality.yml
+
+  publish:
+    name: Publish production OTA
+    needs: [verify-manual-deploy]
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository) ||
+        (github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/master' &&
+          needs.verify-manual-deploy.result == 'success')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Confirm this is still the production branch head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: test "$(gh api repos/$GITHUB_REPOSITORY/commits/master --jq .sha)" = "$DEPLOY_SHA"
+
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           run_install: false
 
-      - name: 🍏 Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 22.19.0
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: 🛠 Setup Expo
+      - name: Setup EAS CLI
         uses: expo/expo-github-action@v8
         with:
-          expo-version: latest
-          eas-version: latest
+          eas-version: 24.12.1
+          packager: pnpm
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 📦 Install dependencies
-        run: pnpm install --no-frozen-lockfile
+      - name: Install dependencies from lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: 🔍 Lint
-        run: pnpm lint
-
-      - name: 🚀 Publish Update (CD)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
+      - name: Publish production update
         env:
-          UPDATE_MESSAGE: ${{ github.event.head_commit.message || 'Manual production update' }}
+          UPDATE_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message || 'Manual production update' }}
         run: eas update --branch production --message "$UPDATE_MESSAGE" --auto

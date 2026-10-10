@@ -16,8 +16,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "doctor": "npx expo-doctor",
-    "verify:prebuild": "pnpm lint && pnpm typecheck && pnpm doctor",
+    "doctor": "npx --yes expo-doctor@1.20.4",
+    "verify:prebuild": "pnpm lint && pnpm typecheck && pnpm run doctor",
     "verify:release": "pnpm verify:prebuild && pnpm test:e2e:smoke",
     "build:web": "expo export --platform web",
     "build:analyze": "expo export --platform web --dump-sourcemap && node ./scripts/analyze-bundle.js",
@@ -104,21 +104,5 @@
     "vitest": "^4.1.8"
   },
   "private": true,
-  "pnpm": {
-    "overrides": {
-      "tar": ">=7.5.11",
-      "flatted": ">=3.4.1",
-      "undici": ">=8.5.0",
-      "node-forge": ">=1.4.0",
-      "picomatch": "^2.3.2",
-      "@xmldom/xmldom": ">=0.8.13",
-      "fast-uri": ">=3.1.2"
-    },
-    "ignoredBuiltDependencies": [
-      "@sentry/cli",
-      "esbuild",
-      "unrs-resolver"
-    ]
-  },
   "packageManager": "pnpm@10.28.2"
 }

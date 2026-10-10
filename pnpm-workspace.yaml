@@ -1,6 +1,16 @@
 packages:
   - "packages/*"
 
+overrides:
+  tar: ">=7.5.11"
+  flatted: ">=3.4.1"
+  undici: ">=8.5.0"
+  node-forge: ">=1.4.0"
+  picomatch: "^2.3.2"
+  "@xmldom/xmldom": ">=0.8.13"
+  fast-uri: ">=3.1.2"
+
 ignoredBuiltDependencies:
   - '@sentry/cli'
+  - esbuild
   - unrs-resolver
