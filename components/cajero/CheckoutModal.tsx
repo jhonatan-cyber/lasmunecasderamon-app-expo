@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { calcularPropina } from '@lasmunecasderamon/sale-totals';

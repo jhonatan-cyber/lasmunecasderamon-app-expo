@@ -1,8 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 import type { Timer } from "@/context/types";
+import { useTimerTick } from "@/context/TimerContext";
 
 type TimerPillProps = {
   timer: Timer;
@@ -19,17 +20,8 @@ export function TimerPill({
   textSecondary,
   textPrimary,
 }: TimerPillProps) {
-  const [remaining, setRemaining] = useState(() =>
-    calculateRemainingTime(timer, serverOffset),
-  );
-
-  useEffect(() => {
-    if (timer.isPaused) return;
-    const interval = setInterval(() => {
-      setRemaining(calculateRemainingTime(timer, serverOffset));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timer, serverOffset]);
+  useTimerTick();
+  const remaining = calculateRemainingTime(timer, serverOffset);
 
   const fmt = (secs: number) => {
     const absSecs = isNaN(secs) ? 0 : Math.max(0, Math.floor(Math.abs(secs)));

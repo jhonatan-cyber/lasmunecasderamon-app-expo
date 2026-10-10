@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, ScrollView, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type ExtraTiempoModalProps = {
   visible: boolean;

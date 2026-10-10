@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -19,7 +19,7 @@ interface ProductCardProps {
     rooms: Room[];
 }
 
-export const ProductCard = ({
+export const ProductCard = React.memo(({
     product,
     cartItem,
     onAdd,
@@ -109,7 +109,9 @@ export const ProductCard = ({
             )}
         </View>
     );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 const styles = StyleSheet.create({
     productCard: {

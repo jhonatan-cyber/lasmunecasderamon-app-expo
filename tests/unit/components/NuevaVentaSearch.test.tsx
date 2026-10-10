@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
+import { NuevaVentaSearch } from '@/components/cajero/nueva-venta/NuevaVentaSearch';
 
 // El setup global mockea `react-native` solo con lo que usan los hooks; el buscador
 // necesita además Pressable y TextInput, así que aquí se completan.
@@ -31,16 +32,14 @@ vi.mock('react-native', () => ({
   )
 }));
 
-vi.mock('@expo/vector-icons', () => ({
-  Ionicons: () => <span />
+vi.mock('@expo/vector-icons/Ionicons', () => ({
+  default: () => <span />
 }));
 
 // Ml por shot global de Configuraciones (el componente no debe pedir el fetch real).
 vi.mock('@/hooks/useConfigValue', () => ({
   useConfigValue: (_category: string, _key: string, defaultValue: unknown) => defaultValue
 }));
-
-import { NuevaVentaSearch } from '@/components/cajero/nueva-venta/NuevaVentaSearch';
 
 afterEach(cleanup);
 

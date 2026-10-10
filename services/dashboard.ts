@@ -9,9 +9,9 @@ export const dashboardService = {
    * `AnalyticsScreen` de Flutter): monto a cobrar + conteos de
    * servicios/comisiones/propinas, agrupados por rol en el backend.
    */
-  summary: () =>
-    apiClientSafe('/stats/dashboard-summary', { method: 'GET' }),
+  summary: (signal?: AbortSignal) =>
+    apiClientSafe('/stats/dashboard-summary', { method: 'GET', signal }),
 
-  salesChart: () =>
-    apiClientSafe('/stats/sales-by-week', { method: 'GET' }),
+  salesChart: (signal?: AbortSignal) =>
+    apiClientSafe('/stats/sales-by-week', { method: 'GET', signal }),
 };

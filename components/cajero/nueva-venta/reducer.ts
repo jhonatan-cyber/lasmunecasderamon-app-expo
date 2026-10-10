@@ -11,10 +11,10 @@ export const initialVentaState: VentaState = {
   cart: [],
   selectedCliente: null,
   selectedHabitacion: null,
-  metodoPago: 'efectivo',
+  metodoPago: '',
   pagosMixtos: [],
   enableTip: false,
-  selectedTime: 5,
+  selectedTime: 30,
   timeModalVisible: false,
   categories: [],
   modalOpen: false,
@@ -51,11 +51,14 @@ export function ventaReducer(state: VentaState, action: VentaAction): VentaState
       return { ...state, cart: action.payload };
     case 'SET_SELECTED_CLIENTE': {
       const client = action.payload;
-      const hasSaldo = (client?.saldo || 0) > 0;
+      const canUsePrepago = Number(client?.saldo ?? (client as any)?.saldo_prepago ?? 0) > 0;
+      const metodoPago = state.metodoPago === 'prepago' && !canUsePrepago
+        ? 'efectivo'
+        : state.metodoPago;
       return {
         ...state,
         selectedCliente: client,
-        metodoPago: hasSaldo ? 'prepago' : 'efectivo',
+        metodoPago,
         pagosMixtos: [],
         metodoPagoAdicional: 'efectivo',
       };

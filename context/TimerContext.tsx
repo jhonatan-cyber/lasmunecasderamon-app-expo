@@ -9,6 +9,7 @@ import React, {
     useRef,
     useState,
 } from "react";
+import { AppState } from "react-native";
 import type { Timer, TimerContextType } from '@/context/types';
 
 import { ExpiredTimerModal } from '@/context/components/ExpiredTimerModal';
@@ -27,6 +28,7 @@ interface TimerActionsContextType {
 }
 
 const TimerActionsContext = createContext<TimerActionsContextType | undefined>(undefined);
+const TimerTickContext = createContext(0);
 
 
 
@@ -38,12 +40,9 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const serverOffsetRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
+  const [timerTick, setTimerTick] = useState(0);
   const user = useAuthStore((state) => state.user);
   const timersRef = useRef<Timer[]>([]);
-
-  useEffect(() => {
-    timersRef.current = timers;
-  }, [timers]);
 
   const { fetchActiveTimers } = useActiveTimersFetcher({
     setTimers,
@@ -54,12 +53,17 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // SSE event handling — delegated to the extracted hook
-  useSSETimerHandler({
+  const { syncTimersRef } = useSSETimerHandler({
     fetchActiveTimers,
     serverOffset,
     setTimers,
     setExpiredTimer,
   });
+
+  useEffect(() => {
+    timersRef.current = timers;
+    syncTimersRef(timers);
+  }, [syncTimersRef, timers]);
 
   // Voice announcements and overdue detection (5s polling) — delegated to extracted hook
   useTimerVoiceAnnouncer({
@@ -70,35 +74,36 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setExpiredTimer,
   });
 
-  // ─── Tick loop local de 1s ──────────────────────────────────
-  // Decrementa remainingTime para timers activos no pausados.
-  // Así la UI muestra un countdown suave incluso si no llegan SSE events.
+  // El tick visual vive en un contexto separado: solo las tarjetas que muestran
+  // una cuenta regresiva se actualizan cada segundo. Las pantallas que solo
+  // necesitan saber qué timers existen mantienen referencias estables.
   useEffect(() => {
-    const interval = setInterval(() => {
-      const currentTimers = timersRef.current;
-      let needsUpdate = false;
+    if (!timers.some((timer) => timer.isActive && !timer.isPaused)) return;
 
-      for (const timer of currentTimers) {
-        if (timer.isActive && !timer.isPaused && timer.remainingTime > 0) {
-          needsUpdate = true;
-          break;
-        }
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const stop = () => {
+      if (interval !== undefined) {
+        clearInterval(interval);
+        interval = undefined;
       }
+    };
+    const start = () => {
+      stop();
+      setTimerTick((tick) => tick + 1);
+      interval = setInterval(() => setTimerTick((tick) => tick + 1), 1000);
+    };
 
-      if (!needsUpdate) return;
+    if (AppState.currentState === "active") start();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") start();
+      else stop();
+    });
 
-      setTimers((prev) =>
-        prev.map((t) => {
-          if (t.isActive && !t.isPaused && t.remainingTime > 0) {
-            return { ...t, remainingTime: t.remainingTime - 1 };
-          }
-          return t;
-        }),
-      );
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      stop();
+      subscription.remove();
+    };
+  }, [timers]);
 
   // Initial fetch solo con sesión (antes fetcheaba pre-login y cosechaba 401).
   useEffect(() => {
@@ -118,8 +123,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setExpiredTimer(null);
   }, []);
 
-  // Memoizados por separado: el tick de 1s solo invalida `dataValue`;
-  // `actionsValue` es estable (fetchActiveTimers no cambia).
+  // Los valores de datos solo cambian al sincronizar timers, no en cada tick.
   const dataValue = useMemo(
     () => ({ timers, serverOffset, loading }),
     [timers, serverOffset, loading],
@@ -137,9 +141,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           refreshTimers: actionsValue.refreshTimers,
         }}
       >
-        {children}
-
-        <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
+        <TimerTickContext.Provider value={timerTick}>
+          {children}
+          <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
+        </TimerTickContext.Provider>
       </TimerContext.Provider>
     </TimerActionsContext.Provider>
   );
@@ -167,3 +172,6 @@ export const useTimerActions = () => {
   }
   return context;
 };
+
+/** Suscripción de bajo costo para componentes que muestran una cuenta regresiva. */
+export const useTimerTick = () => useContext(TimerTickContext);

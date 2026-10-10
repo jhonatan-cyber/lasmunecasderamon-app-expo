@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { barService } from '@/services/bar';
 import {
   getMirror,
@@ -124,6 +124,7 @@ export const useBarScreen = () => {
         async () => (await barService.stock(signal)) as ApiList<BarStockItem>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
+      if (signal?.aborted) return;
       const res = lectura.data;
       if (res?.success !== false) setStock(unwrapList<BarStockItem>(res));
     } catch (e) {
@@ -144,6 +145,7 @@ export const useBarScreen = () => {
         async () => (await barService.pendingTransfers(signal)) as ApiList<BarTransfer>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
+      if (signal?.aborted) return;
       const all = unwrapList<BarTransfer>(lectura.data);
       setTransfers(all.filter((t) => t.estado === 'pendiente'));
       setError(null);
@@ -169,6 +171,7 @@ export const useBarScreen = () => {
         async () => (await barService.movements(100, signal)) as ApiList<BarMovement>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
+      if (signal?.aborted) return;
       setMovements(unwrapList<BarMovement>(lectura.data));
     } catch (e) {
       if (signal?.aborted) return;
@@ -185,6 +188,7 @@ export const useBarScreen = () => {
         success?: boolean;
         data?: { history?: BarTransfer[] };
       };
+      if (signal?.aborted) return;
       if (response?.success !== false) setTransferHistory(response?.data?.history ?? []);
     } catch (e) {
       if (!signal?.aborted) logger.fetchError(e, { context: 'BarScreen:fetchTransferHistory' });
@@ -196,6 +200,7 @@ export const useBarScreen = () => {
     (async () => {
       if (!loadedRef.current) setLoading(true);
       await Promise.all([fetchStock(ac.signal), fetchTransfers(ac.signal)]);
+      if (ac.signal.aborted) return;
       loadedRef.current = true;
       setLoading(false);
     })();
@@ -262,19 +267,24 @@ export const useBarScreen = () => {
     [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory],
   );
 
-  const filteredStock = stock.filter((i) =>
-    (i.stock_bar ?? 0) > 0 || (i.botellas_vacias_shots ?? 0) > 0,
-  ).filter((i) => {
+  const filteredStock = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return true;
-    return (
-      i.producto_nombre.toLowerCase().includes(term) ||
-      i.nombre.toLowerCase().includes(term) ||
-      (i.codigo_barras || '').toLowerCase().includes(term)
-    );
-  });
+    return stock.filter((item) => {
+      const isAvailable =
+        (item.stock_bar ?? 0) > 0 || (item.botellas_vacias_shots ?? 0) > 0;
+      if (!isAvailable || !term) return isAvailable;
+      return (
+        item.producto_nombre.toLowerCase().includes(term) ||
+        item.nombre.toLowerCase().includes(term) ||
+        (item.codigo_barras || '').toLowerCase().includes(term)
+      );
+    });
+  }, [search, stock]);
 
-  const totalBar = stock.reduce((acc, i) => acc + (i.stock_bar ?? 0), 0);
+  const totalBar = useMemo(
+    () => stock.reduce((total, item) => total + (item.stock_bar ?? 0), 0),
+    [stock],
+  );
 
   return {
     stock: filteredStock,

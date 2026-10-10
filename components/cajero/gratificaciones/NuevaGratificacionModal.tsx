@@ -8,7 +8,7 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { GratificacionEmployee } from '@/hooks/useGratificaciones';
 
 interface NuevaGratificacionModalProps {

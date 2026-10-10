@@ -3,6 +3,7 @@ import { Text } from "react-native";
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { useTimerTick } from "@/context/TimerContext";
 
 type CuentaTimerProps = {
   timer: Timer;
@@ -11,17 +12,9 @@ type CuentaTimerProps = {
 };
 
 export const CuentaTimer = React.memo(({ timer, serverOffset, accentColor }: CuentaTimerProps) => {
+  useTimerTick();
   useRenderCount('CuentaTimer', { timerId: timer?.id, remaining: timer?.duration });
-  const [remaining, setRemaining] = React.useState(() =>
-    calculateRemainingTime(timer, serverOffset),
-  );
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setRemaining(calculateRemainingTime(timer, serverOffset));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timer, serverOffset]);
+  const remaining = calculateRemainingTime(timer, serverOffset);
 
   const isOverdue = remaining <= 0;
   const m = Math.floor(Math.abs(remaining) / 60);

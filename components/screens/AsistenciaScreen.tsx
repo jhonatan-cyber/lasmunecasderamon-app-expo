@@ -2,7 +2,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAsistencia } from '@/hooks/useAsistencia';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlatList, FlatList as FlashList } from "react-native";
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useCallback } from 'react';

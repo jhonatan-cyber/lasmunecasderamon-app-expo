@@ -49,7 +49,7 @@ export type VentaState = {
   cart: VentaCartItem[];
   selectedCliente: Cliente | null;
   selectedHabitacion: Habitacion | null;
-  metodoPago: PaymentMethod;
+  metodoPago: PaymentMethod | '';
   pagosMixtos: PagoMixto[];
   enableTip: boolean;
   selectedTime: number;

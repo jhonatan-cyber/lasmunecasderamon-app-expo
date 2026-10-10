@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import FlashList from "@/components/shared/FlashList";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -30,6 +30,8 @@ import {
   VentasSkeleton,
   VentaCardSkeleton,
 } from '@/components/cajero/ventas';
+
+const VENTA_SKELETON_ITEMS = [1, 2, 3, 4];
 
 export default function VentasScreen() {
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -76,7 +78,27 @@ export default function VentasScreen() {
   const C = Colors[isDark ? 'dark' : 'light'];
 
 
-  const renderVentaCard = ({ item }: { item: any }) => {
+  const activeVentaTimers = React.useMemo(
+    () => timers.filter((timer) => timer.tipoTransaccion === "venta"),
+    [timers],
+  );
+  const activeTimerServiceIds = React.useMemo(
+    () => new Set(activeVentaTimers.map((timer) => String(timer.servicioId))),
+    [activeVentaTimers],
+  );
+  const processSales = React.useMemo(
+    () => ventasList.filter((venta) =>
+      venta.estado === 2 || activeTimerServiceIds.has(String(getVentaId(venta))),
+    ),
+    [activeTimerServiceIds, getVentaId, ventasList],
+  );
+  const listData = React.useMemo(
+    () => loadingSales
+      ? VENTA_SKELETON_ITEMS
+      : activeTab === "historial" ? ventasList : processSales,
+    [activeTab, loadingSales, processSales, ventasList],
+  );
+  const renderVentaCard = React.useCallback(({ item }: { item: any }) => {
     return (
       <VentaCard
         item={item}
@@ -93,7 +115,7 @@ export default function VentasScreen() {
         getVentaId={getVentaId}
       />
     );
-  };
+  }, [accentColor, borderColor, cardBg, getVentaId, handleFinalizarVenta, handleOpenActionSheet, isDark, serverOffset, timers, textPrimary, textSecondary]);
 
   if (loading) {
     return (
@@ -143,26 +165,11 @@ export default function VentasScreen() {
         accentColor={accentColor}
         isDark={isDark}
         isTablet={isTablet}
-        activeTimerCount={timers.filter((t) => t.tipoTransaccion === "venta").length}
+        activeTimerCount={activeVentaTimers.length}
       />
 
       <FlashList
-        data={
-          loadingSales
-            ? [1, 2, 3, 4] as any
-            : (activeTab === "historial"
-              ? ventasList
-              : ventasList.filter(
-                (v) =>
-                  v.estado === 2 ||
-                  timers.some(
-                    (t) =>
-                      t.tipoTransaccion === "venta" &&
-                      (t.servicioId === getVentaId(v) ||
-                        (t.roomId === v.habitacion_id && v.estado === 2)),
-                  ),
-              ))
-        }
+        data={listData as any}
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
         ListHeaderComponent={null}

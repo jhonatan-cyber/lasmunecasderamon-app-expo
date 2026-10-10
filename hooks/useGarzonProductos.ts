@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
@@ -93,6 +93,8 @@ export function useGarzonProductos() {
                 readThroughMirror(MIRROR_KEYS.clients, '/clients', signal),
             ]);
 
+            if (signal?.aborted) return;
+
             const prodData = prodRes.status === 'fulfilled' ? prodRes.value.data : null;
             const anfData = anfRes.status === 'fulfilled' ? anfRes.value.data : null;
             const roomData = roomRes.status === 'fulfilled' ? roomRes.value.data : null;
@@ -142,6 +144,7 @@ export function useGarzonProductos() {
                 });
             }
         } catch (err: any) {
+            if (signal?.aborted) return;
             logger.fetchError(err, { context: 'Productos:fetchProductos' });
             setError(err.message || 'Error de conexión');
             if (isManual) {
@@ -153,16 +156,20 @@ export function useGarzonProductos() {
                 });
             }
         } finally {
-            setLoading(false);
-            setRefreshing(false);
+            if (!signal?.aborted) {
+                setLoading(false);
+                setRefreshing(false);
+            }
         }
     }, [categoryId, readThroughMirror]);
 
-    useEffect(() => {
-        const ac = new AbortController();
-        fetchData(false, ac.signal);
-        return () => ac.abort();
-    }, [fetchData]);
+    useFocusEffect(
+        useCallback(() => {
+            const ac = new AbortController();
+            fetchData(false, ac.signal);
+            return () => ac.abort();
+        }, [fetchData])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, Text, StyleSheet, RefreshControl, Image } from 'react-native';
 import FlashList from '@/components/shared/FlashList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';

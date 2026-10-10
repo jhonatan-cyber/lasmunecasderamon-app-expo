@@ -1,5 +1,4 @@
 import {
-    apiClient,
     apiClientSafe,
     setForbiddenHandler,
     setSessionConfirmedHandler,
@@ -14,103 +13,17 @@ import {
     parseOfflineSession,
     serializeOfflineSession,
     shouldRefreshOfflineSession,
-    type OfflineSession,
 } from '@/utils/offlineSession';
 import { TokenStorage } from '@/utils/tokenStorage';
 import { loginSchema, serverUserSchema } from '@lasmunecasderamon/validations';
+import type { AuthState, LoginPayload, LoginResponse, User } from './authTypes';
+import { createBiometricActions } from './auth/biometricActions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
-export interface User {
-    id: string;
-    name: string;
-    lastName: string;
-    email: string;
-    role: string;
-    foto: string;
-    username: string;
-    phone?: string;
-    address?: string;
-    estado_civil?: string;
-    nick?: string;
-    qr_token?: string;
-    two_factor_enabled?: boolean;
-    forcePasswordChange?: boolean;
-}
-
-interface LoginPayload {
-    qr_token?: string;
-    email?: string;
-    password?: string;
-    codigo?: string;
-}
-
-interface LoginResponse {
-    success: boolean;
-    requiereCodigo?: boolean;
-    user?: User;
-    token?: string;
-    refreshToken?: string;
-    asistenciaRegistrada?: boolean;
-    message?: string;
-}
-
-export interface TempAuthData {
-    username: string;
-    password: string;
-    userTmp?: User;
-}
-
-interface LoginResult {
-    requiereCodigo?: boolean;
-    user?: User;
-    asistenciaRegistrada?: boolean;
-    forcePasswordChange?: boolean;
-}
-
-interface AuthState {
-    user: User | null;
-    token: string | null;
-    isLoading: boolean;
-    sessionExpired: boolean;
-    /** Última vez que el servidor confirmó la sesión (ventana offline). */
-    offlineSession: OfflineSession | null;
-    login: (username: string, password: string, codigo?: string, qr_token?: string) => Promise<LoginResult>;
-    logout: () => Promise<void>;
-    checkAuth: () => Promise<void>;
-    clearSessionExpired: () => void;
-    /** Lee el marcador persistido y lo descarta si es de otro usuario. */
-    loadOfflineSession: () => Promise<OfflineSession | null>;
-    /** Marca "el servidor confirmó la sesión ahora" (login o petición 2xx). */
-    startOfflineSession: (now?: number) => Promise<void>;
-    clearOfflineSession: () => Promise<void>;
-    /** ¿Se puede seguir operando sin red dentro de la ventana de gracia? */
-    canWorkOffline: (now?: number) => boolean;
-    clearForcePasswordChange: () => Promise<void>;
-    tempAuthData: TempAuthData | null;
-    setTempAuthData: (data: TempAuthData | null) => void;
-    /** Aplica local (optimista) y confirma en el servidor; false si no se pudo confirmar. */
-    updateProfile: (partialUser: Partial<User>) => Promise<boolean>;
-    /** Reconsulta /auth/me y actualiza el usuario local; false si el servidor ya no lo resuelve. */
-    refreshUser: () => Promise<boolean>;
-    isBiometricEnabled: boolean;
-    setBiometricEnabled: (enabled: boolean) => Promise<void>;
-    saveCredentials: (username: string, password: string) => Promise<void>;
-    getCredentials: () => Promise<{ username: string; password: string } | null>;
-    removeCredentials: () => Promise<void>;
-    biometricType: 'fingerprint' | 'facial' | 'iris' | null;
-    isBiometricAvailable: boolean;
-    checkBiometricAvailability: () => Promise<void>;
-    authenticateWithBiometric: () => Promise<boolean>;
-    enable2FA: (password: string) => Promise<boolean>;
-    disable2FA: (password: string) => Promise<boolean>;
-}
+export type { TempAuthData, User } from './authTypes';
 
 export const useAuthStore = create<AuthState>((set, get) => {
-    const unsupportedTwoFactorError = new Error('La configuración de 2FA aún no está disponible en el backend.');
-
 
     setUnauthorizedHandler(() => {
         if (get().user !== null) {
@@ -218,71 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         tempAuthData: null,
         setTempAuthData: (data) => set({ tempAuthData: data }),
 
-        checkBiometricAvailability: async () => {
-            try {
-                const compatible = await LocalAuthentication.hasHardwareAsync();
-                const enrolled = await LocalAuthentication.isEnrolledAsync();
-                const isAvailable = compatible && enrolled;
-
-                let biometricType: 'fingerprint' | 'facial' | 'iris' | null = null;
-
-                if (isAvailable) {
-                    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-                    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-                        biometricType = 'facial';
-                    } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-                        biometricType = 'fingerprint';
-                    } else if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-                        biometricType = 'iris';
-                    }
-                }
-
-                set({ isBiometricAvailable: isAvailable, biometricType });
-            } catch (error) {
-
-                set({ isBiometricAvailable: false, biometricType: null });
-            }
-        },
-
-        authenticateWithBiometric: async () => {
-            try {
-                const result = await LocalAuthentication.authenticateAsync({
-                    promptMessage: 'Autentícate para acceder',
-                    cancelLabel: 'Cancelar',
-                    disableDeviceFallback: false,
-                    fallbackLabel: 'Usar contraseña',
-                });
-
-                return result.success;
-            } catch (error) {
-
-                return false;
-            }
-        },
-
-        enable2FA: async (password: string) => {
-            try {
-                logger.warn('2FA enable requested but backend support is not available', {
-                    hasPassword: Boolean(password)
-                });
-                throw unsupportedTwoFactorError;
-            } catch (error) {
-                logger.warn('2FA enable skipped', { error });
-                return false;
-            }
-        },
-
-        disable2FA: async (password: string) => {
-            try {
-                logger.warn('2FA disable requested but backend support is not available', {
-                    hasPassword: Boolean(password)
-                });
-                throw unsupportedTwoFactorError;
-            } catch (error) {
-                logger.warn('2FA disable skipped', { error });
-                return false;
-            }
-        },
+        ...createBiometricActions((partial) => set(partial)),
 
         login: async (username, password, codigo, qr_token) => {
             try {
@@ -422,34 +271,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
             } finally {
                 set({ isLoading: false });
             }
-        },
-
-        setBiometricEnabled: async (enabled) => {
-            await AsyncStorage.setItem('biometricEnabled', enabled.toString());
-            set({ isBiometricEnabled: enabled });
-            if (!enabled) {
-                await SecureStore.deleteItemAsync('user_credentials');
-            }
-        },
-
-        saveCredentials: async (username, password) => {
-            await SecureStore.setItemAsync('user_credentials', JSON.stringify({ username, password }));
-        },
-
-        getCredentials: async () => {
-            try {
-                const credentials = await SecureStore.getItemAsync('user_credentials');
-                if (!credentials) return null;
-                const parsed = JSON.parse(credentials) as { username?: string; password?: string };
-                if (typeof parsed?.username !== 'string' || typeof parsed?.password !== 'string') return null;
-                return { username: parsed.username, password: parsed.password };
-            } catch {
-                return null;
-            }
-        },
-
-        removeCredentials: async () => {
-            await SecureStore.deleteItemAsync('user_credentials');
         },
 
         /**

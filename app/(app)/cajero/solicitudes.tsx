@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import FlashList from "@/components/shared/FlashList";
 import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
@@ -91,6 +91,11 @@ export default function SolicitudesScreen() {
     
     const [activeFilter, setActiveFilter] = useState<'all' | 'anticipo' | 'pedido' | 'solicitud'>('all');
 
+    const counts = React.useMemo(() => {
+        const result = { all: solicitudes.length, anticipo: 0, pedido: 0, solicitud: 0 };
+        for (const solicitud of solicitudes) result[solicitud.tipoItem] += 1;
+        return result;
+    }, [solicitudes]);
     
     const { totalAPagar, filteredSolicitudes } = React.useMemo(() => {
         let filtered = solicitudes;
@@ -195,7 +200,6 @@ export default function SolicitudesScreen() {
             {}
             <View style={[styles.filterRow, { paddingHorizontal: 16 }]}>
                 {(['all', 'anticipo', 'pedido', 'solicitud'] as const).map(type => {
-                    const count = type === 'all' ? solicitudes.length : solicitudes.filter(s => s.tipoItem === type).length;
                     const labels: Record<string, string> = { all: 'Todas', anticipo: 'Anticipos', pedido: 'Pedidos', solicitud: 'Servicios' };
                     return (
                         <Pressable
@@ -212,7 +216,7 @@ export default function SolicitudesScreen() {
                                 { color: textSecondary },
                                 activeFilter === type && { color: '#FFFFFF', fontWeight: '800' }
                             ]}>
-                                {labels[type]} ({count})
+                                {labels[type]} ({counts[type]})
                             </Text>
                         </Pressable>
                     );

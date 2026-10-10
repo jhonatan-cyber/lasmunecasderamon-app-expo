@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { formatBotellaAbierta } from '@/hooks/utils/cartUtils';

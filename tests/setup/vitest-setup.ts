@@ -44,6 +44,8 @@ vi.mock('react-native-safe-area-context', () => ({
 // timers/serverOffset: en tests unitarios basta un contexto vacío.
 vi.mock('@/context/TimerContext', () => ({
     useTimer: vi.fn(() => ({ timers: [], serverOffset: 0, refreshTimers: vi.fn() })),
+    useTimerActions: vi.fn(() => ({ refreshTimers: vi.fn() })),
+    useTimerTick: vi.fn(() => 0),
     TimerProvider: ({ children }: { children: any }) => children,
 }));
 

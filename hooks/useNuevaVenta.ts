@@ -8,12 +8,14 @@ import {
   showToast,
   isChampagneProduct,
   getHostessLimit,
-  isExpensiveDrink,
   openCategory,
   mapForSaleProduct,
   normalizeRoom,
   normalizeClients,
   normalizeAnfitrionas,
+  filterForSaleProducts,
+  setSaleServiceLevels,
+  roomRequiredForSalePrice,
 } from '@/hooks/utils/cartUtils';
 import logger from '@/utils/logger';
 import { eventBus } from '@/utils/eventBus';
@@ -47,6 +49,7 @@ export function useNuevaVenta() {
   }, [state.cart]);
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
+  const saleTiersCache = useRef<Map<string, { anfitrionas: number; precio: number; comision: number }[]>>(new Map());
 
   const {
     anfitrionas,
@@ -68,6 +71,13 @@ export function useNuevaVenta() {
   } = state;
 
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const simpleHasta = Number(useConfigValue('comisiones', 'umbral_simple_hasta', '10000'));
+  const anfitrionaDesde = Number(useConfigValue('comisiones', 'umbral_anfitriona_desde', '20000'));
+  const habitacionDesde = Number(useConfigValue('comisiones', 'umbral_habitacion_desde', '30000'));
+
+  useEffect(() => {
+    setSaleServiceLevels({ simpleHasta, hostessDesde: anfitrionaDesde, habitacionDesde });
+  }, [simpleHasta, anfitrionaDesde, habitacionDesde]);
 
   const totals = useMemo(() => {
     const subtotal = cart.reduce(
@@ -80,12 +90,11 @@ export function useNuevaVenta() {
   }, [cart, enableTip, propinaPct]);
 
   const hasCommissionItem = useMemo(() => {
-    return cart.some(
-      (item) =>
-        Number(item.commission || item.comision || 0) > 0 ||
-        isExpensiveDrink(item),
-    );
-  }, [cart]);
+    return cart.some(item => {
+      const price = Number(item.precio ?? item.price ?? 0);
+      return isChampagneProduct(item) || (price >= habitacionDesde && price >= anfitrionaDesde);
+    });
+  }, [cart, habitacionDesde, anfitrionaDesde]);
 
   /**
    * Lectura con espejo: red primero y, si no hay, lo último guardado. Vender sin
@@ -97,6 +106,36 @@ export function useNuevaVenta() {
       getMirror().readThroughDetailed<T>(key, fetcher, { maxAgeMs }),
     [],
   );
+
+  const getSaleTiers = useCallback(async (
+    productId: string,
+    champagne: boolean,
+  ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> => {
+    const cached = saleTiersCache.current.get(productId);
+    if (cached) return cached;
+    const defaults = [
+      { anfitrionas: 1, precio: 120000, comision: 40000 },
+      { anfitrionas: 2, precio: 120000, comision: 40000 },
+      { anfitrionas: 3, precio: 160000, comision: 60000 },
+      { anfitrionas: 4, precio: 180000, comision: 80000 },
+      { anfitrionas: 5, precio: 200000, comision: 100000 },
+    ];
+    try {
+      const response = await apiClientSafe(`/products/${encodeURIComponent(productId)}/tiers?configurados=1`);
+      const tiers: { anfitrionas: number; precio: number; comision: number }[] = (response as any)?.success && Array.isArray((response as any).data)
+        ? (response as any).data
+            .map((tier: any) => ({ anfitrionas: Number(tier.anfitrionas), precio: Number(tier.precio), comision: Number(tier.comision) }))
+            .filter((tier: any) => tier.anfitrionas > 0 && tier.precio >= 0 && tier.comision >= 0)
+            .sort((a: any, b: any) => a.anfitrionas - b.anfitrionas)
+        : [];
+      const result = tiers.length ? tiers : champagne ? defaults : [];
+      saleTiersCache.current.set(productId, result);
+      return result;
+    } catch (error) {
+      logger.fetchError(error, { context: 'NuevaVenta:getSaleTiers' });
+      return champagne ? defaults : [];
+    }
+  }, []);
 
   const fetchInitialData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
     if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
@@ -280,15 +319,57 @@ export function useNuevaVenta() {
   );
 
   const addProductToCart = useCallback(
-    (prod: any) => {
+    async (prod: any) => {
       const id = prod.id || prod.id_producto;
+      const tierProductId = String(prod.producto_id || prod.id_producto || prod.id);
       // El shot sale de la botella abierta: no gasta unidades del bar, así que
       // su tope es el máximo del dashboard (99) y no `stock_bar`.
       const esShot = prod?.tipo_venta === 'shot';
       const stockBar = Number(prod.stock_bar ?? 0);
-      const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
-      const qty = Math.min(Number(prod.quantity ?? modalQuantities[id] ?? 1), maxQty);
-      const hostesses = modalHostessSelections[id] || [];
+      const hasStockLimit = prod.stock_bar !== null && prod.stock_bar !== undefined;
+      const maxQty = esShot ? 99 : hasStockLimit ? Math.max(0, stockBar) : Number.MAX_SAFE_INTEGER;
+      const requestedQty = Number(prod.quantity ?? modalQuantities[id] ?? 1);
+      if (!Number.isInteger(requestedQty) || requestedQty < 1 || requestedQty > 2147483647) {
+        showToast('Cantidad inválida', 'La cantidad debe ser un número entero positivo.');
+        return;
+      }
+      let qty = Math.min(requestedQty, maxQty);
+      const hasCommission = Number(prod.comision ?? prod.commission ?? 0) > 0;
+      const requestedHostesses = hasCommission ? modalHostessSelections[id] || [] : [];
+      const bottlePrice = resolverVentaProducto(prod, 'botella').precioBotella;
+      const maxHostesses = requestedHostesses.length === 0
+        ? 0
+        : isChampagneProduct(prod)
+          ? Math.min(
+              getHostessLimit(prod),
+              Math.max(1, ...(await getSaleTiers(tierProductId, true)).map(tier => tier.anfitrionas)),
+            )
+          : roomRequiredForSalePrice(bottlePrice)
+            ? Math.min(Number(prod.max_anfitrionas) > 0 ? Number(prod.max_anfitrionas) : qty, qty)
+            : Number(prod.max_anfitrionas) > 0
+              ? Number(prod.max_anfitrionas)
+              : 1;
+      const hostesses = requestedHostesses.slice(0, maxHostesses);
+      if (hostesses.length < requestedHostesses.length) {
+        showToast('Límite de anfitrionas', `Se asignaron como máximo ${maxHostesses} anfitrionas a este producto.`);
+      }
+      let salePrice = Number(prod.precio ?? prod.price ?? 0);
+      let saleCommission = Number(prod.comision ?? prod.commission ?? 0);
+      if (
+        !esShot &&
+        hostesses.length > 0 &&
+        (isChampagneProduct(prod) || Number(prod.max_anfitrionas) >= 2)
+      ) {
+        const tiers: { anfitrionas: number; precio: number; comision: number }[] =
+          await getSaleTiers(tierProductId, isChampagneProduct(prod));
+        const tier = isChampagneProduct(prod)
+          ? [...tiers].reverse().find(item => item.anfitrionas <= hostesses.length)
+          : tiers.find(item => item.anfitrionas === hostesses.length);
+        if (tier) {
+          salePrice = tier.precio;
+          saleCommission = tier.comision;
+        }
+      }
       const newCart = [...cartRef.current];
 
       const itemHostesses = hostesses.length > 0 ? hostesses : [];
@@ -296,8 +377,8 @@ export function useNuevaVenta() {
         hostesses.length > 0
           ? hostesses
               .map(
-                (hId: string) =>
-                  anfitrionas.find((a: any) => String(a.id_usuario || a.id) === hId)?.nick || '',
+                (hId: string | number) =>
+                  anfitrionas.find((a: any) => String(a.id_usuario || a.id) === String(hId))?.nick || '',
               )
               .filter(Boolean)
               .join(', ')
@@ -318,6 +399,22 @@ export function useNuevaVenta() {
         );
       });
 
+      if (esShot) {
+        const alreadyAdded = existingItemIndex >= 0 ? Number(newCart[existingItemIndex].quantity || 0) : 0;
+        qty = Math.min(qty, Math.max(0, 99 - alreadyAdded));
+      } else if (hasStockLimit) {
+        const presentationId = String(prod.presentacion_id || id);
+        const reserved = newCart.reduce((total, item) =>
+          String(item.presentacion_id || item.id || item.id_producto) === presentationId && item.tipo_venta !== 'shot'
+            ? total + Number(item.quantity || item.cantidad || 0)
+            : total, 0);
+        qty = Math.min(qty, Math.max(0, stockBar - reserved));
+      }
+      if (qty < requestedQty) {
+        showToast('Stock insuficiente', `Solo se pueden agregar ${qty} unidades disponibles.`);
+      }
+      if (qty <= 0) return;
+
       if (existingItemIndex >= 0) {
         newCart[existingItemIndex].quantity = Math.min(
           newCart[existingItemIndex].quantity + qty,
@@ -326,6 +423,10 @@ export function useNuevaVenta() {
       } else {
         newCart.push({
           ...prod,
+          precio: salePrice,
+          price: salePrice,
+          comision: saleCommission,
+          commission: saleCommission,
           tipo_venta: esShot ? ('shot' as const) : ('botella' as const),
           shot_anfitriona: esShot ? Boolean(prod?.shot_anfitriona) : false,
           quantity: Math.min(qty, maxQty),
@@ -338,7 +439,7 @@ export function useNuevaVenta() {
       cartRef.current = newCart;
       showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
     },
-    [modalQuantities, modalHostessSelections, anfitrionas],
+    [modalQuantities, modalHostessSelections, anfitrionas, getSaleTiers],
   );
 
   /**
@@ -351,7 +452,13 @@ export function useNuevaVenta() {
   }, []);
 
   const handlePressAddProduct = useCallback(
-    (item: any, choice?: SaleChoice, quantity = 1) => {
+    async (item: any, choice?: SaleChoice, quantity = 1) => {
+      const selectedChoice = choice || saleChoices[String(item.id || item.id_producto)] || 'botella';
+      const requestedShot = selectedChoice === 'shot' || selectedChoice === 'shot_anfitriona';
+      if (!requestedShot && item?.stock_bar != null && Number(item.stock_bar) <= 0) {
+        showToast('Sin stock en bar', 'Este producto ya no tiene unidades disponibles.');
+        return;
+      }
       // Precio, comisión y tope salen de la forma de venta elegida: un shot no
       // hereda la comisión de la botella (regla del dashboard).
       const id = String(item.id || item.id_producto);
@@ -370,13 +477,23 @@ export function useNuevaVenta() {
       const hasComm = Number(venta.comision) > 0;
 
       if (hasComm) {
+        const champagne = isChampagneProduct(item);
+        const tierProductId = String(item.producto_id || item.id_producto || item.id);
+        const tiers: { anfitrionas: number; precio: number; comision: number }[] =
+          champagne ? await getSaleTiers(tierProductId, true) : [];
+        const explicitMax = Number(item.max_anfitrionas);
+        const max = champagne
+          ? Math.min(getHostessLimit(producto), Math.max(1, ...tiers.map(tier => tier.anfitrionas)))
+          : roomRequiredForSalePrice(venta.precioBotella)
+            ? Math.min(explicitMax > 0 ? explicitMax : quantity, quantity)
+            : explicitMax > 0 ? explicitMax : 1;
         dispatch({
           type: 'SET_HOSTESS_TARGET',
           target: {
             productId: item.id || item.id_producto,
             product: producto,
-            max: getHostessLimit(producto),
-            isChampagne: isChampagneProduct(item),
+            max,
+            isChampagne: champagne,
           },
         });
         return;
@@ -384,7 +501,7 @@ export function useNuevaVenta() {
 
       addProductToCart(producto);
     },
-    [addProductToCart, saleChoices],
+    [addProductToCart, saleChoices, getSaleTiers],
   );
 
   const removeFromCart = useCallback(
@@ -405,17 +522,49 @@ export function useNuevaVenta() {
       // no gasta botellas y usa el máximo del dashboard, como al agregar.
       const esShot = newCart[index].tipo_venta === 'shot';
       const stockBar = Number(newCart[index].stock_bar ?? 0);
-      const maxQty = esShot ? 99 : stockBar > 0 ? stockBar : Number.MAX_SAFE_INTEGER;
+      const hasStockLimit = newCart[index].stock_bar !== null && newCart[index].stock_bar !== undefined;
+      const presentationId = String(newCart[index].presentacion_id || newCart[index].id || newCart[index].id_producto);
+      const reservedElsewhere = newCart.reduce((total, item, itemIndex) =>
+        itemIndex !== index && item.tipo_venta !== 'shot' &&
+        String(item.presentacion_id || item.id || item.id_producto) === presentationId
+          ? total + Number(item.quantity || item.cantidad || 0)
+          : total, 0);
+      const maxQty = esShot
+        ? 99
+        : hasStockLimit ? Math.max(0, stockBar - reservedElsewhere) : Number.MAX_SAFE_INTEGER;
+      if (maxQty < 1 && newQty >= newCart[index].quantity) {
+        showToast('Sin stock en bar', 'Este producto ya no tiene unidades disponibles.');
+        return;
+      }
+      if (newQty > maxQty) showToast('Stock insuficiente', `Máximo ${maxQty} unidades disponibles.`);
       newCart[index].quantity = Math.min(newQty, maxQty);
+      const item = newCart[index];
+      const currentHostesses = Array.isArray(item.anfitrionas) ? item.anfitrionas : [];
+      if (currentHostesses.length > 0 && !isChampagneProduct(item)) {
+        const bottlePrice = resolverVentaProducto(item, 'botella').precioBotella;
+        if (roomRequiredForSalePrice(bottlePrice)) {
+          const explicitMax = Number(item.max_anfitrionas);
+          const hostessLimit = Math.min(explicitMax > 0 ? explicitMax : newCart[index].quantity, newCart[index].quantity);
+          if (currentHostesses.length > hostessLimit) {
+            item.anfitrionas = currentHostesses.slice(0, hostessLimit);
+            item.hostessNames = item.anfitrionas
+              .map((hostessId: string | number) => anfitrionas.find((person: any) => String(person.id_usuario || person.id) === String(hostessId))?.nick || '')
+              .filter(Boolean)
+              .join(', ') || null;
+            showToast('Anfitrionas actualizadas', `Se ajustó la asignación al nuevo máximo de ${hostessLimit}.`, 'info');
+          }
+        }
+      }
       dispatch({ type: 'SET_CART', payload: newCart });
       cartRef.current = newCart;
     },
-    [cart],
+    [cart, anfitrionas],
   );
 
   const handleSubmit = useCallback(async () => {
     if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
     if (cart.length === 0) return showToast('Error', 'Carrito vacío');
+    if (!metodoPago) return showToast('Método requerido', 'Selecciona un método de pago');
 
     if (metodoPago === 'mixto') {
       const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
@@ -432,6 +581,12 @@ export function useNuevaVenta() {
 
     if (metodoPago === 'prepago' && !selectedCliente) {
       return showToast('Error', 'Seleccione un cliente para pagar con prepago');
+    }
+    if (
+      metodoPago === 'prepago' &&
+      Number(selectedCliente?.saldo ?? (selectedCliente as any)?.saldo_prepago ?? 0) < totals.total
+    ) {
+      return showToast('Saldo insuficiente', 'El saldo prepago del cliente no cubre el total de la venta');
     }
 
     // El saldo prepago vive en el servidor y no se puede descontar en el
@@ -530,8 +685,11 @@ export function useNuevaVenta() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortController = useRef<AbortController | null>(null);
   const searchSeq = useRef(0);
   const setSearchProductoInput = useCallback((value: string) => {
+    searchAbortController.current?.abort();
+    searchAbortController.current = null;
     setSearchProducto(value);
     if (value.trim()) {
       setSearchLoading(true);
@@ -545,19 +703,29 @@ export function useNuevaVenta() {
   }, []);
 
   const executeSearch = useCallback(async (term: string, seq: number) => {
+    searchAbortController.current?.abort();
+    const controller = new AbortController();
+    searchAbortController.current = controller;
     try {
       const res = await apiClientSafe(
         `/products?for_sale=1&term=${encodeURIComponent(term)}`,
+        { signal: controller.signal },
       );
       // Una respuesta vieja no pisa los resultados del término vigente.
       if (seq !== searchSeq.current) return;
       if ((res as any)?.success && Array.isArray((res as any).data)) {
-        setSearchResults((res as any).data.map(mapForSaleProduct));
+        setSearchResults(filterForSaleProducts((res as any).data).map(mapForSaleProduct));
       }
     } catch (error) {
+      if (controller.signal.aborted) return;
       logger.fetchError(error, { context: 'NuevaVenta:searchProducts' });
     } finally {
-      if (seq === searchSeq.current) setSearchLoading(false);
+      if (!controller.signal.aborted && seq === searchSeq.current) {
+        if (searchAbortController.current === controller) {
+          searchAbortController.current = null;
+        }
+        setSearchLoading(false);
+      }
     }
   }, []);
 
@@ -575,6 +743,12 @@ export function useNuevaVenta() {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
   }, [searchProducto, executeSearch]);
+
+  useEffect(() => () => {
+    searchSeq.current++;
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchAbortController.current?.abort();
+  }, []);
 
   const handleSearchNow = useCallback(() => {
     const term = searchProducto.trim();

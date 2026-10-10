@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 

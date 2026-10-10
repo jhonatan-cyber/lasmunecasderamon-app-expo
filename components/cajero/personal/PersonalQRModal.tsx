@@ -5,7 +5,7 @@ import {
     StyleSheet, 
     View 
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { User } from '@/hooks/usePersonalScreen';
 import { PersonalQRUserView } from './PersonalQRUserView';

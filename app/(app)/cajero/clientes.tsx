@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import FlashList from "@/components/shared/FlashList";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";

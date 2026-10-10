@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";

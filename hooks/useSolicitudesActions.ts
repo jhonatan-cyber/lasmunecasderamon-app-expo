@@ -1,5 +1,6 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { eventBus } from "@/utils/eventBus";
 import * as Haptics from "expo-haptics";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
@@ -431,9 +432,40 @@ export const useSolicitudesActions = ({
 
   useEffect(() => {
     setPendingAutoOpen(null);
-    const tid = setInterval(() => setNowTick(t => t + 1), 1000);
-    return () => clearInterval(tid);
   }, [setPendingAutoOpen]);
+
+  // El tiempo de espera se muestra en minutos; actualizar cada segundo forzaba
+  // renders de toda la lista sin cambiar lo que ve el usuario.
+  useFocusEffect(
+    useCallback(() => {
+      let interval: ReturnType<typeof setInterval> | undefined;
+      const stopTicker = () => {
+        if (interval !== undefined) {
+          clearInterval(interval);
+          interval = undefined;
+        }
+      };
+      const startTicker = () => {
+        stopTicker();
+        interval = setInterval(() => setNowTick(tick => tick + 1), 60_000);
+      };
+
+      if (AppState.currentState === "active") startTicker();
+      const subscription = AppState.addEventListener("change", state => {
+        if (state === "active") {
+          setNowTick(tick => tick + 1);
+          startTicker();
+        } else {
+          stopTicker();
+        }
+      });
+
+      return () => {
+        stopTicker();
+        subscription.remove();
+      };
+    }, []),
+  );
 
   useEffect(() => {
     if (openId && queryType && solicitudes.length > 0) {

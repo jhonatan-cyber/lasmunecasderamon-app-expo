@@ -11,7 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -32,7 +32,6 @@ import { useNuevaVenta } from '@/hooks/useNuevaVenta';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
 import { NuevaVentaSkeleton } from '@/components/cajero/nueva-venta/NuevaVentaSkeleton';
-import { MixedPaymentPanel } from '@/components/cajero/nueva-venta/MixedPaymentPanel';
 
 export default function NuevaVentaScreen() {
   const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -78,7 +77,6 @@ export default function NuevaVentaScreen() {
     selectedCliente,
     selectedHabitacion,
     metodoPago,
-    pagosMixtos,
     enableTip,
     selectedTime,
     categories,
@@ -214,7 +212,7 @@ export default function NuevaVentaScreen() {
               {selectedCliente && (
                 <View>
                   <Text style={{ fontSize: 13, color: accentColor, fontWeight: '700', marginTop: 2 }}>
-                    Saldo Prepago: ${Number(selectedCliente.saldo || 0).toLocaleString()}
+                    Saldo Prepago: ${Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0).toLocaleString()}
                   </Text>
                   {(selectedCliente as any).metodo_pago && (
                     <Text style={{ fontSize: 12, color: textSecondary, fontWeight: '600', marginTop: 1 }}>
@@ -228,33 +226,9 @@ export default function NuevaVentaScreen() {
           <PaymentMethodSelect
             selectedMethod={metodoPago}
             onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as any })}
-            showPrepago={!!selectedCliente}
-            showMixto={true}                      disabled={(selectedCliente?.saldo || 0) > 0 && metodoPago !== 'mixto'}
-            disabledMethods={selectedCliente && Number(selectedCliente.saldo || 0) <= 0 ? ['prepago'] : []}
+            showPrepago={!!selectedCliente && Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0) > 0}
+            disabledMethods={selectedCliente && Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0) <= 0 ? ['prepago'] : []}
           />
-
-          {metodoPago === 'mixto' && (
-            <MixedPaymentPanel
-              pagosMixtos={pagosMixtos}
-              total={totals.total}
-              clienteSaldo={selectedCliente ? Number(selectedCliente.saldo || 0) : 0}
-              onUpdatePago={(index, monto, display) =>
-                dispatch({ type: 'UPDATE_PAGO_MIXTO', index, monto, display })
-              }
-              onRemovePago={(index) =>
-                dispatch({ type: 'REMOVE_PAGO_MIXTO', index })
-              }
-              onAddPago={(metodo) =>
-                dispatch({ type: 'ADD_PAGO_MIXTO', payload: { metodo, monto: 0, display: '' } })
-              }
-              isDark={isDark}
-              accentColor={accentColor}
-              cardBg={cardBg}
-              textPrimary={textPrimary}
-              textSecondary={textSecondary}
-              borderColor={borderColor}
-            />
-          )}
         </View>
 
         <CartList items={cart as any} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
@@ -285,9 +259,9 @@ export default function NuevaVentaScreen() {
             );
           })()}
           <Pressable
-            style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false) && { opacity: 0.7 }]}
+            style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false || cart.length === 0 || !metodoPago) && { opacity: 0.7 }]}
             onPress={handleSubmit}
-            disabled={submitting || cajaAbierta === false}
+            disabled={submitting || cajaAbierta === false || cart.length === 0 || !metodoPago}
             accessibilityLabel="Finalizar venta"
             accessibilityRole="button"
           >
@@ -327,6 +301,7 @@ export default function NuevaVentaScreen() {
       <RoomSelectModal
         visible={roomModalVisible}
         rooms={habitaciones}
+        requireCompleteConfig
         selectedRoomId={selectedHabitacion?.id || selectedHabitacion?.id_habitacion}
         onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
         onSelect={(room) => {
@@ -355,8 +330,8 @@ export default function NuevaVentaScreen() {
         showToast={() => {}}
         onToggleHostess={handleToggleHostess}
         onClose={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
-        onConfirmProduct={(product) => {
-          addProductToCart(product);
+        onConfirmProduct={async (product) => {
+          await addProductToCart(product);
           dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
         }}
       />

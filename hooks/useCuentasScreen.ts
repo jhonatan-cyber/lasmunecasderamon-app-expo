@@ -1,9 +1,11 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
+import { cuentasReducer, initialCuentasState, type CuentasState } from "@/hooks/cuentas/cuentasState";
+import { useCuentasData } from "@/hooks/cuentas/useCuentasData";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { getOutbox } from "@/services/outbox";
 import { buildCheckoutPayload, describeCheckout } from "@/hooks/utils/checkoutPayload";
@@ -15,125 +17,7 @@ import { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import { useTimer } from "@/context/TimerContext";
 import { formatAmountInput, parseAmountInput } from "@/utils/money";
 import logger from "@/utils/logger";
-import type { CuentaDetalle, CuentaResumen } from "@/hooks/types/cuentaTypes";
-
-type CuentasState = {
-  loading: boolean;
-  refreshing: boolean;
-  cuentas: CuentaDetalle[];
-  resumen: CuentaResumen | null;
-  /** `true` si las cuentas que se están viendo vienen del espejo local. */
-  fromCache: boolean;
-  syncedAt: number | null;
-  selectedCuenta: CuentaDetalle | null;
-  loadingDetail: boolean;
-  modalVisible: boolean;
-  actionSheetVisible: boolean;
-  activeCuenta: CuentaDetalle | null;
-  activeTab: "historial" | "pendientes";
-  search: string;
-  cobroModalVisible: boolean;
-  cobroMetodoPago: PaymentMethod;
-  cobroEnableTip: boolean;
-  cobroSubmitting: boolean;
-  cajaAbierta: boolean | null;
-  alertConfig: {
-    visible: boolean;
-    title: string;
-    message: string;
-    type: "info" | "success" | "warning" | "danger";
-    onConfirm?: () => void;
-    onCancel?: () => void;
-  };
-};
-
-type CuentasAction =
-  | { type: "SET_LOADING"; payload: boolean }
-  | { type: "SET_REFRESHING"; payload: boolean }
-  | { type: "SET_DATA"; payload: Partial<Pick<CuentasState, "cuentas" | "resumen">> }
-  | { type: "SET_FROM_CACHE"; payload: { fromCache: boolean; syncedAt: number | null } }
-  | { type: "SET_ACTIVE_TAB"; payload: "historial" | "pendientes" }
-  | { type: "SET_SEARCH"; payload: string }
-  | { type: "SET_MODAL_VISIBLE"; payload: boolean }
-  | { type: "SET_LOADING_DETAIL"; payload: boolean }
-  | { type: "SET_SELECTED_CUENTA"; payload: CuentaDetalle | null }
-  | { type: "SET_ACTION_SHEET"; visible: boolean; cuenta?: CuentaDetalle }
-  | { type: "SET_COBRO_MODAL_VISIBLE"; payload: boolean }
-  | { type: "SET_COBRO_METODO_PAGO"; payload: PaymentMethod }
-  | { type: "SET_COBRO_ENABLE_TIP"; payload: boolean }    | { type: "SET_COBRO_SUBMITTING"; payload: boolean }
-  | { type: "SET_CAJA_ABIERTA"; payload: boolean | null }
-  | { type: "SET_ALERT_VISIBLE"; payload: boolean }
-  | { type: "SET_ALERT"; payload: CuentasState["alertConfig"] };
-
-const initialCuentasState = (tab: "historial" | "pendientes"): CuentasState => ({
-  loading: true,
-  refreshing: false,
-  cuentas: [],
-  resumen: null,
-  fromCache: false,
-  syncedAt: null,
-  selectedCuenta: null,
-  loadingDetail: false,
-  modalVisible: false,
-  actionSheetVisible: false,
-  activeCuenta: null,
-  activeTab: tab,
-  search: "",
-  cobroModalVisible: false,
-  cobroMetodoPago: "efectivo",
-  cobroEnableTip: false,
-  cobroSubmitting: false,
-  cajaAbierta: null,
-  alertConfig: { visible: false, title: "", message: "", type: "info" },
-});
-
-function cuentasReducer(state: CuentasState, action: CuentasAction): CuentasState {
-  switch (action.type) {
-    case "SET_LOADING":
-      return { ...state, loading: action.payload };
-    case "SET_REFRESHING":
-      return { ...state, refreshing: action.payload };
-    case "SET_DATA":
-      return { ...state, ...action.payload };
-    case "SET_FROM_CACHE":
-      return { ...state, ...action.payload };
-    case "SET_ACTIVE_TAB":
-      return { ...state, activeTab: action.payload };
-    case "SET_SEARCH":
-      return { ...state, search: action.payload };
-    case "SET_MODAL_VISIBLE":
-      return { ...state, modalVisible: action.payload };
-    case "SET_LOADING_DETAIL":
-      return { ...state, loadingDetail: action.payload };
-    case "SET_SELECTED_CUENTA":
-      return { ...state, selectedCuenta: action.payload };
-    case "SET_ACTION_SHEET":
-      return {
-        ...state,
-        actionSheetVisible: action.visible,
-        activeCuenta: action.cuenta || null,
-      };
-    case "SET_COBRO_MODAL_VISIBLE":
-      return { ...state, cobroModalVisible: action.payload };
-    case "SET_COBRO_METODO_PAGO":
-      return { ...state, cobroMetodoPago: action.payload };
-    case "SET_COBRO_ENABLE_TIP":
-      return { ...state, cobroEnableTip: action.payload };
-    case "SET_COBRO_SUBMITTING":
-      return { ...state, cobroSubmitting: action.payload };
-    case "SET_CAJA_ABIERTA":
-      return { ...state, cajaAbierta: action.payload };
-    case "SET_ALERT_VISIBLE":
-      return {
-        ...state,
-        alertConfig: { ...state.alertConfig, visible: action.payload },
-      };
-    case "SET_ALERT":
-      return { ...state, alertConfig: action.payload };
-    default:
-      return state;
-  }
-}
+import type { CuentaDetalle } from "@/hooks/types/cuentaTypes";
 
 const showToast = (
   title: string,
@@ -145,7 +29,6 @@ const showToast = (
 
 export const useCuentasScreen = () => {
   const params = useLocalSearchParams();
-  const dataRef = useRef<string>("");
   const { isOffline } = useConnectivity();
   const { timers, serverOffset, refreshTimers } = useTimer();
   const [anulacionModalVisible, setAnulacionModalVisible] = useState(false);
@@ -181,105 +64,7 @@ export const useCuentasScreen = () => {
     alertConfig,
   } = state;
 
-  const fetchCuentas = useCallback(
-    async (isManual = false, signal?: AbortSignal) => {
-      try {
-        if (isManual && !refreshing) {
-          dispatch({ type: "SET_LOADING", payload: true });
-        }
-
-        const timestamp = Date.now();
-        // Red primero; sin red se muestran las cuentas guardadas en el
-        // dispositivo (con su antigüedad a la vista), que es lo único que
-        // permite trabajar en el salón cuando se cae la conexión.
-        const [cuentasResult, resumenResult, cajaResult] = await Promise.all([
-          getMirror().readThroughDetailed(
-            MIRROR_KEYS.openAccounts,
-            () => apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
-            { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
-          ),
-          getMirror().readThroughDetailed(
-            MIRROR_KEYS.accountsSummary,
-            () => apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
-            { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
-          ),
-          // Estado de caja para bloquear el cobro (paridad con el dashboard).
-          // Con error queda `null`: estado desconocido, no bloquea.
-          getMirror()
-            .readThroughDetailed(
-              MIRROR_KEYS.cashregisterStatus,
-              () => apiClientSafe('/cashregister/status', { signal }),
-              { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
-            )
-            .catch(() => null),
-        ]);
-
-        dispatch({
-          type: "SET_FROM_CACHE",
-          payload: {
-            fromCache: cuentasResult.fromCache || resumenResult.fromCache,
-            syncedAt: cuentasResult.syncedAt,
-          },
-        });
-
-        const resCuentas = cuentasResult.data;
-        const resResumen = resumenResult.data;
-        const resCaja = cajaResult?.data ?? null;
-
-        const actualCuentas: CuentaDetalle[] = Array.isArray(resCuentas.data)
-          ? (resCuentas.data as CuentaDetalle[])
-          : Array.isArray(resCuentas)
-            ? (resCuentas as unknown as CuentaDetalle[])
-            : [];
-        const actualResumen: CuentaResumen | null =
-          (resResumen.data as CuentaResumen | null) ||
-          ("total_por_cobrar" in resResumen
-            ? (resResumen as unknown as CuentaResumen)
-            : null);
-
-        const newData = { cuentas: actualCuentas, resumen: actualResumen };
-        const serialized = JSON.stringify(newData);
-        const hasChanges = dataRef.current !== serialized;
-        dataRef.current = serialized;
-
-        if (
-          resCaja &&
-          typeof resCaja === 'object' &&
-          'success' in resCaja &&
-          (resCaja as { success?: boolean }).success &&
-          typeof (resCaja as { data?: { hasOpenCaja?: boolean } }).data?.hasOpenCaja === 'boolean'
-        ) {
-          dispatch({
-            type: "SET_CAJA_ABIERTA",
-            payload: Boolean((resCaja as { data: { hasOpenCaja: boolean } }).data.hasOpenCaja),
-          });
-        }
-
-        dispatch({
-          type: "SET_DATA",
-          payload: {
-            cuentas: actualCuentas,
-            resumen: actualResumen,
-          },
-        });
-
-        if (isManual) {
-          showToast(
-            hasChanges ? "Éxito" : "Información",
-            hasChanges ? "Datos actualizados" : "Sin cambios",
-            hasChanges ? "success" : "info",
-          );
-        }
-      } catch (error) {
-        logger.fetchError(error, { context: "Cuentas:fetchCuentas" });
-        if (isManual) showToast("Error", "No se pudo actualizar");
-      } finally {
-        dispatch({ type: "SET_LOADING", payload: false });
-        dispatch({ type: "SET_REFRESHING", payload: false });
-      }
-    },
-    [refreshing],
-  );
+  const { fetchCuentas } = useCuentasData({ refreshing, dispatch, notify: showToast });
 
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
 
@@ -554,17 +339,17 @@ export const useCuentasScreen = () => {
   );
 
   const filteredCuentas = useMemo(() => {
-    let list = activeTab === "historial" ? cuentas : cuentas.filter((c) => Number(c.estado) === 1);
-    if (search.trim()) {
-      const query = search.toLowerCase();
-      list = list.filter(
-        (c) =>
-          (c.codigo && c.codigo.toLowerCase().includes(query)) ||
-          (c.cliente_nombre && c.cliente_nombre.toLowerCase().includes(query)) ||
-          (c.habitacion_nombre && c.habitacion_nombre.toLowerCase().includes(query)),
+    const query = search.trim().toLowerCase();
+    return cuentas.filter((cuenta) => {
+      if (activeTab !== "historial" && Number(cuenta.estado) !== 1) return false;
+      if (!query) return true;
+      return (
+        cuenta.codigo?.toLowerCase().includes(query) ||
+        cuenta.cliente_nombre?.toLowerCase().includes(query) ||
+        cuenta.habitacion_nombre?.toLowerCase().includes(query) ||
+        false
       );
-    }
-    return list;
+    });
   }, [cuentas, activeTab, search]);
 
   const pendingCount = useMemo(

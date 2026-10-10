@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -12,10 +12,10 @@ interface CategoryCardProps {
         total_products: number;
     };
     index: number;
-    onPress: () => void;
+    onPress: (categoryId: string, categoryName: string) => void;
 }
 
-export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
+const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
@@ -26,7 +26,7 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
                 { backgroundColor: cardBg, borderColor },
                 pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
             ]}
-            onPress={onPress}
+            onPress={() => onPress(item.id, item.name)}
         >
             <View style={styles.categoryContent}>
                 <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? `${accentColor}20` : '#10B98120' }]}>
@@ -52,6 +52,9 @@ export const CategoryCard = ({ item, index, onPress }: CategoryCardProps) => {
         </Pressable>
     );
 };
+
+export const CategoryCard = React.memo(CategoryCardComponent);
+CategoryCard.displayName = 'CategoryCard';
 
 const styles = StyleSheet.create({
     categoryCard: {

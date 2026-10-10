@@ -26,11 +26,13 @@ export interface SaleCreatePayload {
         tipo_venta?: 'botella' | 'shot';
         /** Solo en líneas de shot: true cuando se cobró al precio de anfitriona. */
         shot_anfitriona?: boolean;
+        isChampagne: boolean;
         cantidad: number;
         precio: number;
         sub_total: number;
         comision: number;
-        hostesses: (string | number)[];
+        hostess_id?: string;
+        hostesses?: string[];
     }[];
     cliente_id: string | null;
     habitacion_id: string | number | null;
@@ -65,29 +67,41 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
             // puede ser a precio de cliente o de anfitriona y no se deduce después.
             const esShot = item.tipo_venta === 'shot';
 
-            return {
-                producto_id: item.producto_id || item.id_producto || item.id,
-                presentacion_id: item.presentacion_id || null,
+            const hasCommission = Number(item.comision || item.commission || 0) > 0;
+            const hostesses: string[] = (hasCommission ? item.anfitrionas || [] : [])
+                .map((a: any) => (typeof a === 'object' ? idDe(a) : a))
+                .filter((id: string | number | null): id is string | number => id !== null)
+                .map(String);
+            const categoria = String(item.categoria || item.category_name || item.category || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+            const isChampagne = Boolean(item.isChampagne) ||
+                categoria.includes('champagne') || categoria.includes('champana') || categoria.includes('shampana');
+            const detalle = {
+                producto_id: String(item.producto_id || item.id_producto || item.id),
+                presentacion_id: item.presentacion_id ? String(item.presentacion_id) : null,
                 tipo_venta: esShot
                     ? ('shot' as const)
                     : item.presentacion_id
                       ? ('botella' as const)
                       : undefined,
                 shot_anfitriona: esShot ? Boolean(item.shot_anfitriona) : undefined,
+                isChampagne,
                 cantidad,
                 precio: item.precio || item.price || 0,
                 sub_total: (item.precio || item.price || 0) * cantidad,
-                comision: Number(item.comision || item.commission || 0) * cantidad,
-                hostesses: (item.anfitrionas || [])
-                    .map((a: any) => (typeof a === 'object' ? idDe(a) : a))
-                    .filter((id: string | number | null): id is string | number => id !== null),
+                comision: hostesses.length > 0 ? Number(item.comision || item.commission || 0) * cantidad : 0,
             };
+            if (hostesses.length === 0) return detalle;
+            if (isChampagne || hostesses.length > 1) return { ...detalle, hostesses };
+            return { ...detalle, hostess_id: hostesses[0] };
         }),
         cliente_id: (selectedCliente?.id?.toString() ||
             selectedCliente?.id_cliente?.toString() ||
             null) as string | null,
         habitacion_id: hasCommissionItem
-            ? selectedHabitacion?.id || selectedHabitacion?.id_habitacion || null
+            ? String(selectedHabitacion?.id ?? selectedHabitacion?.id_habitacion ?? '') || null
             : null,
         metodo_pago: metodoPago,
         pagos_mixtos: metodoPago === 'mixto' ? pagosMixtos : undefined,
@@ -95,11 +109,13 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
         sub_total: totals.subtotal,
         total: totals.total,
         tiempo: selectedHabitacion ? selectedTime : 0,
-        usuarios: cart
+        usuarios: Array.from(new Set(cart
+            .filter(item => Number(item.comision || item.commission || 0) > 0)
             .flatMap(item =>
                 (item.anfitrionas || []).map((a: any) => (typeof a === 'object' ? idDe(a) : a))
             )
-            .filter((id: string | number | null): id is string | number => id !== null),
+            .filter((id: string | number | null): id is string | number => id !== null)
+            .map(String))),
     };
 }
 

@@ -38,8 +38,8 @@ export interface RetiroCajaPayload {
 }
 
 export const cajaService = {
-  status: () =>
-    apiClientSafe('/cashregister/status'),
+  status: (signal?: AbortSignal) =>
+    apiClientSafe('/cashregister/status', { signal }),
 
   open: (data: OpenCajaPayload) =>
     apiClientSafe('/cashregister', {
@@ -70,8 +70,8 @@ export const cajaService = {
       body: JSON.stringify(data),
     }),
 
-  resumen: () =>
-    apiClientSafe('/cashregister?resumen=1'),
+  resumen: (signal?: AbortSignal) =>
+    apiClientSafe('/cashregister?resumen=1', { signal }),
 
   retiros: (data: RetiroCajaPayload) =>
     apiClientSafe('/cashregister/retiros', {

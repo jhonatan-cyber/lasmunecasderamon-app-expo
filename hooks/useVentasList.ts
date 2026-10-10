@@ -2,8 +2,13 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { showToast } from '@/utils/toast-lazy';
-import type { AlertConfig, TabType, Venta } from "@/components/cajero/ventas/types";
-import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
+import type {
+  AlertConfig,
+  TabType,
+  Venta,
+  VentasState,
+  VentasAction,
+} from "@/components/cajero/ventas/types";
 import { useTimerActions } from "@/context/TimerContext";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
@@ -41,6 +46,7 @@ export function useVentasList(
         });
       }
     } catch (error) {
+      if (signal?.aborted) return;
       logger.fetchError(error, { context: "Ventas:fetchData" });
       if (isManual) {
         showToast({
@@ -51,20 +57,16 @@ export function useVentasList(
         });
       }
     } finally {
-      dispatch({ type: "SET_LOADING", payload: false });
-      dispatch({ type: "SET_LOADING_SALES", payload: false });
-      dispatch({ type: "SET_REFRESHING", payload: false });
+      if (!signal?.aborted) {
+        dispatch({ type: "SET_LOADING", payload: false });
+        dispatch({ type: "SET_LOADING_SALES", payload: false });
+        dispatch({ type: "SET_REFRESHING", payload: false });
+      }
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch]);
 
-  
-  useEffect(() => {
-    const ac = new AbortController();
-    fetchVentas(false, ac.signal);
-    return () => ac.abort();
-  }, [fetchVentas]);
-
-  
+  // El focus effect también se ejecuta al montar. Mantener otro efecto de
+  // carga inicial duplicaba las peticiones y el refresh de temporizadores.
   useFocusEffect(
     useCallback(() => {
       const ac = new AbortController();
@@ -91,7 +93,7 @@ export function useVentasList(
     dispatch({ type: "SET_REFRESHING", payload: true });
     fetchVentas(true);
     refreshTimers();
-  }, [fetchVentas, refreshTimers]);
+  }, [dispatch, fetchVentas, refreshTimers]);
 
   const setActiveTab = useCallback(
     (tab: TabType) => dispatch({ type: "SET_ACTIVE_TAB", payload: tab }),
@@ -151,7 +153,7 @@ export function useVentasList(
       };
       dispatch({ type: "SET_ALERT_CONFIG", payload: alertConfig });
     },
-    [fetchVentas, refreshTimers], // eslint-disable-line react-hooks/exhaustive-deps
+    [dispatch, fetchVentas, refreshTimers],
   );
 
   return {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Platform } from "react-native";
 import { eventBus } from "@/utils/eventBus";
 import { useFocusEffect } from "expo-router";
@@ -42,6 +42,7 @@ export function useAnticipos() {
         apiClientSafe('/anticipos/solicitudes', { signal }),
         apiClientSafe('/anticipos/user', { signal }),
       ]);
+      if (signal?.aborted) return;
       if (solicitudesRes.success) setSolicitudes((solicitudesRes.data || []) as Anticipo[]);
       if (pagosRes.success) setPagos((pagosRes.data || []) as any[]);
       
@@ -52,14 +53,17 @@ export function useAnticipos() {
       if ((err as any)?.name === 'AbortError') return;
       setError(err.message || 'Error de conexión');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
   const fetchMaximo = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await apiClientSafe('/anticipos/maximo', { signal });
+      if (signal?.aborted) return null;
       if (response.success && response.data) {
         const d = response.data as { monto_asistencia?: number; monto_comisiones?: number; monto_propinas?: number; monto_maximo?: number; tiene_solicitud_pendiente?: boolean };
         setMontoAsistencia(d.monto_asistencia || 0);
@@ -111,17 +115,16 @@ export function useAnticipos() {
       const ac = new AbortController();
       fetchAnticipos(false, ac.signal);
       fetchMaximo(ac.signal);
-      return () => ac.abort();
+      const subscription = eventBus.addListener('refresh_anticipos', () => {
+        fetchAnticipos(false, ac.signal);
+      });
+
+      return () => {
+        ac.abort();
+        subscription.remove();
+      };
     }, [fetchAnticipos, fetchMaximo])
   );
-
-  useEffect(() => {
-    const subscription = eventBus.addListener('refresh_anticipos', () => {
-      fetchAnticipos();
-    });
-
-    return () => subscription.remove();
-  }, [fetchAnticipos]);
 
   const onRefresh = useCallback(() => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

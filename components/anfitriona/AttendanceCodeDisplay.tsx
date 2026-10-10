@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform, Pressable, Modal, useWindowDimensions
 import { eventBus } from '@/utils/eventBus';
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';

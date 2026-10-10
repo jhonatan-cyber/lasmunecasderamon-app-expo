@@ -20,7 +20,7 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/format";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlatList } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";

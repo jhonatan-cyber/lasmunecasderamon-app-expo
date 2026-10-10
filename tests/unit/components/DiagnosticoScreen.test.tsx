@@ -19,8 +19,8 @@ vi.mock('react-native', () => ({
     useColorScheme: () => 'dark',
 }));
 
-vi.mock('@expo/vector-icons', () => ({
-    Ionicons: ({ name }: any) => <span>{name}</span>,
+vi.mock('@expo/vector-icons/Ionicons', () => ({
+    default: ({ name }: any) => <span>{name}</span>,
 }));
 
 vi.mock('@/components/ui/PremiumHeader', () => ({

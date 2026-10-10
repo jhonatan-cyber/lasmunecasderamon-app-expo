@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/Skeleton';
 import { parseDateSafe } from '@/utils/timeUtils';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MetodoPago } from '../../types/api';

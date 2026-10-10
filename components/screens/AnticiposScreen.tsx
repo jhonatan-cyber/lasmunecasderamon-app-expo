@@ -3,7 +3,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Anticipo, useAnticipos } from '@/hooks/useAnticipos';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlatList } from "react-native";
 import { useState, useCallback } from 'react';
 import {

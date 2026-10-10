@@ -15,6 +15,9 @@ vi.mock('@/hooks/utils/cuentaUtils', () => ({
   getHostessLimit: vi.fn(() => 1),
   buildCommissionPreview: vi.fn(),
   isExpensiveDrink: vi.fn(() => false),
+  isSimpleSaleProduct: vi.fn((price: number) => Number(price) <= 10000),
+  roomRequiredForSalePrice: vi.fn(() => false),
+  setSaleServiceLevels: vi.fn(),
   setExpensiveDrinkThreshold: vi.fn(),
   getCardSplit: vi.fn(() => ({ venta: 0, propina: 0 })),
   setCardSplit: vi.fn(),
@@ -269,7 +272,10 @@ describe('cartUtils', () => {
 
     it('con forSale pide /products?for_sale=1 y normaliza las filas', async () => {
       const dispatch = vi.fn();
-      vi.mocked(apiClientSafe).mockResolvedValueOnce({ success: true, data: [rawRow] } as any);
+      vi.mocked(apiClientSafe).mockResolvedValueOnce({
+        success: true,
+        data: [rawRow, { ...rawRow, presentacion_id: 'pres-agotada', stock_bar: 0 }],
+      } as any);
 
       await openCategory({ id: 7 } as any, dispatch as any, { forSale: true });
 

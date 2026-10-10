@@ -1,7 +1,7 @@
 import React from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import FlashList from "@/components/shared/FlashList";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRenderCount } from "@/hooks/useRenderCount";
 
 type ProductsCategoryModalProps = {

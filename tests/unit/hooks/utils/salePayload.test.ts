@@ -35,6 +35,7 @@ describe('buildSalePayload', () => {
             precio: 5000,
             sub_total: 10000,
             comision: 600,
+            isChampagne: false,
             hostesses: ['a-1', 'a-2'],
         });
         expect(payload.usuarios).toEqual(['a-1', 'a-2']);
@@ -76,7 +77,8 @@ describe('buildSalePayload', () => {
             precio: 8000,
             sub_total: 24000,
             comision: 3000,
-            hostesses: ['a-1'],
+            isChampagne: false,
+            hostess_id: 'a-1',
         });
 
         const shotCliente = buildSalePayload({
@@ -104,6 +106,24 @@ describe('buildSalePayload', () => {
 
         expect(payload.detalles[0].tipo_venta).toBe('botella');
         expect(payload.detalles[0].shot_anfitriona).toBeUndefined();
+    });
+
+    it('no registra comisión cuando el producto comisionable se vende sin anfitrionas', () => {
+        const payload = buildSalePayload({
+            ...base,
+            cart: [{
+                producto_id: 'prod-1',
+                presentacion_id: 'pres-1',
+                precio: 25000,
+                quantity: 2,
+                comision: 5000,
+                anfitrionas: [],
+            }],
+        } as any);
+
+        expect(payload.detalles[0].comision).toBe(0);
+        expect(payload.detalles[0].hostesses).toBeUndefined();
+        expect(payload.usuarios).toEqual([]);
     });
 
     it('solo debe mandar habitación si hay comisión (paridad con el dashboard)', () => {
@@ -137,13 +157,52 @@ describe('buildSalePayload', () => {
                     producto_id: 'prod-1',
                     precio: 100,
                     quantity: 1,
-                    comision: 0,
+                    comision: 1,
                     anfitrionas: [{ id: 5 }, 9, null],
                 },
             ],
         } as any);
 
-        expect(payload.usuarios).toEqual([5, 9]);
+        expect(payload.usuarios).toEqual(['5', '9']);
+        expect(payload.detalles[0].hostesses).toEqual(['5', '9']);
+    });
+
+    it('marca champaña para que el servidor distribuya su comisión entre anfitrionas', () => {
+        const payload = buildSalePayload({
+            ...base,
+            cart: [{
+                producto_id: 'prod-champagne',
+                presentacion_id: 'pres-champagne',
+                categoria: 'Champaña',
+                precio: 120000,
+                quantity: 1,
+                comision: 40000,
+                anfitrionas: [5, 9],
+            }],
+        } as any);
+
+        expect(payload.detalles[0]).toMatchObject({
+            isChampagne: true,
+            comision: 40000,
+            hostesses: ['5', '9'],
+        });
+        expect(payload.usuarios).toEqual(['5', '9']);
+    });
+
+    it('normaliza a texto los identificadores exigidos por el endpoint', () => {
+        const payload = buildSalePayload({
+            ...base,
+            cart: [{ id_producto: 7, presentacion_id: 8, precio: 10, quantity: 1, comision: 0 }],
+            selectedCliente: { id: 9 },
+            selectedHabitacion: { id: 10 },
+        } as any);
+
+        expect(payload.detalles[0]).toMatchObject({
+            producto_id: '7',
+            presentacion_id: '8',
+        });
+        expect(payload.cliente_id).toBe('9');
+        expect(payload.habitacion_id).toBe('10');
     });
 });
 

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import {
   Modal,
@@ -28,6 +28,7 @@ interface RoomSelectModalProps {
   onSelect: (room: Room) => void;
   rooms: Room[];
   selectedRoomId?: string | number;
+  requireCompleteConfig?: boolean;
 }
 
 export const RoomSelectModal = React.memo(function RoomSelectModal({
@@ -36,6 +37,7 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
   onSelect,
   rooms,
   selectedRoomId,
+  requireCompleteConfig = false,
 }: RoomSelectModalProps) {
   useRenderCount('RoomSelectModal', { visible, roomCount: rooms.length });
   const {
@@ -66,7 +68,9 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
           </View>
 
           <FlashList
-            data={rooms}
+            data={requireCompleteConfig
+              ? rooms.filter(room => Number(room.precio ?? 0) > 0 && Number(room.tiempo ?? 0) > 0)
+              : rooms}
             keyExtractor={(item: Room) => (item.id_habitacion || item.id).toString()}
             estimatedItemSize={80}
             renderItem={({ item }: { item: Room }) => {

@@ -1,9 +1,9 @@
 import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 import type { Habitacion, Anfitriona, Cliente, Producto, Categoria, CartItem } from "@lasmunecasderamon/types";
-import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
+import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
 
-export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
+export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
 export type { CuentaUpdateDetalle, CuentaUpdatePayload } from "./cuentaUtils";
 
 // Alias para backward compat — getChampagneLimit == getHostessLimit
@@ -77,7 +77,7 @@ export const mapForSaleProduct = (raw: any) => {
     .join(" ")
     .trim();
   const precio = Number(raw?.precio_venta ?? 0);
-  const comision = precio <= 10000 ? 0 : Number(raw?.comision ?? 0);
+  const comision = isSimpleSaleProduct(precio) ? 0 : Number(raw?.comision ?? 0);
   return {
     ...raw,
     id: presentacionId,
@@ -95,6 +95,12 @@ export const mapForSaleProduct = (raw: any) => {
     tipo_venta: "botella" as const,
   };
 };
+
+/** Defensa del cliente: el catálogo de venta nunca debe mostrar presentaciones agotadas. */
+export const filterForSaleProducts = (products: any[]): any[] =>
+  (Array.isArray(products) ? products : []).filter(
+    product => Number(product?.stock_bar ?? 0) > 0,
+  );
 
 /**
  * Etiqueta de la botella abierta de una presentación (espejo del buscador rápido
@@ -136,7 +142,9 @@ export const openCategory = async (
     );
     if (res.success) {
       const data = (res.data as any[]) || [];
-      const products = options?.forSale ? data.map(mapForSaleProduct) : data;
+      const products = options?.forSale
+        ? filterForSaleProducts(data).map(mapForSaleProduct)
+        : data;
       dispatch({
         type: "OPEN_CATEGORY_MODAL",
         category: cat,

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
     Pressable,
@@ -11,7 +11,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
 
 interface PaymentMethodSelectProps {
-    selectedMethod: PaymentMethod;
+    selectedMethod: PaymentMethod | '';
     onSelect: (method: PaymentMethod) => void;
     showPrepago?: boolean;
     showMixto?: boolean;
@@ -27,7 +27,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     disabled = false,
     disabledMethods = [],
 }) => {
-    const { accentColor, isDark, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, textSecondary, borderColor } = useAccentColor();
 
     const methods: { id: PaymentMethod; icon: any; label: string }[] = [
         { id: 'efectivo', icon: 'cash', label: 'Efectivo' },

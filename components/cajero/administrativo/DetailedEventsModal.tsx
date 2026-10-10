@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import FlashList from "@/components/shared/FlashList";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Event } from "@/hooks/useAdministrativoScreen";
 import { EventItemCard } from "./EventItemCard";
 import { useRenderCount } from "@/hooks/useRenderCount";

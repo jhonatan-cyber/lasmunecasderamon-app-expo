@@ -59,8 +59,16 @@ export default function ProductosScreen() {
         submitOrder,
     } = useGarzonProductos();
 
+    const cartItemsByProductId = React.useMemo(
+        () => new Map(cart.map((cartItem) => [String(cartItem.product.id), cartItem])),
+        [cart],
+    );
+    const handleProductConfig = useStableCallback((productId: string, type: 'hostess' | 'room') => {
+        setActiveConfigItem({ productId, type });
+    });
+
     const renderItem = useStableCallback(({ item }: { item: Product }) => {
-        const cartItem = cart.find((i) => i.product.id === item.id);
+        const cartItem = cartItemsByProductId.get(String(item.id));
 
         return (
             <ProductCard
@@ -68,9 +76,7 @@ export default function ProductosScreen() {
                 cartItem={cartItem}
                 onAdd={addToCart}
                 onRemove={removeFromCart}
-                onConfigPress={(productId, type) =>
-                    setActiveConfigItem({ productId, type })
-                }
+                onConfigPress={handleProductConfig}
                 anfitrionas={anfitrionas}
                 rooms={rooms}
             />

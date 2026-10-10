@@ -17,11 +17,12 @@ import {
   type Venta,
   type VentaDetail,
   type VentaResumen,
+  type AlertConfig,
 } from "@/components/cajero/ventas/types";
-import type { AlertConfig } from "@/components/cajero/ventas/types";
 import { useTimerActions } from "@/context/TimerContext";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
+import { useStableCallback } from "@/hooks/useStableCallback";
 
 const initialVentasLoadedRef = { current: false };
 
@@ -39,7 +40,6 @@ export const useVentasScreen = () => {
     activeTab: initialTab,
   }));
   const dataRef = useRef<string>("");
-  const isFocused = useRef(true);
 
   const showToast = useCallback(
     (title: string, message: string, type: "success" | "error" = "error") => {
@@ -75,6 +75,7 @@ export const useVentasScreen = () => {
           )
           .catch(() => null),
       ]);
+      if (signal?.aborted) return;
 
       setFromCache(salesResult.fromCache || Boolean(resumenResult?.fromCache));
 
@@ -108,6 +109,7 @@ export const useVentasScreen = () => {
       }
       dispatch({ type: "SET_ALERT_CONFIG", payload: { visible: false, title: "", message: "", type: "info", showCancel: true } });
     } catch (error) {
+      if (signal?.aborted) return;
       logger.fetchError(error, { context: "Ventas:fetchData" });
       if (isManual) {
         showToastLazy({
@@ -118,31 +120,21 @@ export const useVentasScreen = () => {
         });
       }
     } finally {
-      initialVentasLoadedRef.current = true;
-      dispatch({ type: "SET_LOADING", payload: false });
-      dispatch({ type: "SET_LOADING_SALES", payload: false });
-      dispatch({ type: "SET_REFRESHING", payload: false });
+      if (!signal?.aborted) {
+        initialVentasLoadedRef.current = true;
+        dispatch({ type: "SET_LOADING", payload: false });
+        dispatch({ type: "SET_LOADING_SALES", payload: false });
+        dispatch({ type: "SET_REFRESHING", payload: false });
+      }
     }
   }, []);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    // La lectura inicial corre en su propia tarea: el efecto no debe disparar
-    // setState de forma síncrona.
-    void (async () => {
-      await fetchVentas(false, ac.signal);
-    })();
-    return () => ac.abort();
-  }, [fetchVentas]);
-
   useFocusEffect(
     useCallback(() => {
-      isFocused.current = true;
       const ac = new AbortController();
       fetchVentas(false, ac.signal);
       refreshTimers();
       return () => {
-        isFocused.current = false;
         ac.abort();
       };
     }, [fetchVentas, refreshTimers]),
@@ -355,6 +347,38 @@ export const useVentasScreen = () => {
     isOffline,
   ]);
 
+  const setActiveTab = useStableCallback((tab: "historial" | "proceso") =>
+    dispatch({ type: "SET_ACTIVE_TAB", payload: tab }),
+  );
+  const setActionSheetVisible = useStableCallback((visible: boolean) =>
+    dispatch({ type: "SET_ACTION_SHEET_VISIBLE", payload: visible }),
+  );
+  const setModalVisible = useStableCallback((visible: boolean) =>
+    dispatch({ type: "SET_MODAL_VISIBLE", payload: visible }),
+  );
+  const setSelectedVenta = useStableCallback((venta: any | null) =>
+    dispatch({ type: "SET_SELECTED_VENTA", payload: venta }),
+  );
+  const setAnulacionModalVisible = useStableCallback((visible: boolean) =>
+    dispatch({ type: "SET_ANULACION_MODAL_VISIBLE", payload: visible }),
+  );
+  const setMotivoAnulacion = useStableCallback((motivo: string) =>
+    dispatch({ type: "SET_MOTIVO_ANULACION", payload: motivo }),
+  );
+  const setMontoAnulacion = useStableCallback((monto: string) =>
+    dispatch({ type: "SET_MONTO_ANULACION", payload: monto }),
+  );
+  const setAlertConfig = useStableCallback(
+    (config: AlertConfig | ((prev: AlertConfig) => AlertConfig)) =>
+      dispatch({
+        type: "SET_ALERT_CONFIG",
+        payload: typeof config === "function" ? config(state.alertConfig) : config,
+      }),
+  );
+  const setRefreshing = useStableCallback((refreshing: boolean) =>
+    dispatch({ type: "SET_REFRESHING", payload: refreshing }),
+  );
+
   return {
     loading: state.loading,
     refreshing: state.refreshing,
@@ -376,32 +400,15 @@ export const useVentasScreen = () => {
     activeTab: state.activeTab,
     alertConfig: state.alertConfig,
     onRefresh,
-    setActiveTab: (tab: "historial" | "proceso") =>
-      dispatch({ type: "SET_ACTIVE_TAB", payload: tab }),
-    setActionSheetVisible: (visible: boolean) =>
-      dispatch({ type: "SET_ACTION_SHEET_VISIBLE", payload: visible }),
-    setModalVisible: (visible: boolean) =>
-      dispatch({ type: "SET_MODAL_VISIBLE", payload: visible }),
-    setSelectedVenta: (venta: any | null) =>
-      dispatch({ type: "SET_SELECTED_VENTA", payload: venta }),
-    setAnulacionModalVisible: (visible: boolean) =>
-      dispatch({ type: "SET_ANULACION_MODAL_VISIBLE", payload: visible }),
-    setMotivoAnulacion: (motivo: string) =>
-      dispatch({ type: "SET_MOTIVO_ANULACION", payload: motivo }),
-    setMontoAnulacion: (monto: string) =>
-      dispatch({ type: "SET_MONTO_ANULACION", payload: monto }),
-    setAlertConfig: (
-      config: AlertConfig | ((prev: AlertConfig) => AlertConfig),
-    ) =>
-      dispatch({
-        type: "SET_ALERT_CONFIG",
-        payload:
-          typeof config === "function"
-            ? config(state.alertConfig)
-            : config,
-      }),
-    setRefreshing: (refreshing: boolean) =>
-      dispatch({ type: "SET_REFRESHING", payload: refreshing }),
+    setActiveTab,
+    setActionSheetVisible,
+    setModalVisible,
+    setSelectedVenta,
+    setAnulacionModalVisible,
+    setMotivoAnulacion,
+    setMontoAnulacion,
+    setAlertConfig,
+    setRefreshing,
     handleOpenActionSheet,
     handleVerDetalles,
     handleFinalizarVenta,

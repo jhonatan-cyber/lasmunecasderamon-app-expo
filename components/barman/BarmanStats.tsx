@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/utils/format';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';

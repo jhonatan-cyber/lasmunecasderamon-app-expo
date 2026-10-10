@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

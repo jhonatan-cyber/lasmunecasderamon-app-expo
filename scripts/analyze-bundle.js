@@ -12,6 +12,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const DIST = path.resolve(__dirname, '..', 'dist');
 const WEB_JS = path.join(DIST, '_expo', 'static', 'js', 'web');
@@ -37,7 +38,10 @@ async function main() {
 
   const mapPath = path.join(WEB_JS, mapFile);
   const jsPath = mapPath.replace(/\.map$/, '');
-  const jsSize = fs.statSync(jsPath).size;
+  const jsBuffer = fs.readFileSync(jsPath);
+  const jsSize = jsBuffer.byteLength;
+  const gzipSize = zlib.gzipSync(jsBuffer).byteLength;
+  const brotliSize = zlib.brotliCompressSync(jsBuffer).byteLength;
   const raw = fs.readFileSync(mapPath, 'utf8');
   const map = JSON.parse(raw);
 
@@ -52,6 +56,17 @@ async function main() {
 
   // ── 3. Aggregate by top-level directory ───────────────────────────
   const groups = new Map(); // groupName → { bytes, files }
+  const ownSourceRoots = new Set([
+    'api',
+    'app',
+    'components',
+    'context',
+    'hooks',
+    'packages',
+    'services',
+    'store',
+    'utils',
+  ]);
 
   for (let i = 0; i < map.sources.length; i++) {
     const src = map.sources[i] || '';
@@ -61,10 +76,15 @@ async function main() {
     const bytes = Buffer.byteLength(content, 'utf8');
 
     // Normalise path separators to forward slash
-    const normalised = src.replace(/\\/g, '/');
+    const normalised = src
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '')
+      .replace(/^(?:\.\.\/)+/, '');
 
     // Determine group
     let group;
+    const firstSegment = normalised.split('/')[0];
+
     if (normalised.startsWith('node_modules/')) {
       // node_modules/<package>/...
       const parts = normalised.split('/');
@@ -72,10 +92,8 @@ async function main() {
       if (parts[1] && parts[1].startsWith('@')) {
         group += '/' + (parts[2] || '?');
       }
-    } else if (normalised.startsWith('packages/')) {
-      group = normalised.split('/').slice(0, 2).join('/');
-    } else if (normalised.startsWith('app/')) {
-      group = 'app/ (código propio)';
+    } else if (ownSourceRoots.has(firstSegment)) {
+      group = `código propio/${firstSegment}`;
     } else {
       group = 'otros';
     }
@@ -103,6 +121,8 @@ async function main() {
   console.log('══════════════════════════════════════════════════');
   console.log('');
   console.log(`  Bundle (JS):       ${(jsSize / 1024).toFixed(1)} KB`);
+  console.log(`  Gzip:              ${(gzipSize / 1024).toFixed(1)} KB`);
+  console.log(`  Brotli:            ${(brotliSize / 1024).toFixed(1)} KB`);
   console.log(`  Source map:        ${(mapPath.length > 0 ? fs.statSync(mapPath).size / 1024 / 1024 : 0).toFixed(1)} MB`);
   console.log(`  Mapped sources:    ${map.sourcesContent.filter(Boolean).length} files`);
   console.log(`  Total source (raw): ${(totalBytes / 1024).toFixed(1)} KB`);
@@ -159,6 +179,8 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     bundleSize: jsSize,
+    gzipSize,
+    brotliSize,
     sourceMapSize: fs.statSync(mapPath).size,
     totalMappedSources: map.sourcesContent.filter(Boolean).length,
     totalSourceBytes: totalBytes,

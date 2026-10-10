@@ -101,8 +101,8 @@ describe('cuentaUtils', () => {
 
     it('aplica límite por tier para champán', () => {
       expect(getHostessLimit({ precio: 250000, categoria: 'Champaña' })).toBe(5);
-      expect(getHostessLimit({ precio: 210000, categoria: 'Champaña' })).toBe(4);
-      expect(getHostessLimit({ precio: 150000, categoria: 'Champaña' })).toBe(3);
+      expect(getHostessLimit({ precio: 210000, categoria: 'Champaña' })).toBe(5);
+      expect(getHostessLimit({ precio: 150000, categoria: 'Champaña' })).toBe(2);
       expect(getHostessLimit({ precio: 130000, categoria: 'Champaña' })).toBe(2);
       expect(getHostessLimit({ precio: 50000, categoria: 'Champaña' })).toBe(1);
     });

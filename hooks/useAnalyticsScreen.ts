@@ -38,13 +38,14 @@ export function useAnalyticsScreen() {
   const [error, setError] = useState('');
   const loadedRef = useRef(false);
 
-  const fetchData = useCallback(async (isManual = false) => {
+  const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
       setError('');
       const [summaryRes, weekRes] = await Promise.all([
-        dashboardService.summary(),
-        dashboardService.salesChart(),
+        dashboardService.summary(signal),
+        dashboardService.salesChart(signal),
       ]);
+      if (signal?.aborted) return;
 
       if (summaryRes?.success) {
         setStats(mapAnalyticsSummary(summaryRes.data));
@@ -63,17 +64,22 @@ export function useAnalyticsScreen() {
 
       loadedRef.current = true;
     } catch (e: any) {
+      if (signal?.aborted) return;
       logger.fetchError?.(e, { context: 'useAnalyticsScreen:fetchData' });
       if (!loadedRef.current) setError(e?.message || 'Error al cargar las analíticas');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      void fetchData();
+      const controller = new AbortController();
+      void fetchData(false, controller.signal);
+      return () => controller.abort();
     }, [fetchData]),
   );
 

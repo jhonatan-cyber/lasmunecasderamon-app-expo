@@ -1,5 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { OvertimeRecord } from '@/hooks/useHorasExtrasScreen';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {

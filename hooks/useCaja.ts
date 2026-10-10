@@ -73,7 +73,6 @@ const showToast = (title: string, message: string, type: 'success' | 'error' | '
 
 export function useCaja() {
     const theme = useAccentColor();
-    const { borderColor } = theme;
     const router = useRouter();
     const user = useAuthStore(state => state.user);
 
@@ -93,25 +92,27 @@ export function useCaja() {
      * GET exitoso. Sin red el cajero sigue viendo cuánto hay en caja, pero
      * abrir, cerrar o retirar queda bloqueado (ver `handleSubmit`).
      */
-    const fetchData = useCallback(async (isManual = false) => {
+    const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
         if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
         try {
             const [statusResult, statsResult] = await Promise.all([
                 getMirror()
                     .readThroughDetailed(
                         MIRROR_KEYS.cashregisterStatus,
-                        () => cajaService.status(),
+                        () => cajaService.status(signal),
                         { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
                     )
                     .catch(() => ({ data: { success: false, data: null }, fromCache: false })),
                 getMirror()
                     .readThroughDetailed(
                         MIRROR_KEYS.cashregisterSummary,
-                        () => cajaService.resumen(),
+                        () => cajaService.resumen(signal),
                         { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
                     )
                     .catch(() => ({ data: { success: false, data: null }, fromCache: false }))
             ]);
+
+            if (signal?.aborted) return;
 
             dispatch({
                 type: 'SET_FROM_CACHE',
@@ -145,16 +146,21 @@ export function useCaja() {
                 });
             }
         } catch {
+            if (signal?.aborted) return;
             if (isManual) showToast('Error', 'No se pudo actualizar la información');
             else showToast('Error', 'No se pudo cargar la información de la caja');
         } finally {
-            dispatch({ type: 'SET_LOADING', payload: false });
-            dispatch({ type: 'SET_REFRESHING', payload: false });
+            if (!signal?.aborted) {
+                dispatch({ type: 'SET_LOADING', payload: false });
+                dispatch({ type: 'SET_REFRESHING', payload: false });
+            }
         }
     }, []);
 
     useEffect(() => {
-        fetchData();
+        const controller = new AbortController();
+        fetchData(false, controller.signal);
+        return () => controller.abort();
     }, [fetchData]);
 
     const onRefresh = useCallback(() => {

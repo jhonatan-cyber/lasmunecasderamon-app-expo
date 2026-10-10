@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
@@ -34,18 +34,20 @@ export default function PedidosScreen() {
         onRefresh
     } = usePedidosScreen();
 
+    const handleCategoryPress = useCallback((categoryId: string, categoryName: string) => {
+        router.push({
+            pathname: '/(app)/garzon/productos',
+            params: { categoryId, categoryName }
+        });
+    }, [router]);
+
     const renderItem = useCallback(({ item, index }: { item: Category, index: number }) => (
         <CategoryCard
             item={item}
             index={index}
-            onPress={() => {
-                router.push({
-                    pathname: '/(app)/garzon/productos',
-                    params: { categoryId: item.id, categoryName: item.name }
-                });
-            }}
+            onPress={handleCategoryPress}
         />
-    ), [router]);
+    ), [handleCategoryPress]);
 
     if (loading) return <PedidosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 

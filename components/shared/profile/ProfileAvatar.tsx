@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { BASE_URL } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";

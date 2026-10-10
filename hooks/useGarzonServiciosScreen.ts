@@ -77,6 +77,8 @@ export function useGarzonServiciosScreen() {
         apiClientSafe("/clients", { signal }),
       ]);
 
+      if (signal?.aborted) return;
+
       const roomData = roomRes.status === "fulfilled" ? roomRes.value : null;
       const anfData = anfRes.status === "fulfilled" ? anfRes.value : null;
       const clientData =
@@ -84,13 +86,14 @@ export function useGarzonServiciosScreen() {
 
       const deduplicate = (arr: any[], idKey: string) => {
         if (!Array.isArray(arr)) return [];
-        const seen = new Set();
-        return arr.filter((item) => {
-          const id = item[idKey] || item.id;
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
+        const unique = new Map<string, any>();
+        for (const item of arr) {
+          const id = item?.[idKey] ?? item?.id;
+          if (id == null) continue;
+          const key = String(id);
+          if (!unique.has(key)) unique.set(key, item);
+        }
+        return Array.from(unique.values());
       };
 
       const rawAnf = (anfData as any)?.data || [];
@@ -109,10 +112,7 @@ export function useGarzonServiciosScreen() {
       setRooms((roomData as any)?.data || []);
 
       
-      setAnfitrionas((prev) => {
-        const combined = [...(rawAnf || []), ...(prev || [])];
-        return deduplicate(combined, "id_usuario");
-      });
+      setAnfitrionas(deduplicate(rawAnf, "id_usuario"));
       setClients(deduplicate(rawClients, "id_cliente"));
 
       if (isRefreshing) {
@@ -124,6 +124,7 @@ export function useGarzonServiciosScreen() {
         });
       }
     } catch (err: any) {
+      if (signal?.aborted) return;
       logger.fetchError(err, { context: "Servicios:fetchServicios" });
       showToast({
         type: "error",
@@ -133,8 +134,10 @@ export function useGarzonServiciosScreen() {
           : "No se pudieron cargar los datos necesarios",
       });
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 

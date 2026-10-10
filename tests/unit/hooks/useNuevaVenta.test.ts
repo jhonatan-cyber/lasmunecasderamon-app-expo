@@ -73,6 +73,14 @@ describe('useNuevaVenta totals (propina / total)', () => {
     });
   });
 
+  it('inicia con tiempo de habitación de 30 minutos y sin método elegido, como el dashboard', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    expect(result.current.state.selectedTime).toBe(30);
+    expect(result.current.state.metodoPago).toBe('');
+  });
+
   it('sin propina el total es el subtotal (con cualquier método de pago)', async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
@@ -285,6 +293,16 @@ describe('useNuevaVenta — búsqueda de productos con debounce (NewSaleSearch)'
               comision: 0,
               stock_bar: 5,
             },
+            {
+              presentacion_id: 'p-agotada',
+              presentacion_nombre: '750 ml',
+              producto_id: 'agotado',
+              producto_nombre: 'Producto agotado',
+              categoria_nombre: 'Vino',
+              precio_venta: 10000,
+              comision: 0,
+              stock_bar: 0,
+            },
           ],
         };
       }
@@ -340,6 +358,54 @@ describe('useNuevaVenta — búsqueda de productos con debounce (NewSaleSearch)'
       stock_bar: 5,
       tipo_venta: 'botella',
     });
+  });
+
+  it('no permite agregar al carrito un producto que ya no tiene stock en bar', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    act(() => {
+      result.current.handlePressAddProduct({
+        id: 'pres-agotada',
+        nombre: 'Producto agotado',
+        stock_bar: 0,
+      }, 'botella', 1);
+    });
+
+    expect(result.current.state.cart).toEqual([]);
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Sin stock en bar' }));
+  });
+
+  it('cancela la búsqueda en vuelo cuando cambia el término', async () => {
+    vi.mocked(apiClientSafe).mockImplementation((url: string, options?: any) => {
+      if (String(url).startsWith('/products?for_sale=1&term=')) {
+        return new Promise((resolve) => {
+          options?.signal?.addEventListener('abort', () =>
+            resolve({ success: false, data: [] }),
+          );
+        }) as any;
+      }
+      if (url === '/cashregister/status') {
+        return Promise.resolve({ success: true, data: { hasOpenCaja: true } });
+      }
+      return Promise.resolve({ success: true, data: [] });
+    });
+
+    const { result, unmount } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+    vi.useFakeTimers();
+
+    act(() => result.current.setSearchProducto('pace'));
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    const firstRequest = termCalls()[0];
+    expect(firstRequest).toBeDefined();
+    expect((firstRequest[1] as any).signal.aborted).toBe(false);
+
+    act(() => result.current.setSearchProducto('coca'));
+    expect((firstRequest[1] as any).signal.aborted).toBe(true);
+
+    unmount();
+    vi.useRealTimers();
   });
 
   it('handleClearSearch limpia texto, resultados y loading sin nueva petición', async () => {
@@ -672,6 +738,88 @@ describe('useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
       result.current.updateQuantity(0, 50);
     });
     expect(result.current.state.cart[0].quantity).toBe(99);
+  });
+
+  it('no permite reservar más botellas que el stock entre líneas con anfitrionas distintas', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+    setCart(result, [{
+      ...conShotComision,
+      tipo_venta: 'botella',
+      quantity: 3,
+      anfitrionas: ['hostess-1'],
+    }]);
+
+    await act(async () => {
+      await result.current.addProductToCart({
+        ...conShotComision,
+        tipo_venta: 'botella',
+        quantity: 2,
+      });
+    });
+
+    expect(result.current.state.cart).toHaveLength(2);
+    expect(result.current.state.cart.map((item: any) => item.quantity)).toEqual([3, 1]);
+  });
+
+  it('limita las anfitrionas de un shot usando el precio de la botella', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+    act(() => {
+      result.current.handleSetSaleChoice('pres-2', 'shot_anfitriona');
+    });
+    await act(async () => {
+      await result.current.handlePressAddProduct({
+        ...conShotComision,
+        opciones_venta: [
+          { tipo: 'botella', precio: 50000, comision: 5000 },
+          { tipo: 'shot', precio: 6000, precio_anfitriona: 3500, comision: 1000 },
+        ],
+      }, 'shot_anfitriona', 3);
+    });
+
+    expect(result.current.state.hostessSelectionTarget?.max).toBe(3);
+    act(() => {
+      result.current.handleToggleHostess('hostess-1');
+    });
+    act(() => {
+      result.current.handleToggleHostess('hostess-2');
+    });
+    act(() => {
+      result.current.handleToggleHostess('hostess-3');
+    });
+    act(() => {
+      result.current.handleToggleHostess('hostess-4');
+    });
+    await act(async () => {
+      await result.current.addProductToCart(result.current.state.hostessSelectionTarget!.product);
+    });
+
+    expect(result.current.state.cart[0].anfitrionas).toHaveLength(3);
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Límite de anfitrionas' }));
+  });
+
+  it('recorta las anfitrionas de una botella cara cuando baja su cantidad', async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+    setCart(result, [{
+      ...conShotComision,
+      tipo_venta: 'botella',
+      quantity: 2,
+      anfitrionas: ['hostess-1', 'hostess-2'],
+      opciones_venta: [
+        { tipo: 'botella', precio: 50000, comision: 5000 },
+        { tipo: 'shot', precio: 6000, precio_anfitriona: 3500, comision: 1000 },
+      ],
+    }]);
+
+    act(() => {
+      result.current.updateQuantity(0, -1);
+    });
+
+    expect(result.current.state.cart[0].quantity).toBe(1);
+    expect(result.current.state.cart[0].anfitrionas).toEqual(['hostess-1']);
+    expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Anfitrionas actualizadas' }));
   });
 
   it('la botella sigue respetando el stock del bar', async () => {

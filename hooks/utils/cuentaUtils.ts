@@ -1,5 +1,5 @@
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
-import type { Cliente, Anfitriona, Producto, CartItem, CommissionPreview } from "@lasmunecasderamon/types";
+import type { Anfitriona, CartItem, CommissionPreview } from "@lasmunecasderamon/types";
 
 export const showToast = (title: string, message: string, type: "success" | "error" | "info" = "error") => {
   showToastLazy({
@@ -11,9 +11,9 @@ export const showToast = (title: string, message: string, type: "success" | "err
 };
 
 const getChampagneTierLimit = (precio: number) => {
-  if (precio >= 240000) return 5;
-  if (precio >= 200000) return 4;
-  if (precio >= 140000) return 3;
+  if (precio >= 200000) return 5;
+  if (precio >= 180000) return 4;
+  if (precio >= 160000) return 3;
   if (precio >= 120000) return 2;
   return 1;
 };
@@ -26,9 +26,31 @@ export const getIvaDecimal = () => ivaRate;
 
 export const getIvaPercent = () => Math.round(ivaRate * 100);
 
+let simpleProductThreshold = 10000;
+let hostessThreshold = 20000;
 export let expensiveDrinkThreshold = 30000;
 
-export const setExpensiveDrinkThreshold = (v: number) => { expensiveDrinkThreshold = v; };
+export const setSaleServiceLevels = (levels: {
+  simpleHasta?: number;
+  hostessDesde?: number;
+  habitacionDesde?: number;
+}) => {
+  if (Number.isFinite(Number(levels.simpleHasta))) simpleProductThreshold = Number(levels.simpleHasta);
+  if (Number.isFinite(Number(levels.hostessDesde))) hostessThreshold = Number(levels.hostessDesde);
+  if (Number.isFinite(Number(levels.habitacionDesde))) expensiveDrinkThreshold = Number(levels.habitacionDesde);
+};
+
+export const setExpensiveDrinkThreshold = (v: number) => {
+  expensiveDrinkThreshold = v;
+};
+
+export const isSimpleSaleProduct = (price: number | string | null | undefined) =>
+  Number.isFinite(Number(price ?? 0)) && Number(price ?? 0) <= simpleProductThreshold;
+
+export const roomRequiredForSalePrice = (price: number | string | null | undefined) => {
+  const amount = Number(price ?? 0);
+  return Number.isFinite(amount) && amount >= expensiveDrinkThreshold && amount >= hostessThreshold;
+};
 
 export const isExpensiveDrink = (producto: { precio?: number; price?: number }) => {
   const precio = Number(producto.precio || producto.price || 0);
@@ -51,9 +73,12 @@ export const getCardSplit = (total: number) => {
   return { venta, propina };
 };
 
-export const isChampagneProduct = (producto: { categoria?: string }) => {
-  const cat = (producto.categoria || "").toLowerCase();
-  return cat.includes("champaña") || cat.includes("shampaña") || cat.includes("champagne");
+export const isChampagneProduct = (producto: { categoria?: string; category_name?: string }) => {
+  const cat = (producto.categoria || producto.category_name || "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return cat.includes("champagne") || cat.includes("champana") || cat.includes("shampana");
 };
 
 export const getHostessLimit = (prod: { precio?: number; price?: number; max_anfitrionas?: number | null; categoria?: string }, qty: number = 1) => {

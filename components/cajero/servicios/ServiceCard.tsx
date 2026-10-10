@@ -1,10 +1,11 @@
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import { safeNumber } from "@/hooks/useServiciosScreen";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { useTimerTick } from "@/context/TimerContext";
 import { ServiceCardHeader } from "./ServiceCardHeader";
 import { ServiceCardDetails } from "./ServiceCardDetails";
 import { ServiceCardTimer } from "./ServiceCardTimer";
@@ -40,21 +41,9 @@ export const ServiceCard = memo(
     onPress,
     theme,
   }: ServiceCardProps) => {
+    useTimerTick();
     useRenderCount('ServiceCard', { itemId: item?.id, activeTab, estado: item?.estado });
-    const [remaining, setRemaining] = useState(() =>
-      calculateRemainingTime(item, serverOffset),
-    );
-
-    useEffect(() => {
-      if (activeTab === "finalizados" || item.isPaused || item.estado === 3)
-        return;
-
-      const interval = setInterval(() => {
-        setRemaining(calculateRemainingTime(item, serverOffset));
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }, [item, serverOffset, item.isPaused, item.estado, activeTab]);
+    const remaining = calculateRemainingTime(item, serverOffset);
 
     const formatTime = (secs: number) => {
       const absSecs = Math.max(0, Math.abs(secs));

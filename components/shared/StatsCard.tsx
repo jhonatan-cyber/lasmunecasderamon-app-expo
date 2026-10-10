@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface StatsCardProps {
   title: string;

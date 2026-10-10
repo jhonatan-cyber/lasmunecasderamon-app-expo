@@ -1,5 +1,6 @@
 import * as Speech from "expo-speech";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { AppState } from "react-native";
 import type { Timer } from "@/context/types";
 import {
   emitRefreshSales,
@@ -40,10 +41,7 @@ export function useTimerVoiceAnnouncer({
   setTimers,
   setExpiredTimer,
 }: UseTimerVoiceAnnouncerParams) {
-  useEffect(() => {
-    if (!isCajeroRole(user)) return;
-
-    const interval = setInterval(() => {
+  const checkTimers = useCallback(() => {
       const currentTimers = timersRef.current;
       currentTimers.forEach((timer) => {
         if (!timer.isActive || timer.isPaused || timer.estado === 3) return;
@@ -92,8 +90,33 @@ export function useTimerVoiceAnnouncer({
           setExpiredTimer(timer);
         }
       });
-    }, 5000);
+  }, [serverOffset, setExpiredTimer, setTimers, timersRef]);
 
-    return () => clearInterval(interval);
-  }, [user, serverOffset, setTimers, setExpiredTimer, timersRef]);
+  useEffect(() => {
+    if (!isCajeroRole(user)) return;
+
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const stop = () => {
+      if (interval !== undefined) {
+        clearInterval(interval);
+        interval = undefined;
+      }
+    };
+    const start = () => {
+      stop();
+      checkTimers();
+      interval = setInterval(checkTimers, 5000);
+    };
+
+    if (AppState.currentState === "active") start();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") start();
+      else stop();
+    });
+
+    return () => {
+      stop();
+      subscription.remove();
+    };
+  }, [checkTimers, user]);
 }
