@@ -40,10 +40,10 @@ export default function ResetPasswordModal({
             <View style={styles.modalOverlay}>
                 <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
                     <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>
-                        Resetear Contraseña
+                        Restablecer contraseña
                     </Text>
                     <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                        Ingresa tu RUN para validar el reseteo. La nueva contraseña será ese mismo RUN.
+                        Ingresa tu RUT registrado. Tu contraseña temporal será ese mismo RUT y deberás cambiarla al iniciar sesión.
                     </Text>
                     <TextInput
                         style={[
@@ -55,9 +55,12 @@ export default function ResetPasswordModal({
                                 borderColor: C.border,
                             },
                         ]}
-                        placeholder="Ingresa tu RUN"
+                        placeholder="Ingresa tu RUT"
                         placeholderTextColor={C.textMuted}
                         autoCapitalize="characters"
+                        autoCorrect={false}
+                        editable={!loading}
+                        accessibilityLabel="RUT registrado"
                         value={resetRun}
                         onChangeText={onChangeResetRun}
                     />
@@ -78,7 +81,7 @@ export default function ResetPasswordModal({
                             {loading ? (
                                 <ActivityIndicator color="#FFF" />
                             ) : (
-                                <Text style={[styles.alertBtnText, { color: '#FFF' }]}>Aceptar</Text>
+                                <Text style={[styles.alertBtnText, { color: '#FFF' }]}>Restablecer</Text>
                             )}
                         </Pressable>
                     </View>

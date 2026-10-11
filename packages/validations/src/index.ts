@@ -17,7 +17,7 @@ export const loginSchema = object({
 });
 
 export const resetPasswordSchema = object({
-  run: string().trim().min(4, 'El RUN es obligatorio'),
+  run: string().trim().min(4, 'El RUT es obligatorio'),
 });
 
 export const changePasswordSchema = object({

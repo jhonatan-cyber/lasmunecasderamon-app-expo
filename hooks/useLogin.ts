@@ -79,7 +79,7 @@ export default function useLogin() {
         if (!validation.success) {
             showAlert(
                 'Atención',
-                validation.error.issues[0]?.message || 'Por favor, ingresa un RUN válido.',
+                validation.error.issues[0]?.message || 'Por favor, ingresa un RUT válido.',
                 'warning'
             );
             return;
@@ -88,8 +88,8 @@ export default function useLogin() {
         const { run } = validation.data;
 
         showAlert(
-            'Resetear Contraseña',
-            `¿Estás seguro que deseas resetear la contraseña de @${username}? La nueva contraseña será tu número de RUN.`,
+            'Restablecer contraseña',
+            `¿Deseas restablecer la contraseña de la cuenta con RUT ${run}? La contraseña temporal será tu RUT registrado. Deberás cambiarla al ingresar.`,
             'info',
             async () => {
                 setLoading(true);
@@ -101,7 +101,7 @@ export default function useLogin() {
                         setResetRun('');
                         showAlert(
                             'Éxito',
-                            'Tu contraseña ha sido reseteada. Revisa tu WhatsApp para ver los detalles.',
+                            'Tu contraseña temporal es tu RUT registrado. Inicia sesión con tu usuario y ese RUT; luego deberás crear una contraseña nueva.',
                             'success'
                         );
                     } else {
@@ -115,7 +115,7 @@ export default function useLogin() {
             },
             true
         );
-    }, [resetRun, showAlert, username]);
+    }, [resetRun, showAlert]);
 
     const performLogin = useCallback(async (u: string, p: string) => {
         setError('');
