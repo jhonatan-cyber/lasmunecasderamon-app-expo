@@ -1,4 +1,5 @@
 import logger from '@/utils/logger';
+import { useAuthStore } from '@/store/authStore';
 
 import { createExpoMirrorDriver, MIRROR_DATABASE_NAME, type MirrorDriver } from './driver';
 import { createMirrorRepository, type MirrorRepository } from './repository';
@@ -85,7 +86,12 @@ export function getMirrorDriver(): MirrorDriver {
 
 /** Repositorio del espejo (singleton perezoso). */
 export function getMirror(): MirrorRepository {
-    if (!repository) repository = createMirrorRepository(getMirrorDriver());
+    if (!repository) repository = createMirrorRepository(getMirrorDriver(), {
+        ownerId: () => {
+            const auth = useAuthStore.getState();
+            return auth.user?.id && !auth.sessionExpired ? String(auth.user.id) : null;
+        },
+    });
     return repository;
 }
 

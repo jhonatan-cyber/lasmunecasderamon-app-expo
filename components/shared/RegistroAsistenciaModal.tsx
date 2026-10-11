@@ -1,21 +1,21 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { AnimatedView } from '@/components/ui/AnimatedView';
-import React, { useState } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
-} from 'react-native';
-import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
+import { showToast } from '@/utils/toast-lazy';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
+import React,{ useState } from 'react';
+import {
+ActivityIndicator,
+Modal,
+Pressable,
+StyleSheet,
+Text,
+TextInput,
+View
+} from 'react-native';
 
 interface AttendanceRegisterResponse {
     success: boolean;
@@ -34,7 +34,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     onClose,
     onRegistered
 }) => {
-    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
     const user = useAuthStore((state) => state.user);
 
     const [codigo, setCodigo] = useState('');
@@ -74,15 +74,15 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
             if (attData.success) {
                 if (attData.alreadyRegistered) {
-                    
+
                     showToast({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: attData.message || 'Ya tenías asistencia registrada hoy'
                     });
-                    onRegistered(); 
+                    onRegistered();
                 } else {
-                    
+
                     showToast({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
@@ -128,15 +128,15 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
 
             if (attData.success) {
                 if (attData.alreadyRegistered) {
-                    
+
                     showToast({
                         type: 'warning',
                         text1: 'âš ï¸ Ya tienes asistencia',
                         text2: attData.message || 'Ya tenías asistencia registrada hoy'
                     });
-                    onRegistered(); 
+                    onRegistered();
                 } else {
-                    
+
                     showToast({
                         type: 'success',
                         text1: 'âœ… Asistencia Registrada',
@@ -167,7 +167,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 onRequestClose={onClose}
             >
                 <View style={styles.overlay}>
-                    <AnimatedView 
+                    <AnimatedView
                         from={{ translateY: 300, opacity: 0 }}
                         animate={{ translateY: 0, opacity: 1 }}
                         transition={{ type: 'spring', damping: 20 }}
@@ -248,7 +248,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                             <Ionicons name="chevron-forward" size={24} color={textSecondary} />
                         </Pressable>
 
-                        <Pressable 
+                        <Pressable
                             style={[styles.skipBtn, { borderColor }]}
                             onPress={onRegistered}
                         >

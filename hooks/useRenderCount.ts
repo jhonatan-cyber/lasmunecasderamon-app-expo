@@ -21,39 +21,19 @@ export function useRenderCount(
   componentName: string,
   props?: Record<string, any>,
 ) {
-  if (!__DEV__) return;
-
   const renderCount = useRef(0);
   const prevProps = useRef<Record<string, any> | null>(null);
-
-  renderCount.current += 1;
-
-  // ── Init global aggregator ──────────────────────────────────────────
-  if (typeof window !== 'undefined') {
-    (window as any).__RENDER_COUNTS ??= {};
-    (window as any).__RENDER_COUNTS[componentName] ??= { count: 0, reasons: [] };
-    (window as any).__RENDER_COUNTS[componentName].count += 1;
-
-    // Create aggregate report function on first call
-    if (!(window as any).__RENDER_REPORT) {
-      (window as any).__RENDER_REPORT = () => {
-        console.group(`📊 Render Count Report`);
-        Object.entries((window as any).__RENDER_COUNTS || {})
-          .sort(([, a]: any, [, b]: any) => b.count - a.count)
-          .forEach(([name, data]: [string, any]) => {
-            const reasons = (data.reasons || []);
-            const topReasons = reasons.slice(0, 5).join(', ');
-            console.log(
-              `  ${name.padEnd(30)} ${String(data.count).padStart(5)} renders${reasons.length ? `  ⚠️ ${topReasons}` : ''}`,
-            );
-          });
-        console.groupEnd();
-      };
-    }
-  }
-
   // ── Diff props to detect unnecessary re-renders ────────────────────
   useEffect(() => {
+    if (!__DEV__) return;
+    renderCount.current += 1;
+    if (typeof window !== 'undefined') {
+      const reportWindow = window as any;
+      reportWindow.__RENDER_COUNTS ??= {};
+      reportWindow.__RENDER_COUNTS[componentName] ??= { count: 0, reasons: [] };
+      reportWindow.__RENDER_COUNTS[componentName].count += 1;
+      reportWindow.__RENDER_REPORT ??= () => console.table(reportWindow.__RENDER_COUNTS);
+    }
     if (!props || renderCount.current <= 1) {
       prevProps.current = props ? { ...props } : null;
       return;
@@ -79,7 +59,7 @@ export function useRenderCount(
     if (changedKeys.length > 0) {
       const msg = `${componentName} re-render #${renderCount.current}: ${changedKeys.join(', ')}`;
       if (changedKeys.length <= 3) {
-        console.warn(`⚠️  ${msg}`);
+        console.debug(msg);
       }
 
       if (typeof window !== 'undefined') {

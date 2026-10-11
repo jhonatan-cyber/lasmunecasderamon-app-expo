@@ -37,6 +37,7 @@ describe('senders de la cola del cajero', () => {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: 'intent-cajero-1' },
             body: JSON.stringify(VENTA),
+            retries: 0,
         });
     });
 
@@ -64,6 +65,7 @@ describe('senders de la cola del cajero', () => {
             method: 'PUT',
             headers: { [IDEMPOTENCY_HEADER]: 'intent-consumo-1' },
             body: JSON.stringify(consumos),
+            retries: 0,
         });
     });
 
@@ -82,6 +84,7 @@ describe('senders de la cola del cajero', () => {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: 'intent-cajero-1' },
             body: JSON.stringify({ metodo_pago: 'tarjeta', total_cobrado: 12000, propina: 1200 }),
+            retries: 0,
         });
     });
 

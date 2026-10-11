@@ -1,3 +1,4 @@
+import logger from "@/utils/logger";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -22,7 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BASE_URL } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useAuthStore } from "@/store/authStore";
-import { THEME_OPTIONS, useThemeStore } from "@/store/themeStore";
+import { ProfileThemePicker } from "@/components/shared/profile/ProfileThemePicker";
 import { useProfile } from "@/hooks/useProfile";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { isVoiceAlertsEnabled, setVoiceAlertsEnabled } from "@/services/pushNotifications";
@@ -97,7 +98,6 @@ export function PremiumProfileView({
   onClose,
 }: PremiumProfileViewProps) {
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
-  const { setAccentColor } = useThemeStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -115,6 +115,9 @@ export function PremiumProfileView({
     pickImage,
     saveProfile,
   } = useProfile();
+
+  const [failedPhotoUri, setFailedPhotoUri] = useState<string | null>(null);
+  const currentPhotoUri = formData.image || (user?.foto ? (user.foto.startsWith("http") ? user.foto : `${BASE_URL}/api/images/users/${encodeURIComponent(user.foto)}`) : null);
 
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
   const [civilPickerVisible, setCivilPickerVisible] = useState(false);
@@ -344,14 +347,13 @@ export function PremiumProfileView({
       >
         <View style={styles.profileHero}>
           <View style={[styles.avatarBorder, { borderColor: accentColor }]}>
-            {formData.image || user?.foto ? (
+            {currentPhotoUri && failedPhotoUri !== currentPhotoUri ? (
               <Image
-                source={{
-                  uri: formData.image
-                    ? formData.image
-                    : user?.foto?.startsWith("http")
-                      ? user.foto
-                      : `${BASE_URL}/api/images/users/${user?.foto}`,
+                key={currentPhotoUri}
+                source={{ uri: currentPhotoUri }}
+                onError={() => {
+                  setFailedPhotoUri(currentPhotoUri);
+                  logger.warn("No se pudo cargar la foto de perfil", { uri: currentPhotoUri });
                 }}
                 style={styles.avatar}
               />
@@ -385,46 +387,12 @@ export function PremiumProfileView({
         </View>
 
         <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Apariencia del Sistema
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginVertical: 10 }}
-            >
-              <View style={{ flexDirection: "row", gap: 12, paddingRight: 20 }}>
-                {THEME_OPTIONS.map((theme) => {
-                  const isSelected =
-                    accentColor.toLowerCase() === theme.color.toLowerCase();
-                  return (
-                    <Pressable
-                      key={theme.color}
-                      onPress={() => {
-                        if (user?.id) {
-                          setAccentColor(user.id, theme.color);
-                        }
-                      }}
-                      style={[
-                        styles.colorCircle,
-                        { backgroundColor: theme.color },
-                        isSelected && {
-                          borderWidth: 3,
-                          borderColor: textPrimary,
-                          transform: [{ scale: 1.15 }],
-                        },
-                      ]}
-                    >
-                      {isSelected && (
-                        <Ionicons name="checkmark" size={24} color="#FFF" />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          </View>
+          <ProfileThemePicker
+            accentColor={accentColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            borderColor={borderColor}
+          />
 
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
@@ -862,11 +830,5 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   cancelModalBtnText: { fontSize: 16, fontWeight: "800", textAlign: "center" },
-  colorCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
 });

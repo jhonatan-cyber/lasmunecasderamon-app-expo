@@ -1,10 +1,9 @@
-import { Platform } from "react-native";
-import { eventBus } from "@/utils/eventBus";
-import { useCallback, useRef, useState } from "react";
-import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from "expo-haptics";
+import { useFocusEffect } from "expo-router";
+import { useCallback,useRef,useState } from "react";
+import { Platform } from "react-native";
 
 import logger from '@/utils/logger';
 interface Gratificacion {

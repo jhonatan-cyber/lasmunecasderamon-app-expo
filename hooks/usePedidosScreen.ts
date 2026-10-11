@@ -88,7 +88,8 @@ export function usePedidosScreen() {
     }, []);
 
     useEffect(() => {
-        void fetchCategories();
+        const timer = setTimeout(() => { void fetchCategories(); }, 0);
+        return () => clearTimeout(timer);
     }, [fetchCategories]);
 
     const onRefresh = useCallback(() => {

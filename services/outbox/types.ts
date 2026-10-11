@@ -39,6 +39,9 @@ export interface OutboxIntent<TPayload = unknown> {
     appliedAt: number | null;
     /** Respuesta del servidor cuando se aplicó. */
     response: unknown | null;
+    /** Las filas antiguas sin propietario nunca se envían con una sesión nueva. */
+    ownerId?: string | null;
+    nextAttemptAt?: number;
 }
 
 export interface OutboxEnqueueInput<TPayload = unknown> {

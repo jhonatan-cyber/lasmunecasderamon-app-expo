@@ -1,44 +1,23 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
-import { useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import { apiClientSafe } from '@/api/client';
-import { ServiceCreateSchema } from '@lasmunecasderamon/validations';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
-import { parseDateSafe } from '@/utils/timeUtils';
-import logger from '@/utils/logger';
-import {
-  type ServicePayload,
-} from '@/components/cajero/nuevo-servicio/types';
 import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
-import { showToast, normalizeRoom, normalizeAnfitrionas, normalizeClients, deduplicate, getCardSplit, getIvaDecimal } from '@/hooks/utils/cartUtils';
-import { serviceReducer, initialServiceState } from '@/components/cajero/nuevo-servicio/reducer';
+import { initialServiceState,serviceReducer } from '@/components/cajero/nuevo-servicio/reducer';
+import {
+type ServicePayload,
+} from '@/components/cajero/nuevo-servicio/types';
+import { deduplicate,getCardSplit,getIvaDecimal,normalizeAnfitrionas,normalizeClients,normalizeRoom,showToast } from '@/hooks/utils/cartUtils';
+import logger from '@/utils/logger';
 import { blockOffline } from '@/utils/offlineGuard';
+import { parseDateSafe } from '@/utils/timeUtils';
+import { ServiceCreateSchema } from '@lasmunecasderamon/validations';
+import { useRouter } from 'expo-router';
+import { useCallback,useEffect,useMemo,useReducer } from 'react';
 
 export function useNuevoServicio() {
   const router = useRouter();
   const [state, dispatch] = useReducer(serviceReducer, initialServiceState);
 
-  const {
-    loadingInitial,
-    anfitrionas,
-    habitaciones,
-    clientes,
-    cajaAbierta,
-    selectedHostesses,
-    selectedClients,
-    selectedHabitacion,
-    precioServicio,
-    metodoPago,
-    metodoPagoAdicional,
-    pagosMixtos,
-    submitting,
-    hostessModalVisible,
-    roomModalVisible,
-    clientModalVisible,
-    balanceModalVisible,
-    balanceAmount,
-    balanceSubmitting,
-  } = state;
+  const {clientes, cajaAbierta, selectedHostesses, selectedClients, selectedHabitacion, precioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, balanceAmount} = state;
 
   const hasAnfitrionaComision =
     selectedHabitacion && (selectedHabitacion.comision_anfitriona ?? 0) > 0;
@@ -352,7 +331,7 @@ export function useNuevoServicio() {
     router,
   ]);
 
-  
+
   useEffect(() => {
     const selectedClient =
       selectedClients.length === 0
@@ -407,7 +386,7 @@ export function useNuevoServicio() {
   return {
     state,
     dispatch,
-    
+
     hasAnfitrionaComision,
     maxHostesses,
     maxClients,
@@ -415,7 +394,7 @@ export function useNuevoServicio() {
     totals,
     desgloseTarjeta,
     selectedClientData,
-    
+
     toggleHostess,
     toggleClient,
     handleLoadBalance,

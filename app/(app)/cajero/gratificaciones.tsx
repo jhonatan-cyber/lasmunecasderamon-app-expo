@@ -1,9 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { useStableCallback } from '@/hooks/useStableCallback';
-import {
+import { FlatList ,
   ActivityIndicator,
   Modal,
   Pressable,
@@ -14,6 +10,10 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { useStableCallback } from '@/hooks/useStableCallback';
+
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';

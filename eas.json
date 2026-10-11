@@ -8,9 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "node": "22.19.0",
+      "environment": "development",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
       },
       "android": {
         "buildType": "apk"
@@ -19,13 +19,13 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "node": "22.19.0"
+      "node": "22.19.0",
+      "environment": "preview"
     },
     "preview_apk": {
       "extends": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
       },
       "android": {
         "buildType": "apk"
@@ -35,6 +35,7 @@
       "channel": "production",
       "autoIncrement": true,
       "node": "22.19.0",
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
       }

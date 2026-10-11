@@ -1,35 +1,35 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useReducer } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import { showToast, isChampagneProduct, buildCommissionPreview } from '@/hooks/utils/cuentaUtils';
 import { apiClientSafe } from "@/api/client-safe";
-import { PremiumHeader } from "@/components/ui/PremiumHeader";
-import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
 import { CartList } from "@/components/cajero/forms/CartList";
+import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
-import { blockOffline } from "@/utils/offlineGuard";
+import { buildCommissionPreview,isChampagneProduct,showToast } from '@/hooks/utils/cuentaUtils';
 import logger from "@/utils/logger";
+import { blockOffline } from "@/utils/offlineGuard";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Stack,useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useCallback,useEffect,useMemo,useReducer } from "react";
+import {
+KeyboardAvoidingView,
+Platform,
+Pressable,
+RefreshControl,
+ScrollView,
+StyleSheet,
+Text,
+useWindowDimensions,
+View,
+} from "react-native";
 
 import {
-  CategorySelector,
-  NewAccountForm,
-  NewAccountSummary,
-  NuevaCuentaModales,
-  initialCuentaState,
-  cuentaReducer,
+CategorySelector,
+cuentaReducer,
+initialCuentaState,
+NewAccountForm,
+NewAccountSummary,
+NuevaCuentaModales,
 } from "@/components/cajero/nueva-cuenta";
 
 
@@ -76,7 +76,7 @@ export default function NuevaCuentaScreen() {
   const fetchInitialData = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
     try {
-      const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
+      const [cajaRes, anfitrionasRes, , clientsRes, categoriesRes] =
         await Promise.all([
           apiClientSafe("/cashregister/status"),
           apiClientSafe("/anfitrionas"),
@@ -86,7 +86,7 @@ export default function NuevaCuentaScreen() {
         ]);
 
       const cajaData = cajaRes as unknown as { success: boolean; data: any };
-      const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
+
       const catsData = categoriesRes as unknown as { success: boolean; data: any[] };
       const clientsData = clientsRes as unknown as { success: boolean; data: any[] };
 

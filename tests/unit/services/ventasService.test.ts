@@ -1,13 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/api/client-safe', () => ({
-  apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: null })),
-}));
-
-vi.mock('@/utils/logger', () => ({
-  default: { captureException: vi.fn() }
-}));
-
 import { apiClientSafe } from '@/api/client-safe';
 import logger from '@/utils/logger';
 import {
@@ -16,6 +8,14 @@ import {
   finalizarVenta,
   enviarSolicitudAnulacion
 } from '@/services/ventasService';
+
+vi.mock('@/api/client-safe', () => ({
+  apiClientSafe: vi.fn(() => Promise.resolve({ success: true, data: null })),
+}));
+
+vi.mock('@/utils/logger', () => ({
+  default: { captureException: vi.fn() }
+}));
 
 const mockApi = () => vi.mocked(apiClientSafe);
 const mockCapture = () => vi.mocked(logger.captureException);

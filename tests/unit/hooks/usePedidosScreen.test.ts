@@ -6,10 +6,10 @@ import { createMirrorRepository } from '@/services/mirror/repository';
 import { ensureMirrorSchema } from '@/services/mirror/schema';
 import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
 
+import { usePedidosScreen } from '@/hooks/usePedidosScreen';
+
 const categoriesService = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('@/services', () => ({ categoriesService }));
-
-import { usePedidosScreen } from '@/hooks/usePedidosScreen';
 
 const CATEGORIAS = [
     { id: 'cat-1', name: 'Cervezas', description: '', status: 1, total_products: 4, display_order: 1 },

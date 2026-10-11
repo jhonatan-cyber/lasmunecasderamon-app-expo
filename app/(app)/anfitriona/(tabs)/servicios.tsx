@@ -1,24 +1,24 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState, useCallback } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ServiceCard } from "@/components/anfitriona/ServiceCard";
+import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
 import FlashList from "@/components/shared/FlashList";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
-import { useServicios, Servicio } from "@/hooks/useServicios";
-import { ServiceCard } from "@/components/anfitriona/ServiceCard";
-import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
+import { Servicio,useServicios } from "@/hooks/useServicios";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCallback,useState } from "react";
+import {
+Pressable,
+RefreshControl,
+StyleSheet,
+Text,
+View,
+} from "react-native";
 
 import logger from "@/utils/logger";
 export default function ServiciosScreen() {
-  const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } = useAccentColor();
+  const {accentColor, bg, cardBg, textSecondary, borderColor} = useAccentColor();
   const {
     servicios,
     loading,
@@ -47,7 +47,7 @@ export default function ServiciosScreen() {
 
 
 
-  const onConfirmAssistance = (
+  const onConfirmAssistance = useCallback((
     servicioId: number,
     roomName: string,
     type: string,
@@ -67,7 +67,7 @@ export default function ServiciosScreen() {
     } else {
       handleAssistance(servicioId, roomName, type);
     }
-  };
+  }, [handleAssistance]);
 
   const filteredData = servicios
     .filter((s) => s?.id_servicio)
@@ -97,10 +97,10 @@ export default function ServiciosScreen() {
     0,
   );
 
-  const handlePressItem = (item: Servicio) => {
+  const handlePressItem = useCallback((item: Servicio) => {
     setSelectedServicio(item);
     setModalVisible(true);
-  };
+  }, []);
 
   const renderServicio = useCallback(
     ({ item, index }: { item: Servicio; index: number }) => (

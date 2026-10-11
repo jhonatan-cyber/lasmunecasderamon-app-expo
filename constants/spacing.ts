@@ -12,9 +12,7 @@ const baseScale = (val: number): number => {
   return Math.round(val * scaleFactor);
 };
 
-const tabletScale = (val: number): number => {
-  return Math.round(val * 1.4);
-};
+
 
 export const Spacing = {
   xxs: isTablet ? 2 : 2,

@@ -18,12 +18,12 @@ const NOW = 1_800_000_000_000;
 
 describe('planMigrations', () => {
     it('debe devolver todas las migraciones cuando no hay ninguna aplicada', () => {
-        expect(planMigrations([]).map(m => m.version)).toEqual([1, 2]);
+        expect(planMigrations([]).map(m => m.version)).toEqual([1, 2, 3]);
     });
 
     it('debe ignorar las ya aplicadas', () => {
-        expect(planMigrations([1]).map(m => m.version)).toEqual([2]);
-        expect(planMigrations([1, 2]).map(m => m.version)).toEqual([]);
+        expect(planMigrations([1]).map(m => m.version)).toEqual([2, 3]);
+        expect(planMigrations([1, 2, 3]).map(m => m.version)).toEqual([]);
     });
 
     it('debe ordenar por versión y saltar huecos', () => {
@@ -55,7 +55,7 @@ describe('ensureMirrorSchema', () => {
         const version = ensureMirrorSchema(driver, () => NOW);
 
         expect(version).toBe(MIRROR_MIGRATIONS[MIRROR_MIGRATIONS.length - 1].version);
-        expect(version).toBe(2);
+        expect(version).toBe(3);
         expect(readAppliedVersions(driver)).toHaveLength(MIRROR_MIGRATIONS.length);
         expect(
             driver.getFirst<{ applied_at: number }>(
@@ -69,7 +69,7 @@ describe('ensureMirrorSchema', () => {
         ensureMirrorSchema(driver, () => NOW);
         ensureMirrorSchema(driver, () => NOW);
 
-        expect(readAppliedVersions(driver)).toEqual([1, 2]);
+        expect(readAppliedVersions(driver)).toEqual([1, 2, 3]);
     });
 
     it('debe aplicar solo lo que falta cuando el ledger ya trae una migración', () => {
@@ -82,9 +82,10 @@ describe('ensureMirrorSchema', () => {
             'INSERT INTO mirror_schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
             [2, 'outbox_de_intenciones', NOW]
         );
+        MIRROR_MIGRATIONS[1].statements.forEach(sql => driver.exec(sql));
 
-        expect(ensureMirrorSchema(driver, () => NOW + 1)).toBe(1);
-        expect(readAppliedVersions(driver)).toEqual([1, 2]);
+        expect(ensureMirrorSchema(driver, () => NOW + 1)).toBe(3);
+        expect(readAppliedVersions(driver)).toEqual([1, 2, 3]);
     });
 });
 

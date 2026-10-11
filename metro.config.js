@@ -1,7 +1,7 @@
 const path = require('path');
-const { getDefaultConfig } = require('expo/metro-config');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname, { includeWebReplay: false });
 const forcedTslibPath = path.resolve(__dirname, 'node_modules/tslib/tslib.es6.js');
 
 // En Windows la caché temporal compartida puede quedar bloqueada por otras

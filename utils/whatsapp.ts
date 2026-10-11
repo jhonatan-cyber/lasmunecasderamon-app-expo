@@ -1,7 +1,6 @@
 import * as Linking from 'expo-linking';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 
 interface WhatsAppOptions {
     phoneNumber: string;
@@ -13,18 +12,18 @@ export const openWhatsApp = async ({ phoneNumber, message }: WhatsAppOptions): P
         const cleanedNumber = phoneNumber.replace(/\D/g, '');
         const encodedMessage = encodeURIComponent(message);
         const url = `https://wa.me/${cleanedNumber}?text=${encodedMessage}`;
-        
+
         const canOpen = await Linking.canOpenURL(url);
-        
+
         if (canOpen) {
             await Linking.openURL(url);
             return true;
         } else {
- 
+
             return false;
         }
-    } catch (error) {
-     
+    } catch  {
+
         return false;
     }
 };
@@ -42,7 +41,7 @@ export const shareReportViaWhatsApp = async (
         if (format === 'pdf') {
             const html = generateReportHTML(reportTitle, reportData);
             const { uri } = await Print.printToFileAsync({ html });
-            
+
             const canShare = await Sharing.isAvailableAsync();
             if (canShare) {
                 await Sharing.shareAsync(uri, {
@@ -59,15 +58,15 @@ export const shareReportViaWhatsApp = async (
             return true;
         }
         return false;
-    } catch (error) {
-   
+    } catch  {
+
         return false;
     }
 };
 
 function generateReportHTML(title: string, data: any): string {
     let rows = '';
-    
+
     if (Array.isArray(data)) {
         data.forEach((item, index) => {
             const values = Object.values(item).map(v => `<td>${v}</td>`).join('');
@@ -109,7 +108,7 @@ function generateReportHTML(title: string, data: any): string {
 
 function generateReportText(title: string, data: any): string {
     let text = `${title}\n${'='.repeat(40)}\n\nFecha: ${new Date().toLocaleDateString('es-PE')}\n\n`;
-    
+
     if (Array.isArray(data)) {
         data.forEach((item, index) => {
             text += `${index + 1}. ${JSON.stringify(item)}\n`;
@@ -117,7 +116,7 @@ function generateReportText(title: string, data: any): string {
     } else {
         text += JSON.stringify(data, null, 2);
     }
-    
+
     return text;
 }
 
@@ -130,17 +129,17 @@ export const formatPhoneForWhatsApp = (phone: string): string => {
 };
 
 export const getPredefinedMessages = {
-    clientNotification: (name: string, amount: number) => 
+    clientNotification: (name: string, amount: number) =>
         `Hola ${name}, tu consumo total es S/ ${amount.toFixed(2)}. Gracias por visitarnos!`,
-    
+
     serviceComplete: (serviceType: string, room: string) =>
         `Tu servicio de ${serviceType} en la sala ${room} ha terminado. Gracias por tu visita!`,
-    
+
     reservationConfirm: (date: string, time: string) =>
         `Tu reservación para el ${date} a las ${time} ha sido confirmada. Te esperamos!`,
-    
+
     reservationCancel: (date: string) =>
         `Tu reservación del ${date} ha sido cancelada. Si necesitas más información, contáctanos.`,
-    
+
     generalNotification: (message: string) => message,
 };

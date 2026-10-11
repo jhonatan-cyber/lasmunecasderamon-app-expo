@@ -81,7 +81,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
             <Text style={[styles.sectionTitle, { color: textPrimary }]}>Resumen del Pedido</Text>
-            
+
             {loadingDetails ? (
               <View style={[styles.metaRow, { borderColor }]}>
                 <Skeleton width={60} height={40} /><Skeleton width={1} height={40} />
@@ -138,7 +138,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   Genera venta por ${splitTarjeta.venta.toLocaleString()} ({splitVentaPct}%) y propina por ${splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}%). Solo informativo, no afecta la caja.
                 </Text>
               </View>
-            )}              <View style={[styles.totals, { backgroundColor: accentBg }]}>
+             )}
+            <View style={[styles.totals, { backgroundColor: accentBg }]}>
               <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
               {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
               <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${totalFinal.toLocaleString()}</Text></View>

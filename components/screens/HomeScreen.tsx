@@ -21,12 +21,7 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/format";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { AnimatedView } from '@/components/ui/AnimatedView';
-import { useCallback, useMemo, useState } from "react";
-import {
+import { FlatList ,
   Modal,
   Pressable,
   RefreshControl,
@@ -35,6 +30,11 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useCallback, useMemo, useState } from "react";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { showToast } from '@/utils/toast-lazy';
 
@@ -44,6 +44,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ role }: HomeScreenProps) {
+  const compactHome = role === "cajero" || role === "barman";
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
@@ -273,7 +274,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <AnimatedScreen>
-          <View style={{ padding: role === "cajero" ? 0 : 16 }}>
+          <View style={{ padding: compactHome ? 0 : 16 }}>
             {}
 
             {role === "anfitriona" && activeService && (
@@ -396,13 +397,13 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === "barman" && (
               <>
-                <View style={{ marginTop: 0, paddingHorizontal: 16 }}>
+                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <BarmanActionGrid fullWidth />
                 </View>
               </>
             )}
 
-            {role !== "cajero" && (
+            {!compactHome && (
               <View style={{ marginTop: 20, paddingHorizontal: 0 }}>
                 <PremiumLiquidationCard
                   user={user}
@@ -412,7 +413,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
-            {role !== "cajero" && (
+            {!compactHome && (
               <PremiumCalendar
                 events={events}
                 selectedDates={selectedDates}
@@ -428,7 +429,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         </AnimatedScreen>
       </ScrollView>
 
-      {selectedDates.length > 0 && (
+      {!compactHome && selectedDates.length > 0 && (
         <AnimatedView
           from={{ translateY: 100 }}
           animate={{ translateY: 0 }}

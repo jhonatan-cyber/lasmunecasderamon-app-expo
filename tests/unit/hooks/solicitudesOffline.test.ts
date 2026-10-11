@@ -20,6 +20,7 @@ vi.mock('@/api/client', () => ({
   apiClient: vi.fn(),
   setTokenInMemory: vi.fn(),
   setUnauthorizedHandler: vi.fn(),
+  setForbiddenHandler: vi.fn(),
   setSessionConfirmedHandler: vi.fn(),
   notifySessionConfirmed: vi.fn(),
 }));

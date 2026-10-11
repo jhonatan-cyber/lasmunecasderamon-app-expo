@@ -1,4 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { Platform } from "react-native";
+import { useFocusEffect } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system";
 import { eventBus } from "@/utils/eventBus";
 import { apiClientSafe } from "@/api/client";
 import { useAuthStore, type User } from "@/store/authStore";
@@ -30,7 +34,7 @@ export function useProfile() {
       const res = await apiClientSafe<UserProfileResponse>("/users/profile", { signal });
       const profile = res.data;
       if (res.success && profile) {
-        await updateProfile(profile);
+        await updateProfile(profile, { localOnly: true });
         setFormData((prev) => ({
           ...prev,
           nick: profile.nick || prev.nick,
@@ -48,8 +52,9 @@ export function useProfile() {
     }
   }, [updateProfile]);
 
-  useEffect(() => {
-    if (!user) return;
+  const userId = user?.id;
+  useFocusEffect(useCallback(() => {
+    if (userId == null) return;
 
     let active = true;
     const abortController = new AbortController();
@@ -65,7 +70,7 @@ export function useProfile() {
     const sub = eventBus.addListener('sse_event', (payload: any) => {
       if (
         payload.type === 'profile_updated' &&
-        payload.data?.userId == user.id
+        String(payload.data?.userId) === String(userId)
       ) {
         if (active) {
           fetchProfile(abortController.signal);
@@ -78,46 +83,53 @@ export function useProfile() {
       abortController.abort();
       sub.remove();
     };
-  }, [user, fetchProfile]);
+  }, [userId, fetchProfile]));
 
   const takePhoto = useCallback(async () => {
-    // Import perezoso: expo-image-picker no entra al path de arranque.
-    const ImagePicker = await import("expo-image-picker");
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted")
-      return { success: false, message: "Se requiere acceso a la cámara" };
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted")
+        return { success: false, message: "Se requiere acceso a la cámara" };
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      updateField("image", result.assets[0].uri);
-      return { success: true };
+      if (!result.canceled) {
+        updateField("image", result.assets[0].uri);
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      logger.fetchError(error, { context: "useProfile:takePhoto" });
+      return { success: false, message: "No se pudo abrir la cámara. Vuelve a intentarlo." };
     }
-    return { success: false };
   }, [updateField]);
 
   const pickImage = useCallback(async () => {
-    const ImagePicker = await import("expo-image-picker");
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted")
-      return { success: false, message: "Se requiere acceso a la galería" };
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted")
+        return { success: false, message: "Se requiere acceso a la galería" };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      updateField("image", result.assets[0].uri);
-      return { success: true };
+      if (!result.canceled) {
+        updateField("image", result.assets[0].uri);
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      logger.fetchError(error, { context: "useProfile:pickImage" });
+      return { success: false, message: "No se pudo abrir la galería. Vuelve a intentarlo." };
     }
-    return { success: false };
   }, [updateField]);
 
   const saveProfile = useCallback(async () => {
@@ -137,18 +149,16 @@ export function useProfile() {
       }
 
       if (formData.image) {
-        const uri = formData.image;
-        const cleanUri = uri.split("?")[0];
-        const uriParts = cleanUri.split(".");
-        const extension = uriParts[uriParts.length - 1]?.toLowerCase() || "jpg";
-        const fileType = extension === "jpg" ? "jpeg" : extension;
-        const fileName = cleanUri.split("/").pop() || `profile.${extension}`;
-
-        form.append("foto", {
-          uri: uri,
-          name: fileName,
-          type: `image/${fileType}`,
-        } as any);
+        if (Platform.OS === "web") {
+          const response = await fetch(formData.image);
+          if (!response.ok) throw new Error("No se pudo leer la foto seleccionada");
+          const image = await response.blob();
+          const extension = image.type.split("/")[1] || "jpg";
+          form.append("foto", image, `profile.${extension}`);
+        } else {
+          const image = new File(formData.image);
+          form.append("foto", image, image.name);
+        }
       }
 
       const res = await apiClientSafe<UserProfileResponse>("/users", {
@@ -158,15 +168,21 @@ export function useProfile() {
 
       if (res.success) {
         const d = res.data || {};
+        if (formData.image) {
+          const persisted = await apiClientSafe<UserProfileResponse>("/users/profile");
+          if (!d.foto || !persisted.success || persisted.data?.foto !== d.foto) {
+            throw new Error("No se pudo confirmar que la foto quedó guardada. Vuelve a intentarlo.");
+          }
+        }
         const updatedUser: Partial<User> = {
-          ...(user ?? {}),
           nick: d.nick || formData.nick,
           phone: d.phone || formData.phone,
           address: d.address || formData.address,
           estado_civil: d.maritalStatus || formData.estadoCivil,
           ...(d.foto ? { foto: d.foto } : {}),
         };
-        await updateProfile(updatedUser);
+        await updateProfile(updatedUser, { localOnly: true });
+        setFormData((prev) => ({ ...prev, image: null, password: "" }));
         return { success: true, message: "Perfil actualizado correctamente" };
       } else {
         throw new Error(res.message || "Error al actualizar perfil");

@@ -64,7 +64,7 @@ export interface AuthState {
     clearForcePasswordChange: () => Promise<void>;
     tempAuthData: TempAuthData | null;
     setTempAuthData: (data: TempAuthData | null) => void;
-    updateProfile: (partialUser: Partial<User>) => Promise<boolean>;
+    updateProfile: (partialUser: Partial<User>, options?: { localOnly?: boolean }) => Promise<boolean>;
     refreshUser: () => Promise<boolean>;
     isBiometricEnabled: boolean;
     setBiometricEnabled: (enabled: boolean) => Promise<void>;

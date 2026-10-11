@@ -1,44 +1,43 @@
-import { eventBus } from "@/utils/eventBus";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
-import {
-    ActivityIndicator,
-
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
-} from 'react-native';
-import {
-    showToast,
-    isChampagneProduct,
-    getHostessLimit,
-    buildCommissionPreview,
-    buildConsumptionsPayload,
-} from '@/hooks/utils/cuentaUtils';
 import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
-import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
-import { useAccentColor } from '@/hooks/useAccentColor';
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useTimer } from '@/context/TimerContext';
-import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import {
+buildCommissionPreview,
+buildConsumptionsPayload,
+isChampagneProduct,
+showToast
+} from '@/hooks/utils/cuentaUtils';
+import { getMirror,MIRROR_KEYS,MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { getOutbox } from '@/services/outbox';
+import { eventBus } from "@/utils/eventBus";
 import logger from '@/utils/logger';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Stack,useLocalSearchParams,useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback,useEffect,useMemo,useReducer } from 'react';
+import {
+ActivityIndicator,
+
+KeyboardAvoidingView,
+Platform,
+Pressable,
+RefreshControl,
+ScrollView,
+StyleSheet,
+Text,
+useWindowDimensions,
+View,
+} from 'react-native';
 
 import {
-    InfoBanner,
-    CategorySelector,
-    RoomSelectionSection,
-    NewConsumptionsSummary,
-    AgregarCuentaModales
+AgregarCuentaModales,
+CategorySelector,
+InfoBanner,
+NewConsumptionsSummary,
+RoomSelectionSection
 } from '@/components/cajero/agregar-cuenta';
 import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 
@@ -410,7 +409,7 @@ export default function AgregarCuentaScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <PremiumHeader 
+            <PremiumHeader
                 title="Agregar Productos"
                 subtitle={fromCache ? 'Datos guardados en el dispositivo' : `Cuenta ${cuentaOriginal?.codigo}`}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
@@ -607,9 +606,9 @@ const styles = StyleSheet.create({
     emptyCartBox: { padding: 20, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     emptyCartText: { fontSize: 14, fontWeight: '600' },
     backBtnRight: {
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        height: 38, 
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 38,
         borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,

@@ -1,10 +1,9 @@
 import type {
-  Habitacion,
-  Anfitriona,
-  Cliente,
-  Producto,
-  Categoria,
-  CartItem,
+Anfitriona,
+CartItem,
+Categoria,
+Habitacion,
+Producto
 } from "@lasmunecasderamon/types";
 
 // ── Cuenta detail sub-types ──────────────────────────────────────────

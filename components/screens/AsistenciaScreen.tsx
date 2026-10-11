@@ -1,19 +1,20 @@
+import { AnimatedView } from '@/components/ui/AnimatedView';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAsistencia } from '@/hooks/useAsistencia';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList, FlatList as FlashList } from "react-native";
-import { AnimatedView } from '@/components/ui/AnimatedView';
-import { useCallback } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCallback } from 'react';
 import {
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+FlatList as FlashList,
+Pressable,
+RefreshControl,
+StyleSheet,
+Text,
+View
+} from "react-native";
+
 
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];

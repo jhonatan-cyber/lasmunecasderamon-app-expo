@@ -5,6 +5,8 @@ import { MIRROR_DATABASE_NAME, type MirrorDriver, type MirrorParam } from './dri
 export { MIRROR_DATABASE_NAME };
 export type { MirrorDriver, MirrorParam };
 
+export async function prepareMirrorStorage(): Promise<void> {}
+
 /**
  * Driver nativo (iOS/Android): archivo SQLite en el directorio de documentos de
  * la app. No vive en AsyncStorage porque el espejo necesita consultas por clave,

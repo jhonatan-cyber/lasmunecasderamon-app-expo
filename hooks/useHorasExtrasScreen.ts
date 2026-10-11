@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { overtimeService } from '@/services';
+import { useFocusEffect } from 'expo-router';
+import { useCallback,useMemo,useRef,useState } from 'react';
 
 export interface OvertimeRecord {
     id_hora_extra: number;
@@ -18,7 +18,6 @@ export interface OvertimeRecord {
 
 export function useHorasExtrasScreen() {
     const theme = useAccentColor();
-    const { bg, cardBg, textPrimary, textSecondary, borderColor } = theme;
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -49,8 +48,8 @@ export function useHorasExtrasScreen() {
     }, []);
 
     useFocusEffect(
-        useCallback(() => { 
-            fetchData(); 
+        useCallback(() => {
+            fetchData();
         }, [fetchData])
     );
 

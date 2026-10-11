@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -22,6 +23,8 @@ import { showToast } from "@/utils/toast-lazy";
 export default function ChangePasswordScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -93,43 +96,75 @@ export default function ChangePasswordScreen() {
             </Text>
           ) : null}
 
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
-            placeholder="Nueva contraseña (mínimo 8 caracteres)"
-            placeholderTextColor={theme.tabIconDefault}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            value={password}
-            onChangeText={setPassword}
-            editable={!loading}
-          />
+          <View style={styles.passwordField}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Nueva contraseña (mínimo 8 caracteres)"
+              placeholderTextColor={theme.tabIconDefault}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              value={password}
+              onChangeText={setPassword}
+              editable={!loading}
+            />
+            <Pressable
+              style={styles.visibilityButton}
+              onPress={() => setShowPassword((visible) => !visible)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? "Ocultar nueva contraseña" : "Mostrar nueva contraseña"}
+              disabled={loading}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={24}
+                color={theme.tabIconDefault}
+              />
+            </Pressable>
+          </View>
 
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
-            placeholder="Confirmar contraseña"
-            placeholderTextColor={theme.tabIconDefault}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            editable={!loading}
-          />
+          <View style={styles.passwordField}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Confirmar contraseña"
+              placeholderTextColor={theme.tabIconDefault}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              editable={!loading}
+            />
+            <Pressable
+              style={styles.visibilityButton}
+              onPress={() => setShowConfirmPassword((visible) => !visible)}
+              accessibilityRole="button"
+              accessibilityLabel={showConfirmPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+              disabled={loading}
+            >
+              <Ionicons
+                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                size={24}
+                color={theme.tabIconDefault}
+              />
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [
@@ -190,13 +225,26 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
+  passwordField: {
+    position: "relative",
+    marginBottom: 16,
+  },
+  visibilityButton: {
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   input: {
     height: 60,
     borderRadius: 20,
-    paddingHorizontal: 24,
+    paddingLeft: 24,
+    paddingRight: 56,
     fontSize: 16,
     borderWidth: 1.5,
-    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,

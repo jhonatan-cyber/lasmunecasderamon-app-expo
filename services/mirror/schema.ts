@@ -10,7 +10,7 @@ export interface MirrorMigration {
     statements: string[];
 }
 
-export const MIRROR_SCHEMA_VERSION = 2;
+export const MIRROR_SCHEMA_VERSION = 3;
 
 export const MIRROR_MIGRATIONS: readonly MirrorMigration[] = [
     {
@@ -53,6 +53,15 @@ export const MIRROR_MIGRATIONS: readonly MirrorMigration[] = [
                 response TEXT
             )`,
             `CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox (status, created_at ASC)`,
+        ],
+    },
+    {
+        version: 3,
+        name: 'propietario_y_reintentos',
+        statements: [
+            'ALTER TABLE outbox ADD COLUMN owner_id TEXT',
+            'ALTER TABLE outbox ADD COLUMN next_attempt_at INTEGER NOT NULL DEFAULT 0',
+            'CREATE INDEX IF NOT EXISTS idx_outbox_owner ON outbox (owner_id, status, next_attempt_at)',
         ],
     },
 ];

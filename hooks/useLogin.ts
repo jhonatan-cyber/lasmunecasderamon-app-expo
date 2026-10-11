@@ -1,11 +1,11 @@
+import { authService } from '@/services';
+import { useAuthStore } from '@/store/authStore';
+import { showToast } from '@/utils/toast-lazy';
+import { resetPasswordSchema } from '@lasmunecasderamon/validations';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback,useEffect,useRef,useState } from 'react';
 import { TextInput } from 'react-native';
-import { showToast } from '@/utils/toast-lazy';
-import { useAuthStore } from '@/store/authStore';
-import { authService } from '@/services';
-import { resetPasswordSchema } from '@lasmunecasderamon/validations';
 
 export interface AlertConfig {
     visible: boolean;
@@ -53,7 +53,6 @@ export default function useLogin() {
         return () => clearTimeout(timer);
     }, [checkBiometrics]);
 
-    const hasAutoPrompted = useRef(false);
 
     const [alertConfig, setAlertConfig] = useState<AlertConfig>({
         visible: false, title: '', message: '', type: 'info'
@@ -170,18 +169,6 @@ export default function useLogin() {
         saveCredentials, setBiometricEnabled, setTempAuthData, showAlert,
     ]);
 
-    const handleLogin = useCallback(async () => {
-        if (!username || !password) {
-            if (isBiometricEnabled && isBiometricSupported) {
-                await handleBiometricLogin();
-                return;
-            }
-            setError('Por favor ingresa tu usuario y contraseña');
-            return;
-        }
-        await performLogin(username.trim(), password);
-    }, [username, password, isBiometricEnabled, isBiometricSupported, performLogin]);
-
     const handleQRScan = useCallback(async (data: string) => {
         setShowQRScanner(false);
         setLoading(true);
@@ -246,10 +233,22 @@ export default function useLogin() {
         }
     }, [getCredentials, isBiometricEnabled, isPrompting, performLogin, showAlert]);
 
+    const handleLogin = useCallback(async () => {
+        if (!username || !password) {
+            if (isBiometricEnabled && isBiometricSupported) {
+                await handleBiometricLogin();
+                return;
+            }
+            setError('Por favor ingresa tu usuario y contraseña');
+            return;
+        }
+        await performLogin(username.trim(), password);
+    }, [username, password, isBiometricEnabled, isBiometricSupported, performLogin, handleBiometricLogin]);
+
     const onAlertConfirm = useCallback(() => {
         closeAlert();
         alertConfig.onConfirm?.();
-    }, [closeAlert, alertConfig.onConfirm]);
+    }, [closeAlert, alertConfig]);
 
     const closeResetPasswordModal = useCallback(() => {
         setShowResetPasswordModal(false);

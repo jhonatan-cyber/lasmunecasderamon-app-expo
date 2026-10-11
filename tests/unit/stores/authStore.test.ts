@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { apiClientSafe } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 
 describe('authStore', () => {
@@ -52,6 +53,14 @@ describe('authStore', () => {
     });
 
     describe('updateProfile', () => {
+        it('sincroniza una foto del servidor sin volver a enviarla', async () => {
+            useAuthStore.setState({ user: { id: '1', name: 'Test', lastName: 'User', email: 'test@test.com', role: 'cajero', foto: 'old.jpg', username: 'test' } });
+            vi.mocked(apiClientSafe).mockClear();
+            await useAuthStore.getState().updateProfile({ foto: 'new.webp' }, { localOnly: true });
+            expect(useAuthStore.getState().user?.foto).toBe('new.webp');
+            expect(apiClientSafe).not.toHaveBeenCalled();
+        });
+
         it('debe actualizar parcialmente el usuario actual', async () => {
             const mockUser = {
                 id: '1',
@@ -200,7 +209,7 @@ describe('authStore', () => {
         it('debe cargar usuario desde AsyncStorage si hay token', async () => {
             const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
             const { TokenStorage } = await import('@/utils/tokenStorage');
-            
+
             vi.mocked(TokenStorage.getToken).mockResolvedValue('test-token');
             vi.mocked(AsyncStorage.getItem).mockImplementation(async (key: string) => {
                 if (key === 'user') return JSON.stringify({ id: '1', name: 'Test', email: 'test@test.com', role: 'admin', foto: '', lastName: '', username: 'test' });

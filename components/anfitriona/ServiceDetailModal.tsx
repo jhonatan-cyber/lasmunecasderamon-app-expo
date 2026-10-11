@@ -1,8 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, View, Pressable, Modal, ScrollView } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Modal,Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
 
 interface ServiceDetailModalProps {
     visible: boolean;
@@ -12,7 +11,7 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: ServiceDetailModalProps) => {
-    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
 
     if (!servicio) return null;
 
@@ -34,21 +33,21 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        return date.toLocaleString('es-ES', { 
-            day: '2-digit', 
-            month: '2-digit', 
+        return date.toLocaleString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
-            hour: '2-digit', 
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
         }).replace(/,/g, '');
     };
 
     return (
-        <Modal 
-            visible={visible} 
-            animationType="slide" 
-            transparent 
+        <Modal
+            visible={visible}
+            animationType="slide"
+            transparent
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
@@ -66,7 +65,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
                             <Ionicons name="close" size={24} color={textPrimary} />
                         </Pressable>
                     </View>
-                    
+
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.detailsGrid}>
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
@@ -76,7 +75,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
                                     {servicio.habitacion}
                                 </Text>
                             </View>
-                            
+
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
                                 <Ionicons name="time" size={16} color={accentColor} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>TIEMPO</Text>
@@ -120,7 +119,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
 
                         <View style={[styles.summarySection, { backgroundColor: bg, borderColor }]}>
                             <Text style={[styles.sectionTitle, { color: textSecondary }]}>RESUMEN FINANCIERO</Text>
-                            
+
                             <View style={styles.summaryRow}>
                                 <Text style={[styles.summaryLabel, { color: textSecondary }]}>Precio Servicio</Text>
                                 <Text style={[styles.summaryVal, { color: textPrimary }]}>
@@ -164,19 +163,19 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
                             </View>
                         </View>
                     </ScrollView>
-                    
+
                     <View style={styles.buttonRow}>
                         {mostrarBotonEditar && onEdit && (
-                            <Pressable 
-                                style={[styles.modalEditBtn, { backgroundColor: '#3B82F6' }]} 
+                            <Pressable
+                                style={[styles.modalEditBtn, { backgroundColor: '#3B82F6' }]}
                                 onPress={onEdit}
                             >
                                 <Ionicons name="pencil" size={20} color="#FFFFFF" />
                                 <Text style={styles.modalEditBtnText}>Editar</Text>
                             </Pressable>
                         )}
-                        <Pressable 
-                            style={[styles.modalCloseBtn, { backgroundColor: accentColor, flex: mostrarBotonEditar ? 1 : undefined, width: mostrarBotonEditar ? undefined : '100%' }]} 
+                        <Pressable
+                            style={[styles.modalCloseBtn, { backgroundColor: accentColor, flex: mostrarBotonEditar ? 1 : undefined, width: mostrarBotonEditar ? undefined : '100%' }]}
                             onPress={onClose}
                         >
                             <Text style={styles.modalCloseBtnText}>Cerrar</Text>

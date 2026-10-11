@@ -3,6 +3,19 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useNuevaVenta } from '@/hooks/useNuevaVenta';
 import { apiClientSafe } from '@/api/client';
 import { emitRefreshCategories } from '@/utils/realtime';
+import { setOutboxForTests } from '@/services/outbox';
+import { createOutboxService } from '@/services/outbox/service';
+import { createOutboxRepository } from '@/services/outbox/repository';
+import { ensureMirrorSchema } from '@/services/mirror/schema';
+import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
+
+let saleDriver: ReturnType<typeof createNodeSqliteMirrorDriver>;
+beforeEach(() => {
+  saleDriver = createNodeSqliteMirrorDriver();
+  ensureMirrorSchema(saleDriver);
+  setOutboxForTests(createOutboxService(createOutboxRepository(saleDriver), { isOffline: () => false }));
+});
+afterEach(() => { setOutboxForTests(null); saleDriver.close(); });
 
 // ── Mocks ────────────────────────────────────────────────────────────────
 const configValues = vi.hoisted(() => new Map<string, string>());

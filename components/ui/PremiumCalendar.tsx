@@ -1,7 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCallback,useMemo,useState } from "react";
+import { Pressable,StyleSheet,Text,View } from "react-native";
 
 interface CalendarEvent {
   date: string;
@@ -24,7 +24,7 @@ export const PremiumCalendar = ({
   currentMonth: propCurrentMonth,
   onMonthChange,
 }: PremiumCalendarProps) => {
-  const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+  const {accentColor, cardBg, borderColor, textPrimary, textSecondary} = useAccentColor();
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
 
   const currentMonth = propCurrentMonth || internalCurrentMonth;

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useLayoutEffect } from 'react';
 
 /**
  * useStableCallback — Returns a stable callback reference that always executes
@@ -42,9 +42,9 @@ export function useStableCallback<T extends (...args: any[]) => any>(
   const ref = useRef(callback);
 
   // Always keep the ref pointing to the latest callback
-  ref.current = callback;
+  useLayoutEffect(() => { ref.current = callback; }, [callback]);
 
   // Return a stable wrapper that delegates to ref.current
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   return useCallback((...args: any[]) => ref.current(...args), []) as T;
 }

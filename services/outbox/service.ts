@@ -72,6 +72,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(intent.payload),
+            retries: 0,
         });
 
         if ((res as { success?: boolean })?.success === false) {
@@ -88,6 +89,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(intent.payload),
+            retries: 0,
         });
 
         if ((res as { success?: boolean })?.success === false) {
@@ -115,6 +117,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(cobro),
+            retries: 0,
         });
 
         if ((res as { success?: boolean })?.success === false) {
@@ -141,6 +144,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             method: 'PUT',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(consumos),
+            retries: 0,
         });
 
         if ((res as { success?: boolean })?.success === false) {
@@ -180,6 +184,10 @@ export interface FlushSummary {
 }
 
 export interface OutboxServiceOptions {
+    ownerId?: () => string | null;
+    retryDelayMs?: (attempt: number) => number;
+    scheduleRetries?: boolean;
+    reconcile?: (intent: OutboxIntent) => Promise<Reconciliation>;
     /**
      * Pregunta **solo si está confirmado que no hay red**. Con la conectividad
      * en `unknown` (arranque) conviene intentar el envío: fallar por no saber
@@ -190,6 +198,12 @@ export interface OutboxServiceOptions {
     maxAttempts?: number;
     now?: () => number;
 }
+
+export type Reconciliation =
+    | { state: 'not_found' }
+    | { state: 'aplicada'; response: unknown }
+    | { state: 'pendiente' }
+    | { state: 'rechazada' | 'fallida'; message: string };
 
 export interface OutboxService {
     enqueue: <TPayload>(input: OutboxEnqueueInput<TPayload>) => OutboxIntent<TPayload>;
@@ -206,11 +220,14 @@ export interface OutboxService {
     /** Lista cacheada y estable; es el `getSnapshot` del store. */
     getSnapshot: () => OutboxIntent[];
     pendingCount: () => number;
+    unownedCount: () => number;
     retry: (id: string) => Promise<OutboxIntent | null>;
     discard: (id: string) => void;
     clear: () => void;
     isFlushing: () => boolean;
     subscribe: (listener: () => void) => () => void;
+    refreshIdentity: () => void;
+    stop: () => void;
 }
 
 /**
@@ -272,6 +289,21 @@ export function createOutboxService(
     const maxAttempts = options.maxAttempts ?? MAX_OUTBOX_ATTEMPTS;
     const now = options.now ?? (() => Date.now());
     const senders = { ...INTENT_SENDERS, ...options.senders };
+    const retryDelayMs = options.retryDelayMs ?? ((attempt: number) => Math.min(60_000, 1000 * 2 ** Math.min(attempt, 6)));
+    const activeOwner = () => options.ownerId?.() ?? null;
+    const hasSession = () => !options.ownerId || activeOwner() !== null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const checkoutBlocked = (intent: OutboxIntent): boolean => intent.type === 'account.checkout' &&
+        intentAccountKey(intent) !== null && repository.hasUnresolvedConsumptions(intentAccountKey(intent)!);
+    const schedule = () => {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        if (!options.scheduleRetries || isOffline() || !hasSession()) return;
+        const candidates = repository.listFlushable(maxAttempts).filter(intent => !checkoutBlocked(intent));
+        if (!candidates.length) return;
+        const due = Math.min(...candidates.map(intent => intent.nextAttemptAt ?? 0));
+        timer = setTimeout(() => { timer = null; void flush(); }, Math.max(250, due - now()));
+    };
 
     const listeners = new Set<() => void>();
     let flushing = false;
@@ -281,10 +313,12 @@ export function createOutboxService(
     // cachea y se invalida en cada mutación.
     let snapshot: OutboxIntent[] = [];
     let snapshotValid = false;
+    let snapshotOwner: string | null = null;
 
     const getSnapshot = (): OutboxIntent[] => {
-        if (!snapshotValid) {
+        if (!snapshotValid || snapshotOwner !== activeOwner()) {
             snapshot = repository.listUnresolved();
+            snapshotOwner = activeOwner();
             snapshotValid = true;
         }
         return snapshot;
@@ -299,6 +333,7 @@ export function createOutboxService(
                 logger.captureException(error, { context: 'outbox:listener' });
             }
         });
+        if (!flushing) schedule();
     };
 
     /** Intención en memoria, para cuando el almacén local no puede guardarla. */
@@ -319,6 +354,8 @@ export function createOutboxService(
             lastError: null,
             appliedAt: null,
             response: null,
+            ownerId: activeOwner(),
+            nextAttemptAt: 0,
         };
     };
 
@@ -330,12 +367,18 @@ export function createOutboxService(
     const sendWithoutQueue = async <TPayload>(
         intent: OutboxIntent<TPayload>
     ): Promise<OutboxIntent<TPayload>> => {
-        if (isOffline()) {
+        if (isOffline() || !hasSession()) {
             return {
                 ...intent,
                 status: 'fallida',
-                lastError: 'Este dispositivo no puede guardar operaciones sin conexión.',
+                lastError: !hasSession() ? 'Inicia sesión antes de enviar operaciones.' : 'Este dispositivo no puede guardar operaciones sin conexión.',
             };
+        }
+        if (options.ownerId && intent.ownerId !== activeOwner()) {
+            return { ...intent, status: 'fallida', lastError: 'La operación pertenece a otra sesión.' };
+        }
+        if (checkoutBlocked(intent)) {
+            return { ...intent, status: 'fallida', lastError: 'Primero sincroniza o revisa los consumos de esta cuenta.' };
         }
 
         const sender = senders[intent.type];
@@ -360,23 +403,49 @@ export function createOutboxService(
     };
 
     const send = async (intent: OutboxIntent): Promise<void> => {
+        const owner = activeOwner();
+        const sameSession = () => hasSession() && activeOwner() === owner;
+        if (!sameSession()) return;
         const sender = senders[intent.type];
         if (!sender) {
             repository.markFailed(intent.id, `Tipo de operación desconocido: ${intent.type}`);
             return;
         }
 
-        repository.markSending(intent.id);
-
         try {
+            if (options.reconcile) {
+                let result: Reconciliation;
+                try { result = await options.reconcile(intent); }
+                catch (error) {
+                    if (sameSession()) repository.markRetryable(intent.id, describeIntentError(error), now() + 30_000);
+                    return;
+                }
+                if (!sameSession()) return;
+                if (result.state === 'aplicada') { repository.markApplied(intent.id, result.response); return; }
+                if (result.state === 'rechazada' || result.state === 'fallida') {
+                    repository.markFailed(intent.id, result.message); return;
+                }
+                if (result.state === 'pendiente') {
+                    repository.markRetryable(intent.id, 'El servidor sigue procesando esta operación.', now() + 30_000);
+                    return;
+                }
+            }
+            if (!sameSession() || isOffline()) return;
+            if (intent.attempts >= maxAttempts) {
+                repository.markFailed(intent.id, 'Se agotaron los intentos; revisa esta operación antes de reenviarla.');
+                return;
+            }
+            repository.markSending(intent.id);
             const response = await sender(intent);
+            if (!sameSession()) return;
             repository.markApplied(intent.id, response);
         } catch (error) {
+            if (!sameSession()) return;
             const message = describeIntentError(error);
             const intentos = repository.get(intent.id)?.attempts ?? 0;
 
             if (isRetryableError(error) && intentos < maxAttempts) {
-                repository.markRetryable(intent.id, message);
+                repository.markRetryable(intent.id, message, now() + retryDelayMs(intentos));
             } else {
                 repository.markFailed(intent.id, message);
             }
@@ -384,16 +453,23 @@ export function createOutboxService(
     };
 
     const flush = async (): Promise<FlushSummary> => {
-        if (isOffline() || flushing) {
+        if (isOffline() || flushing || !hasSession()) {
             return { skipped: true, sent: 0, pending: 0, failed: 0 };
         }
 
         flushing = true;
+        const owner = activeOwner();
         const summary: FlushSummary = { skipped: false, sent: 0, pending: 0, failed: 0 };
 
         try {
             // Ordenado por cuenta: consumos antes que el cobro de la misma cuenta.
             for (const intent of orderFlushable(repository.listFlushable(maxAttempts))) {
+                if (activeOwner() !== owner || !hasSession() || isOffline()) break;
+                if ((intent.nextAttemptAt ?? 0) > now()) continue;
+                if (checkoutBlocked(intent)) {
+                    repository.markRetryable(intent.id, 'Primero sincroniza o revisa los consumos de esta cuenta.');
+                    summary.pending += 1; continue;
+                }
                 await send(intent);
 
                 const estado = repository.get(intent.id)?.status;
@@ -406,7 +482,7 @@ export function createOutboxService(
         } finally {
             flushing = false;
             // Purga barata del historial resuelto en cada flush: evita que la
-            // tabla crezca sin límite (aplicadas >7d, fallidas >30d, cap 500).
+            // tabla crezca sin límite (aplicadas >7d, cap 500).
             try {
                 repository.pruneResolved();
             } catch {
@@ -462,6 +538,7 @@ export function createOutboxService(
         listUnresolved: getSnapshot,
         getSnapshot,
         pendingCount: () => getSnapshot().length,
+        unownedCount: () => repository.countUnowned(),
 
         retry: async (id: string) => {
             repository.retry(id);
@@ -488,5 +565,7 @@ export function createOutboxService(
                 listeners.delete(listener);
             };
         },
+        refreshIdentity: notify,
+        stop: () => { if (timer) clearTimeout(timer); timer = null; },
     };
 }

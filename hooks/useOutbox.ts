@@ -9,6 +9,7 @@ export interface UseOutboxReturn {
     intents: OutboxIntent[];
     pendingCount: number;
     failedCount: number;
+    unownedCount: number;
     isOffline: boolean;
     isFlushing: boolean;
     flush: () => Promise<void>;
@@ -53,6 +54,8 @@ export const useOutbox = (): UseOutboxReturn => {
         getOutboxSnapshot
     );
     const [isFlushing, setIsFlushing] = useState(false);
+    let unownedCount = 0;
+    try { unownedCount = getOutbox().unownedCount(); } catch { /* Sin almacenamiento. */ }
 
     const flush = useCallback(async () => {
         setIsFlushing(true);
@@ -85,6 +88,7 @@ export const useOutbox = (): UseOutboxReturn => {
         intents,
         pendingCount: intents.length,
         failedCount: intents.filter(intent => intent.status === 'fallida').length,
+        unownedCount,
         isOffline,
         isFlushing,
         flush,

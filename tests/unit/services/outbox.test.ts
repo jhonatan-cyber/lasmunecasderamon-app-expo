@@ -329,6 +329,7 @@ describe('outbox · servicio', () => {
             isOffline: () => !online,
             senders: senders as never,
             maxAttempts: options.maxAttempts,
+            retryDelayMs: () => 0,
         });
 
     beforeEach(() => {

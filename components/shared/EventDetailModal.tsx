@@ -1,15 +1,15 @@
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { useAuthStore } from '@/store/authStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+Modal,
+Pressable,
+ScrollView,
+StyleSheet,
+Text,
+View
 } from 'react-native';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { useAuthStore } from '@/store/authStore';
 
 interface EventDetailModalProps {
     visible: boolean;
@@ -30,7 +30,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     getEventLabel,
     getStatusLabel
 }) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const {accentColor, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
     const user = useAuthStore((state) => state.user);
     const formatAmount = (value: any) =>
         Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });

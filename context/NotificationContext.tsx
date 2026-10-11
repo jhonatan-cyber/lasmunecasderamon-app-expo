@@ -55,7 +55,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const router = useRouter();
   const eventSourceRef = useRef<EventSource | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
-  
+
   // ─── Reconexión SSE con exponential backoff ─────────────────
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -137,7 +137,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isCajeroOrAdmin) {
           const isOrder = payload.type === "new_order";
           const id = isOrder ? data.id : data.id_solicitud || data.id;
-          
+
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           showToast({
             type: "order",
@@ -528,7 +528,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     // Estable: solo cambia con router/showLocalNotification (estables).
     // El usuario se lee fresco del store adentro (getState).
-  }, [router, showLocalNotification]);
+  }, [router, showLocalNotification, user]);
 
   // ─── Conexión SSE ───────────────────────────────────────────
   // Crea el EventSource, maneja mensajes, open y error.
@@ -701,17 +701,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       // Limpieza completa al desmontar
       isMountedRef.current = false;
-      
+
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
-      
+
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
-      
+
       retryCountRef.current = 0;
       setIsConnected(false);
     };

@@ -1,21 +1,21 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState, useCallback } from 'react';
-import {
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
 import FlashList from "@/components/shared/FlashList";
 import { OvertimeCard } from '@/components/ui/OvertimeCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { useHorasExtras, HoraExtra } from '@/hooks/useHorasExtras';
+import { HoraExtra,useHorasExtras } from '@/hooks/useHorasExtras';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCallback,useState } from 'react';
+import {
+Pressable,
+RefreshControl,
+StyleSheet,
+Text,
+View,
+} from 'react-native';
 
 export default function HorasExtrasScreen() {
-    const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } = useAccentColor();
+    const {accentColor, bg, cardBg, textSecondary, borderColor} = useAccentColor();
     const { data: horasExtras, loading, refreshing, error, onRefresh, fetchData } = useHorasExtras();
     const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
 

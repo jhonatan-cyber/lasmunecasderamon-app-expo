@@ -113,14 +113,16 @@ interface MetaRow {
 
 export function createMirrorRepository(
     driver: MirrorDriver,
-    options: { isOffline?: () => boolean; now?: () => number } = {}
+    options: { isOffline?: () => boolean; now?: () => number; ownerId?: () => string | null } = {}
 ): MirrorRepository {
     const isOffline = options.isOffline ?? (() => connectivity.isOffline());
     const now = options.now ?? (() => Date.now());
+    const owner = () => options.ownerId?.() ?? null;
+    const cacheKey = (key: string) => options.ownerId ? `user:${owner() ?? 'sin-sesion'}:${key}` : key;
 
     const remove = (key: string) => {
         try {
-            driver.run('DELETE FROM mirror_cache WHERE key = ?', [key]);
+            driver.run('DELETE FROM mirror_cache WHERE key = ?', [cacheKey(key)]);
         } catch (error) {
             logger.captureException(error, { context: 'mirror:remove', key });
         }
@@ -141,9 +143,10 @@ export function createMirrorRepository(
     };
 
     const get = <T>(key: string): MirrorRecord<T> | null => {
+        if (options.ownerId && !owner()) return null;
         const row = readFirst<CacheRow>(
             'SELECT payload, synced_at, source FROM mirror_cache WHERE key = ?',
-            [key]
+            [cacheKey(key)]
         );
         if (!row) return null;
 
@@ -162,10 +165,11 @@ export function createMirrorRepository(
     };
 
     const put = <T>(key: string, data: T, write: MirrorWriteOptions = {}) => {
+        if (options.ownerId && !owner()) return;
         try {
             driver.run(
                 'INSERT OR REPLACE INTO mirror_cache (key, payload, synced_at, source) VALUES (?, ?, ?, ?)',
-                [key, JSON.stringify(data), write.syncedAt ?? now(), write.source ?? null]
+                [cacheKey(key), JSON.stringify(data), write.syncedAt ?? now(), write.source ?? null]
             );
         } catch (error) {
             logger.captureException(error, { context: 'mirror:put', key });
@@ -180,6 +184,7 @@ export function createMirrorRepository(
         // `unknown` cuenta como "quizá hay red": solo el offline confirmado
         // habilita servir el espejo sin preguntarle al servidor.
         const offline = (read.isOffline ?? isOffline)();
+        const originalOwner = owner();
         const cached = get<T>(key);
         const cacheAgeMs = cached ? now() - cached.syncedAt : null;
 
@@ -200,6 +205,7 @@ export function createMirrorRepository(
 
         try {
             const data = await fetcher();
+            if (options.ownerId && originalOwner !== owner()) throw new Error('La sesión cambió durante la consulta.');
             // Una sola lectura del reloj: si se sellara al guardar y se informara
             // otra, la pantalla mostraría una antigüedad que no es la que quedó
             // escrita en el espejo.
@@ -208,7 +214,7 @@ export function createMirrorRepository(
             return { data, fromCache: false, syncedAt, error: null };
         } catch (error) {
             const failure = error instanceof Error ? error : new Error(String(error));
-            if (cached) {
+            if (cached && (!options.ownerId || originalOwner === owner())) {
                 // Con red pero servidor caído: mejor dato viejo que pantalla roja,
                 // y el error queda expuesto para que la UI avise.
                 read.onFallback?.(failure);

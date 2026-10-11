@@ -98,7 +98,6 @@
           "cameraPermission": "Permite el acceso a la cámara para registrar tu asistencia mediante QR."
         }
       ],
-      "@sentry/react-native",
       "expo-font",
       "expo-sharing",
       "expo-sqlite",

@@ -1,8 +1,8 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import React from 'react';
+import { Pressable,StyleSheet,Text,View } from 'react-native';
 
 interface TipCheckboxProps {
     enabled: boolean;
@@ -17,7 +17,7 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
     tipAmount,
     label
 }) => {
-    const { accentColor, isDark, textPrimary, textSecondary } = useAccentColor();
+    const {accentColor, textPrimary, textSecondary} = useAccentColor();
     const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
     const resolvedLabel = label || `Propina (${propinaPct}%)`;
 

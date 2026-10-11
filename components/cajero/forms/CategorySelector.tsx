@@ -1,7 +1,7 @@
+import { useAccentColor } from '@/hooks/useAccentColor';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useAccentColor } from '@/hooks/useAccentColor';
+import { Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
 
 export interface Category {
     id?: number;
@@ -22,7 +22,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     onSelectCategory,
     title = '1. Selección de Categoría'
 }) => {
-    const { accentColor, isDark, cardBg, borderColor, textPrimary } = useAccentColor();
+    const {accentColor, cardBg, borderColor, textPrimary} = useAccentColor();
 
     return (
         <View style={styles.browserContainer}>

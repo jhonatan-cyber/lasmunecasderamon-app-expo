@@ -1,7 +1,6 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as SQLite from 'expo-sqlite';
 
 export type ExportFormat = 'pdf' | 'csv' | 'html';
 
@@ -19,8 +18,8 @@ class ReportService {
             const html = this.generateSalesHTML(config);
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
-        } catch (error) {
-          
+        } catch  {
+
             return null;
         }
     }
@@ -30,8 +29,8 @@ class ReportService {
             const html = this.generateAttendanceHTML(config);
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
-        } catch (error) {
-          
+        } catch  {
+
             return null;
         }
     }
@@ -41,8 +40,8 @@ class ReportService {
             const html = this.generateServicesHTML(config);
             const { uri } = await Print.printToFileAsync({ html });
             return uri;
-        } catch (error) {
-           
+        } catch  {
+
             return null;
         }
     }
@@ -54,7 +53,7 @@ class ReportService {
             const headers = Object.keys(data[0]);
             const csvRows = [
                 headers.join(','),
-                ...data.map(row => 
+                ...data.map(row =>
                     headers.map(header => {
                         const value = row[header];
                         const escaped = String(value).replace(/"/g, '""');
@@ -66,10 +65,10 @@ class ReportService {
             const csvContent = csvRows.join('\n');
             const uri = FileSystem.documentDirectory + `${filename}.csv`;
             await FileSystem.writeAsStringAsync(uri, csvContent);
-            
+
             return uri;
-        } catch (error) {
-        
+        } catch  {
+
             return null;
         }
     }
@@ -86,16 +85,16 @@ class ReportService {
                 return true;
             }
             return false;
-        } catch (error) {
-            
+        } catch  {
+
             return false;
         }
     }
 
     private generateSalesHTML(config: ReportConfig): string {
-        const { title, headers, rows, summary, dateRange } = config;
+        const {title, headers, rows, dateRange, summary} = config;
         const total = rows.reduce((sum: number, row: Record<string, unknown>) => sum + ((row.total as number) || (row.monto as number) || 0), 0);
-        
+
         return `
         <!DOCTYPE html>
         <html>
@@ -145,8 +144,8 @@ class ReportService {
     }
 
     private generateAttendanceHTML(config: ReportConfig): string {
-        const { title, headers, rows, summary } = config;
-        
+        const {title, headers, rows} = config;
+
         return `
         <!DOCTYPE html>
         <html>
@@ -189,8 +188,8 @@ class ReportService {
     }
 
     private generateServicesHTML(config: ReportConfig): string {
-        const { title, headers, rows, summary } = config;
-        
+        const {title, headers, rows} = config;
+
         return `
         <!DOCTYPE html>
         <html>

@@ -1,11 +1,11 @@
+import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { useAccentColor } from "@/hooks/useAccentColor";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import React, { useCallback, useMemo, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useAccentColor } from "@/hooks/useAccentColor";
-import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { useCallback,useMemo,useState } from "react";
+import { Platform,Pressable,StyleSheet,Text,View } from "react-native";
 
 import logger from "@/utils/logger";
 interface Event {
@@ -42,7 +42,7 @@ export function PremiumLiquidationCard({
   totalAmount,
   onExportSuccess,
 }: PremiumLiquidationCardProps) {
-  const { accentColor, isDark, cardBg, textSecondary, borderColor } = useAccentColor();
+  const {accentColor, cardBg, textSecondary, borderColor} = useAccentColor();
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
@@ -201,7 +201,7 @@ export function PremiumLiquidationCard({
             );
           }
         } else {
-          
+
           const canShare = await Sharing.isAvailableAsync();
           if (canShare) {
             await Sharing.shareAsync(uri, {

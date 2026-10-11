@@ -1,4 +1,3 @@
-import * as IntentLauncher from 'expo-intent-launcher';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
@@ -80,18 +79,18 @@ export const appShortcuts: Shortcut[] = [
 
 export const getShortcutFromIntent = async (): Promise<string | null> => {
     if (Platform.OS !== 'android') return null;
-    
+
     try {
-        
-        
-        
-        
-        
-        
-    } catch (error) {
+
+
+
+
+
+
+    } catch  {
         logger.info('No pending intent or method not found');
     }
-    
+
     return null;
 };
 
@@ -104,14 +103,14 @@ export const executeShortcut = async (shortcutId: string): Promise<void> => {
 
 export const createAndroidShortcut = async (shortcutId: string): Promise<void> => {
     if (Platform.OS !== 'android') return;
-    
-   
+
+
 };
 
 export const setupSiriShortcuts = async (): Promise<void> => {
     if (Platform.OS !== 'ios') return;
-    
-   
+
+
 };
 
 export const addSiriShortcut = async (
@@ -119,14 +118,14 @@ export const addSiriShortcut = async (
     shortcutId: string,
 ): Promise<boolean> => {
     if (Platform.OS !== 'ios') return false;
-    
-   
+
+
     return true;
 };
 
 export const invokeSiri = async (phrase: string): Promise<void> => {
     if (Platform.OS !== 'ios') return;
-    
+
     const url = `shortcuts://run-shortcut?name=${encodeURIComponent(phrase)}`;
     await Linking.openURL(url);
 };
@@ -135,8 +134,8 @@ export const triggerShortcut = async (shortcutId: string): Promise<boolean> => {
     try {
         await executeShortcut(shortcutId);
         return true;
-    } catch (error) {
-       
+    } catch  {
+
         return false;
     }
 };

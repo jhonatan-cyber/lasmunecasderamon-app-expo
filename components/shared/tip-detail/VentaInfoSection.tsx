@@ -1,8 +1,8 @@
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { parseDateSafe } from "@/utils/timeUtils";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { parseDateSafe } from "@/utils/timeUtils";
-import { useAccentColor } from "@/hooks/useAccentColor";
+import { StyleSheet,Text,View } from "react-native";
 
 interface VentaInfoSectionProps {
   saleDetail: any;
@@ -11,7 +11,7 @@ interface VentaInfoSectionProps {
 export const VentaInfoSection: React.FC<VentaInfoSectionProps> = ({
   saleDetail,
 }) => {
-  const { accentColor, isDark, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const {isDark, textPrimary, textSecondary, borderColor} = useAccentColor();
 
   if (!saleDetail) {
     return (

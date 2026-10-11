@@ -1,6 +1,9 @@
 import { connectivity } from '@/services/connectivity';
 import { getMirrorDriver, initMirror } from '@/services/mirror';
 import logger from '@/utils/logger';
+import { useAuthStore } from '@/store/authStore';
+import { AppState } from 'react-native';
+import { reconcileIntent } from './reconcile';
 
 import { createOutboxRepository, type OutboxRepository } from './repository';
 import { createOutboxService, type OutboxService } from './service';
@@ -31,8 +34,12 @@ export function getOutbox(): OutboxService {
         if (initMirror() === null) {
             logger.warn('Outbox: el espejo local no está disponible; la cola puede fallar');
         }
-        repository = createOutboxRepository(getMirrorDriver());
-        service = createOutboxService(repository);
+        const ownerId = () => {
+            const auth = useAuthStore.getState();
+            return auth.user?.id && !auth.sessionExpired ? String(auth.user.id) : null;
+        };
+        repository = createOutboxRepository(getMirrorDriver(), { ownerId });
+        service = createOutboxService(repository, { ownerId, reconcile: reconcileIntent, scheduleRetries: true });
     }
     return service;
 }
@@ -54,7 +61,17 @@ export function initOutbox(): void {
         initialized = true;
 
         connectivity.subscribe(state => {
+            outbox.refreshIdentity();
             if (state === 'online') void outbox.flush();
+        });
+        AppState.addEventListener('change', state => {
+            if (state === 'active') void outbox.flush();
+        });
+        useAuthStore.subscribe((state, previous) => {
+            if (state.user?.id !== previous.user?.id || state.sessionExpired !== previous.sessionExpired || state.token !== previous.token) {
+                outbox.refreshIdentity();
+                void outbox.flush();
+            }
         });
 
         void outbox.flush();
@@ -65,6 +82,7 @@ export function initOutbox(): void {
 
 /** Solo tests: reemplaza el singleton por un servicio inyectado. */
 export function setOutboxForTests(injected: OutboxService | null): void {
+    service?.stop();
     service = injected;
     repository = null;
     initialized = true;

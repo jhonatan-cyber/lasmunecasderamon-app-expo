@@ -59,7 +59,7 @@ export const openDeepLink = async (url: string): Promise<boolean> => {
             return true;
         }
         return false;
-    } catch (error) {
+    } catch  {
         return false;
     }
 };
@@ -92,7 +92,7 @@ export const handleDeepLink = (url: string): { screen: string; params?: Record<s
         }
 
         return null;
-    } catch (error) {
+    } catch (error)  {
         logger.captureException(error, { context: 'DeepLinks:parseDeepLink' });
         return null;
     }
@@ -102,7 +102,7 @@ export const registerDeepLinkListeners = (callback: (url: string) => void): (() 
     const subscription = Linking.addEventListener('url', (event) => {
         callback(event.url);
     });
-    
+
     return () => subscription.remove();
 };
 

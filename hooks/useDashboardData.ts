@@ -1,16 +1,16 @@
-import { useCallback, useState } from "react";
-import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClientSafe } from "@/api/client";
-import type { ApiRes } from "@/types/api";
+import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
 import { useAuthStore } from "@/store/authStore";
+import type { ApiRes,DashboardEvent,DashboardStats,UserRole,ActiveService } from "@/types/api";
 import { showToast } from '@/utils/toast-lazy';
-import { DashboardEvent, DashboardStats, UserRole, type ActiveService, type UserProfileResponse } from "@/types/api";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
+import { useCallback,useState } from "react";
+
 import type { EnvaseResumen } from "@/hooks/useEnvasesScreen";
 import {
-  emitRefreshRequests,
-  REALTIME_EVENT_NAMES,
-  shouldInvalidateDashboardFromSse,
+emitRefreshRequests,
+REALTIME_EVENT_NAMES,
+shouldInvalidateDashboardFromSse,
 } from "@/utils/realtime";
 
 import logger from '@/utils/logger';
@@ -58,11 +58,11 @@ export function useDashboardData(role: UserRole) {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [hasNewAlert, setHasNewAlert] = useState(false);
 
-  
-  const { 
-    data, 
-    isLoading: loading, 
-    isFetching: refreshing, 
+
+  const {
+    data,
+    isLoading: loading,
+    isFetching: refreshing,
     refetch,
   } = useQuery({
     queryKey: ['dashboard', role],
@@ -74,7 +74,7 @@ export function useDashboardData(role: UserRole) {
         apiClientSafe<MeStatsData>("/users/me/stats"),
       ];
 
-      
+
       if (role === 'anfitriona') {
         endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
         endpoints.push(apiClientSafe<ServicioRaw[]>("/servicios/user"));
@@ -100,7 +100,7 @@ export function useDashboardData(role: UserRole) {
       const meRes = results[1];
       const statusRes = results[2];
       const meStatsRes = results[3];
-      
+
       let roleStats = null;
       let extraData: Record<string, unknown> = {};
 
@@ -133,7 +133,7 @@ export function useDashboardData(role: UserRole) {
         }
 
         if (meData?.user) {
-            useAuthStore.getState().updateProfile(meData.user as any);
+            useAuthStore.getState().updateProfile(meData.user as any, { localOnly: true });
         }
 
         return {
@@ -146,10 +146,10 @@ export function useDashboardData(role: UserRole) {
       }
       throw new Error("Failed to fetch dashboard central data");
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 
-  
+
   // Invalidación con debounce (un timer por canal): una ráfaga SSE (4-8
   // endpoints por refetch) colapsa en vez de un refetch por evento.
   const invalidateDashboard = useCallback(() => {
@@ -198,6 +198,6 @@ export function useDashboardData(role: UserRole) {
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
-    fetchData: refetch 
+    fetchData: refetch
   };
 }

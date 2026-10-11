@@ -1,23 +1,23 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { CartItem, Anfitriona } from '@lasmunecasderamon/types';
+import type { Anfitriona,CartItem } from '@lasmunecasderamon/types';
+import { afterEach,describe,expect,it,vi } from 'vitest';
+
+import {
+buildCommissionPreview,
+getCardSplit,
+getHostessLimit,
+getIvaDecimal,
+getIvaPercent,
+isChampagneProduct,
+isExpensiveDrink,
+setCardSplit,
+setExpensiveDrinkThreshold,
+setIvaRate
+} from '@/hooks/utils/cuentaUtils';
 
 vi.mock('@/utils/toast-lazy', () => ({
   default: vi.fn(),
   showToast: vi.fn()
 }));
-
-import {
-  setIvaRate,
-  getIvaDecimal,
-  getIvaPercent,
-  setExpensiveDrinkThreshold,
-  isExpensiveDrink,
-  setCardSplit,
-  getCardSplit,
-  isChampagneProduct,
-  getHostessLimit,
-  buildCommissionPreview
-} from '@/hooks/utils/cuentaUtils';
 
 describe('cuentaUtils', () => {
   afterEach(() => {

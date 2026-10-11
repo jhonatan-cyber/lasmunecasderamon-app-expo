@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import { isTablet } from './dimensions';
 
 const tintColorLight = '#000000';
 const tintColorDark = '#FFFFFF';

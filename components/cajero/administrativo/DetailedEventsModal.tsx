@@ -136,7 +136,8 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
             </Pressable>
           </View>
         </View>
-      </View>      </Modal>
+      </View>
+</Modal>
   );
 });
 DetailedEventsModal.displayName = 'DetailedEventsModal';

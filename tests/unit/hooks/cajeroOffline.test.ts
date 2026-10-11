@@ -12,11 +12,11 @@ import { createOutboxService } from '@/services/outbox/service';
 import { connectivity } from '@/services/connectivity';
 import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
 
-const showToast = vi.hoisted(() => vi.fn());
-vi.mock('@/utils/toast-lazy', () => ({ showToast }));
-
 import { useCuentasScreen } from '@/hooks/useCuentasScreen';
 import { useCaja } from '@/hooks/useCaja';
+
+const showToast = vi.hoisted(() => vi.fn());
+vi.mock('@/utils/toast-lazy', () => ({ showToast }));
 
 const CUENTA = {
   id_cuenta: 'c1',

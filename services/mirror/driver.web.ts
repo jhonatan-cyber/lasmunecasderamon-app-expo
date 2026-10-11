@@ -1,28 +1,25 @@
 import { MIRROR_DATABASE_NAME, type MirrorDriver, type MirrorParam } from './driver.types';
-
+import { createPersistentWebDriver } from './persistentWebDriver';
 export { MIRROR_DATABASE_NAME };
 export type { MirrorDriver, MirrorParam };
 
-/**
- * Driver web: no hay SQLite.
- *
- * `expo-sqlite` en web importa un worker con `wa-sqlite.wasm`, que Metro no
- * resuelve (rompía `expo export --platform web` y, con eso, el smoke e2e). Como
- * el garzón trabaja en teléfono, en web el almacén offline simplemente no
- * existe: este driver no lee ni escribe nada y la app funciona como antes,
- * siempre contra la red.
- *
- * Es un no-op silencioso a propósito, pero el resto del sistema no lo asume:
- * `createOutboxService` detecta que una intención no quedó guardada y la envía
- * directo (o falla con un mensaje claro si no hay red), así que nunca se pierde
- * trabajo en silencio.
- */
+let driver: MirrorDriver | null = null;
+let initializing: Promise<void> | null = null;
+
+export function prepareMirrorStorage(): Promise<void> {
+    if (typeof window === 'undefined') return Promise.resolve();
+    if (!initializing) initializing = import('sql.js/dist/sql-asm.js').then(async ({ default: init }) => {
+        const SQL = await init();
+        driver = createPersistentWebDriver(SQL, window.localStorage, MIRROR_DATABASE_NAME);
+    }).catch(error => { initializing = null; throw error; });
+    return initializing;
+}
+
 export function createExpoMirrorDriver(_databaseName: string = MIRROR_DATABASE_NAME): MirrorDriver {
-    return {
-        exec: () => {},
-        run: () => {},
-        getFirst: () => null,
-        getAll: () => [],
-        transaction: task => task(),
+    // Sin permiso/cuota de almacenamiento, se conserva el camino online;
+    // outbox detecta que nada se persistió y nunca promete un envío posterior.
+    return driver ?? {
+        exec: () => {}, run: () => {},
+        getFirst: () => null, getAll: () => [], transaction: task => task(),
     };
 }

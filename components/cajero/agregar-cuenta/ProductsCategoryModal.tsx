@@ -126,7 +126,8 @@ export const ProductsCategoryModal = React.memo(function ProductsCategoryModal({
             <Text style={styles.confirmModalBtnText}>Confirmar</Text>
           </Pressable>
         </View>
-      </View>      </Modal>
+      </View>
+</Modal>
   );
 });
 ProductsCategoryModal.displayName = 'ProductsCategoryModal';

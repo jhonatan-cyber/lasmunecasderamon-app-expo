@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { showToast } from '@/utils/toast-lazy';
-import type { VentaDetail } from "@/components/cajero/ventas/types";
-import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
+import type { VentaDetail , VentasState, VentasAction } from "@/components/cajero/ventas/types";
+
 import { fetchVentaDetail } from "@/services/ventasService";
 
 export function useVentaDetail(

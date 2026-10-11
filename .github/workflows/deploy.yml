@@ -37,6 +37,10 @@ jobs:
     timeout-minutes: 30
     env:
       DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_URL: https://sentry.io
     steps:
       - name: Checkout verified commit
         uses: actions/checkout@v4
@@ -75,3 +79,9 @@ jobs:
         env:
           UPDATE_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message || 'Manual production update' }}
         run: eas update --branch production --message "$UPDATE_MESSAGE" --auto
+
+      - name: Upload Sentry source maps
+        if: vars.EXPO_PUBLIC_SENTRY_DSN != ''
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: node node_modules/@sentry/react-native/scripts/expo-upload-sourcemaps.js dist

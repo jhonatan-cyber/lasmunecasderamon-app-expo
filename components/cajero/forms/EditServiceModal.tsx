@@ -1,25 +1,25 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
-import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
-import { blockOffline } from '@/utils/offlineGuard';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { getIvaDecimal, getIvaPercent } from '@/hooks/utils/cuentaUtils';
-import type { Timer } from '@/context/types';
 import { HostessSelectModal } from '@/components/cajero/forms/HostessSelectModal';
-import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import { PaymentMethodSelect,type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 import { TimeSelector } from '@/components/ui/TimeSelector';
+import type { Timer } from '@/context/types';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { getIvaDecimal,getIvaPercent } from '@/hooks/utils/cuentaUtils';
+import { blockOffline } from '@/utils/offlineGuard';
 import { parseDateSafe } from '@/utils/timeUtils';
+import { showToast } from '@/utils/toast-lazy';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import React,{ useCallback,useEffect,useState } from 'react';
+import {
+ActivityIndicator,
+Modal,
+Pressable,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+View,
+} from 'react-native';
 
 import logger from '@/utils/logger';
 interface Anfitriona {
@@ -58,7 +58,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     timer,
     onSuccess,
 }) => {
-    const { isDark, cardBg, borderColor, accentColor, bg, textPrimary, textSecondary } = useAccentColor();
+    const {cardBg, borderColor, accentColor, bg, textPrimary, textSecondary} = useAccentColor();
     const [loading, setLoading] = useState(false);
     const [, setLoadingAnfitrionas] = useState(false);
     const [tiempo, setTiempo] = useState<number>(30);
@@ -140,16 +140,16 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 setPrecioServicio('0');
                 setTiempo(30);
                 setMetodoPago('efectivo');
-                
-                
+
+
                 let ids: string[] = [];
                 if (timer.anfitrionas_ids && Array.isArray(timer.anfitrionas_ids)) {
                     ids = timer.anfitrionas_ids.map(id => String(id));
                 } else if (timer.anfitrionas && typeof timer.anfitrionas === 'string') {
-                    
-                    
+
+
                 }
-                
+
                 setAnfitrionasSeleccionadas(ids);
                 void fetchAnfitrionas();
                 void fetchHabitacionSinComision();

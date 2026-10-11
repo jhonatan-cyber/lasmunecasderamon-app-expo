@@ -30,7 +30,7 @@ class AppCache {
 
         try {
             await AsyncStorage.setItem(this.getKey(key), JSON.stringify(item));
-        } catch (error) {
+        } catch (error)  {
             logger.captureException(error, { context: 'Cache:set' });
         }
     }
@@ -41,15 +41,15 @@ class AppCache {
             if (!jsonValue) return null;
 
             const item: CacheItem<T> = JSON.parse(jsonValue);
-            
+
             if (Date.now() > item.expiresAt) {
                 await this.remove(key);
                 return null;
             }
 
             return item.data;
-        } catch (error) {
-           
+        } catch  {
+
             return null;
         }
     }
@@ -57,7 +57,7 @@ class AppCache {
     async remove(key: string): Promise<void> {
         try {
             await AsyncStorage.removeItem(this.getKey(key));
-        } catch (error) {
+        } catch (error)  {
             logger.captureException(error, { context: 'Cache:remove' });
         }
     }
@@ -67,7 +67,7 @@ class AppCache {
             const keys = await AsyncStorage.getAllKeys();
             const cacheKeys = keys.filter(k => k.startsWith(this.prefix));
             await Promise.all(cacheKeys.map((key) => AsyncStorage.removeItem(key)));
-        } catch (error) {
+        } catch (error)  {
             logger.captureException(error, { context: 'Cache:clear' });
         }
     }
@@ -99,7 +99,7 @@ class AppCache {
 export const cache = new AppCache();
 
 export const createQueryCache = <T>(
-    queryKey: string[], 
+    queryKey: string[],
     ttl?: number
 ) => {
     const key = queryKey.join(':');

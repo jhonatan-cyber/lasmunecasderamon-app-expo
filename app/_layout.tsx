@@ -11,8 +11,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useCallback, useEffect } from "react";
-import { ActivityIndicator, InteractionManager, LogBox, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, LogBox, Platform, View } from "react-native";
+import { prepareMirrorStorage } from "@/services/mirror/driver";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
 import { configurationsSchema } from "@lasmunecasderamon/validations";
@@ -29,7 +30,9 @@ LogBox.ignoreLogs([
 // Init Sentry lazily — deferred out of the critical render path.
 // Sin EXPO_PUBLIC_SENTRY_DSN, initSentry es no-op (no carga el SDK de ~1.8 MB).
 setTimeout(() => {
-  void initSentry({ tracesSampleRate: 0 });
+  void initSentry({ tracesSampleRate: 0 }).catch(() => {
+    console.info('No se pudo inicializar el reporte de errores.');
+  });
 }, 0);
 
 const queryClient = new QueryClient({
@@ -44,6 +47,14 @@ const queryClient = new QueryClient({
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const [storageReady, setStorageReady] = useState(Platform.OS !== 'web');
+  useEffect(() => {
+    let active = true;
+    void prepareMirrorStorage().catch(() => {
+      console.info('El almacenamiento offline no está disponible en este dispositivo.');
+    }).finally(() => { if (active) setStorageReady(true); });
+    return () => { active = false; };
+  }, []);
   const isLoading = useAuthStore((state) => state.isLoading);
   const checkAuth = useAuthStore((state) => state.checkAuth);
 
@@ -54,10 +65,10 @@ export default function RootLayout() {
   // Post-splash: primero se muestra la UI, después el trabajo pesado
   // (SQLite, outbox, red, /configurations) fuera del path crítico de arranque.
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !storageReady) return;
     SplashScreen.hideAsync().catch(() => {});
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const startServices = () => {
       // Cimientos del modo offline: ninguno lanza; si algo no está
       // disponible, la app sigue funcionando igual.
       void connectivity.start();
@@ -82,12 +93,17 @@ export default function RootLayout() {
           setIvaRate(Number(data.facturacion.impuesto_iva) / 100);
         }
       }).catch(() => {});
-    });
+    };
 
-    return () => task.cancel();
-  }, [isLoading]);
+    if (typeof requestIdleCallback === "function") {
+      const task = requestIdleCallback(startServices, { timeout: 1000 });
+      return () => cancelIdleCallback(task);
+    }
+    const task = setTimeout(startServices, 0);
+    return () => clearTimeout(task);
+  }, [isLoading, storageReady]);
 
-  if (isLoading) {
+  if (isLoading || !storageReady) {
     return (
       <View
         style={{

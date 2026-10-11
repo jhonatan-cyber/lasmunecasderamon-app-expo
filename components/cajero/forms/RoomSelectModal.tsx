@@ -48,7 +48,7 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
     textSecondary,
   } = useAccentColor();
 
-  
+
   const isLibre = (room: Room) => {
     const estado = Number(room.estado ?? room.status ?? 0);
     return estado === 1;
@@ -139,7 +139,8 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
             <Text style={styles.modalActionBtnText}>Listo</Text>
           </Pressable>
         </View>
-      </View>      </Modal>
+      </View>
+</Modal>
   );
 });
 RoomSelectModal.displayName = 'RoomSelectModal';

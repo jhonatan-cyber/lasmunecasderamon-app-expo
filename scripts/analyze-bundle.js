@@ -1,3 +1,4 @@
+/* global __dirname, Buffer */
 /**
  * analyze-bundle.js
  *

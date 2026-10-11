@@ -8,7 +8,7 @@
  * drop-in replacement for `import { FlashList } from "@shopify/flash-list"`
  * without generics compatibility issues.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 import { FlatList } from "react-native";
 
 export default FlatList as any;

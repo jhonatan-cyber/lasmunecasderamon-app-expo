@@ -2,8 +2,8 @@
  * Lazy Sentry wrapper — uses a dynamic import so the Sentry SDK
  * (~1.8 MB) is NOT included in the entry bundle chunk.
  *
- * The SDK is loaded on demand: the first time any Sentry function
- * is called (e.g. the first error report, breadcrumb, or init).
+ * The SDK is loaded only when initSentry receives a configured DSN.
+ * Reporting functions are no-ops until initialization succeeds.
  *
  * On web this produces a separate chunk; on mobile (Metro) the
  * dynamic import resolves synchronously but still defers SDK
@@ -45,9 +45,12 @@ export async function initSentry(options?: {
   // inicializa contra el placeholder (antes apuntaba a example.ingest…).
   if (!dsn || _sentryEnabled) return;
   const Sentry = await loadSentry();
-  _sentryEnabled = true;
   Sentry.init({
     dsn,
+    environment: __DEV__ ? 'development' : 'production',
+    sendDefaultPii: false,
+    // La consola puede contener respuestas completas de usuarios o ventas.
+    beforeBreadcrumb: (breadcrumb) => breadcrumb.category === 'console' ? null : breadcrumb,
 
     // ── Performance ────────────────────────────────────────────────
     // Disabled — we only use Sentry for error+crash reporting, not
@@ -79,15 +82,17 @@ export async function initSentry(options?: {
     attachScreenshot: false,
     attachViewHierarchy: false,
   });
+  _sentryEnabled = true;
 }
 
-/** Add a breadcrumb to Sentry (recorded before init are buffered by the SDK). */
+/** Add a breadcrumb when Sentry is enabled. */
 export async function addBreadcrumb(breadcrumb: {
   message?: string;
   category?: string;
   level?: import('@sentry/react-native').SeverityLevel;
   data?: Record<string, any>;
 }) {
+  if (!_sentryEnabled) return;
   try {
     const Sentry = await loadSentry();
     Sentry.addBreadcrumb(breadcrumb);
@@ -98,6 +103,7 @@ export async function addBreadcrumb(breadcrumb: {
 
 /** Capture an exception / error object. */
 export async function captureException(error: any) {
+  if (!_sentryEnabled) return;
   try {
     const Sentry = await loadSentry();
     if (error instanceof Error) {
@@ -112,6 +118,7 @@ export async function captureException(error: any) {
 
 /** Capture a text message. */
 export async function captureMessage(message: string) {
+  if (!_sentryEnabled) return;
   try {
     const Sentry = await loadSentry();
     Sentry.captureMessage(message);

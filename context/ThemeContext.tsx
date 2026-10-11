@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useColorScheme as useRNColorScheme, Appearance } from 'react-native';
+import { THEME_OPTIONS,useThemeStore } from '@/store/themeStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
+import React,{ createContext,ReactNode,useContext,useEffect,useState } from 'react';
+import { useColorScheme as useRNColorScheme } from 'react-native';
 
 import logger from '@/utils/logger';
 interface ThemeColors {
@@ -64,8 +64,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const systemColorScheme = useRNColorScheme();
     const [theme, setThemeState] = useState<'light' | 'dark'>('light');
     const [accentColor, setAccentColorState] = useState('#6366f1');
-    
-    const userAccentColor = useThemeStore((state) => state.getColor);
+
+    useThemeStore((state) => state.getColor);
 
     useEffect(() => {
         const loadTheme = async () => {
@@ -76,16 +76,16 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 } else {
                     setThemeState(systemColorScheme === 'dark' ? 'dark' : 'light');
                 }
-                
+
                 const savedAccent = await AsyncStorage.getItem('accent-color');
                 if (savedAccent) {
                     setAccentColorState(savedAccent);
                 }
-            } catch (e) {
-              
+            } catch  {
+
             }
         };
-        
+
         loadTheme();
     }, [systemColorScheme]);
 
@@ -93,8 +93,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setThemeState(newTheme);
         try {
             await AsyncStorage.setItem('app-theme', newTheme);
-        } catch (e) {
-            
+        } catch  {
+
         }
     };
 
@@ -106,7 +106,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setAccentColorState(color);
         try {
             await AsyncStorage.setItem('accent-color', color);
-        } catch (e) {
+        } catch (e)  {
             logger.captureException(e, { context: 'ThemeContext:setAccentColor' });
         }
     };
@@ -119,13 +119,13 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     return (
-        <ThemeContext.Provider value={{ 
-            theme, 
-            colors, 
-            accentColor, 
-            setTheme, 
+        <ThemeContext.Provider value={{
+            theme,
+            colors,
+            accentColor,
+            setTheme,
             toggleTheme,
-            setAccentColor 
+            setAccentColor
         }}>
             {children}
         </ThemeContext.Provider>

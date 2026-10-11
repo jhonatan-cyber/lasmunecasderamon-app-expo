@@ -28,10 +28,6 @@ export function useConfigValue<T = string>(category: string, key: string, defaul
 
   useEffect(() => {
     const cacheKey = `${category}.${key}`;
-    if (configCache[cacheKey] !== undefined) {
-      setValue(configCache[cacheKey] as T);
-      return;
-    }
     ensureConfigs().then(() => {
       if (configCache[cacheKey] !== undefined) {
         setValue(configCache[cacheKey] as T);
@@ -39,5 +35,5 @@ export function useConfigValue<T = string>(category: string, key: string, defaul
     });
   }, [category, key, defaultValue]);
 
-  return value;
+  return (configCache[`${category}.${key}`] as T | undefined) ?? value;
 }

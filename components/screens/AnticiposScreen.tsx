@@ -4,9 +4,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Anticipo, useAnticipos } from '@/hooks/useAnticipos';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList } from "react-native";
-import { useState, useCallback } from 'react';
-import {
+import { FlatList ,
     ActivityIndicator,
     Modal,
     Pressable,
@@ -15,7 +13,9 @@ import {
     Text,
     TextInput,
     View,
-} from 'react-native';
+} from "react-native";
+import { useState, useCallback } from 'react';
+
 import { showToast } from '@/utils/toast-lazy';
 
 export default function AnticiposScreen() {
@@ -75,11 +75,11 @@ export default function AnticiposScreen() {
     };
 
     const openSolicitarModal = async () => {
-        
+
         if (montoMaximo === 0) {
             await fetchMaximo();
         }
-        
+
         if (tieneSolicitudPendiente) {
             showToast({ type: 'info', text1: 'Solicitud pendiente', text2: 'Ya tienes una solicitud de anticipo en espera' });
             return;

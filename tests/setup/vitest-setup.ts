@@ -1,5 +1,9 @@
 import { vi } from 'vitest';
 
+
+
+import { useEffect, useRef } from 'react';
+
 // Los módulos de Expo asumen el entorno de React Native (`__DEV__`).
 (globalThis as Record<string, unknown>).__DEV__ = true;
 
@@ -126,10 +130,6 @@ vi.mock('expo-local-authentication', () => ({
     },
 }));
 
-
-
-import { useEffect, useRef } from 'react';
-
 vi.mock('expo-router', () => ({
     useFocusEffect: vi.fn((callback: () => void | (() => void)) => {
         const ref = useRef(callback);
@@ -137,7 +137,7 @@ vi.mock('expo-router', () => ({
         useEffect(() => {
             const cleanup = ref.current();
             return () => { if (cleanup) cleanup(); };
-            // eslint-disable-next-line react-hooks/exhaustive-deps
+
         }, []);
     }),
     useRouter: vi.fn(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() })),

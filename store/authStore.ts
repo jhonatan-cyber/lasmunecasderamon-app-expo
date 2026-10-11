@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         emailToSend = `${emailToSend}@lasmuñecasderamon.com`;
                     }
 
-                    
+
                     const parsed = loginSchema.safeParse({
                         email: emailToSend,
                         password,
@@ -304,7 +304,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 return false;
             }
         },
-        updateProfile: async (partialUser) => {
+        updateProfile: async (partialUser, options) => {
             const currentUser = get().user;
             if (!currentUser) return false;
 
@@ -317,6 +317,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
             const updatedUser = { ...currentUser, ...partialUser };
             await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
             set({ user: updatedUser });
+
+            if (options?.localOnly) return true;
 
             // Optimista en local, pero se espera al servidor y se reporta:
             // sin red el PUT falla y el llamador puede avisar/reintentar.

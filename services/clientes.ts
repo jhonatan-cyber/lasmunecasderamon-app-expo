@@ -16,7 +16,7 @@ export interface PrepagoPayload {
   tipo: string;
   metodo_pago: string;
   motivo: string;
-  pagos_mixtos?: Array<{ metodo: string; monto: number }>;
+  pagos_mixtos?: { metodo: string; monto: number }[];
 }
 
 export const clientesService = {

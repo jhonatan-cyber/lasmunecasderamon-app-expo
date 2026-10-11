@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { showToast } from '@/utils/toast-lazy';
-import type { Venta } from "@/components/cajero/ventas/types";
-import type { VentasState, VentasAction } from "@/components/cajero/ventas/types";
+import type { Venta , VentasState, VentasAction } from "@/components/cajero/ventas/types";
+
 import { enviarSolicitudAnulacion } from "@/services/ventasService";
 
 export function useVentaAnulacion(
@@ -141,6 +141,7 @@ export function useVentaAnulacion(
       dispatch({ type: "SET_ANULANDO_VENTA", payload: false });
     }
   }, [
+    dispatch,
     state.activeVenta,
     state.montoAnulacion,
     state.motivoAnulacion,

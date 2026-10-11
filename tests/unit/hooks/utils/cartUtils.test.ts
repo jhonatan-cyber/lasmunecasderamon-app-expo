@@ -1,5 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 
+import {
+  normalizeRoom,
+  normalizeClients,
+  normalizeAnfitrionas,
+  deduplicate,
+  addProductToCartUtils,
+  mapForSaleProduct,
+  formatBotellaAbierta,
+  openCategory
+} from '@/hooks/utils/cartUtils';
+import { apiClientSafe } from '@/api/client';
+import type { CartItem } from '@lasmunecasderamon/types';
+
 vi.mock('@/utils/toast-lazy', () => ({
   default: vi.fn(),
   showToast: vi.fn()
@@ -25,19 +38,6 @@ vi.mock('@/hooks/utils/cuentaUtils', () => ({
   getIvaPercent: vi.fn(() => 19),
   setIvaRate: vi.fn()
 }));
-
-import {
-  normalizeRoom,
-  normalizeClients,
-  normalizeAnfitrionas,
-  deduplicate,
-  addProductToCartUtils,
-  mapForSaleProduct,
-  formatBotellaAbierta,
-  openCategory
-} from '@/hooks/utils/cartUtils';
-import { apiClientSafe } from '@/api/client';
-import type { CartItem } from '@lasmunecasderamon/types';
 
 describe('cartUtils', () => {
   describe('normalizeRoom', () => {

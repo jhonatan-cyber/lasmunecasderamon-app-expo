@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { eventBus } from '@/utils/eventBus';
-import { showToast } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { usersService, codigoService } from '@/services';
+import { codigoService,usersService } from '@/services';
+import { eventBus } from '@/utils/eventBus';
 import logger from '@/utils/logger';
+import { showToast } from '@/utils/toast-lazy';
+import { useFocusEffect } from 'expo-router';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 
 export interface User {
     id: string;
@@ -19,7 +19,6 @@ export interface User {
 
 export function usePersonalScreen() {
     const theme = useAccentColor();
-    const { bg, cardBg, textPrimary, textSecondary, borderColor } = theme;
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -34,19 +33,19 @@ export function usePersonalScreen() {
             logger.debug('[PersonalScreen] Fetching users with status=active...');
             const data = await usersService.list('status=active', signal);
             logger.debug('[PersonalScreen] Response:', data);
-            
+
             if ((data as any).success) {
                 const allUsers = (data as any).data || [];
                 const staff = allUsers.filter((u: User) => {
                     const r = u.role?.toLowerCase() || '';
                     if (r.includes('administrador') || r.includes('admin')) return false;
-                    return r.includes('garzon') || 
-                           r.includes('garzón') || 
+                    return r.includes('garzon') ||
+                           r.includes('garzón') ||
                            r.includes('mesero') ||
                            r.includes('cajero') ||
                            r.includes('anfitriona');
                 });
-                
+
                 const serialized = JSON.stringify(staff);
                 if (dataRef.current !== serialized) {
                     dataRef.current = serialized;
@@ -109,11 +108,11 @@ export function usePersonalScreen() {
                     text1: 'Éxito',
                     text2: `Código QR generado · vence en ${challenge.ttlSegundos ?? 120}s`,
                 });
-                
-                setUsers(prev => prev.map(u => 
+
+                setUsers(prev => prev.map(u =>
                     u.id === userId ? { ...u, qr_token: challenge.token } : u
                 ));
-                
+
                 if (selectedUser?.id === userId) {
                     setSelectedUser(prev => prev ? { ...prev, qr_token: challenge.token } : null);
                 }
@@ -130,7 +129,7 @@ export function usePersonalScreen() {
     }, [selectedUser]);
 
     const filteredUsers = useMemo(() => {
-        return users.filter(u => 
+        return users.filter(u =>
             u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.nick?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,12 +141,13 @@ export function usePersonalScreen() {
         // El servidor ya no almacena qr_token (desde la migración de desafíos):
         // el código es un desafío de un solo uso, así que se emite al abrir el modal.
         if (!selectedUser.qr_token) {
-            handleGenerateQR(selectedUser.id);
+            const timer = setTimeout(() => { void handleGenerateQR(selectedUser.id); }, 0);
+            return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedUser, selectedUser?.id]);
 
-    
+
     useEffect(() => {
         if (!selectedUser) return;
         const fetchCode = async () => {

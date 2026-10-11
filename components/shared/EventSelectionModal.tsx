@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList } from 'react-native';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList , Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
 
 interface EventSelectionModalProps {
     visible: boolean;

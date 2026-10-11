@@ -57,7 +57,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
         useAccentColor();
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const { intents, pendingCount, failedCount, isOffline, isFlushing, flush, retry, discard } =
+    const { intents, pendingCount, failedCount, unownedCount, isOffline, isFlushing, flush, retry, discard } =
         useOutbox();
 
     const renderIntent = (intent: OutboxIntent) => {
@@ -129,6 +129,11 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
             />
 
             <View style={styles.summary}>
+                {unownedCount > 0 ? (
+                    <Text style={styles.cardError}>
+                        Hay {unownedCount} operación(es) antiguas por revisar. Pide al administrador que verifique su registro antes de reenviarlas.
+                    </Text>
+                ) : null}
                 <Text style={[styles.summaryText, { color: textSecondary }]}>
                     {pendingCount === 0
                         ? 'No hay operaciones pendientes.'

@@ -1,8 +1,8 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import React from 'react';
+import { Pressable,StyleSheet,Text,View } from 'react-native';
 
 import type { CartItem as SharedCartItem } from '@lasmunecasderamon/types';
 
@@ -24,7 +24,7 @@ export const CartList = React.memo(({
     hideQuantityControls = false
 }: CartListProps) => {
     useRenderCount('CartList', { itemsCount: items.length });
-    const { accentColor, isDark, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+    const {accentColor, cardBg, borderColor, textPrimary, textSecondary} = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
         const ObjectGroups: Record<string, { id: number | string; name: string; precio: number; totalQty: number; badge: string | null; subItems: (CartItem & { originalIndex: number })[] }> = {};

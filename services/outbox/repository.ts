@@ -16,6 +16,8 @@ interface OutboxRow {
     last_error: string | null;
     applied_at: number | null;
     response: string | null;
+    owner_id: string | null;
+    next_attempt_at: number;
 }
 
 export interface OutboxRepository {
@@ -30,19 +32,20 @@ export interface OutboxRepository {
     markApplied(id: string, response: unknown): void;
     markFailed(id: string, error: string): void;
     /** Vuelve a 'pendiente' conservando el error (fallo transitorio). */
-    markRetryable(id: string, error: string): void;
+    markRetryable(id: string, error: string, nextAttemptAt?: number): void;
     retry(id: string): void;
     remove(id: string): void;
     clear(): void;
     countUnresolved(): number;
     /**
-     * Purga historial resuelto: aplicadas hace más de `appliedOlderThanMs`
-     * (def. 7d) y fallidas hace más de `failedOlderThanMs` (def. 30d).
+     * Purga historial aplicado (def. 7d). Las fallidas se conservan para revisión.
      * Retorna nº de filas borradas. Sin esto la tabla crece sin límite.
      */
     pruneResolved(appliedOlderThanMs?: number, failedOlderThanMs?: number): number;
     /** Tope de seguridad: nº total de filas (para cap). */
     countAll(): number;
+    hasUnresolvedConsumptions(accountId: string): boolean;
+    countUnowned(): number;
 }
 
 /** Retención por defecto del historial resuelto. */
@@ -72,6 +75,8 @@ function mapRow(row: OutboxRow): OutboxIntent {
         lastError: row.last_error ?? null,
         appliedAt: row.applied_at === null ? null : Number(row.applied_at),
         response: row.response ? parseJson(row.response) : null,
+        ownerId: row.owner_id ?? null,
+        nextAttemptAt: Number(row.next_attempt_at ?? 0),
     };
 }
 
@@ -85,10 +90,18 @@ function parseJson(raw: string): unknown {
 
 export function createOutboxRepository(
     driver: MirrorDriver,
-    options: { now?: () => number; createId?: () => string } = {}
+    options: { now?: () => number; createId?: () => string; ownerId?: () => string | null } = {}
 ): OutboxRepository {
     const now = options.now ?? (() => Date.now());
     const createId = options.createId ?? (() => createQueueId());
+    const ownerId = options.ownerId ?? (() => null);
+    const scoped = (sql: string, params: MirrorParam[] = []): [string, MirrorParam[]] => {
+        const position = sql.search(/\bORDER BY\b/i);
+        const prefix = position < 0 ? sql : sql.slice(0, position);
+        const suffix = position < 0 ? '' : sql.slice(position);
+        return [`${prefix} ${/\bWHERE\b/i.test(prefix) ? 'AND' : 'WHERE'} owner_id IS ? ${suffix}`, [...params, ownerId()]];
+    };
+    const run = (sql: string, params: MirrorParam[] = []) => driver.run(...scoped(sql, params));
 
     const setStatus = (
         id: string,
@@ -114,15 +127,17 @@ export function createOutboxRepository(
         sql += ' WHERE id = ?';
         payload.push(id);
 
-        driver.run(sql, payload);
+        run(sql, payload);
     };
 
     const list = (sql: string, params: MirrorParam[] = []): OutboxIntent[] =>
-        driver.getAll<OutboxRow>(sql, params).map(mapRow);
+        driver.getAll<OutboxRow>(...scoped(sql, params)).map(mapRow);
 
     return {
         enqueue: <TPayload,>(input: OutboxEnqueueInput<TPayload>, id?: string) => {
             const timestamp = now();
+            const owner = ownerId();
+            if (options.ownerId && !owner) throw new Error('Inicia sesión antes de guardar operaciones.');
             const intent: OutboxIntent<TPayload> = {
                 id: id ?? createId(),
                 type: input.type,
@@ -135,11 +150,13 @@ export function createOutboxRepository(
                 lastError: null,
                 appliedAt: null,
                 response: null,
+                ownerId: owner,
+                nextAttemptAt: 0,
             };
 
             driver.run(
-                `INSERT INTO outbox (id, type, payload, label, created_at, updated_at, status, attempts)
-                 VALUES (?, ?, ?, ?, ?, ?, 'pendiente', 0)`,
+                `INSERT INTO outbox (id, type, payload, label, created_at, updated_at, status, attempts, owner_id)
+                 VALUES (?, ?, ?, ?, ?, ?, 'pendiente', 0, ?)`,
                 [
                     intent.id,
                     intent.type,
@@ -147,6 +164,7 @@ export function createOutboxRepository(
                     intent.label,
                     intent.createdAt,
                     intent.updatedAt,
+                    owner,
                 ]
             );
 
@@ -166,14 +184,14 @@ export function createOutboxRepository(
         listFlushable: (maxAttempts: number) =>
             list(
                 `SELECT * FROM outbox
-                  WHERE status = 'pendiente' AND attempts < ?
+                  WHERE ((status = 'pendiente' AND attempts < ?) OR status = 'enviando')
                   ORDER BY created_at ASC`,
                 [maxAttempts]
             ),
 
         markSending: (id: string) => {
             setStatus(id, 'enviando');
-            driver.run('UPDATE outbox SET attempts = attempts + 1 WHERE id = ?', [id]);
+            run('UPDATE outbox SET attempts = attempts + 1 WHERE id = ?', [id]);
         },
 
         markApplied: (id: string, response: unknown) => {
@@ -188,38 +206,39 @@ export function createOutboxRepository(
             setStatus(id, 'fallida', { lastError: error, appliedAt: now() });
         },
 
-        markRetryable: (id: string, error: string) => {
+        markRetryable: (id: string, error: string, nextAttemptAt = 0) => {
             setStatus(id, 'pendiente', { lastError: error });
+            run('UPDATE outbox SET next_attempt_at = ? WHERE id = ?', [nextAttemptAt, id]);
         },
 
         retry: (id: string) => {
-            driver.run(
+            run(
                 `UPDATE outbox
-                    SET status = 'pendiente', attempts = 0, last_error = NULL, updated_at = ?
+                    SET status = 'pendiente', attempts = 0, next_attempt_at = 0, last_error = NULL, updated_at = ?
                   WHERE id = ?`,
                 [now(), id]
             );
         },
 
         remove: (id: string) => {
-            driver.run('DELETE FROM outbox WHERE id = ?', [id]);
+            run('DELETE FROM outbox WHERE id = ?', [id]);
         },
 
         clear: () => {
-            driver.run('DELETE FROM outbox');
+            run('DELETE FROM outbox');
             logger.debug('Outbox: cola vaciada');
         },
 
         countUnresolved: () => {
             const row = driver.getFirst<{ total: number }>(
-                "SELECT COUNT(*) AS total FROM outbox WHERE status IN ('pendiente', 'enviando', 'fallida')"
+                ...scoped("SELECT COUNT(*) AS total FROM outbox WHERE status IN ('pendiente', 'enviando', 'fallida')")
             );
             return Number(row?.total ?? 0);
         },
 
         pruneResolved: (
             appliedOlderThanMs: number = OUTBOX_PRUNE_DEFAULTS.appliedOlderThanMs,
-            failedOlderThanMs: number = OUTBOX_PRUNE_DEFAULTS.failedOlderThanMs,
+            _failedOlderThanMs: number = OUTBOX_PRUNE_DEFAULTS.failedOlderThanMs,
         ) => {
             const countTotal = (): number => {
                 const row = driver.getFirst<{ total: number }>('SELECT COUNT(*) AS total FROM outbox');
@@ -230,10 +249,6 @@ export function createOutboxRepository(
                 driver.run(
                     'DELETE FROM outbox WHERE status = ? AND COALESCE(applied_at, updated_at) < ?',
                     ['aplicada', now() - appliedOlderThanMs]
-                );
-                driver.run(
-                    'DELETE FROM outbox WHERE status = ? AND COALESCE(applied_at, updated_at) < ?',
-                    ['fallida', now() - failedOlderThanMs]
                 );
                 // Cap de seguridad: si aún hay demasiadas filas, se podan las
                 // aplicadas más viejas (nunca pendientes/enviando/fallidas recientes).
@@ -260,5 +275,14 @@ export function createOutboxRepository(
             const row = driver.getFirst<{ total: number }>('SELECT COUNT(*) AS total FROM outbox');
             return Number(row?.total ?? 0);
         },
+        hasUnresolvedConsumptions: accountId => driver.getAll<{ payload: string }>(
+            "SELECT payload FROM outbox WHERE type = 'account.consumptions' AND status IN ('pendiente', 'enviando', 'fallida')"
+        ).some(row => {
+            const payload = parseJson(row.payload) as { id_cuenta?: unknown } | null;
+            return payload?.id_cuenta === undefined || payload.id_cuenta === null || String(payload.id_cuenta) === accountId;
+        }),
+        countUnowned: () => Number(driver.getFirst<{ total: number }>(
+            "SELECT COUNT(*) AS total FROM outbox WHERE owner_id IS NULL AND status IN ('pendiente', 'enviando', 'fallida')"
+        )?.total ?? 0),
     };
 }

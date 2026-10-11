@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 interface HapticsState {
@@ -30,49 +30,49 @@ export const useHaptics = () => {
         if (!enabled) return;
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const medium = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const heavy = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const success = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const warning = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const error = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const selection = useCallback(async () => {
         if (!enabled) return;
         try {
             await Haptics.selectionAsync();
-        } catch (e) {}
+        } catch  {}
     }, [enabled]);
 
     const trigger = useCallback(async (type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection' = 'light') => {

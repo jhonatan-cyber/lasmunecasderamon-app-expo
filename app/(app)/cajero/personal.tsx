@@ -1,27 +1,28 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import FlashList from "@/components/shared/FlashList";
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';import { eventBus } from "@/utils/eventBus";
-import {
-    Dimensions,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
-import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client-safe';
+import FlashList from "@/components/shared/FlashList";
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import logger from '@/utils/logger';
 import { User } from '@/hooks/usePersonalScreen';
+import { eventBus } from "@/utils/eventBus";
+import logger from '@/utils/logger';
+import { showToast } from '@/utils/toast-lazy';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Stack,useFocusEffect,useRouter } from 'expo-router';
+import { useCallback,useEffect,useRef,useState } from 'react';
+import {
+Dimensions,
+Pressable,
+RefreshControl,
+StyleSheet,
+Text,
+TextInput,
+View,
+} from 'react-native';
 
 import {
-    PersonalCard,
-    PersonalQRModal
+PersonalCard,
+PersonalQRModal
 } from '@/components/cajero/personal';
 
 const { width } = Dimensions.get('window');
@@ -32,7 +33,7 @@ const CARD_WIDTH = (width - (GRID_PADDING * 2) - GRID_GAP) / NUM_COLUMNS;
 
 export default function PersonalScreen() {
     const router = useRouter();
-    const { accentColor, accentBg, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const {accentColor, accentBg, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -49,19 +50,19 @@ export default function PersonalScreen() {
             logger.debug('[PersonalScreen] Fetching users with status=active...');
             const data = await apiClientSafe<any[]>('/users?status=active');
             logger.debug('[PersonalScreen] Response:', data);
-            
+
             if (data.success) {
                 const allUsers = data.data || [];
                 const staff = allUsers.filter((u: User) => {
                     const r = u.role?.toLowerCase() || '';
                     if (r.includes('administrador') || r.includes('admin')) return false;
-                    return r.includes('garzon') || 
-                           r.includes('garzón') || 
+                    return r.includes('garzon') ||
+                           r.includes('garzón') ||
                            r.includes('mesero') ||
                            r.includes('cajero') ||
                            r.includes('anfitriona');
                 });
-                
+
                 const serialized = JSON.stringify(staff);
                 if (dataRef.current !== serialized) {
                     dataRef.current = serialized;
@@ -129,11 +130,11 @@ export default function PersonalScreen() {
                     text1: 'Éxito',
                     text2: `Código QR generado · vence en ${challenge.data.ttlSegundos ?? 120}s`,
                 });
-                
-                setUsers(prev => prev.map(u => 
+
+                setUsers(prev => prev.map(u =>
                     u.id === userId ? { ...u, qr_token: challenge.data!.token } : u
                 ));
-                
+
                 if (selectedUser?.id === userId) {
                     setSelectedUser(prev => prev ? { ...prev, qr_token: challenge.data!.token } : null);
                 }
@@ -149,7 +150,7 @@ export default function PersonalScreen() {
         }
     }, [selectedUser]);
 
-    const filteredUsers = users.filter(u => 
+    const filteredUsers = users.filter(u =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.nick?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -216,8 +217,8 @@ export default function PersonalScreen() {
         return (
             <View style={[styles.container, { backgroundColor: bg }]}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <PremiumHeader 
-                    title="Personal" 
+                <PremiumHeader
+                    title="Personal"
                     subtitle="Lista de trabajadores"
                     rightComponent={
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
@@ -233,12 +234,12 @@ export default function PersonalScreen() {
                 />
                 <View style={styles.skeletonGrid}>
                     {[1, 2, 3, 4, 5, 6].map(i => (
-                        <SkeletonLoader 
-                            key={i} 
-                            width={CARD_WIDTH - 8} 
-                            height={160} 
-                            borderRadius={20} 
-                            style={{ margin: 4 }} 
+                        <SkeletonLoader
+                            key={i}
+                            width={CARD_WIDTH - 8}
+                            height={160}
+                            borderRadius={20}
+                            style={{ margin: 4 }}
                         />
                     ))}
                 </View>
@@ -249,8 +250,8 @@ export default function PersonalScreen() {
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
-            <PremiumHeader 
-                title="Personal" 
+            <PremiumHeader
+                title="Personal"
                 subtitle="Selecciona un usuario para ver su QR"
                 rightComponent={
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
@@ -334,11 +335,11 @@ export default function PersonalScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    skeletonGrid: { 
-        padding: 12, 
-        flexDirection: 'row', 
-        flexWrap: 'wrap', 
-        justifyContent: 'space-between' 
+    skeletonGrid: {
+        padding: 12,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between'
     },
     horasExtrasBtn: {
         marginHorizontal: 16,
@@ -383,18 +384,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     backBtnRight: {
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        height: 38, 
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 38,
         borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 12,
         gap: 6
     },
-    backTextHeader: { 
-        color: '#FFFFFF', 
-        fontWeight: '800', 
-        fontSize: 13, 
-        letterSpacing: 0.5 
+    backTextHeader: {
+        color: '#FFFFFF',
+        fontWeight: '800',
+        fontSize: 13,
+        letterSpacing: 0.5
     },
 });
