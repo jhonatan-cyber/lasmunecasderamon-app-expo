@@ -78,7 +78,8 @@ test('root redirects barman users to the barman dashboard', async ({ page }) => 
     await expect(page.locator('body')).toContainText('SERVICIOS');
     await expect(page.locator('body')).not.toContainText('Ganancias');
     await expect(page.locator('body')).not.toContainText('Financiero');
-    await expect(page.locator('body')).toContainText('Reportes');
+    await page.getByText('BAR', { exact: true }).click();
+    await expect(page).toHaveURL(/\/barman\/bar/);
 });
 
 test('barman home renders its tab bar labels', async ({ page }) => {
