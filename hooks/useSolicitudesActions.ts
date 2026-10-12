@@ -1,19 +1,30 @@
+import {
+  saleInventoryFields,
+  type SaleInventoryFields,
+} from "@/hooks/utils/saleInventoryFields";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { eventBus } from "@/utils/eventBus";
 import * as Haptics from "expo-haptics";
-import { showToast as showToastLazy } from '@/utils/toast-lazy';
+import { showToast as showToastLazy } from "@/utils/toast-lazy";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
-import { calcularPropina } from '@lasmunecasderamon/sale-totals';
+import { calcularPropina } from "@lasmunecasderamon/sale-totals";
 import { MetodoPago } from "@/types/api";
-import type { Cliente } from '@lasmunecasderamon/types';
-import type { PedidoItem, SolicitudItem, PendingAutoOpen } from "@/hooks/types/solicitudesTypes";
+import type { Cliente } from "@lasmunecasderamon/types";
+import type {
+  PedidoItem,
+  SolicitudItem,
+  PendingAutoOpen,
+} from "@/hooks/types/solicitudesTypes";
 import { blockOffline } from "@/utils/offlineGuard";
 import logger from "@/utils/logger";
 
 interface PedidoDetalle {
+  configuracion_venta?: SaleInventoryFields;
+  comision?: number;
+  anfitrionas_asignadas_ids?: string;
   producto_id: string;
   cantidad: number;
   precio: number;
@@ -60,7 +71,10 @@ interface UseSolicitudesActionsParams {
   solicitudes: SolicitudItem[];
   cajaAbierta: boolean;
   fetchSolicitudes: (isManual?: boolean) => Promise<void>;
-  removeSolicitudLocally: (id: string, tipo: "pedido" | "solicitud" | "anticipo") => void;
+  removeSolicitudLocally: (
+    id: string,
+    tipo: "pedido" | "solicitud" | "anticipo",
+  ) => void;
   pendingAutoOpen: PendingAutoOpen;
   setPendingAutoOpen: (value: PendingAutoOpen) => void;
   openId?: string | string[];
@@ -78,19 +92,25 @@ export const useSolicitudesActions = ({
   queryType,
 }: UseSolicitudesActionsParams) => {
   const router = useRouter();
-  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const propinaPct = Number(
+    useConfigValue("facturacion", "propina_venta", "10"),
+  );
   const [processedOpenId, setProcessedOpenId] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(0);
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
-  const [selectedPedido, setSelectedPedido] = useState<SolicitudItem | null>(null);
+  const [selectedPedido, setSelectedPedido] = useState<SolicitudItem | null>(
+    null,
+  );
   const [pedidoDetails, setPedidoDetails] = useState<PedidoDetalle[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingClient, setLoadingClient] = useState(false);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("");
-  const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<MetodoPago>("");
+  const [metodoPagoAdicional, setMetodoPagoAdicional] =
+    useState<MetodoPago>("");
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [agregarPropina, setAgregarPropina] = useState(false);
-  const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30);
+  const [selectedMinutesPedido, setSelectedMinutesPedido] =
+    useState<number>(30);
   const [submittingCheckout, setSubmittingCheckout] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -100,18 +120,24 @@ export const useSolicitudesActions = ({
     onConfirm?: () => void;
   }>({ visible: false, title: "", message: "", type: "info" });
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<SolicitudItem | null>(null);
-  const showToast = useCallback((title: string, message: string, type: "success" | "error" = "error") => {
-    if (type === "success") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  const [selectedService, setSelectedService] = useState<SolicitudItem | null>(
+    null,
+  );
+  const showToast = useCallback(
+    (title: string, message: string, type: "success" | "error" = "error") => {
+      if (type === "success")
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-    showToastLazy({
-      type,
-      text1: title,
-      text2: message,
-      visibilityTime: 4000,
-    });
-  }, []);
+      showToastLazy({
+        type,
+        text1: title,
+        text2: message,
+        visibilityTime: 4000,
+      });
+    },
+    [],
+  );
 
   const closeCheckout = useCallback(() => {
     setCheckoutModalVisible(false);
@@ -124,88 +150,228 @@ export const useSolicitudesActions = ({
     setSelectedMinutesPedido(30);
   }, []);
 
-  const handleAprobar = useCallback(async (id: string, tipo: "pedido" | "solicitud" | "anticipo", itemInfo?: SolicitudItem) => {
-    logger.debug("[handleAprobar] id:", { arg0: id, arg1: "tipo:", arg2: tipo, arg3: "itemInfo:", arg4: itemInfo });
-    if (!cajaAbierta) {
-      showToast("Caja Cerrada", "No puedes aprobar servicios ni pedidos porque no hay una caja abierta.", "error");
-      return;
-    }
+  const handleAprobar = useCallback(
+    async (
+      id: string,
+      tipo: "pedido" | "solicitud" | "anticipo",
+      itemInfo?: SolicitudItem,
+    ) => {
+      logger.debug("[handleAprobar] id:", {
+        arg0: id,
+        arg1: "tipo:",
+        arg2: tipo,
+        arg3: "itemInfo:",
+        arg4: itemInfo,
+      });
+      if (!cajaAbierta) {
+        showToast(
+          "Caja Cerrada",
+          "No puedes aprobar servicios ni pedidos porque no hay una caja abierta.",
+          "error",
+        );
+        return;
+      }
 
-    // Aprobar factura y mueve dinero: es decisión del servidor.
-    if (!blockOffline("solicitud")) return;
+      // Aprobar factura y mueve dinero: es decisión del servidor.
+      if (!blockOffline("solicitud")) return;
 
-    if (tipo === "pedido" && itemInfo) {
-      setSelectedPedido(itemInfo);
-      setMetodoPago("");
-      setMetodoPagoAdicional("");
-      setAgregarPropina(false);
-      setCheckoutModalVisible(true);
-      setLoadingDetails(true);
-      setSelectedMinutesPedido(30);
+      if (tipo === "pedido" && itemInfo) {
+        setSelectedPedido(itemInfo);
+        setMetodoPago("");
+        setMetodoPagoAdicional("");
+        setAgregarPropina(false);
+        setCheckoutModalVisible(true);
+        setLoadingDetails(true);
+        setSelectedMinutesPedido(30);
 
-      try {
-        const res = await apiClientSafe<PedidoDetalle[]>(`/orders/detail?id=${id}`);
-        if (res.success) {
-          setPedidoDetails(res.data);
-          const cId = res.data?.[0]?.cliente_id || itemInfo.id_cliente || itemInfo.cliente_id;
-          if (cId) {
-            const cRes = await apiClientSafe<Cliente>(`/clients?id=${cId}`).catch(() => ({ success: false, data: undefined }));
-            if (cRes.success && cRes.data) {
-              setSelectedClient(cRes.data);
-              if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
+        try {
+          const res = await apiClientSafe<PedidoDetalle[]>(
+            `/orders/detail?id=${id}`,
+          );
+          if (res.success) {
+            setPedidoDetails(res.data);
+            const cId =
+              res.data?.[0]?.cliente_id ||
+              itemInfo.id_cliente ||
+              itemInfo.cliente_id;
+            if (cId) {
+              const cRes = await apiClientSafe<Cliente>(
+                `/clients?id=${cId}`,
+              ).catch(() => ({ success: false, data: undefined }));
+              if (cRes.success && cRes.data) {
+                setSelectedClient(cRes.data);
+                if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
+              }
+            } else {
+              setSelectedClient(null);
             }
+            if (res.data.length > 0 && (res.data[0].propina ?? 0) > 0)
+              setAgregarPropina(true);
           } else {
-            setSelectedClient(null);
+            showToast("Error", "No se pudieron cargar los detalles", "error");
+            closeCheckout();
           }
-          if (res.data.length > 0 && (res.data[0].propina ?? 0) > 0) setAgregarPropina(true);
-        } else {
+        } catch {
           showToast("Error", "No se pudieron cargar los detalles", "error");
           closeCheckout();
+        } finally {
+          setLoadingDetails(false);
         }
-      } catch {
-        showToast("Error", "No se pudieron cargar los detalles", "error");
-        closeCheckout();
-      } finally {
-        setLoadingDetails(false);
+        return;
       }
-      return;
-    }
 
-    if (tipo === "anticipo" && itemInfo) {
-      const anticipoEstado = Number(itemInfo.estado);
-      const requiereAprobacion = anticipoEstado === 2;
+      if (tipo === "anticipo" && itemInfo) {
+        const anticipoEstado = Number(itemInfo.estado);
+        const requiereAprobacion = anticipoEstado === 2;
+        setAlertConfig({
+          visible: true,
+          title: requiereAprobacion
+            ? "Aprobar y Pagar Anticipo"
+            : "Pagar Anticipo",
+          message: `¿Confirmas que has entregado el efectivo de $${(itemInfo.monto ?? 0).toLocaleString()} a ${itemInfo.usuario ?? ""}?`,
+          type: "success",
+          onConfirm: async () => {
+            setAlertConfig((prev) => ({ ...prev, visible: false }));
+            try {
+              if (requiereAprobacion) {
+                const approveRes = await apiClientSafe(`/anticipos/${id}`, {
+                  method: "PUT",
+                  body: JSON.stringify({ estado: 1 }),
+                });
+
+                if (!approveRes.success) {
+                  showToast(
+                    "Error",
+                    approveRes.message || "No se pudo aprobar el anticipo.",
+                    "error",
+                  );
+                  fetchSolicitudes();
+                  return;
+                }
+              }
+
+              const res = await apiClientSafe(`/anticipos/${id}`, {
+                method: "PUT",
+                body: JSON.stringify({ estado: 0 }),
+              });
+              if (res.success) {
+                removeSolicitudLocally(id, "anticipo");
+                showToast(
+                  "Éxito",
+                  "Anticipo entregado y descontado de caja.",
+                  "success",
+                );
+                eventBus.emit("refresh_requests");
+                eventBus.emit("refresh_anticipos");
+              } else {
+                showToast(
+                  "Error",
+                  res.message || "Error al procesar.",
+                  "error",
+                );
+                fetchSolicitudes();
+              }
+            } catch (err: any) {
+              showToast("Error", err.message || "Error del servidor", "error");
+              fetchSolicitudes();
+            }
+          },
+        });
+        return;
+      }
+
+      if (tipo === "solicitud") {
+        const executeAprobacion = async () => {
+          removeSolicitudLocally(id, "solicitud");
+          try {
+            const res = await apiClientSafe(
+              `/solicitudes-servicios/${id}/aprobar`,
+              {
+                method: "PATCH",
+                body: JSON.stringify({
+                  metodo_pago:
+                    metodoPago || itemInfo?.metodo_pago || "efectivo",
+                  metodo_pago_adicional: metodoPagoAdicional || undefined,
+                }),
+              },
+            );
+
+            if (res.success) {
+              showToast("Éxito", "Servicio aprobado correctamente.", "success");
+              eventBus.emit("refresh_requests");
+              setMetodoPago("");
+              setMetodoPagoAdicional("");
+              setServiceModalVisible(false);
+            } else {
+              showToast("Error", res.message || "No se pudo aprobar.", "error");
+              fetchSolicitudes();
+            }
+          } catch (err: any) {
+            showToast("Error", err.message || "Error del servidor", "error");
+            fetchSolicitudes();
+          }
+        };
+
+        if (serviceModalVisible) {
+          executeAprobacion();
+        } else {
+          setAlertConfig({
+            visible: true,
+            title: "Aprobar Servicio",
+            message: `¿Confirmas la aprobación del servicio en la ${itemInfo?.habitacion_nombre || "habitación"}?`,
+            type: "success",
+            onConfirm: () => {
+              setAlertConfig((prev) => ({ ...prev, visible: false }));
+              executeAprobacion();
+            },
+          });
+        }
+      }
+    },
+    [
+      cajaAbierta,
+      closeCheckout,
+      fetchSolicitudes,
+      metodoPago,
+      metodoPagoAdicional,
+      removeSolicitudLocally,
+      serviceModalVisible,
+      showToast,
+    ],
+  );
+
+  const handleRechazar = useCallback(
+    (id: string, tipo: "pedido" | "solicitud" | "anticipo") => {
+      if (!blockOffline("solicitud")) return;
       setAlertConfig({
         visible: true,
-        title: requiereAprobacion ? "Aprobar y Pagar Anticipo" : "Pagar Anticipo",
-        message: `¿Confirmas que has entregado el efectivo de $${(itemInfo.monto ?? 0).toLocaleString()} a ${itemInfo.usuario ?? ''}?`,
-        type: "success",
+        title: "Rechazar",
+        message: `¿Seguro que deseas rechazar este ${tipo === "solicitud" ? "servicio" : "pedido"}?`,
+        type: "danger",
         onConfirm: async () => {
-          setAlertConfig(prev => ({ ...prev, visible: false }));
+          setAlertConfig((prev) => ({ ...prev, visible: false }));
+          removeSolicitudLocally(
+            id,
+            tipo === "solicitud" ? "solicitud" : "pedido",
+          );
           try {
-            if (requiereAprobacion) {
-              const approveRes = await apiClientSafe(`/anticipos/${id}`, {
-                method: "PUT",
-                body: JSON.stringify({ estado: 1 }),
-              });
-
-              if (!approveRes.success) {
-                showToast("Error", approveRes.message || "No se pudo aprobar el anticipo.", "error");
-                fetchSolicitudes();
-                return;
-              }
-            }
-
-            const res = await apiClientSafe(`/anticipos/${id}`, {
-              method: "PUT",
-              body: JSON.stringify({ estado: 0 }),
+            const endpoint =
+              tipo === "solicitud"
+                ? `/solicitudes-servicios/${id}/rechazar`
+                : `/orders/${id}`;
+            const res = await apiClientSafe(endpoint, {
+              method: tipo === "solicitud" ? "PATCH" : "PUT",
+              body: JSON.stringify(
+                tipo === "solicitud"
+                  ? { motivo_rechazo: "Caja" }
+                  : { estado: 2 },
+              ),
             });
             if (res.success) {
-              removeSolicitudLocally(id, "anticipo");
-              showToast("Éxito", "Anticipo entregado y descontado de caja.", "success");
+              showToast("Éxito", "Solicitud eliminada.", "success");
               eventBus.emit("refresh_requests");
-              eventBus.emit("refresh_anticipos");
             } else {
-              showToast("Error", res.message || "Error al procesar.", "error");
+              showToast("Error", "No se pudo rechazar.", "error");
               fetchSolicitudes();
             }
           } catch (err: any) {
@@ -214,84 +380,9 @@ export const useSolicitudesActions = ({
           }
         },
       });
-      return;
-    }
-
-    if (tipo === "solicitud") {
-      const executeAprobacion = async () => {
-        removeSolicitudLocally(id, "solicitud");
-        try {
-          const res = await apiClientSafe(`/solicitudes-servicios/${id}/aprobar`, {
-            method: "PATCH",
-            body: JSON.stringify({
-              metodo_pago: metodoPago || itemInfo?.metodo_pago || "efectivo",
-              metodo_pago_adicional: metodoPagoAdicional || undefined,
-            }),
-          });
-
-          if (res.success) {
-            showToast("Éxito", "Servicio aprobado correctamente.", "success");
-            eventBus.emit("refresh_requests");
-            setMetodoPago("");
-            setMetodoPagoAdicional("");
-            setServiceModalVisible(false);
-          } else {
-            showToast("Error", res.message || "No se pudo aprobar.", "error");
-            fetchSolicitudes();
-          }
-        } catch (err: any) {
-          showToast("Error", err.message || "Error del servidor", "error");
-          fetchSolicitudes();
-        }
-      };
-
-      if (serviceModalVisible) {
-        executeAprobacion();
-      } else {
-        setAlertConfig({
-          visible: true,
-          title: "Aprobar Servicio",
-          message: `¿Confirmas la aprobación del servicio en la ${itemInfo?.habitacion_nombre || "habitación"}?`,
-          type: "success",
-          onConfirm: () => {
-            setAlertConfig(prev => ({ ...prev, visible: false }));
-            executeAprobacion();
-          },
-        });
-      }
-    }
-  }, [cajaAbierta, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, removeSolicitudLocally, serviceModalVisible, showToast]);
-
-  const handleRechazar = useCallback((id: string, tipo: "pedido" | "solicitud" | "anticipo") => {
-    if (!blockOffline("solicitud")) return;
-    setAlertConfig({
-      visible: true,
-      title: "Rechazar",
-      message: `¿Seguro que deseas rechazar este ${tipo === "solicitud" ? "servicio" : "pedido"}?`,
-      type: "danger",
-      onConfirm: async () => {
-        setAlertConfig(prev => ({ ...prev, visible: false }));
-        removeSolicitudLocally(id, tipo === "solicitud" ? "solicitud" : "pedido");
-        try {
-          const endpoint = tipo === "solicitud" ? `/solicitudes-servicios/${id}/rechazar` : `/orders/${id}`;
-          const res = await apiClientSafe(endpoint, {
-            method: tipo === "solicitud" ? "PATCH" : "PUT",
-            body: JSON.stringify(tipo === "solicitud" ? { motivo_rechazo: "Caja" } : { estado: 2 }),
-          });
-          if (res.success) {
-            showToast("Éxito", "Solicitud eliminada.", "success");
-            eventBus.emit("refresh_requests");
-          } else {
-            showToast("Error", "No se pudo rechazar.", "error");
-            fetchSolicitudes();
-          }
-        } catch (err: any) {
-          showToast("Error", err.message || "Error del servidor", "error");
-          fetchSolicitudes();
-        }
-      },
-    });
-  }, [fetchSolicitudes, removeSolicitudLocally, showToast]);
+    },
+    [fetchSolicitudes, removeSolicitudLocally, showToast],
+  );
 
   const handleCheckoutSubmit = useCallback(async () => {
     if (!selectedPedido) return;
@@ -300,11 +391,17 @@ export const useSolicitudesActions = ({
     setSubmittingCheckout(true);
 
     const pedidoItem = selectedPedido as PedidoItem;
-    const propinaOriginal = Number(pedidoItem.propina || pedidoDetails?.[0]?.propina || 0);
-    const subtotalBase = Number(
-      pedidoItem.subtotal ?? Math.max(0, Number(pedidoItem.total || 0) - propinaOriginal),
+    const propinaOriginal = Number(
+      pedidoItem.propina || pedidoDetails?.[0]?.propina || 0,
     );
-    const propinaFinal = propinaOriginal > 0 ? propinaOriginal : calcularPropina(subtotalBase, propinaPct, agregarPropina);
+    const subtotalBase = Number(
+      pedidoItem.subtotal ??
+        Math.max(0, Number(pedidoItem.total || 0) - propinaOriginal),
+    );
+    const propinaFinal =
+      propinaOriginal > 0
+        ? propinaOriginal
+        : calcularPropina(subtotalBase, propinaPct, agregarPropina);
     const totalConPropina = subtotalBase + propinaFinal;
     const saldoPrepago = selectedClient ? Number(selectedClient.saldo || 0) : 0;
 
@@ -313,20 +410,28 @@ export const useSolicitudesActions = ({
       montoPrepago = Math.min(totalConPropina, saldoPrepago);
     }
 
-    const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
+    const clienteId =
+      selectedPedido.cliente_id ||
+      pedidoDetails?.[0]?.cliente_id ||
+      selectedClient?.id ||
+      null;
 
     const payload: SalesSubmitPayload = {
-      id_pedido: (selectedPedido as PedidoItem).id_pedido ?? '',
+      id_pedido: (selectedPedido as PedidoItem).id_pedido ?? "",
       cliente_id: clienteId ?? null,
       metodo_pago: metodoPago,
       metodo_pago_adicional: metodoPagoAdicional || undefined,
       monto_prepago: montoPrepago,
       duracion_habitacion: selectedMinutesPedido,
       detalles: pedidoDetails.map((d) => ({
+        ...saleInventoryFields(d),
+        comision: Number(d.comision ?? 0),
+        hostesses:
+          d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
         producto_id: d.producto_id,
         cantidad: d.cantidad,
         precio: d.precio,
-        sub_total: d.subtotal_detalle || (d.cantidad * d.precio),
+        sub_total: d.subtotal_detalle || d.cantidad * d.precio,
       })),
       sub_total: subtotalBase,
       total: totalConPropina,
@@ -357,7 +462,7 @@ export const useSolicitudesActions = ({
 
       if (res.success) {
         showToast("Éxito", "Pedido cobrado y cerrado.", "success");
-        removeSolicitudLocally(pedidoItem.id_pedido ?? '', "pedido");
+        removeSolicitudLocally(pedidoItem.id_pedido ?? "", "pedido");
         closeCheckout();
         eventBus.emit("refresh_requests");
       } else {
@@ -370,12 +475,29 @@ export const useSolicitudesActions = ({
     } finally {
       setSubmittingCheckout(false);
     }
-  }, [agregarPropina, closeCheckout, fetchSolicitudes, metodoPago, metodoPagoAdicional, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast, propinaPct]);
+  }, [
+    agregarPropina,
+    closeCheckout,
+    fetchSolicitudes,
+    metodoPago,
+    metodoPagoAdicional,
+    pedidoDetails,
+    removeSolicitudLocally,
+    selectedClient,
+    selectedMinutesPedido,
+    selectedPedido,
+    showToast,
+    propinaPct,
+  ]);
 
   const handleAddToCuenta = useCallback(async () => {
     if (!selectedPedido || !selectedClient) return;
     if (!cajaAbierta) {
-      showToast("Caja Cerrada", "No puedes crear cuentas sin una caja abierta.", "error");
+      showToast(
+        "Caja Cerrada",
+        "No puedes crear cuentas sin una caja abierta.",
+        "error",
+      );
       return;
     }
 
@@ -384,16 +506,27 @@ export const useSolicitudesActions = ({
 
     setSubmittingCheckout(true);
     try {
-      const clienteId = selectedPedido.cliente_id || pedidoDetails?.[0]?.cliente_id || selectedClient?.id || null;
+      const clienteId =
+        selectedPedido.cliente_id ||
+        pedidoDetails?.[0]?.cliente_id ||
+        selectedClient?.id ||
+        null;
       const habitacionId = pedidoDetails?.[0]?.habitacion_id || null;
       const detalles = pedidoDetails.map((d: any) => ({
+        ...saleInventoryFields(d),
+        comision: Number(d.comision ?? 0),
+        hostesses:
+          d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
         producto_id: d.producto_id,
         cantidad: d.cantidad,
         precio: d.precio,
-        sub_total: (d.cantidad * d.precio),
+        sub_total: d.cantidad * d.precio,
       }));
 
-      const subTotal = detalles.reduce((sum: number, d: any) => sum + d.sub_total, 0);
+      const subTotal = detalles.reduce(
+        (sum: number, d: any) => sum + d.sub_total,
+        0,
+      );
       const total = subTotal;
 
       const payload = {
@@ -414,8 +547,15 @@ export const useSolicitudesActions = ({
       });
 
       if (res.success) {
-        showToast("Éxito", `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`, "success");
-        removeSolicitudLocally((selectedPedido as PedidoItem).id_pedido ?? '', "pedido");
+        showToast(
+          "Éxito",
+          `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`,
+          "success",
+        );
+        removeSolicitudLocally(
+          (selectedPedido as PedidoItem).id_pedido ?? "",
+          "pedido",
+        );
         closeCheckout();
         eventBus.emit("refresh_requests");
       } else {
@@ -428,7 +568,17 @@ export const useSolicitudesActions = ({
     } finally {
       setSubmittingCheckout(false);
     }
-  }, [cajaAbierta, closeCheckout, fetchSolicitudes, pedidoDetails, removeSolicitudLocally, selectedClient, selectedMinutesPedido, selectedPedido, showToast]);
+  }, [
+    cajaAbierta,
+    closeCheckout,
+    fetchSolicitudes,
+    pedidoDetails,
+    removeSolicitudLocally,
+    selectedClient,
+    selectedMinutesPedido,
+    selectedPedido,
+    showToast,
+  ]);
 
   useEffect(() => {
     setPendingAutoOpen(null);
@@ -447,13 +597,13 @@ export const useSolicitudesActions = ({
       };
       const startTicker = () => {
         stopTicker();
-        interval = setInterval(() => setNowTick(tick => tick + 1), 60_000);
+        interval = setInterval(() => setNowTick((tick) => tick + 1), 60_000);
       };
 
       if (AppState.currentState === "active") startTicker();
-      const subscription = AppState.addEventListener("change", state => {
+      const subscription = AppState.addEventListener("change", (state) => {
         if (state === "active") {
-          setNowTick(tick => tick + 1);
+          setNowTick((tick) => tick + 1);
           startTicker();
         } else {
           stopTicker();
@@ -472,9 +622,14 @@ export const useSolicitudesActions = ({
       const id = openId as string;
       if (id === processedOpenId) return;
 
-      const found = solicitudes.find(s =>
-        (queryType === "new_order" && s.tipoItem === "pedido" && s.id_pedido === id) ||
-        (queryType === "new_service_request" && s.tipoItem === "solicitud" && s.id_solicitud === id),
+      const found = solicitudes.find(
+        (s) =>
+          (queryType === "new_order" &&
+            s.tipoItem === "pedido" &&
+            s.id_pedido === id) ||
+          (queryType === "new_service_request" &&
+            s.tipoItem === "solicitud" &&
+            s.id_solicitud === id),
       );
 
       if (found) {
@@ -494,14 +649,23 @@ export const useSolicitudesActions = ({
   }, [handleAprobar, openId, processedOpenId, queryType, router, solicitudes]);
 
   useEffect(() => {
-    if (!pendingAutoOpen || !pendingAutoOpen.id || pendingAutoOpen.id === "undefined" || pendingAutoOpen.id === undefined || !solicitudes.length) {
+    if (
+      !pendingAutoOpen ||
+      !pendingAutoOpen.id ||
+      pendingAutoOpen.id === "undefined" ||
+      pendingAutoOpen.id === undefined ||
+      !solicitudes.length
+    ) {
       return;
     }
 
     const { id, type } = pendingAutoOpen;
-    const found = solicitudes.find(s =>
-      (type === "pedido" && s.tipoItem === "pedido" && s.id_pedido === id) ||
-      (type === "solicitud" && s.tipoItem === "solicitud" && s.id_solicitud === id),
+    const found = solicitudes.find(
+      (s) =>
+        (type === "pedido" && s.tipoItem === "pedido" && s.id_pedido === id) ||
+        (type === "solicitud" &&
+          s.tipoItem === "solicitud" &&
+          s.id_solicitud === id),
     );
 
     if (found) {
@@ -536,7 +700,7 @@ export const useSolicitudesActions = ({
           if (res.success) setSelectedClient(res.data);
         })
         .catch((err) => {
-          if (err?.name === 'AbortError') return;
+          if (err?.name === "AbortError") return;
           setSelectedClient(null);
         })
         .finally(() => setLoadingClient(false));

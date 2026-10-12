@@ -1,12 +1,12 @@
-import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
-import type { SaleChoice } from '@/hooks/utils/saleChoice';
+import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import type { SaleChoice } from "@/hooks/utils/saleChoice";
 import type {
   Anfitriona,
   Habitacion,
   Cliente,
   Producto,
   Categoria,
-} from '@lasmunecasderamon/types';
+} from "@lasmunecasderamon/types";
 
 export type PagoMixto = {
   metodo: PaymentMethod;
@@ -16,6 +16,11 @@ export type PagoMixto = {
 
 /** Product item in the sales cart (uses both ES and EN field names for backward compat) */
 export type VentaCartItem = Producto & {
+  acompanamiento_corto?: {
+    presentacion_id: string;
+    ml_por_corto: number;
+    nombre?: string;
+  };
   quantity: number;
   cantidad?: number;
   anfitrionas?: (string | number)[];
@@ -27,7 +32,7 @@ export type VentaCartItem = Producto & {
   stock_bar?: number;
   // Cómo se vendió (espejo del dashboard): 'shot' va acompañado de
   // `shot_anfitriona` para separar el shot de cliente del de anfitriona.
-  tipo_venta?: 'botella' | 'shot';
+  tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
 };
 
@@ -49,7 +54,7 @@ export type VentaState = {
   cart: VentaCartItem[];
   selectedCliente: Cliente | null;
   selectedHabitacion: Habitacion | null;
-  metodoPago: PaymentMethod | '';
+  metodoPago: PaymentMethod | "";
   pagosMixtos: PagoMixto[];
   enableTip: boolean;
   selectedTime: number;
@@ -79,30 +84,35 @@ export type VentaState = {
 };
 
 export type VentaAction =
-  | { type: 'SET_LOADING_INITIAL'; payload: boolean }
-  | { type: 'SET_REFRESHING'; payload: boolean }
-  | { type: 'SET_INITIAL_DATA'; payload: Partial<VentaState> }
-  | { type: 'SET_CART'; payload: VentaCartItem[] }
-  | { type: 'SET_SELECTED_CLIENTE'; payload: Cliente | null }
-  | { type: 'SET_SELECTED_HABITACION'; payload: Habitacion | null }
-  | { type: 'SET_METODO_PAGO'; payload: PaymentMethod }
-  | { type: 'SET_PAGOS_MIXTOS'; payload: PagoMixto[] }
-  | { type: 'ADD_PAGO_MIXTO'; payload: PagoMixto }
-  | { type: 'UPDATE_PAGO_MIXTO'; index: number; monto: number; display?: string }
-  | { type: 'REMOVE_PAGO_MIXTO'; index: number }
-  | { type: 'SET_ENABLE_TIP'; payload: boolean }
-  | { type: 'SET_SELECTED_TIME'; payload: number }
-  | { type: 'SET_MODAL_VISIBLE'; modal: string; visible: boolean }
-  | { type: 'OPEN_CATEGORY_MODAL'; category: Categoria; products: Producto[] }
-  | { type: 'SET_MODAL_LOADING'; payload: boolean }
-  | { type: 'SET_MODAL_QUANTITY'; productId: string; quantity: number }
-  | { type: 'SET_SALE_CHOICE'; productId: string; choice: SaleChoice }
-  | { type: 'SET_MODAL_HOSTESSES'; productId: string; hostesses: string[] }
-  | { type: 'SET_HOSTESS_TARGET'; target: VentaHostessTarget | null }
-  | { type: 'SET_ACTIVE_CART_IDX'; payload: number | null }
-  | { type: 'SET_SUBMITTING'; payload: boolean }
-  | { type: 'SET_LOAD_MODAL'; visible: boolean; client?: Cliente }
-  | { type: 'SET_LOAD_AMOUNT'; payload: string }
-  | { type: 'SET_LOAD_SUBMITTING'; payload: boolean }
-  | { type: 'SET_LOAD_METODO_PAGO'; payload: PaymentMethod }
-  | { type: 'SET_METODO_PAGO_ADICIONAL'; payload: PaymentMethod };
+  | { type: "SET_LOADING_INITIAL"; payload: boolean }
+  | { type: "SET_REFRESHING"; payload: boolean }
+  | { type: "SET_INITIAL_DATA"; payload: Partial<VentaState> }
+  | { type: "SET_CART"; payload: VentaCartItem[] }
+  | { type: "SET_SELECTED_CLIENTE"; payload: Cliente | null }
+  | { type: "SET_SELECTED_HABITACION"; payload: Habitacion | null }
+  | { type: "SET_METODO_PAGO"; payload: PaymentMethod }
+  | { type: "SET_PAGOS_MIXTOS"; payload: PagoMixto[] }
+  | { type: "ADD_PAGO_MIXTO"; payload: PagoMixto }
+  | {
+      type: "UPDATE_PAGO_MIXTO";
+      index: number;
+      monto: number;
+      display?: string;
+    }
+  | { type: "REMOVE_PAGO_MIXTO"; index: number }
+  | { type: "SET_ENABLE_TIP"; payload: boolean }
+  | { type: "SET_SELECTED_TIME"; payload: number }
+  | { type: "SET_MODAL_VISIBLE"; modal: string; visible: boolean }
+  | { type: "OPEN_CATEGORY_MODAL"; category: Categoria; products: Producto[] }
+  | { type: "SET_MODAL_LOADING"; payload: boolean }
+  | { type: "SET_MODAL_QUANTITY"; productId: string; quantity: number }
+  | { type: "SET_SALE_CHOICE"; productId: string; choice: SaleChoice }
+  | { type: "SET_MODAL_HOSTESSES"; productId: string; hostesses: string[] }
+  | { type: "SET_HOSTESS_TARGET"; target: VentaHostessTarget | null }
+  | { type: "SET_ACTIVE_CART_IDX"; payload: number | null }
+  | { type: "SET_SUBMITTING"; payload: boolean }
+  | { type: "SET_LOAD_MODAL"; visible: boolean; client?: Cliente }
+  | { type: "SET_LOAD_AMOUNT"; payload: string }
+  | { type: "SET_LOAD_SUBMITTING"; payload: boolean }
+  | { type: "SET_LOAD_METODO_PAGO"; payload: PaymentMethod }
+  | { type: "SET_METODO_PAGO_ADICIONAL"; payload: PaymentMethod };

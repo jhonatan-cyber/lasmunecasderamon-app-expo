@@ -1,40 +1,49 @@
 import {
   object,
+  boolean,
   string,
   number,
   array,
   union,
   unknown as zUnknown,
   enum as zEnum,
-} from 'zod/v4';
-import type { z } from 'zod/v4';
+} from "zod/v4";
+import type { z } from "zod/v4";
 
-const paymentMethodSchema = zEnum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto']);
+const paymentMethodSchema = zEnum([
+  "efectivo",
+  "tarjeta",
+  "transferencia",
+  "prepago",
+  "mixto",
+]);
 
 export const loginSchema = object({
-  email: string().min(1, 'El usuario es obligatorio'),
-  password: string().min(1, 'La contrasena es obligatoria'),
+  email: string().min(1, "El usuario es obligatorio"),
+  password: string().min(1, "La contrasena es obligatoria"),
 });
 
 export const resetPasswordSchema = object({
-  run: string().trim().min(4, 'El RUT es obligatorio'),
+  run: string().trim().min(4, "El RUT es obligatorio"),
 });
 
 export const changePasswordSchema = object({
-  password: string().trim().min(8, 'La contrasena debe tener al menos 8 caracteres'),
-  confirmPassword: string().min(1, 'Confirma la contrasena'),
+  password: string()
+    .trim()
+    .min(8, "La contrasena debe tener al menos 8 caracteres"),
+  confirmPassword: string().min(1, "Confirma la contrasena"),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'Las contrasenas no coinciden',
-  path: ['confirmPassword'],
+  message: "Las contrasenas no coinciden",
+  path: ["confirmPassword"],
 });
 
 export const AttendanceRegisterSchema = object({
-  qrData: string().min(1, 'Codigo QR requerido'),
+  qrData: string().min(1, "Codigo QR requerido"),
 });
 
 export const OrderCreateSchema = object({
-  codigo: string().min(1, 'Codigo es requerido'),
-  meseroId: string().min(1, 'Mesero es requerido'),
+  codigo: string().min(1, "Codigo es requerido"),
+  meseroId: string().min(1, "Mesero es requerido"),
   clienteId: string().nullable().optional(),
   subtotal: number().min(0),
   total: number().min(0),
@@ -43,6 +52,14 @@ export const OrderCreateSchema = object({
   device_date: string().optional(),
   detalles: array(
     object({
+      presentacion_id: string().nullable().optional(),
+      tipo_venta: zEnum(["botella", "shot"]).optional(),
+      shot_anfitriona: boolean().optional(),
+      acompanamiento_corto: object({
+        presentacion_id: string().min(1),
+        ml_por_corto: number().int().min(1).max(10000),
+        nombre: string().optional(),
+      }).optional(),
       productoId: string().min(1),
       precio: number().min(0),
       comision: number().optional().default(0),
@@ -52,30 +69,43 @@ export const OrderCreateSchema = object({
       hostessId: string().nullable().optional(),
       roomId: string().nullable().optional(),
       selectedHostesses: array(string()).optional().default([]),
-    }).passthrough(),
-  ).min(1, 'Al menos un detalle es requerido'),
+    })
+      .passthrough()
+      .refine(
+        (d) =>
+          d.tipo_venta !== "shot" ||
+          (Boolean(d.presentacion_id) &&
+            Boolean(d.acompanamiento_corto) &&
+            d.presentacion_id !== d.acompanamiento_corto?.presentacion_id &&
+            Number.isInteger(d.cantidad) &&
+            d.cantidad <= 99),
+        "Selecciona soda o gaseosa y los ml por corto",
+      ),
+  ).min(1, "Al menos un detalle es requerido"),
   usuarios: array(
     object({
       usuarioId: string(),
     }).passthrough(),
-  ).optional().default([]),
+  )
+    .optional()
+    .default([]),
 }).passthrough();
 
 export const ServiceCreateSchema = object({
-  codigo: string().min(1, 'Codigo es requerido'),
+  codigo: string().min(1, "Codigo es requerido"),
   cliente_id: string().nullable().optional(),
   clientes: array(string()).optional().default([]),
-  habitacion_id: string().min(1, 'Habitacion requerida'),
+  habitacion_id: string().min(1, "Habitacion requerida"),
   precio_habitacion: number().min(0),
   precio_servicio: number().min(0),
   iva: number().min(0),
   sub_total: number().min(0),
   total: number().min(0),
   // Alineado con lib/business/schemas/service.ts del dashboard (min(1))
-  tiempo: number().min(1, 'Tiempo es requerido'),
-  fecha_crea: string().min(1, 'Fecha requerida'),
+  tiempo: number().min(1, "Tiempo es requerido"),
+  fecha_crea: string().min(1, "Fecha requerida"),
   metodo_pago: paymentMethodSchema,
-  usuarios: array(string()).min(1, 'Al menos una anfitriona es requerida'),
+  usuarios: array(string()).min(1, "Al menos una anfitriona es requerida"),
   pagos_mixtos: array(
     object({
       metodo: paymentMethodSchema,
@@ -88,8 +118,8 @@ export const ServiceCreateSchema = object({
 }).passthrough();
 
 export const AnticipoRequestSchema = object({
-  monto: number().positive('Monto invalido'),
-  motivo: string().trim().min(1, 'Motivo requerido'),
+  monto: number().positive("Monto invalido"),
+  motivo: string().trim().min(1, "Motivo requerido"),
 }).passthrough();
 
 /**
@@ -109,10 +139,14 @@ export const configurationsSchema = object({
     threshold_producto_caro: zUnknown().optional(),
     split_tarjeta_venta: zUnknown().optional(),
     split_tarjeta_propina: zUnknown().optional(),
-  }).passthrough().optional(),
+  })
+    .passthrough()
+    .optional(),
   facturacion: object({
     impuesto_iva: zUnknown().optional(),
-  }).passthrough().optional(),
+  })
+    .passthrough()
+    .optional(),
 }).passthrough();
 
 export type LoginInput = z.infer<typeof loginSchema>;

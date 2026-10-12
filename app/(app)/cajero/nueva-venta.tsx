@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,37 +10,49 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { CartList } from '@/components/cajero/forms/CartList';
-import { CategorySelector } from '@/components/cajero/forms/CategorySelector';
-import { ClientSelectModal } from '@/components/cajero/forms/ClientSelectModal';
-import { NuevaVentaHostessModal } from '@/components/cajero/nueva-venta/NuevaVentaHostessModal';
-import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
-import { NuevaVentaModals } from '@/components/cajero/nueva-venta/NuevaVentaModals';
-import { NuevaVentaSearch } from '@/components/cajero/nueva-venta/NuevaVentaSearch';
-import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
-import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
-import { TimeSelector } from '@/components/ui/TimeSelector';
-import { RoomSelectModal } from '@/components/cajero/forms/RoomSelectModal';
-import { TipCheckbox } from '@/components/cajero/forms/TipCheckbox';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { useNuevaVenta } from '@/hooks/useNuevaVenta';
-import { useConfigValue } from '@/hooks/useConfigValue';
-import { getCardSplit } from '@/hooks/utils/cuentaUtils';
-import { NuevaVentaSkeleton } from '@/components/cajero/nueva-venta/NuevaVentaSkeleton';
+} from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
+import { CartList } from "@/components/cajero/forms/CartList";
+import { CategorySelector } from "@/components/cajero/forms/CategorySelector";
+import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
+import { NuevaVentaHostessModal } from "@/components/cajero/nueva-venta/NuevaVentaHostessModal";
+import { PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
+import { NuevaVentaModals } from "@/components/cajero/nueva-venta/NuevaVentaModals";
+import { NuevaVentaSearch } from "@/components/cajero/nueva-venta/NuevaVentaSearch";
+import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";
+import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
+import { TimeSelector } from "@/components/ui/TimeSelector";
+import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
+import { TipCheckbox } from "@/components/cajero/forms/TipCheckbox";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { useNuevaVenta } from "@/hooks/useNuevaVenta";
+import { useConfigValue } from "@/hooks/useConfigValue";
+import { getCardSplit } from "@/hooks/utils/cuentaUtils";
+import { NuevaVentaSkeleton } from "@/components/cajero/nueva-venta/NuevaVentaSkeleton";
 
 export default function NuevaVentaScreen() {
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const {
+    accentColor,
+    isDark,
+    bg,
+    cardBg,
+    textPrimary,
+    textSecondary,
+    borderColor,
+  } = useAccentColor();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
-  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
-  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
-
+  const splitVentaPct = Number(
+    useConfigValue("comisiones", "split_tarjeta_venta", "51"),
+  );
+  const splitPropinaPct = Number(
+    useConfigValue("comisiones", "split_tarjeta_propina", "49"),
+  );
 
   const {
     state,
@@ -117,22 +129,40 @@ export default function NuevaVentaScreen() {
     section: { padding: spacing, borderRadius, marginBottom: spacing },
     summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
     submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
-    selectorBtn: { padding: isTablet ? 18 : 14, borderRadius: isTablet ? 20 : 16 },
+    selectorBtn: {
+      padding: isTablet ? 18 : 14,
+      borderRadius: isTablet ? 20 : 16,
+    },
   };
 
-  if (loadingInitial) return <NuevaVentaSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} spacing={spacing} />;
+  if (loadingInitial)
+    return (
+      <NuevaVentaSkeleton
+        bg={bg}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        spacing={spacing}
+      />
+    );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: bg }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={[styles.container, { backgroundColor: bg }]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       <PremiumHeader
         title="Nueva Venta"
         subtitle={
-          fromCache ? 'Datos guardados en el dispositivo' : 'Registrar productos y servicios'
+          fromCache
+            ? "Datos guardados en el dispositivo"
+            : "Registrar productos y servicios"
         }
-        connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
+        connectionStatus={
+          fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
+        }
         rightComponent={
           <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -142,11 +172,22 @@ export default function NuevaVentaScreen() {
       />
 
       {/* Fuera del scroll: el aviso de conexión y de cola tiene que verse siempre. */}
-      <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
+      <OfflineStatusBanner
+        pendientesHref={"/(app)/cajero/pendientes" as never}
+      />
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
+        contentContainerStyle={[
+          styles.scrollContent,
+          dynamicStyles.scrollContent,
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={accentColor}
+          />
+        }
       >
         {cajaAbierta === false && <CajaClosedBanner />}
 
@@ -165,22 +206,51 @@ export default function NuevaVentaScreen() {
           borderColor={borderColor}
         />
 
-        <CategorySelector categories={categories} onSelectCategory={handleOpenCategory} />
+        <CategorySelector
+          categories={categories}
+          onSelectCategory={handleOpenCategory}
+        />
 
-        <View style={[styles.section, dynamicStyles.section, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.sectionTitle, { color: textPrimary, fontSize: isTablet ? 16 : 13 }]}>
+        <View
+          style={[
+            styles.section,
+            dynamicStyles.section,
+            { backgroundColor: cardBg, borderColor },
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: textPrimary, fontSize: isTablet ? 16 : 13 },
+            ]}
+          >
             2. Detalles de la Venta
           </Text>
           {hasCommissionItem && (
             <Pressable
-              style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor }]}
-              onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: true })}
+              style={[
+                styles.selectorBtn,
+                dynamicStyles.selectorBtn,
+                { borderColor },
+              ]}
+              onPress={() =>
+                dispatch({
+                  type: "SET_MODAL_VISIBLE",
+                  modal: "room",
+                  visible: true,
+                })
+              }
               accessibilityLabel="Seleccionar habitación"
               accessibilityRole="button"
             >
               <Ionicons name="business" size={20} color={accentColor} />
-              <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
-                {selectedHabitacion?.nombre || 'Seleccionar Habitación'}
+              <Text
+                style={[
+                  styles.selectorText,
+                  { color: textPrimary, marginLeft: 10 },
+                ]}
+              >
+                {selectedHabitacion?.nombre || "Seleccionar Habitación"}
               </Text>
             </Pressable>
           )}
@@ -188,7 +258,9 @@ export default function NuevaVentaScreen() {
             <View style={{ marginTop: spacing / 2 }}>
               <TimeSelector
                 value={selectedTime}
-                onChange={(t) => dispatch({ type: 'SET_SELECTED_TIME', payload: t })}
+                onChange={(t) =>
+                  dispatch({ type: "SET_SELECTED_TIME", payload: t })
+                }
                 step={5}
                 min={5}
                 max={60}
@@ -197,8 +269,18 @@ export default function NuevaVentaScreen() {
             </View>
           )}
           <Pressable
-            style={[styles.selectorBtn, dynamicStyles.selectorBtn, { borderColor, marginTop: hasCommissionItem ? spacing / 2 : 0 }]}
-            onPress={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: true })}
+            style={[
+              styles.selectorBtn,
+              dynamicStyles.selectorBtn,
+              { borderColor, marginTop: hasCommissionItem ? spacing / 2 : 0 },
+            ]}
+            onPress={() =>
+              dispatch({
+                type: "SET_MODAL_VISIBLE",
+                modal: "client",
+                visible: true,
+              })
+            }
             accessibilityLabel="Seleccionar cliente"
             accessibilityRole="button"
           >
@@ -206,17 +288,46 @@ export default function NuevaVentaScreen() {
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={[styles.selectorText, { color: textPrimary }]}>
                 {selectedCliente
-                  ? ((selectedCliente.nombre || selectedCliente.name || '') + ' ' + (selectedCliente.apellido || selectedCliente.lastName || selectedCliente.last_name || '')).trim() || 'Cliente Seleccionado'
-                  : 'Seleccionar Cliente'}
+                  ? (
+                      (selectedCliente.nombre || selectedCliente.name || "") +
+                      " " +
+                      (selectedCliente.apellido ||
+                        selectedCliente.lastName ||
+                        selectedCliente.last_name ||
+                        "")
+                    ).trim() || "Cliente Seleccionado"
+                  : "Seleccionar Cliente"}
               </Text>
               {selectedCliente && (
                 <View>
-                  <Text style={{ fontSize: 13, color: accentColor, fontWeight: '700', marginTop: 2 }}>
-                    Saldo Prepago: ${Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0).toLocaleString()}
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: accentColor,
+                      fontWeight: "700",
+                      marginTop: 2,
+                    }}
+                  >
+                    Saldo Prepago: $
+                    {Number(
+                      selectedCliente.saldo ??
+                        (selectedCliente as any).saldo_prepago ??
+                        0,
+                    ).toLocaleString()}
                   </Text>
                   {(selectedCliente as any).metodo_pago && (
-                    <Text style={{ fontSize: 12, color: textSecondary, fontWeight: '600', marginTop: 1 }}>
-                      Cargado con: {String((selectedCliente as any).metodo_pago).toUpperCase()}
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: textSecondary,
+                        fontWeight: "600",
+                        marginTop: 1,
+                      }}
+                    >
+                      Cargado con:{" "}
+                      {String(
+                        (selectedCliente as any).metodo_pago,
+                      ).toUpperCase()}
                     </Text>
                   )}
                 </View>
@@ -225,47 +336,162 @@ export default function NuevaVentaScreen() {
           </Pressable>
           <PaymentMethodSelect
             selectedMethod={metodoPago}
-            onSelect={(val) => dispatch({ type: 'SET_METODO_PAGO', payload: val as any })}
-            showPrepago={!!selectedCliente && Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0) > 0}
-            disabledMethods={selectedCliente && Number(selectedCliente.saldo ?? (selectedCliente as any).saldo_prepago ?? 0) <= 0 ? ['prepago'] : []}
+            onSelect={(val) =>
+              dispatch({ type: "SET_METODO_PAGO", payload: val as any })
+            }
+            showPrepago={
+              !!selectedCliente &&
+              Number(
+                selectedCliente.saldo ??
+                  (selectedCliente as any).saldo_prepago ??
+                  0,
+              ) > 0
+            }
+            disabledMethods={
+              selectedCliente &&
+              Number(
+                selectedCliente.saldo ??
+                  (selectedCliente as any).saldo_prepago ??
+                  0,
+              ) <= 0
+                ? ["prepago"]
+                : []
+            }
           />
         </View>
 
-        <CartList items={cart as any} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
+        <CartList
+          items={cart as any}
+          onUpdateQuantity={updateQuantity}
+          onRemove={removeFromCart}
+        />
+        {cart.some((p) => p.tipo_venta === "shot") && (
+          <ShotMixerSelector
+            items={cart.map((p) => ({
+              ...p,
+              nombre: p.nombre || p.name || "",
+              cantidad: p.quantity,
+            }))}
+            onChange={(index, mixer) =>
+              dispatch({
+                type: "SET_CART",
+                payload: cart.map((p, i) =>
+                  i === index ? { ...p, acompanamiento_corto: mixer } : p,
+                ),
+              })
+            }
+          />
+        )}
 
-        <View style={[styles.summaryCard, dynamicStyles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
+        <View
+          style={[
+            styles.summaryCard,
+            dynamicStyles.summaryCard,
+            { backgroundColor: cardBg, borderColor },
+          ]}
+        >
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal</Text>
-            <Text style={[styles.summaryVal, { color: textPrimary }]}>${totals.subtotal.toLocaleString()}</Text>
+            <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+              Subtotal
+            </Text>
+            <Text style={[styles.summaryVal, { color: textPrimary }]}>
+              ${totals.subtotal.toLocaleString()}
+            </Text>
           </View>
           <TipCheckbox
             enabled={enableTip}
-            onToggle={(val: boolean) => dispatch({ type: 'SET_ENABLE_TIP', payload: val })}
+            onToggle={(val: boolean) =>
+              dispatch({ type: "SET_ENABLE_TIP", payload: val })
+            }
             tipAmount={totals.tip}
           />
-          <View style={[styles.summaryRow, { marginTop: 10, borderTopWidth: 1, borderTopColor: borderColor, paddingTop: 10 }]}>
-            <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
-            <Text style={[styles.totalValue, { color: accentColor }]}>${totals.total.toLocaleString()}</Text>
+          <View
+            style={[
+              styles.summaryRow,
+              {
+                marginTop: 10,
+                borderTopWidth: 1,
+                borderTopColor: borderColor,
+                paddingTop: 10,
+              },
+            ]}
+          >
+            <Text style={[styles.totalLabel, { color: textPrimary }]}>
+              TOTAL
+            </Text>
+            <Text style={[styles.totalValue, { color: accentColor }]}>
+              ${totals.total.toLocaleString()}
+            </Text>
           </View>
-          {metodoPago === 'tarjeta' && totals.total > 0 && (() => {
-            const splitTarjeta = getCardSplit(totals.total);
-            return (
-              <View style={{ marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1, backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB', borderColor: isDark ? 'rgba(245,158,11,0.35)' : '#FDE68A' }}>
-                <Text style={{ fontSize: 11, fontWeight: '900', textTransform: 'uppercase', color: isDark ? '#FCD34D' : '#92400E', marginBottom: 4 }}>Tarjetero</Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', lineHeight: 18, color: isDark ? '#FDE68A' : '#78350F' }}>
-                  Genera venta por ${splitTarjeta.venta.toLocaleString()} ({splitVentaPct}%) y propina por ${splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}%). Solo informativo, no afecta la caja.
-                </Text>
-              </View>
-            );
-          })()}
+          {metodoPago === "tarjeta" &&
+            totals.total > 0 &&
+            (() => {
+              const splitTarjeta = getCardSplit(totals.total);
+              return (
+                <View
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    backgroundColor: isDark
+                      ? "rgba(245,158,11,0.12)"
+                      : "#FFFBEB",
+                    borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      color: isDark ? "#FCD34D" : "#92400E",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Tarjetero
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "600",
+                      lineHeight: 18,
+                      color: isDark ? "#FDE68A" : "#78350F",
+                    }}
+                  >
+                    Genera venta por ${splitTarjeta.venta.toLocaleString()} (
+                    {splitVentaPct}%) y propina por $
+                    {splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}
+                    %). Solo informativo, no afecta la caja.
+                  </Text>
+                </View>
+              );
+            })()}
           <Pressable
-            style={[styles.submitBtn, dynamicStyles.submitBtn, { backgroundColor: accentColor }, (submitting || cajaAbierta === false || cart.length === 0 || !metodoPago) && { opacity: 0.7 }]}
+            style={[
+              styles.submitBtn,
+              dynamicStyles.submitBtn,
+              { backgroundColor: accentColor },
+              (submitting ||
+                cajaAbierta === false ||
+                cart.length === 0 ||
+                !metodoPago) && { opacity: 0.7 },
+            ]}
             onPress={handleSubmit}
-            disabled={submitting || cajaAbierta === false || cart.length === 0 || !metodoPago}
+            disabled={
+              submitting ||
+              cajaAbierta === false ||
+              cart.length === 0 ||
+              !metodoPago
+            }
             accessibilityLabel="Finalizar venta"
             accessibilityRole="button"
           >
-            {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Finalizar Venta</Text>}
+            {submitting ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.submitBtnText}>Finalizar Venta</Text>
+            )}
           </Pressable>
         </View>
       </ScrollView>
@@ -289,50 +515,100 @@ export default function NuevaVentaScreen() {
         loadingAmount={loadingAmount}
         loadMetodoPago={loadMetodoPago}
         loadSubmitting={loadSubmitting}
-        onCloseCategoryModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'category', visible: false })}
+        onCloseCategoryModal={() =>
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "category",
+            visible: false,
+          })
+        }
         onPressAddProduct={handlePressAddProduct}
-        onCloseTimeModal={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'time', visible: false })}
-        onSelectTime={(time) => dispatch({ type: 'SET_SELECTED_TIME', payload: time })}
-        onCloseLoadModal={() => dispatch({ type: 'SET_LOAD_MODAL', visible: false })}
-        onLoadAmountChange={(value) => dispatch({ type: 'SET_LOAD_AMOUNT', payload: value })}
-        onLoadMetodoPagoChange={(value) => dispatch({ type: 'SET_LOAD_METODO_PAGO', payload: value })}
+        onCloseTimeModal={() =>
+          dispatch({ type: "SET_MODAL_VISIBLE", modal: "time", visible: false })
+        }
+        onSelectTime={(time) =>
+          dispatch({ type: "SET_SELECTED_TIME", payload: time })
+        }
+        onCloseLoadModal={() =>
+          dispatch({ type: "SET_LOAD_MODAL", visible: false })
+        }
+        onLoadAmountChange={(value) =>
+          dispatch({ type: "SET_LOAD_AMOUNT", payload: value })
+        }
+        onLoadMetodoPagoChange={(value) =>
+          dispatch({ type: "SET_LOAD_METODO_PAGO", payload: value })
+        }
         onConfirmLoad={handleLoadPrepago}
       />
       <RoomSelectModal
         visible={roomModalVisible}
         rooms={habitaciones}
         requireCompleteConfig
-        selectedRoomId={selectedHabitacion?.id || selectedHabitacion?.id_habitacion}
-        onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false })}
+        selectedRoomId={
+          selectedHabitacion?.id || selectedHabitacion?.id_habitacion
+        }
+        onClose={() =>
+          dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: false })
+        }
         onSelect={(room) => {
-          dispatch({ type: 'SET_SELECTED_HABITACION', payload: room as any });
-          dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'room', visible: false });
+          dispatch({ type: "SET_SELECTED_HABITACION", payload: room as any });
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "room",
+            visible: false,
+          });
         }}
       />
       <ClientSelectModal
         visible={clientModalVisible}
         clients={clientes}
-        selectedIds={selectedCliente ? [selectedCliente.id_cliente || selectedCliente.id] : []}
+        selectedIds={
+          selectedCliente
+            ? [selectedCliente.id_cliente || selectedCliente.id]
+            : []
+        }
         max={1}
-        onClose={() => dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false })}
-        onLoadBalance={(client) => dispatch({ type: 'SET_LOAD_MODAL', visible: true, client: client as any })}
+        onClose={() =>
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "client",
+            visible: false,
+          })
+        }
+        onLoadBalance={(client) =>
+          dispatch({
+            type: "SET_LOAD_MODAL",
+            visible: true,
+            client: client as any,
+          })
+        }
         onToggle={(id) => {
-          const cl = clientes.find((c) => String(c.id_cliente || c.id) === String(id));
-          dispatch({ type: 'SET_SELECTED_CLIENTE', payload: cl || null });
-          dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'client', visible: false });
+          const cl = clientes.find(
+            (c) => String(c.id_cliente || c.id) === String(id),
+          );
+          dispatch({ type: "SET_SELECTED_CLIENTE", payload: cl || null });
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "client",
+            visible: false,
+          });
         }}
       />
       <NuevaVentaHostessModal
         visible={hostessSubModalVisible && hostessSelectionTarget !== null}
         hostesses={anfitrionas}
-        selectedIds={hostessSelectionTarget ? (modalHostessSelections[hostessSelectionTarget.productId] || []) : []}
+        selectedIds={
+          hostessSelectionTarget
+            ? modalHostessSelections[hostessSelectionTarget.productId] || []
+            : []
+        }
         selectionTarget={hostessSelectionTarget}
         showToast={() => {}}
         onToggleHostess={handleToggleHostess}
-        onClose={() => dispatch({ type: 'SET_HOSTESS_TARGET', target: null })}
+        onClose={() => dispatch({ type: "SET_HOSTESS_TARGET", target: null })}
         onConfirmProduct={async (product) => {
           await addProductToCart(product);
-          dispatch({ type: 'SET_HOSTESS_TARGET', target: null });
+          dispatch({ type: "SET_HOSTESS_TARGET", target: null });
         }}
       />
     </KeyboardAvoidingView>
@@ -343,25 +619,53 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 100 },
   section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '900', marginBottom: 15, textTransform: 'uppercase', opacity: 0.6 },
-  selectorBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(155,155,155,0.03)' },
-  selectorText: { fontSize: 14, fontWeight: '700' },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 15,
+    textTransform: "uppercase",
+    opacity: 0.6,
+  },
+  selectorBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: "rgba(155,155,155,0.03)",
+  },
+  selectorText: { fontSize: 14, fontWeight: "700" },
   summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel: { fontSize: 14, fontWeight: '600' },
-  summaryVal: { fontSize: 15, fontWeight: '800' },
-  totalLabel: { fontSize: 18, fontWeight: '900' },
-  totalValue: { fontSize: 26, fontWeight: '900' },
-  submitBtn: { height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-  submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  summaryLabel: { fontSize: 14, fontWeight: "600" },
+  summaryVal: { fontSize: 15, fontWeight: "800" },
+  totalLabel: { fontSize: 18, fontWeight: "900" },
+  totalValue: { fontSize: 26, fontWeight: "900" },
+  submitBtn: {
+    height: 60,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  submitBtnText: { color: "#FFF", fontSize: 16, fontWeight: "900" },
   backBtnRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     height: 38,
     borderRadius: 9999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
     paddingHorizontal: 12,
     gap: 6,
   },
-  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backTextRight: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
 });

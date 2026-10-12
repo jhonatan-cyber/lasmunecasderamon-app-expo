@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { apiClientSafe } from '@/api/client';
-import { useConfigValue } from '@/hooks/useConfigValue';
-import { calcularPropina, calcularTotalVenta } from '@lasmunecasderamon/sale-totals';
-import { useSalesActions } from '@/context/SalesContext';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
+import { useRouter } from "expo-router";
+import { apiClientSafe } from "@/api/client";
+import { useConfigValue } from "@/hooks/useConfigValue";
+import {
+  calcularPropina,
+  calcularTotalVenta,
+} from "@lasmunecasderamon/sale-totals";
+import { useSalesActions } from "@/context/SalesContext";
 import {
   showToast,
   isChampagneProduct,
@@ -16,17 +26,24 @@ import {
   filterForSaleProducts,
   setSaleServiceLevels,
   roomRequiredForSalePrice,
-} from '@/hooks/utils/cartUtils';
-import logger from '@/utils/logger';
-import { eventBus } from '@/utils/eventBus';
-import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
-import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
-import { getOutbox } from '@/services/outbox';
-import { blockOffline } from '@/utils/offlineGuard';
-import { buildSalePayload } from '@/hooks/utils/salePayload';
-import { resolverVentaProducto, type SaleChoice } from '@/hooks/utils/saleChoice';
-import { ventaReducer, initialVentaState } from '@/components/cajero/nueva-venta/reducer';
-import type { VentaState } from '@/components/cajero/nueva-venta/types';
+} from "@/hooks/utils/cartUtils";
+import logger from "@/utils/logger";
+import { eventBus } from "@/utils/eventBus";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
+import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
+import { getOutbox } from "@/services/outbox";
+import { blockOffline } from "@/utils/offlineGuard";
+import { buildSalePayload } from "@/hooks/utils/salePayload";
+import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
+import {
+  resolverVentaProducto,
+  type SaleChoice,
+} from "@/hooks/utils/saleChoice";
+import {
+  ventaReducer,
+  initialVentaState,
+} from "@/components/cajero/nueva-venta/reducer";
+import type { VentaState } from "@/components/cajero/nueva-venta/types";
 
 /**
  * El endpoint de categorías de venta ya devuelve solo categorías activas con
@@ -49,7 +66,9 @@ export function useNuevaVenta() {
   }, [state.cart]);
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
-  const saleTiersCache = useRef<Map<string, { anfitrionas: number; precio: number; comision: number }[]>>(new Map());
+  const saleTiersCache = useRef<
+    Map<string, { anfitrionas: number; precio: number; comision: number }[]>
+  >(new Map());
 
   const {
     anfitrionas,
@@ -70,18 +89,31 @@ export function useNuevaVenta() {
     loadMetodoPago,
   } = state;
 
-  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const simpleHasta = Number(useConfigValue('comisiones', 'umbral_simple_hasta', '10000'));
-  const anfitrionaDesde = Number(useConfigValue('comisiones', 'umbral_anfitriona_desde', '20000'));
-  const habitacionDesde = Number(useConfigValue('comisiones', 'umbral_habitacion_desde', '30000'));
+  const propinaPct = Number(
+    useConfigValue("facturacion", "propina_venta", "10"),
+  );
+  const simpleHasta = Number(
+    useConfigValue("comisiones", "umbral_simple_hasta", "10000"),
+  );
+  const anfitrionaDesde = Number(
+    useConfigValue("comisiones", "umbral_anfitriona_desde", "20000"),
+  );
+  const habitacionDesde = Number(
+    useConfigValue("comisiones", "umbral_habitacion_desde", "30000"),
+  );
 
   useEffect(() => {
-    setSaleServiceLevels({ simpleHasta, hostessDesde: anfitrionaDesde, habitacionDesde });
+    setSaleServiceLevels({
+      simpleHasta,
+      hostessDesde: anfitrionaDesde,
+      habitacionDesde,
+    });
   }, [simpleHasta, anfitrionaDesde, habitacionDesde]);
 
   const totals = useMemo(() => {
     const subtotal = cart.reduce(
-      (acc, item) => acc + (item.precio || item.price || 0) * (item.quantity || 1),
+      (acc, item) =>
+        acc + (item.precio || item.price || 0) * (item.quantity || 1),
       0,
     );
     const tip = calcularPropina(subtotal, propinaPct, enableTip);
@@ -90,9 +122,12 @@ export function useNuevaVenta() {
   }, [cart, enableTip, propinaPct]);
 
   const hasCommissionItem = useMemo(() => {
-    return cart.some(item => {
+    return cart.some((item) => {
       const price = Number(item.precio ?? item.price ?? 0);
-      return isChampagneProduct(item) || (price >= habitacionDesde && price >= anfitrionaDesde);
+      return (
+        isChampagneProduct(item) ||
+        (price >= habitacionDesde && price >= anfitrionaDesde)
+      );
     });
   }, [cart, habitacionDesde, anfitrionaDesde]);
 
@@ -102,109 +137,146 @@ export function useNuevaVenta() {
    * estado de caja: `cajaAbierta` decide si se puede vender.
    */
   const readThroughMirror = useCallback(
-    <T,>(key: string, fetcher: () => Promise<T>, maxAgeMs: number) =>
+    <T>(key: string, fetcher: () => Promise<T>, maxAgeMs: number) =>
       getMirror().readThroughDetailed<T>(key, fetcher, { maxAgeMs }),
     [],
   );
 
-  const getSaleTiers = useCallback(async (
-    productId: string,
-    champagne: boolean,
-  ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> => {
-    const cached = saleTiersCache.current.get(productId);
-    if (cached) return cached;
-    const defaults = [
-      { anfitrionas: 1, precio: 120000, comision: 40000 },
-      { anfitrionas: 2, precio: 120000, comision: 40000 },
-      { anfitrionas: 3, precio: 160000, comision: 60000 },
-      { anfitrionas: 4, precio: 180000, comision: 80000 },
-      { anfitrionas: 5, precio: 200000, comision: 100000 },
-    ];
-    try {
-      const response = await apiClientSafe(`/products/${encodeURIComponent(productId)}/tiers?configurados=1`);
-      const tiers: { anfitrionas: number; precio: number; comision: number }[] = (response as any)?.success && Array.isArray((response as any).data)
-        ? (response as any).data
-            .map((tier: any) => ({ anfitrionas: Number(tier.anfitrionas), precio: Number(tier.precio), comision: Number(tier.comision) }))
-            .filter((tier: any) => tier.anfitrionas > 0 && tier.precio >= 0 && tier.comision >= 0)
-            .sort((a: any, b: any) => a.anfitrionas - b.anfitrionas)
-        : [];
-      const result = tiers.length ? tiers : champagne ? defaults : [];
-      saleTiersCache.current.set(productId, result);
-      return result;
-    } catch (error) {
-      logger.fetchError(error, { context: 'NuevaVenta:getSaleTiers' });
-      return champagne ? defaults : [];
-    }
-  }, []);
+  const getSaleTiers = useCallback(
+    async (
+      productId: string,
+      champagne: boolean,
+    ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> => {
+      const cached = saleTiersCache.current.get(productId);
+      if (cached) return cached;
+      const defaults = [
+        { anfitrionas: 1, precio: 120000, comision: 40000 },
+        { anfitrionas: 2, precio: 120000, comision: 40000 },
+        { anfitrionas: 3, precio: 160000, comision: 60000 },
+        { anfitrionas: 4, precio: 180000, comision: 80000 },
+        { anfitrionas: 5, precio: 200000, comision: 100000 },
+      ];
+      try {
+        const response = await apiClientSafe(
+          `/products/${encodeURIComponent(productId)}/tiers?configurados=1`,
+        );
+        const tiers: {
+          anfitrionas: number;
+          precio: number;
+          comision: number;
+        }[] =
+          (response as any)?.success && Array.isArray((response as any).data)
+            ? (response as any).data
+                .map((tier: any) => ({
+                  anfitrionas: Number(tier.anfitrionas),
+                  precio: Number(tier.precio),
+                  comision: Number(tier.comision),
+                }))
+                .filter(
+                  (tier: any) =>
+                    tier.anfitrionas > 0 &&
+                    tier.precio >= 0 &&
+                    tier.comision >= 0,
+                )
+                .sort((a: any, b: any) => a.anfitrionas - b.anfitrionas)
+            : [];
+        const result = tiers.length ? tiers : champagne ? defaults : [];
+        saleTiersCache.current.set(productId, result);
+        return result;
+      } catch (error) {
+        logger.fetchError(error, { context: "NuevaVenta:getSaleTiers" });
+        return champagne ? defaults : [];
+      }
+    },
+    [],
+  );
 
-  const fetchInitialData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
-    if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
-    try {
-      const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
-        await Promise.allSettled([
-          readThroughMirror(
-            MIRROR_KEYS.cashregisterStatus,
-            () => apiClientSafe('/cashregister/status', { signal }),
-            MIRROR_MAX_AGE_MS.dinero,
+  const fetchInitialData = useCallback(
+    async (isRefreshing = false, signal?: AbortSignal) => {
+      if (!isRefreshing)
+        dispatch({ type: "SET_LOADING_INITIAL", payload: true });
+      try {
+        const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
+          await Promise.allSettled([
+            readThroughMirror(
+              MIRROR_KEYS.cashregisterStatus,
+              () => apiClientSafe("/cashregister/status", { signal }),
+              MIRROR_MAX_AGE_MS.dinero,
+            ),
+            readThroughMirror(
+              MIRROR_KEYS.anfitrionas,
+              () => apiClientSafe("/anfitrionas", { signal }),
+              MIRROR_MAX_AGE_MS.catalogo,
+            ),
+            readThroughMirror(
+              MIRROR_KEYS.rooms,
+              () => apiClientSafe("/rooms", { signal }),
+              MIRROR_MAX_AGE_MS.catalogo,
+            ),
+            readThroughMirror(
+              MIRROR_KEYS.clients,
+              () => apiClientSafe("/clients", { signal }),
+              MIRROR_MAX_AGE_MS.catalogo,
+            ),
+            readThroughMirror(
+              MIRROR_KEYS.saleCategories,
+              () => apiClientSafe("/categories?for_sale=1", { signal }),
+              MIRROR_MAX_AGE_MS.catalogo,
+            ),
+          ]);
+
+        setFromCache(
+          [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes].some(
+            (resultado) =>
+              resultado.status === "fulfilled" && resultado.value.fromCache,
           ),
-          readThroughMirror(
-            MIRROR_KEYS.anfitrionas,
-            () => apiClientSafe('/anfitrionas', { signal }),
-            MIRROR_MAX_AGE_MS.catalogo,
+        );
+
+        const caja = cajaRes.status === "fulfilled" ? cajaRes.value.data : null;
+        const anfitrionasVal =
+          anfitrionasRes.status === "fulfilled"
+            ? anfitrionasRes.value.data
+            : null;
+        const rooms =
+          roomsRes.status === "fulfilled" ? roomsRes.value.data : null;
+        const clients =
+          clientsRes.status === "fulfilled" ? clientsRes.value.data : null;
+        const categories =
+          categoriesRes.status === "fulfilled"
+            ? categoriesRes.value.data
+            : null;
+
+        const fetchedData: Partial<VentaState> = {
+          cajaAbierta:
+            cajaRes.status === "fulfilled"
+              ? (caja as any)?.success && (caja as any)?.data?.hasOpenCaja
+              : null,
+          anfitrionas: normalizeAnfitrionas(anfitrionasVal),
+          habitaciones: ((rooms as any)?.success
+            ? (rooms as any).data
+            : []
+          ).map(normalizeRoom),
+          categories: filterSaleCategories(
+            (categories as any)?.success ? (categories as any).data || [] : [],
           ),
-          readThroughMirror(
-            MIRROR_KEYS.rooms,
-            () => apiClientSafe('/rooms', { signal }),
-            MIRROR_MAX_AGE_MS.catalogo,
-          ),
-          readThroughMirror(
-            MIRROR_KEYS.clients,
-            () => apiClientSafe('/clients', { signal }),
-            MIRROR_MAX_AGE_MS.catalogo,
-          ),
-          readThroughMirror(
-            MIRROR_KEYS.saleCategories,
-            () => apiClientSafe('/categories?for_sale=1', { signal }),
-            MIRROR_MAX_AGE_MS.catalogo,
-          ),
-        ]);
+          clientes: normalizeClients(clients),
+        };
 
-      setFromCache(
-        [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes].some(
-          resultado => resultado.status === 'fulfilled' && resultado.value.fromCache,
-        ),
-      );
+        dispatch({ type: "SET_INITIAL_DATA", payload: fetchedData });
 
-      const caja = cajaRes.status === 'fulfilled' ? cajaRes.value.data : null;
-      const anfitrionasVal = anfitrionasRes.status === 'fulfilled' ? anfitrionasRes.value.data : null;
-      const rooms = roomsRes.status === 'fulfilled' ? roomsRes.value.data : null;
-      const clients = clientsRes.status === 'fulfilled' ? clientsRes.value.data : null;
-      const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value.data : null;
-
-      const fetchedData: Partial<VentaState> = {
-        cajaAbierta:
-          cajaRes.status === 'fulfilled' ? (caja as any)?.success && (caja as any)?.data?.hasOpenCaja : null,
-        anfitrionas: normalizeAnfitrionas(anfitrionasVal),
-        habitaciones: ((rooms as any)?.success ? (rooms as any).data : []).map(normalizeRoom),
-        categories: filterSaleCategories(
-          (categories as any)?.success ? (categories as any).data || [] : [],
-        ),
-        clientes: normalizeClients(clients),
-      };
-
-      dispatch({ type: 'SET_INITIAL_DATA', payload: fetchedData });
-
-      // Con la caja cerrada ya no se avisa con toast: la pantalla muestra el
-      // banner «No hay caja abierta.» (espejo de CajaStatusCheck del dashboard)
-      // y mantiene `cajaAbierta === false` para deshabilitar el envío.
-    } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:processVenta' });
-      showToast('Error', 'No se pudo cargar la información.');
-    } finally {
-      dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
-      dispatch({ type: 'SET_REFRESHING', payload: false });
-    }
-  }, [readThroughMirror]);
+        // Con la caja cerrada ya no se avisa con toast: la pantalla muestra el
+        // banner «No hay caja abierta.» (espejo de CajaStatusCheck del dashboard)
+        // y mantiene `cajaAbierta === false` para deshabilitar el envío.
+      } catch (error) {
+        logger.captureException(error, { context: "NuevaVenta:processVenta" });
+        showToast("Error", "No se pudo cargar la información.");
+      } finally {
+        dispatch({ type: "SET_LOADING_INITIAL", payload: false });
+        dispatch({ type: "SET_REFRESHING", payload: false });
+      }
+    },
+    [readThroughMirror],
+  );
 
   useEffect(() => {
     const ac = new AbortController();
@@ -217,26 +289,31 @@ export function useNuevaVenta() {
   // `categories_updated` (SSE): el catálogo cambió en el dashboard; se refresca
   // solo la lista — el carrito y la categoría seleccionada quedan intactos.
   useEffect(() => {
-    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
-      void (async () => {
-        try {
-          const res = await apiClientSafe('/categories?for_sale=1');
-          if ((res as any)?.success) {
-            dispatch({
-              type: 'SET_INITIAL_DATA',
-              payload: { categories: filterSaleCategories((res as any).data || []) },
-            });
+    const subscription = eventBus.addListener(
+      REALTIME_EVENT_NAMES.refreshCategories,
+      () => {
+        void (async () => {
+          try {
+            const res = await apiClientSafe("/categories?for_sale=1");
+            if ((res as any)?.success) {
+              dispatch({
+                type: "SET_INITIAL_DATA",
+                payload: {
+                  categories: filterSaleCategories((res as any).data || []),
+                },
+              });
+            }
+          } catch (e) {
+            logger.fetchError(e, { context: "NuevaVenta:refreshCategories" });
           }
-        } catch (e) {
-          logger.fetchError(e, { context: 'NuevaVenta:refreshCategories' });
-        }
-      })();
-    });
+        })();
+      },
+    );
     return () => subscription.remove();
   }, []);
 
   const onRefresh = useCallback(() => {
-    dispatch({ type: 'SET_REFRESHING', payload: true });
+    dispatch({ type: "SET_REFRESHING", payload: true });
     fetchInitialData(true);
   }, [fetchInitialData]);
 
@@ -247,16 +324,19 @@ export function useNuevaVenta() {
     try {
       const result = await readThroughMirror(
         MIRROR_KEYS.cashregisterStatus,
-        () => apiClientSafe('/cashregister/status'),
+        () => apiClientSafe("/cashregister/status"),
         MIRROR_MAX_AGE_MS.dinero,
       );
       const res = result.data as any;
       const hasOpenCaja = res?.data?.hasOpenCaja;
-      if (res?.success && typeof hasOpenCaja === 'boolean') {
-        dispatch({ type: 'SET_INITIAL_DATA', payload: { cajaAbierta: hasOpenCaja } });
+      if (res?.success && typeof hasOpenCaja === "boolean") {
+        dispatch({
+          type: "SET_INITIAL_DATA",
+          payload: { cajaAbierta: hasOpenCaja },
+        });
       }
     } catch (error) {
-      logger.fetchError(error, { context: 'NuevaVenta:refreshCajaStatus' });
+      logger.fetchError(error, { context: "NuevaVenta:refreshCajaStatus" });
     }
   }, [readThroughMirror]);
 
@@ -267,26 +347,28 @@ export function useNuevaVenta() {
       isNaN(Number(loadingAmount)) ||
       Number(loadingAmount) <= 0
     ) {
-      showToast('Error', 'Ingrese un monto válido');
+      showToast("Error", "Ingrese un monto válido");
       return;
     }
 
-    dispatch({ type: 'SET_LOAD_SUBMITTING', payload: true });
+    dispatch({ type: "SET_LOAD_SUBMITTING", payload: true });
     try {
-      const res = await apiClientSafe('/clients/prepago', {
-        method: 'POST',
+      const res = await apiClientSafe("/clients/prepago", {
+        method: "POST",
         body: JSON.stringify({
-          cliente_id: String(loadingTargetClient.id_cliente || loadingTargetClient.id),
+          cliente_id: String(
+            loadingTargetClient.id_cliente || loadingTargetClient.id,
+          ),
           monto: Number(loadingAmount),
-          tipo: 'CARGA',
+          tipo: "CARGA",
           metodo_pago: loadMetodoPago,
-          motivo: 'Carga de saldo prepago (App)',
+          motivo: "Carga de saldo prepago (App)",
         }),
       });
 
       if ((res as any).success) {
-        showToast('Éxito', 'Saldo cargado correctamente', 'success');
-        dispatch({ type: 'SET_LOAD_MODAL', visible: false });
+        showToast("Éxito", "Saldo cargado correctamente", "success");
+        dispatch({ type: "SET_LOAD_MODAL", visible: false });
         fetchInitialData(true);
         if (
           selectedCliente &&
@@ -294,7 +376,7 @@ export function useNuevaVenta() {
             String(loadingTargetClient.id_cliente || loadingTargetClient.id)
         ) {
           dispatch({
-            type: 'SET_SELECTED_CLIENTE',
+            type: "SET_SELECTED_CLIENTE",
             payload: {
               ...selectedCliente,
               saldo: Number(selectedCliente.saldo || 0) + Number(loadingAmount),
@@ -302,15 +384,21 @@ export function useNuevaVenta() {
           });
         }
       } else {
-        showToast('Error', (res as any).message || 'Error al cargar saldo');
+        showToast("Error", (res as any).message || "Error al cargar saldo");
       }
     } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:submitVenta' });
-      showToast('Error', 'Error de conexión');
+      logger.captureException(error, { context: "NuevaVenta:submitVenta" });
+      showToast("Error", "Error de conexión");
     } finally {
-      dispatch({ type: 'SET_LOAD_SUBMITTING', payload: false });
+      dispatch({ type: "SET_LOAD_SUBMITTING", payload: false });
     }
-  }, [loadingTargetClient, loadingAmount, loadMetodoPago, selectedCliente, fetchInitialData]);
+  }, [
+    loadingTargetClient,
+    loadingAmount,
+    loadMetodoPago,
+    selectedCliente,
+    fetchInitialData,
+  ]);
 
   const handleOpenCategory = useCallback(
     // Venta: catálogo de venta del bar (for_sale), como el dashboard.
@@ -321,37 +409,67 @@ export function useNuevaVenta() {
   const addProductToCart = useCallback(
     async (prod: any) => {
       const id = prod.id || prod.id_producto;
-      const tierProductId = String(prod.producto_id || prod.id_producto || prod.id);
+      const tierProductId = String(
+        prod.producto_id || prod.id_producto || prod.id,
+      );
       // El shot sale de la botella abierta: no gasta unidades del bar, así que
       // su tope es el máximo del dashboard (99) y no `stock_bar`.
-      const esShot = prod?.tipo_venta === 'shot';
+      const esShot = prod?.tipo_venta === "shot";
       const stockBar = Number(prod.stock_bar ?? 0);
-      const hasStockLimit = prod.stock_bar !== null && prod.stock_bar !== undefined;
-      const maxQty = esShot ? 99 : hasStockLimit ? Math.max(0, stockBar) : Number.MAX_SAFE_INTEGER;
+      const hasStockLimit =
+        prod.stock_bar !== null && prod.stock_bar !== undefined;
+      const maxQty = esShot
+        ? 99
+        : hasStockLimit
+          ? Math.max(0, stockBar)
+          : Number.MAX_SAFE_INTEGER;
       const requestedQty = Number(prod.quantity ?? modalQuantities[id] ?? 1);
-      if (!Number.isInteger(requestedQty) || requestedQty < 1 || requestedQty > 2147483647) {
-        showToast('Cantidad inválida', 'La cantidad debe ser un número entero positivo.');
+      if (
+        !Number.isInteger(requestedQty) ||
+        requestedQty < 1 ||
+        requestedQty > 2147483647
+      ) {
+        showToast(
+          "Cantidad inválida",
+          "La cantidad debe ser un número entero positivo.",
+        );
         return;
       }
       let qty = Math.min(requestedQty, maxQty);
       const hasCommission = Number(prod.comision ?? prod.commission ?? 0) > 0;
-      const requestedHostesses = hasCommission ? modalHostessSelections[id] || [] : [];
-      const bottlePrice = resolverVentaProducto(prod, 'botella').precioBotella;
-      const maxHostesses = requestedHostesses.length === 0
-        ? 0
-        : isChampagneProduct(prod)
-          ? Math.min(
-              getHostessLimit(prod),
-              Math.max(1, ...(await getSaleTiers(tierProductId, true)).map(tier => tier.anfitrionas)),
-            )
-          : roomRequiredForSalePrice(bottlePrice)
-            ? Math.min(Number(prod.max_anfitrionas) > 0 ? Number(prod.max_anfitrionas) : qty, qty)
-            : Number(prod.max_anfitrionas) > 0
-              ? Number(prod.max_anfitrionas)
-              : 1;
+      const requestedHostesses = hasCommission
+        ? modalHostessSelections[id] || []
+        : [];
+      const bottlePrice = resolverVentaProducto(prod, "botella").precioBotella;
+      const maxHostesses =
+        requestedHostesses.length === 0
+          ? 0
+          : isChampagneProduct(prod)
+            ? Math.min(
+                getHostessLimit(prod),
+                Math.max(
+                  1,
+                  ...(await getSaleTiers(tierProductId, true)).map(
+                    (tier) => tier.anfitrionas,
+                  ),
+                ),
+              )
+            : roomRequiredForSalePrice(bottlePrice)
+              ? Math.min(
+                  Number(prod.max_anfitrionas) > 0
+                    ? Number(prod.max_anfitrionas)
+                    : qty,
+                  qty,
+                )
+              : Number(prod.max_anfitrionas) > 0
+                ? Number(prod.max_anfitrionas)
+                : 1;
       const hostesses = requestedHostesses.slice(0, maxHostesses);
       if (hostesses.length < requestedHostesses.length) {
-        showToast('Límite de anfitrionas', `Se asignaron como máximo ${maxHostesses} anfitrionas a este producto.`);
+        showToast(
+          "Límite de anfitrionas",
+          `Se asignaron como máximo ${maxHostesses} anfitrionas a este producto.`,
+        );
       }
       let salePrice = Number(prod.precio ?? prod.price ?? 0);
       let saleCommission = Number(prod.comision ?? prod.commission ?? 0);
@@ -360,11 +478,16 @@ export function useNuevaVenta() {
         hostesses.length > 0 &&
         (isChampagneProduct(prod) || Number(prod.max_anfitrionas) >= 2)
       ) {
-        const tiers: { anfitrionas: number; precio: number; comision: number }[] =
-          await getSaleTiers(tierProductId, isChampagneProduct(prod));
+        const tiers: {
+          anfitrionas: number;
+          precio: number;
+          comision: number;
+        }[] = await getSaleTiers(tierProductId, isChampagneProduct(prod));
         const tier = isChampagneProduct(prod)
-          ? [...tiers].reverse().find(item => item.anfitrionas <= hostesses.length)
-          : tiers.find(item => item.anfitrionas === hostesses.length);
+          ? [...tiers]
+              .reverse()
+              .find((item) => item.anfitrionas <= hostesses.length)
+          : tiers.find((item) => item.anfitrionas === hostesses.length);
         if (tier) {
           salePrice = tier.precio;
           saleCommission = tier.comision;
@@ -378,40 +501,56 @@ export function useNuevaVenta() {
           ? hostesses
               .map(
                 (hId: string | number) =>
-                  anfitrionas.find((a: any) => String(a.id_usuario || a.id) === String(hId))?.nick || '',
+                  anfitrionas.find(
+                    (a: any) => String(a.id_usuario || a.id) === String(hId),
+                  )?.nick || "",
               )
               .filter(Boolean)
-              .join(', ')
+              .join(", ")
           : null;
 
       const existingItemIndex = newCart.findIndex((item) => {
         const itemId = item.id || item.id_producto;
         const currentH = item.anfitrionas || [];
-        const sortedCurrent = [...currentH].sort().join(',');
-        const sortedNew = [...itemHostesses].sort().join(',');
+        const sortedCurrent = [...currentH].sort().join(",");
+        const sortedNew = [...itemHostesses].sort().join(",");
         // Misma presentación vendida de forma distinta (botella / shot cliente /
         // shot anfitriona) son líneas aparte en el carrito y en el reporte.
         return (
           itemId === id &&
           sortedCurrent === sortedNew &&
-          (item.tipo_venta === 'shot') === esShot &&
-          Boolean(item.shot_anfitriona) === Boolean(prod?.shot_anfitriona)
+          (item.tipo_venta === "shot") === esShot &&
+          Boolean(item.shot_anfitriona) === Boolean(prod?.shot_anfitriona) &&
+          Number(item.precio ?? item.price) === salePrice &&
+          Number(item.comision ?? item.commission) === saleCommission &&
+          JSON.stringify(item.acompanamiento_corto ?? null) ===
+            JSON.stringify(prod?.acompanamiento_corto ?? null)
         );
       });
 
       if (esShot) {
-        const alreadyAdded = existingItemIndex >= 0 ? Number(newCart[existingItemIndex].quantity || 0) : 0;
+        const alreadyAdded =
+          existingItemIndex >= 0
+            ? Number(newCart[existingItemIndex].quantity || 0)
+            : 0;
         qty = Math.min(qty, Math.max(0, 99 - alreadyAdded));
       } else if (hasStockLimit) {
         const presentationId = String(prod.presentacion_id || id);
-        const reserved = newCart.reduce((total, item) =>
-          String(item.presentacion_id || item.id || item.id_producto) === presentationId && item.tipo_venta !== 'shot'
-            ? total + Number(item.quantity || item.cantidad || 0)
-            : total, 0);
+        const reserved = newCart.reduce(
+          (total, item) =>
+            String(item.presentacion_id || item.id || item.id_producto) ===
+              presentationId && item.tipo_venta !== "shot"
+              ? total + Number(item.quantity || item.cantidad || 0)
+              : total,
+          0,
+        );
         qty = Math.min(qty, Math.max(0, stockBar - reserved));
       }
       if (qty < requestedQty) {
-        showToast('Stock insuficiente', `Solo se pueden agregar ${qty} unidades disponibles.`);
+        showToast(
+          "Stock insuficiente",
+          `Solo se pueden agregar ${qty} unidades disponibles.`,
+        );
       }
       if (qty <= 0) return;
 
@@ -427,7 +566,7 @@ export function useNuevaVenta() {
           price: salePrice,
           comision: saleCommission,
           commission: saleCommission,
-          tipo_venta: esShot ? ('shot' as const) : ('botella' as const),
+          tipo_venta: esShot ? ("shot" as const) : ("botella" as const),
           shot_anfitriona: esShot ? Boolean(prod?.shot_anfitriona) : false,
           quantity: Math.min(qty, maxQty),
           anfitrionas: itemHostesses,
@@ -435,9 +574,13 @@ export function useNuevaVenta() {
         });
       }
 
-      dispatch({ type: 'SET_CART', payload: newCart });
+      dispatch({ type: "SET_CART", payload: newCart });
       cartRef.current = newCart;
-      showToast('Producto Agregado', `Se agregó ${prod.name || prod.nombre} al carrito`, 'success');
+      showToast(
+        "Producto Agregado",
+        `Se agregó ${prod.name || prod.nombre} al carrito`,
+        "success",
+      );
     },
     [modalQuantities, modalHostessSelections, anfitrionas, getSaleTiers],
   );
@@ -447,16 +590,32 @@ export function useNuevaVenta() {
    * shot anfitriona); vive en el estado para que el buscador y el modal de
    * categoría compartan la misma elección.
    */
-  const handleSetSaleChoice = useCallback((productId: string | number, choice: SaleChoice) => {
-    dispatch({ type: 'SET_SALE_CHOICE', productId: String(productId), choice });
-  }, []);
+  const handleSetSaleChoice = useCallback(
+    (productId: string | number, choice: SaleChoice) => {
+      dispatch({
+        type: "SET_SALE_CHOICE",
+        productId: String(productId),
+        choice,
+      });
+    },
+    [],
+  );
 
   const handlePressAddProduct = useCallback(
     async (item: any, choice?: SaleChoice, quantity = 1) => {
-      const selectedChoice = choice || saleChoices[String(item.id || item.id_producto)] || 'botella';
-      const requestedShot = selectedChoice === 'shot' || selectedChoice === 'shot_anfitriona';
-      if (!requestedShot && item?.stock_bar != null && Number(item.stock_bar) <= 0) {
-        showToast('Sin stock en bar', 'Este producto ya no tiene unidades disponibles.');
+      const selectedChoice =
+        choice || saleChoices[String(item.id || item.id_producto)] || "botella";
+      const requestedShot =
+        selectedChoice === "shot" || esCortoAnfitriona(selectedChoice);
+      if (
+        !requestedShot &&
+        item?.stock_bar != null &&
+        Number(item.stock_bar) <= 0
+      ) {
+        showToast(
+          "Sin stock en bar",
+          "Este producto ya no tiene unidades disponibles.",
+        );
         return;
       }
       // Precio, comisión y tope salen de la forma de venta elegida: un shot no
@@ -465,8 +624,8 @@ export function useNuevaVenta() {
       const venta = resolverVentaProducto(item, choice || saleChoices[id]);
       const producto = {
         ...item,
-        tipo_venta: venta.esShot ? ('shot' as const) : ('botella' as const),
-        shot_anfitriona: venta.tipoVenta === 'shot_anfitriona',
+        tipo_venta: venta.esShot ? ("shot" as const) : ("botella" as const),
+        shot_anfitriona: esCortoAnfitriona(venta.tipoVenta),
         precio: venta.precio,
         price: venta.precio,
         comision: venta.comision,
@@ -478,17 +637,27 @@ export function useNuevaVenta() {
 
       if (hasComm) {
         const champagne = isChampagneProduct(item);
-        const tierProductId = String(item.producto_id || item.id_producto || item.id);
-        const tiers: { anfitrionas: number; precio: number; comision: number }[] =
-          champagne ? await getSaleTiers(tierProductId, true) : [];
+        const tierProductId = String(
+          item.producto_id || item.id_producto || item.id,
+        );
+        const tiers: {
+          anfitrionas: number;
+          precio: number;
+          comision: number;
+        }[] = champagne ? await getSaleTiers(tierProductId, true) : [];
         const explicitMax = Number(item.max_anfitrionas);
         const max = champagne
-          ? Math.min(getHostessLimit(producto), Math.max(1, ...tiers.map(tier => tier.anfitrionas)))
+          ? Math.min(
+              getHostessLimit(producto),
+              Math.max(1, ...tiers.map((tier) => tier.anfitrionas)),
+            )
           : roomRequiredForSalePrice(venta.precioBotella)
             ? Math.min(explicitMax > 0 ? explicitMax : quantity, quantity)
-            : explicitMax > 0 ? explicitMax : 1;
+            : explicitMax > 0
+              ? explicitMax
+              : 1;
         dispatch({
-          type: 'SET_HOSTESS_TARGET',
+          type: "SET_HOSTESS_TARGET",
           target: {
             productId: item.id || item.id_producto,
             product: producto,
@@ -508,7 +677,7 @@ export function useNuevaVenta() {
     (index: number) => {
       const newCart = [...cart];
       newCart.splice(index, 1);
-      dispatch({ type: 'SET_CART', payload: newCart });
+      dispatch({ type: "SET_CART", payload: newCart });
       cartRef.current = newCart;
     },
     [cart],
@@ -520,81 +689,144 @@ export function useNuevaVenta() {
       let newQty = Math.max(1, (newCart[index].quantity || 1) + delta);
       // Tope de stock en el bar (catálogo for_sale; legacy sin tope); el shot
       // no gasta botellas y usa el máximo del dashboard, como al agregar.
-      const esShot = newCart[index].tipo_venta === 'shot';
+      const esShot = newCart[index].tipo_venta === "shot";
       const stockBar = Number(newCart[index].stock_bar ?? 0);
-      const hasStockLimit = newCart[index].stock_bar !== null && newCart[index].stock_bar !== undefined;
-      const presentationId = String(newCart[index].presentacion_id || newCart[index].id || newCart[index].id_producto);
-      const reservedElsewhere = newCart.reduce((total, item, itemIndex) =>
-        itemIndex !== index && item.tipo_venta !== 'shot' &&
-        String(item.presentacion_id || item.id || item.id_producto) === presentationId
-          ? total + Number(item.quantity || item.cantidad || 0)
-          : total, 0);
+      const hasStockLimit =
+        newCart[index].stock_bar !== null &&
+        newCart[index].stock_bar !== undefined;
+      const presentationId = String(
+        newCart[index].presentacion_id ||
+          newCart[index].id ||
+          newCart[index].id_producto,
+      );
+      const reservedElsewhere = newCart.reduce(
+        (total, item, itemIndex) =>
+          itemIndex !== index &&
+          item.tipo_venta !== "shot" &&
+          String(item.presentacion_id || item.id || item.id_producto) ===
+            presentationId
+            ? total + Number(item.quantity || item.cantidad || 0)
+            : total,
+        0,
+      );
       const maxQty = esShot
         ? 99
-        : hasStockLimit ? Math.max(0, stockBar - reservedElsewhere) : Number.MAX_SAFE_INTEGER;
+        : hasStockLimit
+          ? Math.max(0, stockBar - reservedElsewhere)
+          : Number.MAX_SAFE_INTEGER;
       if (maxQty < 1 && newQty >= newCart[index].quantity) {
-        showToast('Sin stock en bar', 'Este producto ya no tiene unidades disponibles.');
+        showToast(
+          "Sin stock en bar",
+          "Este producto ya no tiene unidades disponibles.",
+        );
         return;
       }
-      if (newQty > maxQty) showToast('Stock insuficiente', `Máximo ${maxQty} unidades disponibles.`);
+      if (newQty > maxQty)
+        showToast(
+          "Stock insuficiente",
+          `Máximo ${maxQty} unidades disponibles.`,
+        );
       newCart[index].quantity = Math.min(newQty, maxQty);
       const item = newCart[index];
-      const currentHostesses = Array.isArray(item.anfitrionas) ? item.anfitrionas : [];
+      const currentHostesses = Array.isArray(item.anfitrionas)
+        ? item.anfitrionas
+        : [];
       if (currentHostesses.length > 0 && !isChampagneProduct(item)) {
-        const bottlePrice = resolverVentaProducto(item, 'botella').precioBotella;
+        const bottlePrice = resolverVentaProducto(
+          item,
+          "botella",
+        ).precioBotella;
         if (roomRequiredForSalePrice(bottlePrice)) {
           const explicitMax = Number(item.max_anfitrionas);
-          const hostessLimit = Math.min(explicitMax > 0 ? explicitMax : newCart[index].quantity, newCart[index].quantity);
+          const hostessLimit = Math.min(
+            explicitMax > 0 ? explicitMax : newCart[index].quantity,
+            newCart[index].quantity,
+          );
           if (currentHostesses.length > hostessLimit) {
             item.anfitrionas = currentHostesses.slice(0, hostessLimit);
-            item.hostessNames = item.anfitrionas
-              .map((hostessId: string | number) => anfitrionas.find((person: any) => String(person.id_usuario || person.id) === String(hostessId))?.nick || '')
-              .filter(Boolean)
-              .join(', ') || null;
-            showToast('Anfitrionas actualizadas', `Se ajustó la asignación al nuevo máximo de ${hostessLimit}.`, 'info');
+            item.hostessNames =
+              item.anfitrionas
+                .map(
+                  (hostessId: string | number) =>
+                    anfitrionas.find(
+                      (person: any) =>
+                        String(person.id_usuario || person.id) ===
+                        String(hostessId),
+                    )?.nick || "",
+                )
+                .filter(Boolean)
+                .join(", ") || null;
+            showToast(
+              "Anfitrionas actualizadas",
+              `Se ajustó la asignación al nuevo máximo de ${hostessLimit}.`,
+              "info",
+            );
           }
         }
       }
-      dispatch({ type: 'SET_CART', payload: newCart });
+      dispatch({ type: "SET_CART", payload: newCart });
       cartRef.current = newCart;
     },
     [cart, anfitrionas],
   );
 
   const handleSubmit = useCallback(async () => {
-    if (cajaAbierta === false) return showToast('Error', 'Caja cerrada');
-    if (cart.length === 0) return showToast('Error', 'Carrito vacío');
-    if (!metodoPago) return showToast('Método requerido', 'Selecciona un método de pago');
+    if (cajaAbierta === false) return showToast("Error", "Caja cerrada");
+    if (cart.length === 0) return showToast("Error", "Carrito vacío");
+    if (
+      cart.some(
+        (p) =>
+          p.tipo_venta === "shot" &&
+          (!p.acompanamiento_corto?.presentacion_id ||
+            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
+            p.acompanamiento_corto.ml_por_corto < 1 ||
+            p.acompanamiento_corto.ml_por_corto > 10000),
+      )
+    )
+      return showToast(
+        "Falta acompa\u00f1amiento",
+        "Selecciona soda o gaseosa y los ml por corto",
+      );
+    if (!metodoPago)
+      return showToast("Método requerido", "Selecciona un método de pago");
 
-    if (metodoPago === 'mixto') {
+    if (metodoPago === "mixto") {
       const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
       if (Math.abs(suma - totals.total) > 1) {
         return showToast(
-          'Monto Incorrecto',
+          "Monto Incorrecto",
           `La suma ($${suma.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`,
         );
       }
       if (pagosMixtos.length < 2) {
-        return showToast('Métodos Insuficientes', 'Selecciona al menos 2 métodos de pago');
+        return showToast(
+          "Métodos Insuficientes",
+          "Selecciona al menos 2 métodos de pago",
+        );
       }
     }
 
-    if (metodoPago === 'prepago' && !selectedCliente) {
-      return showToast('Error', 'Seleccione un cliente para pagar con prepago');
+    if (metodoPago === "prepago" && !selectedCliente) {
+      return showToast("Error", "Seleccione un cliente para pagar con prepago");
     }
     if (
-      metodoPago === 'prepago' &&
-      Number(selectedCliente?.saldo ?? (selectedCliente as any)?.saldo_prepago ?? 0) < totals.total
+      metodoPago === "prepago" &&
+      Number(
+        selectedCliente?.saldo ?? (selectedCliente as any)?.saldo_prepago ?? 0,
+      ) < totals.total
     ) {
-      return showToast('Saldo insuficiente', 'El saldo prepago del cliente no cubre el total de la venta');
+      return showToast(
+        "Saldo insuficiente",
+        "El saldo prepago del cliente no cubre el total de la venta",
+      );
     }
 
     // El saldo prepago vive en el servidor y no se puede descontar en el
     // dispositivo: una venta prepago sin red podría sobregirar al cliente. Se
     // bloquea en vez de encolarse.
-    if (metodoPago === 'prepago' && !blockOffline('prepago')) return;
+    if (metodoPago === "prepago" && !blockOffline("prepago")) return;
 
-    dispatch({ type: 'SET_SUBMITTING', payload: true });
+    dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const payload = buildSalePayload({
         cart,
@@ -608,7 +840,8 @@ export function useNuevaVenta() {
       });
 
       const items = cart.reduce(
-        (acc: number, item: any) => acc + Number(item.quantity || item.cantidad || 0),
+        (acc: number, item: any) =>
+          acc + Number(item.quantity || item.cantidad || 0),
         0,
       );
 
@@ -616,36 +849,36 @@ export function useNuevaVenta() {
       // id de la intención viaja como clave de idempotencia, así que un corte
       // después de cobrar no duplica la venta al reintentar.
       const intent = await getOutbox().enqueueAndSend({
-        type: 'sale.create',
+        type: "sale.create",
         payload,
-        label: `Venta $${Number(totals.total || 0).toLocaleString('es-CL')} · ${items} ítem(s)`,
+        label: `Venta $${Number(totals.total || 0).toLocaleString("es-CL")} · ${items} ítem(s)`,
       });
 
-      if (intent.status === 'aplicada') {
-        showToast('Éxito', 'Venta realizada', 'success');
+      if (intent.status === "aplicada") {
+        showToast("Éxito", "Venta realizada", "success");
         refreshVentas();
-        router.replace('/cajero/ventas');
+        router.replace("/cajero/ventas");
         return;
       }
 
-      if (intent.status === 'fallida') {
-        showToast('Error', intent.lastError || 'Error al vender');
+      if (intent.status === "fallida") {
+        showToast("Error", intent.lastError || "Error al vender");
         return;
       }
 
       // Quedó pendiente: la venta está guardada y sale al volver la red.
       showToast(
-        'Venta guardada en el dispositivo',
-        'Se enviará automáticamente cuando vuelva la conexión',
-        'info',
+        "Venta guardada en el dispositivo",
+        "Se enviará automáticamente cuando vuelva la conexión",
+        "info",
       );
       refreshVentas();
-      router.replace('/cajero/ventas');
+      router.replace("/cajero/ventas");
     } catch (error) {
-      logger.captureException(error, { context: 'NuevaVenta:processVenta' });
-      showToast('Error', 'Error de conexión');
+      logger.captureException(error, { context: "NuevaVenta:processVenta" });
+      showToast("Error", "Error de conexión");
     } finally {
-      dispatch({ type: 'SET_SUBMITTING', payload: false });
+      dispatch({ type: "SET_SUBMITTING", payload: false });
     }
   }, [
     cajaAbierta,
@@ -674,14 +907,18 @@ export function useNuevaVenta() {
         newSelected = [...currentSelected, id];
       }
 
-      dispatch({ type: 'SET_MODAL_HOSTESSES', productId: String(pid), hostesses: newSelected });
+      dispatch({
+        type: "SET_MODAL_HOSTESSES",
+        productId: String(pid),
+        hostesses: newSelected,
+      });
     },
     [hostessSelectionTarget, modalHostessSelections],
   );
 
   // ── Búsqueda de productos (espejo de NewSaleSearch del dashboard) ────
   // `GET /products?for_sale=1&term=` con debounce de 300 ms.
-  const [searchProducto, setSearchProducto] = useState('');
+  const [searchProducto, setSearchProducto] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -714,11 +951,13 @@ export function useNuevaVenta() {
       // Una respuesta vieja no pisa los resultados del término vigente.
       if (seq !== searchSeq.current) return;
       if ((res as any)?.success && Array.isArray((res as any).data)) {
-        setSearchResults(filterForSaleProducts((res as any).data).map(mapForSaleProduct));
+        setSearchResults(
+          filterForSaleProducts((res as any).data).map(mapForSaleProduct),
+        );
       }
     } catch (error) {
       if (controller.signal.aborted) return;
-      logger.fetchError(error, { context: 'NuevaVenta:searchProducts' });
+      logger.fetchError(error, { context: "NuevaVenta:searchProducts" });
     } finally {
       if (!controller.signal.aborted && seq === searchSeq.current) {
         if (searchAbortController.current === controller) {
@@ -744,11 +983,14 @@ export function useNuevaVenta() {
     };
   }, [searchProducto, executeSearch]);
 
-  useEffect(() => () => {
-    searchSeq.current++;
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchAbortController.current?.abort();
-  }, []);
+  useEffect(
+    () => () => {
+      searchSeq.current++;
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      searchAbortController.current?.abort();
+    },
+    [],
+  );
 
   const handleSearchNow = useCallback(() => {
     const term = searchProducto.trim();
@@ -765,16 +1007,16 @@ export function useNuevaVenta() {
   }, [searchProducto, executeSearch]);
 
   const handleClearSearch = useCallback(() => {
-    setSearchProductoInput('');
+    setSearchProductoInput("");
   }, [setSearchProductoInput]);
 
   return {
-      state,
-      dispatch,
-      totals,
-      hasCommissionItem,
-      fromCache,
-      isTablet: false,  
+    state,
+    dispatch,
+    totals,
+    hasCommissionItem,
+    fromCache,
+    isTablet: false,
     fetchInitialData,
     onRefresh,
     refreshCajaStatus,
