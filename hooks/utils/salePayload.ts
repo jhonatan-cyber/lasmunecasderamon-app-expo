@@ -9,6 +9,8 @@
  * en los detalles, que es como `SaleService` guarda cómo se vendió).
  */
 export interface SalePayloadInput {
+  servicioId?: string;
+  servicioAnfitrionas?: string[];
   cart: any[];
   selectedCliente: any;
   selectedHabitacion: any;
@@ -20,13 +22,20 @@ export interface SalePayloadInput {
 }
 
 export interface SaleCreatePayload {
+  servicio_id?: string;
+  servicio_anfitrionas?: string[];
   detalles: {
     producto_id: string | number;
     presentacion_id: string | number | null;
     tipo_venta?: "botella" | "shot";
     /** Solo en líneas de shot: true cuando se cobró al precio de anfitriona. */
     shot_anfitriona?: boolean;
-    acompanamiento_corto?: { presentacion_id: string; ml_por_corto: number };
+    acompanamiento_botella?: { presentacion_id: string; unidades: number };
+    acompanamiento_corto?: {
+      presentacion_id: string;
+      unidades?: number;
+      ml_por_corto?: number;
+    };
     isChampagne: boolean;
     cantidad: number;
     precio: number;
@@ -62,6 +71,10 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
   } = input;
 
   return {
+    ...(input.servicioId ? { servicio_id: input.servicioId } : {}),
+    ...(input.servicioId && input.servicioAnfitrionas !== undefined
+      ? { servicio_anfitrionas: input.servicioAnfitrionas }
+      : {}),
     detalles: cart.map((item) => {
       const cantidad = item.quantity || item.cantidad || 1;
       // Cómo se vendió queda en el detalle (espejo del dashboard): un shot
@@ -97,6 +110,9 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
             ? ("botella" as const)
             : undefined,
         shot_anfitriona: esShot ? Boolean(item.shot_anfitriona) : undefined,
+        ...(!esShot && item.acompanamiento_botella
+          ? { acompanamiento_botella: item.acompanamiento_botella }
+          : {}),
         ...(esShot && item.acompanamiento_corto
           ? { acompanamiento_corto: item.acompanamiento_corto }
           : {}),
@@ -116,17 +132,18 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
     cliente_id: (selectedCliente?.id?.toString() ||
       selectedCliente?.id_cliente?.toString() ||
       null) as string | null,
-    habitacion_id: hasCommissionItem
-      ? String(
-          selectedHabitacion?.id ?? selectedHabitacion?.id_habitacion ?? "",
-        ) || null
-      : null,
+    habitacion_id:
+      input.servicioId || hasCommissionItem
+        ? String(
+            selectedHabitacion?.id ?? selectedHabitacion?.id_habitacion ?? "",
+          ) || null
+        : null,
     metodo_pago: metodoPago,
     pagos_mixtos: metodoPago === "mixto" ? pagosMixtos : undefined,
     propina: totals.tip,
     sub_total: totals.subtotal,
     total: totals.total,
-    tiempo: selectedHabitacion ? selectedTime : 0,
+    tiempo: input.servicioId ? 0 : selectedHabitacion ? selectedTime : 0,
     usuarios: Array.from(
       new Set(
         cart

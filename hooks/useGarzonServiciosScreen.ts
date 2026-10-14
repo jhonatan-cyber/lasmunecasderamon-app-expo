@@ -1,10 +1,10 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
-import { showToast } from '@/utils/toast-lazy';
+import { showToast } from "@/utils/toast-lazy";
 import { apiClientSafe } from "@/api/client";
 import { blockOffline } from "@/utils/offlineGuard";
-import { getIvaDecimal } from '@/hooks/utils/cuentaUtils';
+import { getIvaDecimal } from "@/hooks/utils/cuentaUtils";
 import logger from "@/utils/logger";
 
 export interface Room {
@@ -43,8 +43,8 @@ export interface Client {
 
 export function useGarzonServiciosScreen() {
   const router = useRouter();
+  const [includedProduct, setIncludedProduct] = useState({ roomId: "", id: "" });
 
-  
   const [rooms, setRooms] = useState<Room[]>([]);
   const [anfitrionas, setAnfitrionas] = useState<Anfitriona[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -53,8 +53,10 @@ export function useGarzonServiciosScreen() {
   const [submitting, setSubmitting] = useState(false);
   const dataRef = useRef<string>("");
 
-  
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const includedRoomId = String(selectedRoom?.id_habitacion || selectedRoom?.id || '');
+  const productoIncluido = includedProduct.roomId === includedRoomId ? includedProduct.id : '';
+  const setProductoIncluido = (id: string) => setIncludedProduct({ roomId: includedRoomId, id });
   const [selectedHostesses, setSelectedHostesses] = useState<number[]>([]);
   const [selectedClients, setSelectedClients] = useState<(number | string)[]>(
     [],
@@ -67,79 +69,82 @@ export function useGarzonServiciosScreen() {
   const [hostessModalVisible, setHostessModalVisible] = useState(false);
   const [clientModalVisible, setClientModalVisible] = useState(false);
 
-  
-  const fetchData = useCallback(async (isRefreshing = false, signal?: AbortSignal) => {
-    try {
-      if (!isRefreshing) setLoading(true);
-      const [roomRes, anfRes, clientRes] = await Promise.allSettled([
-        apiClientSafe("/rooms", { signal }),
-        apiClientSafe("/users?anfitrionas=1", { signal }),
-        apiClientSafe("/clients", { signal }),
-      ]);
+  const fetchData = useCallback(
+    async (isRefreshing = false, signal?: AbortSignal) => {
+      try {
+        if (!isRefreshing) setLoading(true);
+        const [roomRes, anfRes, clientRes] = await Promise.allSettled([
+          apiClientSafe("/rooms", { signal }),
+          apiClientSafe("/users?anfitrionas=1", { signal }),
+          apiClientSafe("/clients", { signal }),
+        ]);
 
-      if (signal?.aborted) return;
+        if (signal?.aborted) return;
 
-      const roomData = roomRes.status === "fulfilled" ? roomRes.value : null;
-      const anfData = anfRes.status === "fulfilled" ? anfRes.value : null;
-      const clientData =
-        clientRes.status === "fulfilled" ? clientRes.value : null;
+        const roomData = roomRes.status === "fulfilled" ? roomRes.value : null;
+        const anfData = anfRes.status === "fulfilled" ? anfRes.value : null;
+        const clientData =
+          clientRes.status === "fulfilled" ? clientRes.value : null;
 
-      const deduplicate = (arr: any[], idKey: string) => {
-        if (!Array.isArray(arr)) return [];
-        const unique = new Map<string, any>();
-        for (const item of arr) {
-          const id = item?.[idKey] ?? item?.id;
-          if (id == null) continue;
-          const key = String(id);
-          if (!unique.has(key)) unique.set(key, item);
+        const deduplicate = (arr: any[], idKey: string) => {
+          if (!Array.isArray(arr)) return [];
+          const unique = new Map<string, any>();
+          for (const item of arr) {
+            const id = item?.[idKey] ?? item?.id;
+            if (id == null) continue;
+            const key = String(id);
+            if (!unique.has(key)) unique.set(key, item);
+          }
+          return Array.from(unique.values());
+        };
+
+        const rawAnf = (anfData as any)?.data || [];
+        const rawClients = Array.isArray(clientData)
+          ? clientData
+          : (clientData as any)?.data || [];
+        const newData = {
+          rooms: (roomData as any)?.data,
+          anfitrionas: rawAnf,
+          clients: rawClients,
+        };
+        const serialized = JSON.stringify(newData);
+        const hasChanges = dataRef.current !== serialized;
+        dataRef.current = serialized;
+
+        setRooms((roomData as any)?.data || []);
+
+        setAnfitrionas(deduplicate(rawAnf, "id_usuario"));
+        setClients(deduplicate(rawClients, "id_cliente"));
+
+        if (isRefreshing) {
+          showToast({
+            type: hasChanges ? "success" : "info",
+            text1: hasChanges ? "Éxito" : "Información",
+            text2: hasChanges
+              ? "Datos actualizados"
+              : "Sin cambios en los datos",
+            visibilityTime: 3000,
+          });
         }
-        return Array.from(unique.values());
-      };
-
-      const rawAnf = (anfData as any)?.data || [];
-      const rawClients = Array.isArray(clientData)
-        ? clientData
-        : (clientData as any)?.data || [];
-      const newData = {
-        rooms: (roomData as any)?.data,
-        anfitrionas: rawAnf,
-        clients: rawClients,
-      };
-      const serialized = JSON.stringify(newData);
-      const hasChanges = dataRef.current !== serialized;
-      dataRef.current = serialized;
-
-      setRooms((roomData as any)?.data || []);
-
-      
-      setAnfitrionas(deduplicate(rawAnf, "id_usuario"));
-      setClients(deduplicate(rawClients, "id_cliente"));
-
-      if (isRefreshing) {
+      } catch (err: any) {
+        if (signal?.aborted) return;
+        logger.fetchError(err, { context: "Servicios:fetchServicios" });
         showToast({
-          type: hasChanges ? "success" : "info",
-          text1: hasChanges ? "Éxito" : "Información",
-          text2: hasChanges ? "Datos actualizados" : "Sin cambios en los datos",
-          visibilityTime: 3000,
+          type: "error",
+          text1: "Error",
+          text2: isRefreshing
+            ? "No se pudieron actualizar los datos"
+            : "No se pudieron cargar los datos necesarios",
         });
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
-    } catch (err: any) {
-      if (signal?.aborted) return;
-      logger.fetchError(err, { context: "Servicios:fetchServicios" });
-      showToast({
-        type: "error",
-        text1: "Error",
-        text2: isRefreshing
-          ? "No se pudieron actualizar los datos"
-          : "No se pudieron cargar los datos necesarios",
-      });
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -154,7 +159,6 @@ export function useGarzonServiciosScreen() {
     fetchData(true);
   };
 
-  
   const hasComision = useMemo(() => {
     return selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0;
   }, [selectedRoom]);
@@ -247,7 +251,6 @@ export function useGarzonServiciosScreen() {
 
   const hasPrepago = !!activeClientWithBalance;
 
-  
   const totals = useMemo(() => {
     const price = parseInt(servicePrice.replace(/\./g, "")) || 0;
     const roomPrice = selectedRoom
@@ -278,7 +281,6 @@ export function useGarzonServiciosScreen() {
 
     let currentIva = 0;
     if (paymentMethod === "tarjeta") {
-      
       currentIva = Math.floor(subtotal * getIvaDecimal());
     }
 
@@ -325,13 +327,17 @@ export function useGarzonServiciosScreen() {
   };
 
   const handleSubmit = async () => {
+    if (hasComision && !productoIncluido)
+      return Alert.alert(
+        "Producto incluido",
+        "Selecciona una unidad del bar para la habitación",
+      );
     if (!selectedRoom) return Alert.alert("Error", "Selecciona una habitación");
     if (selectedHostesses.length === 0)
       return Alert.alert("Error", "Selecciona al menos una anfitriona");
     if (!paymentMethod)
       return Alert.alert("Error", "Selecciona un método de pago");
 
-    
     if (!hasComision && (!servicePrice || servicePrice === "0")) {
       return Alert.alert("Error", "Ingresa el precio del servicio");
     }
@@ -357,6 +363,9 @@ export function useGarzonServiciosScreen() {
         cliente_id: selectedClients.length > 0 ? selectedClients[0] : null,
         clientes: selectedClients,
         habitacion_id: selectedRoom.id_habitacion || selectedRoom.id,
+        producto_incluido_presentacion_id: hasComision
+          ? productoIncluido
+          : null,
         precio_servicio: parseInt(servicePrice.replace(/\./g, "")) || 0,
         precio_habitacion: selectedRoom.precio || selectedRoom.price || 0,
         comision_anfitriona: selectedRoom.comision_anfitriona || 0,
@@ -382,7 +391,10 @@ export function useGarzonServiciosScreen() {
         });
         router.back();
       } else {
-        Alert.alert("Error", (res as any).message || "No se pudo crear el servicio");
+        Alert.alert(
+          "Error",
+          (res as any).message || "No se pudo crear el servicio",
+        );
       }
     } catch (err: any) {
       Alert.alert("Error", err.message || "Error de conexión");
@@ -392,7 +404,8 @@ export function useGarzonServiciosScreen() {
   };
 
   return {
-    
+    productoIncluido,
+    setProductoIncluido,
     rooms,
     anfitrionas,
     clients,
@@ -400,7 +413,6 @@ export function useGarzonServiciosScreen() {
     refreshing,
     submitting,
 
-    
     selectedRoom,
     setSelectedRoom,
     selectedHostesses,
@@ -412,7 +424,6 @@ export function useGarzonServiciosScreen() {
     paymentMethod,
     setPaymentMethod,
 
-    
     roomModalVisible,
     setRoomModalVisible,
     hostessModalVisible,
@@ -420,7 +431,6 @@ export function useGarzonServiciosScreen() {
     clientModalVisible,
     setClientModalVisible,
 
-    
     hasComision,
     maxHostesses,
     maxClients,
@@ -428,7 +438,6 @@ export function useGarzonServiciosScreen() {
     hasPrepago,
     totals,
 
-    
     onRefresh,
     toggleHostess,
     toggleClient,

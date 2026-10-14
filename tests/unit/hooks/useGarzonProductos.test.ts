@@ -199,4 +199,69 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
   });
+
+  it("incluye los cortos con ml abiertos aunque no queden botellas cerradas", async () => {
+    const mirror = createMirrorRepository(driver, { isOffline: () => true });
+    mirror.put(`products:order-bar:${CATEGORY_ID}`, {
+      success: true,
+      data: [
+        {
+          presentacion_id: "vodka-750",
+          producto_id: "vodka",
+          producto_nombre: "Vodka",
+          presentacion_nombre: "750 ml",
+          stock_bar: 0,
+          ml_abierta: 300,
+          opciones_venta: [
+            { tipo: "botella", precio: 30000, comision: 0 },
+            {
+              tipo: "shot",
+              precio: 5000,
+              precio_anfitriona: 20000,
+              comision: 3000,
+            },
+          ],
+        },
+      ],
+    });
+    setMirrorForTests(mirror);
+    const { result } = renderHook(() => useGarzonProductos());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.products.length).toBeGreaterThan(0);
+    expect(
+      result.current.products.every((product) => product.tipo_venta === "shot"),
+    ).toBe(true);
+    expect(
+      result.current.getMaxHostesses({
+        product: {
+          ...result.current.products[0],
+          shot_anfitriona: true,
+          categoria: "Champaña",
+          max_anfitrionas: 5,
+        },
+        quantity: 2,
+        selectedHostesses: [],
+        selectedRoom: null,
+      }),
+    ).toBe(2);
+  });
+
+  it("no duplica un pedido si se pulsa enviar dos veces", async () => {
+    let finish!: (value: any) => void;
+    outbox.enqueueAndSend.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const result = await montarConProductoEnCarro();
+    await act(async () => {
+      const first = result.current.submitOrder();
+      const second = result.current.submitOrder();
+      expect(outbox.enqueueAndSend).toHaveBeenCalledTimes(1);
+      finish(intentoPendiente);
+      await Promise.all([first, second]);
+    });
+    expect(outbox.enqueueAndSend).toHaveBeenCalledTimes(1);
+  });
 });

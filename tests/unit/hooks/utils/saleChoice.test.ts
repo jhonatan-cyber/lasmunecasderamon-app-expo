@@ -104,10 +104,7 @@ describe("resolverVentaProducto", () => {
 
     expect(venta.tipoVenta).toBe("shot");
     expect(venta.tieneShotAnfitriona).toBe(false);
-    expect(venta.opciones.map((opcion) => opcion.value)).toEqual([
-      "botella",
-      "shot",
-    ]);
+    expect(venta.opciones.map((opcion) => opcion.value)).toEqual(["shot"]);
   });
 
   it("sin shot la elección cae a botella en vez de romper", () => {

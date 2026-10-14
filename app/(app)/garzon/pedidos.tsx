@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
     Pressable,
@@ -17,10 +17,13 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { usePedidosScreen, Category } from '@/hooks/usePedidosScreen';
 import { PedidosSkeleton } from '@/components/garzon/pedidos/PedidosSkeleton';
 import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
+import { useAuthStore } from '@/store/authStore';
+import { isBarmanRole } from '@/utils/userRole';
 
 export default function PedidosScreen() {
     const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
     const router = useRouter();
+    const isBarman = isBarmanRole(useAuthStore((state) => state.user));
     const insets = useSafeAreaInsets();
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
 
@@ -36,10 +39,10 @@ export default function PedidosScreen() {
 
     const handleCategoryPress = useCallback((categoryId: string, categoryName: string) => {
         router.push({
-            pathname: '/(app)/garzon/productos',
+            pathname: isBarman ? '/(app)/barman/productos' : '/(app)/garzon/productos',
             params: { categoryId, categoryName }
-        });
-    }, [router]);
+        } as Href);
+    }, [router, isBarman]);
 
     const renderItem = useCallback(({ item, index }: { item: Category, index: number }) => (
         <CategoryCard

@@ -1,3 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuthStore } from "@/store/authStore";
+import {
+  requiresShortMixer,
+  bottleMixerUnits,
+} from "@/hooks/utils/productConfiguration";
 import {
   useCallback,
   useEffect,
@@ -6,7 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import {
@@ -58,8 +64,70 @@ const filterSaleCategories = (categories: any[]) =>
 
 export function useNuevaVenta() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ servicio_id?: string }>();
+  const servicioId =
+    typeof params.servicio_id === "string" ? params.servicio_id : undefined;
+  const [servicioCargadoId, setServicioCargadoId] = useState("");
+  const servicioListo = servicioCargadoId === servicioId;
+  const [servicioNombre, setServicioNombre] = useState("");
+  const [servicioAnfitrionasIniciales, setServicioAnfitrionasIniciales] =
+    useState<string[]>([]);
+  const [servicioAnfitrionas, setServicioAnfitrionas] = useState<string[]>([]);
   const { refreshVentas } = useSalesActions();
   const [state, dispatch] = useReducer(ventaReducer, initialVentaState);
+  useEffect(() => {
+    if (!servicioId) return;
+    const controller = new AbortController();
+    apiClientSafe(`/servicios/${encodeURIComponent(servicioId)}`, {
+      signal: controller.signal,
+    })
+      .then((res: any) => {
+        if (!res.success || ![2, 3].includes(Number(res.data?.estado)))
+          throw new Error("El servicio ya no está activo");
+        const s = res.data;
+        dispatch({
+          type: "SET_SELECTED_HABITACION",
+          payload: {
+            id: s.habitacion_id,
+            id_habitacion: s.habitacion_id,
+            nombre: s.habitacion_nombre || s.habitacion_numero,
+            precio: 0,
+            tiempo: 0,
+            estado: 2,
+          },
+        });
+        if (s.cliente_id)
+          dispatch({
+            type: "SET_SELECTED_CLIENTE",
+            payload: {
+              id: s.cliente_id,
+              id_cliente: s.cliente_id,
+              nombre: s.cliente_nombre || "Cliente del servicio",
+              saldo: 0,
+              deuda: 0,
+            },
+          });
+        setServicioNombre(
+          s.habitacion_nombre || s.habitacion_numero || "Habitación",
+        );
+        const ids = [
+          ...new Set<string>(
+            String(s.anfitrionas_ids || "")
+              .split(",")
+              .map((id) => id.trim())
+              .filter(Boolean),
+          ),
+        ];
+        setServicioAnfitrionasIniciales(ids);
+        setServicioAnfitrionas(ids);
+        setServicioCargadoId(servicioId);
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted)
+          showToast("Servicio", err.message || "No se pudo cargar el servicio");
+      });
+    return () => controller.abort();
+  }, [servicioId]);
   const cartRef = useRef(state.cart);
   useEffect(() => {
     cartRef.current = state.cart;
@@ -122,14 +190,17 @@ export function useNuevaVenta() {
   }, [cart, enableTip, propinaPct]);
 
   const hasCommissionItem = useMemo(() => {
-    return cart.some((item) => {
-      const price = Number(item.precio ?? item.price ?? 0);
-      return (
-        isChampagneProduct(item) ||
-        (price >= habitacionDesde && price >= anfitrionaDesde)
-      );
-    });
-  }, [cart, habitacionDesde, anfitrionaDesde]);
+    return (
+      !servicioId &&
+      cart.some((item) => {
+        const price = Number(item.precio ?? item.price ?? 0);
+        return (
+          isChampagneProduct(item) ||
+          (price >= habitacionDesde && price >= anfitrionaDesde)
+        );
+      })
+    );
+  }, [cart, habitacionDesde, anfitrionaDesde, servicioId]);
 
   /**
    * Lectura con espejo: red primero y, si no hay, lo último guardado. Vender sin
@@ -523,6 +594,8 @@ export function useNuevaVenta() {
           Boolean(item.shot_anfitriona) === Boolean(prod?.shot_anfitriona) &&
           Number(item.precio ?? item.price) === salePrice &&
           Number(item.comision ?? item.commission) === saleCommission &&
+          JSON.stringify(item.acompanamiento_botella ?? null) ===
+            JSON.stringify(prod?.acompanamiento_botella ?? null) &&
           JSON.stringify(item.acompanamiento_corto ?? null) ===
             JSON.stringify(prod?.acompanamiento_corto ?? null)
         );
@@ -656,6 +729,16 @@ export function useNuevaVenta() {
             : explicitMax > 0
               ? explicitMax
               : 1;
+        if (
+          modalHostessSelections[id] === undefined &&
+          servicioAnfitrionas.length > 0
+        ) {
+          dispatch({
+            type: "SET_MODAL_HOSTESSES",
+            productId: id,
+            hostesses: servicioAnfitrionas.slice(0, max),
+          });
+        }
         dispatch({
           type: "SET_HOSTESS_TARGET",
           target: {
@@ -670,7 +753,13 @@ export function useNuevaVenta() {
 
       addProductToCart(producto);
     },
-    [addProductToCart, saleChoices, getSaleTiers],
+    [
+      addProductToCart,
+      saleChoices,
+      getSaleTiers,
+      modalHostessSelections,
+      servicioAnfitrionas,
+    ],
   );
 
   const removeFromCart = useCallback(
@@ -771,21 +860,36 @@ export function useNuevaVenta() {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (servicioId && (!servicioListo || !blockOffline("servicio")))
+      return showToast(
+        "Servicio",
+        "Se necesita cargar el servicio activo para registrar esta venta",
+      );
     if (cajaAbierta === false) return showToast("Error", "Caja cerrada");
     if (cart.length === 0) return showToast("Error", "Carrito vacío");
     if (
       cart.some(
         (p) =>
-          p.tipo_venta === "shot" &&
+          p.tipo_venta !== "shot" &&
+          bottleMixerUnits(p) > 0 &&
+          !p.acompanamiento_botella?.presentacion_id,
+      )
+    ) {
+      showToast("Error", "Selecciona el acompa\u00f1amiento de botella");
+      return;
+    }
+    if (
+      cart.some(
+        (p) =>
+          requiresShortMixer(p) &&
           (!p.acompanamiento_corto?.presentacion_id ||
-            !Number.isInteger(p.acompanamiento_corto.ml_por_corto) ||
-            p.acompanamiento_corto.ml_por_corto < 1 ||
-            p.acompanamiento_corto.ml_por_corto > 10000),
+            !Number.isInteger(p.acompanamiento_corto.unidades ?? 1) ||
+            (p.acompanamiento_corto.unidades ?? 1) < 1),
       )
     )
       return showToast(
         "Falta acompa\u00f1amiento",
-        "Selecciona soda o gaseosa y los ml por corto",
+        "Selecciona soda o gaseosa para entregar completo",
       );
     if (!metodoPago)
       return showToast("Método requerido", "Selecciona un método de pago");
@@ -829,6 +933,13 @@ export function useNuevaVenta() {
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const payload = buildSalePayload({
+        servicioId,
+        servicioAnfitrionas:
+          servicioId &&
+          [...servicioAnfitrionas].sort().join(",") !==
+            [...servicioAnfitrionasIniciales].sort().join(",")
+            ? servicioAnfitrionas
+            : undefined,
         cart,
         selectedCliente,
         selectedHabitacion,
@@ -854,10 +965,18 @@ export function useNuevaVenta() {
         label: `Venta $${Number(totals.total || 0).toLocaleString("es-CL")} · ${items} ítem(s)`,
       });
 
+      if (intent.status !== "fallida") {
+        const userId = useAuthStore.getState().user?.id;
+        if (userId)
+          await AsyncStorage.removeItem(
+            `cart-draft:${userId}:sales:${servicioId || "general"}`,
+          ).catch(() => {});
+      }
       if (intent.status === "aplicada") {
+        dispatch({ type: "SET_CART", payload: [] });
         showToast("Éxito", "Venta realizada", "success");
         refreshVentas();
-        router.replace("/cajero/ventas");
+        router.replace(servicioId ? "/cajero/servicios" : "/cajero/ventas");
         return;
       }
 
@@ -866,6 +985,7 @@ export function useNuevaVenta() {
         return;
       }
 
+      dispatch({ type: "SET_CART", payload: [] });
       // Quedó pendiente: la venta está guardada y sale al volver la red.
       showToast(
         "Venta guardada en el dispositivo",
@@ -890,6 +1010,10 @@ export function useNuevaVenta() {
     totals,
     selectedTime,
     hasCommissionItem,
+    servicioId,
+    servicioListo,
+    servicioAnfitrionas,
+    servicioAnfitrionasIniciales,
     router,
     refreshVentas,
   ]);
@@ -907,13 +1031,23 @@ export function useNuevaVenta() {
         newSelected = [...currentSelected, id];
       }
 
+      if (servicioId)
+        setServicioAnfitrionas((current) => [
+          ...new Set([
+            ...current.filter(
+              (uid) =>
+                !currentSelected.includes(uid) || newSelected.includes(uid),
+            ),
+            ...newSelected,
+          ]),
+        ]);
       dispatch({
         type: "SET_MODAL_HOSTESSES",
         productId: String(pid),
         hostesses: newSelected,
       });
     },
-    [hostessSelectionTarget, modalHostessSelections],
+    [hostessSelectionTarget, modalHostessSelections, servicioId],
   );
 
   // ── Búsqueda de productos (espejo de NewSaleSearch del dashboard) ────
@@ -1011,6 +1145,11 @@ export function useNuevaVenta() {
   }, [setSearchProductoInput]);
 
   return {
+    servicioId,
+    servicioNombre,
+    servicioAnfitrionas: [
+      ...new Set([...servicioAnfitrionasIniciales, ...servicioAnfitrionas]),
+    ],
     state,
     dispatch,
     totals,

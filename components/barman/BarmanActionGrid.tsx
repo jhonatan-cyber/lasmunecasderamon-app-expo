@@ -27,11 +27,11 @@ export const BarmanActionGrid = ({
       route: "/barman/bar",
     },
     {
-      title: "VENTAS",
-      description: "Ventas del día",
-      icon: "cart" as const,
+      title: "PEDIDOS",
+      description: "Realizar pedidos",
+      icon: "basket" as const,
       color: accentColor,
-      route: "/barman/ventas",
+      route: "/barman/pedidos",
     },
     {
       title: "SERVICIOS",

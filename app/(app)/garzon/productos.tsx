@@ -1,5 +1,7 @@
 import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
+import { useCartDraft } from "@/hooks/useCartDraft";
 import { useCartStore } from "@/store/cartStore";
+import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRouter } from "expo-router";
@@ -12,6 +14,8 @@ import {
   StyleSheet,
   Text,
   View,
+  Modal,
+  ScrollView,
 } from "react-native";
 import FlashList from "@/components/shared/FlashList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,10 +30,15 @@ import {
 import { GarzonOfflineBanner } from "@/components/garzon/GarzonOfflineBanner";
 
 export default function ProductosScreen() {
+  const draftCart = useCartStore((state) => state.cart);
+  const clearDraft = useCartDraft("orders", draftCart, (saved) =>
+    useCartStore.setState({ cart: saved }),
+  );
   const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } =
     useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [cartVisible, setCartVisible] = React.useState(false);
 
   const {
     categoryName,
@@ -114,7 +123,14 @@ export default function ProductosScreen() {
                 <Ionicons name="trash-outline" size={20} color="#FF4444" />
               </Pressable>
             )}
-            <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Pressable
+              onPress={() => {
+                clearDraft();
+                clearCart();
+                router.back();
+              }}
+              style={styles.backBtn}
+            >
               <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
               <Text style={styles.backText}>Atrás</Text>
             </Pressable>
@@ -131,6 +147,7 @@ export default function ProductosScreen() {
       ) : (
         <FlashList
           data={products}
+          extraData={cart}
           keyExtractor={(item: Product) => String(item.id)}
           renderItem={renderItem}
           estimatedItemSize={150}
@@ -146,29 +163,26 @@ export default function ProductosScreen() {
             />
           }
           ListHeaderComponent={
-            cart.some((item) => item.product.tipo_venta === "shot") ? (
-              <ShotMixerSelector
-                items={cart.map((item) => ({
-                  ...item.product,
-                  nombre: item.product.name,
-                  cantidad: item.quantity,
-                }))}
-                onChange={(index, mixer) =>
-                  useCartStore.setState((current) => ({
-                    cart: current.cart.map((item, i) =>
-                      i === index
-                        ? {
-                            ...item,
-                            product: {
-                              ...item.product,
-                              acompanamiento_corto: mixer,
-                            },
-                          }
-                        : item,
-                    ),
-                  }))
-                }
-              />
+            cart.length > 0 ? (
+              <Pressable
+                onPress={() => {
+                  useCartStore.getState().splitShorts();
+                  setCartVisible(true);
+                }}
+                style={{
+                  padding: 16,
+                  marginBottom: 12,
+                  borderRadius: 16,
+                  backgroundColor: cardBg,
+                  borderWidth: 1,
+                  borderColor,
+                }}
+              >
+                <Text style={{ color: textPrimary, fontWeight: "800" }}>
+                  Ver pedido completo ·{" "}
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} unidades
+                </Text>
+              </Pressable>
             ) : null
           }
           ListEmptyComponent={
@@ -227,6 +241,113 @@ export default function ProductosScreen() {
         cardBg={cardBg}
         textPrimary={textPrimary}
       />
+      <Modal
+        visible={cartVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCartVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "#0008",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <View
+            style={{
+              maxHeight: "90%",
+              backgroundColor: cardBg,
+              borderRadius: 24,
+              padding: 20,
+              gap: 16,
+            }}
+          >
+            <Text
+              style={{ color: textPrimary, fontSize: 20, fontWeight: "800" }}
+            >
+              Detalle del pedido
+            </Text>
+            <ScrollView contentContainerStyle={{ gap: 20 }}>
+              {cart.map((item) => (
+                <View
+                  key={item.product.id}
+                  style={{
+                    borderBottomWidth: 1,
+                    borderColor,
+                    paddingBottom: 16,
+                  }}
+                >
+                  <OrderLineInfo
+                    item={item}
+                    anfitrionas={anfitrionas}
+                    rooms={rooms}
+                  />
+                  <ShotMixerSelector
+                    compact
+                    bottle={item.product.tipo_venta !== "shot"}
+                    items={[
+                      {
+                        ...item.product,
+                        nombre: item.product.name,
+                        cantidad: item.quantity,
+                      },
+                    ]}
+                    onChange={(_, mixer) =>
+                      useCartStore
+                        .getState()
+                        .updateItemMixer(item.product.id, mixer)
+                    }
+                  />
+                  {item.product.commission > 0 && (
+                    <Pressable
+                      onPress={() => {
+                        setCartVisible(false);
+                        setActiveConfigItem({
+                          productId: item.product.id,
+                          type: "hostess",
+                        });
+                      }}
+                      style={{ paddingVertical: 8 }}
+                    >
+                      <Text style={{ color: accentColor }}>
+                        Seleccionar anfitriona
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+            <Text style={{ color: textSecondary }}>
+              Propina: ${tipAmount.toLocaleString("es-CL")}
+            </Text>
+            <Text
+              style={{ color: textPrimary, fontSize: 20, fontWeight: "800" }}
+            >
+              Total: ${cartTotal.toLocaleString("es-CL")}
+            </Text>
+            <Pressable
+              onPress={() => setCartVisible(false)}
+              style={{
+                backgroundColor: accentColor,
+                borderRadius: 12,
+                padding: 14,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFF",
+                  textAlign: "center",
+                  fontWeight: "800",
+                }}
+              >
+                Cerrar
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

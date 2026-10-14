@@ -1,33 +1,80 @@
-import { apiClientSafe } from '@/api/client';
-import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
-import { generateCode } from '@/components/cajero/nuevo-servicio/helpers';
-import { initialServiceState,serviceReducer } from '@/components/cajero/nuevo-servicio/reducer';
+import { apiClientSafe } from "@/api/client";
+import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import { generateCode } from "@/components/cajero/nuevo-servicio/helpers";
 import {
-type ServicePayload,
-} from '@/components/cajero/nuevo-servicio/types';
-import { deduplicate,getCardSplit,getIvaDecimal,normalizeAnfitrionas,normalizeClients,normalizeRoom,showToast } from '@/hooks/utils/cartUtils';
-import logger from '@/utils/logger';
-import { blockOffline } from '@/utils/offlineGuard';
-import { parseDateSafe } from '@/utils/timeUtils';
-import { ServiceCreateSchema } from '@lasmunecasderamon/validations';
-import { useRouter } from 'expo-router';
-import { useCallback,useEffect,useMemo,useReducer } from 'react';
+  initialServiceState,
+  serviceReducer,
+} from "@/components/cajero/nuevo-servicio/reducer";
+import { type ServicePayload } from "@/components/cajero/nuevo-servicio/types";
+import {
+  deduplicate,
+  getCardSplit,
+  getIvaDecimal,
+  normalizeAnfitrionas,
+  normalizeClients,
+  normalizeRoom,
+  showToast,
+} from "@/hooks/utils/cartUtils";
+import logger from "@/utils/logger";
+import { blockOffline } from "@/utils/offlineGuard";
+import { parseDateSafe } from "@/utils/timeUtils";
+import { ServiceCreateSchema } from "@lasmunecasderamon/validations";
+import { useRouter } from "expo-router";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  useRef,
+} from "react";
 
 export function useNuevoServicio() {
   const router = useRouter();
+  const [includedProduct, setIncludedProduct] = useState({ roomId: "", id: "" });
+  const serviceKey = useRef(generateCode());
+  const submittingRef = useRef(false);
   const [state, dispatch] = useReducer(serviceReducer, initialServiceState);
 
-  const {clientes, cajaAbierta, selectedHostesses, selectedClients, selectedHabitacion, precioServicio, metodoPago, metodoPagoAdicional, pagosMixtos, balanceAmount} = state;
+  const {
+    clientes,
+    cajaAbierta,
+    selectedHostesses,
+    selectedClients,
+    selectedHabitacion,
+    precioServicio,
+    metodoPago,
+    metodoPagoAdicional,
+    pagosMixtos,
+    balanceAmount,
+  } = state;
 
   const hasAnfitrionaComision =
     selectedHabitacion && (selectedHabitacion.comision_anfitriona ?? 0) > 0;
+
+  const includedRoomId = String(selectedHabitacion?.id_habitacion || selectedHabitacion?.id || '');
+  const productoIncluido = includedProduct.roomId === includedRoomId ? includedProduct.id : '';
+  const setProductoIncluido = (id: string) => setIncludedProduct({ roomId: includedRoomId, id });
+
+  useEffect(() => {
+    serviceKey.current = generateCode();
+  }, [
+    selectedHabitacion,
+    selectedHostesses,
+    selectedClients,
+    productoIncluido,
+    precioServicio,
+    metodoPago,
+    pagosMixtos,
+  ]);
 
   const maxHostesses = hasAnfitrionaComision
     ? Math.min(3, 4 - selectedClients.length)
     : 10;
   const maxClients = hasAnfitrionaComision ? 4 - selectedHostesses.length : 4;
 
-  const numericPrecioServicio = parseInt(precioServicio.replace(/\./g, '')) || 0;
+  const numericPrecioServicio =
+    parseInt(precioServicio.replace(/\./g, "")) || 0;
 
   const totals = useMemo(() => {
     const numAnfitrionas = selectedHostesses.length || 1;
@@ -43,16 +90,19 @@ export function useNuevoServicio() {
     const precioServicioActual =
       numericPrecioServicio * multiplicadorTiempo * multiplicadorServicio;
     const precioHabitacionActual =
-      (selectedHabitacion?.precio || 0) * multiplicadorTiempo * multiplicadorHabitacion;
+      (selectedHabitacion?.precio || 0) *
+      multiplicadorTiempo *
+      multiplicadorHabitacion;
 
     let calculatedIva = 0;
-    if (metodoPago === 'tarjeta') {
+    if (metodoPago === "tarjeta") {
       calculatedIva = Math.floor(precioServicioActual * getIvaDecimal());
     }
 
-    let currentTotal = precioServicioActual + precioHabitacionActual + calculatedIva;
+    let currentTotal =
+      precioServicioActual + precioHabitacionActual + calculatedIva;
 
-    if (metodoPago === 'tarjeta') {
+    if (metodoPago === "tarjeta") {
       const totalRedondeado = Math.ceil(currentTotal / 5000) * 5000;
       const excedente = totalRedondeado - currentTotal;
       currentTotal = totalRedondeado;
@@ -67,7 +117,9 @@ export function useNuevoServicio() {
       precioServicioActual,
       comisionPorAnfitriona:
         tieneComision && selectedHostesses.length > 0
-          ? Math.floor(selectedHabitacion.comision_anfitriona / selectedHostesses.length)
+          ? Math.floor(
+              selectedHabitacion.comision_anfitriona / selectedHostesses.length,
+            )
           : selectedHabitacion?.comision_anfitriona || 0,
     };
   }, [
@@ -78,7 +130,10 @@ export function useNuevoServicio() {
     metodoPago,
   ]);
 
-  const desgloseTarjeta = useMemo(() => getCardSplit(totals.total), [totals.total]);
+  const desgloseTarjeta = useMemo(
+    () => getCardSplit(totals.total),
+    [totals.total],
+  );
 
   const selectedClientData = useMemo(() => {
     if (selectedClients.length === 0) return null;
@@ -88,38 +143,53 @@ export function useNuevoServicio() {
   }, [selectedClients, clientes]);
 
   const fetchInitialData = useCallback(async (signal?: AbortSignal) => {
-    dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
+    dispatch({ type: "SET_LOADING_INITIAL", payload: true });
     try {
-      const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all([
-        apiClientSafe('/cashregister/status', { signal }),
-        apiClientSafe('/anfitrionas', { signal }),
-        apiClientSafe('/rooms', { signal }),
-        apiClientSafe('/clients', { signal }),
-      ]);
+      const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all(
+        [
+          apiClientSafe("/cashregister/status", { signal }),
+          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/rooms", { signal }),
+          apiClientSafe("/clients", { signal }),
+        ],
+      );
 
       dispatch({
-        type: 'SET_INITIAL_DATA',
+        type: "SET_INITIAL_DATA",
         payload: {
-          cajaAbierta: (cajaRes as any).success && (cajaRes as any).data?.hasOpenCaja,
-          anfitrionas: deduplicate(normalizeAnfitrionas(anfitrionasRes), 'id_usuario'),
-          habitaciones: deduplicate(((roomsRes as any).success ? (roomsRes as any).data : []).map((room: any) => ({
-            ...normalizeRoom(room),
-            status: room.status ?? room.estado ?? 0,
-            price: room.price ?? room.precio ?? 0,
-            time: room.time ?? room.tiempo ?? 0,
-          })), 'id_habitacion'),
-          clientes: deduplicate(normalizeClients(clientsRes), 'id_cliente'),
+          cajaAbierta:
+            (cajaRes as any).success && (cajaRes as any).data?.hasOpenCaja,
+          anfitrionas: deduplicate(
+            normalizeAnfitrionas(anfitrionasRes),
+            "id_usuario",
+          ),
+          habitaciones: deduplicate(
+            ((roomsRes as any).success ? (roomsRes as any).data : []).map(
+              (room: any) => ({
+                ...normalizeRoom(room),
+                status: room.status ?? room.estado ?? 0,
+                price: room.price ?? room.precio ?? 0,
+                time: room.time ?? room.tiempo ?? 0,
+              }),
+            ),
+            "id_habitacion",
+          ),
+          clientes: deduplicate(normalizeClients(clientsRes), "id_cliente"),
         },
       });
 
       if (!(cajaRes as any).success || !(cajaRes as any).data?.hasOpenCaja) {
-        showToast('Caja Cerrada', 'Debes abrir una caja antes de crear servicios.', 'error');
+        showToast(
+          "Caja Cerrada",
+          "Debes abrir una caja antes de crear servicios.",
+          "error",
+        );
       }
     } catch (error) {
-      logger.fetchError(error, { context: 'NuevoServicio:fetchInitialData' });
-      showToast('Error', 'No se pudo cargar la información necesaria.');
+      logger.fetchError(error, { context: "NuevoServicio:fetchInitialData" });
+      showToast("Error", "No se pudo cargar la información necesaria.");
     } finally {
-      dispatch({ type: 'SET_LOADING_INITIAL', payload: false });
+      dispatch({ type: "SET_LOADING_INITIAL", payload: false });
     }
   }, []);
 
@@ -131,51 +201,63 @@ export function useNuevoServicio() {
 
   const toggleHostess = useCallback(
     (hostessId: string | number) => {
-      const isSelected = selectedHostesses.some((id) => String(id) === String(hostessId));
+      const isSelected = selectedHostesses.some(
+        (id) => String(id) === String(hostessId),
+      );
       let next: (string | number)[];
 
       if (isSelected) {
-        next = selectedHostesses.filter((id) => String(id) !== String(hostessId));
+        next = selectedHostesses.filter(
+          (id) => String(id) !== String(hostessId),
+        );
       } else {
         if (selectedHostesses.length >= maxHostesses) {
-          showToast('Límite', `Máximo ${maxHostesses} anfitrionas`);
+          showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
           return;
         }
         next = [...selectedHostesses, hostessId];
       }
 
-      const uniqueNext = Array.from(new Set(next.map((id) => String(id)))).map((idStr) =>
-        next.find((id) => String(id) === idStr),
+      const uniqueNext = Array.from(new Set(next.map((id) => String(id)))).map(
+        (idStr) => next.find((id) => String(id) === idStr),
       );
 
-      dispatch({ type: 'SET_SELECTED_HOSTESSES', payload: uniqueNext.map((id) => Number(id)) });
+      dispatch({
+        type: "SET_SELECTED_HOSTESSES",
+        payload: uniqueNext.map((id) => Number(id)),
+      });
     },
     [selectedHostesses, maxHostesses],
   );
 
   const toggleClient = useCallback(
     (clientId: string | number) => {
-      const isSelected = selectedClients.some((id) => String(id) === String(clientId));
+      const isSelected = selectedClients.some(
+        (id) => String(id) === String(clientId),
+      );
       let next: (string | number)[];
 
       if (isSelected) {
         next = selectedClients.filter((id) => String(id) !== String(clientId));
       } else {
         if (selectedClients.length >= maxClients) {
-          showToast('Límite', `Máximo ${maxHostesses} anfitrionas`);
+          showToast("Límite", `Máximo ${maxHostesses} anfitrionas`);
           return;
         }
         next = [...selectedClients, clientId];
       }
 
-      const uniqueNext = Array.from(new Set(next.map((id) => String(id)))).map((idStr) =>
-        next.find((id) => String(id) === idStr),
+      const uniqueNext = Array.from(new Set(next.map((id) => String(id)))).map(
+        (idStr) => next.find((id) => String(id) === idStr),
       );
 
-      dispatch({ type: 'SET_SELECTED_CLIENTS', payload: uniqueNext as (string | number)[] });
+      dispatch({
+        type: "SET_SELECTED_CLIENTS",
+        payload: uniqueNext as (string | number)[],
+      });
 
       if (uniqueNext.length === 0) {
-        dispatch({ type: 'SET_METODO_PAGO', payload: 'efectivo' });
+        dispatch({ type: "SET_METODO_PAGO", payload: "efectivo" });
       }
     },
     [selectedClients, maxClients, maxHostesses],
@@ -185,94 +267,138 @@ export function useNuevoServicio() {
     const clientId = selectedClients.length > 0 ? selectedClients[0] : null;
     if (!clientId || !balanceAmount) return;
 
-    dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: true });
+    dispatch({ type: "SET_BALANCE_SUBMITTING", payload: true });
     try {
-      const amount = parseInt(balanceAmount.replace(/\./g, ''));
-      const res = await apiClientSafe('/clients/prepago', {
-        method: 'POST',
+      const amount = parseInt(balanceAmount.replace(/\./g, ""));
+      const res = await apiClientSafe("/clients/prepago", {
+        method: "POST",
         body: JSON.stringify({
           cliente_id: clientId,
           monto: amount,
-          tipo: 'CARGA',
+          tipo: "CARGA",
         }),
       });
 
       if ((res as any).success) {
-        showToast('Éxito', 'Saldo cargado correctamente', 'success');
-        dispatch({ type: 'UPDATE_CLIENT_SALDO', payload: { id: clientId, saldo: (res as any).data.nuevo_saldo } });
-        dispatch({ type: 'SET_MODAL_VISIBLE', modal: 'balance', visible: false });
-        dispatch({ type: 'SET_BALANCE_AMOUNT', payload: '' });
+        showToast("Éxito", "Saldo cargado correctamente", "success");
+        dispatch({
+          type: "UPDATE_CLIENT_SALDO",
+          payload: { id: clientId, saldo: (res as any).data.nuevo_saldo },
+        });
+        dispatch({
+          type: "SET_MODAL_VISIBLE",
+          modal: "balance",
+          visible: false,
+        });
+        dispatch({ type: "SET_BALANCE_AMOUNT", payload: "" });
       } else {
-        showToast('Error', (res as any).message || 'No se pudo cargar el saldo');
+        showToast(
+          "Error",
+          (res as any).message || "No se pudo cargar el saldo",
+        );
       }
     } catch {
-      showToast('Error', 'Error al procesar la carga de saldo');
+      showToast("Error", "Error al procesar la carga de saldo");
     } finally {
-      dispatch({ type: 'SET_BALANCE_SUBMITTING', payload: false });
+      dispatch({ type: "SET_BALANCE_SUBMITTING", payload: false });
     }
   }, [selectedClients, balanceAmount]);
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return;
+    if (hasAnfitrionaComision && !productoIncluido) {
+      showToast(
+        "Producto incluido",
+        "Selecciona una unidad del bar para la habitación",
+      );
+      return;
+    }
     if (!cajaAbierta) {
-      showToast('Caja Cerrada', 'Abre una caja primero.');
+      showToast("Caja Cerrada", "Abre una caja primero.");
       return;
     }
 
     // Crear un servicio abre cuenta, habitación y temporizador en el servidor:
     // sin red se avisa en vez de intentar y fallar con un error genérico.
-    if (!blockOffline('cuenta')) return;
+    if (!blockOffline("cuenta")) return;
 
-    const esMixto = metodoPago === 'mixto' || metodoPagoAdicional === 'mixto';
+    const esMixto = metodoPago === "mixto" || metodoPagoAdicional === "mixto";
     if (esMixto) {
       const sumaPagos = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
       if (Math.abs(sumaPagos - totals.total) > 1) {
         showToast(
-          'Monto Incorrecto',
+          "Monto Incorrecto",
           `La suma de los pagos ($${sumaPagos.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`,
-          'error',
+          "error",
         );
         return;
       }
       if (pagosMixtos.length < 2) {
-        showToast('Métodos Insuficientes', 'Selecciona al menos 2 métodos de pago para el método mixto', 'error');
+        showToast(
+          "Métodos Insuficientes",
+          "Selecciona al menos 2 métodos de pago para el método mixto",
+          "error",
+        );
         return;
       }
     }
 
-    if (metodoPago === 'prepago' || (metodoPago === 'mixto' && pagosMixtos.some((p) => p.metodo === 'prepago'))) {
+    if (
+      metodoPago === "prepago" ||
+      (metodoPago === "mixto" &&
+        pagosMixtos.some((p) => p.metodo === "prepago"))
+    ) {
       const saldo = Number(selectedClientData?.saldo || 0);
-      if (metodoPago === 'mixto') {
-        const prepagoMonto = pagosMixtos.find((p) => p.metodo === 'prepago')?.monto || 0;
+      if (metodoPago === "mixto") {
+        const prepagoMonto =
+          pagosMixtos.find((p) => p.metodo === "prepago")?.monto || 0;
         if (prepagoMonto > saldo) {
-          showToast('Saldo Insuficiente', 'El monto de prepago no puede exceder el saldo del cliente', 'error');
+          showToast(
+            "Saldo Insuficiente",
+            "El monto de prepago no puede exceder el saldo del cliente",
+            "error",
+          );
           return;
         }
       } else if (saldo < totals.total && !metodoPagoAdicional) {
-        showToast('Saldo Insuficiente', 'El saldo del cliente no cubre el total. Selecciona un método adicional.', 'error');
+        showToast(
+          "Saldo Insuficiente",
+          "El saldo del cliente no cubre el total. Selecciona un método adicional.",
+          "error",
+        );
         return;
       }
     }
 
     if (!selectedHabitacion) {
-      showToast('Falta Datos', 'Selecciona una habitación.');
+      showToast("Falta Datos", "Selecciona una habitación.");
       return;
     }
     if (selectedHostesses.length === 0) {
-      showToast('Falta Datos', 'Selecciona al menos una anfitriona.');
+      showToast("Falta Datos", "Selecciona al menos una anfitriona.");
       return;
     }
 
-    dispatch({ type: 'SET_SUBMITTING', payload: true });
+    submittingRef.current = true;
+    dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const payload: ServicePayload = {
         codigo: generateCode(),
-        cliente_id: selectedClients.length > 0 ? String(selectedClients[0]) : null,
+        cliente_id:
+          selectedClients.length > 0 ? String(selectedClients[0]) : null,
         clientes: selectedClients.map((id) => String(id)),
-        habitacion_id: String(selectedHabitacion.id_habitacion || selectedHabitacion.id),
+        habitacion_id: String(
+          selectedHabitacion.id_habitacion || selectedHabitacion.id,
+        ),
+        producto_incluido_presentacion_id: hasAnfitrionaComision
+          ? productoIncluido
+          : null,
         precio_habitacion: totals.precioHabitacionActual,
         precio_servicio: numericPrecioServicio,
         iva: totals.iva,
-        sub_total: hasAnfitrionaComision ? totals.precioHabitacionActual : totals.subTotal,
+        sub_total: hasAnfitrionaComision
+          ? totals.precioHabitacionActual
+          : totals.subTotal,
         total: totals.total,
         tiempo: selectedHabitacion.tiempo || 0,
         fecha_crea: parseDateSafe(new Date()).toISOString(),
@@ -282,39 +408,49 @@ export function useNuevoServicio() {
 
       if (esMixto) {
         payload.pagos_mixtos = pagosMixtos;
-        const prepagoMonto = pagosMixtos.find((p) => p.metodo === 'prepago')?.monto || 0;
-        if (prepagoMonto > 0 && metodoPago !== 'mixto') {
-          payload.metodo_pago = 'prepago';
+        const prepagoMonto =
+          pagosMixtos.find((p) => p.metodo === "prepago")?.monto || 0;
+        if (prepagoMonto > 0 && metodoPago !== "mixto") {
+          payload.metodo_pago = "prepago";
           payload.monto_prepago = prepagoMonto;
         }
-      } else if (metodoPago === 'prepago' && Number(selectedClientData?.saldo || 0) < totals.total) {
+      } else if (
+        metodoPago === "prepago" &&
+        Number(selectedClientData?.saldo || 0) < totals.total
+      ) {
         payload.metodo_pago_adicional = metodoPagoAdicional || undefined;
       }
 
       const validation = ServiceCreateSchema.safeParse(payload);
       if (!validation.success) {
-        const msg = validation.error.issues[0]?.message || 'Datos del servicio inválidos';
-        showToast('Error de Validación', msg);
-        dispatch({ type: 'SET_SUBMITTING', payload: false });
+        const msg =
+          validation.error.issues[0]?.message || "Datos del servicio inválidos";
+        showToast("Error de Validación", msg);
+        dispatch({ type: "SET_SUBMITTING", payload: false });
         return;
       }
 
-      const res = await apiClientSafe('/servicios', {
-        method: 'POST',
+      const res = await apiClientSafe("/servicios", {
+        method: "POST",
         body: JSON.stringify(payload),
+        headers: { "x-idempotency-key": serviceKey.current },
       });
 
       if ((res as any).success) {
-        showToast('Éxito', 'Servicio creado correctamente', 'success');
-        setTimeout(() => router.replace('/cajero/servicios'), 1500);
+        showToast("Éxito", "Servicio creado correctamente", "success");
+        setTimeout(() => router.replace("/cajero/servicios"), 1500);
       } else {
-        showToast('Error', (res as any).message || 'No se pudo crear el servicio');
+        showToast(
+          "Error",
+          (res as any).message || "No se pudo crear el servicio",
+        );
       }
     } catch (error) {
-      logger.captureException(error, { context: 'NuevoServicio:submit' });
-      showToast('Error', 'Ocurrió un error al procesar el servicio.');
+      logger.captureException(error, { context: "NuevoServicio:submit" });
+      showToast("Error", "Ocurrió un error al procesar el servicio.");
     } finally {
-      dispatch({ type: 'SET_SUBMITTING', payload: false });
+      submittingRef.current = false;
+      dispatch({ type: "SET_SUBMITTING", payload: false });
     }
   }, [
     cajaAbierta,
@@ -328,28 +464,30 @@ export function useNuevoServicio() {
     pagosMixtos,
     selectedClientData,
     hasAnfitrionaComision,
+    productoIncluido,
     router,
   ]);
-
 
   useEffect(() => {
     const selectedClient =
       selectedClients.length === 0
         ? null
-        : clientes.find((c) => String(c.id_cliente || c.id) === String(selectedClients[0]));
+        : clientes.find(
+            (c) => String(c.id_cliente || c.id) === String(selectedClients[0]),
+          );
     if (!selectedClient) return;
     const saldo = Number(selectedClient.saldo || 0);
     if (saldo >= totals.total && totals.total > 0) {
-      dispatch({ type: 'SET_METODO_PAGO', payload: 'prepago' });
+      dispatch({ type: "SET_METODO_PAGO", payload: "prepago" });
     } else if (saldo > 0 && saldo < totals.total) {
-      dispatch({ type: 'SET_METODO_PAGO', payload: 'mixto' });
+      dispatch({ type: "SET_METODO_PAGO", payload: "mixto" });
       dispatch({
-        type: 'SET_PAGOS_MIXTOS',
+        type: "SET_PAGOS_MIXTOS",
         payload: [
           {
-            metodo: 'prepago' as PaymentMethod,
+            metodo: "prepago" as PaymentMethod,
             monto: saldo,
-            display: saldo > 0 ? saldo.toLocaleString('es-CL') : '',
+            display: saldo > 0 ? saldo.toLocaleString("es-CL") : "",
           },
         ],
       });
@@ -358,22 +496,22 @@ export function useNuevoServicio() {
 
   const handleMetodoPagoChange = useCallback(
     (val: PaymentMethod) => {
-      dispatch({ type: 'SET_METODO_PAGO', payload: val });
-      if (val !== 'prepago') {
-        dispatch({ type: 'SET_METODO_PAGO_ADICIONAL', payload: '' });
-        dispatch({ type: 'SET_PAGOS_MIXTOS', payload: [] });
+      dispatch({ type: "SET_METODO_PAGO", payload: val });
+      if (val !== "prepago") {
+        dispatch({ type: "SET_METODO_PAGO_ADICIONAL", payload: "" });
+        dispatch({ type: "SET_PAGOS_MIXTOS", payload: [] });
       }
-      if (val === 'mixto') {
+      if (val === "mixto") {
         const saldo = Number(selectedClientData?.saldo || 0);
         dispatch({
-          type: 'SET_PAGOS_MIXTOS',
+          type: "SET_PAGOS_MIXTOS",
           payload:
             saldo > 0
               ? [
                   {
-                    metodo: 'prepago' as PaymentMethod,
+                    metodo: "prepago" as PaymentMethod,
                     monto: saldo,
-                    display: saldo.toLocaleString('es-CL'),
+                    display: saldo.toLocaleString("es-CL"),
                   },
                 ]
               : [],
@@ -384,6 +522,8 @@ export function useNuevoServicio() {
   );
 
   return {
+    productoIncluido,
+    setProductoIncluido,
     state,
     dispatch,
 

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { apiClientSafe } from '@/api/client';
-import { MetodoPago } from '@/types/api';
-import type { Timer } from '@/context/types';
-import type { TimerRawData } from '@/types/realtime';
-import { parseDateSafe } from '@/utils/timeUtils';
-import logger from '@/utils/logger';
+import { useCallback, useEffect, useRef } from "react";
+import { apiClientSafe } from "@/api/client";
+import { MetodoPago } from "@/types/api";
+import type { Timer } from "@/context/types";
+import type { TimerRawData } from "@/types/realtime";
+import { parseDateSafe } from "@/utils/timeUtils";
+import logger from "@/utils/logger";
 
 interface ActiveTimersResponse {
   success: boolean;
@@ -35,15 +35,25 @@ export function useActiveTimersFetcher({
     const nowTs = Date.now();
 
     if (nowTs - lastFetchTimeRef.current < 2000) {
-      logger.debug('[ActiveTimersFetcher] Skipping fetchActiveTimers (debounced)');
+      logger.debug(
+        "[ActiveTimersFetcher] Skipping fetchActiveTimers (debounced)",
+      );
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = setTimeout(
+        () => void fetchActiveTimersRef.current(),
+        2000 - (nowTs - lastFetchTimeRef.current),
+      );
       return;
     }
     lastFetchTimeRef.current = nowTs;
 
     try {
-      logger.debug('[ActiveTimersFetcher] Calling fetchActiveTimers');
+      logger.debug("[ActiveTimersFetcher] Calling fetchActiveTimers");
 
-      const raw = await apiClientSafe<TimerRawData[]>("/timers/active?source=mobile", { timeout: 20000 });
+      const raw = await apiClientSafe<TimerRawData[]>(
+        "/timers/active?source=mobile",
+        { timeout: 20000 },
+      );
       const data = raw as unknown as ActiveTimersResponse;
       if (data.success && Array.isArray(data.data)) {
         if (data.serverTime) {
@@ -54,21 +64,23 @@ export function useActiveTimersFetcher({
           serverOffsetRef.current = offset;
         }
 
-        const currentTimersMap = new Map(timersRef.current.map(t => [t.id, t.isOverdueNotified]));
+        const currentTimersMap = new Map(
+          timersRef.current.map((t) => [t.id, t.isOverdueNotified]),
+        );
 
         const activeTimers = data.data.map((t: TimerRawData) => ({
           id: `${t.servicioId}-${t.roomId}`,
           servicioId: String(t.servicioId),
           roomId: String(t.roomId),
-          roomName: t.roomName || '',
+          roomName: t.roomName || "",
           duration: t.duration,
           remainingTime: t.remainingTime || 0,
           isActive: true,
-          isPaused: t.isPaused === 1 || t.estado === 3,
+          isPaused: t.isPaused === true || t.isPaused === 1 || t.estado === 3,
           startTime: parseDateSafe(t.startTime),
-          servicioCode: t.codigo || '',
+          servicioCode: t.codigo || "",
           cliente_id: t.cliente_id,
-          clienteNombre: t.clienteNombre || '',
+          clienteNombre: t.clienteNombre || "",
           tipoTransaccion: t.tipoTransaccion,
           anfitrionas: t.anfitrionas,
           precio_servicio: t.precio_servicio,
@@ -81,15 +93,25 @@ export function useActiveTimersFetcher({
           solicitante_name: t.solicitante_name,
           solicitante_foto: t.solicitante_foto,
           habitacion_comision: t.habitacion_comision || 0,
-          anfitrionas_ids: typeof t.anfitrionas_ids === 'string' ? t.anfitrionas_ids.split(',').filter(Boolean) : (t.anfitrionas_ids || []),
+          anfitrionas_ids:
+            typeof t.anfitrionas_ids === "string"
+              ? t.anfitrionas_ids.split(",").filter(Boolean)
+              : t.anfitrionas_ids || [],
           anfitrionas_fotos: t.anfitrionas_fotos || [],
           created_at: t.created_at,
           estado: t.estado,
           total_usuarios: t.total_usuarios,
           comision_individual: t.comision_individual,
-          isOverdueNotified: currentTimersMap.get(`${t.servicioId}-${t.roomId}`) || false,
-          es_temporal: t.es_temporal === 1 || t.es_temporal === true,
-          servicio_original_id: t.servicioOriginalId ? String(t.servicioOriginalId) : null,
+          total_comision: t.total_comision,
+          isOverdueNotified:
+            currentTimersMap.get(`${t.servicioId}-${t.roomId}`) || false,
+          es_temporal:
+            t.isTemporary === true ||
+            t.es_temporal === 1 ||
+            t.es_temporal === true,
+          servicio_original_id: t.servicioOriginalId
+            ? String(t.servicioOriginalId)
+            : null,
         }));
 
         setTimers(activeTimers);

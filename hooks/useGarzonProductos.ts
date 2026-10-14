@@ -43,6 +43,7 @@ export function useGarzonProductos() {
   /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
   const dataRef = useRef<string>("");
+  const submitInFlight = useRef(false);
 
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
@@ -143,19 +144,25 @@ export function useGarzonProductos() {
 
         if ((prodData as any)?.success) {
           const active = ((prodData as any).data || [])
-            .filter((p: any) => Number(p.stock_bar) > 0)
+            .filter(
+              (p: any) => Number(p.stock_bar) > 0 || Number(p.ml_abierta) > 0,
+            )
             .flatMap((raw: any) => {
               const p = mapForSaleProduct(raw);
-              return resolverVentaProducto(p).opciones.map((option) => ({
-                ...p,
-                id: `${p.presentacion_id}:${option.value}`,
-                name: `${p.name} - ${option.nombre}`,
-                price: option.precio,
-                commission: option.comision,
-                tipo_venta: option.esShot ? "shot" : "botella",
-                shot_anfitriona: esCortoAnfitriona(option.value),
-                status: 1,
-              }));
+              return resolverVentaProducto(p)
+                .opciones.filter(
+                  (option) => option.esShot || Number(p.stock_bar) > 0,
+                )
+                .map((option) => ({
+                  ...p,
+                  id: `${p.presentacion_id}:${option.value}`,
+                  name: `${p.name} - ${option.nombre}`,
+                  price: option.precio,
+                  commission: option.comision,
+                  tipo_venta: option.esShot ? "shot" : "botella",
+                  shot_anfitriona: esCortoAnfitriona(option.value),
+                  status: 1,
+                }));
             });
           setProducts(active);
         }
@@ -221,10 +228,13 @@ export function useGarzonProductos() {
   const cartTotal = getTotal();
 
   const getMaxHostesses = (item: CartItem) => {
+    if (item.product.tipo_venta === "shot")
+      return item.product.shot_anfitriona ? item.quantity : 0;
     return getHostessLimit(item.product, item.quantity);
   };
 
   const submitOrder = async () => {
+    if (submitInFlight.current) return;
     if (cart.length === 0) return;
     if (!user) return;
 
@@ -249,6 +259,7 @@ export function useGarzonProductos() {
       return result;
     };
 
+    submitInFlight.current = true;
     setSubmitting(true);
     try {
       const codigo = generateCode();
@@ -314,6 +325,7 @@ export function useGarzonProductos() {
         text2: err.message || "Error de conexión",
       });
     } finally {
+      submitInFlight.current = false;
       setSubmitting(false);
     }
   };

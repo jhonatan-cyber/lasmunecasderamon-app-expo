@@ -1,9 +1,14 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
+import { useAuthStore } from "@/store/authStore";
+import { isBarmanRole } from "@/utils/userRole";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { GlobalTimerAlert } from "@/components/cajero/GlobalTimerAlert";
 
 export default function CajeroLayout() {
   const { isDark } = useAccentColor();
+  const user = useAuthStore((state) => state.user);
+
+  if (isBarmanRole(user)) return <Redirect href="/(app)/barman/(tabs)" />;
 
   return (
     <>

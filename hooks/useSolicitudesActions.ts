@@ -155,6 +155,7 @@ export const useSolicitudesActions = ({
       id: string,
       tipo: "pedido" | "solicitud" | "anticipo",
       itemInfo?: SolicitudItem,
+      productoIncluido?: string,
     ) => {
       logger.debug("[handleAprobar] id:", {
         arg0: id,
@@ -292,6 +293,10 @@ export const useSolicitudesActions = ({
                   metodo_pago:
                     metodoPago || itemInfo?.metodo_pago || "efectivo",
                   metodo_pago_adicional: metodoPagoAdicional || undefined,
+                  producto_incluido_presentacion_id:
+                    productoIncluido ||
+                    (itemInfo as any)?.producto_incluido_presentacion_id ||
+                    undefined,
                 }),
               },
             );

@@ -210,6 +210,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
             }
             await TokenStorage.removeTokens();
             await AsyncStorage.removeItem('user');
+            const { useCartStore } = await import('./cartStore');
+            useCartStore.getState().clearCart();
             await get().clearOfflineSession();
             // La credencial biométrica no debe sobrevivir al logout (ni al
             // force_logout / rol borrado): si no, el login biométrico

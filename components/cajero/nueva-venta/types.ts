@@ -16,9 +16,13 @@ export type PagoMixto = {
 
 /** Product item in the sales cart (uses both ES and EN field names for backward compat) */
 export type VentaCartItem = Producto & {
+  opciones_venta?: unknown;
+  unidades_acompanamiento?: number;
+  acompanamiento_botella?: { presentacion_id: string; unidades: number };
   acompanamiento_corto?: {
     presentacion_id: string;
-    ml_por_corto: number;
+    unidades?: number;
+    ml_por_corto?: number;
     nombre?: string;
   };
   quantity: number;

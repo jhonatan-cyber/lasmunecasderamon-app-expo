@@ -55,11 +55,23 @@ export const OrderCreateSchema = object({
       presentacion_id: string().nullable().optional(),
       tipo_venta: zEnum(["botella", "shot"]).optional(),
       shot_anfitriona: boolean().optional(),
+      acompanamiento_botella: object({
+        presentacion_id: string().min(1),
+        unidades: number().int().min(1).max(1000),
+      }).optional(),
       acompanamiento_corto: object({
         presentacion_id: string().min(1),
-        ml_por_corto: number().int().min(1).max(10000),
+        unidades: number().int().min(1).max(1000).optional(),
+        ml_por_corto: number().int().min(1).max(10000).optional(),
         nombre: string().optional(),
-      }).optional(),
+      })
+        .refine(
+          (value) =>
+            (value.unidades !== undefined) !==
+            (value.ml_por_corto !== undefined),
+          "Selecciona unidades completas del acompa\u00f1amiento",
+        )
+        .optional(),
       productoId: string().min(1),
       precio: number().min(0),
       comision: number().optional().default(0),
@@ -75,11 +87,38 @@ export const OrderCreateSchema = object({
         (d) =>
           d.tipo_venta !== "shot" ||
           (Boolean(d.presentacion_id) &&
-            Boolean(d.acompanamiento_corto) &&
             d.presentacion_id !== d.acompanamiento_corto?.presentacion_id &&
             Number.isInteger(d.cantidad) &&
             d.cantidad <= 99),
-        "Selecciona soda o gaseosa y los ml por corto",
+        "Cantidad o presentacion del corto invalida",
+      )
+      .refine(
+        (d) =>
+          !d.acompanamiento_botella ||
+          (d.tipo_venta !== "shot" &&
+            !!d.presentacion_id &&
+            d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+        "Acompa\u00f1amiento de botella inv\u00e1lido",
+      )
+      .transform((d) =>
+        d.tipo_venta === "shot" && !d.shot_anfitriona
+          ? {
+              ...d,
+              comision: 0,
+              generaComision: 0,
+              selectedHostesses: [],
+              hostessId: null,
+            }
+          : d,
+      )
+      .refine(
+        (d) =>
+          d.tipo_venta !== "shot" ||
+          new Set([
+            ...d.selectedHostesses,
+            ...(d.hostessId ? [d.hostessId] : []),
+          ]).size <= d.cantidad,
+        "Se permite una anfitriona por unidad de corto",
       ),
   ).min(1, "Al menos un detalle es requerido"),
   usuarios: array(
@@ -96,6 +135,7 @@ export const ServiceCreateSchema = object({
   cliente_id: string().nullable().optional(),
   clientes: array(string()).optional().default([]),
   habitacion_id: string().min(1, "Habitacion requerida"),
+  producto_incluido_presentacion_id: string().min(1).nullable().optional(),
   precio_habitacion: number().min(0),
   precio_servicio: number().min(0),
   iva: number().min(0),

@@ -1,3 +1,9 @@
+import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
+import { apiClientSafe } from "@/api/client";
+import {
+  requiresShortMixer,
+  bottleMixerUnits,
+} from "@/hooks/utils/productConfiguration";
 import { saleInventoryFields } from "@/hooks/utils/saleInventoryFields";
 import { create } from "zustand";
 import type { CartItem, Product } from "@/types/cart";
@@ -29,16 +35,26 @@ interface CartState {
   tipPercentage: number;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
-  updateItemHostesses: (productId: string, hostessIds: number[]) => void;
+  updateItemHostesses: (
+    productId: string,
+    hostessIds: (string | number)[],
+  ) => void;
+  updateItemMixer: (
+    productId: string,
+    mixer: NonNullable<Product["acompanamiento_corto"]>,
+  ) => void;
   updateItemRoom: (productId: string, roomId: string | null) => void;
   setTipEnabled: (enabled: boolean) => void;
   setTipPercentage: (percentage: number) => void;
+  splitShorts: () => void;
   clearCart: () => void;
   getTotal: () => number;
   getSubtotal: () => number;
   getTipAmount: () => number;
   buildOrderPayload: (params: BuildOrderParams) => BuildOrderResult;
 }
+
+const hostessRequests = new Map<string, number>();
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
@@ -85,6 +101,13 @@ export const useCartStore = create<CartState>((set, get) => ({
         updated[idx] = {
           ...updated[idx],
           quantity: updated[idx].quantity - 1,
+          selectedHostesses:
+            updated[idx].product.tipo_venta === "shot"
+              ? updated[idx].selectedHostesses.slice(
+                  0,
+                  updated[idx].quantity - 1,
+                )
+              : updated[idx].selectedHostesses,
         };
       } else {
         updated.splice(idx, 1);
@@ -93,12 +116,41 @@ export const useCartStore = create<CartState>((set, get) => ({
     });
   },
 
-  updateItemHostesses: (productId, hostessIds) => {
+  updateItemHostesses: async (productId, hostessIds) => {
+    const request = (hostessRequests.get(productId) ?? 0) + 1;
+    hostessRequests.set(productId, request);
+    const original = get().cart.find((item) => item.product.id === productId);
+    if (!original) return;
+    if (original.product.tipo_venta === "shot") {
+      if (!original.product.shot_anfitriona) hostessIds = [];
+      else hostessIds = [...new Set(hostessIds)].slice(0, original.quantity);
+    }
+    let product = original.product;
+    if (product.presentacion_id && product.tipo_venta !== "shot") {
+      const base = resolverVentaProducto(product, "botella");
+      let price = base.precio,
+        commission = base.comision;
+      if (hostessIds.length > 0) {
+        const result = await apiClientSafe<any>(
+          `/products/${encodeURIComponent(product.producto_id || product.id)}/tiers?configurados=1`,
+        );
+        if (!result.success) return;
+        const tier = (result.data || []).find(
+          (row: any) => Number(row.anfitrionas) === hostessIds.length,
+        );
+        if (tier) {
+          price = Number(tier.precio);
+          commission = Number(tier.comision);
+        }
+      }
+      product = { ...product, price, commission };
+    }
+    if (hostessRequests.get(productId) !== request) return;
     set((state) => ({
-      cart: state.cart.map((i) =>
-        i.product.id === productId
-          ? { ...i, selectedHostesses: hostessIds }
-          : i,
+      cart: state.cart.map((item) =>
+        item.product.id === productId
+          ? { ...item, product, selectedHostesses: hostessIds }
+          : item,
       ),
     }));
   },
@@ -111,10 +163,54 @@ export const useCartStore = create<CartState>((set, get) => ({
     }));
   },
 
+  updateItemMixer: (productId, mixer) =>
+    set((state) => ({
+      cart: state.cart.map((item) =>
+        item.product.id !== productId
+          ? item
+          : {
+              ...item,
+              product: {
+                ...item.product,
+                ...(item.product.tipo_venta === "shot"
+                  ? { acompanamiento_corto: mixer }
+                  : {
+                      acompanamiento_botella: {
+                        ...mixer,
+                        unidades: bottleMixerUnits(item.product),
+                      },
+                    }),
+              },
+            },
+      ),
+    })),
+
   setTipEnabled: (enabled) => set({ tipEnabled: enabled }),
 
   setTipPercentage: (percentage) => set({ tipPercentage: percentage }),
 
+  splitShorts: () =>
+    set((state) => ({
+      cart: state.cart.flatMap((item) =>
+        item.product.tipo_venta === "shot" && item.quantity > 1
+          ? Array.from({ length: item.quantity }, (_, index) => ({
+              ...item,
+              quantity: 1,
+              selectedHostesses:
+                item.selectedHostesses[index] === undefined
+                  ? []
+                  : [item.selectedHostesses[index]],
+              product: {
+                ...item.product,
+                id:
+                  index === 0
+                    ? item.product.id
+                    : `${item.product.id}:unit:${Date.now()}:${index}`,
+              },
+            }))
+          : [item],
+      ),
+    })),
   clearCart: () => set({ cart: [], tipEnabled: false }),
 
   getSubtotal: () => {
@@ -135,6 +231,21 @@ export const useCartStore = create<CartState>((set, get) => ({
   buildOrderPayload: (params) => {
     const { meseroId, codigo, clienteId, device_date } = params;
     const state = get();
+    if (
+      state.cart.some(
+        ({ product }) =>
+          (requiresShortMixer(product) &&
+            !product.acompanamiento_corto?.presentacion_id) ||
+          (product.tipo_venta !== "shot" &&
+            bottleMixerUnits(product) > 0 &&
+            !product.acompanamiento_botella?.presentacion_id),
+      )
+    ) {
+      return {
+        success: false,
+        errors: ["Selecciona los acompa\u00f1amientos configurados"],
+      };
+    }
     const subtotal = state.getSubtotal();
     const tipAmount = state.getTipAmount();
     const total = state.getTotal();

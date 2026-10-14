@@ -17,6 +17,7 @@ export interface BarStockItem {
   id: string;
   producto_id: string;
   producto_nombre: string;
+  categoria_nombre?: string | null;
   producto_foto?: string | null;
   nombre: string;
   codigo_barras: string | null;
@@ -275,6 +276,7 @@ export const useBarScreen = () => {
       if (!isAvailable || !term) return isAvailable;
       return (
         item.producto_nombre.toLowerCase().includes(term) ||
+        (item.categoria_nombre ?? '').toLowerCase().includes(term) ||
         item.nombre.toLowerCase().includes(term) ||
         (item.codigo_barras || '').toLowerCase().includes(term)
       );

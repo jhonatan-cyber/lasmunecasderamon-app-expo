@@ -1,4 +1,5 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { IncludedServiceProductSelector } from "@/components/shared/IncludedServiceProductSelector";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -26,10 +27,20 @@ import { ServiceSummaryCard } from "@/components/cajero/nuevo-servicio/ServiceSu
 import { formatAmountInput } from "@/components/cajero/nuevo-servicio/helpers";
 
 export default function NuevoServicioScreen() {
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const {
+    accentColor,
+    isDark,
+    bg,
+    cardBg,
+    textPrimary,
+    textSecondary,
+    borderColor,
+  } = useAccentColor();
   const router = useRouter();
 
   const {
+    productoIncluido,
+    setProductoIncluido,
     state,
     dispatch,
     hasAnfitrionaComision,
@@ -66,10 +77,14 @@ export default function NuevoServicioScreen() {
     balanceSubmitting,
   } = state;
 
-
-
   if (loadingInitial)
-    return <NuevoServicioSkeleton bg={bg} cardBg={cardBg} borderColor={borderColor} />;
+    return (
+      <NuevoServicioSkeleton
+        bg={bg}
+        cardBg={cardBg}
+        borderColor={borderColor}
+      />
+    );
 
   return (
     <KeyboardAvoidingView
@@ -94,7 +109,9 @@ export default function NuevoServicioScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+        <View
+          style={[styles.section, { backgroundColor: cardBg, borderColor }]}
+        >
           <Text style={[styles.sectionTitle, { color: textPrimary }]}>
             Formulario de Servicio
           </Text>
@@ -102,7 +119,13 @@ export default function NuevoServicioScreen() {
           {}
           <Pressable
             style={[styles.selectorBtn, { borderColor }]}
-            onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: true })}
+            onPress={() =>
+              dispatch({
+                type: "SET_MODAL_VISIBLE",
+                modal: "room",
+                visible: true,
+              })
+            }
             accessibilityLabel="Seleccionar habitación"
             accessibilityRole="button"
           >
@@ -121,7 +144,13 @@ export default function NuevoServicioScreen() {
           {}
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
-            onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "hostess", visible: true })}
+            onPress={() =>
+              dispatch({
+                type: "SET_MODAL_VISIBLE",
+                modal: "hostess",
+                visible: true,
+              })
+            }
             accessibilityLabel="Seleccionar anfitrionas"
             accessibilityRole="button"
           >
@@ -149,7 +178,13 @@ export default function NuevoServicioScreen() {
           {}
           <Pressable
             style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
-            onPress={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true })}
+            onPress={() =>
+              dispatch({
+                type: "SET_MODAL_VISIBLE",
+                modal: "client",
+                visible: true,
+              })
+            }
             accessibilityLabel="Seleccionar clientes"
             accessibilityRole="button"
           >
@@ -247,7 +282,11 @@ export default function NuevoServicioScreen() {
                 </View>
                 <Pressable
                   onPress={() =>
-                    dispatch({ type: "SET_MODAL_VISIBLE", modal: "balance", visible: true })
+                    dispatch({
+                      type: "SET_MODAL_VISIBLE",
+                      modal: "balance",
+                      visible: true,
+                    })
                   }
                   style={{
                     backgroundColor: accentColor,
@@ -256,7 +295,9 @@ export default function NuevoServicioScreen() {
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 12 }}>
+                  <Text
+                    style={{ color: "#FFF", fontWeight: "bold", fontSize: 12 }}
+                  >
                     CARGAR
                   </Text>
                 </Pressable>
@@ -275,7 +316,9 @@ export default function NuevoServicioScreen() {
                 metodoPago !== "mixto"
               )
             }
-            disabledMethods={Number(selectedClientData?.saldo || 0) <= 0 ? ["prepago"] : []}
+            disabledMethods={
+              Number(selectedClientData?.saldo || 0) <= 0 ? ["prepago"] : []
+            }
             onSelect={handleMetodoPagoChange}
           />
 
@@ -294,7 +337,9 @@ export default function NuevoServicioScreen() {
               onUpdatePago={(index, monto, display) =>
                 dispatch({ type: "UPDATE_PAGO_MIXTO", index, monto, display })
               }
-              onRemovePago={(index) => dispatch({ type: "REMOVE_PAGO_MIXTO", index })}
+              onRemovePago={(index) =>
+                dispatch({ type: "REMOVE_PAGO_MIXTO", index })
+              }
               onAddPago={(metodo) =>
                 dispatch({
                   type: "ADD_PAGO_MIXTO",
@@ -304,6 +349,13 @@ export default function NuevoServicioScreen() {
             />
           )}
         </View>
+
+        {hasAnfitrionaComision && (
+          <IncludedServiceProductSelector
+            value={productoIncluido}
+            onChange={setProductoIncluido}
+          />
+        )}
 
         <ServiceSummaryCard
           hasAnfitrionaComision={hasAnfitrionaComision}
@@ -332,14 +384,22 @@ export default function NuevoServicioScreen() {
             Number(room.tiempo ?? room.time ?? 0) > 0 ||
             Number(room.comision_anfitriona ?? 0) > 0,
         )}
-        selectedRoomId={selectedHabitacion?.id_habitacion || selectedHabitacion?.id}
-        onClose={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: false })}
+        selectedRoomId={
+          selectedHabitacion?.id_habitacion || selectedHabitacion?.id
+        }
+        onClose={() =>
+          dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: false })
+        }
         onSelect={(room) => {
           dispatch({ type: "SET_SELECTED_HABITACION", payload: room });
           if ((room.comision_anfitriona ?? 0) > 0) {
             dispatch({ type: "SET_PRECIO_SERVICIO", payload: "0" });
           }
-          dispatch({ type: "SET_MODAL_VISIBLE", modal: "room", visible: false });
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "room",
+            visible: false,
+          });
         }}
       />
 
@@ -348,7 +408,13 @@ export default function NuevoServicioScreen() {
         hostesses={anfitrionas}
         selectedIds={selectedHostesses}
         max={maxHostesses}
-        onClose={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "hostess", visible: false })}
+        onClose={() =>
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "hostess",
+            visible: false,
+          })
+        }
         onToggle={toggleHostess}
       />
 
@@ -357,7 +423,13 @@ export default function NuevoServicioScreen() {
         clients={clientes}
         selectedIds={selectedClients}
         max={maxClients}
-        onClose={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: false })}
+        onClose={() =>
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "client",
+            visible: false,
+          })
+        }
         onToggle={toggleClient}
       />
 
@@ -374,12 +446,21 @@ export default function NuevoServicioScreen() {
         textPrimary={textPrimary}
         textSecondary={textSecondary}
         isDark={isDark}
-        onClose={() => dispatch({ type: "SET_MODAL_VISIBLE", modal: "balance", visible: false })}
+        onClose={() =>
+          dispatch({
+            type: "SET_MODAL_VISIBLE",
+            modal: "balance",
+            visible: false,
+          })
+        }
         onAmountChange={(val) => {
           const clean = val.replace(/[^0-9]/g, "");
           dispatch({
             type: "SET_BALANCE_AMOUNT",
-            payload: clean === "" ? "" : parseInt(clean).toLocaleString("es-CL").replace(/,/g, "."),
+            payload:
+              clean === ""
+                ? ""
+                : parseInt(clean).toLocaleString("es-CL").replace(/,/g, "."),
           });
         }}
         onConfirm={handleLoadBalance}
@@ -433,5 +514,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backTextRight: { color: "#FFFFFF", fontWeight: "800", fontSize: 13, letterSpacing: 0.5 },
+  backTextRight: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
 });

@@ -1,6 +1,7 @@
+import { ServiceAssignmentActions } from "./ServiceAssignmentActions";
 import { memo } from "react";
 import { Pressable, StyleSheet } from "react-native";
-import { AnimatedView } from '@/components/ui/AnimatedView';
+import { AnimatedView } from "@/components/ui/AnimatedView";
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
 import { safeNumber } from "@/hooks/useServiciosScreen";
@@ -42,7 +43,11 @@ export const ServiceCard = memo(
     theme,
   }: ServiceCardProps) => {
     useTimerTick();
-    useRenderCount('ServiceCard', { itemId: item?.id, activeTab, estado: item?.estado });
+    useRenderCount("ServiceCard", {
+      itemId: item?.id,
+      activeTab,
+      estado: item?.estado,
+    });
     const remaining = calculateRemainingTime(item, serverOffset);
 
     const formatTime = (secs: number) => {
@@ -154,9 +159,14 @@ export const ServiceCard = memo(
             dangerColor={theme.danger}
           />
 
+          {activeTab === "activos" && <ServiceAssignmentActions item={item} />}
           {activeTab === "activos" && (
             <ServiceCardActions
-              showEdit={Number(item.habitacion_comision || 0) > 0}
+              showEdit={
+                !item.es_temporal &&
+                !item.servicio_original_id &&
+                Number(item.habitacion_comision || 0) > 0
+              }
               warningColor={theme.warning}
               dangerColor={theme.danger}
               onEditar={() => onEditar && onEditar(item)}

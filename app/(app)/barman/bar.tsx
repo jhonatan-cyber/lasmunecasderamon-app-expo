@@ -111,7 +111,7 @@ export default function BarScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar producto, presentación..."
+            placeholder="Buscar producto, categoría, presentación..."
             placeholderTextColor={textSecondary}
             style={[styles.searchInput, { color: textPrimary }]}
             autoCorrect={false}

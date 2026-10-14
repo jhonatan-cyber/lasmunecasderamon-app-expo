@@ -1,3 +1,6 @@
+import { individualShorts } from "@/hooks/utils/individualShorts";
+import { useCartDraft } from "@/hooks/useCartDraft";
+import { bottleMixerUnits } from "@/hooks/utils/productConfiguration";
 import React, { useCallback, useRef } from "react";
 import {
   ActivityIndicator,
@@ -58,6 +61,9 @@ export default function NuevaVentaScreen() {
     state,
     dispatch,
     totals,
+    servicioId,
+    servicioAnfitrionas,
+    servicioNombre,
     hasCommissionItem,
     fromCache,
     onRefresh,
@@ -77,6 +83,11 @@ export default function NuevaVentaScreen() {
     handleSearchNow,
     handleClearSearch,
   } = useNuevaVenta();
+  const clearDraft = useCartDraft(
+    `sales:${servicioId || "general"}`,
+    state.cart,
+    (saved) => dispatch({ type: "SET_CART", payload: saved }),
+  );
 
   const {
     loadingInitial,
@@ -164,7 +175,14 @@ export default function NuevaVentaScreen() {
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
         rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+          <Pressable
+            onPress={() => {
+              clearDraft();
+              dispatch({ type: "SET_CART", payload: [] });
+              router.back();
+            }}
+            style={styles.backBtnRight}
+          >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             <Text style={styles.backTextRight}>Atrás</Text>
           </Pressable>
@@ -226,6 +244,14 @@ export default function NuevaVentaScreen() {
           >
             2. Detalles de la Venta
           </Text>
+          {servicioId && (
+            <Text style={{ color: textPrimary, padding: 12 }}>
+              Venta adicional · {servicioNombre || "Cargando habitación…"}
+              {"\n"}
+              Los cambios de anfitrionas se aplicarán al privado al registrar la
+              venta.
+            </Text>
+          )}
           {hasCommissionItem && (
             <Pressable
               style={[
@@ -365,6 +391,31 @@ export default function NuevaVentaScreen() {
           onUpdateQuantity={updateQuantity}
           onRemove={removeFromCart}
         />
+        <ShotMixerSelector
+          bottle
+          items={cart.map((p) => ({
+            ...p,
+            nombre: p.nombre || p.name || "",
+            cantidad: p.quantity,
+          }))}
+          onChange={(index, mixer) =>
+            dispatch({
+              type: "SET_CART",
+              payload: cart.map((p, i) =>
+                i === index
+                  ? {
+                      ...p,
+                      acompanamiento_botella: {
+                        presentacion_id: mixer.presentacion_id,
+                        nombre: mixer.nombre,
+                        unidades: bottleMixerUnits(p),
+                      },
+                    }
+                  : p,
+              ),
+            })
+          }
+        />
         {cart.some((p) => p.tipo_venta === "shot") && (
           <ShotMixerSelector
             items={cart.map((p) => ({
@@ -398,6 +449,23 @@ export default function NuevaVentaScreen() {
               ${totals.subtotal.toLocaleString()}
             </Text>
           </View>
+          {state.cart.some(
+            (item) => item.tipo_venta === "shot" && item.quantity > 1,
+          ) && (
+            <Pressable
+              onPress={() =>
+                dispatch({
+                  type: "SET_CART",
+                  payload: individualShorts(state.cart),
+                })
+              }
+              style={{ paddingVertical: 12 }}
+            >
+              <Text style={{ color: accentColor, fontWeight: "600" }}>
+                Elegir bebida y anfitriona por cada corto
+              </Text>
+            </Pressable>
+          )}
           <TipCheckbox
             enabled={enableTip}
             onToggle={(val: boolean) =>
@@ -595,6 +663,7 @@ export default function NuevaVentaScreen() {
         }}
       />
       <NuevaVentaHostessModal
+        servicioAnfitrionas={servicioAnfitrionas}
         visible={hostessSubModalVisible && hostessSelectionTarget !== null}
         hostesses={anfitrionas}
         selectedIds={

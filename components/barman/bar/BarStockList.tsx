@@ -126,12 +126,14 @@ export function BarStockList({
                 ))}
               </View>
 
-              {(item.ml_shot ?? 0) > 0 && (
-                <Text style={[styles.shotSize, { color: textSecondary }]}>
-                  Corto: {item.ml_shot} ml
-                </Text>
-              )}
-              {(item.ml_shot_anfitriona ?? 0) > 0 &&
+              {opcionesVenta.some((option) => option.esShot) &&
+                (item.ml_shot ?? 0) > 0 && (
+                  <Text style={[styles.shotSize, { color: textSecondary }]}>
+                    Corto: {item.ml_shot} ml
+                  </Text>
+                )}
+              {opcionesVenta.some((option) => option.esShot) &&
+                (item.ml_shot_anfitriona ?? 0) > 0 &&
                 item.ml_shot_anfitriona !== item.ml_shot && (
                   <Text style={[styles.shotSize, { color: textSecondary }]}>
                     Corto anfitriona: {item.ml_shot_anfitriona} ml
@@ -139,7 +141,7 @@ export function BarStockList({
                 )}
               {(item.ml_abierta ?? 0) > 0 && (
                 <Text style={[styles.served, { color: "#F59E0B" }]}>
-                  Abierta: {item.ml_abierta} ml
+                  Restante: {item.ml_abierta} ml
                 </Text>
               )}
 
@@ -159,7 +161,7 @@ export function BarStockList({
                       style={[styles.bottleDetailsRow, { color: textPrimary }]}
                       numberOfLines={1}
                     >
-                      {bottle.codigo}: {bottle.ml_restante} ml
+                      {item.producto_nombre} · {bottle.ml_restante} ml
                     </Text>
                   ))}
                 </View>

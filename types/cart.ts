@@ -11,10 +11,20 @@ export interface Product {
   stock_bar?: number;
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
+  opciones_venta?: unknown;
+  unidades_acompanamiento?: number;
+  acompanamiento_botella?: {
+    presentacion_id: string;
+    unidades: number;
+    nombre?: string;
+    foto?: string;
+  };
   acompanamiento_corto?: {
     presentacion_id: string;
-    ml_por_corto: number;
+    unidades?: number;
+    ml_por_corto?: number;
     nombre?: string;
+    foto?: string;
   };
   id: string;
   code: string;
@@ -26,13 +36,18 @@ export interface Product {
   status: number;
   foto: string;
   categoria: string;
+  producto_nombre?: string;
+  presentacion_nombre?: string;
+  ml_abierta?: number;
+  ml_shot?: number;
+  ml_shot_anfitriona?: number;
   max_anfitrionas?: number | null;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  selectedHostesses: number[];
+  selectedHostesses: (string | number)[];
   selectedRoom: string | null;
 }
 

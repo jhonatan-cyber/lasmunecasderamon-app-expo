@@ -1,4 +1,4 @@
-import { MetodoPago } from '@/types/api';
+import { MetodoPago } from "@/types/api";
 
 export interface Timer {
   id: string;
@@ -31,6 +31,7 @@ export interface Timer {
   estado?: number;
   total_usuarios?: number;
   comision_individual?: number;
+  total_comision?: number;
   lastAnnouncedMinute?: number;
   isOverdueNotified?: boolean;
   es_temporal?: boolean;

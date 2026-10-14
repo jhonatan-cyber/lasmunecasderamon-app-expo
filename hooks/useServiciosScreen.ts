@@ -1,15 +1,15 @@
 import { Colors } from "@/constants/theme";
 import { useTimer } from "@/context/TimerContext";
-import type { Timer } from '@/context/types';
+import type { Timer } from "@/context/types";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { serviciosService } from "@/services";
 import { eventBus } from "@/utils/eventBus";
 import logger from "@/utils/logger";
 import { blockOffline } from "@/utils/offlineGuard";
 import { parseDateSafe } from "@/utils/timeUtils";
-import { showToast as showToastLazy } from '@/utils/toast-lazy';
+import { showToast as showToastLazy } from "@/utils/toast-lazy";
 import { useFocusEffect } from "expo-router";
-import { useCallback,useEffect,useMemo,useReducer,useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 export const safeNumber = (val: any) => {
   if (val === null || val === undefined || val === "") return 0;
@@ -61,14 +61,19 @@ export const formatServiceDetail = (raw: any) => {
   );
 
   const habitacionComision = safeNumber(raw?.habitacion_comision ?? 0);
-  const tieneComisionHabitacion = habitacionComision > 0;
+  const esTemporal = Boolean(raw?.es_temporal);
+  const tieneComisionHabitacion = habitacionComision > 0 && !esTemporal;
 
   const comisionIndividual = tieneComisionHabitacion
     ? Math.floor(habitacionComision / totalUsuarios)
-    : precioServicio;
+    : esTemporal
+      ? Math.floor(precioServicio / totalUsuarios)
+      : precioServicio;
   const totalComision = tieneComisionHabitacion
     ? habitacionComision
-    : precioServicio * totalUsuarios;
+    : esTemporal
+      ? precioServicio
+      : precioServicio * totalUsuarios;
 
   const roomName =
     raw?.roomName ||
@@ -92,7 +97,7 @@ export const formatServiceDetail = (raw: any) => {
     total_usuarios: totalUsuarios,
     habitacion_comision: habitacionComision,
     comision_individual: comisionIndividual,
-    total_comision: totalComision,
+    total_comision: safeNumber(raw?.total_comision ?? totalComision),
     created_at: fechaServicio.toISOString(),
     fecha_crea: fechaServicio.toISOString(),
     waiter_name:
@@ -225,10 +230,12 @@ export function useServiciosScreen() {
             1,
             safeNumber(sAny.total_usuarios || 1),
           );
-          const totalComision =
-            habitacionComision > 0
-              ? habitacionComision
-              : comisionIndividual * totalUsuarios;
+          const totalComision = safeNumber(
+            sAny.total_comision ??
+              (habitacionComision > 0 && !sAny.es_temporal
+                ? habitacionComision
+                : comisionIndividual * totalUsuarios),
+          );
 
           return {
             id: String(sAny.id || sAny.id_servicio),
@@ -276,6 +283,8 @@ export function useServiciosScreen() {
                 : comisionIndividual,
             total_usuarios: totalUsuarios,
             total_comision: totalComision,
+            es_temporal: Boolean(sAny.es_temporal),
+            servicio_original_id: sAny.servicio_original_id ?? null,
             habitacion_comision: habitacionComision,
             precio_habitacion: safeNumber(sAny.precio_habitacion || 0),
             precio_servicio: safeNumber(sAny.precio_servicio || 0),
@@ -369,7 +378,10 @@ export function useServiciosScreen() {
               });
               dispatch({ type: "CLOSE_ALERT" });
               if (res.success) {
-                showToastLazy({ type: "success", text1: "Servicio Finalizado" });
+                showToastLazy({
+                  type: "success",
+                  text1: "Servicio Finalizado",
+                });
                 refreshTimers();
                 fetchFinalizados();
               } else {

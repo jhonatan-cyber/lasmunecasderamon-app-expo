@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import {
   Image,
@@ -31,6 +31,7 @@ interface HostessSelectModalProps {
   hostesses: Hostess[];
   selectedIds: (string | number)[];
   max?: number;
+  allowedOccupiedIds?: string[];
   title?: string;
 }
 
@@ -42,9 +43,16 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   hostesses,
   selectedIds,
   max,
+  allowedOccupiedIds = [],
   title = "Seleccionar Anfitrionas",
 }) => {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor: subtleBorder } = useAccentColor();
+  const {
+    accentColor,
+    cardBg,
+    textPrimary,
+    textSecondary,
+    borderColor: subtleBorder,
+  } = useAccentColor();
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -73,52 +81,126 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
           <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
             {hostesses.map((item) => {
               const rawId = item.id_usuario || item.id || 0;
-              const isSelected = selectedIds.some(sid => String(sid) === String(rawId));
-              const isMaxReached = max !== undefined && selectedIds.length >= max;
+              const isSelected = selectedIds.some(
+                (sid) => String(sid) === String(rawId),
+              );
+              const isMaxReached =
+                max !== undefined && selectedIds.length >= max;
               const isOccupied = Number(item.estado_servicio) === 1;
-              const isDisabled = (isMaxReached && !isSelected) || isOccupied;
+              const isDisabled =
+                (isMaxReached && !isSelected) ||
+                (isOccupied && !allowedOccupiedIds.includes(String(rawId)));
 
-              const roomInfo = (item as any).habitacion_nombre || (item as any).habitacion || (item as any).room || "";
-  
+              const roomInfo =
+                (item as any).habitacion_nombre ||
+                (item as any).habitacion ||
+                (item as any).room ||
+                "";
+
               return (
                 <Pressable
                   key={rawId.toString()}
-                  onPress={() => !isOccupied && onToggle(rawId as number | string)}
+                  onPress={() =>
+                    !isDisabled && onToggle(rawId as number | string)
+                  }
                   disabled={isDisabled}
                   style={[
                     styles.modalItem,
-                    { 
-                      borderColor: isSelected ? accentColor : isOccupied ? '#EF444450' : subtleBorder, 
-                      backgroundColor: isSelected ? `${accentColor}15` : isOccupied ? '#EF444408' : 'transparent',
-                      opacity: (isMaxReached && !isSelected) ? 0.5 : 1
-                    }
+                    {
+                      borderColor: isSelected
+                        ? accentColor
+                        : isOccupied
+                          ? "#EF444450"
+                          : subtleBorder,
+                      backgroundColor: isSelected
+                        ? `${accentColor}15`
+                        : isOccupied
+                          ? "#EF444408"
+                          : "transparent",
+                      opacity: isMaxReached && !isSelected ? 0.5 : 1,
+                    },
                   ]}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
-                    <View style={[styles.avatarMini, { backgroundColor: isOccupied ? '#EF444420' : `${accentColor}20` }]}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flex: 1,
+                      gap: 12,
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.avatarMini,
+                        {
+                          backgroundColor: isOccupied
+                            ? "#EF444420"
+                            : `${accentColor}20`,
+                        },
+                      ]}
+                    >
                       {item.foto ? (
-                        <Image source={{ uri: `${BASE_URL}/img/users/${item.foto}` }} style={styles.avatarImage} />
+                        <Image
+                          source={{ uri: `${BASE_URL}/img/users/${item.foto}` }}
+                          style={styles.avatarImage}
+                        />
                       ) : (
-                        <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                          <Text style={[styles.avatarText, { color: isOccupied ? '#EF4444' : accentColor }]}>
-                            {(item.nick?.[0] || item.nombre?.[0] || 'A').toUpperCase()}
+                        <View
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.avatarText,
+                              { color: isOccupied ? "#EF4444" : accentColor },
+                            ]}
+                          >
+                            {(
+                              item.nick?.[0] ||
+                              item.nombre?.[0] ||
+                              "A"
+                            ).toUpperCase()}
                           </Text>
                         </View>
                       )}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.modalItemText, { color: isOccupied ? '#EF4444' : textPrimary }]}>
+                      <Text
+                        style={[
+                          styles.modalItemText,
+                          { color: isOccupied ? "#EF4444" : textPrimary },
+                        ]}
+                      >
                         {item.nick || item.nombre || item.name || "Anfitriona"}
                       </Text>
                       {isOccupied && (
-                        <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800', marginTop: 2 }}>
-                          OCUPADA EN SERVICIO {roomInfo ? `(${roomInfo})` : ''}
+                        <Text
+                          style={{
+                            color: "#EF4444",
+                            fontSize: 10,
+                            fontWeight: "800",
+                            marginTop: 2,
+                          }}
+                        >
+                          OCUPADA EN SERVICIO {roomInfo ? `(${roomInfo})` : ""}
                         </Text>
                       )}
                     </View>
                   </View>
-                  {isSelected && <Ionicons name="checkmark-circle" size={24} color={accentColor} />}
-                  {isOccupied && <Ionicons name="lock-closed" size={18} color="#EF4444" />}
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={accentColor}
+                    />
+                  )}
+                  {isOccupied && (
+                    <Ionicons name="lock-closed" size={18} color="#EF4444" />
+                  )}
                 </Pressable>
               );
             })}
@@ -194,19 +276,17 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   avatarText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
-
-

@@ -19,17 +19,23 @@ type Props = {
   visible: boolean;
   hostesses: Hostess[];
   selectedIds: string[];
+  servicioAnfitrionas?: string[];
   selectionTarget: SelectionTarget | null;
   onToggleHostess: (id: string) => void;
   onClose: () => void;
   onConfirmProduct: (product: any) => void;
-  showToast: (title: string, message: string, type?: "success" | "error") => void;
+  showToast: (
+    title: string,
+    message: string,
+    type?: "success" | "error",
+  ) => void;
 };
 
 export function NuevaVentaHostessModal({
   visible,
   hostesses,
   selectedIds,
+  servicioAnfitrionas = [],
   selectionTarget,
   onToggleHostess,
   onClose,
@@ -40,7 +46,12 @@ export function NuevaVentaHostessModal({
     () =>
       hostesses.filter(
         (item, index, self) =>
-          index === self.findIndex((t) => String(t.id_usuario || t.id) === String(item.id_usuario || item.id)),
+          index ===
+          self.findIndex(
+            (t) =>
+              String(t.id_usuario || t.id) ===
+              String(item.id_usuario || item.id),
+          ),
       ),
     [hostesses],
   );
@@ -55,7 +66,11 @@ export function NuevaVentaHostessModal({
     }
 
     if (selectionTarget?.max && currentSelected.length >= selectionTarget.max) {
-      showToast("Limite", `Maximo ${selectionTarget.max} anfitrionas por esta cantidad`, "error");
+      showToast(
+        "Limite",
+        `Maximo ${selectionTarget.max} anfitrionas por esta cantidad`,
+        "error",
+      );
       return;
     }
 
@@ -77,6 +92,7 @@ export function NuevaVentaHostessModal({
         estado_servicio: item.estado_servicio || 0,
       }))}
       selectedIds={selectedIds}
+      allowedOccupiedIds={servicioAnfitrionas}
       max={selectionTarget?.max}
       onToggle={handleToggle}
       onClose={onClose}

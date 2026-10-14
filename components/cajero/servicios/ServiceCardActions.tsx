@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -22,11 +22,11 @@ export const ServiceCardActions: React.FC<ServiceCardActionsProps> = ({
       <Pressable
         style={[styles.editActionBtn, { backgroundColor: warningColor }]}
         onPress={onEditar}
-        accessibilityLabel="Editar servicio"
+        accessibilityLabel="Servicio adicional"
         accessibilityRole="button"
       >
         <Ionicons name="create" size={16} color="#FFF" />
-        <Text style={styles.btnText}>EDITAR</Text>
+        <Text style={styles.btnText}>ADICIONAL</Text>
       </Pressable>
     ) : null}
     <Pressable
@@ -43,7 +43,7 @@ export const ServiceCardActions: React.FC<ServiceCardActionsProps> = ({
 
 const styles = StyleSheet.create({
   actionsBox: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginTop: 15,
   },
@@ -51,23 +51,23 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
     gap: 6,
   },
   finishActionBtn: {
     flex: 1,
     height: 44,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
     gap: 6,
   },
   btnText: {
-    color: '#FFF',
-    fontWeight: '900',
+    color: "#FFF",
+    fontWeight: "900",
     fontSize: 13,
   },
 });

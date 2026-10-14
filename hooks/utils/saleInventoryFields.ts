@@ -2,9 +2,11 @@ export interface SaleInventoryFields {
   presentacion_id?: string | null;
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
+  acompanamiento_botella?: { presentacion_id: string; unidades: number };
   acompanamiento_corto?: {
     presentacion_id: string;
-    ml_por_corto: number;
+    unidades?: number;
+    ml_por_corto?: number;
     nombre?: string;
   };
 }
@@ -30,6 +32,7 @@ export function saleInventoryFields(
     ...(data.shot_anfitriona !== undefined
       ? { shot_anfitriona: data.shot_anfitriona }
       : {}),
+    ...(data.acompanamiento_botella ? { acompanamiento_botella: data.acompanamiento_botella } : {}),
     ...(data.acompanamiento_corto
       ? { acompanamiento_corto: data.acompanamiento_corto }
       : {}),

@@ -28,8 +28,10 @@ export interface TimerRawData {
   created_at?: string;
   total_usuarios?: number;
   comision_individual?: number;
+  total_comision?: number;
   servicioOriginalId?: string | number;
   es_temporal?: number | boolean;
+  isTemporary?: boolean;
   newStartTime?: string;
   habitacion_numero?: string;
   habitacion_id?: string;
@@ -40,4 +42,3 @@ export interface SSEPayload {
   type: string;
   data?: Record<string, unknown>;
 }
-

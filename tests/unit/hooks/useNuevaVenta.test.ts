@@ -9,8 +9,13 @@ import { createOutboxRepository } from "@/services/outbox/repository";
 import { ensureMirrorSchema } from "@/services/mirror/schema";
 import { createNodeSqliteMirrorDriver } from "../../helpers/nodeSqliteMirrorDriver";
 
+const routerReplace = vi.hoisted(() => vi.fn());
+const routeParams = vi.hoisted(() => ({
+  servicio_id: undefined as string | undefined,
+}));
 let saleDriver: ReturnType<typeof createNodeSqliteMirrorDriver>;
 beforeEach(() => {
+  routeParams.servicio_id = undefined;
   saleDriver = createNodeSqliteMirrorDriver();
   ensureMirrorSchema(saleDriver);
   setOutboxForTests(
@@ -38,7 +43,8 @@ vi.mock("@/context/SalesContext", () => ({
 }));
 
 vi.mock("expo-router", () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+  useLocalSearchParams: () => routeParams,
+  useRouter: () => ({ replace: routerReplace, push: vi.fn(), back: vi.fn() }),
 }));
 
 // Los toasts reales se capturan para poder afirmar QUÉ se avisa (paridad con
@@ -976,3 +982,95 @@ describe("useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
     });
   });
 });
+
+it("preselecciona las anfitrionas del privado y conserva el cambio o la selección vacía", async () => {
+  routeParams.servicio_id = "privado-1";
+  vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
+    if (url === "/servicios/privado-1")
+      return {
+        success: true,
+        data: {
+          estado: 2,
+          habitacion_id: "vip-1",
+          anfitrionas_ids: "ana, bea",
+        },
+      };
+    return { success: true, data: [] };
+  });
+  const { result } = renderSaleHook();
+  await waitFor(() =>
+    expect(result.current.state.selectedHabitacion?.id).toBe("vip-1"),
+  );
+  const product = {
+    id: "p1",
+    nombre: "Botella",
+    precio: 20000,
+    comision: 3000,
+    max_anfitrionas: 2,
+    stock_bar: 5,
+  };
+  await act(async () => {
+    await result.current.handlePressAddProduct(product);
+  });
+  expect(result.current.state.modalHostessSelections.p1).toEqual([
+    "ana",
+    "bea",
+  ]);
+  act(() => result.current.handleToggleHostess("ana"));
+  act(() => result.current.handleToggleHostess("otra"));
+  expect(result.current.servicioAnfitrionas).toContain("otra");
+
+  act(() =>
+    result.current.dispatch({
+      type: "SET_MODAL_HOSTESSES",
+      productId: "p1",
+      hostesses: ["otra"],
+    }),
+  );
+  await act(async () => {
+    await result.current.handlePressAddProduct(product);
+  });
+  expect(result.current.state.modalHostessSelections.p1).toEqual(["otra"]);
+  act(() =>
+    result.current.dispatch({
+      type: "SET_MODAL_HOSTESSES",
+      productId: "p1",
+      hostesses: [],
+    }),
+  );
+  await act(async () => {
+    await result.current.handlePressAddProduct(product);
+  });
+  expect(result.current.state.modalHostessSelections.p1).toEqual([]);
+});
+
+it.each([
+  ["privado-1", "/cajero/servicios"],
+  [undefined, "/cajero/ventas"],
+])(
+  "vuelve al listado correcto tras una venta desde %s",
+  async (serviceId, target) => {
+    routeParams.servicio_id = serviceId;
+    routerReplace.mockClear();
+    vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
+      if (url === "/cashregister/status")
+        return { success: true, data: { hasOpenCaja: true } };
+      if (url === "/servicios/privado-1")
+        return { success: true, data: { estado: 2, habitacion_id: "vip-1" } };
+      if (url === "/sales") return { success: true, data: { id: "sale-1" } };
+      return { success: true, data: [] };
+    });
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+    if (serviceId)
+      await waitFor(() =>
+        expect(result.current.state.selectedHabitacion?.id).toBe("vip-1"),
+      );
+    setCart(result, [{ id: "p1", precio: 10000, quantity: 1 }]);
+    setMetodoPago(result, "efectivo");
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+    expect(routerReplace).toHaveBeenCalledWith(target);
+  },
+);

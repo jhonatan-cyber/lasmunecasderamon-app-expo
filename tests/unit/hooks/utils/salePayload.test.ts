@@ -1,292 +1,365 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { buildSalePayload } from '@/hooks/utils/salePayload';
-import { buildConsumptionsPayload } from '@/hooks/utils/cuentaUtils';
+import { buildSalePayload } from "@/hooks/utils/salePayload";
+import { buildConsumptionsPayload } from "@/hooks/utils/cuentaUtils";
 
-describe('buildSalePayload', () => {
-    const base = {
-        cart: [
-            {
-                producto_id: 'prod-1',
-                presentacion_id: 'pres-1',
-                precio: 5000,
-                quantity: 2,
-                comision: 300,
-                anfitrionas: ['a-1', { id_usuario: 'a-2' }],
-            },
-        ],
-        selectedCliente: { id: 'cli-1' },
-        selectedHabitacion: { id: 'hab-1' },
-        metodoPago: 'efectivo',
-        pagosMixtos: [],
-        totals: { subtotal: 10000, tip: 1000, total: 11000 },
-        selectedTime: 60,
-        hasCommissionItem: true,
-    };
+describe("buildSalePayload", () => {
+  const base = {
+    cart: [
+      {
+        producto_id: "prod-1",
+        presentacion_id: "pres-1",
+        precio: 5000,
+        quantity: 2,
+        comision: 300,
+        anfitrionas: ["a-1", { id_usuario: "a-2" }],
+      },
+    ],
+    selectedCliente: { id: "cli-1" },
+    selectedHabitacion: { id: "hab-1" },
+    metodoPago: "efectivo",
+    pagosMixtos: [],
+    totals: { subtotal: 10000, tip: 1000, total: 11000 },
+    selectedTime: 60,
+    hasCommissionItem: true,
+  };
 
-    it('debe armar los detalles con botella por presentación y comisión por cantidad', () => {
-        const payload = buildSalePayload(base as any);
+  it("envía el cambio explícito del servicio y permite liberar todas sin deducirlo de las comisiones", () => {
+    expect(
+      buildSalePayload({
+        ...base,
+        servicioId: "srv-1",
+        servicioAnfitrionas: ["nueva"],
+      }).servicio_anfitrionas,
+    ).toEqual(["nueva"]);
+    expect(
+      buildSalePayload({
+        ...base,
+        servicioId: "srv-1",
+        servicioAnfitrionas: [],
+      }).servicio_anfitrionas,
+    ).toEqual([]);
+    expect(
+      buildSalePayload({ ...base, servicioId: "srv-1" }).servicio_anfitrionas,
+    ).toBeUndefined();
+    expect(
+      buildSalePayload({ ...base, servicioAnfitrionas: ["nueva"] })
+        .servicio_anfitrionas,
+    ).toBeUndefined();
+  });
+  it("vincula el consumo adicional al servicio sin iniciar otro temporizador", () => {
+    const payload = buildSalePayload({
+      ...base,
+      servicioId: "srv-1",
+      hasCommissionItem: false,
+    });
+    expect(payload.servicio_id).toBe("srv-1");
+    expect(payload.habitacion_id).toBe("hab-1");
+    expect(payload.tiempo).toBe(0);
+    expect(payload.total).toBe(11000);
+  });
 
-        expect(payload.detalles[0]).toEqual({
-            producto_id: 'prod-1',
-            presentacion_id: 'pres-1',
-            tipo_venta: 'botella',
-            cantidad: 2,
-            precio: 5000,
-            sub_total: 10000,
-            comision: 600,
-            isChampagne: false,
-            hostesses: ['a-1', 'a-2'],
-        });
-        expect(payload.usuarios).toEqual(['a-1', 'a-2']);
+  it("debe armar los detalles con botella por presentación y comisión por cantidad", () => {
+    const payload = buildSalePayload(base as any);
+
+    expect(payload.detalles[0]).toEqual({
+      producto_id: "prod-1",
+      presentacion_id: "pres-1",
+      tipo_venta: "botella",
+      cantidad: 2,
+      precio: 5000,
+      sub_total: 10000,
+      comision: 600,
+      isChampagne: false,
+      hostesses: ["a-1", "a-2"],
+    });
+    expect(payload.usuarios).toEqual(["a-1", "a-2"]);
+  });
+
+  it("conserva las unidades de acompa\u00f1amiento por botella para enviar o sincronizar", () => {
+    const mixer = { presentacion_id: "sprite", unidades: 4 };
+    const payload = buildSalePayload({
+      ...base,
+      cart: [{ ...base.cart[0], acompanamiento_botella: mixer }],
+    });
+    expect(payload.detalles[0].acompanamiento_botella).toEqual(mixer);
+  });
+
+  it("sin presentación no debe declarar tipo_venta", () => {
+    const payload = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          id: "prod-2",
+          precio: 1000,
+          quantity: 1,
+          comision: 0,
+          anfitrionas: [],
+        },
+      ],
+    } as any);
+
+    expect(payload.detalles[0].presentacion_id).toBeNull();
+    expect(payload.detalles[0].tipo_venta).toBeUndefined();
+  });
+
+  it("debe declarar tipo_venta shot y la audiencia elegida (cliente o anfitriona)", () => {
+    const shotAnfitriona = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          producto_id: "prod-1",
+          presentacion_id: "pres-1",
+          tipo_venta: "shot",
+          shot_anfitriona: true,
+          precio: 8000,
+          quantity: 3,
+          comision: 1000,
+          anfitrionas: ["a-1"],
+        },
+      ],
+    } as any);
+
+    expect(shotAnfitriona.detalles[0]).toEqual({
+      producto_id: "prod-1",
+      presentacion_id: "pres-1",
+      tipo_venta: "shot",
+      shot_anfitriona: true,
+      cantidad: 3,
+      precio: 8000,
+      sub_total: 24000,
+      comision: 3000,
+      isChampagne: false,
+      hostess_id: "a-1",
     });
 
-    it('sin presentación no debe declarar tipo_venta', () => {
-        const payload = buildSalePayload({
-            ...base,
-            cart: [{ id: 'prod-2', precio: 1000, quantity: 1, comision: 0, anfitrionas: [] }],
-        } as any);
+    const shotCliente = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          producto_id: "prod-1",
+          presentacion_id: "pres-1",
+          tipo_venta: "shot",
+          shot_anfitriona: false,
+          precio: 15000,
+          quantity: 1,
+          comision: 1000,
+          anfitrionas: [],
+        },
+      ],
+    } as any);
 
-        expect(payload.detalles[0].presentacion_id).toBeNull();
-        expect(payload.detalles[0].tipo_venta).toBeUndefined();
+    expect(shotCliente.detalles[0].shot_anfitriona).toBe(false);
+    expect(shotCliente.detalles[0].precio).toBe(15000);
+  });
+
+  it("una línea de botella no declara shot_anfitriona", () => {
+    const payload = buildSalePayload(base as any);
+
+    expect(payload.detalles[0].tipo_venta).toBe("botella");
+    expect(payload.detalles[0].shot_anfitriona).toBeUndefined();
+  });
+
+  it("no registra comisión cuando el producto comisionable se vende sin anfitrionas", () => {
+    const payload = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          producto_id: "prod-1",
+          presentacion_id: "pres-1",
+          precio: 25000,
+          quantity: 2,
+          comision: 5000,
+          anfitrionas: [],
+        },
+      ],
+    } as any);
+
+    expect(payload.detalles[0].comision).toBe(0);
+    expect(payload.detalles[0].hostesses).toBeUndefined();
+    expect(payload.usuarios).toEqual([]);
+  });
+
+  it("solo debe mandar habitación si hay comisión (paridad con el dashboard)", () => {
+    const conComision = buildSalePayload(base as any);
+    const sinComision = buildSalePayload({
+      ...base,
+      hasCommissionItem: false,
+    } as any);
+
+    expect(conComision.habitacion_id).toBe("hab-1");
+    expect(conComision.tiempo).toBe(60);
+    expect(sinComision.habitacion_id).toBeNull();
+    // El tiempo se conserva como en el payload original: sin habitación el
+    // servidor no lo usa.
+    expect(sinComision.tiempo).toBe(60);
+  });
+
+  it("solo debe incluir pagos mixtos cuando el método es mixto", () => {
+    const mixto = buildSalePayload({
+      ...base,
+      metodoPago: "mixto",
+      pagosMixtos: [{ metodo: "efectivo", monto: 5000 }],
+    } as any);
+
+    expect(mixto.pagos_mixtos).toEqual([{ metodo: "efectivo", monto: 5000 }]);
+    expect(buildSalePayload(base as any).pagos_mixtos).toBeUndefined();
+  });
+
+  it("debe tolerar un carrito con anfitrionas como objetos y como ids", () => {
+    const payload = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          producto_id: "prod-1",
+          precio: 100,
+          quantity: 1,
+          comision: 1,
+          anfitrionas: [{ id: 5 }, 9, null],
+        },
+      ],
+    } as any);
+
+    expect(payload.usuarios).toEqual(["5", "9"]);
+    expect(payload.detalles[0].hostesses).toEqual(["5", "9"]);
+  });
+
+  it("marca champaña para que el servidor distribuya su comisión entre anfitrionas", () => {
+    const payload = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          producto_id: "prod-champagne",
+          presentacion_id: "pres-champagne",
+          categoria: "Champaña",
+          precio: 120000,
+          quantity: 1,
+          comision: 40000,
+          anfitrionas: [5, 9],
+        },
+      ],
+    } as any);
+
+    expect(payload.detalles[0]).toMatchObject({
+      isChampagne: true,
+      comision: 40000,
+      hostesses: ["5", "9"],
     });
+    expect(payload.usuarios).toEqual(["5", "9"]);
+  });
 
-    it('debe declarar tipo_venta shot y la audiencia elegida (cliente o anfitriona)', () => {
-        const shotAnfitriona = buildSalePayload({
-            ...base,
-            cart: [
-                {
-                    producto_id: 'prod-1',
-                    presentacion_id: 'pres-1',
-                    tipo_venta: 'shot',
-                    shot_anfitriona: true,
-                    precio: 8000,
-                    quantity: 3,
-                    comision: 1000,
-                    anfitrionas: ['a-1'],
-                },
-            ],
-        } as any);
+  it("normaliza a texto los identificadores exigidos por el endpoint", () => {
+    const payload = buildSalePayload({
+      ...base,
+      cart: [
+        {
+          id_producto: 7,
+          presentacion_id: 8,
+          precio: 10,
+          quantity: 1,
+          comision: 0,
+        },
+      ],
+      selectedCliente: { id: 9 },
+      selectedHabitacion: { id: 10 },
+    } as any);
 
-        expect(shotAnfitriona.detalles[0]).toEqual({
-            producto_id: 'prod-1',
-            presentacion_id: 'pres-1',
-            tipo_venta: 'shot',
-            shot_anfitriona: true,
-            cantidad: 3,
-            precio: 8000,
-            sub_total: 24000,
-            comision: 3000,
-            isChampagne: false,
-            hostess_id: 'a-1',
-        });
-
-        const shotCliente = buildSalePayload({
-            ...base,
-            cart: [
-                {
-                    producto_id: 'prod-1',
-                    presentacion_id: 'pres-1',
-                    tipo_venta: 'shot',
-                    shot_anfitriona: false,
-                    precio: 15000,
-                    quantity: 1,
-                    comision: 1000,
-                    anfitrionas: [],
-                },
-            ],
-        } as any);
-
-        expect(shotCliente.detalles[0].shot_anfitriona).toBe(false);
-        expect(shotCliente.detalles[0].precio).toBe(15000);
+    expect(payload.detalles[0]).toMatchObject({
+      producto_id: "7",
+      presentacion_id: "8",
     });
-
-    it('una línea de botella no declara shot_anfitriona', () => {
-        const payload = buildSalePayload(base as any);
-
-        expect(payload.detalles[0].tipo_venta).toBe('botella');
-        expect(payload.detalles[0].shot_anfitriona).toBeUndefined();
-    });
-
-    it('no registra comisión cuando el producto comisionable se vende sin anfitrionas', () => {
-        const payload = buildSalePayload({
-            ...base,
-            cart: [{
-                producto_id: 'prod-1',
-                presentacion_id: 'pres-1',
-                precio: 25000,
-                quantity: 2,
-                comision: 5000,
-                anfitrionas: [],
-            }],
-        } as any);
-
-        expect(payload.detalles[0].comision).toBe(0);
-        expect(payload.detalles[0].hostesses).toBeUndefined();
-        expect(payload.usuarios).toEqual([]);
-    });
-
-    it('solo debe mandar habitación si hay comisión (paridad con el dashboard)', () => {
-        const conComision = buildSalePayload(base as any);
-        const sinComision = buildSalePayload({ ...base, hasCommissionItem: false } as any);
-
-        expect(conComision.habitacion_id).toBe('hab-1');
-        expect(conComision.tiempo).toBe(60);
-        expect(sinComision.habitacion_id).toBeNull();
-        // El tiempo se conserva como en el payload original: sin habitación el
-        // servidor no lo usa.
-        expect(sinComision.tiempo).toBe(60);
-    });
-
-    it('solo debe incluir pagos mixtos cuando el método es mixto', () => {
-        const mixto = buildSalePayload({
-            ...base,
-            metodoPago: 'mixto',
-            pagosMixtos: [{ metodo: 'efectivo', monto: 5000 }],
-        } as any);
-
-        expect(mixto.pagos_mixtos).toEqual([{ metodo: 'efectivo', monto: 5000 }]);
-        expect(buildSalePayload(base as any).pagos_mixtos).toBeUndefined();
-    });
-
-    it('debe tolerar un carrito con anfitrionas como objetos y como ids', () => {
-        const payload = buildSalePayload({
-            ...base,
-            cart: [
-                {
-                    producto_id: 'prod-1',
-                    precio: 100,
-                    quantity: 1,
-                    comision: 1,
-                    anfitrionas: [{ id: 5 }, 9, null],
-                },
-            ],
-        } as any);
-
-        expect(payload.usuarios).toEqual(['5', '9']);
-        expect(payload.detalles[0].hostesses).toEqual(['5', '9']);
-    });
-
-    it('marca champaña para que el servidor distribuya su comisión entre anfitrionas', () => {
-        const payload = buildSalePayload({
-            ...base,
-            cart: [{
-                producto_id: 'prod-champagne',
-                presentacion_id: 'pres-champagne',
-                categoria: 'Champaña',
-                precio: 120000,
-                quantity: 1,
-                comision: 40000,
-                anfitrionas: [5, 9],
-            }],
-        } as any);
-
-        expect(payload.detalles[0]).toMatchObject({
-            isChampagne: true,
-            comision: 40000,
-            hostesses: ['5', '9'],
-        });
-        expect(payload.usuarios).toEqual(['5', '9']);
-    });
-
-    it('normaliza a texto los identificadores exigidos por el endpoint', () => {
-        const payload = buildSalePayload({
-            ...base,
-            cart: [{ id_producto: 7, presentacion_id: 8, precio: 10, quantity: 1, comision: 0 }],
-            selectedCliente: { id: 9 },
-            selectedHabitacion: { id: 10 },
-        } as any);
-
-        expect(payload.detalles[0]).toMatchObject({
-            producto_id: '7',
-            presentacion_id: '8',
-        });
-        expect(payload.cliente_id).toBe('9');
-        expect(payload.habitacion_id).toBe('10');
-    });
+    expect(payload.cliente_id).toBe("9");
+    expect(payload.habitacion_id).toBe("10");
+  });
 });
 
-describe('buildConsumptionsPayload', () => {
-    const cart = [
-        {
-            id_producto: 'prod-9',
-            precio: 2000,
-            cantidad: 3,
-            comision: 100,
-            selectedHostesses: [4],
-            isChampagne: false,
-        },
-    ];
+describe("buildConsumptionsPayload", () => {
+  const cart = [
+    {
+      id_producto: "prod-9",
+      precio: 2000,
+      cantidad: 3,
+      comision: 100,
+      selectedHostesses: [4],
+      isChampagne: false,
+    },
+  ];
 
-    it('debe sumar las anfitrionas ya asignadas a la cuenta con las nuevas', () => {
-        const payload = buildConsumptionsPayload({
-            cart: cart as any,
-            cuentaDetalle: { usuarios: [{ usuario_id: 2 }, { id_usuario: 3 }] },
-            cuentaOriginal: { habitacion_id: null },
-            selectedHabitacion: null,
-            selectedTime: 0,
-            extraTiempo: 0,
-            hasExistingTimer: false,
-        });
-
-        expect(payload.usuarios.sort()).toEqual([2, 3, 4]);
-        expect(payload.detalles[0]).toEqual({
-            producto_id: 'prod-9',
-            precio: 2000,
-            cantidad: 3,
-            sub_total: 6000,
-            comision: 300,
-            hostesses: [4],
-            isChampagne: false,
-        });
+  it("debe sumar las anfitrionas ya asignadas a la cuenta con las nuevas", () => {
+    const payload = buildConsumptionsPayload({
+      cart: cart as any,
+      cuentaDetalle: { usuarios: [{ usuario_id: 2 }, { id_usuario: 3 }] },
+      cuentaOriginal: { habitacion_id: null },
+      selectedHabitacion: null,
+      selectedTime: 0,
+      extraTiempo: 0,
+      hasExistingTimer: false,
     });
 
-    it('debe sumar el tiempo extra cuando la cuenta ya tiene habitación', () => {
-        const payload = buildConsumptionsPayload({
-            cart: cart as any,
-            cuentaDetalle: null,
-            cuentaOriginal: { habitacion_id: 'hab-1' },
-            selectedHabitacion: null,
-            selectedTime: 0,
-            extraTiempo: 30,
-            hasExistingTimer: true,
-        });
+    expect(payload.usuarios.sort()).toEqual([2, 3, 4]);
+    expect(payload.detalles[0]).toEqual({
+      producto_id: "prod-9",
+      precio: 2000,
+      cantidad: 3,
+      sub_total: 6000,
+      comision: 300,
+      hostesses: [4],
+      isChampagne: false,
+    });
+  });
 
-        expect(payload.extraTiempo).toBe(30);
-        expect(payload.tiempo).toBeUndefined();
+  it("debe sumar el tiempo extra cuando la cuenta ya tiene habitación", () => {
+    const payload = buildConsumptionsPayload({
+      cart: cart as any,
+      cuentaDetalle: null,
+      cuentaOriginal: { habitacion_id: "hab-1" },
+      selectedHabitacion: null,
+      selectedTime: 0,
+      extraTiempo: 30,
+      hasExistingTimer: true,
     });
 
-    it('debe abrir habitación solo si no hay temporizador ya corriendo', () => {
-        const comun = {
-            cart: cart as any,
-            cuentaDetalle: null,
-            cuentaOriginal: { habitacion_id: null },
-            selectedHabitacion: { id_habitacion: 'hab-2' },
-            selectedTime: 60,
-            extraTiempo: 0,
-        };
+    expect(payload.extraTiempo).toBe(30);
+    expect(payload.tiempo).toBeUndefined();
+  });
 
-        const nueva = buildConsumptionsPayload({ ...comun, hasExistingTimer: false } as any);
-        const existente = buildConsumptionsPayload({ ...comun, hasExistingTimer: true } as any);
+  it("debe abrir habitación solo si no hay temporizador ya corriendo", () => {
+    const comun = {
+      cart: cart as any,
+      cuentaDetalle: null,
+      cuentaOriginal: { habitacion_id: null },
+      selectedHabitacion: { id_habitacion: "hab-2" },
+      selectedTime: 60,
+      extraTiempo: 0,
+    };
 
-        expect(nueva).toMatchObject({ habitacion_id: 'hab-2', tiempo: 60 });
-        // Con temporizador en curso la habitación no se re-declara: se mantiene.
-        expect(existente.habitacion_id).toBe('hab-2');
-        expect(existente.tiempo).toBe(60);
+    const nueva = buildConsumptionsPayload({
+      ...comun,
+      hasExistingTimer: false,
+    } as any);
+    const existente = buildConsumptionsPayload({
+      ...comun,
+      hasExistingTimer: true,
+    } as any);
+
+    expect(nueva).toMatchObject({ habitacion_id: "hab-2", tiempo: 60 });
+    // Con temporizador en curso la habitación no se re-declara: se mantiene.
+    expect(existente.habitacion_id).toBe("hab-2");
+    expect(existente.tiempo).toBe(60);
+  });
+
+  it("debe prorratear la misma habitación como tiempo extra en vez de reabrirla", () => {
+    const payload = buildConsumptionsPayload({
+      cart: cart as any,
+      cuentaDetalle: { habitacion_id: "hab-1" },
+      cuentaOriginal: { habitacion_id: "hab-1" },
+      selectedHabitacion: { id_habitacion: "hab-1" },
+      selectedTime: 30,
+      extraTiempo: 15,
+      hasExistingTimer: true,
     });
 
-    it('debe prorratear la misma habitación como tiempo extra en vez de reabrirla', () => {
-        const payload = buildConsumptionsPayload({
-            cart: cart as any,
-            cuentaDetalle: { habitacion_id: 'hab-1' },
-            cuentaOriginal: { habitacion_id: 'hab-1' },
-            selectedHabitacion: { id_habitacion: 'hab-1' },
-            selectedTime: 30,
-            extraTiempo: 15,
-            hasExistingTimer: true,
-        });
-
-        expect(payload.extraTiempo).toBe(45);
-        expect(payload.tiempo).toBeUndefined();
-    });
+    expect(payload.extraTiempo).toBe(45);
+    expect(payload.tiempo).toBeUndefined();
+  });
 });

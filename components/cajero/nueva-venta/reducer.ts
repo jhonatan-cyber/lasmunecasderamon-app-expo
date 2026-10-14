@@ -1,5 +1,8 @@
-import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
-import type { VentaState, VentaAction } from '@/components/cajero/nueva-venta/types';
+import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import type {
+  VentaState,
+  VentaAction,
+} from "@/components/cajero/nueva-venta/types";
 
 export const initialVentaState: VentaState = {
   loadingInitial: true,
@@ -11,7 +14,7 @@ export const initialVentaState: VentaState = {
   cart: [],
   selectedCliente: null,
   selectedHabitacion: null,
-  metodoPago: '',
+  metodoPago: "",
   pagosMixtos: [],
   enableTip: false,
   selectedTime: 30,
@@ -32,84 +35,96 @@ export const initialVentaState: VentaState = {
   activeCartIdx: null,
   submitting: false,
   loadModalVisible: false,
-  loadingAmount: '',
+  loadingAmount: "",
   loadingTargetClient: null,
   loadSubmitting: false,
-  loadMetodoPago: 'efectivo',
-  metodoPagoAdicional: 'efectivo',
+  loadMetodoPago: "efectivo",
+  metodoPagoAdicional: "efectivo",
 };
 
-export function ventaReducer(state: VentaState, action: VentaAction): VentaState {
+export function ventaReducer(
+  state: VentaState,
+  action: VentaAction,
+): VentaState {
   switch (action.type) {
-    case 'SET_LOADING_INITIAL':
+    case "SET_LOADING_INITIAL":
       return { ...state, loadingInitial: action.payload };
-    case 'SET_REFRESHING':
+    case "SET_REFRESHING":
       return { ...state, refreshing: action.payload };
-    case 'SET_INITIAL_DATA':
+    case "SET_INITIAL_DATA":
       return { ...state, ...action.payload };
-    case 'SET_CART':
+    case "SET_CART":
       return { ...state, cart: action.payload };
-    case 'SET_SELECTED_CLIENTE': {
+    case "SET_SELECTED_CLIENTE": {
       const client = action.payload;
-      const canUsePrepago = Number(client?.saldo ?? (client as any)?.saldo_prepago ?? 0) > 0;
-      const metodoPago = state.metodoPago === 'prepago' && !canUsePrepago
-        ? 'efectivo'
-        : state.metodoPago;
+      const canUsePrepago =
+        Number(client?.saldo ?? (client as any)?.saldo_prepago ?? 0) > 0;
+      const metodoPago =
+        state.metodoPago === "prepago" && !canUsePrepago
+          ? "efectivo"
+          : state.metodoPago;
       return {
         ...state,
         selectedCliente: client,
         metodoPago,
         pagosMixtos: [],
-        metodoPagoAdicional: 'efectivo',
+        metodoPagoAdicional: "efectivo",
       };
     }
-    case 'SET_SELECTED_HABITACION':
+    case "SET_SELECTED_HABITACION":
       return { ...state, selectedHabitacion: action.payload };
-    case 'SET_METODO_PAGO':
+    case "SET_METODO_PAGO":
       return {
         ...state,
         metodoPago: action.payload,
         pagosMixtos:
-          action.payload === 'mixto'
+          action.payload === "mixto"
             ? Number(state.selectedCliente?.saldo || 0) > 0
               ? [
                   {
-                    metodo: 'prepago' as PaymentMethod,
+                    metodo: "prepago" as PaymentMethod,
                     monto: Number(state.selectedCliente?.saldo || 0),
-                    display: Number(state.selectedCliente?.saldo || 0).toLocaleString('es-CL'),
+                    display: Number(
+                      state.selectedCliente?.saldo || 0,
+                    ).toLocaleString("es-CL"),
                   },
                 ]
               : []
             : [],
       };
-    case 'SET_PAGOS_MIXTOS':
+    case "SET_PAGOS_MIXTOS":
       return { ...state, pagosMixtos: action.payload };
-    case 'ADD_PAGO_MIXTO':
+    case "ADD_PAGO_MIXTO":
       return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
-    case 'UPDATE_PAGO_MIXTO': {
+    case "UPDATE_PAGO_MIXTO": {
       const updated = [...state.pagosMixtos];
       updated[action.index] = {
         ...updated[action.index],
         monto: action.monto,
-        display: action.display ?? (action.monto > 0 ? String(action.monto) : ''),
+        display:
+          action.display ?? (action.monto > 0 ? String(action.monto) : ""),
       };
       return { ...state, pagosMixtos: updated };
     }
-    case 'REMOVE_PAGO_MIXTO':
-      return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
-    case 'SET_METODO_PAGO_ADICIONAL':
+    case "REMOVE_PAGO_MIXTO":
+      return {
+        ...state,
+        pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index),
+      };
+    case "SET_METODO_PAGO_ADICIONAL":
       return { ...state, metodoPagoAdicional: action.payload };
-    case 'SET_ENABLE_TIP':
+    case "SET_ENABLE_TIP":
       return { ...state, enableTip: action.payload };
-    case 'SET_SELECTED_TIME':
+    case "SET_SELECTED_TIME":
       return { ...state, selectedTime: action.payload };
-    case 'SET_MODAL_VISIBLE':
+    case "SET_MODAL_VISIBLE":
       return {
         ...state,
         [`${action.modal}ModalVisible`]: action.visible,
-        modalOpen: action.modal === 'category' ? action.visible : state.modalOpen,
+        modalOpen:
+          action.modal === "category" ? action.visible : state.modalOpen,
       };
-    case 'OPEN_CATEGORY_MODAL':
+    case "OPEN_CATEGORY_MODAL":
       return {
         ...state,
         modalOpen: true,
@@ -118,36 +133,54 @@ export function ventaReducer(state: VentaState, action: VentaAction): VentaState
         modalQuantities: {},
         modalHostessSelections: {},
       };
-    case 'SET_MODAL_LOADING':
+    case "SET_MODAL_LOADING":
       return { ...state, modalLoading: action.payload };
-    case 'SET_MODAL_QUANTITY':
+    case "SET_MODAL_QUANTITY":
       return {
         ...state,
-        modalQuantities: { ...state.modalQuantities, [action.productId]: action.quantity },
+        modalQuantities: {
+          ...state.modalQuantities,
+          [action.productId]: action.quantity,
+        },
       };
-    case 'SET_SALE_CHOICE':
+    case "SET_SALE_CHOICE":
       return {
         ...state,
-        saleChoices: { ...state.saleChoices, [action.productId]: action.choice },
+        saleChoices: {
+          ...state.saleChoices,
+          [action.productId]: action.choice,
+        },
       };
-    case 'SET_MODAL_HOSTESSES':
+    case "SET_MODAL_HOSTESSES":
       return {
         ...state,
-        modalHostessSelections: { ...state.modalHostessSelections, [action.productId]: action.hostesses },
+        modalHostessSelections: {
+          ...state.modalHostessSelections,
+          [action.productId]: action.hostesses,
+        },
       };
-    case 'SET_HOSTESS_TARGET':
-      return { ...state, hostessSelectionTarget: action.target, hostessSubModalVisible: !!action.target };
-    case 'SET_ACTIVE_CART_IDX':
+    case "SET_HOSTESS_TARGET":
+      return {
+        ...state,
+        hostessSelectionTarget: action.target,
+        hostessSubModalVisible: !!action.target,
+      };
+    case "SET_ACTIVE_CART_IDX":
       return { ...state, activeCartIdx: action.payload };
-    case 'SET_SUBMITTING':
+    case "SET_SUBMITTING":
       return { ...state, submitting: action.payload };
-    case 'SET_LOAD_MODAL':
-      return { ...state, loadModalVisible: action.visible, loadingTargetClient: action.client || null, loadingAmount: '' };
-    case 'SET_LOAD_AMOUNT':
+    case "SET_LOAD_MODAL":
+      return {
+        ...state,
+        loadModalVisible: action.visible,
+        loadingTargetClient: action.client || null,
+        loadingAmount: "",
+      };
+    case "SET_LOAD_AMOUNT":
       return { ...state, loadingAmount: action.payload };
-    case 'SET_LOAD_SUBMITTING':
+    case "SET_LOAD_SUBMITTING":
       return { ...state, loadSubmitting: action.payload };
-    case 'SET_LOAD_METODO_PAGO':
+    case "SET_LOAD_METODO_PAGO":
       return { ...state, loadMetodoPago: action.payload };
     default:
       return state;

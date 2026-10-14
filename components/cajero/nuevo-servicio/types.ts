@@ -3,6 +3,7 @@ import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelec
 
 
 export type ServicePayload = ServiceCreateType & {
+  producto_incluido_presentacion_id?: string | null;
   codigo: string;
   fecha_crea: string;
   pagos_mixtos?: MetodoPagoMonto[];

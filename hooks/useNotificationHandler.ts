@@ -1,5 +1,5 @@
 import type * as NotificationsType from "expo-notifications";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -46,7 +46,7 @@ export function useNotificationHandler() {
                 if (isAdminRole(user) || role === "cajero") {
                     router.push("/(app)/cajero/ventas");
                 } else if (isBarmanRole(user)) {
-                    router.push("/(app)/barman/ventas");
+                    router.push("/(app)/barman/pedidos" as Href);
                 }
                 break;
 
