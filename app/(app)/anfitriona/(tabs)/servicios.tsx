@@ -16,7 +16,6 @@ Text,
 View,
 } from "react-native";
 
-import logger from "@/utils/logger";
 export default function ServiciosScreen() {
   const {accentColor, bg, cardBg, textSecondary, borderColor} = useAccentColor();
   const {
@@ -30,7 +29,7 @@ export default function ServiciosScreen() {
   } = useServicios();
 
   const [filter, setFilter] = useState<
-    "all" | "pendiente" | "pagado" | "cobrado"
+    "all" | "pendiente" | "finalizado" | "anulado"
   >("all");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(
@@ -74,26 +73,26 @@ export default function ServiciosScreen() {
     .filter((s) => {
       const estadoNum = Number(s.estado);
       if (filter === "pendiente") return [2, 3, 4].includes(estadoNum);
-      if (filter === "pagado") return estadoNum === 1;
-      if (filter === "cobrado") return estadoNum === 0;
+      if (filter === "finalizado") return estadoNum === 1;
+      if (filter === "anulado") return estadoNum === 0;
       return true;
     });
 
   const finalizados = servicios.filter(
     (s) => s?.id_servicio && Number(s.estado) === 1,
   );
-  const cobrados = servicios.filter(
+  const anulados = servicios.filter(
     (s) => s?.id_servicio && Number(s.estado) === 0,
   );
   const pendientes = servicios.filter(
     (s) => s?.id_servicio && [2, 3, 4].includes(Number(s.estado)),
   );
   const totalACobrar = finalizados.reduce(
-    (sum, s) => sum + (s.comision_usuario || 0),
+    (sum, s) => sum + Number(s.comision_usuario || 0),
     0,
   );
-  const totalEstimado = servicios.reduce(
-    (sum, s) => sum + (s?.comision_usuario || 0),
+  const totalEstimado = servicios.filter(s => Number(s.estado) !== 0).reduce(
+    (sum, s) => sum + Number(s?.comision_usuario || 0),
     0,
   );
 
@@ -137,7 +136,7 @@ export default function ServiciosScreen() {
         style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}
       >
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-          COMISIONES POR COBRAR
+          COMISIONES DE SERVICIOS FINALIZADOS
         </Text>
         <Text style={[styles.summaryAmount, { color: accentColor }]}>
           ${totalACobrar.toLocaleString()}
@@ -150,7 +149,7 @@ export default function ServiciosScreen() {
       </View>
 
       <View style={styles.filterRow}>
-        {(["all", "pendiente", "pagado", "cobrado"] as const).map((f) => (
+        {(["all", "pendiente", "finalizado", "anulado"] as const).map((f) => (
           <Pressable
             key={f}
             style={[
@@ -172,9 +171,9 @@ export default function ServiciosScreen() {
                 ? `Todos (${servicios.length})`
                 : f === "pendiente"
                   ? `En Proceso (${pendientes.length})`
-                  : f === "pagado"
-                    ? `Por Cobrar (${finalizados.length})`
-                    : `Cobrados (${cobrados.length})`}
+                  : f === "finalizado"
+                    ? `Finalizados (${finalizados.length})`
+                    : `Anulados (${anulados.length})`}
             </Text>
           </Pressable>
         ))}
@@ -219,11 +218,6 @@ export default function ServiciosScreen() {
         visible={modalVisible}
         servicio={selectedServicio}
         onClose={() => setModalVisible(false)}
-        onEdit={() => {
-          logger.debug("Editar servicio", {
-            servicioId: selectedServicio?.id_servicio,
-          });
-        }}
       />
 
       <PremiumAlert

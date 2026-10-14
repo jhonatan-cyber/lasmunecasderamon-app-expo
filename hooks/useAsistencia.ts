@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "expo-router";
 import { useCallback,useRef,useState } from "react";
 import { Platform } from "react-native";
+import { useAuthStore } from '@/store/authStore';
 
 import logger from '@/utils/logger';
 interface Gratificacion {
@@ -28,6 +29,8 @@ interface Asistencia {
 }
 
 export function useAsistencia() {
+  const isHostess = useAuthStore(state => state.user?.role?.toLowerCase() === 'anfitriona');
+  const [housingDiscountTotal, setHousingDiscountTotal] = useState(0);
   const [activeTab, setActiveTab] = useState<'asistencias' | 'gratificaciones'>('asistencias');
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   const [gratificaciones, setGratificaciones] = useState<Gratificacion[]>([]);
@@ -55,7 +58,13 @@ export function useAsistencia() {
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
 
-      const data = await apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`, { signal });
+      const endpoint = isHostess ? '/attendance/user?tipo=detalle' : `/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`;
+      const data = await apiClientSafe(endpoint, { signal });
+      if (isHostess) {
+        const summary = await apiClientSafe<any[]>('/attendance/user', { signal });
+        if (!summary.success) throw new Error('No se pudo cargar el descuento de alojamiento');
+        setHousingDiscountTotal(Number(summary.data?.[0]?.descuento_total || 0));
+      }
       if (data.success) {
         const serialized = JSON.stringify(data.data);
         const hasChanges = dataRef.current !== serialized;
@@ -79,7 +88,7 @@ export function useAsistencia() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentDate]);
+  }, [currentDate, isHostess]);
 
   const fetchGratificaciones = useCallback(async (isManual = false, signal?: AbortSignal) => {
     try {
@@ -111,6 +120,8 @@ export function useAsistencia() {
   }, [fetchAsistencias, fetchGratificaciones]);
 
   return {
+    isHostess,
+    housingDiscountTotal,
     activeTab,
     setActiveTab,
     asistencias,

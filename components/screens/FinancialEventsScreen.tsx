@@ -95,13 +95,13 @@ export function FinancialEventsScreen({ title, subtitle, type, onBack }: Financi
         if (filter === 'pendiente') return a.estado === 1;
         // Pagado = todo lo que no está pendiente: 0 en propinas
         // (PayrollRepository) y 2 en comisiones (CommissionRepository).
-        if (filter === 'pagado') return a.estado !== 1;
+        if (filter === 'pagado') return Number(a.estado) === (type === 'comisiones' ? 2 : 0);
         return true;
     });
 
     const pendientes = data.filter((a: any) => a.estado === 1);
     const totalPendiente = pendientes.reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
-    const totalGeneral = data.reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
+    const totalGeneral = data.filter(a => type !== 'comisiones' || Number(a.estado) !== 0).reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
 
     const renderItem = useStableCallback(({ item, index }: { item: any; index: number }) => {
         const isPendiente = item.estado === 1;
@@ -124,7 +124,7 @@ export function FinancialEventsScreen({ title, subtitle, type, onBack }: Financi
                             )}
                             <View style={[styles.statusBadge, { backgroundColor: isPendiente ? (isDark ? '#065F46' : '#D1FAE5') : (isDark ? '#1e3b8a' : '#DBEAFE') }]}>
                                 <Text style={[styles.statusText, { color: isPendiente ? (isDark ? '#6EE7B7' : '#065F46') : (isDark ? '#93C5FD' : '#1E40AF') }]}>
-                                    {isPendiente ? 'Pendiente' : 'Cobrado'}
+                                    {isPendiente ? 'Pendiente' : type === 'comisiones' && Number(item.estado) === 0 ? 'Anulado' : 'Cobrado'}
                                 </Text>
                             </View>
                         </View>

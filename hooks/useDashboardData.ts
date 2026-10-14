@@ -29,6 +29,7 @@ interface PendingCountData {
 
 interface ServicioRaw {
   estado: number;
+  asignacion_activa?: boolean;
   [key: string]: unknown;
 }
 
@@ -112,7 +113,7 @@ export function useDashboardData(role: UserRole) {
             const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
             roleStats = eventsStatsRes.data;
             const serviciosRes = results[5] as ApiRes<ServicioRaw[]>;
-            extraData.activeService = serviciosRes.success ? serviciosRes.data.find(s => s.estado === 2) ?? null : null;
+            extraData.activeService = serviciosRes.success ? serviciosRes.data.find(s => Number(s.estado) === 2 && s.asignacion_activa !== false) ?? null : null;
         } else if (role === 'garzon') {
             const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
             roleStats = eventsStatsRes.data;

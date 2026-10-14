@@ -1,6 +1,18 @@
 # Comparación dashboard y Expo — 13/10/2026
 
-La app móvil cubre los flujos de garzón, cajero y barman. No replica todas las pantallas administrativas del dashboard.
+La app móvil cubre los flujos de anfitriona, garzón, cajero y barman. No replica todas las pantallas administrativas del dashboard.
+
+## Anfitrionas — revisión del 14/10/2026
+
+- Servicios de solo lectura: sin edición, pausa, reasignación ni creación directa desde el rol anfitriona. El dashboard rechaza las mutaciones también en la API.
+- Estado de servicio: 0 anulado, 1 finalizado, 2 en proceso, 3 pausado y 4 solicitud de anulación. Finalizar un servicio no significa haber pagado su comisión.
+- Servicios muestran la comisión personal (`comision_usuario`), excluyendo anulados del total ganado. Una asignación liberada permanece en el historial pero no se presenta como servicio activo.
+- Comisiones de ventas: ambas pantallas usan `/commissions/user?tipo=detalle` y muestran 0 anulado, 1 pendiente, 2 pagado. Los anulados no incrementan los totales ni aparecen como cobrados.
+- Asistencia de anfitrionas: historial completo, sueldo menos aporte y descuento de alojamiento del resumen del servidor, con mínimo de cero.
+- Anticipos: solicitud personal, límite disponible, bloqueo de nueva solicitud pendiente e historial de aprobación y pagos en ambos clientes.
+- Calendario: eventos propios de `/events/user`, importes personales y estados específicos por tipo. Las comisiones de servicios no se suman dos veces en el balance.
+
+La comprobación automatizada cubre permisos de API, cálculos, solicitudes de anticipo y persistencia PostgreSQL. No sustituye una prueba manual con la misma cuenta en un dispositivo Android/iOS y en el navegador.
 
 ## Cambios de esta revisión
 

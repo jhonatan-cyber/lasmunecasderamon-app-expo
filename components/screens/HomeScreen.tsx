@@ -493,6 +493,8 @@ export function HomeScreen({ role }: HomeScreenProps) {
         getEventLabel={getEventLabel}
         getStatusLabel={(item) => {
           const status = Number(item?.estado);
+          if (item?.type === 'servicio') return ({ 0: 'Anulado', 1: 'Finalizado', 2: 'En proceso', 3: 'Pausado', 4: 'Solicitud anulación' } as Record<number, string>)[status] || 'Desconocido';
+          if (item?.type === 'comision') return status === 0 ? 'Anulado' : status === 2 ? 'Pagado' : 'Por cobrar';
           if (item?.type === "anticipo") {
             if (status === 0) return "Pagado";
             if (status === 1) return "Confirmado";

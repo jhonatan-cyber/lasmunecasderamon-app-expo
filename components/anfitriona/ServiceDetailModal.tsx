@@ -7,16 +7,14 @@ interface ServiceDetailModalProps {
     visible: boolean;
     servicio: Servicio | null;
     onClose: () => void;
-    onEdit?: () => void;
 }
 
-export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: ServiceDetailModalProps) => {
+export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetailModalProps) => {
     const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
 
     if (!servicio) return null;
 
     const habitacionComision = Number(servicio.habitacion_comision || 0);
-    const mostrarBotonEditar = habitacionComision > 0 && servicio.estado === 2;
 
     const getEstadoBadge = () => {
         switch (servicio.estado) {
@@ -165,17 +163,8 @@ export const ServiceDetailModal = ({ visible, servicio, onClose, onEdit }: Servi
                     </ScrollView>
 
                     <View style={styles.buttonRow}>
-                        {mostrarBotonEditar && onEdit && (
-                            <Pressable
-                                style={[styles.modalEditBtn, { backgroundColor: '#3B82F6' }]}
-                                onPress={onEdit}
-                            >
-                                <Ionicons name="pencil" size={20} color="#FFFFFF" />
-                                <Text style={styles.modalEditBtnText}>Editar</Text>
-                            </Pressable>
-                        )}
                         <Pressable
-                            style={[styles.modalCloseBtn, { backgroundColor: accentColor, flex: mostrarBotonEditar ? 1 : undefined, width: mostrarBotonEditar ? undefined : '100%' }]}
+                            style={[styles.modalCloseBtn, { backgroundColor: accentColor, width: '100%' }]}
                             onPress={onClose}
                         >
                             <Text style={styles.modalCloseBtnText}>Cerrar</Text>

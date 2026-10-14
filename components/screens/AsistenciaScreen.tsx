@@ -22,7 +22,7 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 export default function AsistenciaScreen() {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const {
-        activeTab, setActiveTab,
+        isHostess, housingDiscountTotal, activeTab, setActiveTab,
         asistencias, gratificaciones,
         loading, refreshing,
         filter, setFilter,
@@ -70,7 +70,7 @@ export default function AsistenciaScreen() {
         ? pendientes.reduce((sum, a: any) => sum + (a.sueldo || 0), 0)
         : pendientes.reduce((sum, g: any) => sum + (g.monto || 0), 0);
     const totalAporte = activeTab === 'asistencias' ? pendientes.reduce((sum, a: any) => sum + (a.aporte || 0), 0) : 0;
-    const totalACobrar = totalSueldo - totalAporte;
+    const totalACobrar = Math.max(0, totalSueldo - totalAporte - (activeTab === 'asistencias' ? housingDiscountTotal : 0));
 
     const renderItem = useStableCallback(({ item, index }: { item: any; index: number }) => {
         const estado = normalizeEstado(item.estado);
@@ -175,7 +175,7 @@ export default function AsistenciaScreen() {
                 </Pressable>
             </View>
 
-            {activeTab === 'asistencias' && (
+            {activeTab === 'asistencias' && !isHostess && (
                 <View style={[styles.monthNav, { backgroundColor: cardBg, borderColor }]}>
                     <Pressable onPress={() => navigateMonth(-1)} style={styles.monthNavBtn}>
                         <Ionicons name="chevron-back" size={18} color={textPrimary} />
@@ -204,6 +204,7 @@ export default function AsistenciaScreen() {
                             <Text style={[styles.summaryDetail, { color: textSecondary }]}>Sueldo: ${totalSueldo.toLocaleString()}</Text>
                             <View style={{ width: 1, height: 12, backgroundColor: borderColor, alignSelf: 'center' }} />
                             <Text style={[styles.summaryDetail, { color: textSecondary }]}>Aporte: -${totalAporte.toLocaleString()}</Text>
+                            {isHostess && <Text style={[styles.summaryDetail, { color: textSecondary }]}>Alojamiento: -${housingDiscountTotal.toLocaleString()}</Text>}
                         </>
                     ) : (
                         <Text style={[styles.summaryDetail, { color: textSecondary }]}>Total histórico: ${currentData.reduce((sum: number, item: any) => sum + Number(item.monto || 0), 0).toLocaleString()}</Text>
