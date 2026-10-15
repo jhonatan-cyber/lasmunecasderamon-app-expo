@@ -377,6 +377,8 @@ export default function AnticiposScreen() {
 
       <Pressable
         style={[styles.fab, { backgroundColor: accentColor }]}
+        accessibilityRole="button"
+        accessibilityLabel="Solicitar anticipo"
         onPress={openSolicitarModal}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />

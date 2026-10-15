@@ -37,7 +37,7 @@ async function bootstrapBarmanSession(page: Page) {
                         data: { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 },
                     };
                 case '/anticipos/maximo':
-                    return { success: true, data: 500000 };
+                    return { success: true, data: { monto_maximo: 500000, tiene_solicitud_pendiente: false } };
                 case '/solicitudes-servicios/pending-count':
                     return { success: true, data: { count: 0, serviciosCount: 0, pedidosCount: 0 } };
                 case '/cashregister/status':
@@ -74,7 +74,8 @@ test('root redirects barman users to the barman dashboard', async ({ page }) => 
 
     await expect(page).toHaveURL(/barman/);
     await expect(page.locator('body')).toContainText('BAR');
-    await expect(page.locator('body')).toContainText('VENTAS');
+    await expect(page.locator('body')).toContainText('PEDIDOS');
+    await expect(page.locator('body')).not.toContainText('VENTAS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
     await expect(page.locator('body')).not.toContainText('Ganancias');
     await expect(page.locator('body')).not.toContainText('Financiero');
@@ -106,7 +107,11 @@ test('barman advances screen renders its shell', async ({ page }) => {
 
     await page.goto('/barman/anticipos');
 
-    await expect(page.locator('body')).toContainText('Mis retiros de efectivo');
+    await expect(page.locator('body')).toContainText('Mis solicitudes y anticipos recibidos');
+    await expect(page.locator('body')).not.toContainText('Entregar Efectivo');
+    await page.getByText('Solicitudes', { exact: true }).click();
+    await page.getByRole('button', { name: 'Solicitar anticipo', exact: true }).click();
+    await expect(page.locator('body')).toContainText('Enviar Solicitud');
 });
 
 test('barman tips screen renders its summary', async ({ page }) => {
@@ -146,12 +151,13 @@ test('barman bar screen exposes the container return tab', async ({ page }) => {
     await expect(page.locator('body')).toContainText('Devoluciones registradas');
 });
 
-test('barman sales screen renders its shell without the cashier FAB', async ({ page }) => {
+test('legacy barman sales route redirects to orders without the cashier FAB', async ({ page }) => {
     await bootstrapBarmanSession(page);
 
     await page.goto('/barman/ventas');
 
-    await expect(page.locator('body')).toContainText('Ventas');
+    await expect(page).toHaveURL(/\/barman\/pedidos/);
+    await expect(page.locator('body')).toContainText('Categorías');
     await expect(
         page.locator('body'),
         'el FAB de nueva venta es flujo del cajero',

@@ -220,5 +220,5 @@ test('anfitriona services screen renders its payout summary', async ({ page }) =
     await page.goto('/anfitriona/servicios');
 
     await expect(page.locator('body')).toContainText(/servicios/i);
-    await expect(page.locator('body')).toContainText(/comisiones por cobrar/i);
+    await expect(page.locator('body')).toContainText(/comisiones de servicios finalizados/i);
 });
