@@ -20,6 +20,8 @@ import type {
 } from "@/hooks/types/solicitudesTypes";
 import { blockOffline } from "@/utils/offlineGuard";
 import logger from "@/utils/logger";
+import { useAuthStore } from "@/store/authStore";
+import { isCajeroRole } from "@/utils/userRole";
 
 interface PedidoDetalle {
   configuracion_venta?: SaleInventoryFields;
@@ -92,6 +94,7 @@ export const useSolicitudesActions = ({
   queryType,
 }: UseSolicitudesActionsParams) => {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const propinaPct = Number(
     useConfigValue("facturacion", "propina_venta", "10"),
   );
@@ -222,35 +225,22 @@ export const useSolicitudesActions = ({
       }
 
       if (tipo === "anticipo" && itemInfo) {
-        const anticipoEstado = Number(itemInfo.estado);
-        const requiereAprobacion = anticipoEstado === 2;
+        if (!isCajeroRole(user) || Number(itemInfo.estado) !== 1) {
+          showToast(
+            "No disponible",
+            "Solo el cajero puede entregar anticipos previamente aprobados por el administrador.",
+            "error",
+          );
+          return;
+        }
         setAlertConfig({
           visible: true,
-          title: requiereAprobacion
-            ? "Aprobar y Pagar Anticipo"
-            : "Pagar Anticipo",
+          title: "Entregar anticipo aprobado",
           message: `¿Confirmas que has entregado el efectivo de $${(itemInfo.monto ?? 0).toLocaleString()} a ${itemInfo.usuario ?? ""}?`,
           type: "success",
           onConfirm: async () => {
             setAlertConfig((prev) => ({ ...prev, visible: false }));
             try {
-              if (requiereAprobacion) {
-                const approveRes = await apiClientSafe(`/anticipos/${id}`, {
-                  method: "PUT",
-                  body: JSON.stringify({ estado: 1 }),
-                });
-
-                if (!approveRes.success) {
-                  showToast(
-                    "Error",
-                    approveRes.message || "No se pudo aprobar el anticipo.",
-                    "error",
-                  );
-                  fetchSolicitudes();
-                  return;
-                }
-              }
-
               const res = await apiClientSafe(`/anticipos/${id}`, {
                 method: "PUT",
                 body: JSON.stringify({ estado: 0 }),
@@ -335,6 +325,7 @@ export const useSolicitudesActions = ({
     },
     [
       cajaAbierta,
+      user,
       closeCheckout,
       fetchSolicitudes,
       metodoPago,

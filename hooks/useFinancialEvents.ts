@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState } from "react";
-import { Platform } from "react-native";
-import { useFocusEffect } from "expo-router";
-import { apiClientSafe } from "@/api/client";
+import { normalizeEmployeeRecords } from '@/utils/employeeRecords';
+import { useCallback, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { apiClientSafe } from '@/api/client';
 import { showToast } from '@/utils/toast-lazy';
-import * as Haptics from "expo-haptics";
+import * as Haptics from 'expo-haptics';
 
 export interface FinancialEvent {
   id: string | number;
@@ -16,7 +17,7 @@ export interface FinancialEvent {
   fecha_crea: string;
   fecha_mod?: string | null;
   propina_fecha_crea?: string | null;
-  estado: number; 
+  estado: number;
   tipo: 'venta' | 'servicio' | 'otro' | 'propina';
   subType?: string;
   cliente_nombre?: string;
@@ -34,52 +35,69 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
   // `?tipo=detalle`: filas por comisión (el default de /commissions/user es
   // la fila agregada por usuario y no trae `tipo`, con lo que el filtro de
   // abajo descartaba todo y la pantalla quedaba siempre vacía).
-  const endpoint = type === 'comisiones' ? '/commissions/user?tipo=detalle' : '/tips?tipo=detalle';
+  const endpoint =
+    type === 'comisiones'
+      ? '/commissions/user?tipo=detalle'
+      : '/tips/user?tipo=detalle';
 
-  const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
-    try {
-      setError('');
-      const res = await apiClientSafe(endpoint, { signal });
-      if (res.success) {
-        
-        const rawData = (res.data || []) as any[];
-        const filteredData = type === 'comisiones' 
-            ? rawData.filter((c: any) => c.tipo === 'venta')
-            : rawData;
-            
-        const serialized = JSON.stringify(filteredData);
-        const hasChanges = dataRef.current !== serialized;
-        dataRef.current = serialized;
-        setData(filteredData);
+  const fetchData = useCallback(
+    async (isManual = false, signal?: AbortSignal) => {
+      try {
+        setError('');
+        const res = await apiClientSafe(endpoint, { signal });
+        if (signal?.aborted) return;
+        if (res.success) {
+          const rawData = normalizeEmployeeRecords<FinancialEvent>(res.data, [
+            'monto',
+            'comision',
+            'estado',
+          ]);
+          const filteredData =
+            type === 'comisiones'
+              ? rawData.filter((c: any) => c.tipo === 'venta')
+              : rawData;
 
-        if (isManual) {
-          showToast({
-            type: hasChanges ? 'success' : 'info',
-            text1: hasChanges ? 'Éxito' : 'Información',
-            text2: hasChanges ? 'Datos actualizados' : 'Sin cambios detectados',
-          });
+          const serialized = JSON.stringify(filteredData);
+          const hasChanges = dataRef.current !== serialized;
+          dataRef.current = serialized;
+          setData(filteredData);
+
+          if (isManual) {
+            showToast({
+              type: hasChanges ? 'success' : 'info',
+              text1: hasChanges ? 'Éxito' : 'Información',
+              text2: hasChanges
+                ? 'Datos actualizados'
+                : 'Sin cambios detectados',
+            });
+          }
+        } else {
+          setError(res.message || 'Error al cargar datos');
         }
-      } else {
-        setError(res.message || 'Error al cargar datos');
+      } catch (err: any) {
+        if (signal?.aborted || err?.name === 'AbortError') return;
+        setError(err.message || 'Error de conexión');
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [type, endpoint]);
+    },
+    [type, endpoint],
+  );
 
   useFocusEffect(
     useCallback(() => {
       const ac = new AbortController();
       fetchData(false, ac.signal);
       return () => ac.abort();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const onRefresh = useCallback(() => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'web')
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRefreshing(true);
     fetchData(true);
   }, [fetchData]);
@@ -89,7 +107,6 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
     loading,
     refreshing,
     error,
-    onRefresh
+    onRefresh,
   };
 }
-

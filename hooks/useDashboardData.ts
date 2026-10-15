@@ -1,17 +1,23 @@
-import { apiClientSafe } from "@/api/client";
-import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
-import { useAuthStore } from "@/store/authStore";
-import type { ApiRes,DashboardEvent,DashboardStats,UserRole,ActiveService } from "@/types/api";
+import { apiClientSafe } from '@/api/client';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import { useAuthStore } from '@/store/authStore';
+import type {
+  ApiRes,
+  DashboardEvent,
+  DashboardStats,
+  UserRole,
+  ActiveService,
+} from '@/types/api';
 import { showToast } from '@/utils/toast-lazy';
-import { useQuery,useQueryClient } from "@tanstack/react-query";
-import { useCallback,useState } from "react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 
-import type { EnvaseResumen } from "@/hooks/useEnvasesScreen";
+import type { EnvaseResumen } from '@/hooks/useEnvasesScreen';
 import {
-emitRefreshRequests,
-REALTIME_EVENT_NAMES,
-shouldInvalidateDashboardFromSse,
-} from "@/utils/realtime";
+  emitRefreshRequests,
+  REALTIME_EVENT_NAMES,
+  shouldInvalidateDashboardFromSse,
+} from '@/utils/realtime';
 
 import logger from '@/utils/logger';
 
@@ -52,50 +58,60 @@ export interface DashboardData {
   containerSummary?: EnvaseResumen | null;
 }
 
-const initialStats: DashboardStats = { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 };
+const initialStats: DashboardStats = {
+  weeklyIncome: [],
+  badges: [],
+  totalEarnings: 0,
+  svcCount: 0,
+};
 
 export function useDashboardData(role: UserRole) {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [hasNewAlert, setHasNewAlert] = useState(false);
-
 
   const {
     data,
     isLoading: loading,
     isFetching: refreshing,
+    error,
     refetch,
   } = useQuery({
-    queryKey: ['dashboard', role],
+    queryKey: ['dashboard', role, userId],
+    enabled: Boolean(userId),
     queryFn: async () => {
       const endpoints = [
-        apiClientSafe<DashboardEvent[]>("/events/user"),
-        apiClientSafe("/auth/me"),
-        apiClientSafe("/users/status"),
-        apiClientSafe<MeStatsData>("/users/me/stats"),
+        apiClientSafe<DashboardEvent[]>('/events/user'),
+        apiClientSafe('/auth/me'),
+        apiClientSafe('/users/status'),
+        apiClientSafe<MeStatsData>('/users/me/stats'),
       ];
 
-
       if (role === 'anfitriona') {
-        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
-        endpoints.push(apiClientSafe<ServicioRaw[]>("/servicios/user"));
+        endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
+        endpoints.push(apiClientSafe<ServicioRaw[]>('/servicios/user'));
       } else if (role === 'garzon') {
-        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
-        endpoints.push(apiClientSafe<CashStatusData>("/cashregister/status"));
+        endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
+        endpoints.push(apiClientSafe<CashStatusData>('/cashregister/status'));
       } else if (role === 'cajero') {
-        endpoints.push(apiClientSafe<Record<string, unknown>>("/caja/stats"));
-        endpoints.push(apiClientSafe("/solicitudes-servicios/pending-count"));
+        endpoints.push(apiClientSafe<Record<string, unknown>>('/caja/stats'));
+        endpoints.push(apiClientSafe('/solicitudes-servicios/pending-count'));
       } else if (role === 'barman') {
-        endpoints.push(apiClientSafe<DashboardStats>("/events/stats"));
-        endpoints.push(apiClientSafe<Record<string, unknown>>("/bar"));
-        endpoints.push(apiClientSafe<unknown[]>("/transfers/pending"));
-        endpoints.push(apiClientSafe<EnvaseResumen>("/bar/containers/summary"));
+        endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
+        endpoints.push(apiClientSafe<Record<string, unknown>>('/bar'));
+        endpoints.push(apiClientSafe<unknown[]>('/transfers/pending'));
+        endpoints.push(apiClientSafe<EnvaseResumen>('/bar/containers/summary'));
       }
 
-      const results = await Promise.all(endpoints.map(p => p.catch(e => {
-        logger.error("Endpoint error:", e);
-        return { success: false, data: null };
-      })));
+      const results = await Promise.all(
+        endpoints.map((p) =>
+          p.catch((e) => {
+            logger.error('Endpoint error:', e);
+            return { success: false, data: null };
+          }),
+        ),
+      );
 
       const eventsRes = results[0];
       const meRes = results[1];
@@ -106,55 +122,68 @@ export function useDashboardData(role: UserRole) {
       let extraData: Record<string, unknown> = {};
 
       if (eventsRes.success) {
-        const meData = (meRes as ApiRes<{ user: Record<string, unknown> }>).data;
+        const meData = (meRes as ApiRes<{ user: Record<string, unknown> }>)
+          .data;
         const statusData = (statusRes as ApiRes<UserStatusData>).data;
 
         if (role === 'anfitriona') {
-            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
-            roleStats = eventsStatsRes.data;
-            const serviciosRes = results[5] as ApiRes<ServicioRaw[]>;
-            extraData.activeService = serviciosRes.success ? serviciosRes.data.find(s => Number(s.estado) === 2 && s.asignacion_activa !== false) ?? null : null;
+          const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+          roleStats = eventsStatsRes.data;
+          const serviciosRes = results[5] as ApiRes<ServicioRaw[]>;
+          extraData.activeService = serviciosRes.success
+            ? (serviciosRes.data.find(
+                (s) => Number(s.estado) === 2 && s.asignacion_activa !== false,
+              ) ?? null)
+            : null;
         } else if (role === 'garzon') {
-            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
-            roleStats = eventsStatsRes.data;
-            const cashRes = results[5] as ApiRes<CashStatusData>;
-            extraData.hasOpenCaja = cashRes.success ? cashRes.data.hasOpenCaja : true;
+          const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+          roleStats = eventsStatsRes.data;
+          const cashRes = results[5] as ApiRes<CashStatusData>;
+          extraData.hasOpenCaja = cashRes.success
+            ? cashRes.data.hasOpenCaja
+            : true;
         } else if (role === 'cajero') {
-            roleStats = results[4];
-            const pendingData = (results[5] as ApiRes<PendingCountData>).data;
-            extraData.pendingCount = pendingData?.count || 0;
+          roleStats = results[4];
+          const pendingData = (results[5] as ApiRes<PendingCountData>).data;
+          extraData.pendingCount = pendingData?.count || 0;
         } else if (role === 'barman') {
-            const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
-            roleStats = eventsStatsRes.data;
-            extraData.barStock = (results[5] as ApiRes<unknown>)?.data ?? null;
-            extraData.pendingTransfers = (results[6] as ApiRes<unknown>)?.data ?? null;
-            // Contador de envases del home (la alerta SSE de almacén es de admin;
-            // el barman ve aquí sus pendientes de recepción).
-            extraData.containerSummary = (results[7] as ApiRes<EnvaseResumen>)?.data ?? null;
+          const eventsStatsRes = results[4] as ApiRes<DashboardStats>;
+          roleStats = eventsStatsRes.data;
+          extraData.barStock = (results[5] as ApiRes<unknown>)?.data ?? null;
+          extraData.pendingTransfers =
+            (results[6] as ApiRes<unknown>)?.data ?? null;
+          // Contador de envases del home (la alerta SSE de almacén es de admin;
+          // el barman ve aquí sus pendientes de recepción).
+          extraData.containerSummary =
+            (results[7] as ApiRes<EnvaseResumen>)?.data ?? null;
         }
 
         if (meData?.user) {
-            useAuthStore.getState().updateProfile(meData.user as any, { localOnly: true });
+          useAuthStore
+            .getState()
+            .updateProfile(meData.user as any, { localOnly: true });
         }
 
         return {
-            events: eventsRes.data || [],
-            stats: roleStats || initialStats,
-            userStatus: statusData?.status || 1,
-            payoutTotal: Number((meStatsRes as ApiRes<MeStatsData>).data?.stats?.montoAnticipoMaximo || 0),
-            ...extraData
+          events: eventsRes.data || [],
+          stats: roleStats || initialStats,
+          userStatus: statusData?.status || 1,
+          payoutTotal: Number(
+            (meStatsRes as ApiRes<MeStatsData>).data?.stats
+              ?.montoAnticipoMaximo || 0,
+          ),
+          ...extraData,
         } as DashboardData;
       }
-      throw new Error("Failed to fetch dashboard central data");
+      throw new Error('Failed to fetch dashboard central data');
     },
     staleTime: 1000 * 60 * 5,
   });
 
-
   // Invalidación con debounce (un timer por canal): una ráfaga SSE (4-8
   // endpoints por refetch) colapsa en vez de un refetch por evento.
   const invalidateDashboard = useCallback(() => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
   }, [queryClient, role]);
 
   useDebouncedEventListener(
@@ -163,30 +192,48 @@ export function useDashboardData(role: UserRole) {
     500,
   );
 
-  useDebouncedEventListener(REALTIME_EVENT_NAMES.sseEvent, (payload: any) => {
-      logger.debug('[SSE Event received]:', { arg0: payload?.type, arg1: payload?.data });
+  useDebouncedEventListener(
+    REALTIME_EVENT_NAMES.sseEvent,
+    (payload: any) => {
+      logger.debug('[SSE Event received]:', {
+        arg0: payload?.type,
+        arg1: payload?.data,
+      });
       if (shouldInvalidateDashboardFromSse(payload?.type)) {
-          invalidateDashboard();
-          // El re-emit es inmediato: aguas abajo hay overlays/shakes urgentes.
-          if (payload.type === 'new_order' || payload.type === 'new_service_request') {
-              logger.debug('[SSE] Emitiendo refresh_requests para:', { arg0: payload.type, arg1: payload.data?.id });
-              emitRefreshRequests(payload);
-          }
+        invalidateDashboard();
+        // El re-emit es inmediato: aguas abajo hay overlays/shakes urgentes.
+        if (
+          payload.type === 'new_order' ||
+          payload.type === 'new_service_request'
+        ) {
+          logger.debug('[SSE] Emitiendo refresh_requests para:', {
+            arg0: payload.type,
+            arg1: payload.data?.id,
+          });
+          emitRefreshRequests(payload);
+        }
       }
-  }, 500);
+    },
+    500,
+  );
 
   const onRefresh = useCallback(async () => {
     try {
-        await refetch();
-        showToast({ type: "success", text1: "Éxito", text2: "Datos actualizados" });
+      await refetch({ throwOnError: true });
+      showToast({
+        type: 'success',
+        text1: 'Éxito',
+        text2: 'Datos actualizados',
+      });
     } catch {
-        showToast({ type: "error", text1: "Error", text2: "Fallo al refrescar" });
+      showToast({ type: 'error', text1: 'Error', text2: 'Fallo al refrescar' });
     }
   }, [refetch]);
 
   return {
     loading,
     refreshing,
+    error: data ? null : error,
     events: data?.events || [],
     stats: data?.stats || initialStats,
     userStatus: data?.userStatus || 1,
@@ -199,6 +246,6 @@ export function useDashboardData(role: UserRole) {
     onRefresh,
     setSelectedDates,
     setHasNewAlert,
-    fetchData: refetch
+    fetchData: refetch,
   };
 }

@@ -1,27 +1,29 @@
-import { apiClientSafe } from "@/api/client";
-import { ActiveServiceCard } from "@/components/anfitriona/ActiveServiceCard";
-import { BarmanActionGrid } from "@/components/barman/BarmanActionGrid";
-import { CajeroActionGrid } from "@/components/cajero/CajeroActionGrid";
-import { CajeroStats } from "@/components/cajero/CajeroStats";
-import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
-import { GarzonStats } from "@/components/garzon/GarzonStats";
-import { EventDetailModal } from "@/components/shared/EventDetailModal";
-import { PremiumLiquidationCard } from "@/components/shared/PremiumLiquidationCard";
-import { PremiumUserProfile } from "@/components/shared/PremiumUserProfile";
-import { RegistroAsistenciaModal } from "@/components/shared/RegistroAsistenciaModal";
-import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
-import { LazyDonutChart } from "@/components/ui/LazyDonutChart";
-import { PremiumAlert } from "@/components/ui/PremiumAlert";
-import { PremiumCalendar } from "@/components/ui/PremiumCalendar";
-import { PremiumHeaderActions } from "@/components/ui/PremiumHeaderActions";
-import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { useAccentColor } from "@/hooks/useAccentColor";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { useAuthStore } from "@/store/authStore";
-import { formatCurrency } from "@/utils/format";
+import { EmployeeListError } from '@/components/shared/EmployeeListError';
+import { apiClientSafe } from '@/api/client';
+import { ActiveServiceCard } from '@/components/anfitriona/ActiveServiceCard';
+import { BarmanActionGrid } from '@/components/barman/BarmanActionGrid';
+import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
+import { CajeroStats } from '@/components/cajero/CajeroStats';
+import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
+import { GarzonStats } from '@/components/garzon/GarzonStats';
+import { EventDetailModal } from '@/components/shared/EventDetailModal';
+import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
+import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
+import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
+import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
+import { LazyDonutChart } from '@/components/ui/LazyDonutChart';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useAuthStore } from '@/store/authStore';
+import { formatCurrency } from '@/utils/format';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList ,
+import {
+  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -29,23 +31,32 @@ import { FlatList ,
   ScrollView,
   StyleSheet,
   View,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from 'react';
 
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showToast } from '@/utils/toast-lazy';
 
-import logger from "@/utils/logger";
+import logger from '@/utils/logger';
 interface HomeScreenProps {
-  role: "anfitriona" | "garzon" | "cajero" | "barman";
+  role: 'anfitriona' | 'garzon' | 'cajero' | 'barman';
 }
 
 export function HomeScreen({ role }: HomeScreenProps) {
-  const compactHome = role === "cajero" || role === "barman";
-  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const compactHome = role === 'cajero' || role === 'barman';
+  const {
+    accentColor,
+    gradientColors,
+    isDark,
+    bg,
+    cardBg,
+    textPrimary,
+    textSecondary,
+    borderColor,
+  } = useAccentColor();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
@@ -53,6 +64,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const {
     loading,
     refreshing,
+    error,
     events,
     stats,
     userStatus,
@@ -68,9 +80,9 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
   const [alertConfig, setAlertConfig] = useState<any>({
     visible: false,
-    title: "",
-    message: "",
-    type: "info",
+    title: '',
+    message: '',
+    type: 'info',
   });
   const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -78,13 +90,11 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-
-
   const showAlert = useCallback(
     (
       title: string,
       message: string,
-      type: any = "info",
+      type: any = 'info',
       onConfirm?: () => void,
       showCancel = false,
     ) => {
@@ -104,12 +114,12 @@ export function HomeScreen({ role }: HomeScreenProps) {
     setSelectedEvent(item);
     if (
       [
-        "comision",
-        "propina",
-        "asistencia",
-        "anticipo",
-        "servicio",
-        "venta",
+        'comision',
+        'propina',
+        'asistencia',
+        'anticipo',
+        'servicio',
+        'venta',
       ].includes(item.type)
     ) {
       setLoadingDetail(true);
@@ -119,7 +129,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         );
         if (res.success) setEventDetail(res.data);
       } catch (e) {
-        logger.captureException(e, { context: "HomeScreen:handleSelectEvent" });
+        logger.captureException(e, { context: 'HomeScreen:handleSelectEvent' });
       } finally {
         setLoadingDetail(false);
       }
@@ -127,23 +137,23 @@ export function HomeScreen({ role }: HomeScreenProps) {
   };
 
   const getEventLabel = (item: any) => {
-    if (!item) return "";
+    if (!item) return '';
     const typeLabels: any = {
-      comision: "Comisión",
-      asistencia: "Asistencia",
-      anticipo: "Anticipo",
-      propina: "Propina",
-      venta: "Venta",
-      servicio: "Servicio",
-      gratificacion: "Gratificación",
-      hora_extra: "Hora Extra",
+      comision: 'Comisión',
+      asistencia: 'Asistencia',
+      anticipo: 'Anticipo',
+      propina: 'Propina',
+      venta: 'Venta',
+      servicio: 'Servicio',
+      gratificacion: 'Gratificación',
+      hora_extra: 'Hora Extra',
     };
-    if (item.type === "comision")
-      return item.subType === "venta"
-        ? "Comisión de Venta"
-        : "Comisión de Servicio";
-    if (item.type === "propina")
-      return item.subType === "venta" ? "Propina de Venta" : "Propina";
+    if (item.type === 'comision')
+      return item.subType === 'venta'
+        ? 'Comisión de Venta'
+        : 'Comisión de Servicio';
+    if (item.type === 'propina')
+      return item.subType === 'venta' ? 'Propina de Venta' : 'Propina';
     return typeLabels[item.type] || item.type.toUpperCase();
   };
 
@@ -152,7 +162,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
     return events
       .filter((e: any) => {
         const d = new Date(e.date);
-        const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+        const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
         return selectedDates.includes(dateStr);
       })
       .sort(
@@ -165,39 +175,44 @@ export function HomeScreen({ role }: HomeScreenProps) {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
         <LinearGradient
-          colors={gradientColors as unknown as readonly [string, string, ...string[]]}
-          style={[styles.header, { paddingTop: insets.top + 10, paddingBottom: 25 }]}
+          colors={
+            gradientColors as unknown as readonly [string, string, ...string[]]
+          }
+          style={[
+            styles.header,
+            { paddingTop: insets.top + 10, paddingBottom: 25 },
+          ]}
         >
           <SkeletonLoader
             width={40}
             height={40}
             borderRadius={20}
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
           />
-          <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
             <SkeletonLoader
               width={60}
               height={60}
               borderRadius={30}
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
             />
             <View style={{ gap: 8 }}>
               <SkeletonLoader
                 width={120}
                 height={20}
-                style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
               />
               <SkeletonLoader
                 width={80}
                 height={15}
-                style={{ backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
               />
             </View>
           </View>
         </LinearGradient>
         <View style={{ padding: 20, gap: 15 }}>
           <SkeletonLoader width="100%" height={150} borderRadius={24} />
-          <View style={{ flexDirection: "row", gap: 15 }}>
+          <View style={{ flexDirection: 'row', gap: 15 }}>
             <SkeletonLoader width="48%" height={100} borderRadius={20} />
             <SkeletonLoader width="48%" height={100} borderRadius={20} />
           </View>
@@ -205,10 +220,22 @@ export function HomeScreen({ role }: HomeScreenProps) {
       </View>
     );
 
+  if (error)
+    return (
+      <View style={{ flex: 1, backgroundColor: bg }}>
+        <EmployeeListError
+          message="No se pudo cargar tu actividad."
+          onRetry={onRefresh}
+        />
+      </View>
+    );
+
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
-        colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+        colors={
+          gradientColors as unknown as readonly [string, string, ...string[]]
+        }
         style={[styles.header, { paddingTop: insets.top + 10 }]}
       >
         <PremiumHeaderActions
@@ -218,38 +245,38 @@ export function HomeScreen({ role }: HomeScreenProps) {
           profilePath={`/${role}/perfil`}
           onQRScannerPress={() => setShowAsistenciaModal(true)}
           onPersonalPress={
-            role === "cajero"
-              ? () => router.push("/cajero/personal")
+            role === 'cajero'
+              ? () => router.push('/cajero/personal')
               : undefined
           }
-          notificationCount={role === "cajero" ? pendingCount : 0}
+          notificationCount={role === 'cajero' ? pendingCount : 0}
           onNotificationPress={
-            role === "cajero"
-              ? () => router.push("/cajero/solicitudes")
+            role === 'cajero'
+              ? () => router.push('/cajero/solicitudes')
               : undefined
           }
         />
         <PremiumUserProfile user={user} userStatus={userStatus} role={role} />
 
-        {role === "anfitriona" && !activeService && (
+        {role === 'anfitriona' && !activeService && (
           <AnimatedView
             from={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            style={{ marginTop: 15, alignItems: "center" }}
+            style={{ marginTop: 15, alignItems: 'center' }}
           >
             <AnimatedButton
               style={[styles.callStaffBtn, { backgroundColor: accentColor }]}
               onPress={() =>
                 showAlert(
-                  "Atención",
-                  "¿Solicitar asistencia general?",
-                  "warning",
+                  'Atención',
+                  '¿Solicitar asistencia general?',
+                  'warning',
                   () => {
-                    apiClientSafe("/notifications/assistance", {
-                      method: "POST",
-                      body: JSON.stringify({ type: "Llamado" }),
+                    apiClientSafe('/notifications/assistance', {
+                      method: 'POST',
+                      body: JSON.stringify({ type: 'Llamado' }),
                     });
-                    showToast({ type: "success", text1: "Enviado" });
+                    showToast({ type: 'success', text1: 'Enviado' });
                   },
                   true,
                 )
@@ -277,14 +304,14 @@ export function HomeScreen({ role }: HomeScreenProps) {
           <View style={{ padding: compactHome ? 0 : 16 }}>
             {}
 
-            {role === "anfitriona" && activeService && (
+            {role === 'anfitriona' && activeService && (
               <ActiveServiceCard
                 habitacion={activeService.habitacion}
-                onPress={() => router.push("/anfitriona/servicios")}
+                onPress={() => router.push('/anfitriona/servicios')}
               />
             )}
 
-            {role === "anfitriona" && (
+            {role === 'anfitriona' && (
               <View style={styles.analyticsRow}>
                 <View
                   style={[
@@ -305,7 +332,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                     isDark={isDark}
                   />
                   <RNText style={{ color: textSecondary, fontSize: 11 }}>
-                    {formatCurrency(stats.totalEarnings)} /{" "}
+                    {formatCurrency(stats.totalEarnings)} /{' '}
                     {formatCurrency(50000)}
                   </RNText>
                 </View>
@@ -321,7 +348,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                   <RNText
                     style={{
                       fontSize: 24,
-                      fontWeight: "900",
+                      fontWeight: '900',
                       color: accentColor,
                     }}
                   >
@@ -331,62 +358,81 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
-            {role === "anfitriona" && (
+            {role === 'anfitriona' && (
               <Pressable
-                onPress={() => router.push("/anfitriona/analytics")}
+                onPress={() => router.push('/anfitriona/analytics')}
                 style={({ pressed }) => [
                   styles.analyticsLink,
-                  { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.8 : 1 },
+                  {
+                    backgroundColor: cardBg,
+                    borderColor,
+                    opacity: pressed ? 0.8 : 1,
+                  },
                 ]}
               >
-                <View style={[styles.analyticsLinkIcon, { backgroundColor: `${accentColor}1F` }]}>
+                <View
+                  style={[
+                    styles.analyticsLinkIcon,
+                    { backgroundColor: `${accentColor}1F` },
+                  ]}
+                >
                   <Ionicons name="stats-chart" size={18} color={accentColor} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <RNText style={{ color: textPrimary, fontSize: 14, fontWeight: "800" }}>
+                  <RNText
+                    style={{
+                      color: textPrimary,
+                      fontSize: 14,
+                      fontWeight: '800',
+                    }}
+                  >
                     Analíticas
                   </RNText>
                   <RNText style={{ color: textSecondary, fontSize: 11 }}>
                     Métricas y tendencias
                   </RNText>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={textSecondary}
+                />
               </Pressable>
             )}
 
-            {role === "garzon" && (
+            {role === 'garzon' && (
               <>
                 <GarzonStats stats={stats} events={events} />
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 15 }}>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
                   <GarzonActionCard
                     title="PEDIDOS"
                     description="Gestión de comandas"
                     icon="beer"
                     color={accentColor}
-                    onPress={() => router.push("/garzon/pedidos")}
+                    onPress={() => router.push('/garzon/pedidos')}
                   />
                   <GarzonActionCard
                     title="SERVICIOS"
                     description="Atenciones activas"
                     icon="bed"
                     color="#10B981"
-                    onPress={() => router.push("/garzon/servicios")}
+                    onPress={() => router.push('/garzon/servicios')}
                   />
                 </View>
                 {/* Paridad con Flutter: acceso a Analíticas desde el home */}
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                   <GarzonActionCard
                     title="ANALÍTICAS"
                     description="Métricas y ventas"
                     icon="stats-chart"
                     color="#8B5CF6"
-                    onPress={() => router.push("/garzon/analytics")}
+                    onPress={() => router.push('/garzon/analytics')}
                   />
                 </View>
               </>
             )}
 
-            {role === "cajero" && (
+            {role === 'cajero' && (
               <>
                 <CajeroStats stats={stats} fullWidth />
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
@@ -395,7 +441,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </>
             )}
 
-            {role === "barman" && (
+            {role === 'barman' && (
               <>
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <BarmanActionGrid fullWidth />
@@ -413,36 +459,34 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
-            {!compactHome && (
-              <PremiumCalendar
-                events={events}
-                selectedDates={selectedDates}
-                onDateToggle={(d) => {
-                  const next = selectedDates.includes(d)
-                    ? selectedDates.filter((x: any) => x !== d)
-                    : [...selectedDates, d];
-                  setSelectedDates(next);
-                }}
-              />
-            )}
+            <PremiumCalendar
+              events={events}
+              selectedDates={selectedDates}
+              onDateToggle={(d) => {
+                const next = selectedDates.includes(d)
+                  ? selectedDates.filter((x: any) => x !== d)
+                  : [...selectedDates, d];
+                setSelectedDates(next);
+              }}
+            />
           </View>
         </AnimatedScreen>
       </ScrollView>
 
-      {!compactHome && selectedDates.length > 0 && (
+      {selectedDates.length > 0 && (
         <AnimatedView
           from={{ translateY: 100 }}
           animate={{ translateY: 0 }}
           style={[styles.selectionFloat, { backgroundColor: cardBg }]}
         >
-          <RNText style={{ color: textPrimary, fontWeight: "700" }}>
+          <RNText style={{ color: textPrimary, fontWeight: '700' }}>
             {selectedDates.length} seleccionados
           </RNText>
           <Pressable
             onPress={() => setIsModalVisible(true)}
             style={[styles.viewBtn, { backgroundColor: accentColor }]}
           >
-            <RNText style={{ color: "#FFF", fontWeight: "800" }}>
+            <RNText style={{ color: '#FFF', fontWeight: '800' }}>
               DETALLES
             </RNText>
           </Pressable>
@@ -470,10 +514,10 @@ export function HomeScreen({ role }: HomeScreenProps) {
                     { backgroundColor: cardBg, borderColor },
                   ]}
                 >
-                  <RNText style={{ color: textPrimary, fontWeight: "700" }}>
+                  <RNText style={{ color: textPrimary, fontWeight: '700' }}>
                     {getEventLabel(item)}
                   </RNText>
-                  <RNText style={{ color: accentColor, fontWeight: "900" }}>
+                  <RNText style={{ color: accentColor, fontWeight: '900' }}>
                     {formatCurrency(item.amount)}
                   </RNText>
                 </Pressable>
@@ -493,20 +537,36 @@ export function HomeScreen({ role }: HomeScreenProps) {
         getEventLabel={getEventLabel}
         getStatusLabel={(item) => {
           const status = Number(item?.estado);
-          if (item?.type === 'servicio') return ({ 0: 'Anulado', 1: 'Finalizado', 2: 'En proceso', 3: 'Pausado', 4: 'Solicitud anulación' } as Record<number, string>)[status] || 'Desconocido';
-          if (item?.type === 'comision') return status === 0 ? 'Anulado' : status === 2 ? 'Pagado' : 'Por cobrar';
-          if (item?.type === "anticipo") {
-            if (status === 0) return "Pagado";
-            if (status === 1) return "Confirmado";
-            if (status === 2) return "Pendiente";
-            if (status === 3) return "Rechazado";
+          if (item?.type === 'servicio')
+            return (
+              (
+                {
+                  0: 'Anulado',
+                  1: 'Finalizado',
+                  2: 'En proceso',
+                  3: 'Pausado',
+                  4: 'Solicitud anulación',
+                } as Record<number, string>
+              )[status] || 'Desconocido'
+            );
+          if (item?.type === 'comision')
+            return status === 0
+              ? 'Anulado'
+              : status === 2
+                ? 'Pagado'
+                : 'Por cobrar';
+          if (item?.type === 'anticipo') {
+            if (status === 0) return 'Pagado';
+            if (status === 1) return 'Confirmado';
+            if (status === 2) return 'Pendiente';
+            if (status === 3) return 'Rechazado';
           }
-          if (status === 0) return "Pagado";
-          if (status === 1) return "Por cobrar";
-          if (status === 2) return "Confirmado";
-          if (status === 3) return "Rechazado";
-          if (status === 4) return "Completado";
-          return String(item?.estado ?? "");
+          if (status === 0) return 'Pagado';
+          if (status === 1) return 'Por cobrar';
+          if (status === 2) return 'Confirmado';
+          if (status === 3) return 'Rechazado';
+          if (status === 4) return 'Completado';
+          return String(item?.estado ?? '');
         }}
       />
       <RegistroAsistenciaModal
@@ -533,81 +593,88 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
-  headerSkeleton: { height: 200, padding: 20, backgroundColor: "#222" },
+  headerSkeleton: { height: 200, padding: 20, backgroundColor: '#222' },
   container: { flex: 1 },
   callStaffBtn: {
     paddingHorizontal: 20,
     height: 44,
     borderRadius: 22,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     elevation: 4,
   },
-  callStaffBtnText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+  callStaffBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   activeServiceCard: {
     margin: 16,
     padding: 16,
     borderRadius: 20,
     elevation: 4,
-  },    analyticsRow: { flexDirection: "row", gap: 12, marginTop: 10 },
-    // Acceso a Analíticas (paridad con Flutter: /anfitriona/analytics)
-    analyticsLink: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      marginTop: 12,
-      padding: 14,
-      borderRadius: 20,
-      borderWidth: 1,
-    },
-    analyticsLinkIcon: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  },
+  analyticsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  // Acceso a Analíticas (paridad con Flutter: /anfitriona/analytics)
+  analyticsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  analyticsLinkIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   glassCard: {
     flex: 1,
     padding: 16,
     borderRadius: 24,
     borderWidth: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: 8,
   },
-  cardTitle: { fontSize: 12, fontWeight: "800", opacity: 0.7 },
+  cardTitle: { fontSize: 12, fontWeight: '800', opacity: 0.7 },
   selectionFloat: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 34,
     left: 20,
     right: 20,
     padding: 16,
     borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     elevation: 10,
   },
   viewBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    height: "80%",
+    height: '80%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   modalHeader: {
     padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  modalTitle: { fontSize: 20, fontWeight: "900" },
+  modalTitle: { fontSize: 20, fontWeight: '900' },
   eventItem: {
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
