@@ -48,7 +48,7 @@ export function useGratificaciones() {
       setError('');
 
       const [gratificacionesRes, usersRes] = await Promise.all([
-        apiClientSafe('/gratificaciones', { signal }),
+        apiClientSafe('/gratifications', { signal }),
         apiClientSafe('/users?status=active', { signal })
       ]);
 
@@ -96,7 +96,7 @@ export function useGratificaciones() {
     async (payload: { usuario_id: string; monto: number; descripcion: string }) => {
       try {
         setSubmitting(true);
-        const response = await apiClientSafe('/gratificaciones', {
+        const response = await apiClientSafe('/gratifications', {
           method: 'POST',
           body: JSON.stringify(payload)
         });

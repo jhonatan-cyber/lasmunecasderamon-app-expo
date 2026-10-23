@@ -45,9 +45,9 @@ async function bootstrapRoleSession(page: Page, role: Role) {
             switch (path) {
                 case '/auth/me':
                     return { success: true, data: { user } };
-                case '/caja/stats':
+                case '/cash-register/stats':
                     return { success: true, data: { ventas: 4, cuentas: 2, servicios: 3, caja: 1 } };
-                case '/solicitudes-servicios/pending-count':
+                case '/service-requests/pending-count':
                     return { success: true, data: { count: 2, serviciosCount: 1, pedidosCount: 1 } };
                 case '/users/status':
                     return { success: true, data: { status: 1, estado_servicio: 1, user: { id: '1', nick: 'test', name: 'Test', role: 'cajero', foto: '' } } };
@@ -75,7 +75,7 @@ async function bootstrapRoleSession(page: Page, role: Role) {
                             { id: '10', name: 'Bebidas', description: 'Tragos', status: 1, total_products: 4, display_order: 1 },
                         ],
                     };
-                case '/servicios/user':
+                case '/services/user':
                     return { success: true, data: [] };
                 default:
                     if (path.startsWith('/sales')) {

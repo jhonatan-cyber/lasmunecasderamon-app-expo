@@ -127,10 +127,10 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     setLoadingAnfitrionas(true);
     try {
       const disponiblesRes = await apiClientSafe<Anfitriona[]>(
-        "/anfitrionas/disponibles",
+        "/hostesses/available",
       );
       const servicioRes = await apiClientSafe<ServicioDetailRaw>(
-        `/servicios/${timer?.servicioId}`,
+        `/services/${timer?.servicioId}`,
       );
       let todasAnfitrionas: Anfitriona[] = [];
 
@@ -283,7 +283,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       const signature = JSON.stringify(payload);
       if (operationRef.current.signature !== signature)
         operationRef.current = { signature, key: createQueueId() };
-      const res = await apiClientSafe("/servicios/temporal", {
+      const res = await apiClientSafe("/services/temporary", {
         method: "POST",
         headers: { "x-idempotency-key": operationRef.current.key },
         body: JSON.stringify(payload),

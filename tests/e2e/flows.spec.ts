@@ -103,7 +103,7 @@ async function mockAllApi(page: Page) {
       })
     }
 
-    if (path === '/servicios' && method === 'POST') {
+    if (path === '/services' && method === 'POST') {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -126,8 +126,8 @@ async function mockAllApi(page: Page) {
     }
 
     const staticResponses: Record<string, unknown> = {
-      '/caja/stats': { success: true, data: { ventas: 0, cuentas: 0, servicios: 0, caja: 1 } },
-      '/solicitudes-servicios/pending-count': { success: true, data: { count: 0, serviciosCount: 0, pedidosCount: 0 } },
+      '/cash-register/stats': { success: true, data: { ventas: 0, cuentas: 0, servicios: 0, caja: 1 } },
+      '/service-requests/pending-count': { success: true, data: { count: 0, serviciosCount: 0, pedidosCount: 0 } },
       '/users/status': { success: true, data: { status: 1, estado_servicio: 1, user: { id: '1', nick: 'test', name: 'Test', role: 'cajero', foto: '' } } },
       '/events/user': { success: true, data: [] },
       '/events/stats': {
@@ -137,10 +137,10 @@ async function mockAllApi(page: Page) {
       '/cashregister/status': { success: true, data: { hasOpenCaja: true } },
       '/categories': { success: true, data: [category] },
       '/products': { success: true, data: [product] },
-      '/anfitrionas': { success: true, data: [anfitriona] },
+      '/hostesses': { success: true, data: [anfitriona] },
       '/rooms': { success: true, data: [room] },
       '/clients': { success: true, data: [cliente] },
-      '/servicios/user': { success: true, data: [] },
+      '/services/user': { success: true, data: [] },
     }
 
     const resp = staticResponses[path] ?? { success: true, data: [] }

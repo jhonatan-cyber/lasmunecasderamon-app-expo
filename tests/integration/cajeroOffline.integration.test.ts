@@ -113,8 +113,8 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             'SELECT version FROM mirror_schema_migrations ORDER BY version ASC'
         );
 
-        expect(aplicadas.map(row => Number(row.version))).toEqual([1, 2]);
-        expect(MIRROR_SCHEMA_VERSION).toBe(2);
+        expect(aplicadas.map(row => Number(row.version))).toEqual([1, 2, 3]);
+        expect(MIRROR_SCHEMA_VERSION).toBe(3);
     });
 
     describe('espejo de lectura (solo lecturas al servidor real)', () => {
@@ -122,7 +122,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             {
                 nombre: 'cuentas abiertas',
                 key: () => MIRROR_KEYS.openAccounts,
-                endpoint: () => `/cuentas?limit=50&_t=${Date.now()}`,
+                endpoint: () => `/accounts?limit=50&_t=${Date.now()}`,
                 maxAgeMs: MIRROR_MAX_AGE_MS.dinero,
             },
             {
@@ -181,7 +181,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
         );
 
         it('espeja el detalle de una cuenta real y lo sirve sin red', async () => {
-            const listado = await apiClientSafe<{ id_cuenta?: string }[]>('/cuentas?limit=5');
+            const listado = await apiClientSafe<{ id_cuenta?: string }[]>('/accounts?limit=5');
             const cuenta = (listado.data as any[])?.[0];
 
             if (!cuenta?.id_cuenta) {
@@ -193,7 +193,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             const clave = MIRROR_KEYS.accountDetail(cuenta.id_cuenta);
             const online = await mirror.readThroughDetailed<any>(
                 clave,
-                () => apiClientSafe(`/cuentas/${cuenta.id_cuenta}?_t=${Date.now()}`),
+                () => apiClientSafe(`/accounts/${cuenta.id_cuenta}?_t=${Date.now()}`),
                 { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
             );
 
@@ -302,12 +302,17 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             expect(consumos.status).toBe('fallida');
             expect(consumos.lastError).toBeTruthy();
 
-            // El cobro transaccional contesta 404 con el motivo concreto: la
-            // intención queda en revisión y no se manda sola otra vez.
-            expect(cobro.status).toBe('fallida');
-            expect(cobro.lastError).toContain('no encontrado');
+            // El cobro de la misma cuenta no se manda: `checkoutBlocked`
+            // retiene todo cobro mientras sus consumos estén sin resolver,
+            // incluso en revisión ('fallida'), porque el cobro cierra la
+            // cuenta y pasaría por alto consumos que el servidor aún no
+            // registró.
+            expect(cobro.status).toBe('pendiente');
+            expect(cobro.lastError).toBe('Primero sincroniza o revisa los consumos de esta cuenta.');
 
-            expect(repository.listFlushable(6)).toHaveLength(0);
+            // El cobro retenido sigue en la cola, a la espera de la revisión
+            // manual de sus consumos; el bloqueo evita que se reintente solo.
+            expect(repository.listFlushable(6)).toHaveLength(1);
 
             // El sello del momento de la operación sobrevive al envío.
             expect((repository.get(ventaIntent.id)!.payload as any).device_date).toBe(
@@ -356,7 +361,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
         });
 
         it('no re-ejecuta una operación que quedó sin resolver', async () => {
-            const res = await fetch(`${API_URL}/cuentas/${CUENTA_INEXISTENTE}`, {
+            const res = await fetch(`${API_URL}/accounts/${CUENTA_INEXISTENTE}`, {
                 method: 'PUT',
                 headers: {
                     'content-type': 'application/json',
@@ -373,9 +378,9 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             expect(body.code).toBe('IDEMPOTENCY_FALLIDA');
         });
 
-        it('tampoco re-ejecuta un cobro que quedó sin resolver', async () => {
+        it('la clave del cobro queda registrada aunque la app lo retenga', async () => {
             const res = await fetch(
-                `${API_URL}/cuentas/${CUENTA_INEXISTENTE}/cobrar-con-venta`,
+                `${API_URL}/accounts/${CUENTA_INEXISTENTE}/charge-with-sale`,
                 {
                     method: 'POST',
                     headers: {
@@ -387,12 +392,32 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
                 }
             );
 
-            // El primer envío devolvió 404 (cuenta inexistente) y quedó
-            // registrado: el reintento devuelve el 409 de revisión en vez de
-            // volver a ejecutar el cobro.
-            expect(res.status).toBe(409);
-            const body = (await res.json()) as { code?: string };
-            expect(body.code).toBe('IDEMPOTENCY_FALLIDA');
+            // La app retuvo el cobro por los consumos en revisión, así que
+            // este envío manual es el PRIMERO con esa clave: el servidor
+            // contesta 404 por la cuenta inexistente y registra la operación
+            // como fallida para idempotencia.
+            expect(res.status).toBe(404);
+            const body = (await res.json()) as { code?: string; message?: string };
+            expect(body.code).toBe('NOT_FOUND');
+            expect(body.message).toContain('no encontrado');
+
+            // Un reintento con la MISMA clave no vuelve a ejecutar el cobro:
+            // devuelve el 409 de revisión en vez de duplicar la operación.
+            const res2 = await fetch(
+                `${API_URL}/accounts/${CUENTA_INEXISTENTE}/charge-with-sale`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        authorization: `Bearer ${token}`,
+                        [IDEMPOTENCY_HEADER]: cobroIntent.id,
+                    },
+                    body: JSON.stringify({ metodo_pago: 'efectivo', total_cobrado: 1000 }),
+                }
+            );
+            expect(res2.status).toBe(409);
+            const body2 = (await res2.json()) as { code?: string };
+            expect(body2.code).toBe('IDEMPOTENCY_FALLIDA');
         });
 
         it('no vuelve a enviar lo ya resuelto', async () => {
@@ -400,7 +425,9 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             await outbox.flush();
 
             expect(repository.list()).toHaveLength(antes);
-            expect(repository.listFlushable(6)).toHaveLength(0);
+            // Lo resuelto ya no está flushable; el único intento que queda
+            // en la cola es el cobro retenido por los consumos en revisión.
+            expect(repository.listFlushable(6)).toHaveLength(1);
         });
     });
 

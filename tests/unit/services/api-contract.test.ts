@@ -74,7 +74,7 @@ function skipCall(src: string, i: number): number {
   return i;
 }
 
-/** Normaliza el literal de un endpoint a una ruta limpia (`/cuentas/<dyn>/stop`). */
+/** Normaliza el literal de un endpoint a una ruta limpia (`/accounts/<dyn>/stop`). */
 function normalizeEndpoint(raw: string): string | null {
   const open = (raw.match(/\$\{/g) || []).length;
   const close = (raw.match(/\}/g) || []).length;

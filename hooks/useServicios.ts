@@ -35,7 +35,7 @@ export function useServicios() {
       setError('');
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
-      const res = await apiClientSafe('/servicios/user', { signal: controller.signal });
+      const res = await apiClientSafe('/services/user', { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if ((res as any).success) {

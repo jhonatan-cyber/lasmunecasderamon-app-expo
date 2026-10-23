@@ -1,4 +1,5 @@
 import { apiClientSafe } from '@/api/client-safe';
+import { interpretarSolicitudAnulacion, type SolicitudAnulacionResultado } from '@/services/anulaciones';
 import type { Venta, VentaDetail, VentaResumen } from "@/components/cajero/ventas/types";
 import logger from "@/utils/logger";
 
@@ -97,25 +98,21 @@ export async function enviarSolicitudAnulacion(
   ventaId: string | number | null,
   motivo: string,
   monto: number,
-): Promise<{ success: boolean; message?: string }> {
+): Promise<SolicitudAnulacionResultado> {
   if (!ventaId) {
     return { success: false, message: "No se pudo identificar la venta." };
   }
 
   try {
-    const res = await apiClientSafe("/ventas/anulacion", {
+    const res = await apiClientSafe("/sales/cancellation", {
       method: "POST",
       body: JSON.stringify({ ventaId, motivo, monto }),
     });
 
-    if (res.success || !res.error) {
-      return { success: true };
-    }
-    return {
-      success: false,
-      message:
-        res.message || res.error || "No se pudo solicitar la anulación",
-    };
+    // El dashboard distingue dos éxitos: 200 (creada + WhatsApp enviado) y
+    // 202 (creada pero WhatsApp falló). `success || !res.error` no ve esa
+    // diferencia y reportaba éxito con el aviso sin partir.
+    return interpretarSolicitudAnulacion(res);
   } catch {
     return {
       success: false,

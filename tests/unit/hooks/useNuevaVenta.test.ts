@@ -986,7 +986,7 @@ describe("useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
 it("preselecciona las anfitrionas del privado y conserva el cambio o la selección vacía", async () => {
   routeParams.servicio_id = "privado-1";
   vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
-    if (url === "/servicios/privado-1")
+    if (url === "/services/privado-1")
       return {
         success: true,
         data: {
@@ -1055,7 +1055,7 @@ it.each([
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
       if (url === "/cashregister/status")
         return { success: true, data: { hasOpenCaja: true } };
-      if (url === "/servicios/privado-1")
+      if (url === "/services/privado-1")
         return { success: true, data: { estado: 2, habitacion_id: "vip-1" } };
       if (url === "/sales") return { success: true, data: { id: "sale-1" } };
       return { success: true, data: [] };

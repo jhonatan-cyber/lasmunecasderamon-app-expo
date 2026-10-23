@@ -27,7 +27,7 @@ export interface SolicitudItemBase {
   habitacion_nombre?: string;
 }
 
-/** A service request solicitud (from /solicitudes-servicios) */
+/** A service request solicitud (from /service-requests) */
 export interface SolicitudSolicitud extends SolicitudItemBase {
   tipoItem: 'solicitud';
   fecha_solicitud?: string;
@@ -46,7 +46,7 @@ export interface PedidoItem extends SolicitudItemBase {
   subtotal?: number;
 }
 
-/** An anticipo/advance (from /anticipos) */
+/** An anticipo/advance (from /advances) */
 export interface AnticipoItem extends SolicitudItemBase {
   tipoItem: 'anticipo';
   fecha_crea?: string;

@@ -52,7 +52,7 @@ export const cajaService = {
    * la solicitud y avisa al administrador por WhatsApp para que la autorice.
    */
   solicitarCierre: (data: SolicitudCierreCajaPayload) =>
-    apiClientSafe<SolicitudCierreCajaRes>('/cashregister/cierre', {
+    apiClientSafe<SolicitudCierreCajaRes>('/cashregister/closing', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -65,7 +65,7 @@ export const cajaService = {
    * pasó el minuto, así que el error trae el motivo en el cuerpo.
    */
   reenviarAvisoCierre: (data: SolicitudCierreCajaPayload) =>
-    apiClientSafe<ReenvioAvisoCierreRes>('/cashregister/cierre/reenviar', {
+    apiClientSafe<ReenvioAvisoCierreRes>('/cashregister/closing/resend', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -74,11 +74,11 @@ export const cajaService = {
     apiClientSafe('/cashregister?resumen=1', { signal }),
 
   retiros: (data: RetiroCajaPayload) =>
-    apiClientSafe('/cashregister/retiros', {
+    apiClientSafe('/cashregister/withdrawals', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   stats: () =>
-    apiClientSafe('/caja/stats'),
+    apiClientSafe('/cash-register/stats'),
 };

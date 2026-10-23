@@ -1,12 +1,18 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // This suite only sends GET/OPTIONS requests. It never creates financial records.
-const localEnv = readFileSync(
-  resolve(process.cwd(), ".env.development.local"),
-  "utf8",
-);
+// Prefiere el override local (.env.development.local) y cae al .env del proyecto
+// si aquel no existe; la garantía anti-producción es la validación de hostname.
+const envFile = [".env.development.local", ".env"]
+  .map((file) => resolve(process.cwd(), file))
+  .find((file) => existsSync(file));
+if (!envFile)
+  throw new Error(
+    "No se encontró .env.development.local ni .env en el proyecto.",
+  );
+const localEnv = readFileSync(envFile, "utf8");
 const configured = localEnv
   .match(/^EXPO_PUBLIC_API_BASE_URL=(.+)$/m)?.[1]
   ?.trim();
@@ -28,15 +34,15 @@ const origin = "http://localhost:8081";
 const endpoints = [
   "/auth/me",
   "/attendance/user?tipo=detalle",
-  "/anticipos/user",
-  "/anticipos/solicitudes",
-  "/anticipos/maximo",
+  "/advances/user",
+  "/advances/requests",
+  "/advances/max",
   "/tips/user?tipo=detalle",
   "/overtime/user",
   "/commissions/user?tipo=detalle",
-  "/servicios/user",
+  "/services/user",
   "/events/user",
-  "/gratificaciones/me",
+  "/gratifications/me",
 ];
 describe("API local real · conexión, CORS y autenticación de módulos personales", () => {
   it("consulta la existencia de usuarios desde el servidor y su base real", async () => {

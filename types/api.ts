@@ -25,7 +25,7 @@ export interface DashboardStats {
   svcCount: number;
 }
 
-/** Active service from /servicios/user where estado === 2 */
+/** Active service from /services/user where estado === 2 */
 export interface ActiveService {
   habitacion: string;
   estado: number;

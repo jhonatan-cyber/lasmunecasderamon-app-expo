@@ -107,7 +107,7 @@ it('normaliza los estados y montos de las horas extras propias', async () => {
 it('separa fallos de solicitudes de anticipos de un historial vacío y permite reintentar', async () => {
   let failed = true;
   vi.mocked(apiClientSafe).mockImplementation(async (path: string) =>
-    path.endsWith('/maximo')
+    path.endsWith('/max')
       ? ({ success: true, data: { monto_maximo: 10000 } } as any)
       : failed
         ? { success: false, message: 'Sin conexión', data: undefined }
@@ -123,7 +123,7 @@ it('separa fallos de solicitudes de anticipos de un historial vacío y permite r
 });
 it('expone los errores de gratificaciones al abrir la pestaña correspondiente', async () => {
   vi.mocked(apiClientSafe).mockImplementation(async (path: string) =>
-    path.includes('gratificaciones')
+    path.includes('gratifications')
       ? { success: false, message: 'Fallo de gratificaciones', data: undefined }
       : { success: true, data: [] },
   );

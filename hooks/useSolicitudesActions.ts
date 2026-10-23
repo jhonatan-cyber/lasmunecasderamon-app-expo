@@ -241,7 +241,7 @@ export const useSolicitudesActions = ({
           onConfirm: async () => {
             setAlertConfig((prev) => ({ ...prev, visible: false }));
             try {
-              const res = await apiClientSafe(`/anticipos/${id}`, {
+              const res = await apiClientSafe(`/advances/${id}`, {
                 method: "PUT",
                 body: JSON.stringify({ estado: 0 }),
               });
@@ -276,7 +276,7 @@ export const useSolicitudesActions = ({
           removeSolicitudLocally(id, "solicitud");
           try {
             const res = await apiClientSafe(
-              `/solicitudes-servicios/${id}/aprobar`,
+              `/service-requests/${id}/approve`,
               {
                 method: "PATCH",
                 body: JSON.stringify({
@@ -353,7 +353,7 @@ export const useSolicitudesActions = ({
           try {
             const endpoint =
               tipo === "solicitud"
-                ? `/solicitudes-servicios/${id}/rechazar`
+                ? `/service-requests/${id}/reject`
                 : `/orders/${id}`;
             const res = await apiClientSafe(endpoint, {
               method: tipo === "solicitud" ? "PATCH" : "PUT",
@@ -537,7 +537,7 @@ export const useSolicitudesActions = ({
         detalles,
       };
 
-      const res = await apiClientSafe("/cuentas", {
+      const res = await apiClientSafe("/accounts", {
         method: "POST",
         body: JSON.stringify(payload),
       });

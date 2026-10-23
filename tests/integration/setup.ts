@@ -47,6 +47,20 @@ vi.mock('react-native', () => ({
     Platform: { OS: 'web', select: (obj: any) => obj?.web ?? obj?.default },
 }));
 
+// `store/authStore -> auth/biometricActions` importa expo-local-authentication;
+// módulo nativo que no existe en Node (igual que en el setup de las unitarias).
+vi.mock('expo-local-authentication', () => ({
+    hasHardwareAsync: vi.fn(() => Promise.resolve(false)),
+    isEnrolledAsync: vi.fn(() => Promise.resolve(false)),
+    supportedAuthenticationTypesAsync: vi.fn(() => Promise.resolve([])),
+    authenticateAsync: vi.fn(() => Promise.resolve({ success: false })),
+    AuthenticationType: {
+        FINGERPRINT: 1,
+        FACIAL_RECOGNITION: 2,
+        IRIS: 3,
+    },
+}));
+
 const secureStore: Record<string, string> = {};
 vi.mock('expo-secure-store', () => ({
     setItemAsync: vi.fn((key: string, value: string) => {

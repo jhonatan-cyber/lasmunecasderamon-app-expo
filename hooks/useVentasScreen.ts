@@ -3,6 +3,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
+import { enviarSolicitudAnulacion } from "@/services/ventasService";
 import {
   getMirror,
   MIRROR_KEYS,
@@ -313,22 +314,21 @@ export const useVentasScreen = () => {
 
     try {
       dispatch({ type: "SET_ANULANDO_VENTA", payload: true });
-      const res = await apiClientSafe("/ventas/anulacion", {
-        method: "POST",
-        body: JSON.stringify({ ventaId, motivo, monto }),
-      });
-      if (res.success || !res.error) {
+      const res = await enviarSolicitudAnulacion(ventaId, motivo, monto);
+      if (res.success) {
         dispatch({ type: "RESET_ANULACION" });
         showToast(
           "Solicitud Enviada",
-          "La anulación ha sido solicitada al administrador por WhatsApp.",
+          res.avisoFallido
+            ? res.message || "La solicitud quedó registrada, pero no se pudo enviar el aviso por WhatsApp."
+            : "La anulación ha sido solicitada al administrador por WhatsApp.",
           "success",
         );
         fetchVentas();
       } else {
         showToast(
           "Error",
-          res.message || res.error || "No se pudo solicitar la anulación",
+          res.message || "No se pudo solicitar la anulación",
         );
       }
     } catch {

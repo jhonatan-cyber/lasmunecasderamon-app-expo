@@ -41,8 +41,8 @@ export function useAnticipos() {
       try {
         setError('');
         const [solicitudesRes, pagosRes] = await Promise.all([
-          apiClientSafe('/anticipos/solicitudes', { signal }),
-          apiClientSafe('/anticipos/user', { signal }),
+          apiClientSafe('/advances/requests', { signal }),
+          apiClientSafe('/advances/user', { signal }),
         ]);
         if (signal?.aborted) return;
         if (!solicitudesRes.success || !pagosRes.success)
@@ -78,7 +78,7 @@ export function useAnticipos() {
 
   const fetchMaximo = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await apiClientSafe('/anticipos/maximo', { signal });
+      const response = await apiClientSafe('/advances/max', { signal });
       if (signal?.aborted) return null;
       if (response.success && response.data) {
         const d = response.data as {
@@ -117,7 +117,7 @@ export function useAnticipos() {
     const { monto: montoVal, motivo: motivoVal } = validation.data;
 
     try {
-      const response = await apiClientSafe('/anticipos/solicitudes', {
+      const response = await apiClientSafe('/advances/requests', {
         method: 'POST',
         body: JSON.stringify({ monto: montoVal, motivo: motivoVal }),
       });

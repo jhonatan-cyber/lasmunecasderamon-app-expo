@@ -102,7 +102,7 @@ export function useGarzonProductos() {
             `/products?for_sale=1&category_id=${categoryId}`,
             signal,
           ),
-          readThroughMirror(MIRROR_KEYS.anfitrionas, "/anfitrionas", signal),
+          readThroughMirror(MIRROR_KEYS.anfitrionas, "/hostesses", signal),
           readThroughMirror(
             MIRROR_KEYS.roomsAvailable,
             "/rooms?status=1",

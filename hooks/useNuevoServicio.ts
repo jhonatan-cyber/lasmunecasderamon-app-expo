@@ -148,7 +148,7 @@ export function useNuevoServicio() {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all(
         [
           apiClientSafe("/cashregister/status", { signal }),
-          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/hostesses", { signal }),
           apiClientSafe("/rooms", { signal }),
           apiClientSafe("/clients", { signal }),
         ],
@@ -270,7 +270,7 @@ export function useNuevoServicio() {
     dispatch({ type: "SET_BALANCE_SUBMITTING", payload: true });
     try {
       const amount = parseInt(balanceAmount.replace(/\./g, ""));
-      const res = await apiClientSafe("/clients/prepago", {
+      const res = await apiClientSafe("/clients/prepaid", {
         method: "POST",
         body: JSON.stringify({
           cliente_id: clientId,
@@ -430,7 +430,7 @@ export function useNuevoServicio() {
         return;
       }
 
-      const res = await apiClientSafe("/servicios", {
+      const res = await apiClientSafe("/services", {
         method: "POST",
         body: JSON.stringify(payload),
         headers: { "x-idempotency-key": serviceKey.current },

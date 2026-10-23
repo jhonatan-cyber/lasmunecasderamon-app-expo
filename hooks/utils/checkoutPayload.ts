@@ -1,5 +1,5 @@
 /**
- * Payload de `POST /cuentas/:id/cobrar-con-venta` armado de forma pura.
+ * Payload de `POST /accounts/:id/charge-with-sale` armado de forma pura.
  *
  * Vive fuera del hook porque el cobro, igual que la venta y los consumos, tiene
  * dos caminos: el que se manda en el momento y el que se encola sin red. El

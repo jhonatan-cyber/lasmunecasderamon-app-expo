@@ -51,7 +51,7 @@ export function useNuevaCuentaScreen() {
       const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.all([
           apiClientSafe("/cashregister/status", { signal }),
-          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/hostesses", { signal }),
           apiClientSafe("/rooms", { signal }),
           apiClientSafe("/clients", { signal }),
           apiClientSafe("/categories", { signal }),
@@ -198,7 +198,7 @@ export function useNuevaCuentaScreen() {
         ],
       };
 
-      const res = await apiClientSafe("/cuentas", {
+      const res = await apiClientSafe("/accounts", {
         method: "POST",
         body: JSON.stringify(cuentaData),
       });

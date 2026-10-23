@@ -103,7 +103,7 @@ export interface CuentaUpdateDetalle {
 }
 
 /**
- * Body de `PUT /cuentas/:id`: **incremento**, no reemplazo. El servidor suma
+ * Body de `PUT /accounts/:id`: **incremento**, no reemplazo. El servidor suma
  * estos detalles a los que ya tiene la cuenta, y por eso el reintento sin red
  * tiene que ir con clave de idempotencia (si no, cargaría los productos dos
  * veces).

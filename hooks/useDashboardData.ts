@@ -90,13 +90,13 @@ export function useDashboardData(role: UserRole) {
 
       if (role === 'anfitriona') {
         endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
-        endpoints.push(apiClientSafe<ServicioRaw[]>('/servicios/user'));
+        endpoints.push(apiClientSafe<ServicioRaw[]>('/services/user'));
       } else if (role === 'garzon') {
         endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
         endpoints.push(apiClientSafe<CashStatusData>('/cashregister/status'));
       } else if (role === 'cajero') {
-        endpoints.push(apiClientSafe<Record<string, unknown>>('/caja/stats'));
-        endpoints.push(apiClientSafe('/solicitudes-servicios/pending-count'));
+        endpoints.push(apiClientSafe<Record<string, unknown>>('/cash-register/stats'));
+        endpoints.push(apiClientSafe('/service-requests/pending-count'));
       } else if (role === 'barman') {
         endpoints.push(apiClientSafe<DashboardStats>('/events/stats'));
         endpoints.push(apiClientSafe<Record<string, unknown>>('/bar'));

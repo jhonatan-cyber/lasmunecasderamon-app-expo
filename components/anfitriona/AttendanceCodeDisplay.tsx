@@ -24,7 +24,7 @@ export const AttendanceCodeDisplay = () => {
     const fetchCodigo = useCallback(async () => {
         if (!canSeeCode) return;
         try {
-            const res = await apiClientSafe('/codigo/actual', {
+            const res = await apiClientSafe('/code/current', {
                 headers: {
                     'x-user-role': role
                 }

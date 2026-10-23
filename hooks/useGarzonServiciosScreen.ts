@@ -378,7 +378,7 @@ export function useGarzonServiciosScreen() {
         num_clientes: selectedClients.length || 1,
       };
 
-      const res = await apiClientSafe("/solicitudes-servicios", {
+      const res = await apiClientSafe("/service-requests", {
         method: "POST",
         body: JSON.stringify(payload),
       });

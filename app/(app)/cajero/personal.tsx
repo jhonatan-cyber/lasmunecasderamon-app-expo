@@ -102,7 +102,7 @@ export default function PersonalScreen() {
             fetchUsers(true),
             (async () => {
                 try {
-                    const res = await apiClientSafe('/codigo/actual');
+                    const res = await apiClientSafe('/code/current');
                     const codigoData = res as unknown as { success: boolean; codigo: string };
                     if (codigoData.success) setCodigoAsistencia(codigoData.codigo);
                 } catch (e) {
@@ -171,7 +171,7 @@ export default function PersonalScreen() {
         if (!selectedUser) return;
         const fetch = async () => {
             try {
-                const res = await apiClientSafe('/codigo/actual');
+                const res = await apiClientSafe('/code/current');
                 const codData = res as unknown as { success: boolean; codigo: string };
                 if (codData.success) setCodigoAsistencia(codData.codigo);
             } catch {}

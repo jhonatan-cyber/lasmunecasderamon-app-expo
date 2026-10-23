@@ -78,7 +78,7 @@ export function useNuevaVenta() {
   useEffect(() => {
     if (!servicioId) return;
     const controller = new AbortController();
-    apiClientSafe(`/servicios/${encodeURIComponent(servicioId)}`, {
+    apiClientSafe(`/services/${encodeURIComponent(servicioId)}`, {
       signal: controller.signal,
     })
       .then((res: any) => {
@@ -276,7 +276,7 @@ export function useNuevaVenta() {
             ),
             readThroughMirror(
               MIRROR_KEYS.anfitrionas,
-              () => apiClientSafe("/anfitrionas", { signal }),
+              () => apiClientSafe("/hostesses", { signal }),
               MIRROR_MAX_AGE_MS.catalogo,
             ),
             readThroughMirror(
@@ -424,7 +424,7 @@ export function useNuevaVenta() {
 
     dispatch({ type: "SET_LOAD_SUBMITTING", payload: true });
     try {
-      const res = await apiClientSafe("/clients/prepago", {
+      const res = await apiClientSafe("/clients/prepaid", {
         method: "POST",
         body: JSON.stringify({
           cliente_id: String(

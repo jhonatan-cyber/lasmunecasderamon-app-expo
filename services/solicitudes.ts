@@ -2,24 +2,24 @@ import { apiClientSafe } from '@/api/client-safe';
 
 export const solicitudesService = {
   list: (estado = 0) =>
-    apiClientSafe(`/solicitudes-servicios?estado=${estado}`),
+    apiClientSafe(`/service-requests?estado=${estado}`),
 
   create: (data: Record<string, unknown>) =>
-    apiClientSafe('/solicitudes-servicios', {
+    apiClientSafe('/service-requests', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  aprobar: (id: string | number) =>
-    apiClientSafe(`/solicitudes-servicios/${id}/aprobar`, {
+  approve: (id: string | number) =>
+    apiClientSafe(`/service-requests/${id}/approve`, {
       method: 'PATCH',
     }),
 
-  rechazar: (id: string | number) =>
-    apiClientSafe(`/solicitudes-servicios/${id}/rechazar`, {
+  reject: (id: string | number) =>
+    apiClientSafe(`/service-requests/${id}/reject`, {
       method: 'PATCH',
     }),
 
   pendingCount: () =>
-    apiClientSafe('/solicitudes-servicios/pending-count'),
+    apiClientSafe('/service-requests/pending-count'),
 };

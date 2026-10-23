@@ -68,7 +68,7 @@ describe("Entrega de anticipos en Expo", () => {
       await result.current.alertConfig.onConfirm?.();
     });
     expect(mocks.api).toHaveBeenCalledTimes(1);
-    expect(mocks.api).toHaveBeenCalledWith("/anticipos/advance", {
+    expect(mocks.api).toHaveBeenCalledWith("/advances/advance", {
       method: "PUT",
       body: JSON.stringify({ estado: 0 }),
     });

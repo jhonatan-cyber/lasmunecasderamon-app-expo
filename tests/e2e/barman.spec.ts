@@ -36,13 +36,13 @@ async function bootstrapBarmanSession(page: Page) {
                         success: true,
                         data: { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 },
                     };
-                case '/anticipos/maximo':
+                case '/advances/max':
                     return { success: true, data: { monto_maximo: 500000, tiene_solicitud_pendiente: false } };
-                case '/solicitudes-servicios/pending-count':
+                case '/service-requests/pending-count':
                     return { success: true, data: { count: 0, serviciosCount: 0, pedidosCount: 0 } };
                 case '/cashregister/status':
                     return { success: true, data: { hasOpenCaja: true } };
-                case '/caja/stats':
+                case '/cash-register/stats':
                     return { success: true, data: { ventas: 0, cuentas: 0, servicios: 0, caja: 0 } };
                 default:
                     return { success: true, data: [] };

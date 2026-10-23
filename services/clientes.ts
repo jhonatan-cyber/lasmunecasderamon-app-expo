@@ -47,7 +47,7 @@ export const clientesService = {
     apiClientSafe(`/clients/history?cliente_id=${clienteId}`, { signal }),
 
   prepago: (data: PrepagoPayload) =>
-    apiClientSafe('/clients/prepago', {
+    apiClientSafe('/clients/prepaid', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

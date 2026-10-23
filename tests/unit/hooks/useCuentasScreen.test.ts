@@ -45,7 +45,7 @@ describe('useCuentasScreen — check de caja para el cobro', () => {
 
   it('con caja cerrada, el guard bloquea handleConfirmarCobro sin POST a /sales ni /cobrar', async () => {
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
-      if (String(url).startsWith('/cuentas?limit')) return mockCuentas;
+      if (String(url).startsWith('/accounts?limit')) return mockCuentas;
       if (String(url).includes('tipo=resumen')) return mockResumen;
       if (url === '/cashregister/status') return mockCajaCerrada;
       return { success: true, data: [] };
@@ -66,14 +66,14 @@ describe('useCuentasScreen — check de caja para el cobro', () => {
     });
 
     const urlsLlamadas = vi.mocked(apiClientSafe).mock.calls.map((c) => c[0]);
-    expect(urlsLlamadas.some((u) => String(u).startsWith('/cuentas/c1/cobrar'))).toBe(false);
+    expect(urlsLlamadas.some((u) => String(u).startsWith('/accounts/c1/charge'))).toBe(false);
     expect(urlsLlamadas.some((u) => String(u) === '/sales')).toBe(false);
     expect(result.current.cobroModalVisible).toBe(true); // el modal sigue abierto
   });
 
   it('revalida el estado de caja al abrir el modal de cobro', async () => {
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
-      if (String(url).startsWith('/cuentas?limit')) return mockCuentas;
+      if (String(url).startsWith('/accounts?limit')) return mockCuentas;
       if (String(url).includes('tipo=resumen')) return mockResumen;
       if (url === '/cashregister/status') return mockCajaAbierta;
       return { success: true, data: [] };
@@ -101,7 +101,7 @@ describe('useCuentasScreen — check de caja para el cobro', () => {
 
   it('una respuesta de caja fallida no pisa el último estado conocido', async () => {
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
-      if (String(url).startsWith('/cuentas?limit')) return mockCuentas;
+      if (String(url).startsWith('/accounts?limit')) return mockCuentas;
       if (String(url).includes('tipo=resumen')) return mockResumen;
       if (url === '/cashregister/status') return mockCajaCerrada;
       return { success: true, data: [] };
@@ -113,7 +113,7 @@ describe('useCuentasScreen — check de caja para el cobro', () => {
     // La revalidación falla: debe conservarse `false`, no convertirse en null.
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
       if (url === '/cashregister/status') throw new Error('network down');
-      if (String(url).startsWith('/cuentas?limit')) return mockCuentas;
+      if (String(url).startsWith('/accounts?limit')) return mockCuentas;
       if (String(url).includes('tipo=resumen')) return mockResumen;
       return { success: true, data: [] };
     });
