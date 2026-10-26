@@ -400,22 +400,33 @@ export function HomeScreen({ role }: HomeScreenProps) {
             )}
 
             {role === 'garzon' && (
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
-                <GarzonActionCard
-                  title="PEDIDOS"
-                  description="Gestión de comandas"
-                  icon="beer"
-                  color={accentColor}
-                  onPress={() => router.push('/garzon/pedidos')}
-                />
-                <GarzonActionCard
-                  title="SERVICIOS"
-                  description="Atenciones activas"
-                  icon="bed"
-                  color="#10B981"
-                  onPress={() => router.push('/garzon/servicios')}
-                />
-              </View>
+              <>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
+                  <GarzonActionCard
+                    title="PEDIDOS"
+                    description="Gestión de comandas"
+                    icon="beer"
+                    color={accentColor}
+                    onPress={() => router.push('/garzon/pedidos')}
+                  />
+                  <GarzonActionCard
+                    title="SERVICIOS"
+                    description="Atenciones activas"
+                    icon="bed"
+                    color="#10B981"
+                    onPress={() => router.push('/garzon/servicios')}
+                  />
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                  <GarzonActionCard
+                    title="ENTRADAS"
+                    description="Cobro en la puerta"
+                    icon="ticket-outline"
+                    color="#F59E0B"
+                    onPress={() => router.push('/garzon/entradas')}
+                  />
+                </View>
+              </>
             )}
 
             {role === 'cajero' && (

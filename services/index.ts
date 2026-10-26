@@ -10,6 +10,7 @@ export { codigoService } from './codigo';
 export { commissionsService } from './commissions';
 export { cuentasService } from './cuentas';
 export { dashboardService } from './dashboard';
+export { entradasService } from './entradas';
 export { eventsService } from './events';
 export { gratificacionesService } from './gratificaciones';
 export { notificationsService } from './notifications';
