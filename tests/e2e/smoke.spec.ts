@@ -138,7 +138,6 @@ test('root redirects garzon users to the waiter dashboard', async ({ page }) => 
     await expect(page).toHaveURL(/garzon/);
     await expect(page.locator('body')).toContainText('PEDIDOS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
-    await expect(page.locator('body')).toContainText('ANALÍTICAS');
 });
 
 test('root redirects anfitriona users to the hostess dashboard', async ({ page }) => {

@@ -5,7 +5,6 @@ import { BarmanActionGrid } from '@/components/barman/BarmanActionGrid';
 import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
 import { CajeroStats } from '@/components/cajero/CajeroStats';
 import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
-import { GarzonStats } from '@/components/garzon/GarzonStats';
 import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
 import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
@@ -401,35 +400,22 @@ export function HomeScreen({ role }: HomeScreenProps) {
             )}
 
             {role === 'garzon' && (
-              <>
-                <GarzonStats stats={stats} events={events} />
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
-                  <GarzonActionCard
-                    title="PEDIDOS"
-                    description="Gestión de comandas"
-                    icon="beer"
-                    color={accentColor}
-                    onPress={() => router.push('/garzon/pedidos')}
-                  />
-                  <GarzonActionCard
-                    title="SERVICIOS"
-                    description="Atenciones activas"
-                    icon="bed"
-                    color="#10B981"
-                    onPress={() => router.push('/garzon/servicios')}
-                  />
-                </View>
-                {/* Paridad con Flutter: acceso a Analíticas desde el home */}
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-                  <GarzonActionCard
-                    title="ANALÍTICAS"
-                    description="Métricas y ventas"
-                    icon="stats-chart"
-                    color="#8B5CF6"
-                    onPress={() => router.push('/garzon/analytics')}
-                  />
-                </View>
-              </>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
+                <GarzonActionCard
+                  title="PEDIDOS"
+                  description="Gestión de comandas"
+                  icon="beer"
+                  color={accentColor}
+                  onPress={() => router.push('/garzon/pedidos')}
+                />
+                <GarzonActionCard
+                  title="SERVICIOS"
+                  description="Atenciones activas"
+                  icon="bed"
+                  color="#10B981"
+                  onPress={() => router.push('/garzon/servicios')}
+                />
+              </View>
             )}
 
             {role === 'cajero' && (
