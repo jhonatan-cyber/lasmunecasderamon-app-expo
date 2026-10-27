@@ -208,7 +208,7 @@ export default function ServiciosActivosScreen() {
       let hasMore = true;
 
       while (hasMore) {
-        const res = await apiClientSafe<{ data: any[]; total: number }>(`/servicios?all=true&limit=${limit}&page=${page}`);
+        const res = await apiClientSafe<{ data: any[]; total: number }>(`/services?all=true&limit=${limit}&page=${page}`);
         const pageData = res.data;
         const raw = Array.isArray(pageData?.data)
           ? pageData.data
@@ -344,7 +344,7 @@ export default function ServiciosActivosScreen() {
               dispatch({ type: 'CLOSE_ALERT' });
               return;
             }
-            const res = await apiClientSafe(`/servicios/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
+            const res = await apiClientSafe(`/services/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
             dispatch({ type: 'CLOSE_ALERT' });
             if (res.success) {
               showToastLazy({ type: "success", text1: "Servicio Finalizado" });

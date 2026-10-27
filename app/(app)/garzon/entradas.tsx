@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -27,8 +27,10 @@ import {
   type MetodoPagoEntrada,
 } from '@/services/entradas';
 import { ajustarFotoBaucher } from '@/utils/baucherFoto';
+import { eventBus } from '@/utils/eventBus';
 import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
 
 /**
@@ -132,6 +134,18 @@ export default function GarzonEntradasScreen() {
       void cargar(true);
     }, [cargar]),
   );
+
+  // La barra entrega o anula la cortesía en otra sesión: el estado de cada
+  // entrada se actualiza sin salir de la pantalla.
+  useEffect(() => {
+    const subscription = eventBus.addListener(
+      REALTIME_EVENT_NAMES.refreshEntradas,
+      () => {
+        void cargar();
+      },
+    );
+    return () => subscription.remove();
+  }, [cargar]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -413,6 +427,9 @@ export default function GarzonEntradasScreen() {
                         styles.metodoLabel,
                         { color: activo ? accentColor : textSecondary },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
                     >
                       {metodoOp.label}
                     </Text>
@@ -596,15 +613,23 @@ const styles = StyleSheet.create({
   metodosRow: { flexDirection: 'row', gap: 8 },
   metodoChip: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 12,
+    paddingHorizontal: 6,
   },
-  metodoLabel: { fontSize: 12, fontWeight: '700' },
+  metodoLabel: {
+    flexShrink: 1,
+    minWidth: 0,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   fotoBtn: {
     flexDirection: 'row',
     alignItems: 'center',
