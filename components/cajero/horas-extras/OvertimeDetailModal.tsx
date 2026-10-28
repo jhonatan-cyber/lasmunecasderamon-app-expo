@@ -1,6 +1,6 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { OvertimeRecord } from '@/hooks/useHorasExtrasScreen';
+import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
     0: { label: 'Pagado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },

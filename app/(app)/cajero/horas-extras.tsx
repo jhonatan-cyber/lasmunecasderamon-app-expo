@@ -14,7 +14,7 @@ import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { OvertimeRecord } from '@/hooks/useHorasExtrasScreen';
+import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 
 import {
     OvertimeStatsCards,

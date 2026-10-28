@@ -19,100 +19,97 @@ export const CajeroActionGrid = ({
   const esAdmin = useIsAdmin();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
-
-  const cols = isTablet ? 3 : 2;
+  const cols = esAdmin ? 1 : isTablet ? 3 : 2;
   const spacing = isTablet ? 24 : 16;
-  const actions = [
-    {
-      title: "VENTAS",
-      description: "Realizar nueva venta",
-      icon: "cart" as const,
-      color: accentColor,
-      route: "/cajero/ventas",
-    },
-    {
-      title: "CUENTAS",
-      description: "Cuentas pendientes",
-      icon: "receipt" as const,
-      color: accentColor,
-      route: "/cajero/cuentas",
-    },
-    {
-      title: "SERVICIOS",
-      description: "Gestión de privados",
-      icon: "bed" as const,
-      color: accentColor,
-      route: "/cajero/servicios",
-    },
-    {
-      title: "CAJA",
-      description: "Control de cajas",
-      icon: "cash" as const,
-      color: accentColor,
-      route: "/cajero/caja",
-    },
-    {
-      title: "PEDIDOS",
-      description: "Solicitudes pendientes",
-      icon: "notifications" as const,
-      color: accentColor,
-      route: "/cajero/solicitudes",
-    },
-    {
-      title: "CLIENTES",
-      description: "Gestión de prepago",
-      icon: "person" as const,
-      color: accentColor,
-      route: "/cajero/clientes",
-    },
-    {
-      title: "CORTESÍAS",
-      description: "Entregar entradas del día",
-      icon: "ticket-outline" as const,
-      color: "#F59E0B",
-      route: "/cajero/cortesias",
-    },
-    {
-      title: "PERSONAL",
-      description: "Liquidación y Asistencia",
-      icon: "people" as const,
-      color: accentColor,
-      route: "/cajero/administrativo",
-    },
-    {
-      title: "GRATIFICACIONES",
-      description: "Solicitar y revisar gratificaciones",
-      icon: "gift" as const,
-      color: accentColor,
-      route: "/cajero/gratificaciones",
-    },
-    {
-      title: "FINANCIERO",
-      description: "Eventos y propinas",
-      icon: "wallet" as const,
-      color: accentColor,
-      route: "/cajero/financieros",
-    },
-    {
-      title: "ANALÍTICAS",
-      description: "Métricas y ventas",
-      icon: "analytics" as const,
-      color: accentColor,
-      route: "/cajero/analytics",
-    },
+  const configuracion = {
+    title: "CONFIGURACIÓN",
+    description: "Ventana y pantallas de asistencia",
+    icon: "settings" as const,
+    color: accentColor,
+    route: "/cajero/configuracion-asistencia",
+  };
 
-    ...(esAdmin
-      ? [
-          {
-            title: "CONFIGURACIÓN",
-            description: "Ventana y pantallas de asistencia",
-            icon: "settings" as const,
-            color: accentColor,
-            route: "/cajero/configuracion-asistencia",
-          },
-        ]
-      : []),
-  ];
+  const actions = esAdmin
+    ? [configuracion]
+    : [
+      {
+        title: "VENTAS",
+        description: "Realizar nueva venta",
+        icon: "cart" as const,
+        color: accentColor,
+        route: "/cajero/ventas",
+      },
+      {
+        title: "CUENTAS",
+        description: "Cuentas pendientes",
+        icon: "receipt" as const,
+        color: accentColor,
+        route: "/cajero/cuentas",
+      },
+      {
+        title: "SERVICIOS",
+        description: "Gestión de privados",
+        icon: "bed" as const,
+        color: accentColor,
+        route: "/cajero/servicios",
+      },
+      {
+        title: "CAJA",
+        description: "Control de cajas",
+        icon: "cash" as const,
+        color: accentColor,
+        route: "/cajero/caja",
+      },
+      {
+        title: "PEDIDOS",
+        description: "Solicitudes pendientes",
+        icon: "notifications" as const,
+        color: accentColor,
+        route: "/cajero/solicitudes",
+      },
+      {
+        title: "CLIENTES",
+        description: "Gestión de prepago",
+        icon: "person" as const,
+        color: accentColor,
+        route: "/cajero/clientes",
+      },
+      {
+        title: "CORTESÍAS",
+        description: "Entregar entradas del día",
+        icon: "ticket-outline" as const,
+        color: "#F59E0B",
+        route: "/cajero/cortesias",
+      },
+      {
+        title: "PERSONAL",
+        description: "Liquidación y Asistencia",
+        icon: "people" as const,
+        color: accentColor,
+        route: "/cajero/administrativo",
+      },
+      {
+        title: "GRATIFICACIONES",
+        description: "Solicitar y revisar gratificaciones",
+        icon: "gift" as const,
+        color: accentColor,
+        route: "/cajero/gratificaciones",
+      },
+      {
+        title: "FINANCIERO",
+        description: "Eventos y propinas",
+        icon: "wallet" as const,
+        color: accentColor,
+        route: "/cajero/financieros",
+      },
+      {
+        title: "ANALÍTICAS",
+        description: "Métricas y ventas",
+        icon: "analytics" as const,
+        color: accentColor,
+        route: "/cajero/analytics",
+      },
+    ];
 
   const rows = [];
   for (let i = 0; i < actions.length; i += cols) {

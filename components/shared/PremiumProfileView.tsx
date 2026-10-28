@@ -1,21 +1,12 @@
+import { styles } from "./PremiumProfileView.styles";
 import logger from "@/utils/logger";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState, useEffect } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Easing,
-  Image,
-  Modal,
-  Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -25,8 +16,16 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useAuthStore } from "@/store/authStore";
 import { ProfileThemePicker } from "@/components/shared/profile/ProfileThemePicker";
 import { useProfile } from "@/hooks/useProfile";
+import { isAdminRole } from "@/utils/userRole";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { isVoiceAlertsEnabled, setVoiceAlertsEnabled } from "@/services/pushNotifications";
+import { ProfileHeader } from "@/components/shared/profile/ProfileHeader";
+import { ProfileHero } from "@/components/shared/profile/ProfileHero";
+import { ProfileFormFields } from "@/components/shared/profile/ProfileFormFields";
+import { ProfileActions } from "@/components/shared/profile/ProfileActions";
+import { ProfileImagePickerModal } from "@/components/shared/profile/ProfileImagePickerModal";
+import { CivilStatusModal } from "@/components/shared/profile/CivilStatusModal";
+import { ProfileLoadingState } from "@/components/shared/profile/ProfileLoadingState";
 
 interface PremiumProfileViewProps {
   roleLabel?: string;
@@ -35,65 +34,9 @@ interface PremiumProfileViewProps {
   onClose?: () => void;
 }
 
-const ESTADO_CIVIL_OPTIONS = [
-  "Soltero/a",
-  "Casado/a",
-  "Unión Libre",
-  "Divorciado/a",
-  "Viudo/a",
-  "Separado/a",
-];
-
-const SkeletonBox = ({
-  width,
-  height,
-  borderRadius = 10,
-  style = {},
-}: {
-  width: number | string;
-  height: number;
-  borderRadius?: number;
-  style?: any;
-}) => {
-  const { accentColor, isDark } = useAccentColor();
-  const [anim] = useState(() => new Animated.Value(0.3));
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0.3,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [anim]);
-  return (
-    <Animated.View
-      style={[
-        {
-          width,
-          height,
-          borderRadius,
-          backgroundColor: isDark ? `${accentColor}25` : `${accentColor}15`,
-          opacity: anim,
-        },
-        style,
-      ]}
-    />
-  );
-};
-
 export function PremiumProfileView({
   roleLabel,
-  avatarEmoji = "ðŸ‘¤",
+  avatarEmoji = "👤",
   onLogout,
   onClose,
 }: PremiumProfileViewProps) {
@@ -105,6 +48,7 @@ export function PremiumProfileView({
 
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const roleLabelEfectivo = isAdminRole(user) ? "Administrador" : roleLabel;
 
   const {
     loading,
@@ -170,8 +114,6 @@ export function PremiumProfileView({
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   }, []);
 
-
-
   const handleTakePhoto = async () => {
     const res = await takePhoto();
     if (!res.success && res.message) {
@@ -215,122 +157,20 @@ export function PremiumProfileView({
     );
   }, [onLogout, logout, router, showAlert]);
 
-  const renderHeader = (skeletonMode = false) => (
-    <LinearGradient
-      colors={gradientColors as unknown as readonly [string, string, ...string[]]}
-      style={[
-        styles.header,
-        {
-          paddingTop: insets.top + (isTablet ? 20 : 10),
-          paddingBottom: 25,
-          borderBottomLeftRadius: 32,
-          borderBottomRightRadius: 32,
-        },
-      ]}
-    >
-      <View style={styles.headerTop}>
-        <View style={{ flex: 1, gap: skeletonMode ? 8 : 2 }}>
-          {skeletonMode ? (
-            <>
-              <SkeletonBox
-                width={140}
-                height={20}
-                borderRadius={8}
-                style={{
-                  backgroundColor: isDark
-                    ? "rgba(17, 24, 39, 0.15)"
-                    : "rgba(255, 255, 255, 0.25)",
-                }}
-              />
-              <SkeletonBox
-                width={90}
-                height={13}
-                borderRadius={6}
-                style={{
-                  backgroundColor: isDark
-                    ? "rgba(17, 24, 39, 0.1)"
-                    : "rgba(255, 255, 255, 0.18)",
-                }}
-              />
-            </>
-          ) : (
-            <>
-              <Text
-                style={[
-                  styles.headerTitle,
-                  { color: isDark ? "#111827" : "#FFFFFF" },
-                  isTablet && { fontSize: 28 },
-                ]}
-              >
-                Mi Perfil
-              </Text>
-              <Text
-                style={[
-                  styles.headerSubtitle,
-                  {
-                    color: isDark ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.8)",
-                  },
-                  isTablet && { fontSize: 17 },
-                ]}
-              >
-                {roleLabel || "Cuenta personal"}
-              </Text>
-            </>
-          )}
-        </View>
-        {!skeletonMode && (
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons
-              name="arrow-back"
-              size={isTablet ? 26 : 22}
-              color="#FFFFFF"
-            />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        )}
-      </View>
-    </LinearGradient>
-  );
-
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <StatusBar style={isDark ? "dark" : "light"} />
-        {renderHeader(true)}
-        <ScrollView
-          style={{ flex: 1 }}
-          scrollEnabled={false}
-          contentContainerStyle={{ padding: 24 }}
-        >
-          <View style={{ alignItems: "center", paddingVertical: 32, gap: 14 }}>
-            <SkeletonBox width={140} height={140} borderRadius={70} />
-            <SkeletonBox width={160} height={22} borderRadius={8} />
-            <SkeletonBox width={80} height={28} borderRadius={20} />
-          </View>
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={{ marginBottom: 20, gap: 8 }}>
-              <SkeletonBox width={120} height={13} borderRadius={6} />
-              <SkeletonBox width="100%" height={56} borderRadius={18} />
-            </View>
-          ))}
-          <SkeletonBox
-            width="100%"
-            height={1}
-            borderRadius={1}
-            style={{ marginVertical: 24 }}
-          />
-          <View style={{ marginBottom: 20, gap: 8 }}>
-            <SkeletonBox width={180} height={13} borderRadius={6} />
-            <SkeletonBox width="100%" height={56} borderRadius={18} />
-          </View>
-          <SkeletonBox
-            width="100%"
-            height={60}
-            borderRadius={20}
-            style={{ marginTop: 10 }}
-          />
-        </ScrollView>
+        <ProfileLoadingState
+          bg={bg}
+          isDark={isDark}
+          roleLabel={roleLabelEfectivo}
+          isTablet={isTablet}
+          gradientColors={gradientColors as unknown as string[]}
+          topInset={insets.top}
+          onBack={() => router.back()}
+        />
       </View>
     );
   }
@@ -339,52 +179,34 @@ export function PremiumProfileView({
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={isDark ? "dark" : "light"} />
-      {renderHeader()}
+      <ProfileHeader
+        roleLabel={roleLabelEfectivo}
+        isTablet={isTablet}
+        isDark={isDark}
+        gradientColors={gradientColors as unknown as string[]}
+        topInset={insets.top}
+        onBack={() => router.back()}
+      />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileHero}>
-          <View style={[styles.avatarBorder, { borderColor: accentColor }]}>
-            {currentPhotoUri && failedPhotoUri !== currentPhotoUri ? (
-              <Image
-                key={currentPhotoUri}
-                source={{ uri: currentPhotoUri }}
-                onError={() => {
-                  setFailedPhotoUri(currentPhotoUri);
-                  logger.warn("No se pudo cargar la foto de perfil", { uri: currentPhotoUri });
-                }}
-                style={styles.avatar}
-              />
-            ) : (
-              <View
-                style={[styles.avatarPlaceholder, { backgroundColor: cardBg }]}
-              >
-                <Text style={styles.avatarEmoji}>{avatarEmoji}</Text>
-              </View>
-            )}
-            <Pressable
-              style={[
-                styles.editPhotoBadge,
-                { backgroundColor: accentColor, borderColor: cardBg },
-              ]}
-              onPress={() => setImagePickerVisible(true)}
-            >
-              <Ionicons name="camera" size={16} color="#FFF" />
-            </Pressable>
-          </View>
-          <Text style={[styles.userName, { color: textPrimary }]}>
-            {user?.name} {user?.lastName}
-          </Text>
-          <View
-            style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}
-          >
-            <Text style={[styles.roleText, { color: accentColor }]}>
-              {roleLabel || user?.role?.toUpperCase()}
-            </Text>
-          </View>
-        </View>
+        <ProfileHero
+          photoUri={currentPhotoUri}
+          failedPhotoUri={failedPhotoUri}
+          onPhotoError={(uri) => {
+            setFailedPhotoUri(uri);
+            logger.warn("No se pudo cargar la foto de perfil", { uri });
+          }}
+          avatarEmoji={avatarEmoji}
+          userName={`${user?.name ?? ""} ${user?.lastName ?? ""}`}
+          roleLabel={roleLabelEfectivo || user?.role?.toUpperCase()}
+          accentColor={accentColor}
+          cardBg={cardBg}
+          textPrimary={textPrimary}
+          onEditPhoto={() => setImagePickerVisible(true)}
+        />
 
         <View style={styles.formContainer}>
           <ProfileThemePicker
@@ -396,135 +218,16 @@ export function PremiumProfileView({
 
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Nickname / Nombre de Escena
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: cardBg, borderColor },
-              ]}
-            >
-              <Ionicons
-                name="star-outline"
-                size={20}
-                color={accentColor}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: textPrimary }]}
-                value={formData.nick}
-                onChangeText={(val) => updateField("nick", val)}
-                placeholder="Tu nick"
-                placeholderTextColor={textSecondary}
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Teléfono
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: cardBg, borderColor },
-              ]}
-            >
-              <Ionicons
-                name="call-outline"
-                size={20}
-                color={accentColor}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: textPrimary }]}
-                value={formData.phone}
-                onChangeText={(val) => updateField("phone", val)}
-                keyboardType="phone-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Dirección
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: cardBg, borderColor },
-              ]}
-            >
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color={accentColor}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: textPrimary }]}
-                value={formData.address}
-                onChangeText={(val) => updateField("address", val)}
-              />
-            </View>
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Estado Civil
-            </Text>
-            <Pressable
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: cardBg, borderColor },
-              ]}
-              onPress={() => setCivilPickerVisible(true)}
-            >
-              <Ionicons
-                name="heart-outline"
-                size={20}
-                color={accentColor}
-                style={styles.inputIcon}
-              />
-              <Text
-                style={[styles.input, { color: textPrimary, paddingTop: 12 }]}
-              >
-                {formData.estadoCivil}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={textSecondary} />
-            </Pressable>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: textSecondary }]}>
-              Nueva Contraseña
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                { backgroundColor: cardBg, borderColor },
-              ]}
-            >
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color={accentColor}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: textPrimary }]}
-                value={formData.password}
-                onChangeText={(val) => updateField("password", val)}
-                secureTextEntry
-                placeholder="*********"
-              />
-            </View>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: borderColor }]} />
+          <ProfileFormFields
+            formData={formData}
+            updateField={updateField}
+            accentColor={accentColor}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            onOpenCivilPicker={() => setCivilPickerVisible(true)}
+          />
 
           <View style={[styles.settingRow, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.settingText}>
@@ -543,116 +246,34 @@ export function PremiumProfileView({
             />
           </View>
 
-          <View style={styles.actionContainer}>
-            <Pressable
-              style={[
-                styles.saveBtn,
-                { backgroundColor: accentColor },
-                saving && { opacity: 0.7 },
-              ]}
-              onPress={onSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.saveBtnText}>Guardar Cambios</Text>
-              )}
-            </Pressable>
-
-            <Pressable style={styles.logoutBtn} onPress={handleInternalLogout}>
-              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-              <Text style={styles.logoutBtnText}>Cerrar Sesión</Text>
-            </Pressable>
-          </View>
+          <ProfileActions
+            saving={saving}
+            accentColor={accentColor}
+            onSave={onSave}
+            onLogout={handleInternalLogout}
+          />
         </View>
       </ScrollView>
 
-      <Modal
+      <ProfileImagePickerModal
         visible={imagePickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImagePickerVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-            <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Elegir Foto
-            </Text>
-            <Pressable style={styles.modalOption} onPress={handleTakePhoto}>
-              <Ionicons name="camera-outline" size={24} color={accentColor} />
-              <Text style={[styles.modalOptionText, { color: textPrimary }]}>
-                Cámara
-              </Text>
-            </Pressable>
-            <Pressable style={styles.modalOption} onPress={handlePickImage}>
-              <Ionicons name="image-outline" size={24} color={accentColor} />
-              <Text style={[styles.modalOptionText, { color: textPrimary }]}>
-                Galería
-              </Text>
-            </Pressable>
-            <Pressable
-              style={styles.cancelModalBtn}
-              onPress={() => setImagePickerVisible(false)}
-            >
-              <Text style={[styles.cancelModalBtnText, { color: "#EF4444" }]}>
-                Cancelar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textPrimary={textPrimary}
+        onTakePhoto={handleTakePhoto}
+        onPickImage={handlePickImage}
+        onClose={() => setImagePickerVisible(false)}
+      />
 
-      <Modal
+      <CivilStatusModal
         visible={civilPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCivilPickerVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-            <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Estado Civil
-            </Text>
-            <ScrollView style={{ maxHeight: 300 }}>
-              {ESTADO_CIVIL_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt}
-                  style={styles.modalOption}
-                  onPress={() => {
-                    updateField("estadoCivil", opt);
-                    setCivilPickerVisible(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      {
-                        color: textPrimary,
-                        fontWeight:
-                          formData.estadoCivil === opt ? "800" : "400",
-                      },
-                    ]}
-                  >
-                    {opt}
-                  </Text>
-                  {formData.estadoCivil === opt && (
-                    <Ionicons name="checkmark" size={20} color={accentColor} />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Pressable
-              style={styles.cancelModalBtn}
-              onPress={() => setCivilPickerVisible(false)}
-            >
-              <Text style={[styles.cancelModalBtnText, { color: "#EF4444" }]}>
-                Cancelar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        selected={formData.estadoCivil}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textPrimary={textPrimary}
+        onSelect={(value) => updateField("estadoCivil", value)}
+        onClose={() => setCivilPickerVisible(false)}
+      />
 
       <PremiumAlert
         visible={alertConfig.visible}
@@ -669,166 +290,3 @@ export function PremiumProfileView({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 16 },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backBtnRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 38,
-    borderRadius: 9999,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    gap: 6,
-  },
-  backTextHeader: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
-  headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
-  profileHero: { alignItems: "center", paddingVertical: 32 },
-  avatarBorder: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 4,
-    padding: 4,
-    position: "relative",
-  },
-  avatar: { width: "100%", height: "100%", borderRadius: 60 },
-  avatarPlaceholder: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarEmoji: { fontSize: 60 },
-  editPhotoBadge: {
-    position: "absolute",
-    bottom: 5,
-    right: 5,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#000",
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "900",
-    marginTop: 16,
-    letterSpacing: -0.5,
-  },
-  roleBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 8,
-  },
-  roleText: { fontSize: 12, fontWeight: "900", letterSpacing: 1 },
-  formContainer: { padding: 24 },
-  inputGroup: { marginBottom: 20 },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  inputWrapper: {
-    height: 56,
-    borderWidth: 1,
-    borderRadius: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 16, fontWeight: "600" },
-  divider: { height: 1, width: "100%", marginVertical: 30, opacity: 0.2 },
-  settingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 4,
-  },
-  settingText: { flex: 1, marginRight: 12 },
-  settingTitle: { fontSize: 16, fontWeight: "700" },
-  settingSubtitle: { fontSize: 13, fontWeight: "500", marginTop: 2 },
-  actionContainer: { marginTop: 10, gap: 16 },
-  saveBtn: {
-    height: 60,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  saveBtnText: { color: "#FFF", fontSize: 18, fontWeight: "800" },
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#EF4444",
-    borderRadius: 18,
-    marginTop: 8,
-  },
-  logoutBtnText: {
-    color: "#EF4444",
-    fontSize: 15,
-    fontWeight: "700",
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  modalContent: { width: "100%", borderRadius: 30, padding: 24 },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  modalOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#37415120",
-    justifyContent: "space-between",
-  },
-  modalOptionText: { fontSize: 16, fontWeight: "600", marginLeft: 12 },
-  cancelModalBtn: {
-    marginTop: 20,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#EF4444",
-    borderRadius: 18,
-  },
-  cancelModalBtnText: { fontSize: 16, fontWeight: "800", textAlign: "center" },
-
-});

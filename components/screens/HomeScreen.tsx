@@ -1,37 +1,38 @@
+import { styles } from "./HomeScreen.styles";
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { apiClientSafe } from '@/api/client';
 import { ActiveServiceCard } from '@/components/anfitriona/ActiveServiceCard';
 import { BarmanActionGrid } from '@/components/barman/BarmanActionGrid';
 import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
 import { CajeroStats } from '@/components/cajero/CajeroStats';
-import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
 import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
 import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
-import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
-import { LazyDonutChart } from '@/components/ui/LazyDonutChart';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
 import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { HomeScreenSkeleton } from '@/components/screens/home/HomeScreenSkeleton';
+import { AnfitrionaAnalyticsSection } from '@/components/screens/home/AnfitrionaAnalyticsSection';
+import { GarzonHomeActions } from '@/components/screens/home/GarzonHomeActions';
+import { SelectedEventsBar } from '@/components/screens/home/SelectedEventsBar';
+import { SelectedEventsModal } from '@/components/screens/home/SelectedEventsModal';
+import {
+  filterEventsByDates,
+  getEventLabel,
+  getStatusLabel,
+} from '@/components/screens/home/eventLabels';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuthStore } from '@/store/authStore';
-import { formatCurrency } from '@/utils/format';
-import { rutaExigeCajaAbierta } from '@/utils/cajaGate';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import {
-  FlatList,
-  Modal,
-  Pressable,
   RefreshControl,
   Text as RNText,
   ScrollView,
-  StyleSheet,
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,6 +64,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const { bloqueado } = useCajaAbierta();
+  const esAdmin = useIsAdmin();
 
   const {
     loading,
@@ -139,88 +141,19 @@ export function HomeScreen({ role }: HomeScreenProps) {
     }
   };
 
-  const getEventLabel = (item: any) => {
-    if (!item) return '';
-    const typeLabels: any = {
-      comision: 'Comisión',
-      asistencia: 'Asistencia',
-      anticipo: 'Anticipo',
-      propina: 'Propina',
-      venta: 'Venta',
-      servicio: 'Servicio',
-      gratificacion: 'Gratificación',
-      hora_extra: 'Hora Extra',
-    };
-    if (item.type === 'comision')
-      return item.subType === 'venta'
-        ? 'Comisión de Venta'
-        : 'Comisión de Servicio';
-    if (item.type === 'propina')
-      return item.subType === 'venta' ? 'Propina de Venta' : 'Propina';
-    return typeLabels[item.type] || item.type.toUpperCase();
-  };
 
-  const selectedEvents = useMemo(() => {
-    if (selectedDates.length === 0) return [];
-    return events
-      .filter((e: any) => {
-        const d = new Date(e.date);
-        const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-        return selectedDates.includes(dateStr);
-      })
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-  }, [selectedDates, events]);
+  const selectedEvents = useMemo(
+    () => filterEventsByDates(events, selectedDates),
+    [selectedDates, events],
+  );
 
   if (loading)
     return (
-      <View style={{ flex: 1, backgroundColor: bg }}>
-        <LinearGradient
-          colors={
-            gradientColors as unknown as readonly [string, string, ...string[]]
-          }
-          style={[
-            styles.header,
-            { paddingTop: insets.top + 10, paddingBottom: 25 },
-          ]}
-        >
-          <SkeletonLoader
-            width={40}
-            height={40}
-            borderRadius={20}
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-          />
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
-            <SkeletonLoader
-              width={60}
-              height={60}
-              borderRadius={30}
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            />
-            <View style={{ gap: 8 }}>
-              <SkeletonLoader
-                width={120}
-                height={20}
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-              />
-              <SkeletonLoader
-                width={80}
-                height={15}
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}
-              />
-            </View>
-          </View>
-        </LinearGradient>
-        <View style={{ padding: 20, gap: 15 }}>
-          <SkeletonLoader width="100%" height={150} borderRadius={24} />
-          <View style={{ flexDirection: 'row', gap: 15 }}>
-            <SkeletonLoader width="48%" height={100} borderRadius={20} />
-            <SkeletonLoader width="48%" height={100} borderRadius={20} />
-          </View>
-        </View>
-      </View>
+      <HomeScreenSkeleton
+        bg={bg}
+        gradientColors={gradientColors as unknown as string[]}
+        topInset={insets.top}
+      />
     );
 
   if (error)
@@ -305,8 +238,6 @@ export function HomeScreen({ role }: HomeScreenProps) {
       >
         <AnimatedScreen>
           <View style={{ padding: compactHome ? 0 : 16 }}>
-            { }
-
             {role === 'anfitriona' && activeService && (
               <ActiveServiceCard
                 habitacion={activeService.habitacion}
@@ -315,142 +246,31 @@ export function HomeScreen({ role }: HomeScreenProps) {
             )}
 
             {role === 'anfitriona' && (
-              <View style={styles.analyticsRow}>
-                <View
-                  style={[
-                    styles.glassCard,
-                    { backgroundColor: cardBg, borderColor },
-                  ]}
-                >
-                  <RNText style={[styles.cardTitle, { color: textPrimary }]}>
-                    Meta Semanal
-                  </RNText>
-                  <LazyDonutChart
-                    size={60}
-                    percent={Math.min(
-                      100,
-                      Math.round((stats.totalEarnings / 50000) * 100),
-                    )}
-                    color={accentColor}
-                    isDark={isDark}
-                  />
-                  <RNText style={{ color: textSecondary, fontSize: 11 }}>
-                    {formatCurrency(stats.totalEarnings)} /{' '}
-                    {formatCurrency(50000)}
-                  </RNText>
-                </View>
-                <View
-                  style={[
-                    styles.glassCard,
-                    { backgroundColor: cardBg, borderColor },
-                  ]}
-                >
-                  <RNText style={[styles.cardTitle, { color: textPrimary }]}>
-                    Crecimiento
-                  </RNText>
-                  <RNText
-                    style={{
-                      fontSize: 24,
-                      fontWeight: '900',
-                      color: accentColor,
-                    }}
-                  >
-                    +12%
-                  </RNText>
-                </View>
-              </View>
-            )}
-
-            {role === 'anfitriona' && (
-              <Pressable
-                onPress={() => router.push('/anfitriona/analytics')}
-                style={({ pressed }) => [
-                  styles.analyticsLink,
-                  {
-                    backgroundColor: cardBg,
-                    borderColor,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.analyticsLinkIcon,
-                    { backgroundColor: `${accentColor}1F` },
-                  ]}
-                >
-                  <Ionicons name="stats-chart" size={18} color={accentColor} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <RNText
-                    style={{
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: '800',
-                    }}
-                  >
-                    Analíticas
-                  </RNText>
-                  <RNText style={{ color: textSecondary, fontSize: 11 }}>
-                    Métricas y tendencias
-                  </RNText>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={textSecondary}
-                />
-              </Pressable>
+              <AnfitrionaAnalyticsSection
+                totalEarnings={stats.totalEarnings}
+                accentColor={accentColor}
+                isDark={isDark}
+                cardBg={cardBg}
+                borderColor={borderColor}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                onOpenAnalytics={() => router.push('/anfitriona/analytics')}
+              />
             )}
 
             {role === 'garzon' && (
-              <>
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
-                  <BloqueoPorCaja
-                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/pedidos')}
-                    style={{ flex: 1 }}
-                  >
-                    <GarzonActionCard
-                      title="PEDIDOS"
-                      description="Gestión de comandas"
-                      icon="beer"
-                      color={accentColor}
-                      onPress={() => router.push('/garzon/pedidos')}
-                    />
-                  </BloqueoPorCaja>
-                  <BloqueoPorCaja
-                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/servicios')}
-                    style={{ flex: 1 }}
-                  >
-                    <GarzonActionCard
-                      title="SERVICIOS"
-                      description="Atenciones activas"
-                      icon="bed"
-                      color="#10B981"
-                      onPress={() => router.push('/garzon/servicios')}
-                    />
-                  </BloqueoPorCaja>
-                </View>
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-                  <BloqueoPorCaja
-                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/entradas')}
-                    style={{ flex: 1 }}
-                  >
-                    <GarzonActionCard
-                      title="ENTRADAS"
-                      description="Cobro en la puerta"
-                      icon="ticket-outline"
-                      color="#F59E0B"
-                      onPress={() => router.push('/garzon/entradas')}
-                    />
-                  </BloqueoPorCaja>
-                </View>
-              </>
+              <GarzonHomeActions
+                bloqueado={bloqueado}
+                accentColor={accentColor}
+                onOpenPedidos={() => router.push('/garzon/pedidos')}
+                onOpenServicios={() => router.push('/garzon/servicios')}
+                onOpenEntradas={() => router.push('/garzon/entradas')}
+              />
             )}
 
             {role === 'cajero' && (
               <>
-                <CajeroStats stats={stats} fullWidth />
+                <CajeroStats stats={stats} fullWidth hideFullWidth={esAdmin} />
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <CajeroActionGrid fullWidth />
                 </View>
@@ -475,74 +295,43 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
-            <PremiumCalendar
-              events={events}
-              selectedDates={selectedDates}
-              onDateToggle={(d) => {
-                const next = selectedDates.includes(d)
-                  ? selectedDates.filter((x: any) => x !== d)
-                  : [...selectedDates, d];
-                setSelectedDates(next);
-              }}
-            />
+            {!esAdmin && (
+              <PremiumCalendar
+                events={events}
+                selectedDates={selectedDates}
+                onDateToggle={(d) => {
+                  const next = selectedDates.includes(d)
+                    ? selectedDates.filter((x: any) => x !== d)
+                    : [...selectedDates, d];
+                  setSelectedDates(next);
+                }}
+              />
+            )}
           </View>
         </AnimatedScreen>
       </ScrollView>
 
       {selectedDates.length > 0 && (
-        <AnimatedView
-          from={{ translateY: 100 }}
-          animate={{ translateY: 0 }}
-          style={[styles.selectionFloat, { backgroundColor: cardBg }]}
-        >
-          <RNText style={{ color: textPrimary, fontWeight: '700' }}>
-            {selectedDates.length} seleccionados
-          </RNText>
-          <Pressable
-            onPress={() => setIsModalVisible(true)}
-            style={[styles.viewBtn, { backgroundColor: accentColor }]}
-          >
-            <RNText style={{ color: '#FFF', fontWeight: '800' }}>
-              DETALLES
-            </RNText>
-          </Pressable>
-        </AnimatedView>
+        <SelectedEventsBar
+          count={selectedDates.length}
+          cardBg={cardBg}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          onOpenDetails={() => setIsModalVisible(true)}
+        />
       )}
 
-      <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: bg }]}>
-            <View style={styles.modalHeader}>
-              <RNText style={[styles.modalTitle, { color: textPrimary }]}>
-                Eventos
-              </RNText>
-              <Pressable onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close" size={28} color={textPrimary} />
-              </Pressable>
-            </View>
-            <FlatList<any>
-              data={selectedEvents}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={() => handleSelectEvent(item)}
-                  style={[
-                    styles.eventItem,
-                    { backgroundColor: cardBg, borderColor },
-                  ]}
-                >
-                  <RNText style={{ color: textPrimary, fontWeight: '700' }}>
-                    {getEventLabel(item)}
-                  </RNText>
-                  <RNText style={{ color: accentColor, fontWeight: '900' }}>
-                    {formatCurrency(item.amount)}
-                  </RNText>
-                </Pressable>
-              )}
-              contentContainerStyle={{ padding: 16 }}
-            />
-          </View>
-        </View>
-      </Modal>
+      <SelectedEventsModal
+        visible={isModalVisible}
+        events={selectedEvents}
+        bg={bg}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textPrimary={textPrimary}
+        accentColor={accentColor}
+        onClose={() => setIsModalVisible(false)}
+        onSelect={handleSelectEvent}
+      />
 
       <EventDetailModal
         visible={!!selectedEvent}
@@ -551,39 +340,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
         loadingDetail={loadingDetail}
         onClose={() => setSelectedEvent(null)}
         getEventLabel={getEventLabel}
-        getStatusLabel={(item) => {
-          const status = Number(item?.estado);
-          if (item?.type === 'servicio')
-            return (
-              (
-                {
-                  0: 'Anulado',
-                  1: 'Finalizado',
-                  2: 'En proceso',
-                  3: 'Pausado',
-                  4: 'Solicitud anulación',
-                } as Record<number, string>
-              )[status] || 'Desconocido'
-            );
-          if (item?.type === 'comision')
-            return status === 0
-              ? 'Anulado'
-              : status === 2
-                ? 'Pagado'
-                : 'Por cobrar';
-          if (item?.type === 'anticipo') {
-            if (status === 0) return 'Pagado';
-            if (status === 1) return 'Confirmado';
-            if (status === 2) return 'Pendiente';
-            if (status === 3) return 'Rechazado';
-          }
-          if (status === 0) return 'Pagado';
-          if (status === 1) return 'Por cobrar';
-          if (status === 2) return 'Confirmado';
-          if (status === 3) return 'Rechazado';
-          if (status === 4) return 'Completado';
-          return String(item?.estado ?? '');
-        }}
+        getStatusLabel={getStatusLabel}
       />
       <RegistroAsistenciaModal
         visible={showAsistenciaModal}
@@ -601,96 +358,3 @@ export function HomeScreen({ role }: HomeScreenProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerSkeleton: { height: 200, padding: 20, backgroundColor: '#222' },
-  container: { flex: 1 },
-  callStaffBtn: {
-    paddingHorizontal: 20,
-    height: 44,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    elevation: 4,
-  },
-  callStaffBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
-  activeServiceCard: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 20,
-    elevation: 4,
-  },
-  analyticsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
-  // Acceso a Analíticas (paridad con Flutter: /anfitriona/analytics)
-  analyticsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  analyticsLinkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  glassCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: { fontSize: 12, fontWeight: '800', opacity: 0.7 },
-  selectionFloat: {
-    position: 'absolute',
-    bottom: 34,
-    left: 20,
-    right: 20,
-    padding: 16,
-    borderRadius: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    elevation: 10,
-  },
-  viewBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    height: '80%',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitle: { fontSize: 20, fontWeight: '900' },
-  eventItem: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-});

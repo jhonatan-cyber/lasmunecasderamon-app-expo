@@ -1,5 +1,6 @@
 import type { ServiceCreateType } from '@lasmunecasderamon/validations';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import type { PagoMixto } from '@/components/cajero/forms/paymentSplit';
 
 
 export type ServicePayload = ServiceCreateType & {
@@ -12,11 +13,7 @@ export type ServicePayload = ServiceCreateType & {
 };
 
 
-export interface MetodoPagoMonto {
-  metodo: PaymentMethod;
-  monto: number;
-  display: string;
-}
+export type MetodoPagoMonto = PagoMixto;
 
 export type ServiceState = {
   loadingInitial: boolean;

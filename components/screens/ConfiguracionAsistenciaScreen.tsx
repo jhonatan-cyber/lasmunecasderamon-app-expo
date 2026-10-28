@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -20,6 +20,10 @@ import {
   type PantallaAsistencia,
 } from '@/hooks/useConfiguracionAsistencia';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import {
+  RUTA_PANTALLA_ASISTENCIA,
+  useModoPantallaStore,
+} from '@/store/modoPantallaStore';
 import { duracionVentana, formatearHora, leerHora } from '@/utils/asistenciaConfig';
 import { showToast } from '@/utils/toast-lazy';
 
@@ -58,6 +62,7 @@ function AccesoRestringido() {
 
 function PanelConfiguracionAsistencia() {
   const router = useRouter();
+  const activarModoPantalla = useModoPantallaStore((state) => state.activar);
   const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
 
@@ -74,12 +79,18 @@ function PanelConfiguracionAsistencia() {
     allowed,
     errorPantallas,
     revocando,
+    activando,
     cargarPantallas,
+    activarPantalla,
     revocarPantalla,
   } = useConfiguracionAsistencia();
 
   const [inicioTexto, setInicioTexto] = useState<string | null>(null);
   const [finTexto, setFinTexto] = useState<string | null>(null);
+  const [nombrePantalla, setNombrePantalla] = useState('');
+  const [confirmacionActivacion, setConfirmacionActivacion] = useState<string | null>(null);
+  const [confirmacionRevocacion, setConfirmacionRevocacion] =
+    useState<PantallaAsistencia | null>(null);
 
   const valorInicio =
     inicioTexto ??
@@ -124,26 +135,45 @@ function PanelConfiguracionAsistencia() {
     );
   };
 
+  const nombreValido = nombrePantalla.trim().length > 0;
+
+  const confirmarActivacion = () => {
+    const nombre = nombrePantalla.trim();
+    if (!nombre) return;
+    setConfirmacionActivacion(nombre);
+  };
+
+  const activarEstaPantalla = async () => {
+    const nombre = confirmacionActivacion;
+    setConfirmacionActivacion(null);
+    if (!nombre) return;
+
+    const ok = await activarPantalla(nombre);
+    if (!ok) {
+      showToast({ type: 'error', text1: 'No se pudo activar la pantalla' });
+      return;
+    }
+
+    setNombrePantalla('');
+    showToast({ type: 'success', text1: 'Pantalla activada' });
+    await activarModoPantalla(nombre);
+    router.replace(RUTA_PANTALLA_ASISTENCIA);
+  };
+
   const confirmarRevocar = (pantalla: PantallaAsistencia) => {
-    Alert.alert(
-      'Desvincular pantalla',
-      `¿Desvincular "${pantalla.nombre}" de la asistencia?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Desvincular',
-          style: 'destructive',
-          onPress: () => {
-            void revocarPantalla(pantalla.id).then((ok) =>
-              showToast(
-                ok
-                  ? { type: 'success', text1: 'Pantalla desvinculada' }
-                  : { type: 'error', text1: 'No se pudo desvincular' },
-              ),
-            );
-          },
-        },
-      ],
+    setConfirmacionRevocacion(pantalla);
+  };
+
+  const revocarEstaPantalla = async () => {
+    const pantalla = confirmacionRevocacion;
+    setConfirmacionRevocacion(null);
+    if (!pantalla) return;
+
+    const ok = await revocarPantalla(pantalla.id);
+    showToast(
+      ok
+        ? { type: 'success', text1: 'Pantalla desvinculada' }
+        : { type: 'error', text1: 'No se pudo desvincular' },
     );
   };
 
@@ -166,11 +196,6 @@ function PanelConfiguracionAsistencia() {
               Ventana de asistencia
             </Text>
           </View>
-          <Text style={[styles.cardDescription, { color: textSecondary }]}>
-            Rango en el que se aceptan marcas de entrada y salida. Fuera de él el
-            sistema guarda la ubicación pero no computa la asistencia del día.
-          </Text>
-
           {loadingVentana ? (
             <View style={styles.skeletonStack}>
               <SkeletonLoader width="100%" height={72} borderRadius={16} />
@@ -181,7 +206,7 @@ function PanelConfiguracionAsistencia() {
               <View style={styles.inputsRow}>
                 <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: textSecondary }]}>
-                    Hora de inicio (entrada)
+                    Entrada
                   </Text>
                   <TextInput
                     style={[
@@ -201,7 +226,7 @@ function PanelConfiguracionAsistencia() {
 
                 <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: textSecondary }]}>
-                    Hora de fin (salida / corte)
+                    Salida / corte
                   </Text>
                   <TextInput
                     style={[
@@ -251,9 +276,7 @@ function PanelConfiguracionAsistencia() {
                 <View style={styles.warningBox}>
                   <Ionicons name="warning-outline" size={16} color="#B45309" />
                   <Text style={styles.warningText}>
-                    La hora de fin debe ser posterior a la hora de inicio. Con este
-                    rango no entraría ninguna marca y nadie podría registrar
-                    asistencia.
+                    La hora de fin debe ser posterior a la de inicio.
                   </Text>
                 </View>
               )}
@@ -291,10 +314,49 @@ function PanelConfiguracionAsistencia() {
               Pantallas de asistencia
             </Text>
           </View>
-          <Text style={[styles.cardDescription, { color: textSecondary }]}>
-            Dispositivos del local vinculados sin claves. La autorización se renueva
-            automáticamente mientras se utilizan.
-          </Text>
+
+          {allowed && (
+            <View style={styles.activacionBox}>
+              <Text style={[styles.inputLabel, { color: textSecondary }]}>
+                Nombre de esta pantalla
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: bg, color: textPrimary, borderColor },
+                ]}
+                value={nombrePantalla}
+                onChangeText={setNombrePantalla}
+                placeholder="Ej. Entrada del local"
+                placeholderTextColor={textSecondary}
+                maxLength={100}
+                editable={!activando}
+                accessibilityLabel="Nombre de esta pantalla de asistencia"
+              />
+              <Pressable
+                onPress={confirmarActivacion}
+                disabled={activando || !nombreValido}
+                style={[
+                  styles.saveButton,
+                  {
+                    backgroundColor: accentColor,
+                    opacity: activando || !nombreValido ? 0.5 : 1,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: activando || !nombreValido }}
+              >
+                {activando ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Ionicons name="tablet-portrait-outline" size={18} color="#FFFFFF" />
+                )}
+                <Text style={styles.saveButtonText}>
+                  {activando ? 'Activando...' : 'Activar pantalla de asistencia'}
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           {!allowed ? (
             <Text style={[styles.cardDescription, { color: textSecondary }]}>
@@ -363,6 +425,30 @@ function PanelConfiguracionAsistencia() {
           )}
         </View>
       </ScrollView>
+
+      <PremiumAlert
+        visible={confirmacionActivacion !== null}
+        type="info"
+        title="Activar pantalla de asistencia"
+        message={`Este dispositivo quedará vinculado como "${confirmacionActivacion ?? ''}" y pasará a mostrar la asistencia del personal. Podrás salir del modo pantalla desde el botón "Salir", que cierra la sesión.`}
+        confirmText="Activar"
+        cancelText="Cancelar"
+        showCancel
+        onConfirm={() => void activarEstaPantalla()}
+        onCancel={() => setConfirmacionActivacion(null)}
+      />
+
+      <PremiumAlert
+        visible={confirmacionRevocacion !== null}
+        type="danger"
+        title="Desvincular pantalla"
+        message={`¿Desvincular "${confirmacionRevocacion?.nombre ?? ''}" de la asistencia? El dispositivo dejará de estar autorizado para registrar asistencia.`}
+        confirmText="Sí, desvincular"
+        cancelText="Cancelar"
+        showCancel
+        onConfirm={() => void revocarEstaPantalla()}
+        onCancel={() => setConfirmacionRevocacion(null)}
+      />
     </View>
   );
 }
@@ -383,9 +469,10 @@ const styles = StyleSheet.create({
   restrictedTitle: { fontSize: 18, fontWeight: '800' },
   restrictedText: { fontSize: 13, lineHeight: 19, textAlign: 'center' },
   skeletonStack: { gap: 10 },
-  inputsRow: { flexDirection: 'row', gap: 12 },
+  inputsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   inputGroup: { flex: 1, gap: 6 },
-  inputLabel: { fontSize: 12, fontWeight: '700' },
+  inputLabel: { fontSize: 12, fontWeight: '700', lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.4 },
+  activacionBox: { gap: 10 },
   input: {
     borderWidth: 1.5,
     borderRadius: 14,

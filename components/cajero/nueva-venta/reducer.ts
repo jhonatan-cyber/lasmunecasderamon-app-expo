@@ -1,4 +1,9 @@
 import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import {
+  addPagoMixto,
+  removePagoMixto,
+  updatePagoMixto,
+} from "@/components/cajero/forms/paymentSplit";
 import type {
   VentaState,
   VentaAction,
@@ -95,21 +100,21 @@ export function ventaReducer(
     case "SET_PAGOS_MIXTOS":
       return { ...state, pagosMixtos: action.payload };
     case "ADD_PAGO_MIXTO":
-      return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
-    case "UPDATE_PAGO_MIXTO": {
-      const updated = [...state.pagosMixtos];
-      updated[action.index] = {
-        ...updated[action.index],
-        monto: action.monto,
-        display:
-          action.display ?? (action.monto > 0 ? String(action.monto) : ""),
+      return { ...state, pagosMixtos: addPagoMixto(state.pagosMixtos, action.payload) };
+    case "UPDATE_PAGO_MIXTO":
+      return {
+        ...state,
+        pagosMixtos: updatePagoMixto(
+          state.pagosMixtos,
+          action.index,
+          action.monto,
+          action.display,
+        ),
       };
-      return { ...state, pagosMixtos: updated };
-    }
     case "REMOVE_PAGO_MIXTO":
       return {
         ...state,
-        pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index),
+        pagosMixtos: removePagoMixto(state.pagosMixtos, action.index),
       };
     case "SET_METODO_PAGO_ADICIONAL":
       return { ...state, metodoPagoAdicional: action.payload };

@@ -20,7 +20,7 @@ import { PremiumCalendar } from "@/components/ui/PremiumCalendar";
 import { PremiumLiquidationCard } from "@/components/shared/PremiumLiquidationCard";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useAuthStore } from "@/store/authStore";
-import { Event } from "@/hooks/useAdministrativoScreen";
+import { Event } from "@/hooks/types/administrativoTypes";
 
 import {
   AdministrativoSkeleton,

@@ -63,14 +63,24 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
 interface CajeroStatsProps {
     stats: any;
     fullWidth?: boolean;
+    hideFullWidth?: boolean;
 }
 
-export const CajeroStats = ({ stats, fullWidth = false }: CajeroStatsProps) => {
+interface StatItem {
+    label: string;
+    value: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    isFullWidth?: boolean;
+    subLabel?: string;
+}
+
+export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }: CajeroStatsProps) => {
     const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const { width } = useWindowDimensions();
     const isTablet = width >= 768;
 
-    const statItems = [
+    const statItems: StatItem[] = [
         {
             label: 'Balance Total',
             value: formatCurrency(stats?.balance_total || 0),
@@ -93,10 +103,14 @@ export const CajeroStats = ({ stats, fullWidth = false }: CajeroStatsProps) => {
         }
     ];
 
+    const tarjetasVisibles = hideFullWidth
+        ? statItems.filter((item) => !item.isFullWidth)
+        : statItems;
+
     return (
         <View style={[styles.container, isTablet && styles.tabletContainer, fullWidth && styles.fullWidthContainer, fullWidth && isTablet && styles.fullWidthTabletContainer]}>
             <View style={[styles.grid, isTablet && styles.tabletGrid]}>
-                {statItems.map((item, index) => (
+                {tarjetasVisibles.map((item, index) => (
                     <StatCard
                         key={index}
                         {...item}

@@ -4,7 +4,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { AnimatedView } from "@/components/ui/AnimatedView";
 import type { Timer } from "@/context/types";
 import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
-import { safeNumber } from "@/hooks/useServiciosScreen";
+import { safeNumber } from "@/utils/format";
 import { useRenderCount } from "@/hooks/useRenderCount";
 import { useTimerTick } from "@/context/TimerContext";
 import { ServiceCardHeader } from "./ServiceCardHeader";

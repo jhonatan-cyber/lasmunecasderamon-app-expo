@@ -8,11 +8,8 @@ import type {
   Categoria,
 } from "@lasmunecasderamon/types";
 
-export type PagoMixto = {
-  metodo: PaymentMethod;
-  monto: number;
-  display: string;
-};
+import type { PagoMixto } from "@/components/cajero/forms/paymentSplit";
+export type { PagoMixto };
 
 /** Product item in the sales cart (uses both ES and EN field names for backward compat) */
 export type VentaCartItem = Producto & {

@@ -5,12 +5,14 @@ import { rutaExigeAdmin } from "@/utils/adminGate";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useCajaAbierta } from "@/hooks/useCajaAbierta";
 import { rutaRequiereCajaAbierta } from "@/utils/cajaGate";
+import { useModoPantallaStore } from "@/store/modoPantallaStore";
 import { GlobalTimerAlert } from "@/components/cajero/GlobalTimerAlert";
 
 export default function CajeroLayout() {
   const { isDark } = useAccentColor();
   const user = useAuthStore((state) => state.user);
   const { bloqueado } = useCajaAbierta();
+  const enModoPantalla = useModoPantallaStore((state) => state.activo);
   const segmentos = useSegments();
 
   if (isBarmanRole(user)) return <Redirect href="/(app)/barman/(tabs)" />;
@@ -78,8 +80,12 @@ export default function CajeroLayout() {
           name="configuracion-asistencia"
           options={{ title: "Configuración", headerShown: false }}
         />
+        <Stack.Screen
+          name="pantalla-asistencia"
+          options={{ title: "Asistencia", headerShown: false, gestureEnabled: false }}
+        />
       </Stack>
-      <GlobalTimerAlert />
+      {!enModoPantalla && <GlobalTimerAlert />}
     </>
   );
 }

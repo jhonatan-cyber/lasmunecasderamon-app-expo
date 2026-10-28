@@ -4,7 +4,7 @@ import { HostessSelectModal } from "@/components/cajero/forms/HostessSelectModal
 import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
 import { ProductsCategoryModal } from "./ProductsCategoryModal";
 import { ExtraTiempoModal } from "./ExtraTiempoModal";
-import { isChampagneProduct, getChampagneLimit } from "@/hooks/useAgregarCuenta";
+import { isChampagneProduct, getChampagneLimit } from "@/hooks/utils/cartUtils";
 import { bloqueaChampanaSinConfigurar } from "@/hooks/utils/champagneConfig";
 
 type AgregarCuentaModalesProps = {

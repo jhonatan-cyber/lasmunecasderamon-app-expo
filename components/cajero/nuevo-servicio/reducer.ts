@@ -1,4 +1,9 @@
-import type { ServiceState, ServiceAction, MetodoPagoMonto } from './types';
+import type { ServiceState, ServiceAction } from './types';
+import {
+  addPagoMixto,
+  removePagoMixto,
+  updatePagoMixto,
+} from '@/components/cajero/forms/paymentSplit';
 
 export const initialServiceState: ServiceState = {
   loadingInitial: true,
@@ -43,18 +48,19 @@ export function serviceReducer(state: ServiceState, action: ServiceAction): Serv
     case 'SET_PAGOS_MIXTOS':
       return { ...state, pagosMixtos: action.payload };
     case 'ADD_PAGO_MIXTO':
-      return { ...state, pagosMixtos: [...state.pagosMixtos, action.payload] };
-    case 'UPDATE_PAGO_MIXTO': {
-      const updatedPagos: MetodoPagoMonto[] = [...state.pagosMixtos];
-      updatedPagos[action.index] = {
-        ...updatedPagos[action.index],
-        monto: action.monto,
-        display: action.display ?? (action.monto > 0 ? String(action.monto) : ''),
+      return { ...state, pagosMixtos: addPagoMixto(state.pagosMixtos, action.payload) };
+    case 'UPDATE_PAGO_MIXTO':
+      return {
+        ...state,
+        pagosMixtos: updatePagoMixto(
+          state.pagosMixtos,
+          action.index,
+          action.monto,
+          action.display,
+        ),
       };
-      return { ...state, pagosMixtos: updatedPagos };
-    }
     case 'REMOVE_PAGO_MIXTO':
-      return { ...state, pagosMixtos: state.pagosMixtos.filter((_, i) => i !== action.index) };
+      return { ...state, pagosMixtos: removePagoMixto(state.pagosMixtos, action.index) };
     case 'SET_SUBMITTING':
       return { ...state, submitting: action.payload };
     case 'SET_MODAL_VISIBLE':

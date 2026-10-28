@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '@/api/client';
 import { AttendanceCodeDisplay } from '@/components/anfitriona/AttendanceCodeDisplay';
+import { getUserRole, isAdminRole } from '@/utils/userRole';
 
 interface PremiumUserProfileProps {
     user: any;
@@ -73,8 +74,8 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
     const fullName = [user?.name, lastName].filter(Boolean).join(' ').trim() || user?.username || 'Usuario';
     const nick = user?.nick || user?.username || fullName;
     const showFullName = Boolean(fullName) && fullName !== nick;
-
-    const roleLabel = getRoleLabel(role || user?.role);
+    const esAdmin = isAdminRole(user);
+    const roleLabel = getRoleLabel(esAdmin ? getUserRole(user) : role || user?.role);
 
     return (
         <View style={styles.headerUser}>
@@ -90,7 +91,7 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
                     <Text style={[styles.username, styles.usernameText, { color: textPrimary }]} numberOfLines={1}>
                         @{nick}
                     </Text>
-                    <AttendanceCodeDisplay />
+                    {!esAdmin && <AttendanceCodeDisplay />}
                 </View>
                 {showFullName && (
                     <Text style={[styles.nickText, { color: textSecondary }]} numberOfLines={1}>

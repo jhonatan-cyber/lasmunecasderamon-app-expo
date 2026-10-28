@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
+import { isAdminRole, isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 import { BiometricEnrollmentModal } from '@/components/shared/BiometricEnrollmentModal';
 
 interface PremiumHeaderActionsProps {
@@ -39,8 +39,7 @@ export const PremiumHeaderActions = ({
 
     const isRestrictedRole = isGarzonRole(user) || isHostessRole(user) || isBarmanRole(user);
     const canUseCajeroActions = isCajeroRole(user);
-
-    
+    const isAdmin = isAdminRole(user);
     const iconColor = '#FFFFFF';
     const btnBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)';
     const btnBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
@@ -66,7 +65,7 @@ export const PremiumHeaderActions = ({
 
     return (
         <View style={styles.headerTop}>
-            {onQRScannerPress && !canUseCajeroActions && (
+            {onQRScannerPress && !canUseCajeroActions && !isAdmin && (
                 <Pressable
                     onPress={onQRScannerPress}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
@@ -74,7 +73,7 @@ export const PremiumHeaderActions = ({
                     <Ionicons name="qr-code" size={20} color={iconColor} />
                 </Pressable>
             )}
-            {onPersonalPress && (
+            {onPersonalPress && !isAdmin && (
                 <Pressable
                     onPress={onPersonalPress}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
@@ -82,7 +81,7 @@ export const PremiumHeaderActions = ({
                     <Ionicons name="people" size={20} color={iconColor} />
                 </Pressable>
             )}
-            {showNotifications && !isRestrictedRole && (
+            {showNotifications && !isRestrictedRole && !isAdmin && (
                 <Pressable
                     onPress={() => {
                         if (onNotificationPress) {
@@ -102,7 +101,7 @@ export const PremiumHeaderActions = ({
                     )}
                 </Pressable>
             )}
-            {!isBiometricEnrolled && (
+            {!isBiometricEnrolled && !isAdmin && (
                 <Pressable
                     onPress={() => setShowEnrollment(true)}
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#000', 
+        borderColor: '#000',
     },
     notificationText: {
         color: '#FFFFFF',

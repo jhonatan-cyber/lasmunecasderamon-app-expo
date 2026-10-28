@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     Modal,
@@ -13,6 +13,11 @@ import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
+import {
+    RUTA_PANTALLA_ASISTENCIA,
+    esRutaPantallaAsistencia,
+    useModoPantallaStore,
+} from '@/store/modoPantallaStore';
 
 export default function AppLayout() {
     const user = useAuthStore((state) => state.user);
@@ -20,6 +25,8 @@ export default function AppLayout() {
     const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
     const logout = useAuthStore((state) => state.logout);
     const refreshUser = useAuthStore((state) => state.refreshUser);
+    const enModoPantalla = useModoPantallaStore((state) => state.activo);
+    const segmentos = useSegments();
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
     const isStaffMember = user?.role &&
@@ -58,6 +65,10 @@ export default function AppLayout() {
         return <Redirect href="/(auth)/login" />;
     }
 
+    if (enModoPantalla && !esRutaPantallaAsistencia(segmentos)) {
+        return <Redirect href={RUTA_PANTALLA_ASISTENCIA} />;
+    }
+
     const handleLogout = async () => {
         clearSessionExpired();
         await logout();
@@ -74,9 +85,10 @@ export default function AppLayout() {
                 screenOptions={{
                     headerShown: false,
                     animation: 'slide_from_right',
+                    orientation: 'portrait',
                 }}
             />
-            <StaffCallOverlay />
+            {!enModoPantalla && <StaffCallOverlay />}
 
             { }
             <Modal

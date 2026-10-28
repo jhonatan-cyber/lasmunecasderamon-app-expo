@@ -154,6 +154,39 @@ describe('useConfiguracionAsistencia — capa de datos de la vista admin', () =>
     expect(algunaPut).toBe(false);
   });
 
+  it('activa este dispositivo como pantalla con POST /kiosk/session y recarga el listado', async () => {
+    let llamadasDispositivos = 0;
+    mockApi({
+      'GET /configurations': () => configResponse,
+      'GET /kiosk/devices': () => {
+        llamadasDispositivos += 1;
+        return { success: true, data: llamadasDispositivos > 1 ? dispositivos : [] };
+      },
+      'POST /kiosk/session': () => ({ success: true, deviceId: 'd1' }),
+    });
+
+    const { result } = renderHook(() => useConfiguracionAsistencia());
+    await waitFor(() => expect(result.current.loadingPantallas).toBe(false));
+    expect(result.current.pantallas).toHaveLength(0);
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.activarPantalla('  Entrada del local  ');
+    });
+
+    expect(ok).toBe(true);
+    expect(result.current.activando).toBe(false);
+
+    const post = vi
+      .mocked(apiClientSafe)
+      .mock.calls.find(([, options]: any) => options?.method === 'POST') as any;
+    expect(post?.[0]).toBe('/kiosk/session');
+    expect(JSON.parse(post[1].body)).toEqual({ nombre: 'Entrada del local' });
+
+    // Se recarga el listado tras activar: la pantalla recién vinculada aparece.
+    await waitFor(() => expect(result.current.pantallas).toHaveLength(1));
+  });
+
   it('desvincula una pantalla con DELETE y recarga el listado', async () => {
     mockApi({
       'GET /configurations': () => configResponse,

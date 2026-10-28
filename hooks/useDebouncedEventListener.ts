@@ -1,15 +1,6 @@
 import { useEffect, useRef } from "react";
 import { eventBus } from "@/utils/eventBus";
 
-/**
- * Suscripción a eventBus con debounce trailing.
- *
- * Las ráfagas SSE (p. ej. `updateSales` + `new_order` + `timer_*` juntos, o el
- * doble `sse_event` + `refresh_requests` del mismo pedido) colapsan en una
- * sola ejecución en vez de N fetches seguidos.
- *
- * NO usar para UI inmediata (shakes, overlays, voz): eso va directo.
- */
 export function useDebouncedEventListener<T = unknown>(
   event: string,
   callback: (payload: T) => void,
@@ -17,7 +8,6 @@ export function useDebouncedEventListener<T = unknown>(
   enabled = true,
 ) {
   const callbackRef = useRef(callback);
-  // En efecto (no durante el render): siempre la última versión del callback.
   useEffect(() => {
     callbackRef.current = callback;
   });
@@ -39,11 +29,6 @@ export function useDebouncedEventListener<T = unknown>(
   }, [event, delayMs, enabled]);
 }
 
-/**
- * Variante multi-evento de `useDebouncedEventListener`: varias señales comparten
- * un único temporizador, así una ráfaga de eventos distintos (p. ej.
- * `refresh_rooms` + `refresh_personal` + `refresh_bar`) provoca un solo refresco.
- */
 export function useDebouncedEventListeners<T = unknown>(
   events: readonly string[],
   callback: (payload: T) => void,

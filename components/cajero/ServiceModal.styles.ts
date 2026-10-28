@@ -1,0 +1,60 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  checkoutModal: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    minHeight: 400,
+    maxHeight: "90%",
+  },
+  modalHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 16,
+  },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalTitleText: { fontSize: 22, fontWeight: "800" },
+  modalSubText: { fontSize: 14, fontWeight: "600", marginTop: 2 },
+  optionsTitleContainer: { marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: "700" },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  infoText: { fontSize: 13, fontWeight: "600" },
+  receiptContainer: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  productDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  productInfoCol: { flex: 1, justifyContent: "center", paddingRight: 8 },
+  productName: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
+  productSubtotal: { fontSize: 15, fontWeight: "800" },
+  modalActionsRow: { flexDirection: "row", gap: 12, marginTop: "auto" },
+  modalBtnAction: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBtnActionText: { fontSize: 16, fontWeight: "800" },
+});

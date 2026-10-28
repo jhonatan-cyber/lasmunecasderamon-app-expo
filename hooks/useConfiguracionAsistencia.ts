@@ -9,7 +9,6 @@ import {
 import logger from '@/utils/logger';
 import { useCallback, useEffect, useState } from 'react';
 
-/** Pantalla (kiosko) vinculada a la asistencia, según `/kiosk/devices`. */
 export interface PantallaAsistencia {
   id: string;
   nombre: string;
@@ -19,19 +18,8 @@ export interface PantallaAsistencia {
   activo: boolean;
 }
 
-/** Categoría bajo la que el dashboard agrupa las claves de asistencia. */
 const CONFIG_CATEGORY = 'asistencia';
 
-/**
- * Capa de datos de la vista de configuración de asistencia (exclusiva de
- * administradores): lee y guarda la ventana de asistencia y lista/desvincula las
- * pantallas de kiosko.
- *
- * Los endpoints reutilizan los del dashboard, que ya exigen rol administrador
- * (`/kiosk/*`) o permiso de escritura del módulo settings (`PUT /configurations`),
- * así que el servidor rechaza a cualquier usuario no autorizado aunque llegue a
- * invocar estas llamadas.
- */
 export function useConfiguracionAsistencia() {
   const [ventana, setVentana] = useState<VentanaAsistencia>(VENTANA_ASISTENCIA_DEFECTO);
   const [guardada, setGuardada] = useState<VentanaAsistencia>(VENTANA_ASISTENCIA_DEFECTO);
@@ -43,6 +31,7 @@ export function useConfiguracionAsistencia() {
   const [allowed, setAllowed] = useState(true);
   const [errorPantallas, setErrorPantallas] = useState('');
   const [revocando, setRevocando] = useState<string | null>(null);
+  const [activando, setActivando] = useState(false);
 
   const cargarVentana = useCallback(async () => {
     setLoadingVentana(true);
@@ -70,8 +59,6 @@ export function useConfiguracionAsistencia() {
       setPantallas(res.data);
       setAllowed(true);
     } catch (error) {
-      // 401/403: el servidor no reconoce permisos de administrador. No es un
-      // error de red, así que la sección se oculta en vez de mostrar el fallo.
       const status = httpDetailsOf(error)?.status;
       if (status === 401 || status === 403) {
         setAllowed(false);
@@ -116,6 +103,28 @@ export function useConfiguracionAsistencia() {
     }
   }, [ventana]);
 
+  const activarPantalla = useCallback(
+    async (nombre: string): Promise<boolean> => {
+      setActivando(true);
+      try {
+        const res = await apiClientSafe('/kiosk/session', {
+          method: 'POST',
+          body: JSON.stringify({ nombre: nombre.trim() }),
+        });
+        if (res?.success === false) return false;
+
+        await cargarPantallas();
+        return true;
+      } catch (error) {
+        logger.captureException(error, { context: 'useConfiguracionAsistencia:activar' });
+        return false;
+      } finally {
+        setActivando(false);
+      }
+    },
+    [cargarPantallas],
+  );
+
   const revocarPantalla = useCallback(
     async (id: string): Promise<boolean> => {
       setRevocando(id);
@@ -155,7 +164,9 @@ export function useConfiguracionAsistencia() {
     allowed,
     errorPantallas,
     revocando,
+    activando,
     cargarPantallas,
+    activarPantalla,
     revocarPantalla,
   };
 }

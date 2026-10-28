@@ -18,6 +18,7 @@ type PremiumTabBarProps = {
         {
             options: {
                 href?: string | null;
+                tabBarItemStyle?: { display?: string };
                 tabBarLabel?: React.ReactNode;
                 title?: string;
                 tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
@@ -43,10 +44,12 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
     const activeTintColor = '#FFFFFF';
     const inactiveTintColor = 'rgba(255, 255, 255, 0.6)';
     const borderColor = 'rgba(255, 255, 255, 0.1)';
+    const estaOculta = (options: any) =>
+        options.href === null || options.tabBarItemStyle?.display === 'none';
 
     const visibleRoutes = state.routes.filter((r: any) => {
         const options = descriptors[r.key].options as any;
-        return options.href !== null;
+        return !estaOculta(options);
     });
 
     const numTabs = visibleRoutes.length || 1;
@@ -83,7 +86,7 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
 
-                if ((options as any).href === null) return null;
+                if (estaOculta(options)) return null;
 
                 const label =
                     options.tabBarLabel !== undefined

@@ -1,7 +1,3 @@
-import {
-  saleInventoryFields,
-  type SaleInventoryFields,
-} from "@/hooks/utils/saleInventoryFields";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
@@ -10,64 +6,16 @@ import * as Haptics from "expo-haptics";
 import { showToast as showToastLazy } from "@/utils/toast-lazy";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
-import { calcularPropina } from "@lasmunecasderamon/sale-totals";
-import { MetodoPago } from "@/types/api";
-import type { Cliente } from "@lasmunecasderamon/types";
 import type {
-  PedidoItem,
-  SolicitudItem,
+  AlertConfig,
   PendingAutoOpen,
+  SolicitudItem,
 } from "@/hooks/types/solicitudesTypes";
 import { blockOffline } from "@/utils/offlineGuard";
-import logger from "@/utils/logger";
 import { useAuthStore } from "@/store/authStore";
 import { isCajeroRole } from "@/utils/userRole";
-
-interface PedidoDetalle {
-  configuracion_venta?: SaleInventoryFields;
-  comision?: number;
-  anfitrionas_asignadas_ids?: string;
-  producto_id: string;
-  cantidad: number;
-  precio: number;
-  subtotal_detalle?: number;
-  cliente_id?: string | number | null;
-  habitacion_id?: string | number | null;
-  propina?: number;
-}
-
-interface DetallePago {
-  producto_id: string;
-  cantidad: number;
-  precio: number;
-  sub_total: number;
-}
-
-interface SalesSubmitPayload {
-  id_pedido: string;
-  cliente_id: string | number | null;
-  metodo_pago: string;
-  metodo_pago_adicional?: string;
-  monto_prepago: number;
-  duracion_habitacion: number;
-  detalles: DetallePago[];
-  sub_total: number;
-  total: number;
-  ganancia_tipo: string;
-  ganancia_monto: number;
-  comision_por_cliente: boolean;
-  recompensa_binario: boolean;
-  recompensa_activos: boolean;
-  recompensa_activos_monto: number;
-  ganancia_anfitriona: number;
-  ganancia_garzon: number;
-  ganancia_local: number;
-  ganancia_empresa: number;
-  total_comision: number;
-  tiempo: number;
-  usuarios: never[];
-  propina?: number;
-}
+import { useSolicitudesCheckout } from "@/hooks/solicitudes/useSolicitudesCheckout";
+import { useSolicitudesServiceModal } from "@/hooks/solicitudes/useSolicitudesServiceModal";
 
 interface UseSolicitudesActionsParams {
   solicitudes: SolicitudItem[];
@@ -100,32 +48,13 @@ export const useSolicitudesActions = ({
   );
   const [processedOpenId, setProcessedOpenId] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(0);
-  const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
-  const [selectedPedido, setSelectedPedido] = useState<SolicitudItem | null>(
-    null,
-  );
-  const [pedidoDetails, setPedidoDetails] = useState<PedidoDetalle[]>([]);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [loadingClient, setLoadingClient] = useState(false);
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>("");
-  const [metodoPagoAdicional, setMetodoPagoAdicional] =
-    useState<MetodoPago>("");
-  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
-  const [agregarPropina, setAgregarPropina] = useState(false);
-  const [selectedMinutesPedido, setSelectedMinutesPedido] =
-    useState<number>(30);
-  const [submittingCheckout, setSubmittingCheckout] = useState(false);
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    type: "info" | "success" | "warning" | "danger";
-    onConfirm?: () => void;
-  }>({ visible: false, title: "", message: "", type: "info" });
-  const [serviceModalVisible, setServiceModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<SolicitudItem | null>(
-    null,
-  );
+  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
   const showToast = useCallback(
     (title: string, message: string, type: "success" | "error" = "error") => {
       if (type === "success")
@@ -142,16 +71,26 @@ export const useSolicitudesActions = ({
     [],
   );
 
-  const closeCheckout = useCallback(() => {
-    setCheckoutModalVisible(false);
-    setSelectedPedido(null);
-    setPedidoDetails([]);
-    setSelectedClient(null);
-    setMetodoPago("");
-    setMetodoPagoAdicional("");
-    setAgregarPropina(false);
-    setSelectedMinutesPedido(30);
-  }, []);
+  const checkout = useSolicitudesCheckout({
+    cajaAbierta,
+    propinaPct,
+    fetchSolicitudes,
+    removeSolicitudLocally,
+    showToast,
+  });
+  const {
+    metodoPago,
+    metodoPagoAdicional,
+    setMetodoPago,
+    setMetodoPagoAdicional,
+    setSelectedClient,
+    closeCheckout,
+    openPedidoCheckout,
+  } = checkout;
+
+  const serviceModal = useSolicitudesServiceModal({ setSelectedClient });
+  const { serviceModalVisible, setServiceModalVisible, setSelectedService } =
+    serviceModal;
 
   const handleAprobar = useCallback(
     async (
@@ -160,13 +99,6 @@ export const useSolicitudesActions = ({
       itemInfo?: SolicitudItem,
       productoIncluido?: string,
     ) => {
-      logger.debug("[handleAprobar] id:", {
-        arg0: id,
-        arg1: "tipo:",
-        arg2: tipo,
-        arg3: "itemInfo:",
-        arg4: itemInfo,
-      });
       if (!cajaAbierta) {
         showToast(
           "Caja Cerrada",
@@ -180,47 +112,7 @@ export const useSolicitudesActions = ({
       if (!blockOffline("solicitud")) return;
 
       if (tipo === "pedido" && itemInfo) {
-        setSelectedPedido(itemInfo);
-        setMetodoPago("");
-        setMetodoPagoAdicional("");
-        setAgregarPropina(false);
-        setCheckoutModalVisible(true);
-        setLoadingDetails(true);
-        setSelectedMinutesPedido(30);
-
-        try {
-          const res = await apiClientSafe<PedidoDetalle[]>(
-            `/orders/detail?id=${id}`,
-          );
-          if (res.success) {
-            setPedidoDetails(res.data);
-            const cId =
-              res.data?.[0]?.cliente_id ||
-              itemInfo.id_cliente ||
-              itemInfo.cliente_id;
-            if (cId) {
-              const cRes = await apiClientSafe<Cliente>(
-                `/clients?id=${cId}`,
-              ).catch(() => ({ success: false, data: undefined }));
-              if (cRes.success && cRes.data) {
-                setSelectedClient(cRes.data);
-                if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
-              }
-            } else {
-              setSelectedClient(null);
-            }
-            if (res.data.length > 0 && (res.data[0].propina ?? 0) > 0)
-              setAgregarPropina(true);
-          } else {
-            showToast("Error", "No se pudieron cargar los detalles", "error");
-            closeCheckout();
-          }
-        } catch {
-          showToast("Error", "No se pudieron cargar los detalles", "error");
-          closeCheckout();
-        } finally {
-          setLoadingDetails(false);
-        }
+        await openPedidoCheckout(itemInfo, id);
         return;
       }
 
@@ -326,12 +218,15 @@ export const useSolicitudesActions = ({
     [
       cajaAbierta,
       user,
-      closeCheckout,
+      openPedidoCheckout,
       fetchSolicitudes,
       metodoPago,
       metodoPagoAdicional,
       removeSolicitudLocally,
       serviceModalVisible,
+      setMetodoPago,
+      setMetodoPagoAdicional,
+      setServiceModalVisible,
       showToast,
     ],
   );
@@ -379,202 +274,6 @@ export const useSolicitudesActions = ({
     },
     [fetchSolicitudes, removeSolicitudLocally, showToast],
   );
-
-  const handleCheckoutSubmit = useCallback(async () => {
-    if (!selectedPedido) return;
-    // El checkout del pedido crea la venta en el servidor.
-    if (!blockOffline("solicitud")) return;
-    setSubmittingCheckout(true);
-
-    const pedidoItem = selectedPedido as PedidoItem;
-    const propinaOriginal = Number(
-      pedidoItem.propina || pedidoDetails?.[0]?.propina || 0,
-    );
-    const subtotalBase = Number(
-      pedidoItem.subtotal ??
-        Math.max(0, Number(pedidoItem.total || 0) - propinaOriginal),
-    );
-    const propinaFinal =
-      propinaOriginal > 0
-        ? propinaOriginal
-        : calcularPropina(subtotalBase, propinaPct, agregarPropina);
-    const totalConPropina = subtotalBase + propinaFinal;
-    const saldoPrepago = selectedClient ? Number(selectedClient.saldo || 0) : 0;
-
-    let montoPrepago = 0;
-    if (metodoPago === "prepago" && selectedClient && saldoPrepago > 0) {
-      montoPrepago = Math.min(totalConPropina, saldoPrepago);
-    }
-
-    const clienteId =
-      selectedPedido.cliente_id ||
-      pedidoDetails?.[0]?.cliente_id ||
-      selectedClient?.id ||
-      null;
-
-    const payload: SalesSubmitPayload = {
-      id_pedido: (selectedPedido as PedidoItem).id_pedido ?? "",
-      cliente_id: clienteId ?? null,
-      metodo_pago: metodoPago,
-      metodo_pago_adicional: metodoPagoAdicional || undefined,
-      monto_prepago: montoPrepago,
-      duracion_habitacion: selectedMinutesPedido,
-      detalles: pedidoDetails.map((d) => ({
-        ...saleInventoryFields(d),
-        comision: Number(d.comision ?? 0),
-        hostesses:
-          d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
-        producto_id: d.producto_id,
-        cantidad: d.cantidad,
-        precio: d.precio,
-        sub_total: d.subtotal_detalle || d.cantidad * d.precio,
-      })),
-      sub_total: subtotalBase,
-      total: totalConPropina,
-      ganancia_tipo: "fijo",
-      ganancia_monto: 0,
-      comision_por_cliente: false,
-      recompensa_binario: false,
-      recompensa_activos: false,
-      recompensa_activos_monto: 0,
-      ganancia_anfitriona: 0,
-      ganancia_garzon: 0,
-      ganancia_local: 0,
-      ganancia_empresa: 0,
-      total_comision: 0,
-      tiempo: selectedMinutesPedido,
-      usuarios: [],
-    };
-
-    if (propinaFinal > 0) {
-      payload.propina = propinaFinal;
-    }
-
-    try {
-      const res = await apiClientSafe("/sales", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      if (res.success) {
-        showToast("Éxito", "Pedido cobrado y cerrado.", "success");
-        removeSolicitudLocally(pedidoItem.id_pedido ?? "", "pedido");
-        closeCheckout();
-        eventBus.emit("refresh_requests");
-      } else {
-        showToast("Error", res.message || "Error al procesar", "error");
-        fetchSolicitudes();
-      }
-    } catch (err: any) {
-      showToast("Error", err.message || "Error base de datos", "error");
-      fetchSolicitudes();
-    } finally {
-      setSubmittingCheckout(false);
-    }
-  }, [
-    agregarPropina,
-    closeCheckout,
-    fetchSolicitudes,
-    metodoPago,
-    metodoPagoAdicional,
-    pedidoDetails,
-    removeSolicitudLocally,
-    selectedClient,
-    selectedMinutesPedido,
-    selectedPedido,
-    showToast,
-    propinaPct,
-  ]);
-
-  const handleAddToCuenta = useCallback(async () => {
-    if (!selectedPedido || !selectedClient) return;
-    if (!cajaAbierta) {
-      showToast(
-        "Caja Cerrada",
-        "No puedes crear cuentas sin una caja abierta.",
-        "error",
-      );
-      return;
-    }
-
-    // Crear la cuenta escribe en caja: necesita el servidor.
-    if (!blockOffline("cuenta")) return;
-
-    setSubmittingCheckout(true);
-    try {
-      const clienteId =
-        selectedPedido.cliente_id ||
-        pedidoDetails?.[0]?.cliente_id ||
-        selectedClient?.id ||
-        null;
-      const habitacionId = pedidoDetails?.[0]?.habitacion_id || null;
-      const detalles = pedidoDetails.map((d: any) => ({
-        ...saleInventoryFields(d),
-        comision: Number(d.comision ?? 0),
-        hostesses:
-          d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
-        producto_id: d.producto_id,
-        cantidad: d.cantidad,
-        precio: d.precio,
-        sub_total: d.cantidad * d.precio,
-      }));
-
-      const subTotal = detalles.reduce(
-        (sum: number, d: any) => sum + d.sub_total,
-        0,
-      );
-      const total = subTotal;
-
-      const payload = {
-        codigo: `CUENTA-${Date.now()}`,
-        cliente_id: clienteId,
-        habitacion_id: habitacionId,
-        tiempo: selectedMinutesPedido || 30,
-        metodo_pago: "efectivo",
-        sub_total: subTotal,
-        total,
-        total_comision: 0,
-        detalles,
-      };
-
-      const res = await apiClientSafe("/accounts", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      if (res.success) {
-        showToast(
-          "Éxito",
-          `Pedido registrado en cuenta de ${selectedClient.name} ${selectedClient.lastName}`,
-          "success",
-        );
-        removeSolicitudLocally(
-          (selectedPedido as PedidoItem).id_pedido ?? "",
-          "pedido",
-        );
-        closeCheckout();
-        eventBus.emit("refresh_requests");
-      } else {
-        showToast("Error", res.message || "Error al crear la cuenta", "error");
-        fetchSolicitudes();
-      }
-    } catch (err: any) {
-      showToast("Error", err.message || "Error al procesar", "error");
-      fetchSolicitudes();
-    } finally {
-      setSubmittingCheckout(false);
-    }
-  }, [
-    cajaAbierta,
-    closeCheckout,
-    fetchSolicitudes,
-    pedidoDetails,
-    removeSolicitudLocally,
-    selectedClient,
-    selectedMinutesPedido,
-    selectedPedido,
-    showToast,
-  ]);
 
   useEffect(() => {
     setPendingAutoOpen(null);
@@ -642,7 +341,16 @@ export const useSolicitudesActions = ({
         return () => clearTimeout(t);
       }
     }
-  }, [handleAprobar, openId, processedOpenId, queryType, router, solicitudes]);
+  }, [
+    handleAprobar,
+    openId,
+    processedOpenId,
+    queryType,
+    router,
+    setSelectedService,
+    setServiceModalVisible,
+    solicitudes,
+  ]);
 
   useEffect(() => {
     if (
@@ -678,73 +386,25 @@ export const useSolicitudesActions = ({
     }
 
     setPendingAutoOpen(null);
-  }, [handleAprobar, pendingAutoOpen, solicitudes, setPendingAutoOpen]);
-
-  useEffect(() => {
-    if (!serviceModalVisible || !selectedService) return;
-    const cId = selectedService.cliente_id || selectedService.id_cliente;
-    if (!cId) {
-      const t = setTimeout(() => setSelectedClient(null), 0);
-      return () => clearTimeout(t);
-    }
-
-    const ac = new AbortController();
-    const t = setTimeout(() => {
-      setLoadingClient(true);
-      apiClientSafe<Cliente>(`/clients?id=${cId}`, { signal: ac.signal })
-        .then((res) => {
-          if (res.success) setSelectedClient(res.data);
-        })
-        .catch((err) => {
-          if (err?.name === "AbortError") return;
-          setSelectedClient(null);
-        })
-        .finally(() => setLoadingClient(false));
-    }, 0);
-
-    return () => {
-      clearTimeout(t);
-      ac.abort();
-    };
-  }, [selectedService, serviceModalVisible]);
+  }, [
+    handleAprobar,
+    pendingAutoOpen,
+    setPendingAutoOpen,
+    setSelectedService,
+    setServiceModalVisible,
+    solicitudes,
+  ]);
 
   return {
     processedOpenId,
     nowTick,
-    checkoutModalVisible,
-    selectedPedido,
-    pedidoDetails,
-    loadingDetails,
-    loadingClient,
-    metodoPago,
-    metodoPagoAdicional,
-    selectedClient,
-    agregarPropina,
-    selectedMinutesPedido,
-    submittingCheckout,
+    ...checkout,
+    ...serviceModal,
     alertConfig,
-    serviceModalVisible,
-    selectedService,
-    setCheckoutModalVisible,
-    setSelectedPedido,
-    setPedidoDetails,
-    setLoadingDetails,
-    setLoadingClient,
-    setMetodoPago,
-    setMetodoPagoAdicional,
-    setSelectedClient,
-    setAgregarPropina,
-    setSelectedMinutesPedido,
-    setSubmittingCheckout,
     setAlertConfig,
-    setServiceModalVisible,
-    setSelectedService,
     setProcessedOpenId,
     setNowTick,
     handleAprobar,
     handleRechazar,
-    handleCheckoutSubmit,
-    handleAddToCuenta,
-    closeCheckout,
   };
 };

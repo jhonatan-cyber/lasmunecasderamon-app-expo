@@ -63,6 +63,10 @@ export function usePersonalScreen() {
                 }
             }
         } catch (error: any) {
+            // Un aborto (remontaje de la pantalla, navegación o rotación) no es un
+            // fallo del servidor: no corresponde avisar al usuario. El cliente
+            // convierte ese aborto en TimeoutError, por eso también se mira el signal.
+            if (signal?.aborted || error?.name === 'AbortError') return;
             logger.fetchError(error, { context: 'Personal:fetchUsers' });
             showToast({
                 type: 'error',

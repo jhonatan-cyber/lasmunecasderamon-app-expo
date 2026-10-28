@@ -3,7 +3,7 @@ import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BASE_URL } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
-import { safeNumber } from '@/hooks/useServiciosScreen';
+import { safeNumber } from '@/utils/format';
 
 interface DetailModalProps {
     visible: boolean;

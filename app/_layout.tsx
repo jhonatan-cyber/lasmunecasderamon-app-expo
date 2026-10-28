@@ -6,6 +6,7 @@ import { connectivity } from "@/services/connectivity";
 import { initMirror } from "@/services/mirror";
 import { initOutbox } from "@/services/outbox";
 import { useAuthStore } from "@/store/authStore";
+import { useModoPantallaStore } from "@/store/modoPantallaStore";
 import { initSentry } from "@/utils/sentry";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
@@ -27,8 +28,6 @@ LogBox.ignoreLogs([
   "The final value for the useLayoutEffect",
 ]);
 
-// Init Sentry lazily — deferred out of the critical render path.
-// Sin EXPO_PUBLIC_SENTRY_DSN, initSentry es no-op (no carga el SDK de ~1.8 MB).
 setTimeout(() => {
   void initSentry({ tracesSampleRate: 0 }).catch(() => {
     console.info('No se pudo inicializar el reporte de errores.');
@@ -57,27 +56,27 @@ export default function RootLayout() {
   }, []);
   const isLoading = useAuthStore((state) => state.isLoading);
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const cargarModoPantalla = useModoPantallaStore((state) => state.cargar);
+  const modoPantallaCargado = useModoPantallaStore((state) => state.cargado);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Post-splash: primero se muestra la UI, después el trabajo pesado
-  // (SQLite, outbox, red, /configurations) fuera del path crítico de arranque.
+  useEffect(() => {
+    void cargarModoPantalla();
+  }, [cargarModoPantalla]);
+
   useEffect(() => {
     if (isLoading || !storageReady) return;
     SplashScreen.hideAsync().catch(() => {});
 
     const startServices = () => {
-      // Cimientos del modo offline: ninguno lanza; si algo no está
-      // disponible, la app sigue funcionando igual.
       void connectivity.start();
       initMirror();
       initOutbox();
 
       apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
-        // Validado con zod: ante un deploy a medias el backend puede mandar
-        // null/formas raras; se ignora en vez de romper umbrales con NaN.
         if (!res?.success) return;
         const parsed = configurationsSchema.safeParse(res.data);
         if (!parsed.success) return;
@@ -103,7 +102,7 @@ export default function RootLayout() {
     return () => clearTimeout(task);
   }, [isLoading, storageReady]);
 
-  if (isLoading || !storageReady) {
+  if (isLoading || !storageReady || !modoPantallaCargado) {
     return (
       <View
         style={{

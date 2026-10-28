@@ -25,11 +25,9 @@ import {
   isChampagneProduct,
   getHostessLimit,
   openCategory,
-  mapForSaleProduct,
   normalizeRoom,
   normalizeClients,
   normalizeAnfitrionas,
-  filterForSaleProducts,
   setSaleServiceLevels,
   roomRequiredForSalePrice,
   MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
@@ -37,6 +35,8 @@ import {
 } from "@/hooks/utils/cartUtils";
 import logger from "@/utils/logger";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
+import { useVentaSearch } from "@/hooks/useVentaSearch";
+import { useVentaTiers } from "@/hooks/useVentaTiers";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { getOutbox } from "@/services/outbox";
@@ -131,9 +131,6 @@ export function useNuevaVenta() {
     cartRef.current = state.cart;
   }, [state.cart]);
   const [fromCache, setFromCache] = useState(false);
-  const saleTiersCache = useRef<
-    Map<string, { anfitrionas: number; precio: number; comision: number }[]>
-  >(new Map());
 
   const {
     anfitrionas,
@@ -210,45 +207,7 @@ export function useNuevaVenta() {
     [],
   );
 
-  const getSaleTiers = useCallback(
-    async (
-      productId: string,
-    ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> => {
-      const cached = saleTiersCache.current.get(productId);
-      if (cached) return cached;
-      try {
-        const response = await apiClientSafe(
-          `/products/${encodeURIComponent(productId)}/tiers?configurados=1`,
-        );
-        const tiers: {
-          anfitrionas: number;
-          precio: number;
-          comision: number;
-        }[] =
-          (response as any)?.success && Array.isArray((response as any).data)
-            ? (response as any).data
-                .map((tier: any) => ({
-                  anfitrionas: Number(tier.anfitrionas),
-                  precio: Number(tier.precio),
-                  comision: Number(tier.comision),
-                }))
-                .filter(
-                  (tier: any) =>
-                    tier.anfitrionas > 0 &&
-                    tier.precio >= 0 &&
-                    tier.comision >= 0,
-                )
-                .sort((a: any, b: any) => a.anfitrionas - b.anfitrionas)
-            : [];
-        saleTiersCache.current.set(productId, tiers);
-        return tiers;
-      } catch (error) {
-        logger.fetchError(error, { context: "NuevaVenta:getSaleTiers" });
-        return [];
-      }
-    },
-    [],
-  );
+  const { getSaleTiers } = useVentaTiers();
 
   const fetchInitialData = useCallback(
     async (isRefreshing = false, signal?: AbortSignal) => {
@@ -1072,96 +1031,14 @@ export function useNuevaVenta() {
     [hostessSelectionTarget, modalHostessSelections, servicioId],
   );
 
-  const [searchProducto, setSearchProducto] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchAbortController = useRef<AbortController | null>(null);
-  const searchSeq = useRef(0);
-  const setSearchProductoInput = useCallback((value: string) => {
-    searchAbortController.current?.abort();
-    searchAbortController.current = null;
-    setSearchProducto(value);
-    if (value.trim()) {
-      setSearchLoading(true);
-      return;
-    }
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = null;
-    searchSeq.current++;
-    setSearchResults([]);
-    setSearchLoading(false);
-  }, []);
-
-  const executeSearch = useCallback(async (term: string, seq: number) => {
-    searchAbortController.current?.abort();
-    const controller = new AbortController();
-    searchAbortController.current = controller;
-    try {
-      const res = await apiClientSafe(
-        `/products?for_sale=1&term=${encodeURIComponent(term)}`,
-        { signal: controller.signal },
-      );
-      if (seq !== searchSeq.current) return;
-      if ((res as any)?.success && Array.isArray((res as any).data)) {
-        setSearchResults(
-          filterForSaleProducts((res as any).data).map(mapForSaleProduct),
-        );
-      }
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      logger.fetchError(error, { context: "NuevaVenta:searchProducts" });
-    } finally {
-      if (!controller.signal.aborted && seq === searchSeq.current) {
-        if (searchAbortController.current === controller) {
-          searchAbortController.current = null;
-        }
-        setSearchLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const term = searchProducto.trim();
-    const seq = ++searchSeq.current;
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = null;
-    if (!term) return;
-    searchTimeout.current = setTimeout(() => {
-      searchTimeout.current = null;
-      void executeSearch(term, seq);
-    }, 300);
-    return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    };
-  }, [searchProducto, executeSearch]);
-
-  useEffect(
-    () => () => {
-      searchSeq.current++;
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-      searchAbortController.current?.abort();
-    },
-    [],
-  );
-
-  const handleSearchNow = useCallback(() => {
-    const term = searchProducto.trim();
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = null;
-    const seq = ++searchSeq.current;
-    if (!term) {
-      setSearchResults([]);
-      setSearchLoading(false);
-      return;
-    }
-    setSearchLoading(true);
-    void executeSearch(term, seq);
-  }, [searchProducto, executeSearch]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchProductoInput("");
-  }, [setSearchProductoInput]);
+  const {
+    searchProducto,
+    setSearchProducto,
+    searchResults,
+    searchLoading,
+    handleSearchNow,
+    handleClearSearch,
+  } = useVentaSearch();
 
   return {
     servicioId,
@@ -1189,7 +1066,7 @@ export function useNuevaVenta() {
     handleSubmit,
     handleToggleHostess,
     searchProducto,
-    setSearchProducto: setSearchProductoInput,
+    setSearchProducto,
     searchResults,
     searchLoading,
     handleSearchNow,
