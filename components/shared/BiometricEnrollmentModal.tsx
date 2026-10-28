@@ -85,6 +85,14 @@ export function BiometricEnrollmentModal({
                 if (!res3?.success) {
                     throw new Error(res3?.message || 'No se pudo guardar la captura facial.');
                 }
+                const frontal = fotosCapturadas.find(f => f.lado === 'frente') ?? fotosCapturadas[0];
+                const res4 = await apiClientSafe(`/users/${userId}/biometric/verify`, {
+                    method: 'POST',
+                    body: JSON.stringify({ foto: frontal?.foto }),
+                });
+                if (res4 && !res4.success) {
+                    throw new Error(res4.message || 'No se pudo verificar la captura facial.');
+                }
                 setBiometricoFacialEnrolled(true);
                 onEnrolled();
             } catch (e) {
