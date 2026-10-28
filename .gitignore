@@ -31,7 +31,7 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files (incluye .env con IPs de LAN: no trackear)
+# local env files (configuracion del equipo: no trackear)
 .env
 .env*.local
 
@@ -48,3 +48,6 @@ package-lock.json
 test-results/
 coverage/
 build/
+
+# logs locales de desarrollo
+_tmp/

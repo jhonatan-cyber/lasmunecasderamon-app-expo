@@ -31,17 +31,23 @@ corepack pnpm typecheck
 
 ## Desarrollo movil
 
-- Para ver cambios en vivo usando la API remota, instala una vez el APK del
-  perfil `development` (`pnpm android:dev`). Luego ejecuta `pnpm start:remote`,
-  conecta el telefono a la misma red que la computadora y abre el proyecto
-  desde el QR de Expo. Fast Refresh actualiza pantallas, estilos y logica al guardar.
-- `pnpm start:remote --tunnel` permite conectar Metro desde otra red.
-  El comando usa la URL remota definida en `eas.json` sin modificar `.env`.
-- El tunel de Metro no expone la API local. Para probar cambios del backend
-  local, usa `pnpm start` y levanta el dashboard en una direccion accesible
-  desde el telefono.
+- No hace falta poner la IP de la PC en ningun archivo. En desarrollo la app
+  toma el host del dev server de Metro (`api/base-url.ts`) y solo usa el puerto
+  de `EXPO_PUBLIC_API_BASE_URL` (`http://localhost:3000` por defecto). Si la PC
+  cambia de WiFi o de IP, el QR de Metro y la API se actualizan solos.
+- Instala una vez el APK del perfil `development` (`pnpm android:dev`). Luego
+  ejecuta `pnpm start` (o `pnpm start:remote`), conecta el telefono a la misma
+  red que la computadora y abre el proyecto desde el QR de Expo. Fast Refresh
+  actualiza pantallas, estilos y logica al guardar.
+- `pnpm start:remote --tunnel` permite conectar Metro desde otra red. El tunel
+  solo expone Metro, no la API local.
+- Para probar cambios del backend local, levanta el dashboard en la PC y usa
+  `pnpm start`; la app lo encuentra en la IP actual de esa PC.
 - Si cambia una dependencia nativa, genera e instala otro APK de desarrollo.
-  Los APK de `preview_apk` y `production` no se conectan a Metro para Fast Refresh.
+  Los APK de `preview_apk` y `production` no se conectan a Metro: `production`
+  apunta al dominio fijo y `preview_apk` conserva una IP de LAN, asi que ese
+  perfil si necesita recompilarse al cambiar de red. Para pruebas locales usa
+  el dev client.
 - `corepack pnpm start` arranca Metro en modo `dev-client`.
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.
