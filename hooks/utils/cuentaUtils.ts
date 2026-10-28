@@ -10,14 +10,6 @@ export const showToast = (title: string, message: string, type: "success" | "err
   });
 };
 
-const getChampagneTierLimit = (precio: number) => {
-  if (precio >= 200000) return 5;
-  if (precio >= 180000) return 4;
-  if (precio >= 160000) return 3;
-  if (precio >= 120000) return 2;
-  return 1;
-};
-
 export let ivaRate = 0.19;
 
 export const setIvaRate = (rate: number) => { ivaRate = rate; };
@@ -81,14 +73,30 @@ export const isChampagneProduct = (producto: { categoria?: string; category_name
   return cat.includes("champagne") || cat.includes("champana") || cat.includes("shampana");
 };
 
+/** Mismo texto que `MENSAJE_CHAMPAGNE_SIN_CONFIGURAR` del dashboard. */
+export const MENSAJE_CHAMPAGNE_SIN_CONFIGURAR =
+  "El producto de champaña no tiene configurada la tabla de precios por anfitrionas";
+
+/**
+ * Sin máximo explícito ni tramos propios el producto no tiene precio por cantidad
+ * de anfitrionas: la venta se bloquea (misma regla que `validarPedido` del
+ * dashboard).
+ */
+export const faltaConfiguracionChampagne = (
+  maxAnfitrionas: unknown,
+  tiers: { anfitrionas: number }[],
+) => !(Number(maxAnfitrionas) > 0) && tiers.length === 0;
+
+/**
+ * Tope de anfitrionas del producto: manda solo el máximo configurado. Un producto
+ * de champaña sin máximo no tiene tramos cargados, así que no admite anfitrionas
+ * hasta que se configure (misma regla que el dashboard). El resto admite una por
+ * unidad.
+ */
 export const getHostessLimit = (prod: { precio?: number; price?: number; max_anfitrionas?: number | null; categoria?: string }, qty: number = 1) => {
   const max = prod.max_anfitrionas;
   if (max !== null && max !== undefined && max > 0) return max * qty;
-  const price = prod.precio ?? prod.price ?? 0;
-  if (isChampagneProduct(prod)) {
-    return getChampagneTierLimit(price) * qty;
-  }
-  return qty;
+  return isChampagneProduct(prod) ? 0 : qty;
 };
 
 /** Un detalle nuevo que se suma a una cuenta ya abierta. */
@@ -103,7 +111,7 @@ export interface CuentaUpdateDetalle {
 }
 
 /**
- * Body de `PUT /cuentas/:id`: **incremento**, no reemplazo. El servidor suma
+ * Body de `PUT /accounts/:id`: **incremento**, no reemplazo. El servidor suma
  * estos detalles a los que ya tiene la cuenta, y por eso el reintento sin red
  * tiene que ir con clave de idempotencia (si no, cargaría los productos dos
  * veces).

@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'rea
 import FlashList from "@/components/shared/FlashList";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
+import { bloqueaChampanaSinConfigurar } from '@/hooks/utils/champagneConfig';
 import { useRenderCount } from "@/hooks/useRenderCount";
 
 interface CategoryProductsModalProps {
@@ -93,7 +94,10 @@ export const CategoryProductsModal = React.memo(function CategoryProductsModal({
                   </View>
                   <Pressable
                     style={[styles.addBtn, { backgroundColor: accentColor }]}
-                    onPress={() => {
+                    onPress={async () => {
+                      // Champaña sin tabla de precios por anfitrionas: no tiene
+                      // cómo cobrarse, se rechaza antes de abrir anfitrionas.
+                      if (await bloqueaChampanaSinConfigurar(item)) return;
                       const hasComm = Number(item.comision || item.commission || 0) > 0;
                       if (hasComm) {
                         onSetHostessTarget({

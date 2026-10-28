@@ -47,7 +47,7 @@ describe("Entrega de anticipos en Expo", () => {
     mocks.role = role as string;
     const { result } = renderHook(() => useSolicitudesActions(params()));
     await act(async () => {
-      await result.current.handleAprobar("advance", "anticipo", {
+      await result.current.handleAprobar("12", "anticipo", {
         estado,
         monto: 1000,
       } as never);
@@ -58,7 +58,7 @@ describe("Entrega de anticipos en Expo", () => {
   it("el cajero entrega uno aprobado sin ejecutar una aprobación adicional", async () => {
     const { result } = renderHook(() => useSolicitudesActions(params()));
     await act(async () => {
-      await result.current.handleAprobar("advance", "anticipo", {
+      await result.current.handleAprobar("12", "anticipo", {
         estado: 1,
         monto: 1000,
       } as never);
@@ -68,7 +68,7 @@ describe("Entrega de anticipos en Expo", () => {
       await result.current.alertConfig.onConfirm?.();
     });
     expect(mocks.api).toHaveBeenCalledTimes(1);
-    expect(mocks.api).toHaveBeenCalledWith("/anticipos/advance", {
+    expect(mocks.api).toHaveBeenCalledWith("/advances/12", {
       method: "PUT",
       body: JSON.stringify({ estado: 0 }),
     });

@@ -23,12 +23,12 @@ export function useCuentasData({ refreshing, dispatch, notify }: Options) {
       const [cuentasResult, resumenResult, cajaResult] = await Promise.all([
         getMirror().readThroughDetailed(
           MIRROR_KEYS.openAccounts,
-          () => apiClientSafe(`/cuentas?limit=50&_t=${timestamp}`, { signal }),
+          () => apiClientSafe(`/accounts?limit=50&_t=${timestamp}`, { signal }),
           { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
         ),
         getMirror().readThroughDetailed(
           MIRROR_KEYS.accountsSummary,
-          () => apiClientSafe(`/cuentas?tipo=resumen&_t=${timestamp}`, { signal }),
+          () => apiClientSafe(`/accounts?tipo=resumen&_t=${timestamp}`, { signal }),
           { maxAgeMs: MIRROR_MAX_AGE_MS.dinero },
         ),
         getMirror()

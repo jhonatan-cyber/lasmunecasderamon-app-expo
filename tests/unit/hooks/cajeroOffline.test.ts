@@ -83,7 +83,7 @@ const cajaAbiertaResponse = {
 };
 
 const responseFor = (url: string) => {
-  if (String(url).startsWith('/cuentas?limit')) return { success: true, data: [CUENTA] };
+  if (String(url).startsWith('/accounts?limit')) return { success: true, data: [CUENTA] };
   if (String(url).includes('tipo=resumen')) return { success: true, data: { total_por_cobrar: 10000 } };
   if (url === '/cashregister/status') {
     return { success: true, data: { hasOpenCaja: true, cajaInfo: { id_caja: 'caja1' } } };
@@ -168,7 +168,7 @@ describe('useCuentasScreen · modo offline', () => {
 
     // El cobro online no tiene camino aparte: se encola y se manda al toque.
     const urls = vi.mocked(apiClientSafe).mock.calls.map(c => String(c[0]));
-    expect(urls).toContain('/cuentas/c1/cobrar-con-venta');
+    expect(urls).toContain('/accounts/c1/charge-with-sale');
     expect(urls.some(u => u.includes('/cobrar') && !u.includes('cobrar-con-venta'))).toBe(false);
     expect(urls).not.toContain('/sales');
 
@@ -244,7 +244,7 @@ describe('useCuentasScreen · modo offline', () => {
 
     // Se abre el detalle una vez con red para que quede espejado.
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) =>
-      String(url).startsWith('/cuentas/c1') ? (CUENTA as never) : (responseFor(url) as never)
+      String(url).startsWith('/accounts/c1') ? (CUENTA as never) : (responseFor(url) as never)
     );
     await act(async () => {
       await online.result.current.handleVerDetalles('c1');

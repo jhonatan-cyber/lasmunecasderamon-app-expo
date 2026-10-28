@@ -28,15 +28,15 @@ const origin = "http://localhost:8081";
 const endpoints = [
   "/auth/me",
   "/attendance/user?tipo=detalle",
-  "/anticipos/user",
-  "/anticipos/solicitudes",
-  "/anticipos/maximo",
+  "/advances/user",
+  "/advances/requests",
+  "/advances/max",
   "/tips/user?tipo=detalle",
   "/overtime/user",
   "/commissions/user?tipo=detalle",
-  "/servicios/user",
+  "/services/user",
   "/events/user",
-  "/gratificaciones/me",
+  "/gratifications/me",
 ];
 describe("API local real · conexión, CORS y autenticación de módulos personales", () => {
   it("consulta la existencia de usuarios desde el servidor y su base real", async () => {

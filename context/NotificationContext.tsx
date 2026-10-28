@@ -11,6 +11,7 @@ import {
   emitRefreshAnticipos,
   emitRefreshBar,
   emitRefreshCuentas,
+  emitRefreshEntradas,
   emitRefreshCategories,
   emitRefreshGratificaciones,
   emitRefreshRequests,
@@ -29,6 +30,7 @@ import {
 } from "@/utils/userRole";
 
 import logger from '@/utils/logger';
+import { formatCurrency } from '@/utils/format';
 import {
   configureNotifications,
   registerForPushNotificationsAsync,
@@ -290,6 +292,43 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isCajeroOrAdmin) {
           emitRefreshRequests();
         }
+        break;
+
+      // ─── Entradas de clientes (puerta → barra) ────────────────────────────
+      // El garzón cobra en la puerta y la cortesía queda pendiente. La audiencia
+      // del dashboard ya limita el evento a administración, caja y barra.
+      case "entrada_registrada": {
+        if (!isCajeroOrAdmin && !isBarmanRole(freshUser)) break;
+        const cantidad = Number(data.cantidad || 1);
+        const cliente = String(data.cliente_nombre || "Cliente sin nombre");
+        const total = Number(data.monto_total || 0);
+        const body = `${
+          cantidad === 1 ? "1 entrada" : `${cantidad} entradas`
+        } · ${cliente}${total > 0 ? ` · ${formatCurrency(total)}` : ""}`;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showToast({
+          type: "order",
+          text1:
+            cantidad === 1
+              ? "Nueva entrada en la puerta"
+              : `${cantidad} entradas en la puerta`,
+          text2: body,
+          visibilityTime: 7000,
+        });
+        void showLocalNotification("Nueva entrada en la puerta", body);
+        emitRefreshEntradas(payload);
+        break;
+      }
+
+      // La barra entregó o anuló la entrada: las colas abiertas se refrescan.
+      case "entrada_actualizada":
+        emitRefreshEntradas(payload);
+        break;
+
+      // Señal genérica de mutación auditada del dashboard: las entradas también
+      // se registran y se entregan desde la web.
+      case "resource_updated":
+        if (data.module === "entradas") emitRefreshEntradas(payload);
         break;
 
       case "ping":

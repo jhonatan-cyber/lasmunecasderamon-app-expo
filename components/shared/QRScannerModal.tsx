@@ -42,7 +42,7 @@ export const QRScannerModal = ({
 
     const fetchCodigo = useCallback(async () => {
         try {
-            const res = await apiClientSafe('/codigo/actual');
+            const res = await apiClientSafe('/code/current');
             if (res.success) setCodigo((res as any).codigo);
         } catch {}
     }, []);

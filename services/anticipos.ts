@@ -2,26 +2,26 @@ import { apiClientSafe } from '@/api/client-safe';
 
 export const anticiposService = {
   list: () =>
-    apiClientSafe('/anticipos'),
+    apiClientSafe('/advances'),
 
   update: (id: string | number, data: Record<string, unknown>) =>
-    apiClientSafe(`/anticipos/${id}`, {
+    apiClientSafe(`/advances/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   solicitudes: () =>
-    apiClientSafe('/anticipos/solicitudes'),
+    apiClientSafe('/advances/requests'),
 
   createSolicitud: (data: Record<string, unknown>) =>
-    apiClientSafe('/anticipos/solicitudes', {
+    apiClientSafe('/advances/requests', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   getUserAnticipos: () =>
-    apiClientSafe('/anticipos/user'),
+    apiClientSafe('/advances/user'),
 
   getMaximo: () =>
-    apiClientSafe('/anticipos/maximo'),
+    apiClientSafe('/advances/max'),
 };

@@ -47,7 +47,7 @@ export const IDEMPOTENCY_HEADER = 'x-idempotency-key';
 
 /**
  * Payload de una intención de consumo: la cuenta a la que se le suman productos
- * y el body tal como lo espera `PUT /cuentas/:id`.
+ * y el body tal como lo espera `PUT /accounts/:id`.
  */
 export interface ConsumptionsIntentPayload {
     id_cuenta: string | number;
@@ -56,7 +56,7 @@ export interface ConsumptionsIntentPayload {
 
 /**
  * Payload de una intención de cobro: la cuenta a cobrar y el body del endpoint
- * transaccional `POST /cuentas/:id/cobrar-con-venta`.
+ * transaccional `POST /accounts/:id/charge-with-sale`.
  */
 export interface CheckoutIntentPayload {
     id_cuenta: string | number;
@@ -113,7 +113,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             throw new Error('La intención de cobro no tiene cuenta.');
         }
 
-        const res = await apiClientSafe(`/cuentas/${id_cuenta}/cobrar-con-venta`, {
+        const res = await apiClientSafe(`/accounts/${id_cuenta}/charge-with-sale`, {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(cobro),
@@ -140,7 +140,7 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
             throw new Error('La intención de consumos no tiene cuenta o productos.');
         }
 
-        const res = await apiClientSafe(`/cuentas/${id_cuenta}`, {
+        const res = await apiClientSafe(`/accounts/${id_cuenta}`, {
             method: 'PUT',
             headers: { [IDEMPOTENCY_HEADER]: intent.id },
             body: JSON.stringify(consumos),

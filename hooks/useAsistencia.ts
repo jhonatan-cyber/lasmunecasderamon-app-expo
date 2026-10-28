@@ -125,7 +125,7 @@ export function useAsistencia() {
     async (isManual = false, signal?: AbortSignal) => {
       try {
         setGratificationsError('');
-        const data = await apiClientSafe('/gratificaciones/me', { signal });
+        const data = await apiClientSafe('/gratifications/me', { signal });
         if (signal?.aborted) return;
         if (!data.success)
           throw new Error(

@@ -32,11 +32,11 @@ const SOLICITUD = {
 };
 
 const respuestas: Record<string, unknown> = {
-  '/solicitudes-servicios?estado=0': { success: true, data: [SOLICITUD] },
+  '/service-requests?estado=0': { success: true, data: [SOLICITUD] },
   '/orders': { success: true, data: [] },
-  '/anticipos': { success: true, data: [] },
-  '/caja/stats': { success: true, data: { cajas_abiertas: 1 } },
-  '/anfitrionas': { success: true, data: [] },
+  '/advances': { success: true, data: [] },
+  '/cash-register/stats': { success: true, data: { cajas_abiertas: 1 } },
+  '/hostesses': { success: true, data: [] },
 };
 
 const llamadasA = (url: string) =>
@@ -90,7 +90,7 @@ describe('useSolicitudes — sin red', () => {
     expect(result.current.solicitudes).toHaveLength(1);
     expect(result.current.isOffline).toBe(true);
     expect(result.current.loading).toBe(false);
-    expect(llamadasA('/solicitudes-servicios')).toBe(1);
+    expect(llamadasA('/service-requests')).toBe(1);
   });
 
   it('sin red y sin nada guardado no inventa datos y no llega a llamar al servidor', async () => {
@@ -101,7 +101,7 @@ describe('useSolicitudes — sin red', () => {
 
     expect(result.current.solicitudes).toHaveLength(0);
     expect(result.current.isOffline).toBe(true);
-    expect(llamadasA('/solicitudes-servicios')).toBe(0);
+    expect(llamadasA('/service-requests')).toBe(0);
   });
 
   it('con red confirmada vuelve a pedir la lista al servidor', async () => {
@@ -113,7 +113,7 @@ describe('useSolicitudes — sin red', () => {
       await result.current.fetchSolicitudes();
     });
 
-    expect(llamadasA('/solicitudes-servicios')).toBe(2);
+    expect(llamadasA('/service-requests')).toBe(2);
     expect(result.current.isOffline).toBe(false);
   });
 

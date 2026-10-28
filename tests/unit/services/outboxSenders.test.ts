@@ -61,7 +61,7 @@ describe('senders de la cola del cajero', () => {
             type: 'account.consumptions',
         });
 
-        expect(apiClientSafe).toHaveBeenCalledWith('/cuentas/cuenta-9', {
+        expect(apiClientSafe).toHaveBeenCalledWith('/accounts/cuenta-9', {
             method: 'PUT',
             headers: { [IDEMPOTENCY_HEADER]: 'intent-consumo-1' },
             body: JSON.stringify(consumos),
@@ -80,7 +80,7 @@ describe('senders de la cola del cajero', () => {
             type: 'account.checkout',
         });
 
-        expect(apiClientSafe).toHaveBeenCalledWith('/cuentas/c-9/cobrar-con-venta', {
+        expect(apiClientSafe).toHaveBeenCalledWith('/accounts/c-9/charge-with-sale', {
             method: 'POST',
             headers: { [IDEMPOTENCY_HEADER]: 'intent-cajero-1' },
             body: JSON.stringify({ metodo_pago: 'tarjeta', total_cobrado: 12000, propina: 1200 }),

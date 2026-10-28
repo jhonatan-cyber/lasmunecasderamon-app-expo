@@ -136,8 +136,8 @@ export const useCuentasScreen = () => {
     const result = await getMirror().readThroughDetailed<CuentaDetalle>(
       MIRROR_KEYS.accountDetail(cuentaId),
       async () => {
-        // `GET /cuentas/:id` responde la cuenta cruda (sin el sobre `success`).
-        const res = await apiClientSafe<CuentaDetalle>(`/cuentas/${cuentaId}?_t=${timestamp}`);
+        // `GET /accounts/:id` responde la cuenta cruda (sin el sobre `success`).
+        const res = await apiClientSafe<CuentaDetalle>(`/accounts/${cuentaId}?_t=${timestamp}`);
         if (!res || res.error) {
           throw new Error(res?.message || "No se pudo obtener el detalle completo de la cuenta");
         }
@@ -170,7 +170,7 @@ export const useCuentasScreen = () => {
     dispatch({ type: "SET_COBRO_SUBMITTING", payload: true });
     try {
       // El servidor cierra la cuenta y factura en UNA transacción
-      // (`POST /cuentas/:id/cobrar-con-venta`), así que esto viaja como una sola
+      // (`POST /accounts/:id/charge-with-sale`), así que esto viaja como una sola
       // intención de la cola: sin red queda guardado en el dispositivo y sale al
       // reconectar, y si el envío se corta a medias, el servidor revierte todo
       // junto o no revierte nada.
@@ -240,7 +240,7 @@ export const useCuentasScreen = () => {
             try {
               dispatch({ type: "SET_ALERT_VISIBLE", payload: false });
               dispatch({ type: "SET_ACTION_SHEET", visible: false });
-              const res = await apiClientSafe(`/cuentas/${cuenta.id_cuenta}/stop`, {
+              const res = await apiClientSafe(`/accounts/${cuenta.id_cuenta}/stop`, {
                 method: "PATCH",
               });
               if (res.success) {
@@ -291,7 +291,7 @@ export const useCuentasScreen = () => {
 
     try {
       setAnulacionSubmitting(true);
-      const res = await apiClientSafe("/cuentas/anulacion", {
+      const res = await apiClientSafe("/accounts/cancellation", {
         method: "POST",
         body: JSON.stringify({
           cuentaId: anulacionCuenta.id_cuenta,

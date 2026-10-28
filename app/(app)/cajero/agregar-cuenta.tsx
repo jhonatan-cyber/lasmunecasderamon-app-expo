@@ -198,7 +198,7 @@ export default function AgregarCuentaScreen() {
             // Red primero y espejo después: cargar consumos sin conexión necesita
             // el catálogo y —sobre todo— el detalle actual de la cuenta.
             const requests: Promise<any>[] = [
-                readThroughMirror(MIRROR_KEYS.anfitrionas, () => apiClientSafe('/anfitrionas'), MIRROR_MAX_AGE_MS.catalogo),
+                readThroughMirror(MIRROR_KEYS.anfitrionas, () => apiClientSafe('/hostesses'), MIRROR_MAX_AGE_MS.catalogo),
                 readThroughMirror(MIRROR_KEYS.categories, () => apiClientSafe('/categories'), MIRROR_MAX_AGE_MS.catalogo),
                 readThroughMirror(MIRROR_KEYS.rooms, () => apiClientSafe('/rooms'), MIRROR_MAX_AGE_MS.catalogo),
             ];
@@ -206,7 +206,7 @@ export default function AgregarCuentaScreen() {
                 requests.push(
                     readThroughMirror(
                         MIRROR_KEYS.accountDetail(cuentaOriginal.id_cuenta),
-                        () => apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`),
+                        () => apiClientSafe(`/accounts/${cuentaOriginal.id_cuenta}`),
                         MIRROR_MAX_AGE_MS.dinero
                     )
                 );

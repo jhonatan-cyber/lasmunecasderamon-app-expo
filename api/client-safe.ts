@@ -15,7 +15,7 @@ import type { ApiRes } from '@/types/api';
  * This eliminates the need for `(res as any).data` or `res.data as MyType[]` casts.
  *
  * @example
- * const res = await apiClientSafe<CuentaDetalle[]>('/cuentas');
+ * const res = await apiClientSafe<CuentaDetalle[]>('/accounts');
  * if (res.success) {
  *   const cuentas = res.data; // typed as CuentaDetalle[]
  * }

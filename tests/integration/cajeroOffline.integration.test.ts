@@ -122,7 +122,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             {
                 nombre: 'cuentas abiertas',
                 key: () => MIRROR_KEYS.openAccounts,
-                endpoint: () => `/cuentas?limit=50&_t=${Date.now()}`,
+                endpoint: () => `/accounts?limit=50&_t=${Date.now()}`,
                 maxAgeMs: MIRROR_MAX_AGE_MS.dinero,
             },
             {
@@ -181,7 +181,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
         );
 
         it('espeja el detalle de una cuenta real y lo sirve sin red', async () => {
-            const listado = await apiClientSafe<{ id_cuenta?: string }[]>('/cuentas?limit=5');
+            const listado = await apiClientSafe<{ id_cuenta?: string }[]>('/accounts?limit=5');
             const cuenta = (listado.data as any[])?.[0];
 
             if (!cuenta?.id_cuenta) {
@@ -193,7 +193,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             const clave = MIRROR_KEYS.accountDetail(cuenta.id_cuenta);
             const online = await mirror.readThroughDetailed<any>(
                 clave,
-                () => apiClientSafe(`/cuentas/${cuenta.id_cuenta}?_t=${Date.now()}`),
+                () => apiClientSafe(`/accounts/${cuenta.id_cuenta}?_t=${Date.now()}`),
                 { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
             );
 
@@ -356,7 +356,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
         });
 
         it('no re-ejecuta una operación que quedó sin resolver', async () => {
-            const res = await fetch(`${API_URL}/cuentas/${CUENTA_INEXISTENTE}`, {
+            const res = await fetch(`${API_URL}/accounts/${CUENTA_INEXISTENTE}`, {
                 method: 'PUT',
                 headers: {
                     'content-type': 'application/json',
@@ -375,7 +375,7 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
 
         it('tampoco re-ejecuta un cobro que quedó sin resolver', async () => {
             const res = await fetch(
-                `${API_URL}/cuentas/${CUENTA_INEXISTENTE}/cobrar-con-venta`,
+                `${API_URL}/accounts/${CUENTA_INEXISTENTE}/charge-with-sale`,
                 {
                     method: 'POST',
                     headers: {

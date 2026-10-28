@@ -93,7 +93,7 @@ describe('useAnticipos', () => {
 
         expect(res).toBe(true);
         const postCall = vi.mocked(apiClientSafe).mock.calls.find(
-            (call: any) => call[0] === '/anticipos/solicitudes' && call[1]?.method === 'POST'
+            (call: any) => call[0] === '/advances/requests' && call[1]?.method === 'POST'
         );
         expect(postCall).toBeTruthy();
     });

@@ -158,7 +158,7 @@ describe('ventasService', () => {
 
       const result = await enviarSolicitudAnulacion(3, 'motivo', 500);
 
-      expect(mockApi()).toHaveBeenCalledWith('/ventas/anulacion', {
+      expect(mockApi()).toHaveBeenCalledWith('/sales/cancellation', {
         method: 'POST',
         body: JSON.stringify({ ventaId: 3, motivo: 'motivo', monto: 500 })
       });

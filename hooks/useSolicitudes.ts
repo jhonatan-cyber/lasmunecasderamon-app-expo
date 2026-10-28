@@ -51,10 +51,10 @@ export const useSolicitudes = () => {
                     MIRROR_KEYS.serviceRequests,
                     async () => {
                         const [resSolicitudes, resOrders, resAnticipos, resStats] = await Promise.all([
-                            apiClientSafe<SolicitudItem[]>('/solicitudes-servicios?estado=0', { signal }).catch(() => ({ success: false, data: [] })),
+                            apiClientSafe<SolicitudItem[]>('/service-requests?estado=0', { signal }).catch(() => ({ success: false, data: [] })),
                             apiClientSafe<SolicitudItem[]>('/orders', { signal }).catch(() => ({ success: false, data: [] })),
-                            apiClientSafe<SolicitudItem[]>('/anticipos', { signal }).catch(() => ({ success: false, data: [] })),
-                            apiClientSafe<{ cajas_abiertas: number }>('/caja/stats', { signal }).catch(() => null),
+                            apiClientSafe<SolicitudItem[]>('/advances', { signal }).catch(() => ({ success: false, data: [] })),
+                            apiClientSafe<{ cajas_abiertas: number }>('/cash-register/stats', { signal }).catch(() => null),
                         ]);
 
                         let combined: SolicitudItem[] = [];
@@ -106,7 +106,7 @@ export const useSolicitudes = () => {
                     },
                     { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
                 ),
-                apiClientSafe<Anfitriona[]>('/anfitrionas', { signal }).catch(() => null),
+                apiClientSafe<Anfitriona[]>('/hostesses', { signal }).catch(() => null),
             ]);
 
             const anfitrionasData = resAnfitrionas as unknown as { success: boolean; data: Anfitriona[] };

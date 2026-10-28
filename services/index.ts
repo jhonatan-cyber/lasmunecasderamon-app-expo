@@ -7,6 +7,7 @@ export { cajaService } from './caja';
 export { categoriesService } from './categories';
 export { clientesService } from './clientes';
 export { codigoService } from './codigo';
+export { colacionesService } from './colaciones';
 export { commissionsService } from './commissions';
 export { cuentasService } from './cuentas';
 export { dashboardService } from './dashboard';

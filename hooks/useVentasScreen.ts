@@ -313,7 +313,7 @@ export const useVentasScreen = () => {
 
     try {
       dispatch({ type: "SET_ANULANDO_VENTA", payload: true });
-      const res = await apiClientSafe("/ventas/anulacion", {
+      const res = await apiClientSafe("/sales/cancellation", {
         method: "POST",
         body: JSON.stringify({ ventaId, motivo, monto }),
       });

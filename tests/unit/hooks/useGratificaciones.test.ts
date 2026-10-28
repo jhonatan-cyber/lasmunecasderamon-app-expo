@@ -17,7 +17,7 @@ describe('useGratificaciones — refresh en vivo por SSE', () => {
   it('refresca la lista al recibir refresh_gratificaciones', async () => {
     let gratificacionesLlamada = 0;
     vi.mocked(apiClientSafe).mockImplementation(async (url: string) => {
-      if (url.startsWith('/gratificaciones')) {
+      if (url.startsWith('/gratifications')) {
         gratificacionesLlamada++;
         return {
           success: true,

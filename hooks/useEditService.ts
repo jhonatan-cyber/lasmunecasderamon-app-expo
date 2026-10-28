@@ -122,11 +122,11 @@ export default function useEditService(
       setLoadingAnfitrionas(true);
       try {
         const disponiblesRes = await apiClientSafe<Anfitriona[]>(
-          "/anfitrionas/disponibles",
+          "/hostesses/available",
           { signal },
         );
         const servicioRes = await apiClientSafe<ServicioDetailRaw>(
-          `/servicios/${timer?.servicioId}`,
+          `/services/${timer?.servicioId}`,
           { signal },
         );
         let todasAnfitrionas: Anfitriona[] = [];
@@ -252,7 +252,7 @@ export default function useEditService(
       const signature = JSON.stringify(payload);
       if (operationRef.current.signature !== signature)
         operationRef.current = { signature, key: createQueueId() };
-      const res = await apiClientSafe("/servicios/temporal", {
+      const res = await apiClientSafe("/services/temporary", {
         method: "POST",
         headers: { "x-idempotency-key": operationRef.current.key },
         body: JSON.stringify(payload),

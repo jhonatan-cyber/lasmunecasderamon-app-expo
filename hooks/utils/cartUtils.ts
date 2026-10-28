@@ -1,9 +1,9 @@
 import { apiClientSafe } from "@/api/client";
 import logger from "@/utils/logger";
 import type { Habitacion, Anfitriona, Cliente, Producto, Categoria, CartItem } from "@lasmunecasderamon/types";
-import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate } from "./cuentaUtils";
+import { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate, MENSAJE_CHAMPAGNE_SIN_CONFIGURAR, faltaConfiguracionChampagne } from "./cuentaUtils";
 
-export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate };
+export { showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview, buildConsumptionsPayload, isExpensiveDrink, setExpensiveDrinkThreshold, setSaleServiceLevels, isSimpleSaleProduct, roomRequiredForSalePrice, getCardSplit, setCardSplit, getIvaDecimal, getIvaPercent, setIvaRate, MENSAJE_CHAMPAGNE_SIN_CONFIGURAR, faltaConfiguracionChampagne };
 export type { CuentaUpdateDetalle, CuentaUpdatePayload } from "./cuentaUtils";
 
 // Alias para backward compat — getChampagneLimit == getHostessLimit

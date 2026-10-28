@@ -39,8 +39,8 @@ export function ServiceAssignmentActions({ item }: { item: Timer }) {
     setLoading(true);
     try {
       const [service, hosts] = (await Promise.all([
-        apiClientSafe(`/servicios/${item.servicioId}`),
-        apiClientSafe("/anfitrionas"),
+        apiClientSafe(`/services/${item.servicioId}`),
+        apiClientSafe("/hostesses"),
       ])) as any[];
       if (!service.success || !hosts.success) throw new Error();
       const ids = (service.data.anfitrionas_ids || "")
@@ -82,7 +82,7 @@ export function ServiceAssignmentActions({ item }: { item: Timer }) {
     setLoading(true);
     try {
       const res: any = await apiClientSafe(
-        `/servicios/${item.servicioId}/anfitrionas`,
+        `/services/${item.servicioId}/hostesses`,
         { method: "PATCH", body: JSON.stringify({ usuarios: seleccion }) },
       );
       if (!res.success) throw new Error(res.message || "No se pudo actualizar");

@@ -103,7 +103,7 @@ export async function enviarSolicitudAnulacion(
   }
 
   try {
-    const res = await apiClientSafe("/ventas/anulacion", {
+    const res = await apiClientSafe("/sales/cancellation", {
       method: "POST",
       body: JSON.stringify({ ventaId, motivo, monto }),
     });

@@ -85,12 +85,12 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
       if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
       try {
         const requests: Promise<any>[] = [
-          apiClientSafe("/anfitrionas", { signal }),
+          apiClientSafe("/hostesses", { signal }),
           apiClientSafe("/categories", { signal }),
           apiClientSafe("/rooms", { signal }),
         ];
         if (cuentaOriginal?.id_cuenta) {
-          requests.push(apiClientSafe(`/cuentas/${cuentaOriginal.id_cuenta}`, { signal }));
+          requests.push(apiClientSafe(`/accounts/${cuentaOriginal.id_cuenta}`, { signal }));
         }
         const [anfitrionasRes, categoriesRes, roomsRes, cuentaDetalleRes] = await Promise.all(requests);
 
@@ -223,7 +223,7 @@ export function useAgregarCuenta(cuentaOriginal: CuentaOriginal | null) {
         cuentaData.tiempo = selectedTime;
       }
       refreshTimers?.();
-      const res = await apiClientSafe(`/cuentas/${cuentaOriginal?.id_cuenta}`, {
+      const res = await apiClientSafe(`/accounts/${cuentaOriginal?.id_cuenta}`, {
         method: "PUT",
         body: JSON.stringify(cuentaData),
       });

@@ -27,6 +27,15 @@ const outbox = vi.hoisted(() => ({
 }));
 vi.mock("@/services/outbox", () => ({ getOutbox: () => outbox }));
 
+const imagePicker = vi.hoisted(() => ({
+  requestCameraPermissionsAsync: vi.fn(),
+  launchCameraAsync: vi.fn(),
+}));
+vi.mock("expo-image-picker", () => imagePicker);
+
+const ajusteBaucher = vi.hoisted(() => ({ ajustarFotoBaucher: vi.fn() }));
+vi.mock("@/utils/baucherFoto", () => ajusteBaucher);
+
 const CATEGORY_ID = "cat-1";
 
 const PRODUCTO = {
@@ -97,6 +106,17 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     outbox.enqueueAndSend.mockReset();
     outbox.enqueueAndSend.mockResolvedValue(intentoPendiente);
+    imagePicker.requestCameraPermissionsAsync.mockReset();
+    imagePicker.requestCameraPermissionsAsync.mockResolvedValue({ status: "granted" });
+    imagePicker.launchCameraAsync.mockReset();
+    // Por defecto el garzón cancela la cámara: así los tests que no usan
+    // transferencia no reciben una foto que nadie pidió.
+    imagePicker.launchCameraAsync.mockResolvedValue({ canceled: true, assets: [] });
+    ajusteBaucher.ajustarFotoBaucher.mockReset();
+    // Por defecto la foto sale de la cámara y ya entra en el límite.
+    ajusteBaucher.ajustarFotoBaucher.mockImplementation(
+      async (dataUrl: string) => ({ ok: true, dataUrl }),
+    );
     showToast.mockReset();
   });
 
@@ -168,6 +188,172 @@ describe("useGarzonProductos · pedido sin red", () => {
       expect.objectContaining({ type: "success" }),
     );
     expect(useCartStore.getState().cart).toEqual([]);
+  });
+
+  it("envía el método de pago que eligió el garzón", async () => {
+    outbox.enqueueAndSend.mockResolvedValue({
+      ...intentoPendiente,
+      status: "aplicada",
+    });
+    const result = await montarConProductoEnCarro();
+
+    act(() => {
+      result.current.setMetodoPago("tarjeta");
+    });
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    expect(outbox.enqueueAndSend).toHaveBeenCalledTimes(1);
+    expect(outbox.enqueueAndSend.mock.calls[0][0].payload.metodoPago).toBe(
+      "tarjeta",
+    );
+  });
+
+  it("vuelve a efectivo para el pedido siguiente y envía el baucher", async () => {
+    imagePicker.launchCameraAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ base64: "Zm90b19iYXVjaGVy" }],
+    });
+    outbox.enqueueAndSend.mockResolvedValue({
+      ...intentoPendiente,
+      status: "aplicada",
+    });
+    const result = await montarConProductoEnCarro();
+    expect(result.current.metodoPago).toBe("efectivo");
+
+    await act(async () => {
+      result.current.setMetodoPago("transferencia");
+    });
+    // Elegir transferencia abre la cámara: la foto queda lista para el envío.
+    expect(result.current.baucherFoto).toBe(
+      "data:image/jpeg;base64,Zm90b19iYXVjaGVy",
+    );
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    expect(result.current.metodoPago).toBe("efectivo");
+    expect(result.current.baucherFoto).toBeNull();
+    expect(outbox.enqueueAndSend.mock.calls[0][0].payload.baucher_foto).toBe(
+      "data:image/jpeg;base64,Zm90b19iYXVjaGVy",
+    );
+  });
+
+  it("no envía el pedido con transferencia si el garzón no sacó la foto del baucher", async () => {
+    const result = await montarConProductoEnCarro();
+
+    await act(async () => {
+      result.current.setMetodoPago("transferencia");
+    });
+    // Cámara cancelada (mock por defecto): sigue sin haber foto.
+    expect(result.current.baucherFoto).toBeNull();
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: "Falta la foto del baucher" }),
+    );
+    // El carro se conserva para que el garzón saque la foto y reintente.
+    expect(useCartStore.getState().cart).toHaveLength(1);
+  });
+
+  it("reduce una foto de cámara gigante y envía el pedido con la foto reducida", async () => {
+    imagePicker.launchCameraAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ base64: "G".repeat(4_000_001), uri: "file:///tmp/baucher.jpg" }],
+    });
+    ajusteBaucher.ajustarFotoBaucher.mockResolvedValue({
+      ok: true,
+      dataUrl: "data:image/jpeg;base64,REDUCIDA",
+    });
+    outbox.enqueueAndSend.mockResolvedValue({
+      ...intentoPendiente,
+      status: "aplicada",
+    });
+    const result = await montarConProductoEnCarro();
+
+    await act(async () => {
+      result.current.setMetodoPago("transferencia");
+    });
+
+    // La foto que salió de la cámara pasa por el ajuste con su archivo temporal.
+    expect(ajusteBaucher.ajustarFotoBaucher).toHaveBeenCalledWith(
+      expect.stringContaining("data:image/jpeg;base64,G"),
+      "file:///tmp/baucher.jpg",
+    );
+    expect(result.current.baucherFoto).toBe("data:image/jpeg;base64,REDUCIDA");
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    // El pedido se envía con la foto que sí entra en el límite del servidor.
+    expect(outbox.enqueueAndSend).toHaveBeenCalledTimes(1);
+    expect(outbox.enqueueAndSend.mock.calls[0][0].payload.baucher_foto).toBe(
+      "data:image/jpeg;base64,REDUCIDA",
+    );
+    expect(useCartStore.getState().cart).toEqual([]);
+  });
+
+  it("no guarda una foto que no se pudo reducir y vuelve a pedirla", async () => {
+    imagePicker.launchCameraAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ base64: "G".repeat(4_000_001), uri: "file:///tmp/baucher.jpg" }],
+    });
+    ajusteBaucher.ajustarFotoBaucher.mockResolvedValue({ ok: false, motivo: "no-cabe" });
+    const result = await montarConProductoEnCarro();
+
+    await act(async () => {
+      result.current.setMetodoPago("transferencia");
+    });
+
+    expect(result.current.baucherFoto).toBeNull();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: "La foto del baucher no sirve" }),
+    );
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    // Sin foto válida no se encola nada y el carro queda para reintentar.
+    expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: "Falta la foto del baucher" }),
+    );
+    expect(useCartStore.getState().cart).toHaveLength(1);
+  });
+
+  it("si la foto igual no pasa el validador, avisa, reabre la cámara y conserva el carro", async () => {
+    const gigante = `data:image/jpeg;base64,${"G".repeat(4_000_001)}`;
+    imagePicker.launchCameraAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ base64: "G".repeat(4_000_001), uri: "file:///tmp/baucher.jpg" }],
+    });
+    // El ajuste no funcionó y la foto gigante igual se guardó: el esquema del
+    // dispositivo la rechaza antes de encolar, así que hay que poder reintentar.
+    ajusteBaucher.ajustarFotoBaucher.mockResolvedValue({ ok: true, dataUrl: gigante });
+    const result = await montarConProductoEnCarro();
+
+    await act(async () => {
+      result.current.setMetodoPago("transferencia");
+    });
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: "La foto del baucher no sirve" }),
+    );
+    await waitFor(() => expect(imagePicker.launchCameraAsync).toHaveBeenCalledTimes(2));
+    expect(useCartStore.getState().cart).toHaveLength(1);
   });
 
   it("debe mostrar el motivo cuando el servidor rechazó el pedido", async () => {

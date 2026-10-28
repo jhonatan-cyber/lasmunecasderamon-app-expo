@@ -18,6 +18,15 @@ const paymentMethodSchema = zEnum([
   "mixto",
 ]);
 
+/**
+ * Tamaño máximo del `baucher_foto` en caracteres de base64 (≈ 3 MB de imagen).
+ * Debe calzar con `BAUCHER_FOTO_MAX_CHARS` de
+ * `lasmunecasderamon-dashboard/lib/business/schemas/order.ts`: si la app manda
+ * más grande, el dashboard responde 400 y el outbox archiva el pedido.
+ */
+export const BAUCHER_FOTO_MAX_CHARS = 4_000_000;
+const BAUCHER_DATA_URL = /^data:image\/(?:jpeg|jpg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
 export const loginSchema = object({
   email: string().min(1, "El usuario es obligatorio"),
   password: string().min(1, "La contrasena es obligatoria"),
@@ -49,6 +58,22 @@ export const OrderCreateSchema = object({
   total: number().min(0),
   totalComision: number().optional().default(0),
   propina: number().optional().default(0),
+  /**
+   * Obligatorio en el dashboard (`lib/business/schemas/order.ts`): el pedido se
+   * guarda completo y ese es el método con el que después se cobra. Sin este
+   * campo `POST /orders` responde 400 y el outbox archiva el pedido como fallido.
+   */
+  metodoPago: zEnum(["efectivo", "tarjeta", "transferencia"]),
+  /**
+   * Foto del baucher en data URL (`data:image/jpeg;base64,…`). Obligatoria con
+   * transferencia (abajo): la saca el garzón con la cámara y el dashboard la
+   * guarda en `public/img/orders`. Espejo del esquema del servidor en
+   * `lasmunecasderamon-dashboard/lib/business/schemas/order.ts`.
+   */
+  baucher_foto: string()
+    .max(BAUCHER_FOTO_MAX_CHARS, "La foto del baucher supera el tamaño máximo")
+    .regex(BAUCHER_DATA_URL, "La foto del baucher no es una imagen válida")
+    .optional(),
   device_date: string().optional(),
   detalles: array(
     object({
@@ -128,7 +153,16 @@ export const OrderCreateSchema = object({
   )
     .optional()
     .default([]),
-}).passthrough();
+})
+  .passthrough()
+  .refine(
+    (data) =>
+      data.metodoPago !== "transferencia" || Boolean(data.baucher_foto),
+    {
+      message: "El pago con transferencia necesita la foto del baucher",
+      path: ["baucher_foto"],
+    },
+  );
 
 export const ServiceCreateSchema = object({
   codigo: string().min(1, "Codigo es requerido"),
