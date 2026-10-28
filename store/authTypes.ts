@@ -15,6 +15,9 @@ export interface User {
     qr_token?: string;
     two_factor_enabled?: boolean;
     forcePasswordChange?: boolean;
+    biometrico_codigo?: string | null;
+    biometrico_huella?: number;
+    biometrico_facial?: number;
 }
 
 export interface LoginPayload {
@@ -77,4 +80,6 @@ export interface AuthState {
     authenticateWithBiometric: () => Promise<boolean>;
     enable2FA: (password: string) => Promise<boolean>;
     disable2FA: (password: string) => Promise<boolean>;
+    biometricoFacialEnrolled: boolean;
+    setBiometricoFacialEnrolled: (enrolled: boolean) => void;
 }
