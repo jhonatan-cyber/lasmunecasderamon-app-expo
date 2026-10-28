@@ -99,16 +99,15 @@ describe('cuentaUtils', () => {
       expect(getHostessLimit({ max_anfitrionas: undefined })).toBe(1);
     });
 
-    it('aplica límite por tier para champán', () => {
-      expect(getHostessLimit({ precio: 250000, categoria: 'Champaña' })).toBe(5);
-      expect(getHostessLimit({ precio: 210000, categoria: 'Champaña' })).toBe(5);
-      expect(getHostessLimit({ precio: 150000, categoria: 'Champaña' })).toBe(2);
-      expect(getHostessLimit({ precio: 130000, categoria: 'Champaña' })).toBe(2);
-      expect(getHostessLimit({ precio: 50000, categoria: 'Champaña' })).toBe(1);
+    it('champán sin máximo configurado no admite anfitrionas', () => {
+      expect(getHostessLimit({ precio: 250000, categoria: 'Champaña' })).toBe(0);
+      expect(getHostessLimit({ precio: 250000, categoria: 'Champaña' }, 2)).toBe(0);
     });
 
-    it('aplica límite por tier multiplicado por cantidad', () => {
-      expect(getHostessLimit({ precio: 250000, categoria: 'Champaña' }, 2)).toBe(10);
+    it('champán usa el máximo configurado multiplicado por cantidad', () => {
+      expect(
+        getHostessLimit({ precio: 250000, categoria: 'Champaña', max_anfitrionas: 3 }, 2)
+      ).toBe(6);
     });
   });
 

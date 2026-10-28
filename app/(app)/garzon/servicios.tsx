@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -113,6 +114,8 @@ export default function ServiciosScreen() {
     setServicePrice,
     paymentMethod,
     setPaymentMethod,
+    baucherFoto,
+    takeBaucherPhoto,
     roomModalVisible,
     setRoomModalVisible,
     hostessModalVisible,
@@ -414,6 +417,46 @@ export default function ServiciosScreen() {
               </>
             )}
 
+            {paymentMethod === "transferencia" && (
+              <Pressable
+                onPress={() => void takeBaucherPhoto()}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  baucherFoto
+                    ? "Repetir foto del baucher"
+                    : "Sacar foto del baucher (obligatoria)"
+                }
+                style={[
+                  styles.baucherRow,
+                  {
+                    borderColor: baucherFoto ? primaryColor : "#EF4444",
+                    backgroundColor: baucherFoto
+                      ? primaryColor + "1A"
+                      : "#EF44441A",
+                  },
+                ]}
+              >
+                {baucherFoto ? (
+                  <Image
+                    source={{ uri: baucherFoto }}
+                    style={styles.baucherThumb}
+                  />
+                ) : (
+                  <Ionicons name="camera-outline" size={20} color="#EF4444" />
+                )}
+                <Text
+                  style={[
+                    styles.baucherText,
+                    { color: baucherFoto ? primaryColor : "#EF4444" },
+                  ]}
+                >
+                  {baucherFoto
+                    ? "Baucher adjunto · tocar para repetir"
+                    : "Sacar foto del baucher (obligatoria)"}
+                </Text>
+              </Pressable>
+            )}
+
             {hasPrepago && (
               <View
                 style={{
@@ -635,4 +678,15 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
+  baucherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  baucherText: { fontSize: 13, fontWeight: "800", flex: 1 },
+  baucherThumb: { width: 40, height: 40, borderRadius: 8 },
 });

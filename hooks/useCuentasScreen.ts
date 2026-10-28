@@ -4,7 +4,6 @@ import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 
 import { apiClientSafe } from "@/api/client";
-import { interpretarSolicitudAnulacion } from "@/services/anulaciones";
 import { cuentasReducer, initialCuentasState, type CuentasState } from "@/hooks/cuentas/cuentasState";
 import { useCuentasData } from "@/hooks/cuentas/useCuentasData";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
@@ -292,30 +291,22 @@ export const useCuentasScreen = () => {
 
     try {
       setAnulacionSubmitting(true);
-      const res = interpretarSolicitudAnulacion(
-        await apiClientSafe("/accounts/cancellation", {
-          method: "POST",
-          body: JSON.stringify({
-            cuentaId: anulacionCuenta.id_cuenta,
-            clienteNombre: anulacionCuenta.cliente_nombre || "",
-            motivo,
-            monto,
-          }),
+      const res = await apiClientSafe("/accounts/cancellation", {
+        method: "POST",
+        body: JSON.stringify({
+          cuentaId: anulacionCuenta.id_cuenta,
+          clienteNombre: anulacionCuenta.cliente_nombre || "",
+          motivo,
+          monto,
         }),
-      );
+      });
 
       if (res.success) {
         setAnulacionModalVisible(false);
         setAnulacionCuenta(null);
         setAnulacionMotivo("");
         setAnulacionMonto("");
-        showToast(
-          "Éxito",
-          res.avisoFallido
-            ? res.message || "La solicitud quedó registrada, pero no se pudo enviar el aviso por WhatsApp"
-            : "La anulación fue solicitada por WhatsApp",
-          "success",
-        );
+        showToast("Éxito", "La anulación fue solicitada por WhatsApp", "success");
         fetchCuentas();
       } else {
         showToast("Error", res.message || "No se pudo solicitar la anulación");

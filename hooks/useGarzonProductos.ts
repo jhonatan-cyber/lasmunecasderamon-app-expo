@@ -1,6 +1,8 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as ImagePicker from "expo-image-picker";
 import { showToast } from "@/utils/toast-lazy";
+import { ajustarFotoBaucher } from "@/utils/baucherFoto";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { useAuthStore } from "@/store/authStore";
@@ -9,7 +11,13 @@ import { mapForSaleProduct } from "@/hooks/utils/cartUtils";
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
 import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
 import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
-import type { CartItem, Product, Anfitriona, Room } from "@/types/cart";
+import type {
+  CartItem,
+  Product,
+  Anfitriona,
+  Room,
+  MetodoPagoPedido,
+} from "@/types/cart";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { getOutbox } from "@/services/outbox";
 import logger from "@/utils/logger";
@@ -36,6 +44,15 @@ export function useGarzonProductos() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  // El pedido se guarda con el método puesto: el dashboard lo exige y cobra con
+  // él. Efectivo por defecto para no frenar al garzón; puede cambiarlo antes de
+  // enviar.
+  const [metodoPago, setMetodoPagoRaw] = useState<MetodoPagoPedido>("efectivo");
+  /**
+   * Foto del baucher en data URL. Solo se exige con transferencia: sin ella el
+   * pedido no puede enviarse porque es la única constancia de que el pago entró.
+   */
+  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -44,6 +61,68 @@ export function useGarzonProductos() {
   const [fromCache, setFromCache] = useState(false);
   const dataRef = useRef<string>("");
   const submitInFlight = useRef(false);
+
+  /**
+   * Abre la cámara para fotografiar el baucher. Si el garzón cancela, el método
+   * sigue siendo transferencia pero sin foto: `submitOrder` vuelve a pedirla.
+   */
+  const takeBaucherPhoto = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        showToast({
+          type: "error",
+          text1: "Sin acceso a la cámara",
+          text2: "Permite la cámara para fotografiar el baucher de la transferencia.",
+        });
+        return;
+      }
+      // Calidad baja a propósito: el base64 viaja dentro del pedido y el
+      // dashboard rechaza sobre `BAUCHER_FOTO_MAX_CHARS`. El baucher se lee
+      // igual, y así una foto de cámara no deja el pedido sin poder enviarse.
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        quality: 0.4,
+        base64: true,
+      });
+      const asset = result.assets?.[0];
+      if (result.canceled || !asset?.base64) return;
+      const original = `data:image/jpeg;base64,${asset.base64}`;
+      // Una foto de cámara puede salir más grande que el límite que acepta el
+      // dashboard (`BAUCHER_FOTO_MAX_CHARS`): aquí se reduce para que el pedido
+      // se pueda enviar. Si no cabe ni reducida no se guarda, porque una foto
+      // que el servidor rechaza con 400 dejaría el pedido sin registrar.
+      const ajuste = await ajustarFotoBaucher(original, asset.uri);
+      if (!ajuste.ok) {
+        showToast({
+          type: "error",
+          text1: "La foto del baucher no sirve",
+          text2:
+            ajuste.motivo === "no-cabe"
+              ? "No entra en el tamaño permitido. Tómala de nuevo con más luz y sin zoom."
+              : "No se pudo reducir la foto. Tómala de nuevo.",
+        });
+        return;
+      }
+      setBaucherFoto(ajuste.dataUrl);
+    } catch (err) {
+      logger.fetchError(err, { context: "Productos:takeBaucherPhoto" });
+      showToast({
+        type: "error",
+        text1: "No se pudo abrir la cámara",
+        text2: "Vuelve a intentar fotografiar el baucher.",
+      });
+    }
+  }, []);
+
+  /** Elegir transferencia dispara la cámara: la foto es obligatoria para enviar. */
+  const setMetodoPago = useCallback(
+    (metodo: MetodoPagoPedido) => {
+      setMetodoPagoRaw(metodo);
+      if (metodo === "transferencia") void takeBaucherPhoto();
+    },
+    [takeBaucherPhoto],
+  );
 
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [clearCartAlertVisible, setClearCartAlertVisible] = useState(false);
@@ -250,6 +329,16 @@ export function useGarzonProductos() {
       }
     }
 
+    if (metodoPago === "transferencia" && !baucherFoto) {
+      showToast({
+        type: "error",
+        text1: "Falta la foto del baucher",
+        text2: "El pago con transferencia requiere la foto del baucher para enviar el pedido.",
+      });
+      void takeBaucherPhoto();
+      return;
+    }
+
     const generateCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let result = "";
@@ -268,15 +357,25 @@ export function useGarzonProductos() {
         meseroId: user.id,
         codigo,
         clienteId: selectedClientId,
+        metodoPago,
+        baucherFoto: metodoPago === "transferencia" ? baucherFoto : null,
         device_date: new Date().toISOString(),
       });
 
       if (!buildResult.success) {
+        // El motivo más caro es la foto: el payload no sale por su tamaño y,
+        // sin aviso claro, el garzón quedaría con el pedido sin enviar.
+        const problemaDeBaucher = buildResult.errors.some((error) =>
+          error.includes("baucher_foto"),
+        );
         showToast({
           type: "error",
-          text1: "Datos inválidos",
-          text2: buildResult.errors.join("; "),
+          text1: problemaDeBaucher ? "La foto del baucher no sirve" : "Datos inválidos",
+          text2: problemaDeBaucher
+            ? "Supera el tamaño permitido. Vuelve a tomarla y el pedido se envía sin problema."
+            : buildResult.errors.join("; "),
         });
+        if (problemaDeBaucher && metodoPago === "transferencia") void takeBaucherPhoto();
         setSubmitting(false);
         return;
       }
@@ -301,6 +400,8 @@ export function useGarzonProductos() {
           text2: "El pedido ha sido registrado correctamente",
         });
         clearCart();
+        setMetodoPagoRaw("efectivo");
+        setBaucherFoto(null);
         router.back();
         return;
       }
@@ -317,6 +418,8 @@ export function useGarzonProductos() {
         visibilityTime: 4000,
       });
       clearCart();
+      setMetodoPagoRaw("efectivo");
+      setBaucherFoto(null);
       router.back();
     } catch (err: any) {
       showToast({
@@ -339,6 +442,10 @@ export function useGarzonProductos() {
     clients,
     selectedClientId,
     setSelectedClientId,
+    metodoPago,
+    setMetodoPago,
+    baucherFoto,
+    takeBaucherPhoto,
     loading,
     refreshing,
     submitting,

@@ -60,6 +60,13 @@ export const CajeroActionGrid = ({
       route: "/cajero/clientes",
     },
     {
+      title: "CORTESÍAS",
+      description: "Entregar entradas del día",
+      icon: "ticket-outline" as const,
+      color: "#F59E0B",
+      route: "/cajero/cortesias",
+    },
+    {
       title: "PERSONAL",
       description: "Liquidación y Asistencia",
       icon: "people" as const,

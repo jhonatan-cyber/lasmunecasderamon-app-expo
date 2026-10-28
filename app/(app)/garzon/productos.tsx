@@ -48,6 +48,10 @@ export default function ProductosScreen() {
     clients,
     selectedClientId,
     setSelectedClientId,
+    metodoPago,
+    setMetodoPago,
+    baucherFoto,
+    takeBaucherPhoto,
     loading,
     refreshing,
     submitting,
@@ -153,7 +157,7 @@ export default function ProductosScreen() {
           estimatedItemSize={150}
           contentContainerStyle={[
             styles.listContent,
-            { paddingBottom: cart.length > 0 ? 180 : 40 },
+            { paddingBottom: cart.length > 0 ? 230 : 40 },
           ]}
           refreshControl={
             <RefreshControl
@@ -204,6 +208,10 @@ export default function ProductosScreen() {
         <GarzonCartBar
           tipEnabled={tipEnabled}
           setTipEnabled={setTipEnabled}
+          metodoPago={metodoPago}
+          setMetodoPago={setMetodoPago}
+          baucherFoto={baucherFoto}
+          onTakeBaucherPhoto={() => void takeBaucherPhoto()}
           tipAmount={tipAmount}
           tipPercentage={propinaPct}
           cartTotal={cartTotal}

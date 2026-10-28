@@ -32,6 +32,8 @@ import {
   filterForSaleProducts,
   setSaleServiceLevels,
   roomRequiredForSalePrice,
+  MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
+  faltaConfiguracionChampagne,
 } from "@/hooks/utils/cartUtils";
 import logger from "@/utils/logger";
 import { eventBus } from "@/utils/eventBus";
@@ -213,20 +215,15 @@ export function useNuevaVenta() {
     [],
   );
 
+  // Tramos de precio por anfitrionas: solo los configurados por producto
+  // (`producto_champagne_tiers`). Sin tramos el producto no se puede vender con
+  // anfitrionas; no hay tabla por defecto.
   const getSaleTiers = useCallback(
     async (
       productId: string,
-      champagne: boolean,
     ): Promise<{ anfitrionas: number; precio: number; comision: number }[]> => {
       const cached = saleTiersCache.current.get(productId);
       if (cached) return cached;
-      const defaults = [
-        { anfitrionas: 1, precio: 120000, comision: 40000 },
-        { anfitrionas: 2, precio: 120000, comision: 40000 },
-        { anfitrionas: 3, precio: 160000, comision: 60000 },
-        { anfitrionas: 4, precio: 180000, comision: 80000 },
-        { anfitrionas: 5, precio: 200000, comision: 100000 },
-      ];
       try {
         const response = await apiClientSafe(
           `/products/${encodeURIComponent(productId)}/tiers?configurados=1`,
@@ -251,12 +248,11 @@ export function useNuevaVenta() {
                 )
                 .sort((a: any, b: any) => a.anfitrionas - b.anfitrionas)
             : [];
-        const result = tiers.length ? tiers : champagne ? defaults : [];
-        saleTiersCache.current.set(productId, result);
-        return result;
+        saleTiersCache.current.set(productId, tiers);
+        return tiers;
       } catch (error) {
         logger.fetchError(error, { context: "NuevaVenta:getSaleTiers" });
-        return champagne ? defaults : [];
+        return [];
       }
     },
     [],
@@ -483,6 +479,18 @@ export function useNuevaVenta() {
       const tierProductId = String(
         prod.producto_id || prod.id_producto || prod.id,
       );
+      // Champaña sin tabla de precios por anfitrionas (ni máximo explícito) no
+      // tiene cómo cobrarse: se bloquea con el mismo mensaje del dashboard.
+      if (isChampagneProduct(prod) && prod?.tipo_venta !== "shot") {
+        const tiers = await getSaleTiers(tierProductId);
+        if (faltaConfiguracionChampagne(prod.max_anfitrionas, tiers)) {
+          showToast(
+            "Champaña sin configurar",
+            MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
+          );
+          return;
+        }
+      }
       // El shot sale de la botella abierta: no gasta unidades del bar, así que
       // su tope es el máximo del dashboard (99) y no `stock_bar`.
       const esShot = prod?.tipo_venta === "shot";
@@ -520,7 +528,7 @@ export function useNuevaVenta() {
                 getHostessLimit(prod),
                 Math.max(
                   1,
-                  ...(await getSaleTiers(tierProductId, true)).map(
+                  ...(await getSaleTiers(tierProductId)).map(
                     (tier) => tier.anfitrionas,
                   ),
                 ),
@@ -553,7 +561,7 @@ export function useNuevaVenta() {
           anfitrionas: number;
           precio: number;
           comision: number;
-        }[] = await getSaleTiers(tierProductId, isChampagneProduct(prod));
+        }[] = await getSaleTiers(tierProductId);
         const tier = isChampagneProduct(prod)
           ? [...tiers]
               .reverse()
@@ -707,17 +715,28 @@ export function useNuevaVenta() {
       };
 
       const hasComm = Number(venta.comision) > 0;
+      const champagne = isChampagneProduct(item);
+      const tierProductId = String(
+        item.producto_id || item.id_producto || item.id,
+      );
+      const tiers: {
+        anfitrionas: number;
+        precio: number;
+        comision: number;
+      }[] = champagne && !venta.esShot ? await getSaleTiers(tierProductId) : [];
+
+      // Sin tabla de precios por anfitrionas (ni máximo explícito) la champaña
+      // no tiene cómo cobrarse: se bloquea con el mismo mensaje del dashboard.
+      if (
+        champagne &&
+        !venta.esShot &&
+        faltaConfiguracionChampagne(item.max_anfitrionas, tiers)
+      ) {
+        showToast("Champaña sin configurar", MENSAJE_CHAMPAGNE_SIN_CONFIGURAR);
+        return;
+      }
 
       if (hasComm) {
-        const champagne = isChampagneProduct(item);
-        const tierProductId = String(
-          item.producto_id || item.id_producto || item.id,
-        );
-        const tiers: {
-          anfitrionas: number;
-          precio: number;
-          comision: number;
-        }[] = champagne ? await getSaleTiers(tierProductId, true) : [];
         const explicitMax = Number(item.max_anfitrionas);
         const max = champagne
           ? Math.min(
@@ -867,6 +886,20 @@ export function useNuevaVenta() {
       );
     if (cajaAbierta === false) return showToast("Error", "Caja cerrada");
     if (cart.length === 0) return showToast("Error", "Carrito vacío");
+    // Última barrera: una champaña sin tabla de precios ni máximo configurado no
+    // se puede cobrar (misma regla y mensaje que el dashboard).
+    for (const item of cart) {
+      if (item.tipo_venta === "shot" || !isChampagneProduct(item)) continue;
+      const tiers = await getSaleTiers(
+        String(item.producto_id || item.id_producto || item.id),
+      );
+      if (faltaConfiguracionChampagne(item.max_anfitrionas, tiers)) {
+        return showToast(
+          "Champaña sin configurar",
+          MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
+        );
+      }
+    }
     if (
       cart.some(
         (p) =>
@@ -1014,6 +1047,7 @@ export function useNuevaVenta() {
     servicioListo,
     servicioAnfitrionas,
     servicioAnfitrionasIniciales,
+    getSaleTiers,
     router,
     refreshVentas,
   ]);

@@ -10,12 +10,12 @@ export const solicitudesService = {
       body: JSON.stringify(data),
     }),
 
-  approve: (id: string | number) =>
+  aprobar: (id: string | number) =>
     apiClientSafe(`/service-requests/${id}/approve`, {
       method: 'PATCH',
     }),
 
-  reject: (id: string | number) =>
+  rechazar: (id: string | number) =>
     apiClientSafe(`/service-requests/${id}/reject`, {
       method: 'PATCH',
     }),

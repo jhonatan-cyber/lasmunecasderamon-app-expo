@@ -1,18 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // This suite only sends GET/OPTIONS requests. It never creates financial records.
-// Prefiere el override local (.env.development.local) y cae al .env del proyecto
-// si aquel no existe; la garantía anti-producción es la validación de hostname.
-const envFile = [".env.development.local", ".env"]
-  .map((file) => resolve(process.cwd(), file))
-  .find((file) => existsSync(file));
-if (!envFile)
-  throw new Error(
-    "No se encontró .env.development.local ni .env en el proyecto.",
-  );
-const localEnv = readFileSync(envFile, "utf8");
+const localEnv = readFileSync(
+  resolve(process.cwd(), ".env.development.local"),
+  "utf8",
+);
 const configured = localEnv
   .match(/^EXPO_PUBLIC_API_BASE_URL=(.+)$/m)?.[1]
   ?.trim();

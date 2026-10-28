@@ -10,7 +10,7 @@
       "node": "22.19.0",
       "environment": "development",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
+        "EXPO_PUBLIC_API_BASE_URL": "http://192.168.0.2:3000"
       },
       "android": {
         "buildType": "apk"
@@ -25,7 +25,7 @@
     "preview_apk": {
       "extends": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
+        "EXPO_PUBLIC_API_BASE_URL": "http://192.168.0.2:3000"
       },
       "android": {
         "buildType": "apk"

@@ -5,6 +5,7 @@ import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
 import { ProductsCategoryModal } from "./ProductsCategoryModal";
 import { ExtraTiempoModal } from "./ExtraTiempoModal";
 import { isChampagneProduct, getChampagneLimit } from "@/hooks/useAgregarCuenta";
+import { bloqueaChampanaSinConfigurar } from "@/hooks/utils/champagneConfig";
 
 type AgregarCuentaModalesProps = {
   
@@ -106,7 +107,10 @@ export function AgregarCuentaModales({
         borderColor={borderColor}
         textPrimary={textPrimary}
         onSetQuantity={onSetQuantity}
-        onSelectProduct={(item) => {
+        onSelectProduct={async (item) => {
+          // Champaña sin tabla de precios por anfitrionas: no tiene cómo
+          // cobrarse, se rechaza antes de abrir anfitrionas.
+          if (await bloqueaChampanaSinConfigurar(item)) return;
           const id = item.id || item.id_producto;
           const hasComm = Number(item.comision || item.commission || 0) > 0;
           if (hasComm) {

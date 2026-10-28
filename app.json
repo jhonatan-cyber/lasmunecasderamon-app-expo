@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.lasmunecasderamon.app",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Permite el acceso a Face ID para iniciar sesión de forma segura.",
-        "NSCameraUsageDescription": "Permite el acceso a la cámara para registrar tu asistencia mediante QR.",
+        "NSCameraUsageDescription": "Permite el acceso a la cámara para registrar tu asistencia mediante QR y fotografiar el baucher de los pedidos pagados con transferencia.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [

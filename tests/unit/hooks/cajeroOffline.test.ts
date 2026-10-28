@@ -169,7 +169,7 @@ describe('useCuentasScreen · modo offline', () => {
     // El cobro online no tiene camino aparte: se encola y se manda al toque.
     const urls = vi.mocked(apiClientSafe).mock.calls.map(c => String(c[0]));
     expect(urls).toContain('/accounts/c1/charge-with-sale');
-    expect(urls.some(u => u.includes('/accounts') && u.includes('/charge') && !u.includes('charge-with-sale'))).toBe(false);
+    expect(urls.some(u => u.includes('/cobrar') && !u.includes('cobrar-con-venta'))).toBe(false);
     expect(urls).not.toContain('/sales');
 
     const enSqlite = driver.getAll<{ status: string }>('SELECT status FROM outbox');
@@ -200,7 +200,7 @@ describe('useCuentasScreen · modo offline', () => {
     // Ni el cobro ni la venta viajan como requests sueltos (los dos pasos ya
     // son uno solo en el servidor): van como UNA intención de la cola.
     const urls = vi.mocked(apiClientSafe).mock.calls.map(c => String(c[0]));
-    expect(urls.some(u => u.includes('/charge'))).toBe(false);
+    expect(urls.some(u => u.includes('/cobrar'))).toBe(false);
     expect(urls).not.toContain('/sales');
 
     const enSqlite = driver.getAll<{ type: string; status: string }>(

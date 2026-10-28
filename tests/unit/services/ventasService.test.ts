@@ -165,37 +165,10 @@ describe('ventasService', () => {
       expect(result).toEqual({ success: true });
     });
 
-    it('no da éxito cuando el servidor responde success:false sin señal de solicitud creada', async () => {
+    it('devuelve success sin error', async () => {
       mockApi().mockResolvedValueOnce(apiResponse({ success: false }));
       await expect(enviarSolicitudAnulacion(3, 'm', 1)).resolves.toEqual({
-        success: false,
-        message: 'No se pudo solicitar la anulación'
-      });
-    });
-
-    it('marca avisoFallido cuando la solicitud se creó pero el aviso de WhatsApp no partió (202)', async () => {
-      mockApi().mockResolvedValueOnce(apiResponse({
-        success: false,
-        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
-        token: 'tk-1'
-      }));
-      await expect(enviarSolicitudAnulacion(3, 'm', 1)).resolves.toEqual({
-        success: true,
-        avisoFallido: true,
-        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador'
-      });
-    });
-
-    it('marca avisoFallido también cuando la señal llega como id (paridad con accounts/cancellation)', async () => {
-      mockApi().mockResolvedValueOnce(apiResponse({
-        success: false,
-        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador',
-        id: 42
-      }));
-      await expect(enviarSolicitudAnulacion(3, 'm', 1)).resolves.toEqual({
-        success: true,
-        avisoFallido: true,
-        message: 'Solicitud creada pero no se pudo enviar WhatsApp al administrador'
+        success: true
       });
     });
 

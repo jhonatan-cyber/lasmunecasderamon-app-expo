@@ -69,7 +69,7 @@ vi.mock('@/services/diagnostics', () => ({
                     key: 'cuentas.abiertas',
                     syncedAt: 1_799_999_820_000,
                     ageMs: 180_000,
-                    source: '/cuentas',
+                    source: '/accounts',
                     bytes: 18,
                     preview: '[{"id":"c-1"}]',
                 },
@@ -114,7 +114,7 @@ describe('pantalla de diagnóstico offline', () => {
         // Filas del espejo con su antigüedad y origen.
         expect(screen.getByText('cuentas.abiertas')).toBeDefined();
         expect(screen.getByText(/hace 3 min/)).toBeDefined();
-        expect(screen.getByText(/origen \/cuentas/)).toBeDefined();
+        expect(screen.getByText(/origen \/accounts/)).toBeDefined();
 
         // Filas de la cola con su estado y cuántos intentos lleva.
         expect(screen.getByText('Venta $100 · 1 ítem(s)')).toBeDefined();

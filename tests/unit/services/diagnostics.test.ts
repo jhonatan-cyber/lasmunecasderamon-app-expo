@@ -42,7 +42,7 @@ describe('diagnóstico offline (lectura del SQLite del dispositivo)', () => {
     it('lee las filas del espejo con su antigüedad, origen y payload', () => {
         mirror.put('cuentas.abiertas', [{ id: 'c-1' }], {
             syncedAt: NOW - 90_000,
-            source: '/cuentas',
+            source: '/accounts',
         });
         mirror.put('catalog.categories', [{ id: 1 }], { syncedAt: NOW });
 
@@ -52,7 +52,7 @@ describe('diagnóstico offline (lectura del SQLite del dispositivo)', () => {
 
         const abiertas = reporte.mirror.rows.find(row => row.key === 'cuentas.abiertas')!;
         expect(abiertas.ageMs).toBe(90_000);
-        expect(abiertas.source).toBe('/cuentas');
+        expect(abiertas.source).toBe('/accounts');
         expect(abiertas.bytes).toBeGreaterThan(0);
         expect(abiertas.preview).toContain('"c-1"');
 

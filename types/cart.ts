@@ -51,6 +51,13 @@ export interface CartItem {
   selectedRoom: string | null;
 }
 
+/**
+ * Métodos con los que queda guardado un pedido. El dashboard exige uno al
+ * crearlo y después cobra con él, por eso no admite prepago ni mixto: el
+ * reparto del saldo se decide en caja, no al tomar el pedido.
+ */
+export type MetodoPagoPedido = "efectivo" | "tarjeta" | "transferencia";
+
 export interface Anfitriona {
   id: string;
   nick: string;

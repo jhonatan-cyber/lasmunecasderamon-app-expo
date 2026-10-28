@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
+import React, { useState } from 'react';
 import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
+import { BiometricEnrollmentModal } from '@/components/shared/BiometricEnrollmentModal';
 
 interface PremiumHeaderActionsProps {
     hasNewAlert?: boolean;
@@ -31,6 +33,8 @@ export const PremiumHeaderActions = ({
     const { isDark } = useAccentColor();
     const logout = useAuthStore(state => state.logout);
     const user = useAuthStore(state => state.user);
+    const isBiometricEnrolled = useAuthStore((state) => state.biometricoFacialEnrolled);
+    const [showEnrollment, setShowEnrollment] = useState(false);
     const router = useRouter();
 
     const isRestrictedRole = isGarzonRole(user) || isHostessRole(user) || isBarmanRole(user);
@@ -98,6 +102,14 @@ export const PremiumHeaderActions = ({
                     )}
                 </Pressable>
             )}
+            {!isBiometricEnrolled && (
+                <Pressable
+                    onPress={() => setShowEnrollment(true)}
+                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                >
+                    <Ionicons name="finger-print" size={20} color={iconColor} />
+                </Pressable>
+            )}
             <Pressable
                 onPress={() => router.push(profilePath as Href)}
                 style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
@@ -116,6 +128,11 @@ export const PremiumHeaderActions = ({
             >
                 <Ionicons name="log-out-outline" size={20} color={iconColor} />
             </Pressable>
+            <BiometricEnrollmentModal
+                visible={showEnrollment}
+                onClose={() => setShowEnrollment(false)}
+                onEnrolled={() => setShowEnrollment(false)}
+            />
         </View>
     );
 };

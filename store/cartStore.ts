@@ -17,6 +17,16 @@ interface BuildOrderParams {
   codigo: string;
   clienteId?: string | null;
   device_date?: string;
+  /**
+   * El dashboard exige el método en el pedido (se cobra con él después).
+   * Mientras el carrito no tenga selector, el pedido viaja como efectivo.
+   */
+  metodoPago?: "efectivo" | "tarjeta" | "transferencia";
+  /**
+   * Foto del baucher (data URL). Solo la manda el pedido con transferencia:
+   * es la constancia del pago y el dashboard la exige en ese caso.
+   */
+  baucherFoto?: string | null;
 }
 
 type BuildOrderResult =
@@ -229,7 +239,14 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   buildOrderPayload: (params) => {
-    const { meseroId, codigo, clienteId, device_date } = params;
+    const {
+      meseroId,
+      codigo,
+      clienteId,
+      device_date,
+      metodoPago = "efectivo",
+      baucherFoto = null,
+    } = params;
     const state = get();
     if (
       state.cart.some(
@@ -262,7 +279,9 @@ export const useCartStore = create<CartState>((set, get) => ({
       total,
       propina: tipAmount,
       totalComision,
+      metodoPago,
       device_date,
+      ...(baucherFoto ? { baucher_foto: baucherFoto } : {}),
       detalles: state.cart.map((item) => ({
         ...saleInventoryFields(item.product),
         productoId: item.product.producto_id || item.product.id,

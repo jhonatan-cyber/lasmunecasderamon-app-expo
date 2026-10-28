@@ -3,6 +3,10 @@ import { apiClientSafe } from '@/api/client-safe';
 export const barService = {
   stock: (signal?: AbortSignal) => apiClientSafe('/bar', { signal }),
 
+  /** Presentaciones de acompañamiento disponibles en el bar. */
+  acompanamientos: (signal?: AbortSignal) =>
+    apiClientSafe('/bar?acompanamientos=1', { signal }),
+
   movements: (limit = 100, signal?: AbortSignal) =>
     apiClientSafe(`/bar/movements?limit=${limit}`, { signal }),
 

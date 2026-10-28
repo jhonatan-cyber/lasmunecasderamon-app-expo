@@ -58,6 +58,10 @@ export default function CajeroLayout() {
           name="clientes"
           options={{ title: "Clientes", headerShown: false }}
         />
+        <Stack.Screen
+          name="cortesias"
+          options={{ title: "Cortesías", headerShown: false }}
+        />
       </Stack>
       <GlobalTimerAlert />
     </>

@@ -182,6 +182,47 @@ describe("useNuevaVenta totals (propina / total)", () => {
     expect(payload.metodo_pago).toBe("tarjeta");
     expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
   });
+
+  it("bloquea el cobro de una champaña sin tabla de precios ni máximo configurado", async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    setCart(result, [
+      {
+        id: "pres-champagne",
+        producto_id: "prod-champagne",
+        nombre: "Champaña $120.000",
+        categoria: "Champaña",
+        precio: 120000,
+        comision: 40000,
+        quantity: 1,
+        tipo_venta: "botella",
+      },
+    ]);
+    setMetodoPago(result, "efectivo");
+    toastSpy.mockClear();
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    const postCall = vi
+      .mocked(apiClientSafe)
+      .mock.calls.find(
+        (call: any) =>
+          call[0] === "/sales" &&
+          call[1]?.method === "POST" &&
+          String(call[1]?.body ?? "").includes("pres-champagne"),
+      );
+    expect(postCall).toBeUndefined();
+    expect(toastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text1: "Champaña sin configurar",
+        text2:
+          "El producto de champaña no tiene configurada la tabla de precios por anfitrionas",
+      }),
+    );
+  });
 });
 
 describe("useNuevaVenta — refresh del catálogo por SSE (categories_updated)", () => {
@@ -740,6 +781,65 @@ describe("useNuevaVenta — selector de forma de venta (shot cliente / anfitrion
     expect(result.current.state.hostessSelectionTarget).toBeNull();
     expect(result.current.state.cart).toHaveLength(1);
     expect(result.current.state.cart[0].anfitrionas).toEqual([]);
+  });
+
+  it("bloquea la champaña sin tabla de precios ni máximo configurado", async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handlePressAddProduct(
+        {
+          id: "pres-champagne",
+          producto_id: "prod-champagne",
+          nombre: "Champaña $120.000",
+          categoria: "Champaña",
+          precio: 120000,
+          comision: 40000,
+          max_anfitrionas: null,
+        },
+        "botella",
+        1,
+      );
+    });
+
+    expect(result.current.state.cart).toEqual([]);
+    expect(result.current.state.hostessSelectionTarget).toBeNull();
+    expect(toastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text1: "Champaña sin configurar",
+        text2:
+          "El producto de champaña no tiene configurada la tabla de precios por anfitrionas",
+      }),
+    );
+  });
+
+  it("permite la champaña cuando el máximo de anfitrionas está configurado", async () => {
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    await act(async () => {
+      await result.current.handlePressAddProduct(
+        {
+          id: "pres-champagne",
+          producto_id: "prod-champagne",
+          nombre: "Champaña $120.000",
+          categoria: "Champaña",
+          precio: 120000,
+          comision: 40000,
+          max_anfitrionas: 2,
+        },
+        "botella",
+        1,
+      );
+    });
+
+    expect(result.current.state.hostessSelectionTarget?.max).toBeGreaterThan(0);
+    expect(
+      toastSpy.mock.calls.some(
+        (call: any) => call[0]?.text1 === "Champaña sin configurar",
+      ),
+    ).toBe(false);
   });
 
   it("permite combinar formatos y productos distintos en una sola venta móvil", async () => {

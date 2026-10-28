@@ -67,6 +67,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
         isBiometricEnabled: false,
         biometricType: null,
         isBiometricAvailable: false,
+        biometricoFacialEnrolled: false,
+        setBiometricoFacialEnrolled: (enrolled) => set({ biometricoFacialEnrolled: enrolled }),
 
         clearSessionExpired: () => set({ sessionExpired: false }),
 
@@ -187,7 +189,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 await AsyncStorage.setItem('user', JSON.stringify(user));
 
                 setTokenInMemory(token!);
-                set({ user: user!, token, tempAuthData: null });
+                set({ user: user!, token, tempAuthData: null, biometricoFacialEnrolled: Boolean(user?.biometrico_facial) });
                 // El login acaba de confirmar la sesión contra el servidor.
                 await get().startOfflineSession();
 
@@ -252,7 +254,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
                     setTokenInMemory(token);
                     try {
                         const parsedUser = JSON.parse(userStr) as User;
-                        set({ token, user: parsedUser });
+                        set({
+                            token,
+                            user: parsedUser,
+                            biometricoFacialEnrolled: Boolean(parsedUser.biometrico_facial),
+                        });
 
                         // Solo se carga el marcador: NO se crea. La ventana
                         // offline nace del contacto real con el servidor
@@ -298,6 +304,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 const updatedUser = { ...currentUser, ...parsed.data } as User;
                 await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
                 set({ user: updatedUser });
+                set({ biometricoFacialEnrolled: Boolean(updatedUser.biometrico_facial) });
                 // /auth/me respondió: sesión confirmada, ventana offline al día.
                 await get().startOfflineSession();
                 return true;

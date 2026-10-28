@@ -77,6 +77,7 @@ test('root redirects barman users to the barman dashboard', async ({ page }) => 
     await expect(page.locator('body')).toContainText('PEDIDOS');
     await expect(page.locator('body')).not.toContainText('VENTAS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
+    await expect(page.locator('body')).toContainText('CORTESÍAS');
     await expect(page.locator('body')).not.toContainText('Ganancias');
     await expect(page.locator('body')).not.toContainText('Financiero');
     await page.getByText('BAR', { exact: true }).click();
