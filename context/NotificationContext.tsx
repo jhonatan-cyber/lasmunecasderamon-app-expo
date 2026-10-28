@@ -1,4 +1,5 @@
 import React, { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { AppState } from "react-native";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
 import { showToast, ToastComponent } from '@/utils/toast-lazy';
@@ -14,8 +15,11 @@ import {
   emitRefreshEntradas,
   emitRefreshCategories,
   emitRefreshGratificaciones,
+  emitRefreshPersonal,
   emitRefreshRequests,
+  emitRefreshRooms,
   emitRefreshSales,
+  emitResourceUpdatedEvents,
   emitSseEvent,
   isSseControlEvent,
 } from "@/utils/realtime";
@@ -37,10 +41,6 @@ import {
   scheduleLocalNotificationAsync,
 } from '@/services/pushNotifications';
 
-// NOTA: no llamar a expo-notifications aquí a nivel de módulo (crashea en
-// Expo Go SDK 53+). Se configura perezosamente dentro del Provider.
-
-
 interface NotificationContextType {
   showLocalNotification: (title: string, body: string) => Promise<void>;
   isConnected: boolean;
@@ -58,27 +58,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const eventSourceRef = useRef<EventSource | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
 
-  // ─── Reconexión SSE con exponential backoff ─────────────────
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
-  /** Último connectSSE (para que el backoff siempre use la versión vigente). */
-  const connectSSERef = useRef<() => Promise<void>>(async () => {});
-  /** Errores seguidos sin ningún open/message (para detectar sesión muerta). */
+  const connectSSERef = useRef<() => Promise<void>>(async () => { });
   const consecutiveErrorsRef = useRef(0);
-  /** Ya se intentó un refresh en esta racha de fallos (uno por racha, no loop). */
   const refreshTriedRef = useRef(false);
 
-  const INITIAL_RETRY_DELAY = 1000;   // 1 segundo
-  const MAX_RETRY_DELAY = 30000;      // 30 segundos
+  const INITIAL_RETRY_DELAY = 1000;
+  const MAX_RETRY_DELAY = 30000;
   const BACKOFF_FACTOR = 2;
-  const JITTER_MAX = 0.3;             // 30% de jitter para evitar thundering herd
-  /** Tras cuántos errores seguidos se intenta renovar la sesión una vez. */
+  const JITTER_MAX = 0.3;
   const ERRORS_BEFORE_REFRESH = 3;
 
-  // ─── scheduleReconnect estable ─────────────────────────────────
-  // useCallback [] + ref: misma semántica que la función re-creada de antes
-  // (siempre llama al connectSSE vigente) pero sin invalidar efectos.
   const scheduleReconnect = useCallback(() => {
     if (!isMountedRef.current) return;
 
@@ -87,7 +79,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       INITIAL_RETRY_DELAY * Math.pow(BACKOFF_FACTOR, retryCountRef.current),
       MAX_RETRY_DELAY
     );
-    // Agregar jitter: ±30% aleatorio para evitar thundering herd
+
     const jitter = delay * JITTER_MAX * (Math.random() * 2 - 1);
     const finalDelay = Math.round(delay + jitter);
 
@@ -106,7 +98,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    // No-op en Expo Go / web: configureNotifications() ya es seguro.
     configureNotifications();
   }, []);
 
@@ -118,20 +109,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user?.id]);
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
-    // Seguro en Expo Go: no-op si push no disponible (el toast ya avisa).
     await scheduleLocalNotificationAsync(title, body);
   }, []);
 
   const handleServerEvent = useCallback((payload: SSEPayload) => {
-    // Se lee el usuario fresco del store (no del closure): así el callback es
-    // estable y un updateProfile (nuevo objeto user) no corta el SSE.
     const freshUser = useAuthStore.getState().user;
     const roleName = getUserRoleName(freshUser);
     const lowerRole = getUserRole(freshUser);
     const isCajeroOrAdmin = isCajeroOrAdminRole(freshUser);
     const data = (payload.data || {}) as any;
     const isRequester =
-      data.usuario_id != null && String(data.usuario_id) === String(freshUser?.id ?? "");        logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
+      data.usuario_id != null && String(data.usuario_id) === String(freshUser?.id ?? ""); logger.debug(`[NotificationContext] Rol detectado: ${roleName} (${lowerRole}), ?Es Cajero/Admin?: ${isCajeroOrAdmin}`);
 
     switch (payload.type) {
       case "new_order":
@@ -180,8 +168,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       case "ANTICIPO_PROCESSED":
       case "anticipo_processed": {
-        // Variantes de payload: `anticipo_processed` trae {status, nick|empleado,
-        // usuario_id}; `ANTICIPO_PROCESSED` (otorgado en caja) trae {estado, usuario}.
         const approved =
           payload.data?.status === "approved" || Number(payload.data?.estado) === 1;
         const title = approved ? "Anticipo aceptado" : "Anticipo rechazado";
@@ -235,19 +221,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
-      // Temporizadores y salas: los consume useSSETimerHandler / las pantallas
-      // de sala vía eventBus; acá solo se tragan para no caer en el default.
       case "timer_started":
       case "timer_stopped":
       case "timer_updated":
       case "timers_updated":
       case "timer_warning_5m":
       case "timer_ended_event":
-      case "room_available":
         break;
 
-      // updateSales: el cron de timers finaliza ventas/servicios → solo refresco.
-      // sale_cancelled: payload { ventaId, total, cajaId } → avisa y refresca.
+      // Una habitación quedó libre (cobro, fin de temporizador o anulación):
+      // refresca los selectores de salas en nueva-cuenta/agregar-cuenta.
+      case "room_available":
+        emitRefreshRooms(payload);
+        emitRefreshCuentas(payload);
+        break;
+
+      // Un servicio cambió (alta, cambio de estado, reasignación de anfitrionas):
+      // puede ocupar o liberar una habitación en otros dispositivos.
+      case "service_changed":
+        emitRefreshRooms(payload);
+        break;
+
+      case "presence_updated":
+        emitRefreshPersonal(payload);
+        break;
+
       case "updateSales":
       case "sale_cancelled":
         if (isCajeroOrAdmin) {
@@ -266,8 +264,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
 
       case "transfers_updated": {
-        // El mismo evento refresca el panel Bar; solo se notifica al barman
-        // cuando el almacén crea un traspaso que requiere su aprobación.
         emitRefreshBar(payload);
         if (data.action === "created" && isBarmanRole(freshUser)) {
           const cantidad = Number(data.cantidad || 0);
@@ -294,17 +290,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
-      // ─── Entradas de clientes (puerta → barra) ────────────────────────────
-      // El garzón cobra en la puerta y la cortesía queda pendiente. La audiencia
-      // del dashboard ya limita el evento a administración, caja y barra.
       case "entrada_registrada": {
         if (!isCajeroOrAdmin && !isBarmanRole(freshUser)) break;
         const cantidad = Number(data.cantidad || 1);
         const cliente = String(data.cliente_nombre || "Cliente sin nombre");
         const total = Number(data.monto_total || 0);
-        const body = `${
-          cantidad === 1 ? "1 entrada" : `${cantidad} entradas`
-        } · ${cliente}${total > 0 ? ` · ${formatCurrency(total)}` : ""}`;
+        const body = `${cantidad === 1 ? "1 entrada" : `${cantidad} entradas`
+          } · ${cliente}${total > 0 ? ` · ${formatCurrency(total)}` : ""}`;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showToast({
           type: "order",
@@ -320,15 +312,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
 
-      // La barra entregó o anuló la entrada: las colas abiertas se refrescan.
       case "entrada_actualizada":
         emitRefreshEntradas(payload);
         break;
-
-      // Señal genérica de mutación auditada del dashboard: las entradas también
-      // se registran y se entregan desde la web.
       case "resource_updated":
-        if (data.module === "entradas") emitRefreshEntradas(payload);
+        emitResourceUpdatedEvents(data.module, payload);
         break;
 
       case "ping":
@@ -362,10 +350,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
-      // ─── Alertas del bar y del almacén ────────────────────────────────────
-      // `bar_shot_alert` (audiencia: barman + administrador, la define sseEvents.ts
-      // del dashboard): una botella abierta bajó del umbral de shots configurado
-      // en Configuraciones → Bar. El servidor ya manda `mensaje` armado.
       case "bar_shot_alert": {
         const alertas = Array.isArray(data.alertas) ? data.alertas : [];
         const nombres = alertas
@@ -383,14 +367,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           visibilityTime: 6000,
         });
         showLocalNotification("Botella por agotarse", body);
-        // La pantalla Bar (si está abierta) refresca su stock con los ml actuales.
         emitRefreshBar(payload);
         break;
       }
 
-      // `warehouse_container_alert` (audiencia: almacén + administrador): envases
-      // entregados por el bar hace más de 2 h sin recepción. Con `vencidos = 0` el
-      // servidor avisa que ya todo fue recibido: eso no es una alerta, se omite.
       case "warehouse_container_alert": {
         if (Number(data.vencidos || 0) > 0) {
           const body =
@@ -427,17 +407,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
 
-      // ─── Catálogo, asistencia, permisos y alertas ────────────────────────
-      // `categories_updated` (todo el personal): las pantallas de venta/cuenta
-      // abiertas refrescan solo la lista de categorías, sin tocar carrito ni
-      // la selección actual (consumen `refresh_categories`).
       case "categories_updated":
         emitRefreshCategories(payload);
         break;
 
-      // `check_attendance` (cron de las 21:00, payload {roles, message}): igual
-      // que el dashboard, si el personal afectado no registró asistencia hoy se
-      // le pide re-ingresar — el login vuelve a registrarla.
       case "check_attendance": {
         const rolesAfectados = (Array.isArray(data.roles) ? data.roles : [])
           .map((r: unknown) => String(r).toLowerCase());
@@ -462,18 +435,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             await showLocalNotification("Asistencia no registrada", body);
             void useAuthStore.getState().logout();
           } catch (e) {
-            // Sin red no se castiga: el próximo evento volverá a chequear.
             logger.debug("[NotificationContext] check_attendance sin verificar", { e });
           }
         })();
         break;
       }
 
-      // `permissions-updated` (personal no administrador): la app no cachea
-      // permisos — el servidor los evalúa por petición y su caché de 60 s ya
-      // fue invalidada por el propio cambio. Con `roleId` el cambio es de un rol
-      // concreto y la app no guarda ese id: refresh en silencio; sin roleId es
-      // global y se avisa, igual que el dashboard web.
       case "permissions-updated":
         if (data.roleId) {
           void useAuthStore.getState().refreshUser();
@@ -488,17 +455,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         break;
 
-      // `role-deleted` (payload {roleId}): la sesión de la app tampoco lleva
-      // roleId — por eso el servidor lo difunde a todo el personal (sseEvents).
-      // Se refresca la sesión; si el rol borrado era el del usuario, /auth/me
-      // deja de resolverlo y se cierra la sesión (redirect del dashboard web).
       case "role-deleted":
         void useAuthStore.getState().refreshUser().then((ok) => {
           if (!ok) void useAuthStore.getState().logout();
         });
         break;
 
-      // ─── Gratificaciones (audiencia: solo administración) ───────────────────
       case "new_gratificacion_request": {
         const body = `${data.empleado || data.nick || "Empleado"} solicitó una gratificación de $${Number(data.monto || 0).toLocaleString("es-ES")}`;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -514,7 +476,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       case "gratificacion_processed": {
-        // estado: 1 = aprobada, 3 = rechazada; accion: 'approve' | 'reject'.
         const aprobada = data.accion === "approve" || Number(data.estado) === 1;
         const body = `${data.nick || data.empleado || "Empleado"} - $${Number(data.monto || 0).toLocaleString("es-ES")}`;
         Haptics.notificationAsync(
@@ -533,7 +494,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         break;
       }
 
-      // `security_alert` (solo administración): severidad high/critical en rojo.
       case "security_alert": {
         const critico = ["high", "critical"].includes(String(data.severity || "").toLowerCase());
         const body = data.message || "Revisa la actividad reciente en el dashboard.";
@@ -553,7 +513,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       case "force_logout": {
-        // Cuenta eliminada/desactivada en el dashboard: cerrar sesión local ya.
         const reason = data.message || "Tu cuenta fue eliminada.";
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         showToast({ type: "error", text1: "Sesión cerrada", text2: reason, visibilityTime: 5000 });
@@ -565,26 +524,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       default:
         logger.info('[NotificationContext] Evento SSE no manejado específicamente', { type: payload.type });
     }
-    // Estable: solo cambia con router/showLocalNotification (estables).
-    // El usuario se lee fresco del store adentro (getState).
   }, [router, showLocalNotification, user]);
 
-  // ─── Conexión SSE ───────────────────────────────────────────
-  // Crea el EventSource, maneja mensajes, open y error.
-  // En error → cierra el EventSource y programa reconexión.
   const connectSSE = useCallback(async () => {
     if (!user?.id) return;
 
-    // Sin red confirmada no se crea un EventSource condenado al error: se
-    // espera al evento 'online' (lo reintenta la suscripción de abajo).
-    // Sin setState aquí: el estado ya es false y el lint prohíbe setStates
-    // síncronos en el path del efecto.
     if (connectivity.isOffline()) {
       logger.debug('[NotificationContext] SSE en pausa: sin red confirmada');
       return;
     }
 
-    // Cerrar conexión anterior si existe
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
@@ -596,7 +545,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       attempt: retryCountRef.current + 1
     });
 
-    // El endpoint exige sesión (401 NO_TOKEN desde d0bba49): envía el access token.
     const token = await ensureTokenInMemory();
 
     let es: EventSource | null = null;
@@ -612,7 +560,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           logger.info('[NotificationContext] Evento SSE vacío');
           return;
         }
-        // Tráfico = conexión viva: corta la racha de errores.
         consecutiveErrorsRef.current = 0;
         refreshTriedRef.current = false;
         try {
@@ -620,7 +567,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           logger.debug('[NotificationContext] Evento SSE recibido', { type: payload.type, id: payload.data?.id || '' });
 
           if (!isSseControlEvent(payload.type)) {
-             emitSseEvent(payload);
+            emitSseEvent(payload);
           }
           handleServerEvent(payload);
         } catch (err) {
@@ -630,11 +577,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       es.addEventListener("open", () => {
         if (!isMountedRef.current) return;
-        retryCountRef.current = 0; // Reset retry count on successful connection
+        retryCountRef.current = 0;
         consecutiveErrorsRef.current = 0;
         refreshTriedRef.current = false;
         setIsConnected(true);
-        // Sin toast: en cada reconexión spameaba "Conectado". Solo debug.
         logger.debug('[NotificationContext] Conexión SSE establecida con éxito');
       });
 
@@ -642,14 +588,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!isMountedRef.current) return;
         consecutiveErrorsRef.current += 1;
         setIsConnected(false);
-        // Cerramos el EventSource para evitar su reconexión automática
-        // y controlamos nosotros la reconexión con exponential backoff
+
         if (es) {
           es.close();
         }
         eventSourceRef.current = null;
 
-        // Sin red: backoff silencioso (el evento 'online' reconecta).
         if (connectivity.isOffline()) {
           logger.debug('[NotificationContext] SSE caído sin red; espera a online');
           scheduleReconnect();
@@ -660,10 +604,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           attempt: retryCountRef.current + 1
         });
 
-        // ¿Sesión muerta (401)? El error SSE no trae status, así que tras
-        // varios fallos seguidos se intenta UNA renovación de token por racha:
-        // si revive, se reconecta ya; si no, sigue el backoff normal (el 401
-        // real lo gestiona el authStore vía notifyUnauthorized).
         if (consecutiveErrorsRef.current >= ERRORS_BEFORE_REFRESH && !refreshTriedRef.current) {
           refreshTriedRef.current = true;
           void refreshAccessToken().then((ok) => {
@@ -672,8 +612,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               logger.info('[NotificationContext] Sesión renovada tras fallo SSE, reconectando');
               consecutiveErrorsRef.current = 0;
               retryCountRef.current = 0;
-              // Vía ref: autorreferencia directa aquí dispararía el lint
-              // (uso en su propio inicializador) aunque en runtime es segura.
               void connectSSERef.current();
             } else {
               scheduleReconnect();
@@ -688,15 +626,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
     } catch (err) {
-       logger.captureException(err, { context: 'NotificationContext:connectSSE' });
-       if (!isMountedRef.current) return;
-       setIsConnected(false);
-       scheduleReconnect();
+      logger.captureException(err, { context: 'NotificationContext:connectSSE' });
+      if (!isMountedRef.current) return;
+      setIsConnected(false);
+      scheduleReconnect();
     }
   }, [user?.id, handleServerEvent, scheduleReconnect]);
 
-  // El ref siempre apunta al connectSSE vigente (asignación en efecto,
-  // nunca durante el render).
   useEffect(() => {
     connectSSERef.current = connectSSE;
   });
@@ -729,16 +665,34 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user?.id, connectSSE]);
 
   useEffect(() => {
-    // Marcamos como mounted al inicio
+    if (!user?.id) return;
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || !isMountedRef.current) return;
+
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+
+      retryCountRef.current = 0;
+      consecutiveErrorsRef.current = 0;
+      refreshTriedRef.current = false;
+      void connectSSERef.current();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
     isMountedRef.current = true;
 
     if (!user?.id) return;
-
-    // Conectar SSE con reconexión automática (exponential backoff)
     void connectSSE();
 
     return () => {
-      // Limpieza completa al desmontar
       isMountedRef.current = false;
 
       if (retryTimeoutRef.current) {
@@ -756,7 +710,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [user?.id, connectSSE]);
 
-  // showLocalNotification es estable; solo isConnected invalida el value.
   const contextValue = useMemo(
     () => ({ showLocalNotification, isConnected }),
     [showLocalNotification, isConnected],

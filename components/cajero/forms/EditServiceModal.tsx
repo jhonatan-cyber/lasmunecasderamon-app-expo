@@ -8,8 +8,10 @@ import {
 import { TimeSelector } from "@/components/ui/TimeSelector";
 import type { Timer } from "@/context/types";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
 import { getIvaDecimal, getIvaPercent } from "@/hooks/utils/cuentaUtils";
 import { blockOffline } from "@/utils/offlineGuard";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { showToast } from "@/utils/toast-lazy";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -80,6 +82,18 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
   const [showHostessModal, setShowHostessModal] = useState(false);
   const [precioHabitacionSinComision, setPrecioHabitacionSinComision] =
     useState<number>(0);
+
+  const liveStateRef = useRef<{
+    seleccionadas: (string | number)[];
+    disponibles: Anfitriona[];
+  }>({ seleccionadas: [], disponibles: [] });
+
+  useEffect(() => {
+    liveStateRef.current = {
+      seleccionadas: anfitrionasSeleccionadas,
+      disponibles: anfitrionasDisponibles,
+    };
+  }, [anfitrionasSeleccionadas, anfitrionasDisponibles]);
 
   const fetchHabitacionSinComision = useCallback(async () => {
     try {
@@ -190,6 +204,33 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     }
   }, [visible, timer, fetchAnfitrionas, fetchHabitacionSinComision]);
 
+  useDebouncedEventListener(
+    REALTIME_EVENT_NAMES.refreshPersonal,
+    useCallback(() => {
+      const { seleccionadas, disponibles } = liveStateRef.current;
+      void (async () => {
+        try {
+          const res = await apiClientSafe<Anfitriona[]>("/hostesses/available");
+          if (!res.success || !Array.isArray(res.data)) return;
+          const elegidasIds = seleccionadas.map(String);
+          const conservadas = disponibles.filter((anf) =>
+            elegidasIds.includes(String(anf.id_usuario)),
+          );
+          setAnfitrionasDisponibles([
+            ...new Map(
+              [...conservadas, ...res.data].map((anf) => [
+                String(anf.id_usuario),
+                anf,
+              ]),
+            ).values(),
+          ]);
+        } catch { }
+      })();
+    }, []),
+    500,
+    visible,
+  );
+
   const toggleAnfitriona = (id: string | number) => {
     setAnfitrionasSeleccionadas((prev) => {
       const isSelected = prev.some((sid) => String(sid) === String(id));
@@ -238,7 +279,6 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       return;
     }
 
-    // Modificar un servicio factura de nuevo en el servidor.
     if (!blockOffline("servicio")) return;
 
     savingRef.current = true;
@@ -376,7 +416,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
               </Text>
             </View>
 
-            {}
+            { }
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: textSecondary }]}>
                 ANFITRIONAS ({anfitrionasSeleccionadas.length} seleccionadas)
@@ -428,8 +468,8 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
                       clean === ""
                         ? "0"
                         : parseInt(clean)
-                            .toLocaleString("es-CL")
-                            .replace(/,/g, "."),
+                          .toLocaleString("es-CL")
+                          .replace(/,/g, "."),
                     );
                   }}
                   keyboardType="numeric"
@@ -444,7 +484,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
               onSelect={setMetodoPago}
             />
 
-            {}
+            { }
             {anfitrionasSeleccionadas.length > 0 && (
               <View
                 style={[
@@ -581,7 +621,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
           </View>
         </View>
 
-        {}
+        { }
         <HostessSelectModal
           visible={showHostessModal}
           onClose={() => setShowHostessModal(false)}

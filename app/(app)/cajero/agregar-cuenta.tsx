@@ -4,6 +4,7 @@ import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useTimer } from '@/context/TimerContext';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useDebouncedEventListeners } from '@/hooks/useDebouncedEventListener';
 import {
 buildCommissionPreview,
 buildConsumptionsPayload,
@@ -13,6 +14,7 @@ showToast
 import { getMirror,MIRROR_KEYS,MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { getOutbox } from '@/services/outbox';
 import { eventBus } from "@/utils/eventBus";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from '@/utils/logger';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack,useLocalSearchParams,useRouter } from 'expo-router';
@@ -44,7 +46,6 @@ import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 type CuentaState = {
     loadingInitial: boolean;
     refreshing: boolean;
-    /** `true` si el catálogo que se está viendo viene del espejo local. */
     fromCache: boolean;
     anfitrionas: any[];
     habitaciones: any[];
@@ -137,8 +138,6 @@ function cuentaReducer(state: CuentaState, action: CuentaAction): CuentaState {
     }
 }
 
-// showToast, isChampagneProduct, getHostessLimit, buildCommissionPreview imported from cuentaUtils
-
 export default function AgregarCuentaScreen() {
     const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     const router = useRouter();
@@ -174,17 +173,11 @@ export default function AgregarCuentaScreen() {
     const isTablet = width >= 768;
     const { timers, refreshTimers } = useTimer();
 
-    /**
-     * Lectura con espejo: red primero y, si no hay, lo último guardado en el
-     * dispositivo.
-     */
     const readThroughMirror = useCallback(
         <T,>(key: string, fetcher: () => Promise<T>, maxAgeMs: number) =>
             getMirror().readThroughDetailed<T>(key, fetcher, { maxAgeMs }),
         []
     );
-
-
 
     const spacing = isTablet ? 24 : 16;
 
@@ -195,8 +188,6 @@ export default function AgregarCuentaScreen() {
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
         if (!isRefreshing) dispatch({ type: 'SET_LOADING_INITIAL', payload: true });
         try {
-            // Red primero y espejo después: cargar consumos sin conexión necesita
-            // el catálogo y —sobre todo— el detalle actual de la cuenta.
             const requests: Promise<any>[] = [
                 readThroughMirror(MIRROR_KEYS.anfitrionas, () => apiClientSafe('/hostesses'), MIRROR_MAX_AGE_MS.catalogo),
                 readThroughMirror(MIRROR_KEYS.categories, () => apiClientSafe('/categories'), MIRROR_MAX_AGE_MS.catalogo),
@@ -233,8 +224,6 @@ export default function AgregarCuentaScreen() {
                         estado: room.estado ?? room.status ?? 0,
                     })),
                     cuentaDetalle: cuentaDetalleRes || null,
-                    // Va en el mismo dispatch que el catálogo: un solo render, y
-                    // el aviso de modo offline no necesita estado aparte.
                     fromCache: [
                         anfitrionasResult,
                         categoriesResult,
@@ -259,6 +248,50 @@ export default function AgregarCuentaScreen() {
             router.back();
         }
     }, [fetchInitialData, cuentaOriginal, router]);
+
+    useDebouncedEventListeners(
+        [
+            REALTIME_EVENT_NAMES.refreshCategories,
+            REALTIME_EVENT_NAMES.refreshPersonal,
+            REALTIME_EVENT_NAMES.refreshRooms,
+        ],
+        useCallback(() => {
+            void (async () => {
+                try {
+                    const [categoriesRes, anfitrionasRes, roomsRes] = await Promise.all([
+                        apiClientSafe('/categories'),
+                        apiClientSafe('/hostesses'),
+                        apiClientSafe('/rooms'),
+                    ]);
+                    const patch: any = {};
+
+                    const catsData = categoriesRes as unknown as { success: boolean; data: any[] };
+                    if (catsData.success) patch.categories = catsData.data || [];
+
+                    const anfData = anfitrionasRes as unknown as { success: boolean; data: any[] };
+                    if (Array.isArray(anfitrionasRes)) patch.anfitrionas = anfitrionasRes;
+                    else if (anfData.success) patch.anfitrionas = anfData.data || [];
+
+                    const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
+                    if (roomsData.success) {
+                        patch.habitaciones = (roomsData.data || []).map((room: any) => ({
+                            ...room,
+                            nombre: room.nombre ?? room.name ?? `Habitación ${room.id_habitacion ?? room.id ?? ''}`.trim(),
+                            precio: room.precio ?? room.price ?? 0,
+                            tiempo: room.tiempo ?? room.time ?? 0,
+                            estado: room.estado ?? room.status ?? 0,
+                        }));
+                    }
+
+                    if (Object.keys(patch).length > 0) {
+                        dispatch({ type: 'SET_INITIAL_DATA', payload: patch });
+                    }
+                } catch (error) {
+                    logger.fetchError(error, { context: 'AgregarCuenta:refreshLive' });
+                }
+            })();
+        }, []),
+    );
 
     const onRefresh = useCallback(() => {
         dispatch({ type: 'SET_REFRESHING', payload: true });
@@ -355,10 +388,6 @@ export default function AgregarCuentaScreen() {
             refreshTimers?.();
 
             const items = cart.reduce((acc, item) => acc + Number(item.cantidad || 0), 0);
-
-            // Los consumos se encolan SIEMPRE, haya red o no: una sola ruta de
-            // código. El id de la intención viaja como clave de idempotencia, así
-            // que el `PUT` de incremento no carga los productos dos veces.
             const intent = await getOutbox().enqueueAndSend({
                 type: 'account.consumptions',
                 payload: { id_cuenta: cuentaOriginal.id_cuenta, consumos: cuentaData },
@@ -377,7 +406,6 @@ export default function AgregarCuentaScreen() {
                 return;
             }
 
-            // Quedó pendiente: el trabajo está guardado y sale al volver la red.
             showToast(
                 'Consumos guardados en el dispositivo',
                 'Se enviarán automáticamente cuando vuelva la conexión',

@@ -1,6 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,26 +25,22 @@ import {
   type EstadoCortesia,
   type MetodoPagoEntrada,
 } from '@/services/entradas';
-import { ajustarFotoBaucher } from '@/utils/baucherFoto';
+import { adjuntarBaucher } from '@/utils/baucherPicker';
 import { eventBus } from '@/utils/eventBus';
 import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
 
-/**
- * Entradas en la puerta (rol garzón). Paridad con `/tickets` del dashboard:
- * el garzón cobra la entrada y la cortesía queda pendiente para la barra.
- */
 const METODOS: {
   id: MetodoPagoEntrada;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { id: 'efectivo', label: 'Efectivo', icon: 'cash-outline' },
-  { id: 'tarjeta', label: 'Tarjeta', icon: 'card-outline' },
-  { id: 'transferencia', label: 'Transferencia', icon: 'swap-horizontal-outline' },
-];
+    { id: 'efectivo', label: 'Efectivo', icon: 'cash-outline' },
+    { id: 'tarjeta', label: 'Tarjeta', icon: 'card-outline' },
+    { id: 'transferencia', label: 'Transferencia', icon: 'swap-horizontal-outline' },
+  ];
 
 const ESTADOS: Record<EstadoCortesia, { label: string; color: string }> = {
   pendiente: { label: 'Pendiente', color: '#F59E0B' },
@@ -55,7 +50,6 @@ const ESTADOS: Record<EstadoCortesia, { label: string; color: string }> = {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Fecha y hora locales en los formatos que exige el servidor (`AAAA-MM-DD`, `HH:MM`). */
 function fechaHoraLocal() {
   const ahora = new Date();
   return {
@@ -79,7 +73,6 @@ export default function GarzonEntradasScreen() {
   const [fotoLoading, setFotoLoading] = useState(false);
 
   const [entradas, setEntradas] = useState<EntradaCliente[]>([]);
-  /** `id_caja` del turno abierto; `null` mientras no haya caja. */
   const [caja, setCaja] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,14 +80,10 @@ export default function GarzonEntradasScreen() {
   const { fecha } = fechaHoraLocal();
   const total = entradas.reduce((sum, entrada) => sum + Number(entrada.monto_entrada), 0);
   const totalPuerta = costoEntrada * cantidad;
-
-  // La misma fecha que se manda al registrar: así la entrada recién cobrada
-  // aparece siempre en el listado de "HOY" de esta pantalla.
   const cargar = useCallback(async (mostrarLoading = false) => {
     if (mostrarLoading) setLoading(true);
     try {
-      // El turno manda: sin caja abierta no hay entradas que mostrar y la
-      // puerta no puede cobrar (el servidor lo rechaza igual).
+
       const status = await cajaService.status();
       const datosCaja = (
         status as {
@@ -112,8 +101,7 @@ export default function GarzonEntradasScreen() {
       }
       const res = await entradasService.listar(fecha);
       if (!res.success) throw new Error(res.message || 'No se pudieron cargar las entradas');
-      // Solo las del turno en curso: al cerrar la caja sus entradas dejan de
-      // listarse aunque el día siga abierto.
+
       setEntradas((res.data ?? []).filter(entrada => entrada.caja_id === cajaAbierta));
     } catch (error) {
       logger.fetchError(error, { context: 'Entradas:cargar' });
@@ -127,16 +115,12 @@ export default function GarzonEntradasScreen() {
     }
   }, [fecha]);
 
-  // Igual que el resto de las pantallas: se recarga al volver el foco (por si
-  // otro garzón registró en la misma puerta) y la primera carga muestra spinner.
   useFocusEffect(
     useCallback(() => {
       void cargar(true);
     }, [cargar]),
   );
 
-  // La barra entrega o anula la cortesía en otra sesión: el estado de cada
-  // entrada se actualiza sin salir de la pantalla.
   useEffect(() => {
     const subscription = eventBus.addListener(
       REALTIME_EVENT_NAMES.refreshEntradas,
@@ -153,52 +137,11 @@ export default function GarzonEntradasScreen() {
     setRefreshing(false);
   }, [cargar]);
 
-  /**
-   * Fotografía el baucher de la transferencia. Mismo flujo que el pedido del
-   * garzón: la foto viaja como data URL y `ajustarFotoBaucher` la reduce para
-   * que no reborde `BAUCHER_FOTO_MAX_CHARS` (un 400 del servidor dejaría el
-   * registro sin enviar).
-   */
   const tomarFotoBaucher = useCallback(async () => {
+    setFotoLoading(true);
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        showToast({
-          type: 'error',
-          text1: 'Sin acceso a la cámara',
-          text2: 'Permite la cámara para fotografiar el baucher de la transferencia.',
-        });
-        return;
-      }
-      setFotoLoading(true);
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        quality: 0.4,
-        base64: true,
-      });
-      const asset = result.assets?.[0];
-      if (result.canceled || !asset?.base64) return;
-      const original = `data:image/jpeg;base64,${asset.base64}`;
-      const ajuste = await ajustarFotoBaucher(original, asset.uri);
-      if (!ajuste.ok) {
-        showToast({
-          type: 'error',
-          text1: 'La foto del baucher no sirve',
-          text2:
-            ajuste.motivo === 'no-cabe'
-              ? 'No entra en el tamaño permitido. Tómala de nuevo con más luz y sin zoom.'
-              : 'No se pudo reducir la foto. Tómala de nuevo.',
-        });
-        return;
-      }
-      setBaucherFoto(ajuste.dataUrl);
-    } catch (error) {
-      logger.fetchError(error, { context: 'Entradas:tomarFotoBaucher' });
-      showToast({
-        type: 'error',
-        text1: 'No se pudo abrir la cámara',
-        text2: 'Vuelve a intentar fotografiar el baucher.',
-      });
+      const dataUrl = await adjuntarBaucher('Entradas:tomarFotoBaucher');
+      if (dataUrl) setBaucherFoto(dataUrl);
     } finally {
       setFotoLoading(false);
     }

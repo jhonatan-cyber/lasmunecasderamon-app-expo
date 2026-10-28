@@ -48,6 +48,10 @@ corepack pnpm typecheck
   apunta al dominio fijo y `preview_apk` conserva una IP de LAN, asi que ese
   perfil si necesita recompilarse al cambiar de red. Para pruebas locales usa
   el dev client.
+- El enrolamiento facial detecta el giro de la cabeza con ML Kit
+  (`@infinitered/react-native-mlkit-face-detection`), un modulo nativo: entra en
+  el APK al recompilar. En un build viejo el enrolamiento sigue funcionando con
+  captura temporizada, sin deteccion.
 - `corepack pnpm start` arranca Metro en modo `dev-client`.
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.

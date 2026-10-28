@@ -9,13 +9,10 @@ import {
 } from '@/services/mirror';
 import { blockOffline } from '@/utils/offlineGuard';
 import { showToast } from '@/utils/toast-lazy';
-import { emitRefreshBar } from '@/utils/realtime';
+import { emitRefreshBar, REALTIME_EVENT_NAMES } from '@/utils/realtime';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
 import logger from '@/utils/logger';
 
-/**
- * Texto corto del motivo por el que un escaneo no se aceptó.
- * Espejo de `MOTIVO_ENVASE` del dashboard (hooks/productos/useContainerScan.ts).
- */
 export const MOTIVO_ENVASE: Record<string, string> = {
   no_es_nuestro: 'No es nuestro',
   no_esta_vacia: 'No está vacío',
@@ -25,13 +22,11 @@ export const MOTIVO_ENVASE: Record<string, string> = {
   ya_confirmado: 'Ya confirmado',
 };
 
-/** Envase verificado, con lo necesario para mostrarlo en el resultado y el historial. */
 export interface EnvaseUnidad {
   id: string;
   codigo: string;
   codigo_barras: string | null;
   estado: string;
-  /** Residuo reconocido como merma al devolver una botella dentro de tolerancia. */
   ml_merma: number;
   fecha_devolucion: string | null;
   fecha_confirmacion: string | null;
@@ -40,7 +35,6 @@ export interface EnvaseUnidad {
   compra_folio: string | null;
 }
 
-/** Registro del historial: el envase + quién entregó y quién recibió. */
 export interface EnvaseDevolucion extends EnvaseUnidad {
   usuario_nombre: string | null;
   usuario_apellido: string | null;
@@ -48,11 +42,9 @@ export interface EnvaseDevolucion extends EnvaseUnidad {
   confirmado_nombre: string | null;
   confirmado_apellido: string | null;
   confirmado_nick: string | null;
-  /** true mientras el almacén no confirme la recepción. */
   pendiente_confirmacion: boolean;
 }
 
-/** Veredicto del servidor para un escaneo (`data` del POST /bar/containers). */
 export interface EnvaseResultado {
   ok: boolean;
   motivo?: string;
@@ -60,7 +52,6 @@ export interface EnvaseResultado {
   unidad: EnvaseUnidad | null;
 }
 
-/** Escaneo de la sesión actual (contador del lote), del más reciente al más antiguo. */
 export interface EnvaseEscaneo {
   id: string;
   codigo: string;
@@ -70,14 +61,12 @@ export interface EnvaseEscaneo {
   hora: string;
 }
 
-/** Contador del control de envases (`GET /bar/containers/summary`). */
 export interface EnvaseResumen {
   pendientes: number;
   vencidos: number;
   umbral_horas?: number;
 }
 
-/** Lo que ve la UI (y el scanner) tras cada lectura. `null` = no se procesó. */
 export interface EnvaseVeredicto {
   ok: boolean;
   texto: string;
@@ -89,26 +78,11 @@ export interface EnvaseResultadoLote {
   texto: string;
 }
 
-/** Cuántos escaneos de la sesión se conservan en pantalla. */
 const MAXIMO_SESION = 50;
 
 const horaAhora = () =>
   new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-/**
- * Tab «Envases» de la pantalla Bar del barman.
- *
- * Porta el paso 1 del control de envases del dashboard (bar → almacén):
- * escanear un envase vacío verifica que es nuestro, que está vacío y que no se
- * entregó antes, y lo marca como entregado en el mismo POST. La recepción la
- * confirma después el almacén desde el dashboard (permiso distinto: el barman
- * no puede confirmar su propia entrega).
- *
- * A diferencia del dashboard (cola offline en localStorage), aquí cada lectura
- * se verifica en línea: sin red el escaneo se rechaza con un aviso claro
- * («Verificar un envase necesita el servidor») en vez de dejar una entrega sin
- * confirmar, y el historial se sigue viendo desde el espejo local.
- */
 export const useEnvasesScreen = () => {
   const [devoluciones, setDevoluciones] = useState<EnvaseDevolucion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,8 +99,6 @@ export const useEnvasesScreen = () => {
   const fetchDevoluciones = useCallback(async () => {
     if (!cargado.current) setLoading(true);
     try {
-      // Red primero; sin red se sirve el historial guardado, que es lo que
-      // permite revisar lo entregado aunque caiga la conexión.
       const lectura = await getMirror().readThroughDetailed(
         MIRROR_KEYS.barContainers,
         async () => (await barService.containers()) as { data?: EnvaseDevolucion[] | null },
@@ -158,21 +130,17 @@ export const useEnvasesScreen = () => {
     await fetchDevoluciones();
   }, [fetchDevoluciones]);
 
-  /**
-   * Procesa un código escaneado (o tecleado) contra `POST /bar/containers`.
-   *
-   * Devuelve el veredicto para que el caller limpie el campo / muestre el aviso
-   * del scanner, o `null` si no se procesó (vacío, otra lectura en curso o
-   * error de red ya avisado con toast) para que el código se conserve.
-   */
+  useDebouncedEventListener(
+    REALTIME_EVENT_NAMES.refreshBar,
+    useCallback(() => {
+      void fetchDevoluciones();
+    }, [fetchDevoluciones]),
+  );
+
   const enviarEscaneo = useCallback(
     async (valor: string): Promise<EnvaseVeredicto | null> => {
       const escaneo = valor.trim().toUpperCase();
       if (!escaneo || enCurso.current) return null;
-
-      // El veredicto (es nuestro, está vacío, no se devolvió antes) sólo lo da
-      // el servidor, así que sin red no se puede verificar: avisar es mejor
-      // que encolar una lectura que nadie podrá confirmar.
       if (!blockOffline('envase')) return null;
 
       enCurso.current = true;
@@ -205,7 +173,6 @@ export const useEnvasesScreen = () => {
             ...previa,
           ].slice(0, MAXIMO_SESION),
         );
-        // Refresca historial y el contador de botellas vacías en la pestaña Bar.
         if (veredicto.ok) {
           void fetchDevoluciones();
           emitRefreshBar({ type: 'container_returned' });

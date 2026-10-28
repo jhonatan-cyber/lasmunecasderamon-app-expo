@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useState } from "react";
+import  { useCallback, useEffect, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -15,6 +15,8 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTimer } from "@/context/TimerContext";
 import { showToast } from "@/hooks/utils/cartUtils";
 import { blockOffline } from "@/utils/offlineGuard";
+import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import type { Timer } from "@/context/types";
 export function ServiceAssignmentActions({ item }: { item: Timer }) {
   const router = useRouter();
@@ -32,6 +34,53 @@ export function ServiceAssignmentActions({ item }: { item: Timer }) {
   const nuevas = seleccion.filter((id) => !actuales.includes(id));
   const retiradas = actuales.filter((id) => !seleccion.includes(id));
   const changed = nuevas.length > 0 || retiradas.length > 0;
+
+  const liveStateRef = useRef<{
+    open: boolean;
+    actuales: string[];
+    opciones: { id: string; nombre: string }[];
+  }>({ open: false, actuales: [], opciones: [] });
+
+  useEffect(() => {
+    liveStateRef.current = { open, actuales, opciones };
+  }, [open, actuales, opciones]);
+
+  useDebouncedEventListener(
+    REALTIME_EVENT_NAMES.refreshPersonal,
+    useCallback(() => {
+      const {
+        open: isOpen,
+        actuales: actualesIds,
+        opciones: actualesOpciones,
+      } = liveStateRef.current;
+      if (!isOpen) return;
+      void (async () => {
+        try {
+          const hosts: any = await apiClientSafe("/hostesses");
+          if (!hosts?.success) return;
+          const disponibles = (hosts.data || [])
+            .filter(
+              (h: any) =>
+                actualesIds.includes(String(h.id_usuario || h.id)) ||
+                Number(h.estado_servicio || 0) === 0,
+            )
+            .map((h: any) => ({
+              id: String(h.id_usuario || h.id),
+              nombre: h.nick || h.nombre || h.name,
+            }));
+          const previas = actualesOpciones.filter((o) =>
+            actualesIds.includes(o.id),
+          );
+          setOpciones([
+            ...new Map<string, { id: string; nombre: string }>(
+              [...previas, ...disponibles].map((h) => [h.id, h]),
+            ).values(),
+          ]);
+        } catch {}
+      })();
+    }, []),
+  );
+
   async function abrir() {
     if (!blockOffline("servicio")) return;
     setOpen(true);

@@ -7,6 +7,8 @@ import {
     MIRROR_MAX_AGE_MS,
     OfflineCacheMissError,
 } from '@/services/mirror';
+import { useDebouncedEventListeners } from '@/hooks/useDebouncedEventListener';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import logger from '@/utils/logger';
 
 export interface Category {
@@ -23,7 +25,6 @@ export function usePedidosScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
-    /** `true` si el catálogo que se está viendo viene del espejo local. */
     const [fromCache, setFromCache] = useState(false);
     const [syncedAt, setSyncedAt] = useState<number | null>(null);
     const dataRef = useRef<string>('');
@@ -32,11 +33,9 @@ export function usePedidosScreen() {
         try {
             setError('');
 
-            // Red primero; si no hay, el espejo local de la Fase 0 y el usuario
-            // ve el catálogo guardado en vez de una pantalla vacía.
             const result = await getMirror().readThroughDetailed(
-                MIRROR_KEYS.categories,
-                () => categoriesService.list(),
+                MIRROR_KEYS.saleCategories,
+                () => categoriesService.listForSale(),
                 { maxAgeMs: MIRROR_MAX_AGE_MS.catalogo }
             );
             const data = result.data;
@@ -48,8 +47,11 @@ export function usePedidosScreen() {
             dataRef.current = serialized;
 
             if ((data as any).success) {
+
                 const active = ((data as any).data || [])
-                    .filter((c: Category) => c.status === 1)
+                    .filter(
+                        (c: Category) => c.status === 1 && Number(c.total_products) > 0
+                    )
                     .sort((a: Category, b: Category) => a.display_order - b.display_order);
                 setCategories(active);
             } else {
@@ -91,6 +93,17 @@ export function usePedidosScreen() {
         const timer = setTimeout(() => { void fetchCategories(); }, 0);
         return () => clearTimeout(timer);
     }, [fetchCategories]);
+
+    useDebouncedEventListeners(
+        [
+            REALTIME_EVENT_NAMES.refreshCategories,
+            REALTIME_EVENT_NAMES.refreshProducts,
+            REALTIME_EVENT_NAMES.refreshBar,
+        ],
+        useCallback(() => {
+            void fetchCategories();
+        }, [fetchCategories]),
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);

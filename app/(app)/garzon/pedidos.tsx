@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import {
     Pressable,
     RefreshControl,
@@ -19,6 +19,8 @@ import { PedidosSkeleton } from '@/components/garzon/pedidos/PedidosSkeleton';
 import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
 import { useAuthStore } from '@/store/authStore';
 import { isBarmanRole } from '@/utils/userRole';
+
+const COLUMNAS_CATEGORIAS = 2;
 
 export default function PedidosScreen() {
     const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
@@ -45,18 +47,20 @@ export default function PedidosScreen() {
     }, [router, isBarman]);
 
     const renderItem = useCallback(({ item, index }: { item: Category, index: number }) => (
-        <CategoryCard
-            item={item}
-            index={index}
-            onPress={handleCategoryPress}
-        />
+        <View style={styles.cardCell}>
+            <CategoryCard
+                item={item}
+                index={index}
+                onPress={handleCategoryPress}
+            />
+        </View>
     ), [handleCategoryPress]);
 
     if (loading) return <PedidosSkeleton bg={bg} gradientColors={gradientColors} insets={insets} />;
 
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
-            <PremiumHeader 
+            <PremiumHeader
                 title="Categorías"
                 subtitle={fromCache ? 'Catálogo guardado en el dispositivo' : 'Selecciona una para ver los productos'}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
@@ -84,7 +88,9 @@ export default function PedidosScreen() {
                 data={categories}
                 keyExtractor={(item: Category) => item.id.toString()}
                 renderItem={renderItem}
-                estimatedItemSize={100}
+                numColumns={COLUMNAS_CATEGORIAS}
+                columnWrapperStyle={styles.columnWrapper}
+                estimatedItemSize={180}
                 contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
@@ -115,6 +121,8 @@ const styles = StyleSheet.create({
     },
     backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     listContent: { paddingHorizontal: 20, paddingTop: 10 },
+    columnWrapper: { gap: 15 },
+    cardCell: { flex: 1, marginBottom: 15 },
     errorCard: {
         margin: 20,
         padding: 20,

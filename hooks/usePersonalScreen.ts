@@ -1,6 +1,8 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { codigoService,usersService } from '@/services';
 import { eventBus } from '@/utils/eventBus';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import logger from '@/utils/logger';
 import { showToast } from '@/utils/toast-lazy';
 import { useFocusEffect } from 'expo-router';
@@ -81,6 +83,13 @@ export function usePersonalScreen() {
         }, [fetchUsers])
     );
 
+    useDebouncedEventListener(
+        REALTIME_EVENT_NAMES.refreshPersonal,
+        useCallback(() => {
+            void fetchUsers(false);
+        }, [fetchUsers]),
+    );
+
     const onRefresh = async () => {
         setRefreshing(true);
         await Promise.all([
@@ -144,7 +153,6 @@ export function usePersonalScreen() {
             const timer = setTimeout(() => { void handleGenerateQR(selectedUser.id); }, 0);
             return () => clearTimeout(timer);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedUser, selectedUser?.id]);
 
 
@@ -161,7 +169,6 @@ export function usePersonalScreen() {
             if (payload.type === 'code_changed' && payload.data?.codigo) {
                 setCodigoAsistencia(payload.data.codigo);
             }
-            // La asistencia registrada cierra el modal del QR (desafío canjeado)
             if (payload.type === 'attendance_registered' && String(payload.data?.user?.id) === String(selectedUser.id)) {
                 setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, qr_token: undefined } : u));
                 setSelectedUser(null);

@@ -34,7 +34,8 @@ it('concilia un cierre inesperado incluso en el último intento permitido', asyn
         senders: { 'sale.create': sender },
     });
     await outbox.flush();
-    expect(repository.get(original.id)?.status).toBe('aplicada');
+    // Conciliada como aplicada: se borra de SQLite en el mismo flush.
+    expect(repository.get(original.id)).toBeNull();
     expect(sender).not.toHaveBeenCalled();
 });
 
@@ -113,7 +114,8 @@ it('concilia una operación aplicada tras perder la respuesta, sin reenviarla', 
     });
     await outbox.flush();
     expect(sender).not.toHaveBeenCalled();
-    expect(repository.get(original.id)).toMatchObject({ status: 'aplicada', response: { success: true, data: { id: 77 } } });
+    // El servidor ya la tenía: se confirma y se borra, sin reenviarla.
+    expect(repository.get(original.id)).toBeNull();
 });
 
 it('una conciliación inaccesible o dudosa no repite la escritura', async () => {
@@ -141,6 +143,7 @@ it('espera automáticamente entre reintentos y conserva la misma clave', async (
         await vi.advanceTimersByTimeAsync(1);
         expect(sender).toHaveBeenCalledTimes(2);
         expect(sender.mock.calls[1][0].id).toBe(original.id);
-        expect(repository.get(original.id)?.status).toBe('aplicada');
+        // Confirmada en el reintento automático: la fila ya no está.
+        expect(repository.get(original.id)).toBeNull();
     } finally { outbox.stop(); }
 });

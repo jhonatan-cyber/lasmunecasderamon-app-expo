@@ -18,6 +18,8 @@ interface CategoryCardProps {
 const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    // Alterna el color del icono para que la rejilla no se vea plana.
+    const tone = index % 2 === 0 ? accentColor : '#10B981';
 
     return (
         <Pressable
@@ -27,27 +29,24 @@ const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
                 pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
             ]}
             onPress={() => onPress(item.id, item.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.name}, ${item.total_products} productos`}
         >
-            <View style={styles.categoryContent}>
-                <View style={[styles.iconContainer, { backgroundColor: index % 2 === 0 ? `${accentColor}20` : '#10B98120' }]}>
-                    <Ionicons name="wine" size={30} color={index % 2 === 0 ? accentColor : '#10B981'} />
-                </View>
+            <View style={[styles.iconContainer, { backgroundColor: `${tone}20` }]}>
+                <Ionicons name="wine" size={30} color={tone} />
+            </View>
 
-                <View style={styles.categoryInfo}>
-                    <Text style={[styles.categoryName, { color: textPrimary }]}>{item.name}</Text>
-                    <Text style={[styles.categoryDescription, { color: textSecondary }]} numberOfLines={1}>
-                        {item.description || `Ver productos de ${item.name}`}
-                    </Text>
-                </View>
+            <Text style={[styles.categoryName, { color: textPrimary }]} numberOfLines={2}>
+                {item.name}
+            </Text>
+            <Text style={[styles.categoryDescription, { color: textSecondary }]} numberOfLines={2}>
+                {item.description || `Ver productos de ${item.name}`}
+            </Text>
 
-                <View style={styles.categoryRight}>
-                    <View style={[styles.productsBadge, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
-                        <Text style={[styles.productsCount, { color: accentColor }]}>
-                            {item.total_products}
-                        </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-                </View>
+            <View style={[styles.productsBadge, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
+                <Text style={[styles.productsCount, { color: accentColor }]}>
+                    {item.total_products}
+                </Text>
             </View>
         </Pressable>
     );
@@ -58,10 +57,14 @@ CategoryCard.displayName = 'CategoryCard';
 
 const styles = StyleSheet.create({
     categoryCard: {
+        flex: 1,
+        minHeight: 170,
         borderRadius: 24,
-        padding: 14,
-        marginTop: 12,
+        padding: 16,
         borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -74,10 +77,6 @@ const styles = StyleSheet.create({
             },
         }),
     },
-    categoryContent: {
-        flexDirection: 'row',
-        alignItems: 'center'
-    },
     iconContainer: {
         width: 56,
         height: 56,
@@ -85,29 +84,21 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    categoryInfo: {
-        flex: 1,
-        marginLeft: 16
-    },
     categoryName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '800',
-        letterSpacing: -0.3
+        letterSpacing: -0.3,
+        textAlign: 'center',
     },
     categoryDescription: {
         fontSize: 12,
-        marginTop: 2,
-        fontWeight: '500'
-    },
-    categoryRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10
+        fontWeight: '500',
+        textAlign: 'center',
     },
     productsBadge: {
         minWidth: 32,
-        height: 32,
-        paddingHorizontal: 8,
+        height: 28,
+        paddingHorizontal: 10,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',

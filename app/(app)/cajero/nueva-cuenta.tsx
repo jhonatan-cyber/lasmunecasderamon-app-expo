@@ -4,7 +4,9 @@ import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { buildCommissionPreview,isChampagneProduct,showToast } from '@/hooks/utils/cuentaUtils';
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 import { blockOffline } from "@/utils/offlineGuard";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -64,9 +66,6 @@ export default function NuevaCuentaScreen() {
 
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
-
-
-
   const spacing = isTablet ? 24 : 16;
 
   const dynamicStyles = {
@@ -76,7 +75,7 @@ export default function NuevaCuentaScreen() {
   const fetchInitialData = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) dispatch({ type: "SET_LOADING_INITIAL", payload: true });
     try {
-      const [cajaRes, anfitrionasRes, , clientsRes, categoriesRes] =
+      const [cajaRes, anfitrionasRes, roomsRes, clientsRes, categoriesRes] =
         await Promise.all([
           apiClientSafe("/cashregister/status"),
           apiClientSafe("/hostesses"),
@@ -87,10 +86,11 @@ export default function NuevaCuentaScreen() {
 
       const cajaData = cajaRes as unknown as { success: boolean; data: any };
 
+      const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
       const catsData = categoriesRes as unknown as { success: boolean; data: any[] };
       const clientsData = clientsRes as unknown as { success: boolean; data: any[] };
 
-      const rawHabitaciones = cajaData.success ? cajaData.data || [] : [];
+      const rawHabitaciones = roomsData.success ? roomsData.data || [] : [];
       const fetchedData: any = {
         cajaAbierta: cajaData.success && cajaData.data?.hasOpenCaja,
         anfitrionas: Array.isArray(anfitrionasRes)
@@ -139,6 +139,60 @@ export default function NuevaCuentaScreen() {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  useDebouncedEventListeners(
+    [
+      REALTIME_EVENT_NAMES.refreshCategories,
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
+    useCallback(() => {
+      void (async () => {
+        try {
+          const [categoriesRes, anfitrionasRes, roomsRes, clientsRes] = await Promise.all([
+            apiClientSafe("/categories"),
+            apiClientSafe("/hostesses"),
+            apiClientSafe("/rooms"),
+            apiClientSafe("/clients"),
+          ]);
+          const patch: any = {};
+
+          const catsData = categoriesRes as unknown as { success: boolean; data: any[] };
+          if (catsData.success) patch.categories = catsData.data || [];
+
+          const anfData = anfitrionasRes as unknown as { success: boolean; data: any[] };
+          if (Array.isArray(anfitrionasRes)) patch.anfitrionas = anfitrionasRes;
+          else if (anfData.success) patch.anfitrionas = anfData.data || [];
+
+          const roomsData = roomsRes as unknown as { success: boolean; data: any[] };
+          if (roomsData.success) {
+            patch.habitaciones = (roomsData.data || []).map((room: any) => ({
+              ...room,
+              nombre:
+                room.nombre ??
+                room.name ??
+                `Habitación ${room.id_habitacion ?? room.id ?? ""}`.trim(),
+              precio: room.precio ?? room.price ?? 0,
+              tiempo: room.tiempo ?? room.time ?? 0,
+              estado: room.estado ?? room.status ?? 0,
+              comision_anfitriona: room.comision_anfitriona ?? 0,
+            }));
+          }
+
+          const clientsData = clientsRes as unknown as { success: boolean; data: any[] };
+          if (Array.isArray(clientsRes)) patch.clientes = clientsRes;
+          else if (clientsData?.success) patch.clientes = clientsData.data || [];
+
+          if (Object.keys(patch).length > 0) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: patch });
+          }
+        } catch (e) {
+          logger.fetchError(e, { context: "NuevaCuenta:refreshLive" });
+        }
+      })();
+    }, []),
+  );
 
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });

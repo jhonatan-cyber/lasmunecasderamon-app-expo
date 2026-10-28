@@ -8,6 +8,8 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { clientesService } from '@/services';
 import type { PrepagoPayload } from '@/services/clientes';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import logger from '@/utils/logger';
 
 export interface Client {
@@ -32,32 +34,21 @@ export function useClientes() {
     const [refreshing, setRefreshing] = useState(false);
     const [clients, setClients] = useState<Client[]>([]);
     const [search, setSearch] = useState("");
-
-    // Estado de caja: la carga de saldo prepago mueve dinero en caja
-    // (deductFromCaja), así que se bloquea si no hay caja abierta.
     const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null);
-
-    
     const [clientModalVisible, setClientModalVisible] = useState(false);
     const [loadModalVisible, setLoadModalVisible] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [loadingAmount, setLoadingAmount] = useState("");
     const [loadMetodoPago, setLoadMetodoPago] = useState<PaymentMethod>('efectivo');
     const [submitting, setSubmitting] = useState(false);
-    
-    
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [refreshingHistory, setRefreshingHistory] = useState(false);
-
-    
     const [primaryMethod, setPrimaryMethod] = useState<PaymentMethod>('efectivo');
     const [secondaryMethod, setSecondaryMethod] = useState<PaymentMethod>('transferencia');
     const [primaryAmount, setPrimaryAmount] = useState("");
     const [secondaryAmount, setSecondaryAmount] = useState("");
-
-    
     const [formName, setFormName] = useState("");
     const [formLastName, setFormLastName] = useState("");
     const [formRun, setFormRun] = useState("");
@@ -88,13 +79,11 @@ export function useClientes() {
         try {
             const res = await apiClientSafe('/cashregister/status');
             const data = (res as { success?: boolean; data?: { hasOpenCaja?: boolean } })?.data;
-            // Solo true/false confirmado; si falla, queda el último estado
-            // conocido (null al inicio = desconocido, no bloquea).
+
             if ((res as { success?: boolean })?.success && typeof data?.hasOpenCaja === 'boolean') {
                 setCajaAbierta(data.hasOpenCaja);
             }
         } catch {
-            // Silencioso: estado desconocido no bloquea la carga de saldo.
         }
     }, []);
 
@@ -105,6 +94,13 @@ export function useClientes() {
             refreshCajaStatus();
             return () => ac.abort();
         }, [fetchClients, refreshCajaStatus])
+    );
+
+    useDebouncedEventListener(
+        REALTIME_EVENT_NAMES.refreshClients,
+        useCallback(() => {
+            void fetchClients(false);
+        }, [fetchClients]),
     );
 
     const filteredClients = useMemo(() => {

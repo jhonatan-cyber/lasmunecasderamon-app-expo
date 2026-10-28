@@ -10,6 +10,10 @@ export const REALTIME_EVENT_NAMES = {
   refreshEntradas: "refresh_entradas",
   refreshCategories: "refresh_categories",
   refreshGratificaciones: "refresh_gratificaciones",
+  refreshRooms: "refresh_rooms",
+  refreshPersonal: "refresh_personal",
+  refreshClients: "refresh_clients",
+  refreshProducts: "refresh_products",
 } as const;
 
 export type RealtimePayload = {
@@ -31,12 +35,6 @@ const DASHBOARD_REFRESH_EVENTS = new Set([
   "room_available",
 ]);
 
-// Catálogo del dashboard (lib/api/sseEvents.ts): no existe `sale_created` ni
-// `sale_updated`; las ventas se refrescan con `updateSales` y `sale_cancelled`
-// (ambos STAFF_ONLY). `updateSales` se emite al crear la venta
-// (`SaleService.createSale`) y al pararse un timer de venta/servicio (cron
-// `check-timers`), con payload informativo `{ id, type }`; `sale_cancelled`, al
-// anular la venta (`SaleQueries`).
 const SALE_REFRESH_EVENTS = new Set([
   "updateSales",
   "sale_cancelled",
@@ -105,22 +103,59 @@ export const emitRefreshCuentas = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshCuentas", payload);
 };
 
-/** Stock del bar: lo dispara `bar_shot_alert` cuando una botella se agota. */
 export const emitRefreshBar = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshBar", payload);
 };
 
-/** Cola de entradas de clientes: `entrada_registrada` y `entrada_actualizada`. */
 export const emitRefreshEntradas = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshEntradas", payload);
 };
 
-/** Catálogo de productos: lo dispara `categories_updated` (crud en el dashboard). */
 export const emitRefreshCategories = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshCategories", payload);
 };
 
-/** Lista de gratificaciones: la disparan `new_gratificacion_request` y `gratificacion_processed`. */
 export const emitRefreshGratificaciones = (payload?: RealtimePayload) => {
   emitRealtimeEvent("refreshGratificaciones", payload);
+};
+
+export const emitRefreshRooms = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshRooms", payload);
+};
+
+export const emitRefreshPersonal = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshPersonal", payload);
+};
+
+export const emitRefreshClients = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshClients", payload);
+};
+
+export const emitRefreshProducts = (payload?: RealtimePayload) => {
+  emitRealtimeEvent("refreshProducts", payload);
+};
+
+const RESOURCE_UPDATED_MODULES: Record<
+  string,
+  ReadonlyArray<keyof typeof REALTIME_EVENT_NAMES>
+> = {
+  users: ["refreshPersonal", "refreshCuentas"],
+  hostesses: ["refreshPersonal"],
+  attendance: ["refreshPersonal"],
+  rooms: ["refreshRooms", "refreshCuentas"],
+  private_rooms: ["refreshRooms", "refreshCuentas"],
+  products: ["refreshProducts", "refreshCategories"],
+  categories: ["refreshCategories"],
+  clients: ["refreshClients"],
+  entradas: ["refreshEntradas"],
+};
+
+export const emitResourceUpdatedEvents = (
+  module?: string | null,
+  payload?: RealtimePayload,
+) => {
+  if (!module) return;
+  const events = RESOURCE_UPDATED_MODULES[module.toLowerCase()];
+  if (!events) return;
+  events.forEach((event) => emitRealtimeEvent(event, payload));
 };

@@ -1,9 +1,19 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack, useSegments } from 'expo-router';
 import React from 'react';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
+import { rutaRequiereCajaAbierta } from '@/utils/cajaGate';
 
 export default function BarmanLayout() {
     const { isDark } = useAccentColor();
+    const { bloqueado } = useCajaAbierta();
+    const segmentos = useSegments();
+
+    // Mismo bloqueo que el garzón para pedidos, productos, servicios y
+    // cortesías. El bar queda accesible: mueve stock y no cobra al cliente.
+    if (bloqueado && rutaRequiereCajaAbierta(segmentos)) {
+        return <Redirect href="/(app)/barman/(tabs)" />;
+    }
 
     return (
         <Stack screenOptions={{

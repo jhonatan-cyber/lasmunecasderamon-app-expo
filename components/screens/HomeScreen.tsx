@@ -9,6 +9,7 @@ import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
 import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
+import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { AnimatedScreen } from '@/components/ui/AnimatedScreen';
 import { LazyDonutChart } from '@/components/ui/LazyDonutChart';
@@ -17,9 +18,11 @@ import { PremiumCalendar } from '@/components/ui/PremiumCalendar';
 import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAuthStore } from '@/store/authStore';
 import { formatCurrency } from '@/utils/format';
+import { rutaExigeCajaAbierta } from '@/utils/cajaGate';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   FlatList,
@@ -59,6 +62,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
+  const { bloqueado } = useCajaAbierta();
 
   const {
     loading,
@@ -301,7 +305,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
       >
         <AnimatedScreen>
           <View style={{ padding: compactHome ? 0 : 16 }}>
-            {}
+            { }
 
             {role === 'anfitriona' && activeService && (
               <ActiveServiceCard
@@ -402,29 +406,44 @@ export function HomeScreen({ role }: HomeScreenProps) {
             {role === 'garzon' && (
               <>
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 15 }}>
-                  <GarzonActionCard
-                    title="PEDIDOS"
-                    description="Gestión de comandas"
-                    icon="beer"
-                    color={accentColor}
-                    onPress={() => router.push('/garzon/pedidos')}
-                  />
-                  <GarzonActionCard
-                    title="SERVICIOS"
-                    description="Atenciones activas"
-                    icon="bed"
-                    color="#10B981"
-                    onPress={() => router.push('/garzon/servicios')}
-                  />
+                  <BloqueoPorCaja
+                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/pedidos')}
+                    style={{ flex: 1 }}
+                  >
+                    <GarzonActionCard
+                      title="PEDIDOS"
+                      description="Gestión de comandas"
+                      icon="beer"
+                      color={accentColor}
+                      onPress={() => router.push('/garzon/pedidos')}
+                    />
+                  </BloqueoPorCaja>
+                  <BloqueoPorCaja
+                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/servicios')}
+                    style={{ flex: 1 }}
+                  >
+                    <GarzonActionCard
+                      title="SERVICIOS"
+                      description="Atenciones activas"
+                      icon="bed"
+                      color="#10B981"
+                      onPress={() => router.push('/garzon/servicios')}
+                    />
+                  </BloqueoPorCaja>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-                  <GarzonActionCard
-                    title="ENTRADAS"
-                    description="Cobro en la puerta"
-                    icon="ticket-outline"
-                    color="#F59E0B"
-                    onPress={() => router.push('/garzon/entradas')}
-                  />
+                  <BloqueoPorCaja
+                    bloqueado={bloqueado && rutaExigeCajaAbierta('/garzon/entradas')}
+                    style={{ flex: 1 }}
+                  >
+                    <GarzonActionCard
+                      title="ENTRADAS"
+                      description="Cobro en la puerta"
+                      icon="ticket-outline"
+                      color="#F59E0B"
+                      onPress={() => router.push('/garzon/entradas')}
+                    />
+                  </BloqueoPorCaja>
                 </View>
               </>
             )}

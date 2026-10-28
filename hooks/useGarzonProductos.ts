@@ -1,8 +1,7 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as ImagePicker from "expo-image-picker";
 import { showToast } from "@/utils/toast-lazy";
-import { ajustarFotoBaucher } from "@/utils/baucherFoto";
+import { adjuntarBaucher } from "@/utils/baucherPicker";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { useAuthStore } from "@/store/authStore";
@@ -20,6 +19,8 @@ import type {
 } from "@/types/cart";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { getOutbox } from "@/services/outbox";
+import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 
 export interface Client {
@@ -44,78 +45,21 @@ export function useGarzonProductos() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  // El pedido se guarda con el método puesto: el dashboard lo exige y cobra con
-  // él. Efectivo por defecto para no frenar al garzón; puede cambiarlo antes de
-  // enviar.
   const [metodoPago, setMetodoPagoRaw] = useState<MetodoPagoPedido>("efectivo");
-  /**
-   * Foto del baucher en data URL. Solo se exige con transferencia: sin ella el
-   * pedido no puede enviarse porque es la única constancia de que el pago entró.
-   */
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
   const dataRef = useRef<string>("");
   const submitInFlight = useRef(false);
 
-  /**
-   * Abre la cámara para fotografiar el baucher. Si el garzón cancela, el método
-   * sigue siendo transferencia pero sin foto: `submitOrder` vuelve a pedirla.
-   */
   const takeBaucherPhoto = useCallback(async () => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        showToast({
-          type: "error",
-          text1: "Sin acceso a la cámara",
-          text2: "Permite la cámara para fotografiar el baucher de la transferencia.",
-        });
-        return;
-      }
-      // Calidad baja a propósito: el base64 viaja dentro del pedido y el
-      // dashboard rechaza sobre `BAUCHER_FOTO_MAX_CHARS`. El baucher se lee
-      // igual, y así una foto de cámara no deja el pedido sin poder enviarse.
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        quality: 0.4,
-        base64: true,
-      });
-      const asset = result.assets?.[0];
-      if (result.canceled || !asset?.base64) return;
-      const original = `data:image/jpeg;base64,${asset.base64}`;
-      // Una foto de cámara puede salir más grande que el límite que acepta el
-      // dashboard (`BAUCHER_FOTO_MAX_CHARS`): aquí se reduce para que el pedido
-      // se pueda enviar. Si no cabe ni reducida no se guarda, porque una foto
-      // que el servidor rechaza con 400 dejaría el pedido sin registrar.
-      const ajuste = await ajustarFotoBaucher(original, asset.uri);
-      if (!ajuste.ok) {
-        showToast({
-          type: "error",
-          text1: "La foto del baucher no sirve",
-          text2:
-            ajuste.motivo === "no-cabe"
-              ? "No entra en el tamaño permitido. Tómala de nuevo con más luz y sin zoom."
-              : "No se pudo reducir la foto. Tómala de nuevo.",
-        });
-        return;
-      }
-      setBaucherFoto(ajuste.dataUrl);
-    } catch (err) {
-      logger.fetchError(err, { context: "Productos:takeBaucherPhoto" });
-      showToast({
-        type: "error",
-        text1: "No se pudo abrir la cámara",
-        text2: "Vuelve a intentar fotografiar el baucher.",
-      });
-    }
+    const dataUrl = await adjuntarBaucher("Productos:takeBaucherPhoto");
+    if (dataUrl) setBaucherFoto(dataUrl);
   }, []);
 
-  /** Elegir transferencia dispara la cámara: la foto es obligatoria para enviar. */
   const setMetodoPago = useCallback(
     (metodo: MetodoPagoPedido) => {
       setMetodoPagoRaw(metodo);
@@ -154,11 +98,7 @@ export function useGarzonProductos() {
     setTipPercentage(propinaPct);
   }, [propinaPct, setTipPercentage]);
 
-  /**
-   * Lectura con espejo: red primero y, si no hay, lo último guardado en el
-   * dispositivo. El catálogo de un turno atrás sigue sirviendo para tomar el
-   * pedido; la hora de la última sincronización se muestra en pantalla.
-   */
+
   const readThroughMirror = useCallback(
     (key: string, endpoint: string, signal?: AbortSignal) =>
       getMirror().readThroughDetailed<any>(
@@ -298,6 +238,22 @@ export function useGarzonProductos() {
     }, [fetchData]),
   );
 
+  // Refresco en vivo: catálogo de productos, stock del bar (traspasos),
+  // anfitrionas disponibles, salas libres y clientes.
+  useDebouncedEventListeners(
+    [
+      REALTIME_EVENT_NAMES.refreshCategories,
+      REALTIME_EVENT_NAMES.refreshProducts,
+      REALTIME_EVENT_NAMES.refreshBar,
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
+    useCallback(() => {
+      void fetchData(false);
+    }, [fetchData]),
+  );
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData(true);
@@ -363,8 +319,7 @@ export function useGarzonProductos() {
       });
 
       if (!buildResult.success) {
-        // El motivo más caro es la foto: el payload no sale por su tamaño y,
-        // sin aviso claro, el garzón quedaría con el pedido sin enviar.
+
         const problemaDeBaucher = buildResult.errors.some((error) =>
           error.includes("baucher_foto"),
         );
@@ -384,9 +339,6 @@ export function useGarzonProductos() {
 
       logger.debug("[DEBUG] Enviando pedido", { orderData });
 
-      // El pedido se encola SIEMPRE (una sola ruta de código, haya red o
-      // no). El id de la intención viaja como clave de idempotencia, así
-      // que un reintento tras un corte no duplica el pedido.
       const intent = await getOutbox().enqueueAndSend({
         type: "order.create",
         payload: orderData,
@@ -410,7 +362,6 @@ export function useGarzonProductos() {
         throw new Error(intent.lastError || "El servidor rechazó el pedido");
       }
 
-      // Quedó pendiente: el trabajo está guardado y sale al volver la red.
       showToast({
         type: "info",
         text1: "Pedido guardado en el dispositivo",

@@ -1,7 +1,6 @@
 import type { MirrorDriver, MirrorParam } from '@/services/mirror/driver';
 import { createQueueId } from '@/utils/ids';
 import logger from '@/utils/logger';
-
 import type { OutboxEnqueueInput, OutboxIntent, OutboxIntentStatus } from './types';
 
 interface OutboxRow {
@@ -24,37 +23,26 @@ export interface OutboxRepository {
     enqueue<TPayload>(input: OutboxEnqueueInput<TPayload>, id?: string): OutboxIntent<TPayload>;
     get(id: string): OutboxIntent | null;
     list(): OutboxIntent[];
-    /** Pendientes y fallidas, en orden de creación (lo que la UI muestra). */
     listUnresolved(): OutboxIntent[];
-    /** Lo que corresponde enviar ahora: pendientes por debajo del tope. */
     listFlushable(maxAttempts: number): OutboxIntent[];
     markSending(id: string): void;
     markApplied(id: string, response: unknown): void;
     markFailed(id: string, error: string): void;
-    /** Vuelve a 'pendiente' conservando el error (fallo transitorio). */
     markRetryable(id: string, error: string, nextAttemptAt?: number): void;
     retry(id: string): void;
     remove(id: string): void;
     clear(): void;
     countUnresolved(): number;
-    /**
-     * Purga historial aplicado (def. 7d). Las fallidas se conservan para revisión.
-     * Retorna nº de filas borradas. Sin esto la tabla crece sin límite.
-     */
     pruneResolved(appliedOlderThanMs?: number, failedOlderThanMs?: number): number;
-    /** Tope de seguridad: nº total de filas (para cap). */
     countAll(): number;
     hasUnresolvedConsumptions(accountId: string): boolean;
     countUnowned(): number;
+    adoptUnowned(ownerId: string): number;
 }
 
-/** Retención por defecto del historial resuelto. */
 export const OUTBOX_PRUNE_DEFAULTS = {
-    /** Aplicadas: 7 días. */
     appliedOlderThanMs: 7 * 24 * 60 * 60 * 1000,
-    /** Fallidas: 30 días (dan tiempo a conciliar). */
     failedOlderThanMs: 30 * 24 * 60 * 60 * 1000,
-    /** Tope total de filas antes de podar las aplicadas más viejas. */
     maxRows: 500,
 } as const;
 
@@ -132,6 +120,17 @@ export function createOutboxRepository(
 
     const list = (sql: string, params: MirrorParam[] = []): OutboxIntent[] =>
         driver.getAll<OutboxRow>(...scoped(sql, params)).map(mapRow);
+
+    /**
+     * Filas sin dueño, sin `scoped`: el filtro por dueño es justamente lo que
+     * deja estas filas fuera de todo, incluida su propia adopción.
+     */
+    const countUnownedRows = (): number =>
+        Number(
+            driver.getFirst<{ total: number }>(
+                "SELECT COUNT(*) AS total FROM outbox WHERE owner_id IS NULL AND status IN ('pendiente', 'enviando', 'fallida')"
+            )?.total ?? 0
+        );
 
     return {
         enqueue: <TPayload,>(input: OutboxEnqueueInput<TPayload>, id?: string) => {
@@ -281,8 +280,22 @@ export function createOutboxRepository(
             const payload = parseJson(row.payload) as { id_cuenta?: unknown } | null;
             return payload?.id_cuenta === undefined || payload.id_cuenta === null || String(payload.id_cuenta) === accountId;
         }),
-        countUnowned: () => Number(driver.getFirst<{ total: number }>(
-            "SELECT COUNT(*) AS total FROM outbox WHERE owner_id IS NULL AND status IN ('pendiente', 'enviando', 'fallida')"
-        )?.total ?? 0),
+        countUnowned: countUnownedRows,
+
+        /**
+         * SQL directo, sin `scoped`: el filtro por dueño es justamente lo que
+         * deja estas filas fuera de todo, incluida su propia adopción.
+         */
+        adoptUnowned: (ownerId: string) => {
+            const antes = countUnownedRows();
+            if (!antes) return 0;
+
+            driver.run(
+                `UPDATE outbox SET owner_id = ?
+                  WHERE owner_id IS NULL AND status IN ('pendiente', 'enviando', 'fallida')`,
+                [ownerId]
+            );
+            return antes - countUnownedRows();
+        },
     };
 }

@@ -1,14 +1,26 @@
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
-import { isBarmanRole } from "@/utils/userRole";
+import { isAdminRole, isBarmanRole } from "@/utils/userRole";
+import { rutaExigeAdmin } from "@/utils/adminGate";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useCajaAbierta } from "@/hooks/useCajaAbierta";
+import { rutaRequiereCajaAbierta } from "@/utils/cajaGate";
 import { GlobalTimerAlert } from "@/components/cajero/GlobalTimerAlert";
 
 export default function CajeroLayout() {
   const { isDark } = useAccentColor();
   const user = useAuthStore((state) => state.user);
+  const { bloqueado } = useCajaAbierta();
+  const segmentos = useSegments();
 
   if (isBarmanRole(user)) return <Redirect href="/(app)/barman/(tabs)" />;
+
+  if (rutaExigeAdmin(segmentos) && !isAdminRole(user)) {
+    return <Redirect href="/(app)/cajero/(tabs)" />;
+  }
+  if (bloqueado && rutaRequiereCajaAbierta(segmentos)) {
+    return <Redirect href="/(app)/cajero/(tabs)" />;
+  }
 
   return (
     <>
@@ -61,6 +73,10 @@ export default function CajeroLayout() {
         <Stack.Screen
           name="cortesias"
           options={{ title: "Cortesías", headerShown: false }}
+        />
+        <Stack.Screen
+          name="configuracion-asistencia"
+          options={{ title: "Configuración", headerShown: false }}
         />
       </Stack>
       <GlobalTimerAlert />

@@ -10,6 +10,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
 import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
 
@@ -21,12 +22,12 @@ export default function AppLayout() {
     const refreshUser = useAuthStore((state) => state.refreshUser);
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
-    const isStaffMember = user?.role && 
-        (user.role.toLowerCase().includes('garzon') || 
-         user.role.toLowerCase().includes('anfitriona') ||
-         user.role.toLowerCase().includes('barman'));
+    const isStaffMember = user?.role &&
+        (user.role.toLowerCase().includes('garzon') ||
+            user.role.toLowerCase().includes('anfitriona') ||
+            user.role.toLowerCase().includes('barman'));
 
-    
+
     useEffect(() => {
         if (user && isStaffMember) {
             const checkAndShowModal = async () => {
@@ -34,7 +35,7 @@ export default function AppLayout() {
                     const modalShownKey = 'asistenciaModalShown';
                     const lastShown = await AsyncStorage.getItem(modalShownKey);
                     const today = new Date().toDateString();
-                    
+
                     if (lastShown !== today) {
                         setShowAsistenciaModal(true);
                         await AsyncStorage.setItem(modalShownKey, today);
@@ -51,12 +52,8 @@ export default function AppLayout() {
         setShowAsistenciaModal(false);
     };
 
-    
     useNotificationHandler();
-
-    // configureNotifications() vive en NotificationProvider (único dueño):
-    // llamarlo aquí era duplicado (es idempotente, pero con doble ownership).
-
+    useCajaAbierta();
     if (!user) {
         return <Redirect href="/(auth)/login" />;
     }
@@ -66,11 +63,6 @@ export default function AppLayout() {
         await logout();
     };
 
-    // "Reintentar" revalida contra /auth/me: si el 401 fue un bache (token
-    // rotado, backend reiniciado), la sesión se recupera sin relogin. Si no
-    // se recupera, se cierra igual (modo offline/cache sigue disponible y el
-    // próximo 401 reabre el modal). Nunca se fuerza logout aquí: sin red el
-    // refresh falla aunque los tokens locales sigan siendo válidos.
     const handleContinueWithoutLogout = async () => {
         await refreshUser().catch(() => false);
         clearSessionExpired();
@@ -86,7 +78,7 @@ export default function AppLayout() {
             />
             <StaffCallOverlay />
 
-            {}
+            { }
             <Modal
                 visible={sessionExpired}
                 transparent
@@ -106,14 +98,14 @@ export default function AppLayout() {
                         <TouchableOpacity style={styles.btn} onPress={handleLogout}>
                             <Text style={styles.btnText}>Iniciar sesión</Text>
                         </TouchableOpacity>
-                            <TouchableOpacity style={styles.btnSecondary} onPress={handleContinueWithoutLogout}>
-                                <Text style={styles.btnSecondaryText}>Reintentar sesión</Text>
-                            </TouchableOpacity>
+                        <TouchableOpacity style={styles.btnSecondary} onPress={handleContinueWithoutLogout}>
+                            <Text style={styles.btnSecondaryText}>Reintentar sesión</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
 
-            {}
+            { }
             <RegistroAsistenciaModal
                 visible={showAsistenciaModal}
                 onClose={() => setShowAsistenciaModal(false)}

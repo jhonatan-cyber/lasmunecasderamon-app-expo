@@ -356,7 +356,7 @@ describe('outbox · servicio', () => {
         expect(await outbox.flush()).toEqual({ skipped: true, sent: 0, pending: 0, failed: 0 });
     });
 
-    it('debe enviar en orden y marcar aplicada cada intención', async () => {
+    it('debe enviar en orden y borrar cada intención confirmada', async () => {
         const outbox = buildService();
 
         await outbox.enqueueAndSend({ type: 'order.create', payload: PEDIDO });
@@ -365,7 +365,8 @@ describe('outbox · servicio', () => {
         expect(senders['order.create']).toHaveBeenCalledTimes(2);
         expect(outbox.listUnresolved()).toEqual([]);
         expect(outbox.pendingCount()).toBe(0);
-        expect(repository.list().map(intent => intent.status)).toEqual(['aplicada', 'aplicada']);
+        // El servidor confirmó: ya no queda nada por sincronizar en SQLite.
+        expect(repository.list()).toEqual([]);
     });
 
     it('debe enviar la intención con su id como clave de idempotencia', async () => {
@@ -411,7 +412,25 @@ describe('outbox · servicio', () => {
         const summary = await outbox.flush();
 
         expect(summary).toEqual({ skipped: false, sent: 1, pending: 0, failed: 0 });
-        expect(repository.get('id-1')?.status).toBe('aplicada');
+        // Confirmada: la fila se borra en el mismo flush.
+        expect(repository.get('id-1')).toBeNull();
+    });
+
+    it('debe devolver el desenlace confirmado aunque la fila ya no exista', async () => {
+        const outbox = buildService();
+
+        const intent = await outbox.enqueueAndSend({
+            type: 'order.create',
+            payload: PEDIDO,
+            label: 'Pedido ABC12345',
+        });
+
+        // El envío directo necesita el desenlace en memoria: al borrarse la fila
+        // releerla devolvería el estado previo al envío.
+        expect(intent.status).toBe('aplicada');
+        expect(intent.response).toEqual({ success: true });
+        expect(repository.get(intent.id)).toBeNull();
+        expect(outbox.pendingCount()).toBe(0);
     });
 
     it('debe marcar fallida y no reintentar sola una intención rechazada', async () => {
@@ -449,6 +468,18 @@ describe('outbox · servicio', () => {
 
         expect(intent?.status).toBe('aplicada');
         expect(outbox.pendingCount()).toBe(0);
+    });
+
+    it('debe devolver el motivo cuando el reenvío manual vuelve a fallar', async () => {
+        senders['order.create'] = vi.fn().mockRejectedValue(new Error('Permisos insuficientes'));
+        const outbox = buildService();
+
+        await outbox.enqueueAndSend({ type: 'order.create', payload: PEDIDO });
+        const resultado = await outbox.retry('id-1');
+
+        // La pantalla necesita el desenlace para poder informar el fallo real.
+        expect(resultado?.status).toBe('fallida');
+        expect(resultado?.lastError).toBe('Permisos insuficientes');
     });
 
     it('debe marcar fallida una intención de tipo desconocido', async () => {
@@ -518,6 +549,61 @@ describe('outbox · servicio', () => {
 
         expect(outbox.getSnapshot().map(intent => intent.id)).toEqual(['id-1']);
         expect(outbox.pendingCount()).toBe(1);
+    });
+});
+
+describe('outbox · adopción de operaciones sin dueño', () => {
+    let driver: ReturnType<typeof createNodeSqliteMirrorDriver>;
+
+    beforeEach(() => {
+        driver = createNodeSqliteMirrorDriver();
+        ensureMirrorSchema(driver, () => NOW);
+    });
+
+    afterEach(() => {
+        driver.close();
+    });
+
+    /** Cola guardada antes de que el dispositivo supiera qué sesión estaba activa. */
+    const encolarSinDueno = () => {
+        const repo = createOutboxRepository(driver, { now: () => NOW, createId: () => 'huerfana' });
+        repo.enqueue({ type: 'order.create', payload: PEDIDO });
+        return repo;
+    };
+
+    it('debe reclamar y enviar las filas guardadas sin sesión', async () => {
+        encolarSinDueno();
+
+        const conSesion = createOutboxRepository(driver, { now: () => NOW, ownerId: () => 'u-1' });
+        const send = vi.fn().mockResolvedValue({ success: true });
+        const outbox = createOutboxService(conSesion, {
+            ownerId: () => 'u-1',
+            isOffline: () => false,
+            senders: { 'order.create': send } as never,
+        });
+
+        // Sin sesión al guardarse quedó con `owner_id NULL`: el filtro por dueño
+        // la deja fuera de la cola y sin adopción nunca se enviaría.
+        expect(conSesion.countUnowned()).toBe(1);
+        expect(conSesion.list()).toEqual([]);
+
+        const summary = await outbox.flush();
+
+        expect(send).toHaveBeenCalledTimes(1);
+        expect(summary).toEqual({ skipped: false, sent: 1, pending: 0, failed: 0 });
+        expect(conSesion.countUnowned()).toBe(0);
+        // Confirmada: no queda rastro en SQLite.
+        expect(conSesion.countAll()).toBe(0);
+    });
+
+    it('no debe adoptar filas ya resueltas', async () => {
+        const sinDueno = encolarSinDueno();
+        sinDueno.markApplied('huerfana', { success: true });
+
+        const conSesion = createOutboxRepository(driver, { now: () => NOW, ownerId: () => 'u-1' });
+
+        expect(conSesion.adoptUnowned('u-1')).toBe(0);
+        expect(conSesion.countAll()).toBe(1);
     });
 });
 

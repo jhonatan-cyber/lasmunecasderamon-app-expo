@@ -1,12 +1,13 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { showToast } from "@/utils/toast-lazy";
-import { ajustarFotoBaucher } from "@/utils/baucherFoto";
+import { adjuntarBaucher } from "@/utils/baucherPicker";
 import { apiClientSafe } from "@/api/client";
 import { blockOffline } from "@/utils/offlineGuard";
 import { getIvaDecimal } from "@/hooks/utils/cuentaUtils";
+import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 
 export interface Room {
@@ -67,68 +68,17 @@ export function useGarzonServiciosScreen() {
   const [paymentMethod, setPaymentMethodRaw] = useState<
     "efectivo" | "tarjeta" | "transferencia" | "prepago" | ""
   >("");
-  /**
-   * Foto del baucher en data URL. Solo se exige con transferencia: sin ella la
-   * solicitud no puede enviarse porque es la única constancia de que el pago
-   * entró (mismo contrato que el pedido y la entrada en la puerta).
-   */
+
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [roomModalVisible, setRoomModalVisible] = useState(false);
   const [hostessModalVisible, setHostessModalVisible] = useState(false);
   const [clientModalVisible, setClientModalVisible] = useState(false);
 
-  /**
-   * Abre la cámara para fotografiar el baucher. Si el garzón cancela, el método
-   * sigue siendo transferencia pero sin foto: `handleSubmit` vuelve a pedirla.
-   */
   const takeBaucherPhoto = useCallback(async () => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        showToast({
-          type: "error",
-          text1: "Sin acceso a la cámara",
-          text2: "Permite la cámara para fotografiar el baucher de la transferencia.",
-        });
-        return;
-      }
-      // Calidad baja a propósito: el base64 viaja dentro del payload y el
-      // servidor rechaza sobre `BAUCHER_FOTO_MAX_CHARS`. El baucher se lee
-      // igual, y así una foto de cámara no deja la solicitud sin poder enviarse.
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        quality: 0.4,
-        base64: true,
-      });
-      const asset = result.assets?.[0];
-      if (result.canceled || !asset?.base64) return;
-      const original = `data:image/jpeg;base64,${asset.base64}`;
-      // Si no cabe ni reducida no se guarda: una foto que el servidor rechaza
-      // con 400 dejaría la solicitud sin registrar.
-      const ajuste = await ajustarFotoBaucher(original, asset.uri);
-      if (!ajuste.ok) {
-        showToast({
-          type: "error",
-          text1: "La foto del baucher no sirve",
-          text2:
-            ajuste.motivo === "no-cabe"
-              ? "No entra en el tamaño permitido. Tómala de nuevo con más luz y sin zoom."
-              : "No se pudo reducir la foto. Tómala de nuevo.",
-        });
-        return;
-      }
-      setBaucherFoto(ajuste.dataUrl);
-    } catch (err) {
-      logger.fetchError(err, { context: "Servicios:takeBaucherPhoto" });
-      showToast({
-        type: "error",
-        text1: "No se pudo abrir la cámara",
-        text2: "Vuelve a intentar fotografiar el baucher.",
-      });
-    }
+    const dataUrl = await adjuntarBaucher("Servicios:takeBaucherPhoto");
+    if (dataUrl) setBaucherFoto(dataUrl);
   }, []);
 
-  /** Elegir transferencia dispara la cámara: la foto es obligatoria para enviar. */
   const setPaymentMethod = useCallback(
     (metodo: "efectivo" | "tarjeta" | "transferencia" | "prepago" | "") => {
       setPaymentMethodRaw(metodo);
@@ -222,6 +172,17 @@ export function useGarzonServiciosScreen() {
     }, [fetchData]),
   );
 
+  useDebouncedEventListeners(
+    [
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
+    useCallback(() => {
+      void fetchData(false);
+    }, [fetchData]),
+  );
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchData(true);
@@ -298,8 +259,8 @@ export function useGarzonServiciosScreen() {
       uniqueNext.length === 0
         ? null
         : clients.find(
-            (c) => String(c.id_cliente || c.id) === String(uniqueNext[0]),
-          );
+          (c) => String(c.id_cliente || c.id) === String(uniqueNext[0]),
+        );
 
     if (activeClient && (activeClient.saldo || 0) > 0) {
       setPaymentMethod("prepago");
@@ -419,8 +380,6 @@ export function useGarzonServiciosScreen() {
       return Alert.alert("Error", "Ingresa el precio del servicio");
     }
 
-    // La solicitud nace en caja: sin el servidor no se puede registrar ni
-    // validar, así que se avisa en vez de enviarla a ciegas.
     if (!blockOffline("solicitud")) return;
 
     const generateCode = () => {
@@ -449,8 +408,7 @@ export function useGarzonServiciosScreen() {
         usuarios: selectedHostesses,
         anfitrionas_ids: selectedHostesses,
         metodo_pago: paymentMethod,
-        // Solo transferencia lleva la foto: es la constancia del pago y el
-        // servidor la exige en ese caso.
+
         ...(paymentMethod === "transferencia" && baucherFoto
           ? { baucher_foto: baucherFoto }
           : {}),

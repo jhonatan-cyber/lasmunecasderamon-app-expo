@@ -1,5 +1,8 @@
 import { apiClientSafe } from '@/api/client';
-import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import {
+  useDebouncedEventListener,
+  useDebouncedEventListeners,
+} from '@/hooks/useDebouncedEventListener';
 import { useAuthStore } from '@/store/authStore';
 import type {
   ApiRes,
@@ -54,7 +57,6 @@ export interface DashboardData {
   activeService: ActiveService | null;
   pendingCount: number;
   payoutTotal: number;
-  /** Solo barman: contador de envases del bar (`null` si no cargó). */
   containerSummary?: EnvaseResumen | null;
 }
 
@@ -152,8 +154,6 @@ export function useDashboardData(role: UserRole) {
           extraData.barStock = (results[5] as ApiRes<unknown>)?.data ?? null;
           extraData.pendingTransfers =
             (results[6] as ApiRes<unknown>)?.data ?? null;
-          // Contador de envases del home (la alerta SSE de almacén es de admin;
-          // el barman ve aquí sus pendientes de recepción).
           extraData.containerSummary =
             (results[7] as ApiRes<EnvaseResumen>)?.data ?? null;
         }
@@ -180,14 +180,25 @@ export function useDashboardData(role: UserRole) {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Invalidación con debounce (un timer por canal): una ráfaga SSE (4-8
-  // endpoints por refetch) colapsa en vez de un refetch por evento.
   const invalidateDashboard = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['dashboard', role] });
   }, [queryClient, role]);
 
   useDebouncedEventListener(
     REALTIME_EVENT_NAMES.refreshRequests,
+    invalidateDashboard,
+    500,
+  );
+
+  useDebouncedEventListeners(
+    [
+      REALTIME_EVENT_NAMES.refreshBar,
+      REALTIME_EVENT_NAMES.refreshProducts,
+      REALTIME_EVENT_NAMES.refreshCategories,
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
     invalidateDashboard,
     500,
   );
@@ -201,7 +212,6 @@ export function useDashboardData(role: UserRole) {
       });
       if (shouldInvalidateDashboardFromSse(payload?.type)) {
         invalidateDashboard();
-        // El re-emit es inmediato: aguas abajo hay overlays/shakes urgentes.
         if (
           payload.type === 'new_order' ||
           payload.type === 'new_service_request'

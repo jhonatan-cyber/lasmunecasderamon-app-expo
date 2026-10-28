@@ -17,6 +17,8 @@ import {
 } from "@/hooks/utils/cartUtils";
 import logger from "@/utils/logger";
 import { blockOffline } from "@/utils/offlineGuard";
+import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
+import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { parseDateSafe } from "@/utils/timeUtils";
 import { ServiceCreateSchema } from "@lasmunecasderamon/validations";
 import { useRouter } from "expo-router";
@@ -198,6 +200,50 @@ export function useNuevoServicio() {
     fetchInitialData(ac.signal);
     return () => ac.abort();
   }, [fetchInitialData]);
+
+  useDebouncedEventListeners(
+    [
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
+    useCallback(() => {
+      void (async () => {
+        try {
+          const [anfitrionasRes, roomsRes, clientsRes] = await Promise.all([
+            apiClientSafe("/hostesses"),
+            apiClientSafe("/rooms"),
+            apiClientSafe("/clients"),
+          ]);
+          const patch: Record<string, unknown> = {};
+
+          if ((anfitrionasRes as any)?.success || Array.isArray(anfitrionasRes)) {
+            patch.anfitrionas = deduplicate(normalizeAnfitrionas(anfitrionasRes), "id_usuario");
+          }
+          if ((roomsRes as any)?.success) {
+            patch.habitaciones = deduplicate(
+              (((roomsRes as any).data as any[]) || []).map((room: any) => ({
+                ...normalizeRoom(room),
+                status: room.status ?? room.estado ?? 0,
+                price: room.price ?? room.precio ?? 0,
+                time: room.time ?? room.tiempo ?? 0,
+              })),
+              "id_habitacion",
+            );
+          }
+          if (Array.isArray(clientsRes) || (clientsRes as any)?.success) {
+            patch.clientes = deduplicate(normalizeClients(clientsRes), "id_cliente");
+          }
+
+          if (Object.keys(patch).length > 0) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: patch });
+          }
+        } catch (error) {
+          logger.fetchError(error, { context: "NuevoServicio:refreshLive" });
+        }
+      })();
+    }, []),
+  );
 
   const toggleHostess = useCallback(
     (hostessId: string | number) => {

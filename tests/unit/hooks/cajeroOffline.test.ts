@@ -172,9 +172,9 @@ describe('useCuentasScreen · modo offline', () => {
     expect(urls.some(u => u.includes('/cobrar') && !u.includes('cobrar-con-venta'))).toBe(false);
     expect(urls).not.toContain('/sales');
 
+    // El cobro se confirmó y se borró: no queda nada por sincronizar.
     const enSqlite = driver.getAll<{ status: string }>('SELECT status FROM outbox');
-    expect(enSqlite).toHaveLength(1);
-    expect(enSqlite[0].status).toBe('aplicada');
+    expect(enSqlite).toEqual([]);
 
     expect(result.current.cobroModalVisible).toBe(false);
     expect(showToast).toHaveBeenCalledWith(

@@ -8,6 +8,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useOutbox } from '@/hooks/useOutbox';
 import type { OutboxIntent, OutboxIntentType } from '@/services/outbox';
+import { showToast } from '@/utils/toast-lazy';
 
 const ESTADO_UI: Record<OutboxIntent['status'], { label: string; color: string }> = {
     pendiente: { label: 'EN COLA', color: '#2563EB' },
@@ -16,7 +17,6 @@ const ESTADO_UI: Record<OutboxIntent['status'], { label: string; color: string }
     fallida: { label: 'REVISAR', color: '#EF4444' },
 };
 
-/** Ícono por tipo de operación, para que se distinga de un vistazo. */
 const ICONO_POR_TIPO: Record<OutboxIntentType, keyof typeof Ionicons.glyphMap> = {
     'order.create': 'receipt-outline',
     'sale.create': 'cart-outline',
@@ -35,18 +35,11 @@ const formatFecha = (timestamp: number) => {
 export interface PendingOperationsScreenProps {
     title: string;
     emptySubtitle: string;
-    /** `false` para roles que no pueden operar sin red (cajero). */
     createsWorkOffline?: boolean;
     onBack: () => void;
 }
 
-/**
- * Operaciones que este dispositivo hizo y el servidor todavía no confirmó:
- * lo encolado sin red más lo que el servidor rechazó.
- *
- * Es la única pantalla donde se ven y donde se decide: reintentar o descartar,
- * con el motivo del rechazo a la vista para poder corregir.
- */
+
 export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = ({
     title,
     emptySubtitle,
@@ -59,6 +52,74 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
     const router = useRouter();
     const { intents, pendingCount, failedCount, unownedCount, isOffline, isFlushing, flush, retry, discard } =
         useOutbox();
+
+    const onSyncNow = async () => {
+        const resumen = await flush();
+
+        if (resumen.skipped) {
+            showToast({
+                type: 'error',
+                text1: 'No se pudo sincronizar',
+                text2: isOffline
+                    ? 'Sigue sin conexión. Vuelve a intentarlo cuando recuperes internet.'
+                    : 'Vuelve a iniciar sesión para reenviar las operaciones guardadas.',
+                visibilityTime: 5000,
+            });
+            return;
+        }
+
+        if (resumen.sent > 0 && resumen.failed === 0 && resumen.pending === 0) {
+            showToast({
+                type: 'success',
+                text1: 'Operaciones enviadas',
+                text2: `${resumen.sent} confirmada(s) por el servidor y borradas del dispositivo.`,
+            });
+            return;
+        }
+
+        if (resumen.failed === 0 && resumen.pending === 0) {
+            showToast({ type: 'info', text1: 'Nada por enviar', text2: 'No quedaban operaciones en la cola.' });
+            return;
+        }
+
+        showToast({
+            type: 'error',
+            text1: 'Revisa las operaciones',
+            text2: `${resumen.sent} enviada(s) · ${resumen.pending} pendiente(s) · ${resumen.failed} con error. El motivo está en cada tarjeta.`,
+            visibilityTime: 6000,
+        });
+    };
+
+    const onRetry = async (intent: OutboxIntent) => {
+        const resultado = await retry(intent.id);
+        const etiqueta = intent.label || intent.type;
+
+        if (!resultado || resultado.status === 'aplicada') {
+            showToast({
+                type: 'success',
+                text1: 'Operación enviada',
+                text2: `${etiqueta} ya está registrada en el servidor.`,
+            });
+            return;
+        }
+
+        if (resultado.status === 'fallida') {
+            showToast({
+                type: 'error',
+                text1: 'No se pudo enviar',
+                text2: resultado.lastError ?? `Revisa ${etiqueta} antes de reintentarlo.`,
+                visibilityTime: 6000,
+            });
+            return;
+        }
+
+        showToast({
+            type: 'info',
+            text1: 'Sigue en la cola',
+            text2: resultado.lastError ?? `No hubo red para enviar ${etiqueta}.`,
+            visibilityTime: 5000,
+        });
+    };
 
     const renderIntent = (intent: OutboxIntent) => {
         const estado = ESTADO_UI[intent.status];
@@ -93,7 +154,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
 
                 <View style={styles.cardActions}>
                     <Pressable
-                        onPress={() => retry(intent.id)}
+                        onPress={() => void onRetry(intent)}
                         disabled={isFlushing}
                         style={[
                             styles.actionButton,
@@ -131,25 +192,25 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
             <View style={styles.summary}>
                 {unownedCount > 0 ? (
                     <Text style={styles.cardError}>
-                        Hay {unownedCount} operación(es) antiguas por revisar. Pide al administrador que verifique su registro antes de reenviarlas.
+                        Hay {unownedCount} operación(es) guardadas antes de identificarte. Se enviarán con
+                        tu sesión actual al sincronizar.
                     </Text>
                 ) : null}
                 <Text style={[styles.summaryText, { color: textSecondary }]}>
                     {pendingCount === 0
                         ? 'No hay operaciones pendientes.'
-                        : `${pendingCount} operación(es) en la cola${
-                              failedCount > 0 ? ` · ${failedCount} para revisar` : ''
-                          }`}
+                        : `${pendingCount} operación(es) en la cola${failedCount > 0 ? ` · ${failedCount} para revisar` : ''
+                        }`}
                 </Text>
 
                 <Pressable
-                    onPress={() => flush()}
-                    disabled={isOffline || isFlushing || pendingCount === 0}
+                    onPress={() => void onSyncNow()}
+                    disabled={isOffline || isFlushing}
                     style={[
                         styles.syncButton,
                         {
                             backgroundColor: accentColor,
-                            opacity: isOffline || isFlushing || pendingCount === 0 ? 0.5 : 1,
+                            opacity: isOffline || isFlushing ? 0.5 : 1,
                         },
                     ]}
                 >

@@ -7,8 +7,9 @@ import { ensureMirrorSchema } from '@/services/mirror/schema';
 import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
 
 import { usePedidosScreen } from '@/hooks/usePedidosScreen';
+import { emitRefreshCategories } from '@/utils/realtime';
 
-const categoriesService = vi.hoisted(() => ({ list: vi.fn() }));
+const categoriesService = vi.hoisted(() => ({ listForSale: vi.fn() }));
 vi.mock('@/services', () => ({ categoriesService }));
 
 const CATEGORIAS = [
@@ -27,8 +28,8 @@ describe('usePedidosScreen · espejo local', () => {
         online = true;
         setMirrorForTests(createMirrorRepository(driver, { isOffline: () => !online }));
 
-        categoriesService.list.mockReset();
-        categoriesService.list.mockResolvedValue({ success: true, data: CATEGORIAS });
+        categoriesService.listForSale.mockReset();
+        categoriesService.listForSale.mockResolvedValue({ success: true, data: CATEGORIAS });
     });
 
     afterEach(() => {
@@ -60,7 +61,7 @@ describe('usePedidosScreen · espejo local', () => {
         primero.unmount();
 
         online = false;
-        categoriesService.list.mockRejectedValue(new Error('Network request failed'));
+        categoriesService.listForSale.mockRejectedValue(new Error('Network request failed'));
 
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -73,7 +74,7 @@ describe('usePedidosScreen · espejo local', () => {
 
     it('debe avisar sin red y sin catálogo guardado', async () => {
         online = false;
-        categoriesService.list.mockRejectedValue(new Error('Network request failed'));
+        categoriesService.listForSale.mockRejectedValue(new Error('Network request failed'));
 
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -88,7 +89,7 @@ describe('usePedidosScreen · espejo local', () => {
         await waitFor(() => expect(primero.result.current.loading).toBe(false));
         primero.unmount();
 
-        categoriesService.list.mockRejectedValue(new Error('servidor caído'));
+        categoriesService.listForSale.mockRejectedValue(new Error('servidor caído'));
 
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -98,7 +99,7 @@ describe('usePedidosScreen · espejo local', () => {
     });
 
     it('debe exponer el error del servidor cuando no hay nada guardado', async () => {
-        categoriesService.list.mockRejectedValue(new Error('El servidor rechazó la consulta'));
+        categoriesService.listForSale.mockRejectedValue(new Error('El servidor rechazó la consulta'));
 
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -107,7 +108,7 @@ describe('usePedidosScreen · espejo local', () => {
     });
 
     it('debe filtrar categorías inactivas y ordenar por display_order', async () => {
-        categoriesService.list.mockResolvedValue({
+        categoriesService.listForSale.mockResolvedValue({
             success: true,
             data: [
                 { ...CATEGORIAS[1], status: 0 },
@@ -122,8 +123,23 @@ describe('usePedidosScreen · espejo local', () => {
         expect(result.current.categories.map(c => c.display_order)).toEqual([2, 9]);
     });
 
+    it('debe descartar las categorías sin stock en el bar', async () => {
+        categoriesService.listForSale.mockResolvedValue({
+            success: true,
+            data: [
+                { ...CATEGORIAS[0], total_products: 0 },
+                { ...CATEGORIAS[1], display_order: 9 },
+            ],
+        });
+
+        const { result } = renderHook(() => usePedidosScreen());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        expect(result.current.categories.map(c => c.name)).toEqual(['Tragos']);
+    });
+
     it('debe sobrevivir a una respuesta sin datos', async () => {
-        categoriesService.list.mockResolvedValue({ success: false, message: 'nada' });
+        categoriesService.listForSale.mockResolvedValue({ success: false, message: 'nada' });
 
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -132,13 +148,32 @@ describe('usePedidosScreen · espejo local', () => {
         expect(result.current.error).toBe('nada');
     });
 
-    it('debe usar la clave de espejo del catálogo', async () => {
+    it('debe usar la clave de espejo propia del catálogo de venta', async () => {
         const { result } = renderHook(() => usePedidosScreen());
         await waitFor(() => expect(result.current.loading).toBe(false));
 
-        expect(MIRROR_KEYS.categories).toBe('catalog.categories');
+        expect(MIRROR_KEYS.saleCategories).toBe('catalog.sale-categories');
         expect(driver.getFirst<{ key: string }>('SELECT key FROM mirror_cache')?.key).toBe(
-            'catalog.categories'
+            'catalog.sale-categories'
         );
+    });
+
+    it('debe refrescar el catálogo al recibir la señal en vivo', async () => {
+        const { result } = renderHook(() => usePedidosScreen());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        expect(categoriesService.listForSale).toHaveBeenCalledTimes(1);
+
+        categoriesService.listForSale.mockResolvedValue({
+            success: true,
+            data: [{ ...CATEGORIAS[0], name: 'Cervezas Artesanales' }, CATEGORIAS[1]],
+        });
+
+        await act(async () => {
+            emitRefreshCategories();
+            await new Promise((resolve) => setTimeout(resolve, 600));
+        });
+
+        expect(categoriesService.listForSale).toHaveBeenCalledTimes(2);
+        expect(result.current.categories.map(c => c.name)).toContain('Cervezas Artesanales');
     });
 });

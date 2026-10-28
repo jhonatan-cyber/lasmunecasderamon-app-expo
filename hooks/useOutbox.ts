@@ -1,35 +1,29 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
-
 import { useConnectivity } from '@/hooks/useConnectivity';
-import { getOutbox, type OutboxIntent } from '@/services/outbox';
+import { getOutbox, type FlushSummary, type OutboxIntent } from '@/services/outbox';
 import logger from '@/utils/logger';
 
 export interface UseOutboxReturn {
-    /** Intenciones sin resolver (pendientes, en vuelo y fallidas). */
     intents: OutboxIntent[];
     pendingCount: number;
     failedCount: number;
     unownedCount: number;
     isOffline: boolean;
     isFlushing: boolean;
-    flush: () => Promise<void>;
-    retry: (id: string) => Promise<void>;
+    flush: () => Promise<FlushSummary>;
+    retry: (id: string) => Promise<OutboxIntent | null>;
     discard: (id: string) => void;
 }
 
 const SIN_INTENCIONES: OutboxIntent[] = [];
+const SIN_INTENTOS: FlushSummary = { skipped: true, sent: 0, pending: 0, failed: 0 };
 
-/**
- * La cola es un sistema externo: se lee como store (`useSyncExternalStore`) en
- * vez de copiarla a estado local en un efecto, así no hay renders en cascada ni
- * desfase entre lo que muestra la pantalla y lo que hay guardado.
- */
 const subscribeToOutbox = (onChange: () => void) => {
     try {
         return getOutbox().subscribe(onChange);
     } catch (error) {
         logger.captureException(error, { context: 'useOutbox:subscribe' });
-        return () => {};
+        return () => { };
     }
 };
 
@@ -42,10 +36,6 @@ const getOutboxSnapshot = (): OutboxIntent[] => {
     }
 };
 
-/**
- * Estado de la cola de intenciones del garzón: lo que ya se hizo en el
- * dispositivo y todavía no confirmó el servidor.
- */
 export const useOutbox = (): UseOutboxReturn => {
     const { isOffline } = useConnectivity();
     const intents = useSyncExternalStore(
@@ -60,9 +50,10 @@ export const useOutbox = (): UseOutboxReturn => {
     const flush = useCallback(async () => {
         setIsFlushing(true);
         try {
-            await getOutbox().flush();
+            return await getOutbox().flush();
         } catch (error) {
             logger.captureException(error, { context: 'useOutbox:flush' });
+            return SIN_INTENTOS;
         } finally {
             setIsFlushing(false);
         }
@@ -70,9 +61,10 @@ export const useOutbox = (): UseOutboxReturn => {
 
     const retry = useCallback(async (id: string) => {
         try {
-            await getOutbox().retry(id);
+            return await getOutbox().retry(id);
         } catch (error) {
             logger.captureException(error, { context: 'useOutbox:retry' });
+            return null;
         }
     }, []);
 

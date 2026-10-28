@@ -85,8 +85,6 @@ export function useNuevaCuentaScreen() {
     return () => ac.abort();
   }, [fetchInitialData]);
 
-  // `categories_updated` (SSE): solo se refresca la lista de categorías; el
-  // carrito y la selección del modal quedan intactos.
   useEffect(() => {
     const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshCategories, () => {
       void (async () => {

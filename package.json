@@ -32,6 +32,7 @@
     "@expo/dom-webview": "~57.0.1",
     "@expo/metro-runtime": "~57.0.17",
     "@expo/vector-icons": "^15.0.3",
+    "@infinitered/react-native-mlkit-face-detection": "5.0.0",
     "@lasmunecasderamon/config": "workspace:*",
     "@lasmunecasderamon/sale-totals": "workspace:*",
     "@lasmunecasderamon/types": "workspace:*",

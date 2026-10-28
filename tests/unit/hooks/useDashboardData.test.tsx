@@ -12,6 +12,7 @@ vi.mock('@/store/authStore', () => ({
 }));
 vi.mock('@/hooks/useDebouncedEventListener', () => ({
   useDebouncedEventListener: vi.fn(),
+  useDebouncedEventListeners: vi.fn(),
 }));
 beforeEach(() => {
   state.userId = 'user-a';

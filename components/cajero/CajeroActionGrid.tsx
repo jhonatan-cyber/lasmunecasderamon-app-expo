@@ -2,6 +2,10 @@ import { useRouter, type Href } from "expo-router";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Spacing } from "@/constants";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useCajaAbierta } from "@/hooks/useCajaAbierta";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { BloqueoPorCaja } from "@/components/shared/BloqueoPorCaja";
+import { rutaExigeCajaAbierta } from "@/utils/cajaGate";
 import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
 
 export const CajeroActionGrid = ({
@@ -11,6 +15,8 @@ export const CajeroActionGrid = ({
 }) => {
   const { accentColor } = useAccentColor();
   const router = useRouter();
+  const { bloqueado } = useCajaAbierta();
+  const esAdmin = useIsAdmin();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
@@ -94,6 +100,18 @@ export const CajeroActionGrid = ({
       color: accentColor,
       route: "/cajero/analytics",
     },
+
+    ...(esAdmin
+      ? [
+          {
+            title: "CONFIGURACIÓN",
+            description: "Ventana y pantallas de asistencia",
+            icon: "settings" as const,
+            color: accentColor,
+            route: "/cajero/configuracion-asistencia",
+          },
+        ]
+      : []),
   ];
 
   const rows = [];
@@ -113,8 +131,12 @@ export const CajeroActionGrid = ({
             { marginTop: rowIndex > 0 ? spacing / 2 : 0, gap: spacing / 2 },
           ]}
         >
-          {row.map((action, colIndex) => (
-            <View key={action.title} style={{ flex: 1 }}>
+          {row.map((action) => (
+            <BloqueoPorCaja
+              key={action.title}
+              bloqueado={bloqueado && rutaExigeCajaAbierta(action.route)}
+              style={{ flex: 1 }}
+            >
               <GarzonActionCard
                 title={action.title}
                 description={action.description}
@@ -122,7 +144,7 @@ export const CajeroActionGrid = ({
                 color={action.color}
                 onPress={() => router.push(action.route as Href)}
               />
-            </View>
+            </BloqueoPorCaja>
           ))}
           {row.length < cols &&
             Array.from({ length: cols - row.length }).map((_, i) => (

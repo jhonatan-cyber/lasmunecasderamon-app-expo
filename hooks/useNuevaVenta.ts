@@ -36,7 +36,7 @@ import {
   faltaConfiguracionChampagne,
 } from "@/hooks/utils/cartUtils";
 import logger from "@/utils/logger";
-import { eventBus } from "@/utils/eventBus";
+import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { getOutbox } from "@/services/outbox";
@@ -53,10 +53,6 @@ import {
 } from "@/components/cajero/nueva-venta/reducer";
 import type { VentaState } from "@/components/cajero/nueva-venta/types";
 
-/**
- * El endpoint de categorías de venta ya devuelve solo categorías activas con
- * unidades activas disponibles en el bar; se valida de nuevo por robustez.
- */
 const filterSaleCategories = (categories: any[]) =>
   (Array.isArray(categories) ? categories : []).filter((c: any) => {
     const status = Number(c?.status ?? c?.estado ?? 0);
@@ -134,7 +130,6 @@ export function useNuevaVenta() {
   useEffect(() => {
     cartRef.current = state.cart;
   }, [state.cart]);
-  /** `true` si lo que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
   const saleTiersCache = useRef<
     Map<string, { anfitrionas: number; precio: number; comision: number }[]>
@@ -215,9 +210,6 @@ export function useNuevaVenta() {
     [],
   );
 
-  // Tramos de precio por anfitrionas: solo los configurados por producto
-  // (`producto_champagne_tiers`). Sin tramos el producto no se puede vender con
-  // anfitrionas; no hay tabla por defecto.
   const getSaleTiers = useCallback(
     async (
       productId: string,
@@ -331,9 +323,6 @@ export function useNuevaVenta() {
 
         dispatch({ type: "SET_INITIAL_DATA", payload: fetchedData });
 
-        // Con la caja cerrada ya no se avisa con toast: la pantalla muestra el
-        // banner «No hay caja abierta.» (espejo de CajaStatusCheck del dashboard)
-        // y mantiene `cajaAbierta === false` para deshabilitar el envío.
       } catch (error) {
         logger.captureException(error, { context: "NuevaVenta:processVenta" });
         showToast("Error", "No se pudo cargar la información.");
@@ -353,40 +342,58 @@ export function useNuevaVenta() {
     return () => ac.abort();
   }, [fetchInitialData]);
 
-  // `categories_updated` (SSE): el catálogo cambió en el dashboard; se refresca
-  // solo la lista — el carrito y la categoría seleccionada quedan intactos.
-  useEffect(() => {
-    const subscription = eventBus.addListener(
+  useDebouncedEventListeners(
+    [
       REALTIME_EVENT_NAMES.refreshCategories,
-      () => {
-        void (async () => {
-          try {
-            const res = await apiClientSafe("/categories?for_sale=1");
-            if ((res as any)?.success) {
-              dispatch({
-                type: "SET_INITIAL_DATA",
-                payload: {
-                  categories: filterSaleCategories((res as any).data || []),
-                },
-              });
-            }
-          } catch (e) {
-            logger.fetchError(e, { context: "NuevaVenta:refreshCategories" });
+      REALTIME_EVENT_NAMES.refreshProducts,
+      REALTIME_EVENT_NAMES.refreshPersonal,
+      REALTIME_EVENT_NAMES.refreshRooms,
+      REALTIME_EVENT_NAMES.refreshClients,
+    ],
+    useCallback(() => {
+      void (async () => {
+        try {
+          const [categoriesRes, anfitrionasRes, roomsRes, clientsRes] =
+            await Promise.all([
+              apiClientSafe("/categories?for_sale=1"),
+              apiClientSafe("/hostesses"),
+              apiClientSafe("/rooms"),
+              apiClientSafe("/clients"),
+            ]);
+
+          const patch: Partial<VentaState> = {};
+          if ((categoriesRes as any)?.success) {
+            patch.categories = filterSaleCategories(
+              (categoriesRes as any).data || [],
+            );
           }
-        })();
-      },
-    );
-    return () => subscription.remove();
-  }, []);
+          if ((anfitrionasRes as any)?.success || Array.isArray(anfitrionasRes)) {
+            patch.anfitrionas = normalizeAnfitrionas(anfitrionasRes);
+          }
+          if ((roomsRes as any)?.success) {
+            patch.habitaciones = (
+              ((roomsRes as any).data as any[]) || []
+            ).map(normalizeRoom);
+          }
+          if ((clientsRes as any)?.success || Array.isArray(clientsRes)) {
+            patch.clientes = normalizeClients(clientsRes);
+          }
+
+          if (Object.keys(patch).length > 0) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: patch });
+          }
+        } catch (error) {
+          logger.fetchError(error, { context: "NuevaVenta:refreshLive" });
+        }
+      })();
+    }, []),
+  );
 
   const onRefresh = useCallback(() => {
     dispatch({ type: "SET_REFRESHING", payload: true });
     fetchInitialData(true);
   }, [fetchInitialData]);
 
-  // Al volver de la pantalla de Caja se refresca **solo** el estado de caja:
-  // un único GET /cashregister/status, sin recargar catálogo, clientes ni
-  // carrito (el reducer mezcla el parcial con SET_INITIAL_DATA).
   const refreshCajaStatus = useCallback(async () => {
     try {
       const result = await readThroughMirror(
@@ -468,7 +475,6 @@ export function useNuevaVenta() {
   ]);
 
   const handleOpenCategory = useCallback(
-    // Venta: catálogo de venta del bar (for_sale), como el dashboard.
     (cat: any) => openCategory(cat, dispatch, { forSale: true }),
     [],
   );
@@ -479,8 +485,7 @@ export function useNuevaVenta() {
       const tierProductId = String(
         prod.producto_id || prod.id_producto || prod.id,
       );
-      // Champaña sin tabla de precios por anfitrionas (ni máximo explícito) no
-      // tiene cómo cobrarse: se bloquea con el mismo mensaje del dashboard.
+
       if (isChampagneProduct(prod) && prod?.tipo_venta !== "shot") {
         const tiers = await getSaleTiers(tierProductId);
         if (faltaConfiguracionChampagne(prod.max_anfitrionas, tiers)) {
@@ -491,8 +496,7 @@ export function useNuevaVenta() {
           return;
         }
       }
-      // El shot sale de la botella abierta: no gasta unidades del bar, así que
-      // su tope es el máximo del dashboard (99) y no `stock_bar`.
+
       const esShot = prod?.tipo_venta === "shot";
       const stockBar = Number(prod.stock_bar ?? 0);
       const hasStockLimit =
@@ -666,11 +670,6 @@ export function useNuevaVenta() {
     [modalQuantities, modalHostessSelections, anfitrionas, getSaleTiers],
   );
 
-  /**
-   * Qué forma de venta se eligió para una presentación (botella, shot cliente o
-   * shot anfitriona); vive en el estado para que el buscador y el modal de
-   * categoría compartan la misma elección.
-   */
   const handleSetSaleChoice = useCallback(
     (productId: string | number, choice: SaleChoice) => {
       dispatch({
@@ -699,8 +698,7 @@ export function useNuevaVenta() {
         );
         return;
       }
-      // Precio, comisión y tope salen de la forma de venta elegida: un shot no
-      // hereda la comisión de la botella (regla del dashboard).
+
       const id = String(item.id || item.id_producto);
       const venta = resolverVentaProducto(item, choice || saleChoices[id]);
       const producto = {
@@ -725,8 +723,6 @@ export function useNuevaVenta() {
         comision: number;
       }[] = champagne && !venta.esShot ? await getSaleTiers(tierProductId) : [];
 
-      // Sin tabla de precios por anfitrionas (ni máximo explícito) la champaña
-      // no tiene cómo cobrarse: se bloquea con el mismo mensaje del dashboard.
       if (
         champagne &&
         !venta.esShot &&
@@ -795,8 +791,7 @@ export function useNuevaVenta() {
     (index: number, delta: number) => {
       const newCart = [...cart];
       let newQty = Math.max(1, (newCart[index].quantity || 1) + delta);
-      // Tope de stock en el bar (catálogo for_sale; legacy sin tope); el shot
-      // no gasta botellas y usa el máximo del dashboard, como al agregar.
+
       const esShot = newCart[index].tipo_venta === "shot";
       const stockBar = Number(newCart[index].stock_bar ?? 0);
       const hasStockLimit =
@@ -886,8 +881,7 @@ export function useNuevaVenta() {
       );
     if (cajaAbierta === false) return showToast("Error", "Caja cerrada");
     if (cart.length === 0) return showToast("Error", "Carrito vacío");
-    // Última barrera: una champaña sin tabla de precios ni máximo configurado no
-    // se puede cobrar (misma regla y mensaje que el dashboard).
+
     for (const item of cart) {
       if (item.tipo_venta === "shot" || !isChampagneProduct(item)) continue;
       const tiers = await getSaleTiers(
@@ -958,9 +952,6 @@ export function useNuevaVenta() {
       );
     }
 
-    // El saldo prepago vive en el servidor y no se puede descontar en el
-    // dispositivo: una venta prepago sin red podría sobregirar al cliente. Se
-    // bloquea en vez de encolarse.
     if (metodoPago === "prepago" && !blockOffline("prepago")) return;
 
     dispatch({ type: "SET_SUBMITTING", payload: true });
@@ -989,9 +980,6 @@ export function useNuevaVenta() {
         0,
       );
 
-      // La venta se encola SIEMPRE, haya red o no: una sola ruta de código. El
-      // id de la intención viaja como clave de idempotencia, así que un corte
-      // después de cobrar no duplica la venta al reintentar.
       const intent = await getOutbox().enqueueAndSend({
         type: "sale.create",
         payload,
@@ -1084,8 +1072,6 @@ export function useNuevaVenta() {
     [hostessSelectionTarget, modalHostessSelections, servicioId],
   );
 
-  // ── Búsqueda de productos (espejo de NewSaleSearch del dashboard) ────
-  // `GET /products?for_sale=1&term=` con debounce de 300 ms.
   const [searchProducto, setSearchProducto] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -1116,7 +1102,6 @@ export function useNuevaVenta() {
         `/products?for_sale=1&term=${encodeURIComponent(term)}`,
         { signal: controller.signal },
       );
-      // Una respuesta vieja no pisa los resultados del término vigente.
       if (seq !== searchSeq.current) return;
       if ((res as any)?.success && Array.isArray((res as any).data)) {
         setSearchResults(

@@ -3,20 +3,12 @@ import { NetworkError, TimeoutError, UnauthorizedError, httpDetailsOf } from '@/
 import { connectivity } from '@/services/connectivity';
 import { createQueueId } from '@/utils/ids';
 import logger from '@/utils/logger';
-
 import type { OutboxRepository } from './repository';
 import type { OutboxEnqueueInput, OutboxIntent, OutboxIntentType } from './types';
 
-/** Tope de reintentos automáticos antes de pedir intervención humana. */
 export const MAX_OUTBOX_ATTEMPTS = 6;
-
-/** Envía una intención al servidor. Lanza si el servidor no la aceptó. */
 export type IntentSender = (intent: OutboxIntent) => Promise<unknown>;
 
-/**
- * Orden dentro de la misma cuenta: los consumos van antes que el cobro (el
- * cobro cierra la cuenta). El resto conserva el FIFO por created_at del SQL.
- */
 const ACCOUNT_TYPE_ORDER: Partial<Record<OutboxIntentType, number>> = {
     'account.consumptions': 0,
     'account.checkout': 1,
@@ -35,29 +27,16 @@ export function orderFlushable(intents: OutboxIntent[]): OutboxIntent[] {
         if (keyA !== null && keyA === keyB) {
             return (ACCOUNT_TYPE_ORDER[a.type] ?? 0) - (ACCOUNT_TYPE_ORDER[b.type] ?? 0);
         }
-        return 0; // sort estable: conserva el FIFO por created_at
+        return 0;
     });
 }
 
-/**
- * Cabecera con la que el servidor deduplica. El id de la intención es estable
- * durante toda su vida, así que un reintento tras un timeout no duplica nada.
- */
 export const IDEMPOTENCY_HEADER = 'x-idempotency-key';
-
-/**
- * Payload de una intención de consumo: la cuenta a la que se le suman productos
- * y el body tal como lo espera `PUT /accounts/:id`.
- */
 export interface ConsumptionsIntentPayload {
     id_cuenta: string | number;
     consumos: Record<string, unknown>;
 }
 
-/**
- * Payload de una intención de cobro: la cuenta a cobrar y el body del endpoint
- * transaccional `POST /accounts/:id/charge-with-sale`.
- */
 export interface CheckoutIntentPayload {
     id_cuenta: string | number;
     metodo_pago?: string;
@@ -101,11 +80,6 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
         return res;
     },
 
-    /**
-     * Cobro de cuenta con su venta, al endpoint que hace las dos cosas en una
-     * sola transacción: si el corte deja la operación a medias, el servidor la
-     * revierte entera y el reintento de la cola no duplica nada.
-     */
     'account.checkout': async intent => {
         const { id_cuenta, ...cobro } = intent.payload as CheckoutIntentPayload;
 
@@ -127,12 +101,6 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
         return res;
     },
 
-    /**
-     * Consumos a una cuenta abierta. El `PUT` es un incremento: si el servidor no
-     * deduplicara por la clave de la intención, reintentar cargaría los mismos
-     * productos otra vez. La cuenta viene en el payload porque el endpoint la
-     * lleva en la ruta.
-     */
     'account.consumptions': async intent => {
         const { id_cuenta, consumos } = intent.payload as ConsumptionsIntentPayload;
 
@@ -157,15 +125,6 @@ export const INTENT_SENDERS: Record<OutboxIntentType, IntentSender> = {
     },
 };
 
-/**
- * Sella el momento en que el usuario hizo la operación.
- *
- * `apiClient` inyecta `device_date` en el envío, así que sin esto una venta
- * encolada sin red quedaría con la hora de sincronización y no con la hora
- * real del cobro: movería la venta de turno y ensuciaría caja y reportes. Se
- * sella al encolar, que es cuando el hecho ocurrió, y no se pisa si el payload
- * ya lo trae.
- */
 export function stampDeviceDate<TPayload>(payload: TPayload, now: () => number): TPayload {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
 
@@ -176,7 +135,6 @@ export function stampDeviceDate<TPayload>(payload: TPayload, now: () => number):
 }
 
 export interface FlushSummary {
-    /** `true` si no se intentó nada (sin red o ya había un flush en curso). */
     skipped: boolean;
     sent: number;
     pending: number;
@@ -188,11 +146,7 @@ export interface OutboxServiceOptions {
     retryDelayMs?: (attempt: number) => number;
     scheduleRetries?: boolean;
     reconcile?: (intent: OutboxIntent) => Promise<Reconciliation>;
-    /**
-     * Pregunta **solo si está confirmado que no hay red**. Con la conectividad
-     * en `unknown` (arranque) conviene intentar el envío: fallar por no saber
-     * sería perder una operación que sí podía salir.
-     */
+
     isOffline?: () => boolean;
     senders?: Partial<Record<OutboxIntentType, IntentSender>>;
     maxAttempts?: number;
@@ -207,12 +161,6 @@ export type Reconciliation =
 
 export interface OutboxService {
     enqueue: <TPayload>(input: OutboxEnqueueInput<TPayload>) => OutboxIntent<TPayload>;
-    /**
-     * Encola y, si hay red, intenta enviar de inmediato. Devuelve el estado
-     * final de la intención para que la pantalla decida qué decir al usuario.
-     * Si el dispositivo no puede guardar la intención (web sin SQLite), la envía
-     * directo: nunca se pierde en silencio.
-     */
     enqueueAndSend: <TPayload>(input: OutboxEnqueueInput<TPayload>) => Promise<OutboxIntent<TPayload>>;
     flush: () => Promise<FlushSummary>;
     list: () => OutboxIntent[];
@@ -230,18 +178,6 @@ export interface OutboxService {
     stop: () => void;
 }
 
-/**
- * ¿El fallo es transitorio? Solo entonces tiene sentido reintentar solo. Un
- * error del servidor (validación, permisos, conflicto) daría lo mismo otra vez,
- * así que la intención queda 'fallida' para que alguien la mire.
- *
- * Un fallo de **transporte** (sin respuesta del servidor) es el único que se
- * reintenta solo. Si el servidor contestó —incluso con un 5xx— el intento ya
- * quedó registrado con su clave y un reintento automático no ejecutaría nada: el
- * dashboard contesta 409 «puede haber aplicado». Reintentarlo sólo gasta turnos y
- * cambia el motivo real por un conflicto de idempotencia, así que lo revisa una
- * persona.
- */
 export function isRetryableError(error: unknown): boolean {
     if (error instanceof NetworkError || error instanceof TimeoutError) return true;
     if (error instanceof UnauthorizedError) return false;
@@ -252,20 +188,11 @@ export function isRetryableError(error: unknown): boolean {
     return /fetch|network|timeout|timed out|abort/i.test(message);
 }
 
-/**
- * Mensaje que va a ver el usuario en la pantalla de pendientes.
- *
- * El `message` del error HTTP suele ser el genérico del sobre («Error de
- * validación»), mientras que el motivo concreto vive en `error.message` del
- * cuerpo («Al menos un detalle es requerido»). Se prefiere el concreto: es el
- * que le dice al cajero qué corregir.
- */
 export function describeIntentError(error: unknown): string {
     const fallback = error instanceof Error ? error.message : String(error);
     return pickServerMessage(httpDetailsOf(error)?.body) ?? fallback;
 }
 
-/** Motivo concreto dentro del sobre de error del servidor, si lo hay. */
 function pickServerMessage(body: unknown): string | null {
     if (!body || typeof body !== 'object') return null;
 
@@ -307,10 +234,6 @@ export function createOutboxService(
 
     const listeners = new Set<() => void>();
     let flushing = false;
-
-    // Snapshot para `useSyncExternalStore`: React exige que `getSnapshot`
-    // devuelva la misma referencia mientras nada cambie, así que la lista se
-    // cachea y se invalida en cada mutación.
     let snapshot: OutboxIntent[] = [];
     let snapshotValid = false;
     let snapshotOwner: string | null = null;
@@ -336,7 +259,6 @@ export function createOutboxService(
         if (!flushing) schedule();
     };
 
-    /** Intención en memoria, para cuando el almacén local no puede guardarla. */
     const createTransientIntent = <TPayload>(
         input: OutboxEnqueueInput<TPayload>
     ): OutboxIntent<TPayload> => {
@@ -359,11 +281,6 @@ export function createOutboxService(
         };
     };
 
-    /**
-     * Camino sin cola: el dispositivo no puede guardar trabajo pendiente, así que
-     * la intención se envía ahora o se reporta como fallida con un motivo claro.
-     * No hay reintento posible, y decirlo es mejor que prometer que saldrá luego.
-     */
     const sendWithoutQueue = async <TPayload>(
         intent: OutboxIntent<TPayload>
     ): Promise<OutboxIntent<TPayload>> => {
@@ -402,14 +319,23 @@ export function createOutboxService(
         }
     };
 
-    const send = async (intent: OutboxIntent): Promise<void> => {
+    const confirm = (intent: OutboxIntent, response: unknown): OutboxIntent => {
+        repository.remove(intent.id);
+        return { ...intent, status: 'aplicada', response, appliedAt: now(), lastError: null };
+    };
+
+    const persisted = (intent: OutboxIntent, fallback: OutboxIntent): OutboxIntent =>
+        repository.get(intent.id) ?? fallback;
+
+    const send = async (intent: OutboxIntent): Promise<OutboxIntent | null> => {
         const owner = activeOwner();
         const sameSession = () => hasSession() && activeOwner() === owner;
-        if (!sameSession()) return;
+        if (!sameSession()) return null;
         const sender = senders[intent.type];
         if (!sender) {
-            repository.markFailed(intent.id, `Tipo de operación desconocido: ${intent.type}`);
-            return;
+            const error = `Tipo de operación desconocido: ${intent.type}`;
+            repository.markFailed(intent.id, error);
+            return persisted(intent, { ...intent, status: 'fallida', lastError: error });
         }
 
         try {
@@ -418,41 +344,45 @@ export function createOutboxService(
                 try { result = await options.reconcile(intent); }
                 catch (error) {
                     if (sameSession()) repository.markRetryable(intent.id, describeIntentError(error), now() + 30_000);
-                    return;
+                    return null;
                 }
-                if (!sameSession()) return;
-                if (result.state === 'aplicada') { repository.markApplied(intent.id, result.response); return; }
+                if (!sameSession()) return null;
+                if (result.state === 'aplicada') return confirm(intent, result.response);
                 if (result.state === 'rechazada' || result.state === 'fallida') {
-                    repository.markFailed(intent.id, result.message); return;
+                    repository.markFailed(intent.id, result.message);
+                    return persisted(intent, { ...intent, status: 'fallida', lastError: result.message });
                 }
                 if (result.state === 'pendiente') {
-                    repository.markRetryable(intent.id, 'El servidor sigue procesando esta operación.', now() + 30_000);
-                    return;
+                    const aviso = 'El servidor sigue procesando esta operación.';
+                    repository.markRetryable(intent.id, aviso, now() + 30_000);
+                    return persisted(intent, { ...intent, status: 'pendiente', lastError: aviso });
                 }
             }
-            if (!sameSession() || isOffline()) return;
+            if (!sameSession() || isOffline()) return null;
             if (intent.attempts >= maxAttempts) {
-                repository.markFailed(intent.id, 'Se agotaron los intentos; revisa esta operación antes de reenviarla.');
-                return;
+                const error = 'Se agotaron los intentos; revisa esta operación antes de reenviarla.';
+                repository.markFailed(intent.id, error);
+                return persisted(intent, { ...intent, status: 'fallida', lastError: error });
             }
             repository.markSending(intent.id);
             const response = await sender(intent);
-            if (!sameSession()) return;
-            repository.markApplied(intent.id, response);
+            if (!sameSession()) return null;
+            return confirm(intent, response);
         } catch (error) {
-            if (!sameSession()) return;
+            if (!sameSession()) return null;
             const message = describeIntentError(error);
             const intentos = repository.get(intent.id)?.attempts ?? 0;
 
             if (isRetryableError(error) && intentos < maxAttempts) {
                 repository.markRetryable(intent.id, message, now() + retryDelayMs(intentos));
-            } else {
-                repository.markFailed(intent.id, message);
+                return persisted(intent, { ...intent, status: 'pendiente', lastError: message });
             }
+            repository.markFailed(intent.id, message);
+            return persisted(intent, { ...intent, status: 'fallida', lastError: message });
         }
     };
 
-    const flush = async (): Promise<FlushSummary> => {
+    const flush = async (recogidos?: Map<string, OutboxIntent>): Promise<FlushSummary> => {
         if (isOffline() || flushing || !hasSession()) {
             return { skipped: true, sent: 0, pending: 0, failed: 0 };
         }
@@ -462,7 +392,15 @@ export function createOutboxService(
         const summary: FlushSummary = { skipped: false, sent: 0, pending: 0, failed: 0 };
 
         try {
-            // Ordenado por cuenta: consumos antes que el cobro de la misma cuenta.
+
+            if (owner) {
+                try {
+                    repository.adoptUnowned(owner);
+                } catch (error) {
+                    logger.captureException(error, { context: 'outbox:adoptUnowned' });
+                }
+            }
+
             for (const intent of orderFlushable(repository.listFlushable(maxAttempts))) {
                 if (activeOwner() !== owner || !hasSession() || isOffline()) break;
                 if ((intent.nextAttemptAt ?? 0) > now()) continue;
@@ -470,23 +408,39 @@ export function createOutboxService(
                     repository.markRetryable(intent.id, 'Primero sincroniza o revisa los consumos de esta cuenta.');
                     summary.pending += 1; continue;
                 }
-                await send(intent);
+
+                let desenlace: OutboxIntent | null = null;
+                try {
+                    desenlace = await send(intent);
+                } catch (error) {
+                    logger.captureException(error, { context: 'outbox:send', intentId: intent.id });
+                    try {
+                        repository.markRetryable(intent.id, describeIntentError(error));
+                    } catch (markError) {
+                        logger.captureException(markError, { context: 'outbox:send:retryable' });
+                    }
+                }
+
+                if (desenlace) {
+                    recogidos?.set(desenlace.id, desenlace);
+                    if (desenlace.status === 'aplicada') summary.sent += 1;
+                    else if (desenlace.status === 'fallida') summary.failed += 1;
+                    else summary.pending += 1;
+                    continue;
+                }
 
                 const estado = repository.get(intent.id)?.status;
-                if (estado === 'aplicada') summary.sent += 1;
-                else if (estado === 'fallida') summary.failed += 1;
+                if (estado === 'fallida') summary.failed += 1;
                 else summary.pending += 1;
             }
         } catch (error) {
             logger.captureException(error, { context: 'outbox:flush' });
         } finally {
             flushing = false;
-            // Purga barata del historial resuelto en cada flush: evita que la
-            // tabla crezca sin límite (aplicadas >7d, cap 500).
             try {
                 repository.pruneResolved();
             } catch {
-                // La purga nunca debe romper el flush.
+
             }
             notify();
         }
@@ -526,9 +480,10 @@ export function createOutboxService(
                 return sendWithoutQueue(intent ?? createTransientIntent(stamped));
             }
 
-            await flush();
+            const desenlaces = new Map<string, OutboxIntent>();
+            await flush(desenlaces);
 
-            const actual = repository.get(intent.id);
+            const actual = desenlaces.get(intent.id) ?? repository.get(intent.id);
             return (actual as OutboxIntent<TPayload> | null) ?? intent;
         },
 
@@ -543,8 +498,9 @@ export function createOutboxService(
         retry: async (id: string) => {
             repository.retry(id);
             notify();
-            await flush();
-            return repository.get(id);
+            const desenlaces = new Map<string, OutboxIntent>();
+            await flush(desenlaces);
+            return desenlaces.get(id) ?? repository.get(id);
         },
 
         discard: (id: string) => {

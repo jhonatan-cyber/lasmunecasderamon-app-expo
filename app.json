@@ -16,9 +16,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lasmunecasderamon.app",
+      "deploymentTarget": "15.5",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Permite el acceso a Face ID para iniciar sesión de forma segura.",
         "NSCameraUsageDescription": "Permite el acceso a la cámara para registrar tu asistencia mediante QR y fotografiar el baucher de los pedidos pagados con transferencia.",
+        "NSPhotoLibraryUsageDescription": "Permite elegir de tu galería la foto del baucher de un pedido pagado con transferencia.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
@@ -57,7 +59,9 @@
       "permissions": [
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -96,6 +100,13 @@
         "expo-camera",
         {
           "cameraPermission": "Permite el acceso a la cámara para registrar tu asistencia mediante QR."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permite el acceso a la cámara para fotografiar el baucher de los pedidos pagados con transferencia.",
+          "photosPermission": "Permite elegir de tu galería la foto del baucher de un pedido pagado con transferencia."
         }
       ],
       "expo-font",

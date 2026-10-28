@@ -6,6 +6,8 @@ import { apiClientSafe } from '@/api/client';
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
+import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import type { Anfitriona } from '@lasmunecasderamon/types';
 import type { SSEPayload } from '@/types/realtime';
 import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
@@ -43,9 +45,6 @@ export const useSolicitudes = () => {
 
     const fetchSolicitudes = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
-            // Red primero; sin red se sirve la lista del turno guardada en el
-            // dispositivo (espejo), que es lo único que deja ver qué falta
-            // resolver cuando se cae la conexión.
             const [lectura, resAnfitrionas] = await Promise.all([
                 getMirror().readThroughDetailed(
                     MIRROR_KEYS.serviceRequests,
@@ -159,8 +158,6 @@ export const useSolicitudes = () => {
 
     useEffect(() => {
         const ac = new AbortController();
-        // La lectura inicial corre en su propia tarea: el efecto no debe
-        // disparar setState de forma síncrona.
         void (async () => {
             await fetchSolicitudes(false, ac.signal);
         })();
@@ -184,6 +181,23 @@ export const useSolicitudes = () => {
         });
         return () => subscription.remove();
     }, [fetchSolicitudes]);
+
+    useDebouncedEventListener(
+        REALTIME_EVENT_NAMES.refreshPersonal,
+        useCallback(() => {
+            void (async () => {
+                try {
+                    const resAnfitrionas = await apiClientSafe<Anfitriona[]>('/hostesses');
+                    const anfitrionasData = resAnfitrionas as unknown as { success: boolean; data: Anfitriona[] };
+                    if (Array.isArray(resAnfitrionas)) {
+                        setAllHostesses(resAnfitrionas);
+                    } else if (anfitrionasData?.success) {
+                        setAllHostesses(anfitrionasData.data || []);
+                    }
+                } catch {}
+            })();
+        }, []),
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
