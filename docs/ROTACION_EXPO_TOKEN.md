@@ -102,7 +102,7 @@ El disparo manual ejecuta primero `quality.yml` y, si pasa, publica la OTA. Tamb
 | Cuenta y proyecto | `nuwe` / `ef39814f-d1f7-444c-bc30-598055b8595e` |
 | Secreto | `EXPO_TOKEN`, nivel repositorio |
 | Consumidores | `.github/workflows/deploy.yml` y `.github/workflows/build-android.yml` |
-| Preflight | `Verify Expo token` en `deploy.yml` y `build-android.yml` falla antes de instalar dependencias si el secreto falta o no autentica |
+| Preflight | `Verify Expo token` en ambos workflows ejecuta `scripts/verify-expo-token.sh` antes de instalar dependencias |
 | Disparador | `workflow_run` de `App Quality` en `master`, o `workflow_dispatch` |
 | Canal OTA | `production`; `runtimeVersion` por fingerprint: solo llega a binarios compatibles |
 | Guarda de deploy | El SHA debe seguir siendo el head de `master`; si `master` avanzó, hay que relanzar |
