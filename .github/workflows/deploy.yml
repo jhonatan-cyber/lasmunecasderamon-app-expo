@@ -70,13 +70,30 @@ jobs:
         with:
           eas-version: 24.12.1
           packager: pnpm
-          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error title=EXPO_TOKEN no configurado::Falta el secreto EXPO_TOKEN. Sigue docs/ROTACION_EXPO_TOKEN.md y relanza el workflow."
+            exit 1
+          fi
+
+          if ! account=$(eas whoami 2>&1); then
+            printf '%s\n' "$account"
+            echo "::error title=EXPO_TOKEN invalido::El secreto EXPO_TOKEN no autentica con Expo. Rótalo siguiendo docs/ROTACION_EXPO_TOKEN.md y relanza el workflow."
+            exit 1
+          fi
+
+          echo "EAS autenticado como: $account"
 
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile
 
       - name: Publish production update
         env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           UPDATE_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message || 'Manual production update' }}
         run: eas update --branch production --message "$UPDATE_MESSAGE" --auto
 

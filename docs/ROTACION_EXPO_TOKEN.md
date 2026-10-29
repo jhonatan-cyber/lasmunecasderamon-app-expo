@@ -17,7 +17,7 @@ gh run list --workflow=deploy.yml --branch master --limit 3
 gh run view <RUN_ID> --log-failed
 ```
 
-Busca en el paso **Publish production OTA**:
+Busca el paso **Verify Expo token** (o **Publish production OTA** en runs anteriores a este preflight):
 
 ```text
 eas whoami
@@ -102,6 +102,7 @@ El disparo manual ejecuta primero `quality.yml` y, si pasa, publica la OTA. Tamb
 | Cuenta y proyecto | `nuwe` / `ef39814f-d1f7-444c-bc30-598055b8595e` |
 | Secreto | `EXPO_TOKEN`, nivel repositorio |
 | Consumidores | `.github/workflows/deploy.yml` y `.github/workflows/build-android.yml` |
+| Preflight | `Verify Expo token` falla antes de instalar dependencias si el secreto falta o no autentica |
 | Disparador | `workflow_run` de `App Quality` en `master`, o `workflow_dispatch` |
 | Canal OTA | `production`; `runtimeVersion` por fingerprint: solo llega a binarios compatibles |
 | Guarda de deploy | El SHA debe seguir siendo el head de `master`; si `master` avanzó, hay que relanzar |
@@ -113,6 +114,7 @@ El disparo manual ejecuta primero `quality.yml` y, si pasa, publica la OTA. Tamb
 | Síntoma | Causa probable | Acción |
 | --- | --- | --- |
 | `The bearer token is invalid` | Token revocado, inválido o secreto con valor viejo | Crear token nuevo y actualizar `EXPO_TOKEN` |
+| `EXPO_TOKEN no configurado` | El secreto no existe en el repositorio | Cargar `EXPO_TOKEN` y relanzar el workflow |
 | `whoami` funciona pero falla la update | La cuenta no tiene acceso al proyecto `nuwe` | Usar el owner o un robot user con permiso de publicación |
 | `EAS project not configured` | Falta `extra.eas.projectId` en `app.json` | Restaurar el project ID; hoy está presente |
 | Falla «Confirm this is still the production branch head» | `master` avanzó durante el run | Relanzar el workflow sobre el head actual |
