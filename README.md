@@ -71,6 +71,8 @@ corepack pnpm typecheck
 
 - `eas.json` define los perfiles de compilacion.
 - `.github/workflows/deploy.yml` publica updates OTA desde `master`.
+- Si `App CI/CD` falla con `The bearer token is invalid`, sigue la guia de
+  [rotacion de EXPO_TOKEN](docs/ROTACION_EXPO_TOKEN.md).
 - `app.json` concentra iconos, deep links, permisos y configuracion de Expo.
 
 ## Flujo recomendado de verificacion
