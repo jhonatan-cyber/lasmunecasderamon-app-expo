@@ -67,6 +67,35 @@ corepack pnpm typecheck
 - `typecheck`: valida tipos antes de publicar builds o updates OTA.
 - Antes de publicar una update, correr ambos comandos y probar el login mas una ruta principal por rol.
 
+## Ramas y merges
+
+Solo se mantiene `master`. Cada cambio vive en una rama corta que sale de
+`master` y se borra al mergear el PR; no se dejan ramas abiertas despues del
+merge. El despliegue OTA solo corre desde `master`, asi que una rama de trabajo
+no publica nada.
+
+El borrado automatico de la rama de cabeza esta activo en GitHub
+(`delete_branch_on_merge`), por lo que un PR mergeado desde la web o la API
+borra su rama solo. En merges locales, pide el borrado de forma explicita:
+
+```bash
+gh pr merge <numero> --delete-branch
+# si ya mergeaste a mano:
+git push origin --delete <rama>
+git branch -d <rama>
+```
+
+Verificacion:
+
+```bash
+git fetch --prune
+git ls-remote --heads origin   # debe listar solo refs/heads/master
+git branch                     # solo master
+```
+
+El ajuste no borra ramas de forks ni actua sobre PRs ya mergeados; si queda
+alguna rama vieja, usa los comandos de arriba.
+
 ## Build y release
 
 - `eas.json` define los perfiles de compilacion.
