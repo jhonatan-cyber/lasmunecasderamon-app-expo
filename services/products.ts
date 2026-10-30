@@ -5,5 +5,13 @@ export const productsService = {
     apiClientSafe(`/products?category_id=${categoryId}`),
 
   /** Presentaciones con stock en el bar (catálogo de venta). */
-  forSale: () => apiClientSafe('/products?for_sale=1'),
+  forSale: (signal?: AbortSignal) =>
+    apiClientSafe('/products?for_sale=1', { signal }),
+
+  /**
+   * Bebidas analcohólicas habilitadas para cover de cliente: las únicas que el
+   * bar puede servir como acompañamiento de una cortesía.
+   */
+  forCover: (signal?: AbortSignal) =>
+    apiClientSafe('/products/for-sale?solo_cover=true', { signal }),
 };

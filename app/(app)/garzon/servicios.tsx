@@ -149,6 +149,20 @@ export default function ServiciosScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: bg }}
     >
+      <PremiumHeader
+        title="Servicios"
+        subtitle="Registrar nuevo servicio en habitación"
+        rightComponent={
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backBtnRight}
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextHeader}>Atrás</Text>
+          </Pressable>
+        }
+      />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -161,19 +175,6 @@ export default function ServiciosScreen() {
           />
         }
       >
-        <PremiumHeader
-          title="Servicios"
-          subtitle="Registrar nuevo servicio en habitación"
-          rightComponent={
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backBtnRight}
-            >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
-        />
 
         <GarzonOfflineBanner />
 

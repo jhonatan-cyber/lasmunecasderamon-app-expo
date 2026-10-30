@@ -1,8 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -64,9 +67,17 @@ export function SolicitarAnticipoModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalOverlay}
+      >
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
-        <View style={[styles.modalContent, { backgroundColor: bg }]}>
+        <View
+          style={[
+            styles.modalContent,
+            { backgroundColor: bg, maxHeight: "92%" },
+          ]}
+        >
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textPrimary }]}>
@@ -76,6 +87,12 @@ export function SolicitarAnticipoModal({
               <Ionicons name="close" size={22} color={textSecondary} />
             </Pressable>
           </View>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            style={{ flexShrink: 1 }}
+            contentContainerStyle={{ paddingBottom: 4 }}
+          >
           <View
             style={[
               styles.disponibleCard,
@@ -180,8 +197,9 @@ export function SolicitarAnticipoModal({
               </Text>
             )}
           </Pressable>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

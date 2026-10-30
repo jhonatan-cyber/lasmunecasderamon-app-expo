@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { EntradasListadoCard } from '@/components/entradas/EntradasListadoCard';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -22,7 +23,6 @@ import { cajaService } from '@/services/caja';
 import {
   entradasService,
   type EntradaCliente,
-  type EstadoCortesia,
   type MetodoPagoEntrada,
 } from '@/services/entradas';
 import { adjuntarBaucher } from '@/utils/baucherPicker';
@@ -41,12 +41,6 @@ const METODOS: {
     { id: 'tarjeta', label: 'Tarjeta', icon: 'card-outline' },
     { id: 'transferencia', label: 'Transferencia', icon: 'swap-horizontal-outline' },
   ];
-
-const ESTADOS: Record<EstadoCortesia, { label: string; color: string }> = {
-  pendiente: { label: 'Pendiente', color: '#F59E0B' },
-  entregada: { label: 'Entregada', color: '#10B981' },
-  anulada: { label: 'Anulada', color: '#EF4444' },
-};
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -71,6 +65,7 @@ export default function GarzonEntradasScreen() {
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [fotoLoading, setFotoLoading] = useState(false);
+  const [registroAbierto, setRegistroAbierto] = useState(true);
 
   const [entradas, setEntradas] = useState<EntradaCliente[]>([]);
   const [caja, setCaja] = useState<string | null>(null);
@@ -78,7 +73,7 @@ export default function GarzonEntradasScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { fecha } = fechaHoraLocal();
-  const total = entradas.reduce((sum, entrada) => sum + Number(entrada.monto_entrada), 0);
+
   const totalPuerta = costoEntrada * cantidad;
   const cargar = useCallback(async (mostrarLoading = false) => {
     if (mostrarLoading) setLoading(true);
@@ -253,6 +248,17 @@ export default function GarzonEntradasScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1, backgroundColor: bg }}
     >
+      <PremiumHeader
+        title="Entradas"
+        subtitle="Cobro de acceso en la puerta"
+        rightComponent={
+          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextHeader}>Atrás</Text>
+          </Pressable>
+        }
+      />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -266,17 +272,6 @@ export default function GarzonEntradasScreen() {
           />
         }
       >
-        <PremiumHeader
-          title="Entradas"
-          subtitle="Cobro de acceso en la puerta"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
-        />
-
         <View style={{ padding: 20 }}>
           {!caja && (
             <View style={[styles.cajaBanner, { backgroundColor: '#F59E0B1F', borderColor: '#F59E0B' }]}>
@@ -292,10 +287,24 @@ export default function GarzonEntradasScreen() {
           <View
             style={[styles.card, { backgroundColor: cardBg, borderColor }]}
           >
-            <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-              NUEVA ENTRADA
-            </Text>
+            <Pressable
+              onPress={() => setRegistroAbierto(abierto => !abierto)}
+              style={styles.cardToggle}
+            >
+              <Text
+                style={[styles.sectionLabel, { color: textSecondary, marginTop: 0, marginBottom: 0 }]}
+              >
+                NUEVA ENTRADA
+              </Text>
+              <Ionicons
+                name={registroAbierto ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={textSecondary}
+              />
+            </Pressable>
 
+            {registroAbierto && (
+              <>
             <TextInput
               value={clienteNombre}
               onChangeText={setClienteNombre}
@@ -434,71 +443,20 @@ export default function GarzonEntradasScreen() {
                 <Text style={styles.submitText}>REGISTRAR ENTRADA</Text>
               )}
             </AnimatedButton>
+              </>
+            )}
           </View>
 
-          {/* ── Listado del día ──────────────────────────────────── */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: cardBg, borderColor, marginTop: 20 },
-            ]}
-          >
-            <View style={styles.listHeader}>
-              <View>
-                <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                  HOY · {fecha.split('-').reverse().join('/')}
-                </Text>
-                <Text style={[styles.totalValue, { color: textPrimary, fontSize: 20 }]}>
-                  {formatCurrency(total)}
-                </Text>
-              </View>
-              <Text style={{ color: textSecondary, fontSize: 12 }}>
-                {entradas.length} {entradas.length === 1 ? 'persona' : 'personas'}
-              </Text>
-            </View>
-
-            {entradas.length === 0 && (
-              <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
-                {caja
+          <View style={{ marginTop: 20 }}>
+            <EntradasListadoCard
+              entradas={entradas}
+              titulo={`HOY · ${fecha.split('-').reverse().join('/')}`}
+              vacio={
+                caja
                   ? 'Sin entradas registradas en este turno.'
-                  : 'Sin caja abierta: no hay turno que listar.'}
-              </Text>
-            )}
-
-            {entradas.map(entrada => {
-              const estado = ESTADOS[entrada.cortesia_estado] ?? ESTADOS.pendiente;
-              return (
-                <View
-                  key={entrada.id}
-                  style={[styles.entradaRow, { borderColor }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{ color: textPrimary, fontWeight: '700', fontSize: 14 }}
-                      numberOfLines={1}
-                    >
-                      {entrada.cliente_nombre || 'Cliente sin nombre'}
-                    </Text>
-                    <Text style={{ color: textSecondary, fontSize: 11 }}>
-                      {entrada.hora} · {entrada.metodo_pago}
-                      {entrada.registrado_por_nombre
-                        ? ` · ${entrada.registrado_por_nombre}`
-                        : ''}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
-                      {formatCurrency(entrada.monto_entrada)}
-                    </Text>
-                    <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
-                      <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800' }}>
-                        {estado.label}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
+                  : 'Sin caja abierta: no hay turno que listar.'
+              }
+            />
           </View>
         </View>
       </ScrollView>
@@ -519,6 +477,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  cardToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   card: {
     borderRadius: 28,
     padding: 20,
@@ -605,24 +568,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 16,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  entradaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginTop: 4,
   },
 });

@@ -9,8 +9,11 @@ import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
 import React,{ useState } from 'react';
 import {
 ActivityIndicator,
+KeyboardAvoidingView,
 Modal,
+Platform,
 Pressable,
+ScrollView,
 StyleSheet,
 Text,
 TextInput,
@@ -166,13 +169,22 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                 animationType="slide"
                 onRequestClose={onClose}
             >
-                <View style={styles.overlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.overlay}
+                >
                     <AnimatedView
                         from={{ translateY: 300, opacity: 0 }}
                         animate={{ translateY: 0, opacity: 1 }}
                         transition={{ type: 'spring', damping: 20 }}
-                        style={[styles.modalContent, { backgroundColor: bg }]}
+                        style={[styles.modalContent, { backgroundColor: bg, maxHeight: '92%' }]}
                     >
+                        <ScrollView
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                            style={{ flexShrink: 1 }}
+                            contentContainerStyle={{ paddingBottom: 8 }}
+                        >
                         <View style={styles.header}>
                             <View style={[styles.iconCircle, { backgroundColor: `${accentColor}20` }]}>
                                 <Ionicons name="calendar" size={32} color={accentColor} />
@@ -256,8 +268,9 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                                 Continuar sin asistencia
                             </Text>
                         </Pressable>
+                        </ScrollView>
                     </AnimatedView>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             <QRScannerModal

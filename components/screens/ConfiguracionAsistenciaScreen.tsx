@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -188,6 +190,10 @@ function PanelConfiguracionAsistencia() {
         onBack={() => router.back()}
       />
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.cardHeader}>
@@ -425,6 +431,7 @@ function PanelConfiguracionAsistencia() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <PremiumAlert
         visible={confirmacionActivacion !== null}

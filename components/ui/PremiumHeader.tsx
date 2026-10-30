@@ -69,7 +69,11 @@ export function PremiumHeader({
                     </Pressable>
                 )}
                 <View style={{ flex: 1, marginLeft: onBack ? 12 : 0 }}>
-                    <Text style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}>
+                    <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}
+                    >
                         {title}
                     </Text>
                     {subtitle && (
@@ -87,7 +91,11 @@ export function PremiumHeader({
                                     elevation: 4
                                 }} />
                             )}
-                            <Text style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}>
+                            <Text
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}
+                            >
                                 {connectionStatus ? (connectionStatus.label || (connectionStatus.isConnected ? 'Conectado' : 'Desconectado')) : subtitle}
                             </Text>
                         </View>

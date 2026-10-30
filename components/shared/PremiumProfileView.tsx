@@ -4,6 +4,8 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState, useEffect } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Switch,
   Text,
@@ -187,6 +189,10 @@ export function PremiumProfileView({
         topInset={insets.top}
         onBack={() => router.back()}
       />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
@@ -254,6 +260,7 @@ export function PremiumProfileView({
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <ProfileImagePickerModal
         visible={imagePickerVisible}

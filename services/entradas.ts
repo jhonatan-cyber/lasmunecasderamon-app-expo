@@ -60,8 +60,18 @@ export interface EntradaPendiente {
 
 export interface EntregaEntradaPayload {
   presentacion_id: string;
+  /**
+   * `corte` sirve un trago (precio del shot, descuenta ml); `botella` sirve la
+   * presentación completa. El servidor toma `botella` si se omite.
+   */
+  tipo_entrega?: 'corte' | 'botella';
   /** Obligatorio cuando la bebida trae acompañamiento configurado. */
   acompanamiento_presentacion_id?: string | null;
+  /**
+   * Lo que el cliente paga de mas en la barra. Sin valor, el servidor deriva
+   * la diferencia entre el precio y lo ya pagado en la puerta.
+   */
+  monto_adicional?: number;
 }
 
 /** Resultado de la entrega: cortesía o adicional cobrado en la barra. */

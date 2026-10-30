@@ -3,25 +3,24 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import {
+  agruparEntradas,
+  EntradasListadoCard,
+  estadoDelGrupo,
+  type GrupoEntrada,
+} from '@/components/entradas/EntradasListadoCard';
+import { EntregaCortesiasModal } from '@/components/entradas/EntregaCortesiasModal';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
-import { barService } from '@/services/bar';
-import { entradasService, type EntradaPendiente } from '@/services/entradas';
-import { productsService } from '@/services/products';
+import { entradasService, type EntradaCliente, type EntradaPendiente } from '@/services/entradas';
 import { eventBus } from '@/utils/eventBus';
 import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
@@ -33,27 +32,17 @@ import { showToast } from '@/utils/toast-lazy';
  * pestaña Cortesías de la web: la puerta cobra la entrada y aquí la barra sirve
  * la bebida; el servidor decide si es cortesía o adicional según
  * `max(tope, monto_entrada)`.
+ *
+ * La cola trae una persona por fila, pero la barra atiende la compra completa:
+ * cada grupo muestra un solo botón y el modal reparte los cortes elegidos entre
+ * las entradas pendientes del grupo.
  */
 
-interface OpcionVenta {
-  tipo?: string;
-  acompanamiento?: { unidades?: number };
-}
-
-interface Bebida {
-  presentacion_id: string;
-  producto_nombre: string;
-  presentacion_nombre: string;
-  precio_venta: number;
-  stock_bar: number;
-  opciones_venta: OpcionVenta[];
-}
-
-interface Acompanamiento {
+/** Compra con al menos una cortesía pendiente: se muestra como en el listado del garzón. */
+interface GrupoPendiente {
   id: string;
-  producto_nombre: string;
-  nombre: string;
-  stock_bar: number;
+  dia: GrupoEntrada;
+  filas: EntradaPendiente[];
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -66,58 +55,8 @@ function fechaHoraLocal() {
   };
 }
 
-/** `opciones_venta` llega como JSON (array u objeto serializado) desde la API. */
-function opcionesDe(valor: unknown): OpcionVenta[] {
-  if (Array.isArray(valor)) return valor as OpcionVenta[];
-  if (typeof valor === 'string') {
-    try {
-      const parseado = JSON.parse(valor);
-      return Array.isArray(parseado) ? (parseado as OpcionVenta[]) : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-/** Unidades de acompañamiento que exige la opción botella, igual que la web. */
-function unidadesAcompanamiento(bebida: Bebida | null | undefined): number {
-  const botella = bebida?.opciones_venta.find(opcion => opcion.tipo === 'botella');
-  const unidades = Number(botella?.acompanamiento?.unidades ?? 0);
-  return Number.isFinite(unidades) && unidades > 0 ? Math.floor(unidades) : 0;
-}
-
-function bebidaDe(valor: unknown): Bebida | null {
-  if (!valor || typeof valor !== 'object') return null;
-  const fila = valor as Record<string, unknown>;
-  const presentacionId = String(fila.presentacion_id ?? '');
-  if (!presentacionId) return null;
-  return {
-    presentacion_id: presentacionId,
-    producto_nombre: String(fila.producto_nombre ?? ''),
-    presentacion_nombre: String(fila.presentacion_nombre ?? ''),
-    precio_venta: Number(fila.precio_venta ?? 0),
-    stock_bar: Number(fila.stock_bar ?? 0),
-    opciones_venta: opcionesDe(fila.opciones_venta),
-  };
-}
-
-function acompanamientoDe(valor: unknown): Acompanamiento | null {
-  if (!valor || typeof valor !== 'object') return null;
-  const fila = valor as Record<string, unknown>;
-  const id = String(fila.id ?? '');
-  if (!id) return null;
-  return {
-    id,
-    producto_nombre: String(fila.producto_nombre ?? ''),
-    nombre: String(fila.nombre ?? ''),
-    stock_bar: Number(fila.stock_bar ?? 0),
-  };
-}
-
 export function CortesiasScreen() {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, isDark } =
-    useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
 
   const topeCortesia = Number(
@@ -125,20 +64,48 @@ export function CortesiasScreen() {
   );
 
   const [pendientes, setPendientes] = useState<EntradaPendiente[]>([]);
+  const [entradasDia, setEntradasDia] = useState<EntradaCliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const [entrada, setEntrada] = useState<EntradaPendiente | null>(null);
-  const [bebidas, setBebidas] = useState<Bebida[]>([]);
-  const [bebidasLoading, setBebidasLoading] = useState(false);
-  const [busqueda, setBusqueda] = useState('');
-  const [presentacionId, setPresentacionId] = useState('');
-  const [acompanamientos, setAcompanamientos] = useState<Acompanamiento[]>([]);
-  const [acompanamientoId, setAcompanamientoId] = useState('');
-  const [acompanamientosLoading, setAcompanamientosLoading] = useState(false);
-  const [entregando, setEntregando] = useState(false);
+  const [grupoEntrega, setGrupoEntrega] = useState<GrupoPendiente | null>(null);
+  const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
 
   const { fecha } = fechaHoraLocal();
+
+  const totalPendiente = useMemo(
+    () => pendientes.reduce((suma, fila) => suma + Number(fila.monto_entrada), 0),
+    [pendientes],
+  );
+
+  // Una fila por compra, con los mismos datos que el listado del garzón. Si el
+  // listado del día no cargó, se arma con lo que trae la cola.
+  const gruposPendientes = useMemo<GrupoPendiente[]>(() => {
+    const porGrupo = new Map<string, EntradaPendiente[]>();
+    for (const fila of pendientes) {
+      const clave = fila.grupo_registro_id ?? fila.id;
+      const actual = porGrupo.get(clave);
+      if (actual) actual.push(fila);
+      else porGrupo.set(clave, [fila]);
+    }
+
+    const diaPorGrupo = new Map(agruparEntradas(entradasDia).map(grupo => [grupo.id, grupo]));
+    return Array.from(porGrupo.entries()).map(([clave, filas]) => ({
+      id: clave,
+      dia:
+        diaPorGrupo.get(clave) ?? {
+          id: clave,
+          cliente: filas[0].cliente_nombre || 'Cliente sin nombre',
+          cantidad: filas.length,
+          costoUnitario: Number(filas[0].monto_entrada),
+          total: filas.reduce((suma, fila) => suma + Number(fila.monto_entrada), 0),
+          metodo: filas[0].metodo_pago,
+          adicional: 0,
+          entregadas: 0,
+          anuladas: 0,
+        },
+      filas,
+    }));
+  }, [pendientes, entradasDia]);
 
   const cargar = useCallback(
     async (mostrarLoading = false) => {
@@ -146,11 +113,22 @@ export function CortesiasScreen() {
       try {
         // La cola es la del día de negocio, igual que en el dashboard: el
         // servidor no la limita a una caja y entregar no exige caja abierta.
-        const res = await entradasService.pendientes(fecha);
+        const [res, listado] = await Promise.all([
+          entradasService.pendientes(fecha),
+          entradasService.listar(fecha),
+        ]);
         if (!res.success) {
           throw new Error(res.message || 'No se pudo cargar la cola de cortesías');
         }
         setPendientes(res.data ?? []);
+        // El listado es de consulta: si falla, la entrega sigue disponible.
+        setEntradasDia(listado.success ? (listado.data ?? []) : []);
+        if (!listado.success) {
+          logger.fetchError(
+            new Error(listado.message || 'No se pudo cargar el listado de entradas'),
+            { context: 'Cortesias:listado' },
+          );
+        }
       } catch (error) {
         logger.fetchError(error, { context: 'Cortesias:cargar' });
         showToast({
@@ -190,157 +168,13 @@ export function CortesiasScreen() {
     setRefreshing(false);
   }, [cargar]);
 
-  const cargarBebidas = useCallback(async () => {
-    setBebidasLoading(true);
-    try {
-      const res = await productsService.forSale();
-      const lista = (res as { data?: unknown[] })?.data;
-      if (!res.success || !Array.isArray(lista)) {
-        throw new Error(res.message || 'No se pudieron cargar las bebidas del bar');
-      }
-      setBebidas(
-        lista
-          .map(bebidaDe)
-          .filter((bebida): bebida is Bebida => bebida !== null && bebida.stock_bar > 0),
-      );
-    } catch (error) {
-      logger.fetchError(error, { context: 'Cortesias:cargarBebidas' });
-      showToast({
-        type: 'error',
-        text1: 'No se pudieron cargar las bebidas',
-        text2: error instanceof Error ? error.message : 'Intenta de nuevo.',
-      });
-    } finally {
-      setBebidasLoading(false);
-    }
+  const abrirEntrega = useCallback((grupo: GrupoPendiente) => {
+    setGrupoEntrega(grupo);
   }, []);
 
-  const abrirEntrega = useCallback(
-    (fila: EntradaPendiente) => {
-      setEntrada(fila);
-      setPresentacionId('');
-      setAcompanamientoId('');
-      setAcompanamientos([]);
-      setBusqueda('');
-      if (bebidas.length === 0) void cargarBebidas();
-    },
-    [bebidas.length, cargarBebidas],
-  );
-
   const cerrarEntrega = useCallback(() => {
-    if (entregando) return;
-    setEntrada(null);
-    setPresentacionId('');
-    setAcompanamientoId('');
-    setBusqueda('');
-  }, [entregando]);
-
-  const seleccionarBebida = useCallback(
-    async (bebida: Bebida) => {
-      setPresentacionId(bebida.presentacion_id);
-      setAcompanamientoId('');
-      if (unidadesAcompanamiento(bebida) <= 0) {
-        setAcompanamientos([]);
-        return;
-      }
-      if (acompanamientos.length > 0) return;
-      setAcompanamientosLoading(true);
-      try {
-        const res = await barService.acompanamientos();
-        const lista = (res as { data?: unknown[] })?.data;
-        if (!res.success || !Array.isArray(lista)) {
-          throw new Error(res.message || 'No se pudieron cargar los acompañamientos');
-        }
-        setAcompanamientos(
-          lista
-            .map(acompanamientoDe)
-            .filter((fila): fila is Acompanamiento => fila !== null),
-        );
-      } catch (error) {
-        logger.fetchError(error, { context: 'Cortesias:acompanamientos' });
-        showToast({
-          type: 'error',
-          text1: 'No se pudieron cargar los acompañamientos',
-          text2: error instanceof Error ? error.message : 'Intenta de nuevo.',
-        });
-      } finally {
-        setAcompanamientosLoading(false);
-      }
-    },
-    [acompanamientos.length],
-  );
-
-  const bebidaSeleccionada = bebidas.find(bebida => bebida.presentacion_id === presentacionId);
-  const requiereAcompanamiento = unidadesAcompanamiento(bebidaSeleccionada) > 0;
-  const umbral = Math.max(topeCortesia, entrada?.monto_entrada ?? 0);
-
-  const visibles = useMemo(() => {
-    const term = busqueda.trim().toLocaleLowerCase('es');
-    if (!term) return bebidas;
-    return bebidas.filter(bebida =>
-      `${bebida.producto_nombre} ${bebida.presentacion_nombre}`
-        .toLocaleLowerCase('es')
-        .includes(term),
-    );
-  }, [bebidas, busqueda]);
-
-  const entregar = useCallback(async () => {
-    if (!entrada || entregando) return;
-    if (!bebidaSeleccionada) {
-      showToast({
-        type: 'error',
-        text1: 'Falta la bebida',
-        text2: 'Selecciona la bebida que se entrega.',
-      });
-      return;
-    }
-    if (requiereAcompanamiento && !acompanamientoId) {
-      showToast({
-        type: 'error',
-        text1: 'Falta el acompañamiento',
-        text2: 'Selecciona el acompañamiento incluido en esta bebida.',
-      });
-      return;
-    }
-    setEntregando(true);
-    try {
-      const res = await entradasService.entregar(entrada.id, {
-        presentacion_id: bebidaSeleccionada.presentacion_id,
-        acompanamiento_presentacion_id: requiereAcompanamiento ? acompanamientoId : null,
-      });
-      if (!res.success) throw new Error(res.message || 'No se pudo entregar la bebida');
-      const tipo = res.data?.tipo;
-      showToast({
-        type: 'success',
-        text1: tipo === 'cortesia' ? 'Cortesía entregada' : 'Adicional registrado',
-        text2:
-          tipo === 'cortesia'
-            ? entrada.cliente_nombre || 'Cliente sin nombre'
-            : `Cobra ${formatCurrency(res.data?.montoCobrarBarra ?? 0)} en la barra`,
-      });
-      setEntrada(null);
-      setPresentacionId('');
-      setAcompanamientoId('');
-      setBusqueda('');
-      await cargar();
-    } catch (error) {
-      logger.fetchError(error, { context: 'Cortesias:entregar' });
-      showToast({
-        type: 'error',
-        text1: 'No se pudo entregar',
-        text2: error instanceof Error ? error.message : 'Intenta de nuevo.',
-      });
-    } finally {
-      setEntregando(false);
-    }
-  }, [
-    acompanamientoId,
-    bebidaSeleccionada,
-    cargar,
-    entrada,
-    entregando,
-    requiereAcompanamiento,
-  ]);
+    setGrupoEntrega(null);
+  }, []);
 
   if (loading) {
     return (
@@ -363,10 +197,18 @@ export function CortesiasScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: bg }}
-    >
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      <PremiumHeader
+        title="Cortesías"
+        subtitle="Entregas de la barra"
+        rightComponent={
+          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.backTextHeader}>Atrás</Text>
+          </Pressable>
+        }
+      />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -380,17 +222,6 @@ export function CortesiasScreen() {
           />
         }
       >
-        <PremiumHeader
-          title="Cortesías"
-          subtitle="Entregas de la barra"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
-        />
-
         <View style={{ padding: 20 }}>
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.listHeader}>
@@ -399,11 +230,12 @@ export function CortesiasScreen() {
                   PENDIENTES DEL DÍA
                 </Text>
                 <Text style={[styles.totalValue, { color: textPrimary }]}>
-                  {pendientes.length}
+                  {formatCurrency(totalPendiente)}
                 </Text>
               </View>
               <Text style={{ color: textSecondary, fontSize: 12 }}>
-                {pendientes.length === 1 ? '1 persona' : `${pendientes.length} personas`}
+                {gruposPendientes.length}{' '}
+                {gruposPendientes.length === 1 ? 'compra' : 'compras'}
               </Text>
             </View>
 
@@ -413,206 +245,114 @@ export function CortesiasScreen() {
               </Text>
             )}
 
-            {pendientes.map(fila => (
-              <View key={fila.id} style={[styles.entradaRow, { borderColor }]}>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ color: textPrimary, fontWeight: '700', fontSize: 14 }}
-                    numberOfLines={1}
-                  >
-                    {fila.cliente_nombre || 'Cliente sin nombre'}
-                  </Text>
-                  <Text style={{ color: textSecondary, fontSize: 11 }}>
-                    {fila.hora} · {formatCurrency(fila.monto_entrada)} · {fila.metodo_pago}
-                  </Text>
+            {gruposPendientes.map(grupo => {
+              const estado = estadoDelGrupo(grupo.dia);
+              const multiple = grupo.filas.length > 1;
+              const abierto = grupoAbierto === grupo.id;
+              return (
+                <View key={grupo.id} style={[styles.grupoRow, { borderColor }]}>
+                  <View style={styles.grupoFilaSuperior}>
+                    <Pressable
+                      onPress={() => {
+                        if (multiple) {
+                          setGrupoAbierto(actual => (actual === grupo.id ? null : grupo.id));
+                          return;
+                        }
+                        abrirEntrega(grupo);
+                      }}
+                      style={styles.grupoHeader}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{ color: textPrimary, fontWeight: '700', fontSize: 14 }}
+                          numberOfLines={1}
+                        >
+                          {grupo.dia.cliente}
+                        </Text>
+                        <Text style={{ color: textSecondary, fontSize: 11 }}>
+                          {grupo.dia.cantidad}{' '}
+                          {grupo.dia.cantidad === 1 ? 'entrada' : 'entradas'} ·{' '}
+                          {formatCurrency(grupo.dia.costoUnitario)} c/u · {grupo.dia.metodo}
+                        </Text>
+                        {multiple && (
+                          <Text style={{ color: textSecondary, fontSize: 11 }}>
+                            {grupo.filas.length} sin entregar
+                          </Text>
+                        )}
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
+                          {formatCurrency(grupo.dia.total)}
+                        </Text>
+                        <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
+                          <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800' }}>
+                            {estado.label}
+                          </Text>
+                        </View>
+                      </View>
+                      {multiple && (
+                        <Ionicons
+                          name={abierto ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color={textSecondary}
+                        />
+                      )}
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => abrirEntrega(grupo)}
+                      style={({ pressed }) => [
+                        styles.entregarBtn,
+                        { backgroundColor: `${accentColor}1F`, opacity: pressed ? 0.7 : 1 },
+                      ]}
+                    >
+                      <Text style={{ color: accentColor, fontWeight: '800', fontSize: 11 }}>
+                        {multiple ? `ENTREGAR ${grupo.filas.length}` : 'ENTREGAR'}
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  {multiple &&
+                    abierto &&
+                    grupo.filas.map(fila => (
+                      <View key={fila.id} style={styles.subFila}>
+                        <Text style={{ flex: 1, color: textSecondary, fontSize: 11 }}>
+                          {fila.hora} · {formatCurrency(fila.monto_entrada)}
+                        </Text>
+                      </View>
+                    ))}
                 </View>
-                <Pressable
-                  onPress={() => abrirEntrega(fila)}
-                  style={({ pressed }) => [
-                    styles.entregarBtn,
-                    { backgroundColor: `${accentColor}1F`, opacity: pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  <Text style={{ color: accentColor, fontWeight: '800', fontSize: 11 }}>
-                    ENTREGAR
-                  </Text>
-                </Pressable>
-              </View>
-            ))}
+              );
+            })}
+          </View>
+
+          <View style={{ marginTop: 20 }}>
+            <EntradasListadoCard
+              entradas={entradasDia}
+              titulo={`HOY · ${fecha.split('-').reverse().join('/')}`}
+              vacio="Sin entradas registradas hoy."
+            />
           </View>
         </View>
       </ScrollView>
 
-      {/* ── Modal de entrega ─────────────────────────────────────── */}
-      <Modal visible={entrada !== null} transparent animationType="slide" onRequestClose={cerrarEntrega}>
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: isDark ? '#111827' : '#FFFFFF', borderColor },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
-                  ENTREGAR BEBIDA
-                </Text>
-                <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 16 }} numberOfLines={1}>
-                  {entrada?.cliente_nombre || 'Cliente sin nombre'}
-                </Text>
-                <Text style={{ color: textSecondary, fontSize: 12 }}>
-                  {entrada ? `${formatCurrency(entrada.monto_entrada)} · ${entrada.hora}` : ''}
-                </Text>
-              </View>
-              <Pressable onPress={cerrarEntrega} hitSlop={10}>
-                <Ionicons name="close" size={22} color={textSecondary} />
-              </Pressable>
-            </View>
-
-            <TextInput
-              value={busqueda}
-              onChangeText={setBusqueda}
-              placeholder="Buscar bebida"
-              placeholderTextColor={textSecondary}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
-                  borderColor,
-                  color: textPrimary,
-                },
-              ]}
-            />
-
-            {bebidasLoading ? (
-              <View style={{ paddingVertical: 24 }}>
-                <ActivityIndicator color={accentColor} />
-              </View>
-            ) : (
-              <FlatList
-                data={visibles}
-                keyExtractor={item => item.presentacion_id}
-                style={{ maxHeight: 300 }}
-                keyboardShouldPersistTaps="handled"
-                ListEmptyComponent={
-                  <Text
-                    style={{
-                      color: textSecondary,
-                      fontSize: 12,
-                      textAlign: 'center',
-                      paddingVertical: 16,
-                    }}
-                  >
-                    Sin bebidas con stock en el bar.
-                  </Text>
-                }
-                renderItem={({ item }) => {
-                  const activo = item.presentacion_id === presentacionId;
-                  const esCortesia = item.precio_venta <= umbral;
-                  return (
-                    <Pressable
-                      onPress={() => void seleccionarBebida(item)}
-                      style={[
-                        styles.bebidaRow,
-                        {
-                          borderColor: activo ? accentColor : borderColor,
-                          backgroundColor: activo ? `${accentColor}14` : 'transparent',
-                        },
-                      ]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: textPrimary, fontWeight: '700', fontSize: 13 }}>
-                          {[item.producto_nombre, item.presentacion_nombre]
-                            .filter(Boolean)
-                            .join(' ')}
-                        </Text>
-                        <Text style={{ color: textSecondary, fontSize: 11 }}>
-                          {formatCurrency(item.precio_venta)} · stock {item.stock_bar}
-                        </Text>
-                      </View>
-                      <Text
-                        style={{
-                          color: esCortesia ? '#10B981' : '#F59E0B',
-                          fontSize: 10,
-                          fontWeight: '800',
-                        }}
-                      >
-                        {esCortesia
-                          ? 'CORTESÍA'
-                          : `COBRA ${formatCurrency(
-                              Math.max(0, item.precio_venta - (entrada?.monto_entrada ?? 0)),
-                            )}`}
-                      </Text>
-                      {activo && (
-                        <Ionicons name="checkmark-circle" size={18} color={accentColor} />
-                      )}
-                    </Pressable>
-                  );
-                }}
-              />
-            )}
-
-            {requiereAcompanamiento && (
-              <View style={{ marginTop: 10 }}>
-                <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                  ACOMPAÑAMIENTO INCLUIDO
-                </Text>
-                {acompanamientosLoading ? (
-                  <ActivityIndicator color={accentColor} />
-                ) : (
-                  <View style={styles.chipsWrap}>
-                    {acompanamientos.map(opcion => {
-                      const activo = opcion.id === acompanamientoId;
-                      return (
-                        <Pressable
-                          key={opcion.id}
-                          onPress={() => setAcompanamientoId(opcion.id)}
-                          style={[
-                            styles.chip,
-                            {
-                              borderColor: activo ? accentColor : borderColor,
-                              backgroundColor: activo ? `${accentColor}1F` : 'transparent',
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={{
-                              color: activo ? accentColor : textSecondary,
-                              fontSize: 11,
-                              fontWeight: '700',
-                            }}
-                          >
-                            {[opcion.producto_nombre, opcion.nombre].filter(Boolean).join(' ')}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            )}
-
-            <AnimatedButton
-              onPress={entregar}
-              disabled={entregando || !bebidaSeleccionada}
-              style={[
-                styles.submitBtn,
-                {
-                  backgroundColor: accentColor,
-                  opacity: entregando || !bebidaSeleccionada ? 0.6 : 1,
-                },
-              ]}
-            >
-              {entregando ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.submitText}>ENTREGAR EN LA BARRA</Text>
-              )}
-            </AnimatedButton>
-          </View>
-        </View>
-      </Modal>
-    </KeyboardAvoidingView>
+      <EntregaCortesiasModal
+        key={grupoEntrega?.id ?? 'cerrado'}
+        visible={grupoEntrega !== null}
+        grupo={
+          grupoEntrega
+            ? {
+                id: grupoEntrega.id,
+                cliente: grupoEntrega.dia.cliente,
+                filas: grupoEntrega.filas,
+              }
+            : null
+        }
+        tope={topeCortesia}
+        onClose={cerrarEntrega}
+        onEntregado={cargar}
+      />
+    </View>
   );
 }
 
@@ -635,7 +375,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     marginBottom: 8,
-    marginTop: 12,
   },
   listHeader: {
     flexDirection: 'row',
@@ -644,69 +383,38 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   totalValue: { fontSize: 22, fontWeight: '900' },
-  entradaRow: {
+  grupoRow: {
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  grupoFilaSuperior: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+  },
+  grupoHeader: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  subFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    paddingTop: 8,
+    paddingLeft: 4,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 4,
   },
   entregarBtn: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    padding: 20,
-    paddingBottom: 28,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    marginTop: 8,
-  },
-  bebidaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 10,
-    marginTop: 8,
-  },
-  chipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  submitBtn: {
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  submitText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
 });
