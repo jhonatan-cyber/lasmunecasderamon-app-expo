@@ -49,6 +49,15 @@ function combineSignals(
     },
   };
 }
+/**
+ * Error con la misma forma que produce `fetch` al abortar. En React Native el
+ * corte a mitad del cuerpo no llega como `AbortError`: el texto queda
+ * incompleto y el parseo falla con un `SyntaxError`, que se confundiría con una
+ * respuesta del servidor realmente inválida.
+ */
+const abortError = (): Error =>
+  Object.assign(new Error('Petición abortada'), { name: 'AbortError' });
+
 const logApiCall = (
   endpoint: string,
   attempt: number,
@@ -173,6 +182,9 @@ export const apiClient = async <T = ApiRes<unknown>>(
 
       const data = response.status === 204 ? {} : await response.json().catch((error: unknown) => {
         if ((error as Error)?.name === 'AbortError') throw error;
+        // Si el corte fue del cliente (timeout) mientras llegaba el cuerpo, el
+        // motivo es el tiempo agotado: el JSON "inválido" es la consecuencia.
+        if (controller.signal.aborted) throw abortError();
         if (response.ok) throw new InvalidResponseError();
         return {};
       });

@@ -8,12 +8,14 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useModoPantallaStore } from '@/store/modoPantallaStore';
 
 // El mock global de `react-native` sólo cubre lo que usan los hooks; esta
-// pantalla necesita además TextInput, ScrollView y Pressable, así que se
-// re-declara lo mínimo para renderizar y verificar qué se muestra.
+// pantalla necesita además TextInput, ScrollView, Pressable y
+// KeyboardAvoidingView, así que se re-declara lo mínimo para renderizar y
+// verificar qué se muestra.
 vi.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,
+  KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
   TextInput: ({ style, onChangeText, placeholderTextColor, keyboardType, accessibilityLabel, ...props }: any) => (
     <input {...props} onChange={(event) => onChangeText?.(event.target.value)} />
   ),

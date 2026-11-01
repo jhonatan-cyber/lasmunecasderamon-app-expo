@@ -48,6 +48,15 @@ const PAUSA_ACEPTADO_MS = 450;
 /** Lecturas fallidas seguidas antes de rendirse y capturar por tiempo. */
 const FALLOS_PARA_TEMPORIZADO = 3;
 
+/**
+ * Presupuesto de las llamadas del enrolamiento. El valor por omisión del cliente
+ * es 10 s: en desarrollo la primera llamada compila la ruta y la respuesta
+ * llegaba cortada, que se leía como JSON inválido.
+ */
+export const TIMEOUT_ENROLAMIENTO_MS = 30_000;
+/** Guardar o comparar las fotos tarda más que el resto de la escritura. */
+export const TIMEOUT_IMAGENES_MS = 60_000;
+
 /** Frases que se reproducen por voz al entrar a cada paso. */
 export const INSTRUCCIONES: Record<FaseCaptura, string> = {
     front: 'Mire de frente',
@@ -126,6 +135,7 @@ export function BiometricEnrollmentModal({
                 const res = await apiClientSafe(`/users/${userId}/biometric`, {
                     method: 'PUT',
                     body: JSON.stringify({ facial: 1 }),
+                    timeout: TIMEOUT_ENROLAMIENTO_MS,
                 });
                 if (!res?.success) {
                     throw new Error(res?.message || 'No se pudo guardar el enrolamiento facial.');
@@ -133,6 +143,7 @@ export function BiometricEnrollmentModal({
                 const res2 = await apiClientSafe(`/users/${userId}/biometric`, {
                     method: 'POST',
                     body: JSON.stringify({}),
+                    timeout: TIMEOUT_ENROLAMIENTO_MS,
                 });
                 if (!res2?.success) {
                     throw new Error(res2?.message || 'No se pudo asignar el código de la persona.');
@@ -140,6 +151,8 @@ export function BiometricEnrollmentModal({
                 const res3 = await apiClientSafe(`/users/${userId}/biometric/captures`, {
                     method: 'POST',
                     body: JSON.stringify({ fotos: fotosCapturadas }),
+                    // Tres fotos en base64: es el cuerpo más pesado del flujo.
+                    timeout: TIMEOUT_IMAGENES_MS,
                 });
                 if (!res3?.success) {
                     throw new Error(res3?.message || 'No se pudo guardar la captura facial.');
@@ -148,6 +161,8 @@ export function BiometricEnrollmentModal({
                 const res4 = await apiClientSafe(`/users/${userId}/biometric/verify`, {
                     method: 'POST',
                     body: JSON.stringify({ foto: frontal?.foto }),
+                    // Comparar la cara puede cargar el motor facial en frío.
+                    timeout: TIMEOUT_IMAGENES_MS,
                 });
                 if (res4 && !res4.success) {
                     throw new Error(res4.message || 'No se pudo verificar la captura facial.');

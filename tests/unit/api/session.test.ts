@@ -83,6 +83,19 @@ describe('peticiones con renovación de sesión', () => {
     expect(confirmed).not.toHaveBeenCalled();
   });
 
+  it('reporta tiempo agotado cuando el cuerpo llega cortado por el timeout', async () => {
+    // En React Native el abort a mitad del cuerpo no llega como AbortError: el
+    // texto queda incompleto y el parseo falla. El motivo real es el tiempo.
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn((_url: string, options: RequestInit) => new Promise(resolve => {
+      options.signal?.addEventListener('abort', () => resolve(new Response('{"success":tru', { status: 200 })), { once: true });
+    })));
+    const pending = expect(apiClient('/users/1/biometric', { method: 'PUT', retries: 0 }))
+      .rejects.toBeInstanceOf(TimeoutError);
+    await vi.advanceTimersByTimeAsync(10000);
+    await pending;
+  });
+
   it('acepta respuestas 204 sin cuerpo', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
     await expect(apiClient('/orders', { retries: 0 })).resolves.toEqual({});

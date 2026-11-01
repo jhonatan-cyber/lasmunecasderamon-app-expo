@@ -271,8 +271,12 @@ export const useBarScreen = () => {
   const filteredStock = useMemo(() => {
     const term = search.trim().toLowerCase();
     return stock.filter((item) => {
+      // Solo se lista lo que tiene existencia: stock en barra, botellas
+      // abiertas o vacías por cortos pendientes de devolución.
       const isAvailable =
-        (item.stock_bar ?? 0) > 0 || (item.botellas_vacias_shots ?? 0) > 0;
+        (item.stock_bar ?? 0) > 0 ||
+        (item.ml_abierta ?? 0) > 0 ||
+        (item.botellas_vacias_shots ?? 0) > 0;
       if (!isAvailable || !term) return isAvailable;
       return (
         item.producto_nombre.toLowerCase().includes(term) ||
