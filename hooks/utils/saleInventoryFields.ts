@@ -1,8 +1,10 @@
+import type { AcompanamientoBotella } from "@/types/cart";
+
 export interface SaleInventoryFields {
   presentacion_id?: string | null;
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
-  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_botella?: AcompanamientoBotella;
   acompanamiento_corto?: {
     presentacion_id: string;
     unidades?: number;

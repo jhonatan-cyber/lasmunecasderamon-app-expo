@@ -312,22 +312,44 @@ describe("Pedidos de cortos por anfitriona", () => {
     });
     expect(result.data.usuarios.map((user) => user.usuarioId)).toEqual(ids);
   });
-  it("usa el número de bebidas configurado por botella", () => {
+  it("reparte el acompañamiento configurado por botella entre sabores", () => {
     const bottle = {
       ...mockProduct,
+      presentacion_id: "vodka-750",
       tipo_venta: "botella" as const,
       opciones_venta: [{ tipo: "botella", acompanamiento: { unidades: 4 } }],
     };
     useCartStore.getState().addToCart(bottle);
-    useCartStore
-      .getState()
-      .updateItemMixer(bottle.id, {
-        presentacion_id: "sprite",
-        unidades: 1,
-        nombre: "Sprite",
-      });
+    const sabores = [
+      { presentacion_id: "fanta", unidades: 2, nombre: "Fanta" },
+      { presentacion_id: "coca", unidades: 1, nombre: "Coca-Cola" },
+      { presentacion_id: "agua", unidades: 1, nombre: "Agua" },
+    ];
+    useCartStore.getState().updateItemBottleMixers(bottle.id, sabores);
     expect(
       useCartStore.getState().cart[0].product.acompanamiento_botella,
-    ).toMatchObject({ unidades: 4 });
+    ).toEqual(sabores);
+    const result = useCartStore
+      .getState()
+      .buildOrderPayload({ meseroId: "garzon", codigo: "PEDIDO" });
+    expect(result.success).toBe(true);
+  });
+
+  it("exige repartir exactamente las unidades configuradas por botella", () => {
+    const bottle = {
+      ...mockProduct,
+      presentacion_id: "vodka-750",
+      tipo_venta: "botella" as const,
+      opciones_venta: [{ tipo: "botella", acompanamiento: { unidades: 4 } }],
+    };
+    useCartStore.getState().addToCart(bottle);
+    useCartStore.getState().updateItemBottleMixers(bottle.id, [
+      { presentacion_id: "fanta", unidades: 2 },
+    ]);
+    expect(
+      useCartStore
+        .getState()
+        .buildOrderPayload({ meseroId: "garzon", codigo: "PEDIDO" }).success,
+    ).toBe(false);
   });
 });

@@ -68,6 +68,11 @@ export interface EntregaEntradaPayload {
   /** Obligatorio cuando la bebida trae acompañamiento configurado. */
   acompanamiento_presentacion_id?: string | null;
   /**
+   * Reparto del acompañamiento por sabor (sabor + unidades). Tiene prioridad
+   * sobre `acompanamiento_presentacion_id` cuando viene con datos.
+   */
+  acompanamientos?: { presentacion_id: string; unidades: number }[] | null;
+  /**
    * Lo que el cliente paga de mas en la barra. Sin valor, el servidor deriva
    * la diferencia entre el precio y lo ya pagado en la puerta.
    */
@@ -117,6 +122,16 @@ export const entradasService = {
   pendientes: (fecha?: string) =>
     apiClientSafe<EntradaPendiente[]>(
       fecha ? `/tickets/pendientes?fecha=${encodeURIComponent(fecha)}` : '/tickets/pendientes',
+    ),
+
+  /**
+   * Anula una entrada que nunca se sirvió: el monto cobrado en la puerta queda
+   * registrado en la caja y la fila deja de estar pendiente.
+   */
+  anular: (entradaId: string) =>
+    apiClientSafe<{ entradaId: string; monto: number }>(
+      `/tickets/${encodeURIComponent(entradaId)}/anular`,
+      { method: 'POST' },
     ),
 
   /** Entrega en la barra: el servidor decide cortesía o adicional según el precio. */

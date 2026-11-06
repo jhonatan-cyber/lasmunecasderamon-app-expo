@@ -183,7 +183,9 @@ export function HomeScreen({ role }: HomeScreenProps) {
           onPersonalPress={
             role === 'cajero'
               ? () => router.push('/cajero/personal')
-              : undefined
+              :              role === 'barman'
+                ? () => router.push('/(app)/barman/personal')
+                : undefined
           }
           notificationCount={role === 'cajero' ? pendingCount : 0}
           onNotificationPress={
@@ -265,6 +267,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                 onOpenPedidos={() => router.push('/garzon/pedidos')}
                 onOpenServicios={() => router.push('/garzon/servicios')}
                 onOpenEntradas={() => router.push('/garzon/entradas')}
+                onOpenCortesias={() => router.push('/garzon/cortesias')}
               />
             )}
 

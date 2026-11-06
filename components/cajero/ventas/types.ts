@@ -144,6 +144,8 @@ export interface Venta {
   item_count?: number;
   usuarios_nicks?: string | null;
   id_venta?: string | number;
+  /** Nombre del archivo del baucher en el servidor (solo transferencia). */
+  baucher_foto?: string | null;
 }
 
 export interface VentaDetalle {

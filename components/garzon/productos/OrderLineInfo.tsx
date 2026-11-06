@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 import type { Anfitriona, CartItem, Room } from "@/types/cart";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useConfigValue } from "@/hooks/useConfigValue";
+import { normalizarAcompanamientoBotella } from "@/hooks/utils/productConfiguration";
 import { OrderProductPhoto } from "@/components/shared/OrderProductPhoto";
 
 export function OrderLineInfo({
@@ -33,7 +34,11 @@ export function OrderLineInfo({
     | undefined =
     product.tipo_venta === "shot"
       ? product.acompanamiento_corto
-      : product.acompanamiento_botella;
+      : undefined;
+  const saboresBotella =
+    product.tipo_venta === "shot"
+      ? []
+      : normalizarAcompanamientoBotella(product.acompanamiento_botella);
   const mixerQuantity = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
   const unit = mixer?.ml_por_corto !== undefined ? "ml" : "unidades";
   return (
@@ -106,13 +111,41 @@ export function OrderLineInfo({
               {mixer.nombre || mixer.presentacion_id}
             </Text>
             <Text style={{ color: textSecondary }}>
-              {mixerQuantity} {unit} por{" "}
-              {product.tipo_venta === "shot" ? "corto" : "botella"}
+              {mixerQuantity} {unit} por corto
             </Text>
             <Text style={{ color: textPrimary }}>
               Bebida total: {mixerQuantity * item.quantity} {unit}
             </Text>
           </View>
+        </View>
+      )}
+      {saboresBotella.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: textSecondary }}>
+            Acompañamiento por botella (
+            {saboresBotella.reduce((sum, sabor) => sum + sabor.unidades, 0)}{" "}
+            unidades por botella)
+          </Text>
+          {saboresBotella.map((sabor) => (
+            <View
+              key={sabor.presentacion_id}
+              style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
+            >
+              <OrderProductPhoto
+                foto={sabor.foto}
+                name={sabor.nombre || "Bebida"}
+              />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={{ color: textPrimary }}>
+                  {sabor.nombre || sabor.presentacion_id}
+                </Text>
+                <Text style={{ color: textSecondary }}>
+                  {sabor.unidades} unidades por botella · total{" "}
+                  {sabor.unidades * item.quantity}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       )}
       <Text style={{ color: "#10B981", fontWeight: "800", fontSize: 18 }}>

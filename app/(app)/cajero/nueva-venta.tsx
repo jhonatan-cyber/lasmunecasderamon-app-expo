@@ -1,9 +1,9 @@
 import { individualShorts } from "@/hooks/utils/individualShorts";
 import { useCartDraft } from "@/hooks/useCartDraft";
-import { bottleMixerUnits } from "@/hooks/utils/productConfiguration";
-import React, { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -36,6 +36,7 @@ import { useNuevaVenta } from "@/hooks/useNuevaVenta";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { getCardSplit } from "@/hooks/utils/cuentaUtils";
 import { NuevaVentaSkeleton } from "@/components/cajero/nueva-venta/NuevaVentaSkeleton";
+import { adjuntarBaucher } from "@/utils/baucherPicker";
 
 export default function NuevaVentaScreen() {
   const {
@@ -120,11 +121,16 @@ export default function NuevaVentaScreen() {
     loadMetodoPago,
   } = state;
 
+  /** Foto del baucher en data URL; se exige con transferencia al finalizar. */
+  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
+  const handleAdjuntarBaucher = useCallback(async () => {
+    const dataUrl = await adjuntarBaucher("NuevaVenta:baucher");
+    if (dataUrl) setBaucherFoto(dataUrl);
+  }, []);
+
   const firstCajaFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
-      // El primer foco ya lo cubre fetchInitialData; después de visitar la
-      // pantalla de Caja solo se refresca el estado de caja.
       if (firstCajaFocus.current) {
         firstCajaFocus.current = false;
         return;
@@ -188,8 +194,6 @@ export default function NuevaVentaScreen() {
           </Pressable>
         }
       />
-
-      {/* Fuera del scroll: el aviso de conexión y de cola tiene que verse siempre. */}
       <OfflineStatusBanner
         pendientesHref={"/(app)/cajero/pendientes" as never}
       />
@@ -315,13 +319,13 @@ export default function NuevaVentaScreen() {
               <Text style={[styles.selectorText, { color: textPrimary }]}>
                 {selectedCliente
                   ? (
-                      (selectedCliente.nombre || selectedCliente.name || "") +
-                      " " +
-                      (selectedCliente.apellido ||
-                        selectedCliente.lastName ||
-                        selectedCliente.last_name ||
-                        "")
-                    ).trim() || "Cliente Seleccionado"
+                    (selectedCliente.nombre || selectedCliente.name || "") +
+                    " " +
+                    (selectedCliente.apellido ||
+                      selectedCliente.lastName ||
+                      selectedCliente.last_name ||
+                      "")
+                  ).trim() || "Cliente Seleccionado"
                   : "Seleccionar Cliente"}
               </Text>
               {selectedCliente && (
@@ -337,8 +341,8 @@ export default function NuevaVentaScreen() {
                     Saldo Prepago: $
                     {Number(
                       selectedCliente.saldo ??
-                        (selectedCliente as any).saldo_prepago ??
-                        0,
+                      (selectedCliente as any).saldo_prepago ??
+                      0,
                     ).toLocaleString()}
                   </Text>
                   {(selectedCliente as any).metodo_pago && (
@@ -362,28 +366,82 @@ export default function NuevaVentaScreen() {
           </Pressable>
           <PaymentMethodSelect
             selectedMethod={metodoPago}
-            onSelect={(val) =>
-              dispatch({ type: "SET_METODO_PAGO", payload: val as any })
-            }
+            onSelect={(val) => {
+              if (val !== "transferencia") setBaucherFoto(null);
+              dispatch({ type: "SET_METODO_PAGO", payload: val as any });
+            }}
             showPrepago={
               !!selectedCliente &&
               Number(
                 selectedCliente.saldo ??
-                  (selectedCliente as any).saldo_prepago ??
-                  0,
+                (selectedCliente as any).saldo_prepago ??
+                0,
               ) > 0
             }
             disabledMethods={
               selectedCliente &&
-              Number(
-                selectedCliente.saldo ??
+                Number(
+                  selectedCliente.saldo ??
                   (selectedCliente as any).saldo_prepago ??
                   0,
-              ) <= 0
+                ) <= 0
                 ? ["prepago"]
                 : []
             }
           />
+
+          {metodoPago === "transferencia" && (
+            <View
+              style={[
+                styles.baucherCard,
+                {
+                  borderColor: baucherFoto ? "#10B981" : "#EF4444",
+                  backgroundColor: baucherFoto
+                    ? "rgba(16,185,129,0.08)"
+                    : "rgba(239,68,68,0.08)",
+                },
+              ]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.baucherTitulo, { color: textPrimary }]}>
+                  Baucher de la transferencia
+                </Text>
+                <Text style={[styles.baucherHint, { color: textSecondary }]}>
+                  {baucherFoto
+                    ? "Foto adjunta lista para enviar."
+                    : "Obligatorio: adjunta la foto o captura del comprobante."}
+                </Text>
+              </View>
+              {baucherFoto && (
+                <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
+              )}
+              <Pressable
+                onPress={handleAdjuntarBaucher}
+                style={[styles.baucherBtn, { borderColor: accentColor }]}
+                accessibilityRole="button"
+                accessibilityLabel="Adjuntar baucher de la transferencia"
+              >
+                <Ionicons
+                  name={baucherFoto ? "refresh" : "camera"}
+                  size={18}
+                  color={accentColor}
+                />
+                <Text style={[styles.baucherBtnText, { color: accentColor }]}>
+                  {baucherFoto ? "Repetir" : "Adjuntar"}
+                </Text>
+              </Pressable>
+              {baucherFoto && (
+                <Pressable
+                  onPress={() => setBaucherFoto(null)}
+                  style={styles.baucherQuitar}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quitar baucher"
+                >
+                  <Ionicons name="close" size={16} color={textSecondary} />
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
         <CartList
@@ -398,20 +456,11 @@ export default function NuevaVentaScreen() {
             nombre: p.nombre || p.name || "",
             cantidad: p.quantity,
           }))}
-          onChange={(index, mixer) =>
+          onChangeBottle={(index, sabores) =>
             dispatch({
               type: "SET_CART",
               payload: cart.map((p, i) =>
-                i === index
-                  ? {
-                      ...p,
-                      acompanamiento_botella: {
-                        presentacion_id: mixer.presentacion_id,
-                        nombre: mixer.nombre,
-                        unidades: bottleMixerUnits(p),
-                      },
-                    }
-                  : p,
+                i === index ? { ...p, acompanamiento_botella: sabores } : p,
               ),
             })
           }
@@ -452,20 +501,20 @@ export default function NuevaVentaScreen() {
           {state.cart.some(
             (item) => item.tipo_venta === "shot" && item.quantity > 1,
           ) && (
-            <Pressable
-              onPress={() =>
-                dispatch({
-                  type: "SET_CART",
-                  payload: individualShorts(state.cart),
-                })
-              }
-              style={{ paddingVertical: 12 }}
-            >
-              <Text style={{ color: accentColor, fontWeight: "600" }}>
-                Elegir bebida y anfitriona por cada corto
-              </Text>
-            </Pressable>
-          )}
+              <Pressable
+                onPress={() =>
+                  dispatch({
+                    type: "SET_CART",
+                    payload: individualShorts(state.cart),
+                  })
+                }
+                style={{ paddingVertical: 12 }}
+              >
+                <Text style={{ color: accentColor, fontWeight: "600" }}>
+                  Elegir bebida y anfitriona por cada corto
+                </Text>
+              </Pressable>
+            )}
           <TipCheckbox
             enabled={enableTip}
             onToggle={(val: boolean) =>
@@ -543,14 +592,16 @@ export default function NuevaVentaScreen() {
               (submitting ||
                 cajaAbierta === false ||
                 cart.length === 0 ||
-                !metodoPago) && { opacity: 0.7 },
+                !metodoPago ||
+                (metodoPago === "transferencia" && !baucherFoto)) && { opacity: 0.7 },
             ]}
-            onPress={handleSubmit}
+            onPress={() => handleSubmit(baucherFoto)}
             disabled={
               submitting ||
               cajaAbierta === false ||
               cart.length === 0 ||
-              !metodoPago
+              !metodoPago ||
+              (metodoPago === "transferencia" && !baucherFoto)
             }
             accessibilityLabel="Finalizar venta"
             accessibilityRole="button"
@@ -672,7 +723,7 @@ export default function NuevaVentaScreen() {
             : []
         }
         selectionTarget={hostessSelectionTarget}
-        showToast={() => {}}
+        showToast={() => { }}
         onToggleHostess={handleToggleHostess}
         onClose={() => dispatch({ type: "SET_HOSTESS_TARGET", target: null })}
         onConfirmProduct={async (product) => {
@@ -714,6 +765,29 @@ const styles = StyleSheet.create({
   summaryVal: { fontSize: 15, fontWeight: "800" },
   totalLabel: { fontSize: 18, fontWeight: "900" },
   totalValue: { fontSize: 26, fontWeight: "900" },
+  baucherCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  baucherTitulo: { fontSize: 13, fontWeight: "800" },
+  baucherHint: { fontSize: 11, fontWeight: "600", marginTop: 2, lineHeight: 15 },
+  baucherThumb: { width: 42, height: 42, borderRadius: 10 },
+  baucherBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  baucherBtnText: { fontSize: 12, fontWeight: "800" },
+  baucherQuitar: { padding: 2 },
   submitBtn: {
     height: 60,
     borderRadius: 20,

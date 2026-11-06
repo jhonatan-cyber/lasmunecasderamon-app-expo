@@ -7,6 +7,9 @@ import {
 import type { PedidoItem } from "@/hooks/types/solicitudesTypes";
 
 export interface PedidoDetalle {
+  id_pedido?: string;
+  /** Nombre del archivo del baucher en el servidor (solo transferencia). */
+  baucher_foto?: string | null;
   configuracion_venta?: SaleInventoryFields;
   comision?: number;
   anfitrionas_asignadas_ids?: string;

@@ -7,6 +7,7 @@ import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MetodoPago } from '../../types/api';
+import { BaucherFoto } from '@/components/shared/BaucherFoto';
 
 interface CheckoutModalProps {
   visible: boolean;
@@ -95,6 +96,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <View style={styles.metaItem}><Ionicons name="people-outline" size={14} color={textSecondary} /><Text style={[styles.metaLabel, { color: textSecondary }]}>Cliente</Text><Text style={[styles.metaValue, { color: textPrimary }]}>{pedidoDetails[0]?.cliente || "Sin registrar"}</Text></View>
                 <View style={[styles.divider, { backgroundColor: borderColor }]} />
                 <View style={styles.metaItem}><Ionicons name="bed-outline" size={14} color={textSecondary} /><Text style={[styles.metaLabel, { color: textSecondary }]}>Lugar</Text><Text style={[styles.metaValue, { color: textPrimary }]}>{pedidoDetails[0]?.room_name || "Mesa"}</Text></View>
+              </View>
+            )}
+
+            {!loadingDetails && pedidoDetails[0]?.baucher_foto && (
+              <View style={{ marginBottom: 16 }}>
+                <BaucherFoto
+                  endpoint={`/orders/${pedidoDetails[0].id_pedido || selectedPedido.id_pedido}/baucher`}
+                  descripcion={`Pedido ${selectedPedido.codigo}`}
+                />
               </View>
             )}
 

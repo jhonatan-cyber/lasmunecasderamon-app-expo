@@ -192,6 +192,11 @@ export const ProductCard = React.memo(
                           .getState()
                           .updateItemMixer(product.id, mixer)
                       }
+                      onChangeBottle={(_, sabores) =>
+                        useCartStore
+                          .getState()
+                          .updateItemBottleMixers(product.id, sabores)
+                      }
                     />
                     {hasCommission && (
                       <Pressable

@@ -17,6 +17,7 @@ import {
   type GrupoEntrada,
 } from '@/components/entradas/EntradasListadoCard';
 import { EntregaCortesiasModal } from '@/components/entradas/EntregaCortesiasModal';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
@@ -68,6 +69,8 @@ export function CortesiasScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [grupoEntrega, setGrupoEntrega] = useState<GrupoPendiente | null>(null);
+  const [grupoAnular, setGrupoAnular] = useState<GrupoPendiente | null>(null);
+  const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
 
   const { fecha } = fechaHoraLocal();
@@ -102,6 +105,7 @@ export function CortesiasScreen() {
           adicional: 0,
           entregadas: 0,
           anuladas: 0,
+          baucherEntradaId: null,
         },
       filas,
     }));
@@ -167,6 +171,42 @@ export function CortesiasScreen() {
     await cargar();
     setRefreshing(false);
   }, [cargar]);
+
+  /**
+   * Anula todas las entradas pendientes de la compra, como el dashboard: una
+   * persona que se fue no recibe su bebida, pero el monto cobrado en la puerta
+   * queda posteado a la caja. El servidor anula una fila por llamada.
+   */
+  const anularPendientes = useCallback(
+    async (grupo: GrupoPendiente) => {
+      setGrupoAnular(null);
+      setAnulandoId(grupo.id);
+      let anuladas = 0;
+      try {
+        for (const fila of grupo.filas) {
+          const res = await entradasService.anular(fila.id);
+          if (!res.success) throw new Error(res.message || 'No se pudo anular la entrada');
+          anuladas += 1;
+        }
+        showToast({
+          type: 'success',
+          text1: anuladas === 1 ? 'Entrada anulada' : `${anuladas} entradas anuladas`,
+          text2: grupo.dia.cliente,
+        });
+      } catch (error) {
+        logger.fetchError(error, { context: 'Cortesias:anular' });
+        showToast({
+          type: 'error',
+          text1: 'No se pudieron anular las entradas',
+          text2: error instanceof Error ? error.message : 'Intenta de nuevo.',
+        });
+      } finally {
+        if (anuladas > 0) await cargar();
+        setAnulandoId(null);
+      }
+    },
+    [cargar],
+  );
 
   const abrirEntrega = useCallback((grupo: GrupoPendiente) => {
     setGrupoEntrega(grupo);
@@ -310,6 +350,29 @@ export function CortesiasScreen() {
                         {multiple ? `ENTREGAR ${grupo.filas.length}` : 'ENTREGAR'}
                       </Text>
                     </Pressable>
+
+                    <Pressable
+                      onPress={() => setGrupoAnular(grupo)}
+                      disabled={anulandoId === grupo.id}
+                      style={({ pressed }) => [
+                        styles.anularBtn,
+                        { opacity: anulandoId === grupo.id ? 0.5 : pressed ? 0.7 : 1 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        grupo.filas.length === 1
+                          ? 'Anular entrada pendiente'
+                          : `Anular ${grupo.filas.length} entradas pendientes`
+                      }
+                    >
+                      {anulandoId === grupo.id ? (
+                        <ActivityIndicator size="small" color="#EF4444" />
+                      ) : (
+                        <Text style={styles.anularText}>
+                          {grupo.filas.length > 1 ? `ANULAR ${grupo.filas.length}` : 'ANULAR'}
+                        </Text>
+                      )}
+                    </Pressable>
                   </View>
 
                   {multiple &&
@@ -335,6 +398,26 @@ export function CortesiasScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <PremiumAlert
+        visible={grupoAnular !== null}
+        type="danger"
+        title={grupoAnular && grupoAnular.filas.length > 1 ? 'Anular entradas' : 'Anular entrada'}
+        message={
+          grupoAnular
+            ? grupoAnular.filas.length === 1
+              ? '¿Anular la entrada pendiente de este grupo? El monto se registrará como entrada en la caja.'
+              : `¿Anular las ${grupoAnular.filas.length} entradas pendientes de este grupo? El monto se registrará como entrada en la caja.`
+            : ''
+        }
+        confirmText="Anular"
+        cancelText="Cancelar"
+        showCancel
+        onConfirm={() => {
+          if (grupoAnular) void anularPendientes(grupoAnular);
+        }}
+        onCancel={() => setGrupoAnular(null)}
+      />
 
       <EntregaCortesiasModal
         key={grupoEntrega?.id ?? 'cerrado'}
@@ -417,4 +500,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
   },
+  anularBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 64,
+  },
+  anularText: { color: '#EF4444', fontWeight: '800', fontSize: 10 },
+  
 });

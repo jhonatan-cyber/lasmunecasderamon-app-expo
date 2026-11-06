@@ -18,14 +18,17 @@ const paymentMethodSchema = zEnum([
   "mixto",
 ]);
 
-/**
- * Tamaño máximo del `baucher_foto` en caracteres de base64 (≈ 3 MB de imagen).
- * Debe calzar con `BAUCHER_FOTO_MAX_CHARS` de
- * `lasmunecasderamon-dashboard/lib/business/schemas/order.ts`: si la app manda
- * más grande, el dashboard responde 400 y el outbox archiva el pedido.
- */
 export const BAUCHER_FOTO_MAX_CHARS = 4_000_000;
 const BAUCHER_DATA_URL = /^data:image\/(?:jpeg|jpg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+const acompanamientoBotellaItemSchema = object({
+  presentacion_id: string().min(1),
+  unidades: number().int().min(1).max(1000),
+});
+
+const acompanamientoBotellaSchema = union([
+  acompanamientoBotellaItemSchema,
+  array(acompanamientoBotellaItemSchema).min(1).max(50),
+]).transform((items) => (Array.isArray(items) ? items : [items]));
 
 export const loginSchema = object({
   email: string().min(1, "El usuario es obligatorio"),
@@ -58,18 +61,7 @@ export const OrderCreateSchema = object({
   total: number().min(0),
   totalComision: number().optional().default(0),
   propina: number().optional().default(0),
-  /**
-   * Obligatorio en el dashboard (`lib/business/schemas/order.ts`): el pedido se
-   * guarda completo y ese es el método con el que después se cobra. Sin este
-   * campo `POST /orders` responde 400 y el outbox archiva el pedido como fallido.
-   */
   metodoPago: zEnum(["efectivo", "tarjeta", "transferencia"]),
-  /**
-   * Foto del baucher en data URL (`data:image/jpeg;base64,…`). Obligatoria con
-   * transferencia (abajo): la saca el garzón con la cámara y el dashboard la
-   * guarda en `public/img/orders`. Espejo del esquema del servidor en
-   * `lasmunecasderamon-dashboard/lib/business/schemas/order.ts`.
-   */
   baucher_foto: string()
     .max(BAUCHER_FOTO_MAX_CHARS, "La foto del baucher supera el tamaño máximo")
     .regex(BAUCHER_DATA_URL, "La foto del baucher no es una imagen válida")
@@ -80,10 +72,7 @@ export const OrderCreateSchema = object({
       presentacion_id: string().nullable().optional(),
       tipo_venta: zEnum(["botella", "shot"]).optional(),
       shot_anfitriona: boolean().optional(),
-      acompanamiento_botella: object({
-        presentacion_id: string().min(1),
-        unidades: number().int().min(1).max(1000),
-      }).optional(),
+      acompanamiento_botella: acompanamientoBotellaSchema.optional(),
       acompanamiento_corto: object({
         presentacion_id: string().min(1),
         unidades: number().int().min(1).max(1000).optional(),
@@ -118,22 +107,28 @@ export const OrderCreateSchema = object({
         "Cantidad o presentacion del corto invalida",
       )
       .refine(
-        (d) =>
-          !d.acompanamiento_botella ||
-          (d.tipo_venta !== "shot" &&
+        (d) => {
+          if (!d.acompanamiento_botella) return true;
+          const ids = d.acompanamiento_botella.map((sabor) => sabor.presentacion_id);
+          return (
+            d.tipo_venta !== "shot" &&
             !!d.presentacion_id &&
-            d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+            ids.length > 0 &&
+            new Set(ids).size === ids.length &&
+            ids.every((id) => id !== d.presentacion_id)
+          );
+        },
         "Acompa\u00f1amiento de botella inv\u00e1lido",
       )
       .transform((d) =>
         d.tipo_venta === "shot" && !d.shot_anfitriona
           ? {
-              ...d,
-              comision: 0,
-              generaComision: 0,
-              selectedHostesses: [],
-              hostessId: null,
-            }
+            ...d,
+            comision: 0,
+            generaComision: 0,
+            selectedHostesses: [],
+            hostessId: null,
+          }
           : d,
       )
       .refine(
@@ -175,7 +170,6 @@ export const ServiceCreateSchema = object({
   iva: number().min(0),
   sub_total: number().min(0),
   total: number().min(0),
-  // Alineado con lib/business/schemas/service.ts del dashboard (min(1))
   tiempo: number().min(1, "Tiempo es requerido"),
   fecha_crea: string().min(1, "Fecha requerida"),
   metodo_pago: paymentMethodSchema,
@@ -196,18 +190,10 @@ export const AnticipoRequestSchema = object({
   motivo: string().trim().min(1, "Motivo requerido"),
 }).passthrough();
 
-/**
- * Respuestas del servidor (borde API → app). El backend puede cambiar tipos
- * (id numérico vs string) o mandar null ante un deploy a medias: validar evita
- * que un `undefined` se propague al store y rompa pantallas.
- */
-
-/** Usuario tal como lo devuelve /auth/me (el id manda; el resto es libre). */
 export const serverUserSchema = object({
   id: union([string(), number()]),
 }).passthrough();
 
-/** /configurations: solo se leen estos grupos; lo demás se ignora. */
 export const configurationsSchema = object({
   comisiones: object({
     threshold_producto_caro: zUnknown().optional(),

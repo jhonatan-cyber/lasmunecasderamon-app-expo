@@ -15,6 +15,7 @@ import type { VentaDetail } from "./types";
 import { VentaOrigenSection } from "./VentaOrigenSection";
 import { VentaDistribucionSection } from "./VentaDistribucionSection";
 import { VentaProductosList } from "./VentaProductosList";
+import { BaucherFoto } from "@/components/shared/BaucherFoto";
 
 type VentaDetailModalProps = {
   visible: boolean;
@@ -131,6 +132,16 @@ export function VentaDetailModal({
                       </View>
                     </View>
                   </View>
+
+                  {selectedVenta.baucher_foto && (
+                    <View style={{ marginBottom: 25 }}>
+                      <Text style={[styles.sectionLabel, { color: textSecondary }]}>Comprobante</Text>
+                      <BaucherFoto
+                        endpoint={`/sales/${selectedVenta.id}/baucher`}
+                        descripcion={`Venta ${selectedVenta.codigo}`}
+                      />
+                    </View>
+                  )}
 
                   {}
                   <VentaDistribucionSection

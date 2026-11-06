@@ -47,6 +47,13 @@ export const BarmanActionGrid = ({
       color: "#F59E0B",
       route: "/barman/cortesias",
     },
+    {
+      title: "LIMPIEZA",
+      description: "Surtidos del turno",
+      icon: "sparkles" as const,
+      color: accentColor,
+      route: "/barman/limpieza",
+    },
     // Solo aparece cuando hay algo que resolver: sin conexión o trabajo que el
     // servidor todavía no confirmó.
     ...(isOffline || pendingCount > 0 || failedCount > 0

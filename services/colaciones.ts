@@ -1,11 +1,31 @@
 import { apiClientSafe } from '@/api/client-safe';
 
+/** Ml que se descuenta del bar al registrar la colación. */
+export function mlDeColacion(producto: unknown) {
+  const opcion = (producto as any)?.opciones_venta || [];
+  const encontrado = opcion.find((o: any) => o.tipo === 'botella');
+  if (encontrado?.ml_colacion) return Number(encontrado.ml_colacion);
+  const mlBotella = Number((producto as any)?.ml_botella ?? 0);
+  return Number.isFinite(mlBotella) && mlBotella > 0 ? mlBotella : 0;
+}
+
+/** Acompanamiento configurado en la transferencia de esa presentación. */
+export function acompanamientoDeColacion(producto: unknown) {
+  const opcion = (producto as any)?.opciones_venta || [];
+  const encontrado = opcion.find((o: any) => o.tipo === 'botella');
+  const propio =
+    encontrado?.acompanamiento_colacion?.unidades ??
+    encontrado?.acompanamiento?.unidades ??
+    0;
+  const unidades = Math.max(0, Math.floor(Number(propio)));
+  const ml = Math.floor(Number(encontrado?.acompanamiento_colacion?.ml ?? 0));
+  return { unidades, ml: ml > 0 ? ml : null };
+}
+
 export type CatalogoColacion = 'productos' | 'analcoholicas';
 
 export interface DefinicionCatalogoColacion {
-  /** Parámetro de query que entiende el endpoint de catálogo. */
   parametroCatalogo: string;
-  /** Categoría protegida exigida; null = cualquier producto habilitado. */
   categoriaSistema: string | null;
 }
 
@@ -22,16 +42,32 @@ export interface ReglaColacionResponse {
   roles: Record<string, ReglaColacion>;
 }
 
-/**
- * Regla compartida de colación servida por el dashboard. La app no repite el
- * mapeo rol → catálogo ni la categoría protegida: los consume de acá.
- */
 export const colacionesService = {
   regla: (signal?: AbortSignal) =>
     apiClientSafe<ReglaColacionResponse>('/meals/rule', { signal }),
+  catalogo: (
+    regla: ReglaColacionResponse,
+    catalogo: CatalogoColacion,
+    signal?: AbortSignal,
+  ) => apiClientSafe(urlCatalogoColacion(regla, catalogo), { signal }),
+  acompanamientos: (signal?: AbortSignal) =>
+    apiClientSafe('/bar?acompanamientos=1', { signal }),
+  listar: (params: { fecha?: string; caja_id?: string }, signal?: AbortSignal) => {
+    const q = new URLSearchParams();
+    if (params.fecha) q.set('fecha', params.fecha);
+    if (params.caja_id) q.set('caja_id', params.caja_id);
+    return apiClientSafe(`/meals${q.toString() ? `?${q.toString()}` : ''}`, { signal });
+  },
+  registrar: (payload: {
+    usuario_id: string;
+    presentacion_id: string;
+    ml_bebida: number;
+    nombre_bebida: string;
+    acompanamiento?: 'gaseosa' | 'soda' | null;
+    acompanamiento_presentacion_id?: string | null;
+  }) => apiClientSafe('/meals', { method: 'POST', body: JSON.stringify(payload) }),
 };
 
-/** Regla del rol (case-insensitive), o null si ese rol no recibe colación. */
 export function reglaPorRol(
   regla: ReglaColacionResponse,
   rol?: string | null,
@@ -39,7 +75,6 @@ export function reglaPorRol(
   return regla.roles[(rol ?? '').trim().toLowerCase()] ?? null;
 }
 
-/** URL del catálogo de colación con el parámetro que indica el servidor. */
 export function urlCatalogoColacion(
   regla: ReglaColacionResponse,
   catalogo: CatalogoColacion,

@@ -10,6 +10,12 @@ export interface SaleOption {
   precio_anfitriona?: number;
   ml_acompanamiento_cliente?: number;
   ml_acompanamiento_anfitriona?: number;
+  /**
+   * El corto servido a cliente incluye una unidad completa de bebida. `false` =
+   * sin acompañamiento: no se pide ni se descuenta bebida analcohólica. Ausente
+   * = con acompañamiento, para no alterar las configuraciones existentes.
+   */
+  acompanamiento_cliente?: boolean;
   acompanamiento?: { tipo?: "gaseosa" | "soda"; unidades: number };
   precios_anfitriona?: { precio: number; comision: number }[];
 }

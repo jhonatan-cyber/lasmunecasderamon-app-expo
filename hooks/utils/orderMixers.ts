@@ -11,9 +11,19 @@ export function availableOrderMixers(
   search = "",
 ) {
   if (!item) return [];
-  const consumption = bottle
-    ? { unidades: bottleMixerUnits(item) }
-    : shortMixerConsumption(item);
+  const quantity = Math.max(1, Number(item.cantidad) || 1);
+  if (bottle) {
+    // Reparto entre sabores: basta con que el sabor tenga stock para una unidad
+    // por botella; el reparto exacto se valida al agregar el producto.
+    if (bottleMixerUnits(item) <= 0) return [];
+    return bar.filter(
+      (product) =>
+        String(product.id) !== String(item.presentacion_id) &&
+        Number(product.stock_bar || 0) >= quantity &&
+        matchesProductSearch(product, search),
+    );
+  }
+  const consumption = shortMixerConsumption(item);
   if (
     Number(
       "ml_por_corto" in consumption
@@ -22,7 +32,6 @@ export function availableOrderMixers(
     ) <= 0
   )
     return [];
-  const quantity = Math.max(1, Number(item.cantidad) || 1);
   return bar.filter((product) => {
     if (String(product.id) === String(item.presentacion_id)) return false;
     const stock = Number(product.stock_bar || 0);

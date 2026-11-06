@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import type { EntradaCliente } from '@/services/entradas';
+import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { formatCurrency } from '@/utils/format';
 
 export interface GrupoEntrada {
@@ -15,6 +16,8 @@ export interface GrupoEntrada {
   adicional: number;
   entregadas: number;
   anuladas: number;
+  /** Id de la fila con baucher, para abrir la foto del grupo. */
+  baucherEntradaId: string | null;
 }
 
 /**
@@ -42,6 +45,7 @@ export function agruparEntradas(entradas: EntradaCliente[]): GrupoEntrada[] {
       actual.adicional += Number(entrada.monto_bebida_adicional ?? 0);
       if (entrada.cortesia_estado === 'entregada') actual.entregadas += 1;
       if (entrada.cortesia_estado === 'anulada') actual.anuladas += 1;
+      if (!actual.baucherEntradaId && entrada.baucher_foto) actual.baucherEntradaId = entrada.id;
     } else {
       mapa.set(clave, {
         id: clave,
@@ -53,6 +57,7 @@ export function agruparEntradas(entradas: EntradaCliente[]): GrupoEntrada[] {
         adicional: Number(entrada.monto_bebida_adicional ?? 0),
         entregadas: entrada.cortesia_estado === 'entregada' ? 1 : 0,
         anuladas: entrada.cortesia_estado === 'anulada' ? 1 : 0,
+        baucherEntradaId: entrada.baucher_foto ? entrada.id : null,
       });
     }
   }
@@ -121,6 +126,15 @@ export function EntradasListadoCard({ entradas, vacio, titulo = 'HOY' }: Props) 
                     {grupo.cantidad} {grupo.cantidad === 1 ? 'entrada' : 'entradas'} ·{' '}
                     {formatCurrency(grupo.costoUnitario)} c/u · {grupo.metodo}
                   </Text>
+                  {grupo.baucherEntradaId && (
+                    <View style={{ marginTop: 6 }}>
+                      <BaucherFoto
+                        compacto
+                        endpoint={`/tickets/${grupo.baucherEntradaId}/baucher`}
+                        descripcion={grupo.cliente}
+                      />
+                    </View>
+                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>

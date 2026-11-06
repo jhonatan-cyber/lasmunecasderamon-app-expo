@@ -1,10 +1,14 @@
-/**
- * Tipos de dominio del carrito del garzón.
- *
- * Vivían en `components/shared/ProductCard.tsx` y el store los importaba
- * desde ahí (capa store → components, invertida). Hogar canónico ahora;
- * ProductCard re-exporta para compatibilidad.
- */
+export interface AcompanamientoBotellaItem {
+  presentacion_id: string;
+  unidades: number;
+  nombre?: string;
+  foto?: string;
+}
+
+export type AcompanamientoBotella =
+  | AcompanamientoBotellaItem
+  | AcompanamientoBotellaItem[];
+
 export interface Product {
   producto_id?: string;
   presentacion_id?: string;
@@ -13,12 +17,7 @@ export interface Product {
   shot_anfitriona?: boolean;
   opciones_venta?: unknown;
   unidades_acompanamiento?: number;
-  acompanamiento_botella?: {
-    presentacion_id: string;
-    unidades: number;
-    nombre?: string;
-    foto?: string;
-  };
+  acompanamiento_botella?: AcompanamientoBotella;
   acompanamiento_corto?: {
     presentacion_id: string;
     unidades?: number;
@@ -51,11 +50,6 @@ export interface CartItem {
   selectedRoom: string | null;
 }
 
-/**
- * Métodos con los que queda guardado un pedido. El dashboard exige uno al
- * crearlo y después cobra con él, por eso no admite prepago ni mixto: el
- * reparto del saldo se decide en caja, no al tomar el pedido.
- */
 export type MetodoPagoPedido = "efectivo" | "tarjeta" | "transferencia";
 
 export interface Anfitriona {

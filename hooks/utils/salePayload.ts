@@ -1,13 +1,5 @@
-/**
- * Payload de `POST /sales` armado de forma pura.
- *
- * Vive fuera del hook porque ahora hay dos caminos que lo necesitan: la venta
- * que se manda en el momento y la que se encola sin red. Tenerlo en un solo
- * lugar evita que el offline y el online se desincronicen (paridad con el
- * payload del dashboard: consume stock en el bar, vende por botella por
- * defecto como `mapForSaleToCartItem` y marca `tipo_venta`/`shot_anfitriona`
- * en los detalles, que es como `SaleService` guarda cómo se vendió).
- */
+import type { AcompanamientoBotella } from "@/types/cart";
+
 export interface SalePayloadInput {
   servicioId?: string;
   servicioAnfitrionas?: string[];
@@ -19,6 +11,8 @@ export interface SalePayloadInput {
   totals: { subtotal: number; tip: number; total: number };
   selectedTime: number;
   hasCommissionItem: boolean;
+  /** Foto del baucher en data URL; obligatoria cuando el pago es transferencia. */
+  baucherFoto?: string | null;
 }
 
 export interface SaleCreatePayload {
@@ -28,9 +22,8 @@ export interface SaleCreatePayload {
     producto_id: string | number;
     presentacion_id: string | number | null;
     tipo_venta?: "botella" | "shot";
-    /** Solo en líneas de shot: true cuando se cobró al precio de anfitriona. */
     shot_anfitriona?: boolean;
-    acompanamiento_botella?: { presentacion_id: string; unidades: number };
+    acompanamiento_botella?: AcompanamientoBotella;
     acompanamiento_corto?: {
       presentacion_id: string;
       unidades?: number;
@@ -53,6 +46,7 @@ export interface SaleCreatePayload {
   total: number;
   tiempo: number;
   usuarios: (string | number)[];
+  baucher_foto?: string;
 }
 
 const idDe = (valor: any): string | number | null =>
@@ -77,10 +71,7 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
       : {}),
     detalles: cart.map((item) => {
       const cantidad = item.quantity || item.cantidad || 1;
-      // Cómo se vendió queda en el detalle (espejo del dashboard): un shot
-      // puede ser a precio de cliente o de anfitriona y no se deduce después.
       const esShot = item.tipo_venta === "shot";
-
       const hasCommission = Number(item.comision || item.commission || 0) > 0;
       const hostesses: string[] = (hasCommission ? item.anfitrionas || [] : [])
         .map((a: any) => (typeof a === "object" ? idDe(a) : a))
@@ -135,10 +126,13 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
     habitacion_id:
       input.servicioId || hasCommissionItem
         ? String(
-            selectedHabitacion?.id ?? selectedHabitacion?.id_habitacion ?? "",
-          ) || null
+          selectedHabitacion?.id ?? selectedHabitacion?.id_habitacion ?? "",
+        ) || null
         : null,
     metodo_pago: metodoPago,
+    ...(metodoPago === "transferencia" && input.baucherFoto
+      ? { baucher_foto: input.baucherFoto }
+      : {}),
     pagos_mixtos: metodoPago === "mixto" ? pagosMixtos : undefined,
     propina: totals.tip,
     sub_total: totals.subtotal,
@@ -162,10 +156,6 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
   };
 }
 
-/**
- * Etiqueta corta para la pantalla de pendientes: el cajero tiene que reconocer
- * la operación de un vistazo, así que lleva el total y los ítems.
- */
 export function describeSale(label: {
   total?: number;
   items?: number;

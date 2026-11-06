@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import {
   requiresShortMixer,
   bottleMixerUnits,
+  totalUnidadesAcompanamientoBotella,
 } from "@/hooks/utils/productConfiguration";
 import {
   useCallback,
@@ -832,7 +833,7 @@ export function useNuevaVenta() {
     [cart, anfitrionas],
   );
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (baucherFoto?: string | null) => {
     if (servicioId && (!servicioListo || !blockOffline("servicio")))
       return showToast(
         "Servicio",
@@ -858,10 +859,11 @@ export function useNuevaVenta() {
         (p) =>
           p.tipo_venta !== "shot" &&
           bottleMixerUnits(p) > 0 &&
-          !p.acompanamiento_botella?.presentacion_id,
+          totalUnidadesAcompanamientoBotella(p.acompanamiento_botella) !==
+            bottleMixerUnits(p),
       )
     ) {
-      showToast("Error", "Selecciona el acompa\u00f1amiento de botella");
+      showToast("Error", "Reparte el acompa\u00f1amiento de botella");
       return;
     }
     if (
@@ -913,6 +915,12 @@ export function useNuevaVenta() {
 
     if (metodoPago === "prepago" && !blockOffline("prepago")) return;
 
+    if (metodoPago === "transferencia" && !baucherFoto)
+      return showToast(
+        "Falta el baucher",
+        "Adjunta la foto del baucher para el pago con transferencia",
+      );
+
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
       const payload = buildSalePayload({
@@ -931,6 +939,7 @@ export function useNuevaVenta() {
         totals,
         selectedTime,
         hasCommissionItem,
+        baucherFoto,
       });
 
       const items = cart.reduce(
@@ -966,7 +975,6 @@ export function useNuevaVenta() {
       }
 
       dispatch({ type: "SET_CART", payload: [] });
-      // Quedó pendiente: la venta está guardada y sale al volver la red.
       showToast(
         "Venta guardada en el dispositivo",
         "Se enviará automáticamente cuando vuelva la conexión",

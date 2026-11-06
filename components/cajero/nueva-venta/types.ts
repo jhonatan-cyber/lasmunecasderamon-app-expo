@@ -1,5 +1,6 @@
 import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import type { SaleChoice } from "@/hooks/utils/saleChoice";
+import type { AcompanamientoBotella } from "@/types/cart";
 import type {
   Anfitriona,
   Habitacion,
@@ -15,7 +16,7 @@ export type { PagoMixto };
 export type VentaCartItem = Producto & {
   opciones_venta?: unknown;
   unidades_acompanamiento?: number;
-  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_botella?: AcompanamientoBotella;
   acompanamiento_corto?: {
     presentacion_id: string;
     unidades?: number;
@@ -26,18 +27,13 @@ export type VentaCartItem = Producto & {
   cantidad?: number;
   anfitrionas?: (string | number)[];
   hostessNames?: string | null;
-  // Catálogo de venta (for_sale): identidad por presentación, stock en el bar
-  // y tipo de venta (botella por defecto, como el dashboard).
   presentacion_id?: string;
   producto_id?: string;
   stock_bar?: number;
-  // Cómo se vendió (espejo del dashboard): 'shot' va acompañado de
-  // `shot_anfitriona` para separar el shot de cliente del de anfitriona.
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
 };
 
-/** Hostess selection target for commission products */
 export type VentaHostessTarget = {
   productId: string | number;
   isChampagne: boolean;
@@ -67,7 +63,6 @@ export type VentaState = {
   modalLoading: boolean;
   modalQuantities: { [key: string]: number };
   modalHostessSelections: { [key: string]: string[] };
-  /** Forma de venta elegida por presentación (botella, shot cliente, shot anfitriona). */
   saleChoices: { [key: string]: SaleChoice };
   hostessSelectionTarget: VentaHostessTarget | null;
   hostessSubModalVisible: boolean;

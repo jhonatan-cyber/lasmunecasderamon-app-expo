@@ -3,10 +3,15 @@ import { apiClientSafe } from "@/api/client";
 import {
   requiresShortMixer,
   bottleMixerUnits,
+  totalUnidadesAcompanamientoBotella,
 } from "@/hooks/utils/productConfiguration";
 import { saleInventoryFields } from "@/hooks/utils/saleInventoryFields";
 import { create } from "zustand";
-import type { CartItem, Product } from "@/types/cart";
+import type {
+  AcompanamientoBotellaItem,
+  CartItem,
+  Product,
+} from "@/types/cart";
 import {
   OrderCreateSchema,
   type OrderCreateType,
@@ -17,27 +22,19 @@ interface BuildOrderParams {
   codigo: string;
   clienteId?: string | null;
   device_date?: string;
-  /**
-   * El dashboard exige el método en el pedido (se cobra con él después).
-   * Mientras el carrito no tenga selector, el pedido viaja como efectivo.
-   */
   metodoPago?: "efectivo" | "tarjeta" | "transferencia";
-  /**
-   * Foto del baucher (data URL). Solo la manda el pedido con transferencia:
-   * es la constancia del pago y el dashboard la exige en ese caso.
-   */
   baucherFoto?: string | null;
 }
 
 type BuildOrderResult =
   | {
-      success: true;
-      data: OrderCreateType;
-    }
+    success: true;
+    data: OrderCreateType;
+  }
   | {
-      success: false;
-      errors: string[];
-    };
+    success: false;
+    errors: string[];
+  };
 
 interface CartState {
   cart: CartItem[];
@@ -52,6 +49,10 @@ interface CartState {
   updateItemMixer: (
     productId: string,
     mixer: NonNullable<Product["acompanamiento_corto"]>,
+  ) => void;
+  updateItemBottleMixers: (
+    productId: string,
+    sabores: AcompanamientoBotellaItem[],
   ) => void;
   updateItemRoom: (productId: string, roomId: string | null) => void;
   setTipEnabled: (enabled: boolean) => void;
@@ -114,9 +115,9 @@ export const useCartStore = create<CartState>((set, get) => ({
           selectedHostesses:
             updated[idx].product.tipo_venta === "shot"
               ? updated[idx].selectedHostesses.slice(
-                  0,
-                  updated[idx].quantity - 1,
-                )
+                0,
+                updated[idx].quantity - 1,
+              )
               : updated[idx].selectedHostesses,
         };
       } else {
@@ -176,22 +177,24 @@ export const useCartStore = create<CartState>((set, get) => ({
   updateItemMixer: (productId, mixer) =>
     set((state) => ({
       cart: state.cart.map((item) =>
+        item.product.id !== productId || item.product.tipo_venta !== "shot"
+          ? item
+          : {
+            ...item,
+            product: { ...item.product, acompanamiento_corto: mixer },
+          },
+      ),
+    })),
+
+  updateItemBottleMixers: (productId, sabores) =>
+    set((state) => ({
+      cart: state.cart.map((item) =>
         item.product.id !== productId
           ? item
           : {
-              ...item,
-              product: {
-                ...item.product,
-                ...(item.product.tipo_venta === "shot"
-                  ? { acompanamiento_corto: mixer }
-                  : {
-                      acompanamiento_botella: {
-                        ...mixer,
-                        unidades: bottleMixerUnits(item.product),
-                      },
-                    }),
-              },
-            },
+            ...item,
+            product: { ...item.product, acompanamiento_botella: sabores },
+          },
       ),
     })),
 
@@ -204,20 +207,20 @@ export const useCartStore = create<CartState>((set, get) => ({
       cart: state.cart.flatMap((item) =>
         item.product.tipo_venta === "shot" && item.quantity > 1
           ? Array.from({ length: item.quantity }, (_, index) => ({
-              ...item,
-              quantity: 1,
-              selectedHostesses:
-                item.selectedHostesses[index] === undefined
-                  ? []
-                  : [item.selectedHostesses[index]],
-              product: {
-                ...item.product,
-                id:
-                  index === 0
-                    ? item.product.id
-                    : `${item.product.id}:unit:${Date.now()}:${index}`,
-              },
-            }))
+            ...item,
+            quantity: 1,
+            selectedHostesses:
+              item.selectedHostesses[index] === undefined
+                ? []
+                : [item.selectedHostesses[index]],
+            product: {
+              ...item.product,
+              id:
+                index === 0
+                  ? item.product.id
+                  : `${item.product.id}:unit:${Date.now()}:${index}`,
+            },
+          }))
           : [item],
       ),
     })),
@@ -255,7 +258,8 @@ export const useCartStore = create<CartState>((set, get) => ({
             !product.acompanamiento_corto?.presentacion_id) ||
           (product.tipo_venta !== "shot" &&
             bottleMixerUnits(product) > 0 &&
-            !product.acompanamiento_botella?.presentacion_id),
+            totalUnidadesAcompanamientoBotella(product.acompanamiento_botella) !==
+            bottleMixerUnits(product)),
       )
     ) {
       return {

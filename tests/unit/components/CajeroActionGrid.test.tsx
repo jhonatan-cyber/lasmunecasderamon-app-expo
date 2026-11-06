@@ -47,6 +47,7 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
+    'ENTRADAS',
     'CORTESÍAS',
     'PERSONAL',
     'GRATIFICACIONES',

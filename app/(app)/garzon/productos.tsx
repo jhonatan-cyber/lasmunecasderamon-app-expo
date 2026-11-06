@@ -307,6 +307,11 @@ export default function ProductosScreen() {
                         .getState()
                         .updateItemMixer(item.product.id, mixer)
                     }
+                    onChangeBottle={(_, sabores) =>
+                      useCartStore
+                        .getState()
+                        .updateItemBottleMixers(item.product.id, sabores)
+                    }
                   />
                   {item.product.commission > 0 && (
                     <Pressable

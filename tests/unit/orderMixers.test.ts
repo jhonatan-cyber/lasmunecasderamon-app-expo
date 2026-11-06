@@ -54,7 +54,7 @@ describe("Bebidas del pedido", () => {
       availableOrderMixers(bar, { ...product, cantidad: 4 }, false),
     ).toEqual([]);
   });
-  it("para botellas usa las unidades configuradas y permite buscar", () => {
+  it("para botellas ofrece sabores con al menos una unidad por botella", () => {
     expect(
       availableOrderMixers(
         bar,
@@ -63,6 +63,12 @@ describe("Bebidas del pedido", () => {
         "sprite",
       ).map((item) => item.id),
     ).toEqual(["sprite"]);
-    expect(availableOrderMixers(bar, product, true)).toEqual([]);
+    expect(
+      availableOrderMixers(
+        bar,
+        { ...product, tipo_venta: "botella", cantidad: 2 },
+        true,
+      ).map((item) => item.id),
+    ).toEqual(["sprite"]);
   });
 });

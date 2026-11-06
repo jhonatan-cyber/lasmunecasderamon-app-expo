@@ -2,6 +2,11 @@
 
 La app móvil cubre los flujos de anfitriona, garzón, cajero y barman. No replica todas las pantallas administrativas del dashboard.
 
+## Limpieza y Colaciones — revisión del 05/11/2026
+
+- Limpieza: disponible para barman (`/barman/limpieza`) y cajero (`/cajero/limpieza`). Ambos roles ven el inventario según su ubicación (bar/caja) y pueden registrar consumos sin permiso de gestión.
+- Colaciones: disponible para cajero (`/cajero/colaciones`) con la misma lógica que barman: requiere caja abierta, muestra catálogo de bebidas analcohólicas y permite registrar con acompañamiento si la bebida lo tiene configurado.
+
 ## Anfitrionas — revisión del 14/10/2026
 
 - Servicios de solo lectura: sin edición, pausa, reasignación ni creación directa desde el rol anfitriona. El dashboard rechaza las mutaciones también en la API.
