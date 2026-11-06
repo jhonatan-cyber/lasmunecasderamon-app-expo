@@ -18,6 +18,7 @@ export const initialVentaState: VentaState = {
   cajaAbierta: null,
   cart: [],
   selectedCliente: null,
+  selectedSegundoCliente: null,
   selectedHabitacion: null,
   metodoPago: "",
   pagosMixtos: [],
@@ -71,17 +72,27 @@ export function ventaReducer(
       return {
         ...state,
         selectedCliente: client,
+        selectedSegundoCliente:
+          state.selectedSegundoCliente &&
+          String(state.selectedSegundoCliente.id_cliente ?? state.selectedSegundoCliente.id) ===
+          String(client?.id_cliente ?? client?.id)
+            ? null
+            : state.selectedSegundoCliente,
         metodoPago,
         pagosMixtos: [],
         metodoPagoAdicional: "efectivo",
       };
     }
+    case "SET_SELECTED_SEGUNDO_CLIENTE":
+      return { ...state, selectedSegundoCliente: action.payload };
     case "SET_SELECTED_HABITACION":
       return { ...state, selectedHabitacion: action.payload };
     case "SET_METODO_PAGO":
       return {
         ...state,
         metodoPago: action.payload,
+        selectedSegundoCliente:
+          action.payload === "prepago" ? state.selectedSegundoCliente : null,
         pagosMixtos:
           action.payload === "mixto"
             ? Number(state.selectedCliente?.saldo || 0) > 0

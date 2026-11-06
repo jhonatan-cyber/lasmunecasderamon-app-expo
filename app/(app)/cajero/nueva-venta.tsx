@@ -99,6 +99,7 @@ export default function NuevaVentaScreen() {
     cajaAbierta,
     cart,
     selectedCliente,
+    selectedSegundoCliente,
     selectedHabitacion,
     metodoPago,
     enableTip,
@@ -123,6 +124,7 @@ export default function NuevaVentaScreen() {
 
   /** Foto del baucher en data URL; se exige con transferencia al finalizar. */
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
+  const [clientSelectionTarget, setClientSelectionTarget] = useState<"primary" | "secondary">("primary");
   const handleAdjuntarBaucher = useCallback(async () => {
     const dataUrl = await adjuntarBaucher("NuevaVenta:baucher");
     if (dataUrl) setBaucherFoto(dataUrl);
@@ -305,11 +307,14 @@ export default function NuevaVentaScreen() {
               { borderColor, marginTop: hasCommissionItem ? spacing / 2 : 0 },
             ]}
             onPress={() =>
-              dispatch({
-                type: "SET_MODAL_VISIBLE",
-                modal: "client",
-                visible: true,
-              })
+              {
+                setClientSelectionTarget("primary");
+                dispatch({
+                  type: "SET_MODAL_VISIBLE",
+                  modal: "client",
+                  visible: true,
+                });
+              }
             }
             accessibilityLabel="Seleccionar cliente"
             accessibilityRole="button"
@@ -364,6 +369,42 @@ export default function NuevaVentaScreen() {
               )}
             </View>
           </Pressable>
+          {metodoPago === "prepago" &&
+            clientes.some((cliente) => {
+              const id = String(cliente.id_cliente ?? cliente.id);
+              const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
+              return id !== primaryId &&
+                Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
+            }) && (
+              <View style={{ marginTop: spacing / 2 }}>
+                <Pressable
+                  style={[
+                    styles.selectorBtn,
+                    dynamicStyles.selectorBtn,
+                    { borderColor: selectedSegundoCliente ? accentColor : borderColor },
+                  ]}
+                  onPress={() => {
+                    if (selectedSegundoCliente) {
+                      dispatch({ type: "SET_SELECTED_SEGUNDO_CLIENTE", payload: null });
+                    } else {
+                      setClientSelectionTarget("secondary");
+                      dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
+                    }
+                  }}
+                >
+                  <Ionicons
+                    name={selectedSegundoCliente ? "people" : "person-add"}
+                    size={20}
+                    color={accentColor}
+                  />
+                  <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
+                    {selectedSegundoCliente
+                      ? `${selectedSegundoCliente.nombre || selectedSegundoCliente.name || ""} ${selectedSegundoCliente.apellido || selectedSegundoCliente.lastName || ""}`.trim()
+                      : "Repartir prepago con otro cliente"}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           <PaymentMethodSelect
             selectedMethod={metodoPago}
             onSelect={(val) => {
@@ -680,10 +721,18 @@ export default function NuevaVentaScreen() {
       />
       <ClientSelectModal
         visible={clientModalVisible}
-        clients={clientes}
+        clients={clientSelectionTarget === "secondary"
+          ? clientes.filter((cliente) => {
+              const id = String(cliente.id_cliente ?? cliente.id);
+              const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
+              return id !== primaryId &&
+                Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
+            })
+          : clientes}
         selectedIds={
-          selectedCliente
-            ? [selectedCliente.id_cliente || selectedCliente.id]
+          (clientSelectionTarget === "secondary" ? selectedSegundoCliente : selectedCliente)
+            ? [(clientSelectionTarget === "secondary" ? selectedSegundoCliente : selectedCliente)!.id_cliente ||
+               (clientSelectionTarget === "secondary" ? selectedSegundoCliente : selectedCliente)!.id]
             : []
         }
         max={1}
@@ -705,7 +754,12 @@ export default function NuevaVentaScreen() {
           const cl = clientes.find(
             (c) => String(c.id_cliente || c.id) === String(id),
           );
-          dispatch({ type: "SET_SELECTED_CLIENTE", payload: cl || null });
+          dispatch({
+            type: clientSelectionTarget === "secondary"
+              ? "SET_SELECTED_SEGUNDO_CLIENTE"
+              : "SET_SELECTED_CLIENTE",
+            payload: cl || null,
+          });
           dispatch({
             type: "SET_MODAL_VISIBLE",
             modal: "client",

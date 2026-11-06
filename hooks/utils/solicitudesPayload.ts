@@ -6,7 +6,7 @@ import {
 } from "@/hooks/utils/saleInventoryFields";
 import type { PedidoItem } from "@/hooks/types/solicitudesTypes";
 
-export interface PedidoDetalle {
+export interface PedidoDetalle extends SaleInventoryFields {
   id_pedido?: string;
   /** Nombre del archivo del baucher en el servidor (solo transferencia). */
   baucher_foto?: string | null;
@@ -35,6 +35,7 @@ interface SalesSubmitPayload {
   metodo_pago: string;
   metodo_pago_adicional?: string;
   monto_prepago: number;
+  monto_adicional?: number;
   duracion_habitacion: number;
   detalles: DetallePago[];
   sub_total: number;
@@ -51,7 +52,7 @@ interface SalesSubmitPayload {
   ganancia_empresa: number;
   total_comision: number;
   tiempo: number;
-  usuarios: never[];
+  usuarios: string[];
   propina?: number;
 }
 
@@ -95,6 +96,22 @@ export function buildSalesSubmitPayload({
 
   const clienteId =
     pedido.cliente_id || detalles?.[0]?.cliente_id || cliente?.id || null;
+  const mappedDetails = detalles.map((d) => ({
+    ...saleInventoryFields(d),
+    comision: Number(d.comision ?? 0),
+    hostesses: d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
+    producto_id: d.producto_id,
+    cantidad: d.cantidad,
+    precio: d.precio,
+    sub_total: d.subtotal_detalle || d.cantidad * d.precio,
+  }));
+  const usuarios = Array.from(
+    new Set(mappedDetails.flatMap((detalle) => detalle.hostesses ?? [])),
+  );
+  const totalComision = mappedDetails.reduce(
+    (sum, detalle) => sum + Number(detalle.comision || 0),
+    0,
+  );
 
   const payload: SalesSubmitPayload = {
     id_pedido: pedido.id_pedido ?? "",
@@ -102,16 +119,11 @@ export function buildSalesSubmitPayload({
     metodo_pago: metodoPago,
     metodo_pago_adicional: metodoPagoAdicional || undefined,
     monto_prepago: montoPrepago,
+    ...(montoPrepago > 0 && montoPrepago < totalConPropina
+      ? { monto_adicional: totalConPropina - montoPrepago }
+      : {}),
     duracion_habitacion: duracionMinutos,
-    detalles: detalles.map((d) => ({
-      ...saleInventoryFields(d),
-      comision: Number(d.comision ?? 0),
-      hostesses: d.anfitrionas_asignadas_ids?.split(",").filter(Boolean) ?? [],
-      producto_id: d.producto_id,
-      cantidad: d.cantidad,
-      precio: d.precio,
-      sub_total: d.subtotal_detalle || d.cantidad * d.precio,
-    })),
+    detalles: mappedDetails,
     sub_total: subtotalBase,
     total: totalConPropina,
     ganancia_tipo: "fijo",
@@ -124,9 +136,9 @@ export function buildSalesSubmitPayload({
     ganancia_garzon: 0,
     ganancia_local: 0,
     ganancia_empresa: 0,
-    total_comision: 0,
+    total_comision: totalComision,
     tiempo: duracionMinutos,
-    usuarios: [],
+    usuarios,
   };
 
   if (propinaFinal > 0) {

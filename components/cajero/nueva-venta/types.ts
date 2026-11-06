@@ -32,6 +32,7 @@ export type VentaCartItem = Producto & {
   stock_bar?: number;
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
+  botella_anfitriona?: boolean;
 };
 
 export type VentaHostessTarget = {
@@ -50,6 +51,7 @@ export type VentaState = {
   cajaAbierta: boolean | null;
   cart: VentaCartItem[];
   selectedCliente: Cliente | null;
+  selectedSegundoCliente: Cliente | null;
   selectedHabitacion: Habitacion | null;
   metodoPago: PaymentMethod | "";
   pagosMixtos: PagoMixto[];
@@ -85,6 +87,7 @@ export type VentaAction =
   | { type: "SET_INITIAL_DATA"; payload: Partial<VentaState> }
   | { type: "SET_CART"; payload: VentaCartItem[] }
   | { type: "SET_SELECTED_CLIENTE"; payload: Cliente | null }
+  | { type: "SET_SELECTED_SEGUNDO_CLIENTE"; payload: Cliente | null }
   | { type: "SET_SELECTED_HABITACION"; payload: Habitacion | null }
   | { type: "SET_METODO_PAGO"; payload: PaymentMethod }
   | { type: "SET_PAGOS_MIXTOS"; payload: PagoMixto[] }

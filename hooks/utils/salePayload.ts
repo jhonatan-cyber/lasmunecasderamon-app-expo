@@ -13,6 +13,7 @@ export interface SalePayloadInput {
   hasCommissionItem: boolean;
   /** Foto del baucher en data URL; obligatoria cuando el pago es transferencia. */
   baucherFoto?: string | null;
+  prepagoDestinos?: { cliente_id: string; monto: number }[];
 }
 
 export interface SaleCreatePayload {
@@ -22,6 +23,7 @@ export interface SaleCreatePayload {
     producto_id: string | number;
     presentacion_id: string | number | null;
     tipo_venta?: "botella" | "shot";
+    botella_anfitriona?: boolean;
     shot_anfitriona?: boolean;
     acompanamiento_botella?: AcompanamientoBotella;
     acompanamiento_corto?: {
@@ -47,6 +49,7 @@ export interface SaleCreatePayload {
   tiempo: number;
   usuarios: (string | number)[];
   baucher_foto?: string;
+  prepago_destinos?: { cliente_id: string; monto: number }[];
 }
 
 const idDe = (valor: any): string | number | null =>
@@ -100,7 +103,8 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
           : item.presentacion_id
             ? ("botella" as const)
             : undefined,
-        shot_anfitriona: esShot ? Boolean(item.shot_anfitriona) : undefined,
+        ...(!esShot ? { botella_anfitriona: item.botella_anfitriona !== false } : {}),
+        ...(esShot ? { shot_anfitriona: Boolean(item.shot_anfitriona) } : {}),
         ...(!esShot && item.acompanamiento_botella
           ? { acompanamiento_botella: item.acompanamiento_botella }
           : {}),
@@ -134,6 +138,9 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
       ? { baucher_foto: input.baucherFoto }
       : {}),
     pagos_mixtos: metodoPago === "mixto" ? pagosMixtos : undefined,
+    ...(metodoPago === "prepago" && input.prepagoDestinos?.length
+      ? { prepago_destinos: input.prepagoDestinos }
+      : {}),
     propina: totals.tip,
     sub_total: totals.subtotal,
     total: totals.total,

@@ -32,7 +32,11 @@ vi.mock('@/components/shared/BloqueoPorCaja', () => ({
 }));
 
 vi.mock('@/components/garzon/GarzonActionCard', () => ({
-  GarzonActionCard: ({ title }: any) => <div>{title}</div>,
+  GarzonActionCard: ({ title, color, borderColor }: any) => (
+    <div data-title={title} data-color={color} data-border-color={borderColor}>
+      {title}
+    </div>
+  ),
 }));
 
 afterEach(() => {
@@ -44,15 +48,15 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'VENTAS',
     'CUENTAS',
     'SERVICIOS',
+    'COLACIONES',
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
     'ENTRADAS',
     'CORTESÍAS',
+    'LIMPIEZA',
     'PERSONAL',
     'GRATIFICACIONES',
-    'FINANCIERO',
-    'ANALÍTICAS',
   ];
 
   it('muestra sólo la tarjeta de CONFIGURACIÓN para un administrador', () => {
@@ -75,5 +79,28 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
       expect(screen.getByText(titulo)).toBeDefined();
     });
     expect(screen.queryByText('CONFIGURACIÓN')).toBeNull();
+  });
+
+  it('oculta las tarjetas FINANCIERO y ANALÍTICAS para el cajero', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(false);
+
+    render(<CajeroActionGrid />);
+
+    expect(screen.queryByText('FINANCIERO')).toBeNull();
+    expect(screen.queryByText('ANALÍTICAS')).toBeNull();
+  });
+
+  it('usa iconos de distintos colores y el acento de la app como borde', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(false);
+
+    render(<CajeroActionGrid />);
+
+    const ventas = screen.getByText('VENTAS').closest('[data-title="VENTAS"]');
+    const cuentas = screen.getByText('CUENTAS').closest('[data-title="CUENTAS"]');
+
+    expect(ventas?.getAttribute('data-color')).toBe('#22C55E');
+    expect(cuentas?.getAttribute('data-color')).toBe('#3B82F6');
+    expect(ventas?.getAttribute('data-border-color')).toBe('#E11D48');
+    expect(cuentas?.getAttribute('data-border-color')).toBe('#E11D48');
   });
 });

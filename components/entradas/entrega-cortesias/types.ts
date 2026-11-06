@@ -71,4 +71,5 @@ export interface EntregaCortesiasModalProps {
   tope: number;
   onClose: () => void;
   onEntregado: () => void | Promise<void>;
+  modo?: 'entrega' | 'solicitud';
 }

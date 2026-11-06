@@ -4,7 +4,6 @@ import { apiClientSafe } from '@/api/client';
 import { ActiveServiceCard } from '@/components/anfitriona/ActiveServiceCard';
 import { BarmanActionGrid } from '@/components/barman/BarmanActionGrid';
 import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
-import { CajeroStats } from '@/components/cajero/CajeroStats';
 import { EventDetailModal } from '@/components/shared/EventDetailModal';
 import { PremiumLiquidationCard } from '@/components/shared/PremiumLiquidationCard';
 import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
@@ -180,13 +179,6 @@ export function HomeScreen({ role }: HomeScreenProps) {
           showAlert={showAlert}
           profilePath={`/${role}/perfil`}
           onQRScannerPress={() => setShowAsistenciaModal(true)}
-          onPersonalPress={
-            role === 'cajero'
-              ? () => router.push('/cajero/personal')
-              :              role === 'barman'
-                ? () => router.push('/(app)/barman/personal')
-                : undefined
-          }
           notificationCount={role === 'cajero' ? pendingCount : 0}
           onNotificationPress={
             role === 'cajero'
@@ -273,7 +265,6 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === 'cajero' && (
               <>
-                <CajeroStats stats={stats} fullWidth hideFullWidth={esAdmin} />
                 <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
                   <CajeroActionGrid fullWidth />
                 </View>
@@ -298,7 +289,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               </View>
             )}
 
-            {!esAdmin && (
+            {role !== 'cajero' && !esAdmin && (
               <PremiumCalendar
                 events={events}
                 selectedDates={selectedDates}

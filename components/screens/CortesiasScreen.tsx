@@ -27,6 +27,8 @@ import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
+import { useAuthStore } from '@/store/authStore';
+import { isBarmanRole, isCajeroRole } from '@/utils/userRole';
 
 /**
  * Cortesías del día (barman y cajero cuando opera la barra). Paridad con la
@@ -59,6 +61,9 @@ function fechaHoraLocal() {
 export function CortesiasScreen() {
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
+  const user = useAuthStore(state => state.user);
+  const requiereSolicitud = isBarmanRole(user);
+  const esCajero = isCajeroRole(user);
 
   const topeCortesia = Number(
     useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000),
@@ -72,6 +77,7 @@ export function CortesiasScreen() {
   const [grupoAnular, setGrupoAnular] = useState<GrupoPendiente | null>(null);
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
+  const [solicitudesCortesias, setSolicitudesCortesias] = useState<any[]>([]);
 
   const { fecha } = fechaHoraLocal();
 
@@ -115,6 +121,13 @@ export function CortesiasScreen() {
     async (mostrarLoading = false) => {
       if (mostrarLoading) setLoading(true);
       try {
+        if (esCajero) {
+          const solicitudes = await entradasService.listarSolicitudesCortesias('pendiente');
+          if (!solicitudes.success)
+            throw new Error(solicitudes.message || 'No se pudieron cargar las solicitudes');
+          setSolicitudesCortesias(solicitudes.data ?? []);
+          return;
+        }
         // La cola es la del día de negocio, igual que en el dashboard: el
         // servidor no la limita a una caja y entregar no exige caja abierta.
         const [res, listado] = await Promise.all([
@@ -144,7 +157,7 @@ export function CortesiasScreen() {
         if (mostrarLoading) setLoading(false);
       }
     },
-    [fecha],
+    [fecha, esCajero],
   );
 
   useFocusEffect(
@@ -216,6 +229,29 @@ export function CortesiasScreen() {
     setGrupoEntrega(null);
   }, []);
 
+  const aprobarSolicitud = useCallback(async (id: string) => {
+    const res = await entradasService.aprobarSolicitudCortesias(id);
+    if (!res.success) {
+      showToast({ type: 'error', text1: 'No se pudo aprobar', text2: res.message });
+      return;
+    }
+    showToast({ type: 'success', text1: 'Entrega aprobada', text2: `${res.data?.entregadas || 0} cortesías entregadas` });
+    await cargar();
+  }, [cargar]);
+
+  const rechazarSolicitud = useCallback(async (id: string) => {
+    const res = await entradasService.rechazarSolicitudCortesias(
+      id,
+      'Solicitud rechazada por el cajero',
+    );
+    if (!res.success) {
+      showToast({ type: 'error', text1: 'No se pudo rechazar', text2: res.message });
+      return;
+    }
+    showToast({ type: 'success', text1: 'Solicitud rechazada' });
+    await cargar();
+  }, [cargar]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
@@ -263,6 +299,62 @@ export function CortesiasScreen() {
         }
       >
         <View style={{ padding: 20 }}>
+          {esCajero && (
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor, marginBottom: 20 }]}>
+              <View style={styles.listHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: textSecondary }]}>
+                    SOLICITUDES DEL BARMAN
+                  </Text>
+                  <Text style={[styles.totalValue, { color: textPrimary }]}>
+                    {solicitudesCortesias.length}
+                  </Text>
+                </View>
+                <Text style={{ color: textSecondary, fontSize: 12 }}>Pendientes de autorización</Text>
+              </View>
+              {solicitudesCortesias.length === 0 && (
+                <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
+                  No hay cortesías por autorizar.
+                </Text>
+              )}
+              {solicitudesCortesias.map((solicitud) => {
+                const unidades = Array.isArray(solicitud.unidades)
+                  ? solicitud.unidades
+                  : (() => { try { return JSON.parse(solicitud.unidades || '[]'); } catch { return []; } })();
+                return (
+                  <View key={solicitud.id} style={[styles.grupoRow, { borderColor }]}>
+                    <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
+                      {solicitud.cliente_nombre || 'Cliente sin nombre'}
+                    </Text>
+                    <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
+                      Solicitó: {solicitud.solicitado_por_nick || 'Barman'} · {unidades.length} {unidades.length === 1 ? 'bebida' : 'bebidas'}
+                    </Text>
+                    {unidades.map((unidad: any, index: number) => (
+                      <Text key={`${unidad.presentacion_id}-${index}`} style={{ color: textPrimary, fontSize: 12, marginTop: 8 }}>
+                        • {unidad.producto_nombre || 'Producto'} {unidad.presentacion_nombre ? `· ${unidad.presentacion_nombre}` : ''}
+                        {unidad.tipo_entrega === 'botella' ? ' · Botella' : ' · Corte'}
+                      </Text>
+                    ))}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                      <Pressable
+                        onPress={() => void aprobarSolicitud(solicitud.id)}
+                        style={{ flex: 1, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                      >
+                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>APROBAR</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void rechazarSolicitud(solicitud.id)}
+                        style={{ flex: 1, backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                      >
+                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>RECHAZAR</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+          {!esCajero && (
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.listHeader}>
               <View>
@@ -388,6 +480,7 @@ export function CortesiasScreen() {
               );
             })}
           </View>
+          )}
 
           <View style={{ marginTop: 20 }}>
             <EntradasListadoCard
@@ -434,6 +527,7 @@ export function CortesiasScreen() {
         tope={topeCortesia}
         onClose={cerrarEntrega}
         onEntregado={cargar}
+        modo={requiereSolicitud ? 'solicitud' : 'entrega'}
       />
     </View>
   );

@@ -26,6 +26,7 @@ export function EntregaCortesiasModal({
   tope,
   onClose,
   onEntregado,
+  modo = 'entrega',
 }: EntregaCortesiasModalProps) {
   const { accentColor, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
   const {
@@ -50,7 +51,7 @@ export function EntregaCortesiasModal({
     cambiarAdicional,
     cerrar,
     entregar,
-  } = useEntregaCortesias({ visible, grupo, tope, onClose, onEntregado });
+  } = useEntregaCortesias({ visible, grupo, tope, onClose, onEntregado, modo });
 
   const fondo = isDark ? '#111827' : '#FFFFFF';
   const submitDeshabilitado =
@@ -179,9 +180,13 @@ export function EntregaCortesiasModal({
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.submitText}>
-                    {totalSeleccionado > 0
-                      ? `ENTREGAR ${totalSeleccionado} EN LA BARRA`
-                      : 'ENTREGAR EN LA BARRA'}
+                    {modo === 'solicitud'
+                      ? (totalSeleccionado > 0
+                          ? `SOLICITAR AUTORIZACIÓN DE ${totalSeleccionado}`
+                          : 'SOLICITAR AUTORIZACIÓN')
+                      : (totalSeleccionado > 0
+                          ? `ENTREGAR ${totalSeleccionado} EN LA BARRA`
+                          : 'ENTREGAR EN LA BARRA')}
                   </Text>
                 )}
               </AnimatedButton>

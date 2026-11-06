@@ -37,7 +37,6 @@ const renderHeader = () =>
       showAlert={vi.fn()}
       profilePath="/cajero/perfil"
       onQRScannerPress={vi.fn()}
-      onPersonalPress={vi.fn()}
     />,
   );
 
@@ -65,13 +64,13 @@ describe('PremiumHeaderActions — acciones del header según rol', () => {
     expect(screen.queryByText('finger-print')).toBeNull();
   });
 
-  it('mantiene campana, personal y enrolar para un cajero', () => {
+  it('mantiene campana y enrolar para un cajero sin mostrar personal', () => {
     setSession('cajero');
 
     renderHeader();
 
     expect(screen.getByText('notifications-outline')).toBeDefined();
-    expect(screen.getByText('people')).toBeDefined();
+    expect(screen.queryByText('people')).toBeNull();
     expect(screen.getByText('finger-print')).toBeDefined();
   });
 

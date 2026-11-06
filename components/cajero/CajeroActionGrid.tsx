@@ -36,99 +36,85 @@ export const CajeroActionGrid = ({
         title: "VENTAS",
         description: "Realizar nueva venta",
         icon: "cart" as const,
-        color: accentColor,
+        color: "#22C55E",
         route: "/cajero/ventas",
       },
       {
         title: "CUENTAS",
         description: "Cuentas pendientes",
         icon: "receipt" as const,
-        color: accentColor,
+        color: "#3B82F6",
         route: "/cajero/cuentas",
       },
     {
       title: "SERVICIOS",
       description: "Gestión de privados",
       icon: "bed" as const,
-      color: accentColor,
+      color: "#F97316",
       route: "/cajero/servicios",
     },
     {
       title: "COLACIONES",
       description: "Cortos de turno",
       icon: "beer" as const,
-      color: accentColor,
+      color: "#F59E0B",
       route: "/cajero/colaciones",
     },
       {
         title: "CAJA",
         description: "Control de cajas",
         icon: "cash" as const,
-        color: accentColor,
+        color: "#14B8A6",
         route: "/cajero/caja",
       },
       {
         title: "PEDIDOS",
         description: "Solicitudes pendientes",
         icon: "notifications" as const,
-        color: accentColor,
+        color: "#EF4444",
         route: "/cajero/solicitudes",
       },
       {
         title: "CLIENTES",
         description: "Gestión de prepago",
         icon: "person" as const,
-        color: accentColor,
+        color: "#8B5CF6",
         route: "/cajero/clientes",
       },
       {
         title: "ENTRADAS",
         description: "Cobro en la puerta",
         icon: "enter-outline" as const,
-        color: "#F59E0B",
+        color: "#EAB308",
         route: "/cajero/entradas",
       },
       {
         title: "CORTESÍAS",
         description: "Entregar entradas del día",
         icon: "ticket-outline" as const,
-        color: "#8B5CF6",
+        color: "#D946EF",
         route: "/cajero/cortesias",
       },
       {
         title: "LIMPIEZA",
         description: "Surtidos de limpieza",
         icon: "brush" as const,
-        color: accentColor,
+        color: "#06B6D4",
         route: "/cajero/limpieza",
       },
       {
         title: "PERSONAL",
-        description: "Liquidación y Asistencia",
+        description: "Personal y códigos QR",
         icon: "people" as const,
-        color: accentColor,
-        route: "/cajero/administrativo",
+        color: "#6366F1",
+        route: "/cajero/personal",
       },
       {
         title: "GRATIFICACIONES",
         description: "Solicitar y revisar gratificaciones",
         icon: "gift" as const,
-        color: accentColor,
+        color: "#EC4899",
         route: "/cajero/gratificaciones",
-      },
-      {
-        title: "FINANCIERO",
-        description: "Eventos y propinas",
-        icon: "wallet" as const,
-        color: accentColor,
-        route: "/cajero/financieros",
-      },
-      {
-        title: "ANALÍTICAS",
-        description: "Métricas y ventas",
-        icon: "analytics" as const,
-        color: accentColor,
-        route: "/cajero/analytics",
       },
     ];
 
@@ -160,6 +146,7 @@ export const CajeroActionGrid = ({
                 description={action.description}
                 icon={action.icon}
                 color={action.color}
+                borderColor={accentColor}
                 onPress={() => router.push(action.route as Href)}
               />
             </BloqueoPorCaja>

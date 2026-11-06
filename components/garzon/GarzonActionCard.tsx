@@ -10,11 +10,12 @@ interface GarzonActionCardProps {
     description: string;
     icon: keyof typeof Ionicons.glyphMap;
     color: string;
+    borderColor?: string;
     onPress: () => void;
     disabled?: boolean;
 }
 
-export const GarzonActionCard = ({ title, description, icon, color, onPress, disabled }: GarzonActionCardProps) => {
+export const GarzonActionCard = ({ title, description, icon, color, borderColor, onPress, disabled }: GarzonActionCardProps) => {
     const { width } = useWindowDimensions();
     const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
     const isTablet = width >= 768;
@@ -38,8 +39,8 @@ export const GarzonActionCard = ({ title, description, icon, color, onPress, dis
                     shadowColor: color,
                     shadowOpacity: isDark ? 0.3 : 0.15,
                     opacity: disabled ? 0.6 : 1,
-                    borderWidth: isDark ? 1 : 0,
-                    borderColor: isDark ? `${color}40` : 'transparent',
+                    borderWidth: 1,
+                    borderColor: borderColor || color,
                 }
             ]}
         >
@@ -107,6 +108,5 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     }
 });
-
 
 

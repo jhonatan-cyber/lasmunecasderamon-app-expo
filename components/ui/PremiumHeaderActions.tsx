@@ -16,7 +16,6 @@ interface PremiumHeaderActionsProps {
     profilePath: string;
     showNotifications?: boolean;
     onQRScannerPress?: () => void;
-    onPersonalPress?: () => void;
 }
 
 export const PremiumHeaderActions = ({
@@ -28,7 +27,6 @@ export const PremiumHeaderActions = ({
     profilePath,
     showNotifications = true,
     onQRScannerPress,
-    onPersonalPress
 }: PremiumHeaderActionsProps) => {
     const { isDark } = useAccentColor();
     const logout = useAuthStore(state => state.logout);
@@ -71,14 +69,6 @@ export const PremiumHeaderActions = ({
                     style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
                 >
                     <Ionicons name="qr-code" size={20} color={iconColor} />
-                </Pressable>
-            )}
-            {onPersonalPress && !isAdmin && (
-                <Pressable
-                    onPress={onPersonalPress}
-                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
-                >
-                    <Ionicons name="people" size={20} color={iconColor} />
                 </Pressable>
             )}
             {showNotifications && !isRestrictedRole && !isAdmin && (
@@ -171,4 +161,3 @@ const styles = StyleSheet.create({
         fontWeight: '900',
     },
 });
-

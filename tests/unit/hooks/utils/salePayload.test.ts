@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSalePayload } from "@/hooks/utils/salePayload";
 import { buildConsumptionsPayload } from "@/hooks/utils/cuentaUtils";
+import { buildSalesSubmitPayload } from "@/hooks/utils/solicitudesPayload";
 
 describe("buildSalePayload", () => {
   const base = {
@@ -66,6 +67,7 @@ describe("buildSalePayload", () => {
       producto_id: "prod-1",
       presentacion_id: "pres-1",
       tipo_venta: "botella",
+      botella_anfitriona: true,
       cantidad: 2,
       precio: 5000,
       sub_total: 10000,
@@ -270,6 +272,50 @@ describe("buildSalePayload", () => {
     });
     expect(payload.cliente_id).toBe("9");
     expect(payload.habitacion_id).toBe("10");
+  });
+});
+
+describe("buildSalesSubmitPayload para pedidos", () => {
+  it("conserva inventario, anfitrionas, comisión y prepago al cobrar", () => {
+    const payload = buildSalesSubmitPayload({
+      pedido: {
+        id_pedido: "pedido-1",
+        cliente_id: "cliente-1",
+        subtotal: 20000,
+        total: 22000,
+        propina: 2000,
+      } as any,
+      detalles: [
+        {
+          producto_id: "producto-1",
+          presentacion_id: "pres-1",
+          tipo_venta: "botella",
+          botella_anfitriona: false,
+          cantidad: 2,
+          precio: 10000,
+          comision: 3000,
+          anfitrionas_asignadas_ids: "a-1,a-2",
+        },
+      ],
+      cliente: { id: "cliente-1", saldo: 7000 } as any,
+      metodoPago: "prepago",
+      metodoPagoAdicional: "",
+      propinaPct: 10,
+      agregarPropina: false,
+      duracionMinutos: 30,
+    });
+
+    expect(payload.detalles[0]).toMatchObject({
+      presentacion_id: "pres-1",
+      tipo_venta: "botella",
+      botella_anfitriona: false,
+      comision: 3000,
+      hostesses: ["a-1", "a-2"],
+    });
+    expect(payload.usuarios).toEqual(["a-1", "a-2"]);
+    expect(payload.total_comision).toBe(3000);
+    expect(payload.monto_prepago).toBe(7000);
+    expect(payload.monto_adicional).toBe(15000);
   });
 });
 

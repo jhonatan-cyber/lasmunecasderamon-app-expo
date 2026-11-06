@@ -22,7 +22,10 @@ export function parseOpcionesVenta(raw: unknown): SaleOption[] {
 
 /** Forma de venta elegida: botella entera o shot, a precio de cliente o de anfitriona. */
 export type SaleChoice =
-  SaleType | "shot_anfitriona" | `shot_anfitriona:${number}`;
+  SaleType | "botella_sin_anfitriona" | "shot_anfitriona" | `shot_anfitriona:${number}`;
+
+export const esBotella = (value: string) =>
+  value === "botella" || value === "botella_sin_anfitriona";
 
 export interface OpcionVentaProducto {
   value: SaleChoice;
@@ -77,22 +80,36 @@ export function resolverVentaProducto(
   );
   const precioShotCliente = Number(opcionShot?.precio ?? 0);
   const preciosAnfitriona = preciosCortoAnfitriona(opcionShot);
-  const tieneShot = Boolean(opcionShot && precioShotCliente > 0);
-  const tieneShotAnfitriona = tieneShot && preciosAnfitriona.length > 0;
+  const tieneShotCliente = Boolean(opcionShot && precioShotCliente > 0);
+  const tieneShotAnfitriona = Boolean(opcionShot && preciosAnfitriona.length > 0);
+  const tieneShot = tieneShotCliente || tieneShotAnfitriona;
+  const botellaHabilitada =
+    opcionBotella?.en_venta !== false &&
+    opcionBotella?.vender_con_anfitriona !== false &&
+    precioBotella > 0;
 
   const opciones: OpcionVentaProducto[] = [
-    ...((opcionBotella || !tieneShot) ? [
-    {
-      value: "botella" as SaleChoice,
-      nombre: opcionBotella?.acompanamiento
-        ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === "gaseosa" ? "gaseosas" : "sodas") : "acompa\u00f1amientos"}`
-        : "Botella",
-      precio: precioBotella,
-      comision: comisionBotella,
-      esShot: false,
-    }
-    ] : []),
-    ...(tieneShot
+    ...(botellaHabilitada && (opcionBotella || !tieneShot)
+      ? [{
+          value: "botella" as SaleChoice,
+          nombre: opcionBotella?.acompanamiento
+            ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === "gaseosa" ? "gaseosas" : "sodas") : "acompa\u00f1amientos"}`
+            : "Botella",
+          precio: precioBotella,
+          comision: comisionBotella,
+          esShot: false,
+        }]
+      : []),
+    ...(Number(opcionBotella?.precio_sin_anfitriona) > 0
+      ? [{
+          value: "botella_sin_anfitriona" as SaleChoice,
+          nombre: "Botella sin anfitriona",
+          precio: Number(opcionBotella!.precio_sin_anfitriona),
+          comision: 0,
+          esShot: false,
+        }]
+      : []),
+    ...(tieneShotCliente
       ? [
           {
             value: "shot" as SaleChoice,
@@ -123,26 +140,26 @@ export function resolverVentaProducto(
 
   const tipoVenta: SaleChoice =
     eleccion &&
-    esCortoAnfitriona(eleccion) &&
+    (esCortoAnfitriona(eleccion) || eleccion === "botella_sin_anfitriona") &&
     opciones.some((option) => option.value === eleccion)
       ? eleccion
       : (eleccion === "shot" || (eleccion && esCortoAnfitriona(eleccion))) &&
           tieneShot
         ? "shot"
-        : opciones[0].value;
+        : (opciones[0]?.value ?? "botella");
 
   const elegida =
-    opciones.find((opcion) => opcion.value === tipoVenta) ?? opciones[0];
-  const maxCantidad = elegida.esShot ? 99 : Number(producto?.stock_bar ?? 0);
+    opciones.find((opcion) => opcion.value === tipoVenta) ?? opciones[0] ?? null;
+  const maxCantidad = elegida?.esShot ? 99 : Number(producto?.stock_bar ?? 0);
 
   return {
     opciones,
     tieneShot,
     tieneShotAnfitriona,
     tipoVenta,
-    esShot: elegida.esShot,
-    precio: elegida.precio,
-    comision: elegida.comision,
+    esShot: Boolean(elegida?.esShot),
+    precio: elegida?.precio ?? 0,
+    comision: elegida?.comision ?? 0,
     precioBotella,
     comisionBotella,
     maxCantidad,

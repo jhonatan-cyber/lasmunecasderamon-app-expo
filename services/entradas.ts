@@ -140,4 +140,36 @@ export const entradasService = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  solicitarEntregaCortesias: (payload: {
+    grupo_registro_id: string | null;
+    cliente_nombre: string | null;
+    entrada_ids: string[];
+    unidades: Array<Record<string, unknown>>;
+    monto_total: number;
+  }) =>
+    apiClientSafe<{ id: string }>('/tickets/cortesia-solicitudes', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  listarSolicitudesCortesias: (estado = 'pendiente') =>
+    apiClientSafe<any[]>(
+      `/tickets/cortesia-solicitudes?estado=${encodeURIComponent(estado)}`,
+    ),
+
+  aprobarSolicitudCortesias: (id: string) =>
+    apiClientSafe<{ entregadas: number }>(
+      `/tickets/cortesia-solicitudes/${encodeURIComponent(id)}/approve`,
+      { method: 'PATCH' },
+    ),
+
+  rechazarSolicitudCortesias: (id: string, motivo: string) =>
+    apiClientSafe<unknown>(
+      `/tickets/cortesia-solicitudes/${encodeURIComponent(id)}/reject`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ motivo }),
+      },
+    ),
 };

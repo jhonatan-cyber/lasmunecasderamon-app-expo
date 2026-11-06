@@ -28,6 +28,7 @@ interface UseEntregaCortesiasParams {
   tope: number;
   onClose: () => void;
   onEntregado: () => void | Promise<void>;
+  modo?: 'entrega' | 'solicitud';
 }
 
 /**
@@ -41,6 +42,7 @@ export function useEntregaCortesias({
   tope,
   onClose,
   onEntregado,
+  modo = 'entrega',
 }: UseEntregaCortesiasParams) {
   const [bebidas, setBebidas] = useState<Bebida[]>([]);
   const [acompanamientos, setAcompanamientos] = useState<Acompanamiento[]>([]);
@@ -208,6 +210,8 @@ export function useEntregaCortesias({
       formato: Formato;
       reparto: AcompanamientoBotellaItem[];
       adicional: string;
+      producto_nombre: string;
+      presentacion_nombre: string;
     }[] = [];
     for (const linea of lineas) {
       for (let indice = 0; indice < linea.cantidad; indice += 1) {
@@ -216,6 +220,8 @@ export function useEntregaCortesias({
           formato: linea.formato,
           reparto: linea.reparto,
           adicional: linea.adicional,
+          producto_nombre: linea.bebida.producto_nombre,
+          presentacion_nombre: linea.bebida.presentacion_nombre,
         });
       }
     }
@@ -223,6 +229,42 @@ export function useEntregaCortesias({
     setEntregando(true);
     let entregadas = 0;
     try {
+      if (modo === 'solicitud') {
+        const unidadesSolicitud = unidades.map((unidad, indice) => ({
+          entrada_id: filas[indice]?.id,
+          presentacion_id: unidad.presentacion_id,
+          tipo_entrega: unidad.formato,
+          producto_nombre: unidad.producto_nombre,
+          presentacion_nombre: unidad.presentacion_nombre,
+          acompanamientos: unidad.reparto.length
+            ? unidad.reparto.map(sabor => ({
+                presentacion_id: sabor.presentacion_id,
+                unidades: sabor.unidades,
+              }))
+            : null,
+          ...(unidad.adicional.trim()
+            ? { monto_adicional: Number(unidad.adicional) }
+            : {}),
+        }));
+        if (unidadesSolicitud.some(unidad => !unidad.entrada_id))
+          throw new Error('El grupo ya no tiene entradas pendientes');
+        const res = await entradasService.solicitarEntregaCortesias({
+          grupo_registro_id: grupo.id,
+          cliente_nombre: grupo.cliente,
+          entrada_ids: unidadesSolicitud.map(unidad => unidad.entrada_id as string),
+          unidades: unidadesSolicitud,
+          monto_total: unidadesSolicitud.length * (filas[0]?.monto_entrada || 0),
+        });
+        if (!res.success) throw new Error(res.message || 'No se pudo enviar la solicitud');
+        entregadas = unidadesSolicitud.length;
+        showToast({
+          type: 'success',
+          text1: 'Solicitud enviada al cajero',
+          text2: 'La entrega quedará pendiente de autorización.',
+        });
+        await onEntregado();
+        onClose();
+      } else {
       for (const unidad of unidades) {
         const fila = filas[entregadas];
         if (!fila) throw new Error('El grupo ya no tiene entradas pendientes');
@@ -248,6 +290,7 @@ export function useEntregaCortesias({
       });
       await onEntregado();
       onClose();
+      }
     } catch (err) {
       logger.fetchError(err, { context: 'EntregaCortesias:entregar' });
       showToast({
@@ -274,6 +317,7 @@ export function useEntregaCortesias({
     onClose,
     onEntregado,
     totalSeleccionado,
+    modo,
   ]);
 
   return {

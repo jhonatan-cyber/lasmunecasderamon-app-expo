@@ -138,6 +138,7 @@ export function useNuevaVenta() {
     cajaAbierta,
     cart,
     selectedCliente,
+    selectedSegundoCliente,
     selectedHabitacion,
     metodoPago,
     pagosMixtos,
@@ -665,6 +666,7 @@ export function useNuevaVenta() {
         ...item,
         tipo_venta: venta.esShot ? ("shot" as const) : ("botella" as const),
         shot_anfitriona: esCortoAnfitriona(venta.tipoVenta),
+        botella_anfitriona: venta.esShot ? undefined : venta.tipoVenta !== "botella_sin_anfitriona",
         precio: venta.precio,
         price: venta.precio,
         comision: venta.comision,
@@ -901,16 +903,41 @@ export function useNuevaVenta() {
     if (metodoPago === "prepago" && !selectedCliente) {
       return showToast("Error", "Seleccione un cliente para pagar con prepago");
     }
-    if (
-      metodoPago === "prepago" &&
-      Number(
-        selectedCliente?.saldo ?? (selectedCliente as any)?.saldo_prepago ?? 0,
-      ) < totals.total
-    ) {
-      return showToast(
-        "Saldo insuficiente",
-        "El saldo prepago del cliente no cubre el total de la venta",
+    let prepagoDestinos: { cliente_id: string; monto: number }[] = [];
+    if (metodoPago === "prepago") {
+      const clientesPrepago = [selectedCliente, selectedSegundoCliente].filter(
+        (cliente): cliente is NonNullable<typeof cliente> => Boolean(cliente),
       );
+      const clientesUnicos = clientesPrepago.filter(
+        (cliente, index, rows) =>
+          index === rows.findIndex((row) =>
+            String(row.id_cliente ?? row.id) === String(cliente.id_cliente ?? cliente.id)
+          ),
+      );
+      let restante = Math.round(totals.total);
+      const mitad = Math.round(restante / 2);
+      for (const cliente of clientesUnicos) {
+        if (restante <= 0) break;
+        const saldo = Number(
+          cliente.saldo ?? (cliente as any).saldo_prepago ?? 0,
+        );
+        const monto = clientesUnicos.length === 2
+          ? Math.min(saldo, mitad, restante)
+          : Math.min(saldo, restante);
+        if (monto > 0) {
+          prepagoDestinos.push({
+            cliente_id: String(cliente.id_cliente ?? cliente.id),
+            monto,
+          });
+          restante -= monto;
+        }
+      }
+      if (restante > 0) {
+        return showToast(
+          "Saldo insuficiente",
+          "El saldo prepago disponible no cubre el total de la venta",
+        );
+      }
     }
 
     if (metodoPago === "prepago" && !blockOffline("prepago")) return;
@@ -940,6 +967,7 @@ export function useNuevaVenta() {
         selectedTime,
         hasCommissionItem,
         baucherFoto,
+        prepagoDestinos,
       });
 
       const items = cart.reduce(
