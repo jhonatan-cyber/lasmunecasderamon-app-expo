@@ -107,7 +107,7 @@ export const resolveBaseUrl = (): string =>
     envUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
     platform: Platform.OS,
     devServerHost: currentDevServerHost(),
-    webHostname: typeof window !== "undefined" ? window.location.hostname : null,
+    webHostname: typeof window !== "undefined" ? window.location?.hostname ?? null : null,
   });
 
 export const BASE_URL = resolveBaseUrl();
