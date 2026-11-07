@@ -5,6 +5,7 @@ export interface SaleOption {
   colacion_habilitada?: boolean;
   cover_habilitado?: boolean;
   en_venta?: boolean;
+  corto_anfitriona_habilitado?: boolean;
   ml_colacion?: number;
   acompanamiento_colacion?: { unidades: number; ml?: number };
   precio_sin_anfitriona?: number;

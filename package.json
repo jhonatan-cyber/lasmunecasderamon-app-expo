@@ -12,7 +12,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "android:dev": "npx eas-cli build --profile development --platform android",
-    "android:preview": "npx eas-cli build --profile preview_apk --platform android",
+    "android:preview": "npx eas-cli build --profile preview --platform android",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",

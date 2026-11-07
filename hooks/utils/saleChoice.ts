@@ -85,7 +85,7 @@ export function resolverVentaProducto(
   const tieneShot = tieneShotCliente || tieneShotAnfitriona;
   const botellaHabilitada =
     opcionBotella?.en_venta !== false &&
-    opcionBotella?.vender_con_anfitriona !== false &&
+    (opcionBotella?.en_venta === true || opcionBotella?.vender_con_anfitriona !== false) &&
     precioBotella > 0;
 
   const opciones: OpcionVentaProducto[] = [
@@ -100,7 +100,7 @@ export function resolverVentaProducto(
           esShot: false,
         }]
       : []),
-    ...(Number(opcionBotella?.precio_sin_anfitriona) > 0
+    ...(opcionBotella?.en_venta !== false && Number(opcionBotella?.precio_sin_anfitriona) > 0
       ? [{
           value: "botella_sin_anfitriona" as SaleChoice,
           nombre: "Botella sin anfitriona",

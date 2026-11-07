@@ -85,7 +85,14 @@ describe("useGarzonProductos · pedido sin red", () => {
           nombre: "210",
           stock_bar: 5,
           precio: 5000,
-          opciones_venta: [{ tipo: "botella", precio: 5000, comision: 0 }],
+          opciones_venta: [
+            {
+              tipo: "botella",
+              precio: 5000,
+              comision: 0,
+              precio_sin_anfitriona: 3500,
+            },
+          ],
         },
       ],
     });
@@ -144,8 +151,39 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     expect(result.current.products.map((p) => p.name)).toEqual([
       "Corona - Botella",
+      "Corona - Botella sin anfitriona",
     ]);
     expect(result.current.fromCache).toBe(true);
+  });
+
+  it("conserva el formato de botella sin anfitriona al enviar el pedido", async () => {
+    const { result } = renderHook(() => useGarzonProductos());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const product = result.current.products.find(
+      (item) => item.botella_anfitriona === false,
+    );
+    expect(product).toMatchObject({
+      price: 3500,
+      commission: 0,
+      botella_anfitriona: false,
+    });
+
+    act(() => {
+      result.current.addToCart(product!);
+    });
+
+    await act(async () => {
+      await result.current.submitOrder();
+    });
+
+    const payload = outbox.enqueueAndSend.mock.calls[0][0].payload;
+    expect(payload.detalles[0]).toMatchObject({
+      precio: 3500,
+      comision: 0,
+      botella_anfitriona: false,
+    });
   });
 
   it("debe encolar el pedido cuando no hay red, sin perderlo", async () => {

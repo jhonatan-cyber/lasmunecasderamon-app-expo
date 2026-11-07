@@ -180,6 +180,9 @@ export function useGarzonProductos() {
                   commission: option.comision,
                   tipo_venta: option.esShot ? "shot" : "botella",
                   shot_anfitriona: esCortoAnfitriona(option.value),
+                  botella_anfitriona: option.esShot
+                    ? undefined
+                    : option.value !== "botella_sin_anfitriona",
                   status: 1,
                 }));
             });

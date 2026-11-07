@@ -44,10 +44,10 @@ corepack pnpm typecheck
 - Para probar cambios del backend local, levanta el dashboard en la PC y usa
   `pnpm start`; la app lo encuentra en la IP actual de esa PC.
 - Si cambia una dependencia nativa, genera e instala otro APK de desarrollo.
-  Los APK de `preview_apk` y `production` no se conectan a Metro: `production`
-  apunta al dominio fijo y `preview_apk` conserva una IP de LAN, asi que ese
-  perfil si necesita recompilarse al cambiar de red. Para pruebas locales usa
-  el dev client.
+  Los APK de `preview`, `preview_apk` y `production` no se conectan a Metro:
+  `preview` apunta al dominio fijo, `preview_apk` conserva una IP de LAN (y
+  necesita recompilarse al cambiar de red), y `production` tambien apunta al
+  dominio fijo. Para pruebas locales usa el dev client.
 - El enrolamiento facial detecta el giro de la cabeza con ML Kit
   (`@infinitered/react-native-mlkit-face-detection`), un modulo nativo: entra en
   el APK al recompilar. En un build viejo el enrolamiento sigue funcionando con
@@ -63,7 +63,18 @@ corepack pnpm typecheck
 - `corepack pnpm start` arranca Metro en modo `dev-client`.
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.
-- Si quieres una prueba mas cercana a preproduccion, instala `corepack pnpm android:preview`.
+- Para compartir una version de prueba fuera de tu red, usa el perfil `preview`:
+  `corepack pnpm android:preview`. Cuando termine EAS Build, comparte el enlace
+  de instalacion que muestra EAS; el APK se instala desde cualquier ubicacion y
+  usa la API de produccion. Para actualizar la app con cambios de JavaScript o
+  estilos, inicia manualmente el workflow **Publish Preview OTA** desde GitHub
+  e indica el mensaje de la actualizacion. Quienes ya la instalaron reciben la
+  actualizacion al volver a abrir la app. Cambios nativos requieren un nuevo
+  build y compartir el enlace otra vez. Los workflows de build y OTA requieren
+  el secreto de GitHub `EXPO_TOKEN`.
+- El canal `preview-testers` es solo para testers: no publicar cambios ahi que no
+  quieras distribuir. El APK `preview_apk` usa el canal `preview-lan` para pruebas
+  en la red local y no recibe las actualizaciones OTA de testers.
 - Si quieres seguir usando Expo Go, usa `corepack pnpm start:go` con Expo Go para SDK 57.
 - Las actualizaciones OTA usan `runtimeVersion.policy: fingerprint`: un cambio de SDK
   requiere un nuevo APK de desarrollo o distribucion antes de publicar actualizaciones

@@ -6,9 +6,10 @@ on:
       profile:
         description: 'EAS Build Profile'
         required: true
-        default: 'preview_apk'
+        default: 'preview'
         type: choice
         options:
+          - preview
           - preview_apk
           - production
 

@@ -15,6 +15,7 @@ export interface Product {
   stock_bar?: number;
   tipo_venta?: "botella" | "shot";
   shot_anfitriona?: boolean;
+  botella_anfitriona?: boolean;
   opciones_venta?: unknown;
   unidades_acompanamiento?: number;
   acompanamiento_botella?: AcompanamientoBotella;

@@ -72,6 +72,7 @@ export const OrderCreateSchema = object({
       presentacion_id: string().nullable().optional(),
       tipo_venta: zEnum(["botella", "shot"]).optional(),
       shot_anfitriona: boolean().optional(),
+      botella_anfitriona: boolean().optional(),
       acompanamiento_botella: acompanamientoBotellaSchema.optional(),
       acompanamiento_corto: object({
         presentacion_id: string().min(1),

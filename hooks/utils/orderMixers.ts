@@ -3,6 +3,7 @@ import {
   bottleMixerUnits,
   shortMixerConsumption,
 } from "./productConfiguration";
+import { parseOpcionesVenta } from "./saleChoice";
 
 export function availableOrderMixers(
   bar: any[],
@@ -34,6 +35,15 @@ export function availableOrderMixers(
     return [];
   return bar.filter((product) => {
     if (String(product.id) === String(item.presentacion_id)) return false;
+    const bottleOption = parseOpcionesVenta(product.opciones_venta).find(
+      (option) => option.tipo === "botella",
+    );
+    if (
+      item.shot_anfitriona
+        ? bottleOption?.corto_anfitriona_habilitado === false
+        : bottleOption?.cover_habilitado !== true
+    )
+      return false;
     const stock = Number(product.stock_bar || 0);
     const requiredMl =
       Number("ml_por_corto" in consumption ? consumption.ml_por_corto : 0) *

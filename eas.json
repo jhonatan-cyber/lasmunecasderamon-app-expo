@@ -18,12 +18,19 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview",
+      "channel": "preview-testers",
       "node": "22.19.0",
-      "environment": "preview"
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://dashboard.xn--lasmuecasderamon-bub.com"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview_apk": {
       "extends": "preview",
+      "channel": "preview-lan",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://192.168.0.2:3000"
       },

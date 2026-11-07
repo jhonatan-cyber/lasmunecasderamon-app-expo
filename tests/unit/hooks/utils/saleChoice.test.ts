@@ -62,6 +62,24 @@ describe("resolverVentaProducto", () => {
     expect(venta.comision).toBe(0);
   });
 
+  it("no vende la botella desactivada aunque tenga un precio alternativo", () => {
+    const venta = resolverVentaProducto({
+      stock_bar: 4,
+      opciones_venta: [
+        {
+          tipo: "botella",
+          precio: 2900,
+          comision: 500,
+          precio_sin_anfitriona: 2500,
+          en_venta: false,
+        },
+      ],
+    });
+
+    expect(venta.opciones).toEqual([]);
+    expect(venta.precio).toBe(0);
+  });
+
   it("con shot ofrece Botella, Corto cliente y Corto anfitriona", () => {
     const venta = resolverVentaProducto(conCortoYAnfitriona);
 
