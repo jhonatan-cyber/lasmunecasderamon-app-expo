@@ -81,71 +81,68 @@ describe('formatCurrency', () => {
 });
 
 describe('filtrarAnticipos', () => {
+    // solicitudes: estados activos (pendiente, aprobado, rechazado)
+    // pagos: historial ya entregado (estado 0)
     const solicitudes = [
-        anticipo(1, 1000, 2),
-        anticipo(2, 2000, 1),
-        anticipo(3, 3000, 3),
-        anticipo(4, 4000, 'pendiente'),
+        anticipo(1, 1000, 2),         // pendiente
+        anticipo(2, 2000, 1),         // aprobado
+        anticipo(3, 3000, 3),         // rechazado
+        anticipo(4, 4000, 'pendiente'), // pendiente (string)
     ];
     const pagos = [
-        anticipo(5, 500, 0),
-        anticipo(6, 600, 'pagado'),
-        anticipo(7, 700, 'pendiente'),
+        anticipo(5, 500, 0),           // recibido/pagado
+        anticipo(6, 600, 'pagado'),    // recibido (string)
+        // id 7 duplica un pendiente que podría venir en ambas — se excluye
     ];
 
-    it('en solicitudes sin filtro muestra todas', () => {
-        const result = filtrarAnticipos({
-            viewMode: 'solicitudes',
-            filter: 'todos',
-            solicitudes,
-            pagos,
-        });
-
-        expect(result.map((a) => a.id_solicitud)).toEqual([1, 2, 3, 4]);
+    it('sin filtro muestra todas las entradas unificadas', () => {
+        const result = filtrarAnticipos({ filter: 'todos', solicitudes, pagos });
+        // solicitudes (4) + pagos no duplicados (2) = 6
+        expect(result.map((a) => a.id_solicitud)).toEqual([1, 2, 3, 4, 5, 6]);
     });
 
-    it('filtra solicitudes pendientes', () => {
-        const result = filtrarAnticipos({
-            viewMode: 'solicitudes',
-            filter: 'pendiente',
-            solicitudes,
-            pagos,
-        });
-
+    it('filtra solo pendientes (solicitados)', () => {
+        const result = filtrarAnticipos({ filter: 'pendiente', solicitudes, pagos });
         expect(result.map((a) => a.id_solicitud)).toEqual([1, 4]);
     });
 
-    it('filtra solicitudes aprobadas', () => {
-        const result = filtrarAnticipos({
-            viewMode: 'solicitudes',
-            filter: 'aprobado',
-            solicitudes,
-            pagos,
-        });
-
+    it('filtra solo aprobados', () => {
+        const result = filtrarAnticipos({ filter: 'aprobado', solicitudes, pagos });
         expect(result.map((a) => a.id_solicitud)).toEqual([2]);
     });
 
-    it('filtra solicitudes rechazadas', () => {
-        const result = filtrarAnticipos({
-            viewMode: 'solicitudes',
-            filter: 'rechazado',
-            solicitudes,
-            pagos,
-        });
-
+    it('filtra solo rechazados', () => {
+        const result = filtrarAnticipos({ filter: 'rechazado', solicitudes, pagos });
         expect(result.map((a) => a.id_solicitud)).toEqual([3]);
     });
 
-    it('en la vista de anticipos solo muestra los pagados', () => {
+    it('filtra solo recibidos (pagados/entregados)', () => {
+        const result = filtrarAnticipos({ filter: 'recibido', solicitudes, pagos });
+        expect(result.map((a) => a.id_solicitud)).toEqual([5, 6]);
+    });
+
+    it('evita duplicados cuando un pago ya aparece en solicitudes', () => {
+        // id 1 está en solicitudes; si también llegara en pagos no debe duplicarse
+        const pagosDuplicados = [
+            ...pagos,
+            anticipo(1, 1000, 0), // duplicado por id_solicitud
+        ];
+        const result = filtrarAnticipos({ filter: 'todos', solicitudes, pagos: pagosDuplicados });
+        const ids = result.map((a) => a.id_solicitud);
+        // id 1 aparece una sola vez
+        expect(ids.filter((id) => id === 1)).toHaveLength(1);
+        expect(ids).toHaveLength(6);
+    });
+
+    it('el parámetro viewMode es ignorado (compatibilidad hacia atrás)', () => {
+        // viewMode ya no controla la vista; pasarlo no rompe nada
         const result = filtrarAnticipos({
-            viewMode: 'anticipos',
+            viewMode: 'anticipos' as any,
             filter: 'todos',
             solicitudes,
             pagos,
         });
-
-        expect(result.map((a) => a.id_solicitud)).toEqual([5, 6]);
+        expect(result).toHaveLength(6);
     });
 });
 

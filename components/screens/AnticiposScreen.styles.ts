@@ -45,8 +45,8 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   filterButton: {
-    flex: 1,
     paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 9999,
     alignItems: "center",
     borderWidth: 1,
