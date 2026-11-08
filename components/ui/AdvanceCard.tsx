@@ -54,7 +54,6 @@ export function AdvanceCard({
     const isPagada = estado === 'pagada';
     const isRechazada = estado === 'rechazada';
 
-    
     const getStatusColors = () => {
         if (isPendiente) {
             return {
@@ -63,14 +62,20 @@ export function AdvanceCard({
                 label: 'Pendiente'
             };
         }
-        if (isAprobada || isPagada) {
+        if (isPagada) {
             return {
                 backgroundColor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
                 color: isDark ? '#6EE7B7' : '#065F46',
-                label: isPagada ? 'Cobrado' : viewMode === 'solicitudes' ? 'Aprobada' : 'Cobrado'
+                label: 'Recibido'
             };
         }
-        
+        if (isAprobada) {
+            return {
+                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
+                color: isDark ? '#93C5FD' : '#1D4ED8',
+                label: viewMode === 'solicitudes' ? 'Aprobado' : 'Recibido'
+            };
+        }
         return {
             backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
             color: isDark ? '#F87171' : '#B91C1C',

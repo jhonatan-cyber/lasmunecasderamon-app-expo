@@ -21,9 +21,7 @@ import {
   filtrarAnticipos,
   normalizeEstado,
   type FiltroAnticipos,
-  type VistaAnticipos,
 } from "@/components/screens/anticipos/anticiposUtils";
-import { AnticiposViewTabs } from "@/components/screens/anticipos/AnticiposViewTabs";
 import { AnticiposSummaryCard } from "@/components/screens/anticipos/AnticiposSummaryCard";
 import { AnticiposFilterRow } from "@/components/screens/anticipos/AnticiposFilterRow";
 import { SolicitarAnticipoModal } from "@/components/screens/anticipos/SolicitarAnticipoModal";
@@ -55,7 +53,6 @@ export default function AnticiposScreen() {
   } = useAnticipos();
 
   const [filter, setFilter] = useState<FiltroAnticipos>("todos");
-  const [viewMode, setViewMode] = useState<VistaAnticipos>("anticipos");
   const [modalVisible, setModalVisible] = useState(false);
   const [monto, setMonto] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -129,12 +126,7 @@ export default function AnticiposScreen() {
     setModalVisible(true);
   };
 
-  const filteredData = filtrarAnticipos({
-    viewMode,
-    filter,
-    solicitudes,
-    pagos,
-  });
+  const filteredData = filtrarAnticipos({ filter, solicitudes, pagos });
   const { totalPendiente, totalEnCaja, totalPagado } = calcularTotales(
     solicitudes,
     pagos,
@@ -147,11 +139,11 @@ export default function AnticiposScreen() {
         index={index}
         showIndexBadge={false}
         compactDate={true}
-        viewMode={viewMode}
+        viewMode="solicitudes"
         normalizeEstado={normalizeEstado}
       />
     ),
-    [viewMode],
+    [],
   );
 
   if (loading) {
@@ -190,16 +182,8 @@ export default function AnticiposScreen() {
         subtitle="Mis solicitudes y anticipos recibidos"
       />
 
-      <AnticiposViewTabs
-        viewMode={viewMode}
-        accentColor={accentColor}
-        cardBg={cardBg}
-        textSecondary={textSecondary}
-        onChange={setViewMode}
-      />
-
       <AnticiposSummaryCard
-        viewMode={viewMode}
+        viewMode="solicitudes"
         totalPendiente={totalPendiente}
         totalEnCaja={totalEnCaja}
         totalPagado={totalPagado}
@@ -209,21 +193,19 @@ export default function AnticiposScreen() {
         textSecondary={textSecondary}
       />
 
-      {viewMode === "solicitudes" && (
-        <AnticiposFilterRow
-          filter={filter}
-          accentColor={accentColor}
-          cardBg={cardBg}
-          borderColor={borderColor}
-          textSecondary={textSecondary}
-          onChange={setFilter}
-        />
-      )}
+      <AnticiposFilterRow
+        filter={filter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textSecondary={textSecondary}
+        onChange={setFilter}
+      />
 
       <FlatList
         data={filteredData}
         keyExtractor={(item) =>
-          (item.id_solicitud || (item as any).id_anticipo).toString()
+          String((item as any).id_anticipo || item.id_solicitud)
         }
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}

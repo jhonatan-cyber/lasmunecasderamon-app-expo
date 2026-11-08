@@ -1,6 +1,6 @@
 import type { Anticipo } from "@/hooks/useAnticipos";
 
-export type FiltroAnticipos = "todos" | "pendiente" | "aprobado" | "rechazado";
+export type FiltroAnticipos = "todos" | "pendiente" | "aprobado" | "rechazado" | "recibido";
 export type VistaAnticipos = "solicitudes" | "anticipos";
 
 export const normalizeEstado = (
@@ -39,28 +39,38 @@ export const formatCurrency = (amount: any) =>
   (Number(amount) || 0).toLocaleString("de-DE");
 
 export function filtrarAnticipos({
-  viewMode,
   filter,
   solicitudes,
   pagos,
 }: {
-  viewMode: VistaAnticipos;
+  viewMode?: VistaAnticipos;
   filter: FiltroAnticipos;
   solicitudes: Anticipo[];
   pagos: Anticipo[];
 }): any[] {
-  if (viewMode === "solicitudes") {
-    return solicitudes.filter((s) => {
-      const estado = normalizeEstado(s.estado);
-      if (filter === "pendiente") return estado === "pendiente";
-      if (filter === "aprobado") return estado === "confirmada";
-      if (filter === "rechazado") return estado === "rechazada";
-      return true;
-    });
-  }
-  return pagos.filter(
-    (p) => normalizeEstado((p as any).estado) === "pagada",
-  );
+  // Unifica ambas listas; los pagos (estado 0) no aparecen en solicitudes
+  const todos = [
+    ...solicitudes,
+    // evitar duplicados: pagos que ya estén en solicitudes por id
+    ...pagos.filter(
+      (p) =>
+        !solicitudes.some(
+          (s) =>
+            String((s as any).id_anticipo || s.id_solicitud) ===
+            String((p as any).id_anticipo || p.id_solicitud),
+        ),
+    ),
+  ];
+
+  if (filter === "pendiente")
+    return todos.filter((a) => normalizeEstado(a.estado) === "pendiente");
+  if (filter === "aprobado")
+    return todos.filter((a) => normalizeEstado(a.estado) === "confirmada");
+  if (filter === "rechazado")
+    return todos.filter((a) => normalizeEstado(a.estado) === "rechazada");
+  if (filter === "recibido")
+    return todos.filter((a) => normalizeEstado(a.estado) === "pagada");
+  return todos;
 }
 
 export function calcularTotales(

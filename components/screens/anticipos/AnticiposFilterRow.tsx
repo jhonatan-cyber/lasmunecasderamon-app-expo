@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { ScrollView, Pressable, Text } from "react-native";
 import { styles } from "../AnticiposScreen.styles";
 import type { FiltroAnticipos } from "./anticiposUtils";
 
@@ -11,11 +11,12 @@ interface AnticiposFilterRowProps {
   onChange: (filter: FiltroAnticipos) => void;
 }
 
-const FILTROS: FiltroAnticipos[] = [
-  "todos",
-  "pendiente",
-  "aprobado",
-  "rechazado",
+const FILTROS: { key: FiltroAnticipos; label: string }[] = [
+  { key: "todos", label: "Todos" },
+  { key: "pendiente", label: "Solicitados" },
+  { key: "aprobado", label: "Aprobados" },
+  { key: "rechazado", label: "Rechazados" },
+  { key: "recibido", label: "Recibidos" },
 ];
 
 export function AnticiposFilterRow({
@@ -27,31 +28,33 @@ export function AnticiposFilterRow({
   onChange,
 }: AnticiposFilterRowProps) {
   return (
-    <View style={styles.filterRow}>
-      {FILTROS.map((f) => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterRow}
+    >
+      {FILTROS.map(({ key, label }) => (
         <Pressable
-          key={f}
+          key={key}
           style={[
             styles.filterButton,
             {
-              backgroundColor: filter === f ? accentColor : cardBg,
-              borderColor: filter === f ? accentColor : borderColor,
+              backgroundColor: filter === key ? accentColor : cardBg,
+              borderColor: filter === key ? accentColor : borderColor,
             },
           ]}
-          onPress={() => onChange(f)}
+          onPress={() => onChange(key)}
         >
           <Text
             style={[
               styles.filterText,
-              { color: filter === f ? "#FFFFFF" : textSecondary },
+              { color: filter === key ? "#FFFFFF" : textSecondary },
             ]}
           >
-            {f === "pendiente"
-              ? "Solicitados"
-              : f.charAt(0).toUpperCase() + f.slice(1) + "s"}
+            {label}
           </Text>
         </Pressable>
       ))}
-    </View>
+    </ScrollView>
   );
 }

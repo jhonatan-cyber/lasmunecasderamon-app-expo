@@ -3,6 +3,7 @@ import { PROD_API_BASE_URL } from '@lasmunecasderamon/config';
 import { isLoopbackHost, parseBaseUrl, pickBaseUrl, pickDevHost } from '@/api/base-url';
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.doUnmock('react-native');
   vi.doUnmock('expo-constants');
@@ -147,6 +148,13 @@ describe('base-url — host de desarrollo por dispositivo', () => {
     });
 
     it('en un emulador Android sin dev server usa el alias del host', async () => {
+      const { BASE_URL } = await cargarConDispositivo('android', null);
+
+      expect(BASE_URL).toBe('http://10.0.2.2:3000');
+    });
+
+    it('en Android no falla cuando window existe sin location', async () => {
+      vi.stubGlobal('window', { location: undefined });
       const { BASE_URL } = await cargarConDispositivo('android', null);
 
       expect(BASE_URL).toBe('http://10.0.2.2:3000');
