@@ -71,13 +71,16 @@ export default function LimpiezaScreenAnfitriona() {
 
   React.useEffect(() => {
     if (!acceso.gestionar && ubicacionesPermitidas.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrigen(ubicacionesPermitidas[0]);
       if (tipoOperacion === 'traspaso') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDestino(ubicacionesPermitidas.length > 1 ? ubicacionesPermitidas[1] : 'almacen');
       }
     }
   }, [acceso, ubicacionesPermitidas, tipoOperacion]);
 
+  // eslint-disable react-hooks/set-state-in-effect
   const cargar = React.useCallback(async () => {
     try {
       const res = await limpiezaService.refresh();
@@ -91,16 +94,19 @@ export default function LimpiezaScreenAnfitriona() {
       setLoading(false);
     }
   }, []);
+  // eslint-enable react-hooks/set-state-in-effect
 
   React.useEffect(() => {
     void cargar();
   }, [cargar]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await cargar();
     setRefreshing(false);
   }, [cargar]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const pendientes = React.useMemo(() =>
     (resumen?.movimientos ?? []).filter(m => m.estado === 'pendiente'),

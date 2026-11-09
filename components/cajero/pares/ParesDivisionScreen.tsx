@@ -50,7 +50,10 @@ export default function ParesDivisionScreen() {
         { id: 'V-1005', monto: 200000, empleadoId: '5' },
       ],
     };
+    // Inicialización sincrónica de datos estáticos — no hay fuente externa
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEmpleados(data.empleados);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVentas(data.ventas);
   }, []);
 
@@ -65,6 +68,7 @@ export default function ParesDivisionScreen() {
         initial.set(empleado?.role ?? 'desconocido', []);
       }
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPares(initial);
   }, [ventas, empleados]);
 

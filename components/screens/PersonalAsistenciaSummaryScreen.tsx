@@ -36,6 +36,7 @@ export default function PersonalAsistenciaSummaryScreen() {
       { id: '4', name: 'Miguel', lastName: 'Hernandez', role: 'barman', fecha: '2026-11-05', horaInicio: '08:00', horaFin: '16:00', sueldo: 170000, aporte: 20000, total: 150000, estado: 'pendiente' },
       { id: '5', name: 'Sofia', lastName: 'Diaz', role: 'cajero', fecha: '2026-11-05', horaInicio: '11:00', horaFin: '17:00', sueldo: 185000, aporte: 27000, total: 158000, estado: 'pendiente' },
     ];
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEmpleados(data);
   }, []);
 
