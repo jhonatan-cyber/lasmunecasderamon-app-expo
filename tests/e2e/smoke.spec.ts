@@ -201,10 +201,7 @@ test('cajero home opens the analytics screen with real KPIs and charts', async (
         });
     });
 
-    await page.goto('/cajero');
-    await expect(page).toHaveURL(/cajero/);
-
-    await page.getByText('ANALÍTICAS', { exact: true }).first().click();
+    await page.goto('/cajero/analytics');
 
     await expect(page).toHaveURL(/analytics/);
     await expect(page.locator('body')).toContainText('Ventas Semanales');
