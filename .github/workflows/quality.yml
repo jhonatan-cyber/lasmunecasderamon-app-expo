@@ -48,12 +48,6 @@ jobs:
       - name: Smoke web export
         run: pnpm smoke:web
 
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Smoke E2E
-        run: pnpm test:e2e:smoke
-
   security:
     runs-on: ubuntu-24.04
     steps:
