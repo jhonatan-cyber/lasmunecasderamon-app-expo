@@ -17,12 +17,10 @@ import { useState, useCallback } from "react";
 
 import { showToast } from "@/utils/toast-lazy";
 import {
-  calcularTotales,
   filtrarAnticipos,
   normalizeEstado,
   type FiltroAnticipos,
 } from "@/components/screens/anticipos/anticiposUtils";
-import { AnticiposSummaryCard } from "@/components/screens/anticipos/AnticiposSummaryCard";
 import { AnticiposFilterRow } from "@/components/screens/anticipos/AnticiposFilterRow";
 import { SolicitarAnticipoModal } from "@/components/screens/anticipos/SolicitarAnticipoModal";
 
@@ -127,10 +125,6 @@ export default function AnticiposScreen() {
   };
 
   const filteredData = filtrarAnticipos({ filter, solicitudes, pagos });
-  const { totalPendiente, totalEnCaja, totalPagado } = calcularTotales(
-    solicitudes,
-    pagos,
-  );
 
   const renderItem = useCallback(
     ({ item, index }: { item: Anticipo; index: number }) => (
@@ -180,17 +174,6 @@ export default function AnticiposScreen() {
       <PremiumHeader
         title="Anticipos"
         subtitle="Mis solicitudes y anticipos recibidos"
-      />
-
-      <AnticiposSummaryCard
-        viewMode="solicitudes"
-        totalPendiente={totalPendiente}
-        totalEnCaja={totalEnCaja}
-        totalPagado={totalPagado}
-        accentColor={accentColor}
-        cardBg={cardBg}
-        borderColor={borderColor}
-        textSecondary={textSecondary}
       />
 
       <AnticiposFilterRow
