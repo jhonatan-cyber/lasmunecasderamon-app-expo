@@ -110,7 +110,10 @@ test('barman advances screen renders its shell', async ({ page }) => {
 
     await expect(page.locator('body')).toContainText('Mis solicitudes y anticipos recibidos');
     await expect(page.locator('body')).not.toContainText('Entregar Efectivo');
-    await page.getByText('Solicitudes', { exact: true }).click();
+    // Los filtros de estado reemplazan los botones Solicitudes/Historial
+    await expect(page.locator('body')).toContainText('Todos');
+    await expect(page.locator('body')).toContainText('Solicitados');
+    await expect(page.locator('body')).toContainText('Recibidos');
     await page.getByRole('button', { name: 'Solicitar anticipo', exact: true }).click();
     await expect(page.locator('body')).toContainText('Enviar Solicitud');
 });
