@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, LogBox, Platform, View } from "react-native";
 import { prepareMirrorStorage } from "@/services/mirror/driver";
@@ -44,6 +45,20 @@ const queryClient = new QueryClient({
 });
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Chequea OTA al arrancar: si hay update disponible lo descarga y recarga.
+// Solo corre en builds nativos (no en dev client ni web).
+if (!__DEV__ && Platform.OS !== "web") {
+  Updates.checkForUpdateAsync()
+    .then(({ isAvailable }) => {
+      if (!isAvailable) return;
+      return Updates.fetchUpdateAsync().then(() => Updates.reloadAsync());
+    })
+    .catch(() => {
+      // Error de red u OTA — no bloquea el arranque
+    });
+}
+
 
 export default function RootLayout() {
   const [storageReady, setStorageReady] = useState(Platform.OS !== 'web');
