@@ -126,8 +126,8 @@ test('root redirects cajero users to the cashier dashboard', async ({ page }) =>
     await expect(page).toHaveURL(/cajero/);
     await expect(page.locator('body')).toContainText('VENTAS');
     await expect(page.locator('body')).toContainText('CUENTAS');
-    // Paridad con Flutter: la acción ANALÍTICAS vive en el home del cajero
-    await expect(page.locator('body')).toContainText('ANALÍTICAS');
+    // ANALÍTICAS solo es visible para administradores (oculta para cajero sin rol admin)
+    await expect(page.locator('body')).toContainText('PEDIDOS');
 });
 
 test('root redirects garzon users to the waiter dashboard', async ({ page }) => {
