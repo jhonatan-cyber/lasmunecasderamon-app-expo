@@ -1,34 +1,48 @@
 name: Publish Preview OTA
 
 on:
+  workflow_run:
+    workflows: ['App Quality']
+    types: [completed]
+    branches: [master]
   workflow_dispatch:
     inputs:
       message:
         description: 'Description of the preview update'
-        required: true
+        required: false
         default: 'Manual preview update'
         type: string
 
 permissions:
   contents: read
 
-jobs:
-  verify:
-    uses: ./.github/workflows/quality.yml
+concurrency:
+  group: expo-preview-update
+  cancel-in-progress: false
 
+jobs:
   publish:
     name: Publish preview OTA
-    needs: [verify]
-    if: needs.verify.result == 'success'
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository) ||
+        github.event_name == 'workflow_dispatch'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       EXPO_PUBLIC_API_BASE_URL: https://dashboard.xn--lasmuecasderamon-bub.com
-      UPDATE_MESSAGE: ${{ inputs.message }}
+      UPDATE_MESSAGE: ${{ github.event.workflow_run.head_commit.message || inputs.message || 'Preview update' }}
     steps:
-      - name: Checkout selected branch
+      - name: Checkout verified commit
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup pnpm
