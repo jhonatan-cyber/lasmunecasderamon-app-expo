@@ -32,6 +32,14 @@ export const normalizeEstado = (
     estado === "rechazado"
   )
     return "rechazada";
+  // Estado 4: anticipo descontado en la liquidación de nómina.
+  if (
+    estado === 4 ||
+    estado === "4" ||
+    estado === "liquidada" ||
+    estado === "liquidado"
+  )
+    return "liquidada";
   return String(estado ?? "");
 };
 
@@ -69,7 +77,9 @@ export function filtrarAnticipos({
   if (filter === "rechazado")
     return todos.filter((a) => normalizeEstado(a.estado) === "rechazada");
   if (filter === "recibido")
-    return todos.filter((a) => normalizeEstado(a.estado) === "pagada");
+    return todos.filter((a) =>
+      ["pagada", "liquidada"].includes(normalizeEstado(a.estado)),
+    );
   return todos;
 }
 

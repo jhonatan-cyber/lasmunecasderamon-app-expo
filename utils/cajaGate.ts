@@ -4,7 +4,7 @@ export const RUTAS_QUE_REQUIEREN_CAJA = new Set([
     'solicitudes',
     'servicios',
     'entradas',
-    'cortesias',
+    'covers',
 ]);
 
 export function rutaRequiereCajaAbierta(segmentos: readonly string[]): boolean {

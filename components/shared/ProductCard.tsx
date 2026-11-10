@@ -33,6 +33,8 @@ export const ProductCard = React.memo(
     const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
       useAccentColor();
     const [open, setOpen] = useState(false);
+    // Cantidad local del modal — parte en 0 al abrir, no refleja el carrito hasta Agregar
+    const [localQty, setLocalQty] = useState(0);
     const selectedProduct = cartItem?.product || product;
     const quantity = cartItem?.quantity || 0;
     const hasCommission = Number(selectedProduct.commission) > 0;
@@ -44,12 +46,26 @@ export const ProductCard = React.memo(
       setOpen(false);
       onConfigPress(product.id, type);
     };
+
+    const handleOpen = () => {
+      setLocalQty(0); // siempre empieza en 0 al abrir
+      setOpen(true);
+    };
+
+    const handleAgregar = () => {
+      if (localQty > 0) {
+        // Agrega localQty unidades al carrito
+        for (let i = 0; i < localQty; i++) onAdd(selectedProduct);
+      }
+      setLocalQty(0);
+      setOpen(false);
+    };
     return (
       <>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Configurar ${product.name}`}
-          onPress={() => setOpen(true)}
+          onPress={() => handleOpen()}
           style={{
             flexDirection: "row",
             gap: 12,
@@ -137,7 +153,7 @@ export const ProductCard = React.memo(
                   item={
                     cartItem || {
                       product,
-                      quantity: 1,
+                      quantity: 0,
                       selectedHostesses: [],
                       selectedRoom: null,
                     }
@@ -153,23 +169,23 @@ export const ProductCard = React.memo(
                   }}
                 >
                   <Pressable
-                    disabled={quantity === 0}
+                    disabled={localQty === 0}
                     accessibilityLabel={`Disminuir ${product.name}`}
-                    onPress={() => onRemove(product.id)}
+                    onPress={() => setLocalQty((q) => Math.max(0, q - 1))}
                     style={{ padding: 10 }}
                   >
                     <Ionicons
                       name="remove-circle"
                       size={30}
-                      color={quantity ? accentColor : textSecondary}
+                      color={localQty > 0 ? accentColor : textSecondary}
                     />
                   </Pressable>
                   <Text style={{ color: textPrimary, fontWeight: "800" }}>
-                    {quantity} en pedido
+                    {localQty}
                   </Text>
                   <Pressable
                     accessibilityLabel={`Aumentar ${product.name}`}
-                    onPress={() => onAdd(selectedProduct)}
+                    onPress={() => setLocalQty((q) => q + 1)}
                     style={{ padding: 10 }}
                   >
                     <Ionicons name="add-circle" size={30} color={accentColor} />
@@ -238,19 +254,18 @@ export const ProductCard = React.memo(
                 }}
               >
                 $
-                {(selectedProduct.price * Math.max(1, quantity)).toLocaleString(
+                {(selectedProduct.price * Math.max(1, localQty)).toLocaleString(
                   "es-CL",
                 )}
               </Text>
               <Pressable
-                onPress={() => {
-                  if (!quantity) onAdd(selectedProduct);
-                  else setOpen(false);
-                }}
+                disabled={localQty === 0}
+                onPress={handleAgregar}
                 style={{
                   backgroundColor: accentColor,
                   padding: 14,
                   borderRadius: 14,
+                  opacity: localQty === 0 ? 0.4 : 1,
                 }}
               >
                 <Text
@@ -260,7 +275,7 @@ export const ProductCard = React.memo(
                     fontWeight: "800",
                   }}
                 >
-                  {quantity ? "Aceptar" : "Agregar al pedido"}
+                  {localQty === 0 ? "Selecciona cantidad" : `Agregar ${localQty} al pedido`}
                 </Text>
               </Pressable>
             </View>

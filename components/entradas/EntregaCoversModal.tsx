@@ -13,21 +13,21 @@ import {
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
-import { styles } from './EntregaCortesiasModal.styles';
-import { EntregaCortesiasProducto } from './entrega-cortesias/EntregaCortesiasProducto';
-import { claveDe, precioVisible } from './entrega-cortesias/helpers';
-import type { EntregaCortesiasModalProps } from './entrega-cortesias/types';
-import { useEntregaCortesias } from './entrega-cortesias/useEntregaCortesias';
+import { styles } from './EntregaCoversModal.styles';
+import { EntregaCoversProducto } from './entrega-covers/EntregaCoversProducto';
+import { claveDe, precioVisible } from './entrega-covers/helpers';
+import type { EntregaCoversModalProps } from './entrega-covers/types';
+import { useEntregaCovers } from './entrega-covers/useEntregaCovers';
 
-export type { GrupoEntrega } from './entrega-cortesias/types';
-export function EntregaCortesiasModal({
+export type { GrupoEntrega } from './entrega-covers/types';
+export function EntregaCoversModal({
   visible,
   grupo,
   tope,
   onClose,
   onEntregado,
   modo = 'entrega',
-}: EntregaCortesiasModalProps) {
+}: EntregaCoversModalProps) {
   const { accentColor, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
   const {
     acompanamientos,
@@ -37,10 +37,19 @@ export function EntregaCortesiasModal({
     error,
     entregando,
     filas,
-    umbral,
+    totalEntradas,
+    montoAdicional,
+    cambiarMontoAdicional,
+    adicional,
+    presupuesto,
     seleccion,
     visibles,
     totalSeleccionado,
+    precioSeleccionado,
+    cobroBarra,
+    presupuestoInsuficiente,
+    excedePresupuesto,
+    excedeAdicional,
     lineas,
     faltanAcompanamientos,
     agregar,
@@ -48,14 +57,17 @@ export function EntregaCortesiasModal({
     agregarSabor,
     ajustarSabor,
     quitarSabor,
-    cambiarAdicional,
     cerrar,
     entregar,
-  } = useEntregaCortesias({ visible, grupo, tope, onClose, onEntregado, modo });
+  } = useEntregaCovers({ visible, grupo, tope, onClose, onEntregado, modo });
 
   const fondo = isDark ? '#111827' : '#FFFFFF';
   const submitDeshabilitado =
-    entregando || cargando || lineas.length === 0 || faltanAcompanamientos;
+    entregando ||
+    cargando ||
+    lineas.length === 0 ||
+    faltanAcompanamientos ||
+    presupuestoInsuficiente;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={cerrar}>
@@ -75,7 +87,7 @@ export function EntregaCortesiasModal({
               <View style={styles.header}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
-                    ENTREGAR CORTESÍAS
+                    ENTREGAR COVERS
                   </Text>
                   <Text
                     style={{ color: textPrimary, fontWeight: '800', fontSize: 16 }}
@@ -108,6 +120,33 @@ export function EntregaCortesiasModal({
                 ]}
               />
 
+              <View style={{ marginTop: 12 }}>
+                <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
+                  MONTO ADICIONAL DEL GRUPO
+                </Text>
+                <TextInput
+                  value={montoAdicional}
+                  onChangeText={cambiarMontoAdicional}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={textSecondary}
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                      borderColor,
+                      color: textPrimary,
+                      marginTop: 0,
+                    },
+                  ]}
+                />
+                <Text style={{ color: textSecondary, fontSize: 11, marginTop: 6 }}>
+                  Entradas {formatCurrency(totalEntradas)}
+                  {adicional > 0 ? ` + adicional ${formatCurrency(adicional)}` : ''} = presupuesto{' '}
+                  {formatCurrency(presupuesto)}
+                </Text>
+              </View>
+
               {cargando ? (
                 <View style={{ paddingVertical: 24 }}>
                   <ActivityIndicator color={accentColor} />
@@ -125,13 +164,13 @@ export function EntregaCortesiasModal({
                         paddingVertical: 16,
                       }}
                     >
-                      Sin cortes hasta {formatCurrency(umbral)} con stock en el bar.
+                      Sin productos hasta {formatCurrency(presupuesto)} con stock en el bar.
                     </Text>
                   )}
                   {visibles.map(({ bebida, formato }) => {
                     const clave = claveDe(bebida, formato);
                     return (
-                      <EntregaCortesiasProducto
+                      <EntregaCoversProducto
                         key={clave}
                         bebida={bebida}
                         formato={formato}
@@ -146,12 +185,10 @@ export function EntregaCortesiasModal({
                           ajustarSabor(clave, presentacionId, delta)
                         }
                         onQuitarSabor={presentacionId => quitarSabor(clave, presentacionId)}
-                        onCambiarAdicional={valor => cambiarAdicional(clave, valor)}
                         accentColor={accentColor}
                         textPrimary={textPrimary}
                         textSecondary={textSecondary}
                         borderColor={borderColor}
-                        isDark={isDark}
                       />
                     );
                   })}
@@ -164,6 +201,23 @@ export function EntregaCortesiasModal({
                   {filas.length === 1 ? 'entrada' : 'entradas'} por entregar
                 </Text>
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
+                  Productos {formatCurrency(precioSeleccionado)} de{' '}
+                  {formatCurrency(presupuesto)}
+                  {cobroBarra > 0 ? ` · se cobra en barra ${formatCurrency(cobroBarra)}` : ''}
+                </Text>
+                {excedePresupuesto && (
+                  <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 4 }}>
+                    Faltan {formatCurrency(precioSeleccionado - presupuesto)} de presupuesto para
+                    esta selección.
+                  </Text>
+                )}
+                {excedeAdicional && (
+                  <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 4 }}>
+                    El cobro en barra supera el monto adicional en{' '}
+                    {formatCurrency(cobroBarra - adicional)}.
+                  </Text>
+                )}
+                <Text style={{ color: textSecondary, fontSize: 11, marginTop: 4 }}>
                   Un corte por persona. Puedes repetir el mismo producto o elegir varios.
                 </Text>
               </View>

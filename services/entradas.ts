@@ -1,7 +1,9 @@
 import { apiClientSafe } from '@/api/client-safe';
 
 export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
-export type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
+export type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
+/** Anulada a mano se devuelve; anulada por el cierre del turno se cobra en caja. */
+export type AnulacionOrigen = 'manual' | 'cierre';
 
 /**
  * Fila del listado de `/tickets` (contrato de `modules/entradas` del dashboard).
@@ -19,15 +21,21 @@ export interface EntradaCliente {
   /** Caja (turno) en la que se cobró la entrada. */
   caja_id: string | null;
   venta_id: string | null;
-  productos_cortesia: string | null;
-  cantidad_productos_cortesia: number;
+  /** Bebida servida en la barra, ya formateada como `producto · presentación`. */
+  bebida_cover: string | null;
+  /** Acompañamiento configurado para la bebida servida. */
+  acompanamiento_bebida: string | null;
+  productos_cover: string | null;
+  cantidad_productos_cover: number;
   fecha: string;
   /** `HH:MM` (formato del servidor). */
   hora: string;
   registrado_por_nombre: string;
-  cortesia_estado: EstadoCortesia;
-  cortesia_entregada_at: string | null;
-  cortesia_entregada_por_nombre: string | null;
+  cover_estado: EstadoCover;
+  /** Solo tiene valor cuando `cover_estado` es `anulada`. */
+  anulacion_origen: AnulacionOrigen | null;
+  cover_entregada_at: string | null;
+  cover_entregada_por_nombre: string | null;
 }
 
 export interface RegistroEntradaPayload {
@@ -79,16 +87,16 @@ export interface EntregaEntradaPayload {
   monto_adicional?: number;
 }
 
-/** Resultado de la entrega: cortesía o adicional cobrado en la barra. */
+/** Resultado de la entrega: cover o adicional cobrado en la barra. */
 export interface ResultadoEntrega {
   entradaId: string;
-  tipo: 'cortesia' | 'upgrade';
+  tipo: 'cover' | 'upgrade';
   presentacionId: string;
   /** Precio de lista de la bebida entregada. */
   precio: number;
   /** Lo que el cliente ya pagó en la puerta. */
   montoEntrada: number;
-  /** Lo que el cliente entrega en la barra (0 en la cortesía). */
+  /** Lo que el cliente entrega en la barra (0 en el cover). */
   montoCobrarBarra: number;
   ventaId: string | null;
   cajaId: string;
@@ -111,7 +119,7 @@ export const entradasService = {
       fecha ? `/tickets?fecha=${encodeURIComponent(fecha)}` : '/tickets',
     ),
 
-  /** Registro en la puerta: cobra la entrada y deja la cortesía pendiente. */
+  /** Registro en la puerta: cobra la entrada y deja el cover pendiente. */
   registrar: (payload: RegistroEntradaPayload) =>
     apiClientSafe<RegistroEntradaResultado>('/tickets', {
       method: 'POST',
@@ -134,39 +142,39 @@ export const entradasService = {
       { method: 'POST' },
     ),
 
-  /** Entrega en la barra: el servidor decide cortesía o adicional según el precio. */
+  /** Entrega en la barra: el servidor decide cover o adicional según el precio. */
   entregar: (entradaId: string, payload: EntregaEntradaPayload) =>
     apiClientSafe<ResultadoEntrega>(`/tickets/${encodeURIComponent(entradaId)}/entregar`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  solicitarEntregaCortesias: (payload: {
+  solicitarEntregaCovers: (payload: {
     grupo_registro_id: string | null;
     cliente_nombre: string | null;
     entrada_ids: string[];
     unidades: Array<Record<string, unknown>>;
     monto_total: number;
   }) =>
-    apiClientSafe<{ id: string }>('/tickets/cortesia-solicitudes', {
+    apiClientSafe<{ id: string }>('/tickets/cover-solicitudes', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  listarSolicitudesCortesias: (estado = 'pendiente') =>
+  listarSolicitudesCovers: (estado = 'pendiente') =>
     apiClientSafe<any[]>(
-      `/tickets/cortesia-solicitudes?estado=${encodeURIComponent(estado)}`,
+      `/tickets/cover-solicitudes?estado=${encodeURIComponent(estado)}`,
     ),
 
-  aprobarSolicitudCortesias: (id: string) =>
+  aprobarSolicitudCovers: (id: string) =>
     apiClientSafe<{ entregadas: number }>(
-      `/tickets/cortesia-solicitudes/${encodeURIComponent(id)}/approve`,
+      `/tickets/cover-solicitudes/${encodeURIComponent(id)}/approve`,
       { method: 'PATCH' },
     ),
 
-  rechazarSolicitudCortesias: (id: string, motivo: string) =>
+  rechazarSolicitudCovers: (id: string, motivo: string) =>
     apiClientSafe<unknown>(
-      `/tickets/cortesia-solicitudes/${encodeURIComponent(id)}/reject`,
+      `/tickets/cover-solicitudes/${encodeURIComponent(id)}/reject`,
       {
         method: 'PATCH',
         body: JSON.stringify({ motivo }),

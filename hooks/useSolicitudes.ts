@@ -81,7 +81,11 @@ export const useSolicitudes = () => {
 
                         if (resAnticipos.success) {
                             const arr: SolicitudItem[] = (resAnticipos.data as any[] || [])
-                                .filter((a: Record<string, unknown>) => a.estado === 1 || a.estado === 2)
+                                // El servidor deja el anticipo en estado 1 tras entregarlo
+                                // y solo agrega fecha_entrega; sin este filtro vuelve a
+                                // aparecer como pendiente y el reintento de entrega falla.
+                                .filter((a: Record<string, unknown>) =>
+                                    (a.estado === 1 || a.estado === 2) && !a.fecha_entrega)
                                 .map((a: Record<string, unknown>) => ({
                                     ...a,
                                     codigo: (a.codigo as string) || `ANT-${String(a.id_anticipo).slice(0, 6).toUpperCase()}`,

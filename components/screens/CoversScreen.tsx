@@ -16,7 +16,7 @@ import {
   estadoDelGrupo,
   type GrupoEntrada,
 } from '@/components/entradas/EntradasListadoCard';
-import { EntregaCortesiasModal } from '@/components/entradas/EntregaCortesiasModal';
+import { EntregaCoversModal } from '@/components/entradas/EntregaCoversModal';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -31,9 +31,9 @@ import { useAuthStore } from '@/store/authStore';
 import { isBarmanRole, isCajeroRole } from '@/utils/userRole';
 
 /**
- * Cortesías del día (barman y cajero cuando opera la barra). Paridad con la
- * pestaña Cortesías de la web: la puerta cobra la entrada y aquí la barra sirve
- * la bebida; el servidor decide si es cortesía o adicional según
+ * Covers del día (barman y cajero cuando opera la barra). Paridad con la
+ * pestaña Covers de la web: la puerta cobra la entrada y aquí la barra sirve
+ * la bebida; el servidor decide si es cover o adicional según
  * `max(tope, monto_entrada)`.
  *
  * La cola trae una persona por fila, pero la barra atiende la compra completa:
@@ -41,7 +41,7 @@ import { isBarmanRole, isCajeroRole } from '@/utils/userRole';
  * las entradas pendientes del grupo.
  */
 
-/** Compra con al menos una cortesía pendiente: se muestra como en el listado del garzón. */
+/** Compra con al menos un cover pendiente: se muestra como en el listado del garzón. */
 interface GrupoPendiente {
   id: string;
   dia: GrupoEntrada;
@@ -58,15 +58,15 @@ function fechaHoraLocal() {
   };
 }
 
-export function CortesiasScreen() {
+export function CoversScreen() {
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const requiereSolicitud = isBarmanRole(user);
   const esCajero = isCajeroRole(user);
 
-  const topeCortesia = Number(
-    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000),
+  const topeCover = Number(
+    useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000),
   );
 
   const [pendientes, setPendientes] = useState<EntradaPendiente[]>([]);
@@ -77,7 +77,7 @@ export function CortesiasScreen() {
   const [grupoAnular, setGrupoAnular] = useState<GrupoPendiente | null>(null);
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
-  const [solicitudesCortesias, setSolicitudesCortesias] = useState<any[]>([]);
+  const [solicitudesCovers, setSolicitudesCovers] = useState<any[]>([]);
 
   const { fecha } = fechaHoraLocal();
 
@@ -109,9 +109,15 @@ export function CortesiasScreen() {
           total: filas.reduce((suma, fila) => suma + Number(fila.monto_entrada), 0),
           metodo: filas[0].metodo_pago,
           adicional: 0,
+          totalGrupo: filas.reduce((suma, fila) => suma + Number(fila.monto_entrada), 0),
+          hora: filas[0].hora || '',
+          registradoPor: filas[0].registrado_por_nombre || '',
           entregadas: 0,
           anuladas: 0,
+          devueltas: 0,
+          devueltoMonto: 0,
           baucherEntradaId: null,
+          registros: [],
         },
       filas,
     }));
@@ -122,10 +128,10 @@ export function CortesiasScreen() {
       if (mostrarLoading) setLoading(true);
       try {
         if (esCajero) {
-          const solicitudes = await entradasService.listarSolicitudesCortesias('pendiente');
+          const solicitudes = await entradasService.listarSolicitudesCovers('pendiente');
           if (!solicitudes.success)
             throw new Error(solicitudes.message || 'No se pudieron cargar las solicitudes');
-          setSolicitudesCortesias(solicitudes.data ?? []);
+          setSolicitudesCovers(solicitudes.data ?? []);
           return;
         }
         // La cola es la del día de negocio, igual que en el dashboard: el
@@ -135,7 +141,7 @@ export function CortesiasScreen() {
           entradasService.listar(fecha),
         ]);
         if (!res.success) {
-          throw new Error(res.message || 'No se pudo cargar la cola de cortesías');
+          throw new Error(res.message || 'No se pudo cargar la cola de covers');
         }
         setPendientes(res.data ?? []);
         // El listado es de consulta: si falla, la entrega sigue disponible.
@@ -143,11 +149,11 @@ export function CortesiasScreen() {
         if (!listado.success) {
           logger.fetchError(
             new Error(listado.message || 'No se pudo cargar el listado de entradas'),
-            { context: 'Cortesias:listado' },
+            { context: 'Covers:listado' },
           );
         }
       } catch (error) {
-        logger.fetchError(error, { context: 'Cortesias:cargar' });
+        logger.fetchError(error, { context: 'Covers:cargar' });
         showToast({
           type: 'error',
           text1: 'No se pudo cargar la cola',
@@ -187,8 +193,9 @@ export function CortesiasScreen() {
 
   /**
    * Anula todas las entradas pendientes de la compra, como el dashboard: una
-   * persona que se fue no recibe su bebida, pero el monto cobrado en la puerta
-   * queda posteado a la caja. El servidor anula una fila por llamada.
+   * persona que se fue no recibe su bebida y el dinero cobrado en la puerta se
+   * le devuelve; la caja recién lo registra al servir o al cerrar el turno.
+   * El servidor anula una fila por llamada.
    */
   const anularPendientes = useCallback(
     async (grupo: GrupoPendiente) => {
@@ -207,7 +214,7 @@ export function CortesiasScreen() {
           text2: grupo.dia.cliente,
         });
       } catch (error) {
-        logger.fetchError(error, { context: 'Cortesias:anular' });
+        logger.fetchError(error, { context: 'Covers:anular' });
         showToast({
           type: 'error',
           text1: 'No se pudieron anular las entradas',
@@ -230,17 +237,17 @@ export function CortesiasScreen() {
   }, []);
 
   const aprobarSolicitud = useCallback(async (id: string) => {
-    const res = await entradasService.aprobarSolicitudCortesias(id);
+    const res = await entradasService.aprobarSolicitudCovers(id);
     if (!res.success) {
       showToast({ type: 'error', text1: 'No se pudo aprobar', text2: res.message });
       return;
     }
-    showToast({ type: 'success', text1: 'Entrega aprobada', text2: `${res.data?.entregadas || 0} cortesías entregadas` });
+    showToast({ type: 'success', text1: 'Entrega aprobada', text2: `${res.data?.entregadas || 0} covers entregados` });
     await cargar();
   }, [cargar]);
 
   const rechazarSolicitud = useCallback(async (id: string) => {
-    const res = await entradasService.rechazarSolicitudCortesias(
+    const res = await entradasService.rechazarSolicitudCovers(
       id,
       'Solicitud rechazada por el cajero',
     );
@@ -256,7 +263,7 @@ export function CortesiasScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
         <PremiumHeader
-          title="Cortesías"
+          title="Covers"
           subtitle="Entregas de la barra"
           rightComponent={
             <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
@@ -275,7 +282,7 @@ export function CortesiasScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <PremiumHeader
-        title="Cortesías"
+        title="Covers"
         subtitle="Entregas de la barra"
         rightComponent={
           <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
@@ -307,17 +314,17 @@ export function CortesiasScreen() {
                     SOLICITUDES DEL BARMAN
                   </Text>
                   <Text style={[styles.totalValue, { color: textPrimary }]}>
-                    {solicitudesCortesias.length}
+                    {solicitudesCovers.length}
                   </Text>
                 </View>
                 <Text style={{ color: textSecondary, fontSize: 12 }}>Pendientes de autorización</Text>
               </View>
-              {solicitudesCortesias.length === 0 && (
+              {solicitudesCovers.length === 0 && (
                 <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
-                  No hay cortesías por autorizar.
+                  No hay covers por autorizar.
                 </Text>
               )}
-              {solicitudesCortesias.map((solicitud) => {
+              {solicitudesCovers.map((solicitud) => {
                 const unidades = Array.isArray(solicitud.unidades)
                   ? solicitud.unidades
                   : (() => { try { return JSON.parse(solicitud.unidades || '[]'); } catch { return []; } })();
@@ -373,7 +380,7 @@ export function CortesiasScreen() {
 
             {pendientes.length === 0 && (
               <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
-                Sin cortesías pendientes por ahora.
+                Sin covers pendientes por ahora.
               </Text>
             )}
 
@@ -402,6 +409,7 @@ export function CortesiasScreen() {
                           {grupo.dia.cliente}
                         </Text>
                         <Text style={{ color: textSecondary, fontSize: 11 }}>
+                          {grupo.dia.hora ? `${grupo.dia.hora} · ` : ''}
                           {grupo.dia.cantidad}{' '}
                           {grupo.dia.cantidad === 1 ? 'entrada' : 'entradas'} ·{' '}
                           {formatCurrency(grupo.dia.costoUnitario)} c/u · {grupo.dia.metodo}
@@ -414,7 +422,7 @@ export function CortesiasScreen() {
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
-                          {formatCurrency(grupo.dia.total)}
+                          {formatCurrency(grupo.dia.totalGrupo)}
                         </Text>
                         <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
                           <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800' }}>
@@ -499,8 +507,8 @@ export function CortesiasScreen() {
         message={
           grupoAnular
             ? grupoAnular.filas.length === 1
-              ? '¿Anular la entrada pendiente de este grupo? El monto se registrará como entrada en la caja.'
-              : `¿Anular las ${grupoAnular.filas.length} entradas pendientes de este grupo? El monto se registrará como entrada en la caja.`
+              ? '¿Anular la entrada pendiente de este grupo? El dinero cobrado se devuelve en la puerta.'
+              : `¿Anular las ${grupoAnular.filas.length} entradas pendientes de este grupo? El dinero cobrado se devuelve en la puerta.`
             : ''
         }
         confirmText="Anular"
@@ -512,7 +520,7 @@ export function CortesiasScreen() {
         onCancel={() => setGrupoAnular(null)}
       />
 
-      <EntregaCortesiasModal
+      <EntregaCoversModal
         key={grupoEntrega?.id ?? 'cerrado'}
         visible={grupoEntrega !== null}
         grupo={
@@ -524,7 +532,7 @@ export function CortesiasScreen() {
               }
             : null
         }
-        tope={topeCortesia}
+        tope={topeCover}
         onClose={cerrarEntrega}
         onEntregado={cargar}
         modo={requiereSolicitud ? 'solicitud' : 'entrega'}

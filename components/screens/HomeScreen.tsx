@@ -259,7 +259,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
                 onOpenPedidos={() => router.push('/garzon/pedidos')}
                 onOpenServicios={() => router.push('/garzon/servicios')}
                 onOpenEntradas={() => router.push('/garzon/entradas')}
-                onOpenCortesias={() => router.push('/garzon/cortesias')}
+                onOpenCovers={() => router.push('/garzon/covers')}
               />
             )}
 

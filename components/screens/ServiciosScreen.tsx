@@ -144,7 +144,7 @@ function reducer(state: ScreenState, action: Action): ScreenState {
   }
 }
 
-type ServiciosVariant = 'cajero' | 'barman';
+type ServiciosVariant = 'cajero' | 'barman' | 'admin';
 
 interface ServiciosScreenProps {
   variant: ServiciosVariant;
@@ -152,6 +152,8 @@ interface ServiciosScreenProps {
 
 export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const esCajero = variant === 'cajero';
+  const esAdmin = variant === 'admin';
+  const soloLectura = esAdmin;
   const { accentColor, isDark } = useAccentColor();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -368,7 +370,8 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       serverOffset={serverOffset}
       onFinalizar={onFinalizar}
       onEditar={onEditar}
-      onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: formatServiceDetail(t, esCajero) })}
+      readOnly={soloLectura}
+      onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: formatServiceDetail(t, esCajero || esAdmin) })}
       theme={theme}
     />
   ));
@@ -380,7 +383,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         title="Servicios"
         rightComponent={
           <Pressable
-            onPress={() => router.replace(esCajero ? "/cajero" : "/(app)/barman/(tabs)")}
+            onPress={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
             style={styles.backBtnRight}
           >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -397,7 +400,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
       {esCajero ? (
         <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
-      ) : (
+      ) : esAdmin ? null : (
         <BarmanOfflineBanner />
       )}
 
@@ -426,7 +429,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         />
       </View>
 
-      {!editModalVisible && !detailModalVisible && !alertConfig.visible && (
+      {!esAdmin && !editModalVisible && !detailModalVisible && !alertConfig.visible && (
         <Pressable
           style={[styles.fab, { backgroundColor: accentColor, bottom: Math.max(80, insets.bottom + 65) }]}
           onPress={() => router.push('/cajero/nuevo-servicio')}

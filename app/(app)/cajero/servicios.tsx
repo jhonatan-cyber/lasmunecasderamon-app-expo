@@ -1,5 +1,7 @@
 import { ServiciosScreen } from '@/components/screens/ServiciosScreen';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 export default function CajeroServiciosScreen() {
-  return <ServiciosScreen variant="cajero" />;
+  const esAdmin = useIsAdmin();
+  return <ServiciosScreen variant={esAdmin ? 'admin' : 'cajero'} />;
 }

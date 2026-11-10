@@ -7,13 +7,26 @@ describe('adminGate — rutas exclusivas de administrador', () => {
     expect(rutaExigeAdmin(['(app)', 'cajero', 'configuracion-asistencia'])).toBe(true);
   });
 
+  it('reconoce las pantallas de consulta del administrador', () => {
+    expect(rutaExigeAdmin(['(app)', 'cajero', 'asistencia-local'])).toBe(true);
+    expect(rutaExigeAdmin(['(app)', 'cajero', 'compras'])).toBe(true);
+    expect(rutaExigeAdmin(['(app)', 'cajero', 'pagos'])).toBe(true);
+    expect(rutaExigeAdmin(['(app)', 'cajero', 'anticipos-admin'])).toBe(true);
+  });
+
   it('no marca como admin las rutas normales del cajero', () => {
     expect(rutaExigeAdmin(['(app)', 'cajero', '(tabs)'])).toBe(false);
     expect(rutaExigeAdmin(['(app)', 'cajero', 'ventas'])).toBe(false);
     expect(rutaExigeAdmin([])).toBe(false);
   });
 
-  it('sólo declara como admin la pantalla de configuración', () => {
-    expect([...RUTAS_SOLO_ADMIN]).toEqual(['configuracion-asistencia']);
+  it('declara como admin las pantallas de administración', () => {
+    expect([...RUTAS_SOLO_ADMIN]).toEqual([
+      'configuracion-asistencia',
+      'asistencia-local',
+      'compras',
+      'pagos',
+      'anticipos-admin',
+    ]);
   });
 });

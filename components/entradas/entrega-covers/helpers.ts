@@ -10,7 +10,7 @@ export const normalizar = (valor: string) =>
     .trim();
 
 /** Analcohólicos y cigarrillos no pueden entregarse como cortesía. */
-export function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
+export function categoriaFueraDeCover(categoria: string | null | undefined): boolean {
   const texto = normalizar(categoria || '');
   return texto.includes('analcohol') || texto.includes('cigarr');
 }
@@ -86,33 +86,55 @@ function unidadesAcompanamientoBebida(bebida: Bebida): number {
 }
 
 /**
- * Formato de cortesía que cubre el umbral: el corte si su precio entra,
- * si no la botella cuando ambos precios (con y sin anfitriona) entran.
+ * Formatos que entran en el presupuesto del grupo (entradas + monto adicional).
+ *
+ * El corte se lista cuando el precio del shot entra completo. La botella se
+ * lista cuando su precio sin anfitriona entra; si queda sobre el umbral se
+ * cobra la diferencia en la barra, y si entra como cover el servidor además
+ * exige que el precio de venta no supere el umbral.
  */
-export function formatoCortesia(bebida: Bebida, umbral: number): Formato | null {
+export function formatosCover(
+  bebida: Bebida,
+  presupuesto: number,
+  umbral: number,
+): Formato[] {
+  const formatos: Formato[] = [];
   const corte = precioCorte(bebida);
-  if (corte !== null && corte <= umbral) return 'corte';
+  if (corte !== null && corte <= presupuesto) formatos.push('corte');
 
-  if (bebida.precio_sin_anfitriona <= umbral && bebida.precio_venta <= umbral) {
-    return 'botella';
+  const precioBotella = bebida.precio_sin_anfitriona;
+  if (
+    precioBotella <= presupuesto &&
+    (precioBotella > umbral || bebida.precio_venta <= umbral)
+  ) {
+    formatos.push('botella');
   }
-  return null;
+  return formatos;
 }
 
 export function precioVisible(bebida: Bebida, formato: Formato): number {
   return formato === 'corte' ? (precioCorte(bebida) ?? 0) : bebida.precio_sin_anfitriona;
 }
 
+/**
+ * Diferencia que se cobra en la barra por una entrega, con la misma regla del
+ * servidor: sobre `max(tope, monto_entrada)` se paga el precio menos la entrada.
+ */
+export function montoCobroBarra(precio: number, montoEntrada: number, tope: number): number {
+  const umbral = Math.max(tope, montoEntrada);
+  return precio > umbral ? Math.max(0, precio - montoEntrada) : 0;
+}
+
 /** El corte siempre lleva acompañamiento; la botella solo si lo tiene configurado. */
-function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
+export function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
   return formato === 'corte' || unidadesAcompanamientoBebida(bebida) > 0;
 }
 
 export const claveDe = (bebida: Bebida, formato: Formato) =>
   `${bebida.presentacion_id}:${formato}`;
 
-/** Unidades de cover que exige una entrega según su formato. */
-function unidadesRequeridas(bebida: Bebida, formato: Formato): number {
+/** Unidades de cover que exige cada entrega según su formato. */
+export function unidadesPorEntrega(bebida: Bebida, formato: Formato): number {
   return formato === 'corte' ? 1 : unidadesAcompanamientoBebida(bebida);
 }
 
@@ -127,8 +149,9 @@ function opcionesCoverPara(
 }
 
 /**
- * Calcula el estado del reparto de acompañamiento de una línea: cuánto exige,
- * cuánto lleva asignado y qué sabores se pueden agregar o subir.
+ * Calcula el estado del reparto de acompañamiento de una línea: cuánto exige
+ * entre todas sus entregas, cuánto lleva asignado y qué sabores se pueden
+ * agregar o subir.
  */
 export function calcularReparto(
   bebida: Bebida,
@@ -137,7 +160,9 @@ export function calcularReparto(
   cantidad: number,
   acompanamientos: Acompanamiento[],
 ): RepartoInfo {
-  const unidades = unidadesRequeridas(bebida, formato);
+  const entregas = Math.max(1, cantidad);
+  const porEntrega = unidadesPorEntrega(bebida, formato);
+  const unidades = porEntrega * entregas;
   const opcionesCover = opcionesCoverPara(bebida, acompanamientos);
   const asignado = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
   const restante = Math.max(0, unidades - asignado);
@@ -145,15 +170,11 @@ export function calcularReparto(
   const opcionesParaAgregar = opcionesCover.filter(
     opcion => !elegidos.has(opcion.presentacion_id),
   );
-  const lotes = Math.max(1, cantidad);
   const stockDe = (presentacionId: string) =>
     opcionesCover.find(opcion => opcion.presentacion_id === presentacionId)?.stock_bar ?? 0;
   const maxDe = (sabor: AcompanamientoBotellaItem) => {
-    const otros = asignado - sabor.unidades;
-    return Math.max(
-      1,
-      Math.min(unidades - otros, Math.floor(stockDe(sabor.presentacion_id) / lotes)),
-    );
+    const otros = Math.max(0, asignado - sabor.unidades);
+    return Math.max(1, Math.min(unidades - otros, stockDe(sabor.presentacion_id)));
   };
   const requerido = requiereAcompanamiento(bebida, formato);
   // El corte puede salir sin bebida si no hay cover en el bar; la botella
@@ -163,6 +184,7 @@ export function calcularReparto(
 
   return {
     requerido,
+    unidadesPorEntrega: porEntrega,
     unidadesRequeridas: unidades,
     asignado,
     restante,
@@ -171,4 +193,53 @@ export function calcularReparto(
     maxDe,
     falta,
   };
+}
+
+/**
+ * Reparte el total de unidades entre las entregas de una línea: cada entrega
+ * recibe `unidadesPorEntrega` y ningún sabor se repite dentro de la misma.
+ */
+export function dividirRepartoPorEntrega(
+  reparto: AcompanamientoBotellaItem[],
+  unidadesPorEntrega: number,
+  entregas: number,
+): AcompanamientoBotellaItem[][] {
+  const porEntrega = Math.max(1, Math.floor(Number(unidadesPorEntrega) || 0));
+  const totalEntregas = Math.max(0, Math.floor(Number(entregas) || 0));
+  const disponibles = reparto
+    .map(sabor => ({ ...sabor, unidades: Math.max(0, Math.floor(Number(sabor.unidades) || 0)) }))
+    .filter(sabor => sabor.unidades > 0);
+
+  const resultado: AcompanamientoBotellaItem[][] = [];
+  for (let indice = 0; indice < totalEntregas; indice += 1) {
+    const grupo: AcompanamientoBotellaItem[] = [];
+    let faltan = porEntrega;
+    for (const sabor of disponibles) {
+      if (faltan <= 0) break;
+      if (sabor.unidades <= 0) continue;
+      const tomar = Math.min(sabor.unidades, faltan);
+      grupo.push({ ...sabor, unidades: tomar });
+      sabor.unidades -= tomar;
+      faltan -= tomar;
+    }
+    resultado.push(grupo);
+  }
+  return resultado;
+}
+
+/** Recorta el reparto a `maxUnidades`, conservando el orden de los sabores. */
+export function recortarReparto(
+  reparto: AcompanamientoBotellaItem[],
+  maxUnidades: number,
+): AcompanamientoBotellaItem[] {
+  let restante = Math.max(0, Math.floor(Number(maxUnidades) || 0));
+  const resultado: AcompanamientoBotellaItem[] = [];
+  for (const sabor of reparto) {
+    if (restante <= 0) break;
+    const unidades = Math.min(Math.max(0, Math.floor(Number(sabor.unidades) || 0)), restante);
+    if (unidades <= 0) continue;
+    resultado.push({ ...sabor, unidades });
+    restante -= unidades;
+  }
+  return resultado;
 }

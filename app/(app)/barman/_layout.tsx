@@ -28,7 +28,7 @@ export default function BarmanLayout() {
             <Stack.Screen name="productos" options={{ headerShown: false }} />
             <Stack.Screen name="pendientes" options={{ headerShown: false }} />
             <Stack.Screen name="servicios" options={{ headerShown: false }} />
-            <Stack.Screen name="cortesias" options={{ headerShown: false }} />
+            <Stack.Screen name="covers" options={{ headerShown: false }} />
             <Stack.Screen name="perfil" options={{ headerShown: false }} />
         </Stack>
     );

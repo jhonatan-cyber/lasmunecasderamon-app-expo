@@ -1,12 +1,13 @@
+import { recortarReparto } from './helpers';
 import type { Acompanamiento, Seleccion } from './types';
 
 export type SeleccionAction =
+  | { type: 'reiniciar' }
   | { type: 'agregar'; clave: string; max: number }
-  | { type: 'quitar'; clave: string }
+  | { type: 'quitar'; clave: string; unidadesPorEntrega: number }
   | { type: 'agregarSabor'; clave: string; opcion: Acompanamiento }
   | { type: 'ajustarSabor'; clave: string; presentacionId: string; delta: number }
-  | { type: 'quitarSabor'; clave: string; presentacionId: string }
-  | { type: 'cambiarAdicional'; clave: string; valor: string };
+  | { type: 'quitarSabor'; clave: string; presentacionId: string };
 
 export const seleccionInicial: Seleccion = {};
 
@@ -17,6 +18,8 @@ export const seleccionInicial: Seleccion = {};
  */
 export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Seleccion {
   switch (accion.type) {
+    case 'reiniciar':
+      return seleccionInicial;
     case 'agregar': {
       const total = Object.values(estado).reduce((suma, linea) => suma + linea.cantidad, 0);
       if (total >= accion.max) return estado;
@@ -26,7 +29,6 @@ export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Se
         [accion.clave]: {
           cantidad: (actual?.cantidad ?? 0) + 1,
           reparto: actual?.reparto ?? [],
-          adicional: actual?.adicional ?? '',
         },
       };
     }
@@ -38,7 +40,16 @@ export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Se
         delete resto[accion.clave];
         return resto;
       }
-      return { ...estado, [accion.clave]: { ...actual, cantidad: actual.cantidad - 1 } };
+      return {
+        ...estado,
+        [accion.clave]: {
+          cantidad: actual.cantidad - 1,
+          reparto: recortarReparto(
+            actual.reparto,
+            accion.unidadesPorEntrega * (actual.cantidad - 1),
+          ),
+        },
+      };
     }
     case 'agregarSabor': {
       const linea = estado[accion.clave];
@@ -84,14 +95,6 @@ export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Se
           ...linea,
           reparto: linea.reparto.filter(sabor => sabor.presentacion_id !== accion.presentacionId),
         },
-      };
-    }
-    case 'cambiarAdicional': {
-      const linea = estado[accion.clave];
-      if (!linea) return estado;
-      return {
-        ...estado,
-        [accion.clave]: { ...linea, adicional: accion.valor.replace(/[^\d]/g, '') },
       };
     }
     default:

@@ -6,7 +6,13 @@
  * La pantalla, además, vuelve a comprobar el rol al montarse: la ruta no se
  * limita a ocultar la entrada en la interfaz.
  */
-export const RUTAS_SOLO_ADMIN = new Set(['configuracion-asistencia']);
+export const RUTAS_SOLO_ADMIN = new Set([
+  'configuracion-asistencia',
+  'asistencia-local',
+  'compras',
+  'pagos',
+  'anticipos-admin',
+]);
 
 export function rutaExigeAdmin(segmentos: readonly string[]): boolean {
   const ultimo = segmentos[segmentos.length - 1];

@@ -54,6 +54,13 @@ describe('normalizeEstado', () => {
         expect(normalizeEstado('rechazado')).toBe('rechazada');
     });
 
+    it('reconoce los anticipos liquidados en nómina', () => {
+        expect(normalizeEstado(4)).toBe('liquidada');
+        expect(normalizeEstado('4')).toBe('liquidada');
+        expect(normalizeEstado('liquidada')).toBe('liquidada');
+        expect(normalizeEstado('liquidado')).toBe('liquidada');
+    });
+
     it('deja pasar un estado desconocido como texto', () => {
         expect(normalizeEstado(9)).toBe('9');
         expect(normalizeEstado('en_revision')).toBe('en_revision');
@@ -92,13 +99,13 @@ describe('filtrarAnticipos', () => {
     const pagos = [
         anticipo(5, 500, 0),           // recibido/pagado
         anticipo(6, 600, 'pagado'),    // recibido (string)
-        // id 7 duplica un pendiente que podría venir en ambas — se excluye
+        anticipo(7, 700, 4),           // liquidado en nómina
     ];
 
     it('sin filtro muestra todas las entradas unificadas', () => {
         const result = filtrarAnticipos({ filter: 'todos', solicitudes, pagos });
-        // solicitudes (4) + pagos no duplicados (2) = 6
-        expect(result.map((a) => a.id_solicitud)).toEqual([1, 2, 3, 4, 5, 6]);
+        // solicitudes (4) + pagos no duplicados (3) = 7
+        expect(result.map((a) => a.id_solicitud)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     });
 
     it('filtra solo pendientes (solicitados)', () => {
@@ -116,9 +123,9 @@ describe('filtrarAnticipos', () => {
         expect(result.map((a) => a.id_solicitud)).toEqual([3]);
     });
 
-    it('filtra solo recibidos (pagados/entregados)', () => {
+    it('filtra solo recibidos (pagados/entregados/liquidados)', () => {
         const result = filtrarAnticipos({ filter: 'recibido', solicitudes, pagos });
-        expect(result.map((a) => a.id_solicitud)).toEqual([5, 6]);
+        expect(result.map((a) => a.id_solicitud)).toEqual([5, 6, 7]);
     });
 
     it('evita duplicados cuando un pago ya aparece en solicitudes', () => {
@@ -131,7 +138,7 @@ describe('filtrarAnticipos', () => {
         const ids = result.map((a) => a.id_solicitud);
         // id 1 aparece una sola vez
         expect(ids.filter((id) => id === 1)).toHaveLength(1);
-        expect(ids).toHaveLength(6);
+        expect(ids).toHaveLength(7);
     });
 
     it('el parámetro viewMode es ignorado (compatibilidad hacia atrás)', () => {
@@ -142,7 +149,7 @@ describe('filtrarAnticipos', () => {
             solicitudes,
             pagos,
         });
-        expect(result).toHaveLength(6);
+        expect(result).toHaveLength(7);
     });
 });
 

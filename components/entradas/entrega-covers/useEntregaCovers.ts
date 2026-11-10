@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { entradasService } from '@/services/entradas';
 import { productsService } from '@/services/products';
-import type { AcompanamientoBotellaItem } from '@/types/cart';
 import logger from '@/utils/logger';
 import { showToast } from '@/utils/toast-lazy';
 import {
   acompanamientoDe,
   bebidaDe,
   calcularReparto,
-  categoriaFueraDeCortesia,
+  categoriaFueraDeCover,
   claveDe,
-  formatoCortesia,
+  dividirRepartoPorEntrega,
+  formatosCover,
+  montoCobroBarra,
   normalizar,
+  precioVisible,
+  unidadesPorEntrega,
 } from './helpers';
 import { seleccionInicial, seleccionReducer } from './reducer';
 import type {
@@ -22,7 +25,7 @@ import type {
   LineaEntrega,
 } from './types';
 
-interface UseEntregaCortesiasParams {
+interface UseEntregaCoversParams {
   visible: boolean;
   grupo: GrupoEntrega | null;
   tope: number;
@@ -32,29 +35,37 @@ interface UseEntregaCortesiasParams {
 }
 
 /**
- * Datos y estado del modal de entrega de cortesías: catálogo del bar (bebidas y
- * covers), filtro de búsqueda, selección de productos con su reparto de
- * acompañamiento y la entrega secuencial contra la API.
+ * Datos y estado del modal de entrega de covers: catálogo del bar (bebidas y
+ * covers), presupuesto del grupo (entradas + monto adicional), selección de
+ * productos con su reparto de acompañamiento y la entrega contra la API.
  */
-export function useEntregaCortesias({
+export function useEntregaCovers({
   visible,
   grupo,
   tope,
   onClose,
   onEntregado,
   modo = 'entrega',
-}: UseEntregaCortesiasParams) {
+}: UseEntregaCoversParams) {
   const [bebidas, setBebidas] = useState<Bebida[]>([]);
   const [acompanamientos, setAcompanamientos] = useState<Acompanamiento[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [montoAdicional, setMontoAdicional] = useState('');
   const [seleccion, dispatch] = useReducer(seleccionReducer, seleccionInicial);
   const [entregando, setEntregando] = useState(false);
 
   const filasDelGrupo = grupo?.filas;
   const filas = useMemo(() => filasDelGrupo ?? [], [filasDelGrupo]);
-  const umbral = Math.max(tope, filas[0]?.monto_entrada ?? 0);
+  const topeCover = Number(tope) || 0;
+  const umbral = Math.max(topeCover, Number(filas[0]?.monto_entrada) || 0);
+  const totalEntradas = useMemo(
+    () => filas.reduce((suma, fila) => suma + (Number(fila.monto_entrada) || 0), 0),
+    [filas],
+  );
+  const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
+  const presupuesto = totalEntradas + adicional;
 
   useEffect(() => {
     if (!visible) return;
@@ -66,6 +77,11 @@ export function useEntregaCortesias({
           productsService.forCover(controller.signal).catch(() => null),
         ]);
         if (controller.signal.aborted) return;
+        // Cada apertura arranca con el grupo limpio: sin búsqueda ni monto
+        // adicional del grupo anterior.
+        dispatch({ type: 'reiniciar' });
+        setBusqueda('');
+        setMontoAdicional('');
         const lista = (resBebidas as { data?: unknown[] })?.data;
         if (!resBebidas.success || !Array.isArray(lista)) {
           throw new Error(resBebidas.message || 'No se pudieron cargar las bebidas del bar');
@@ -87,7 +103,7 @@ export function useEntregaCortesias({
         );
       } catch (err) {
         if (controller.signal.aborted) return;
-        logger.fetchError(err, { context: 'EntregaCortesias:cargar' });
+        logger.fetchError(err, { context: 'EntregaCovers:cargar' });
         setError(
           err instanceof Error ? err.message : 'No se pudieron cargar las bebidas del bar',
         );
@@ -102,18 +118,24 @@ export function useEntregaCortesias({
   const visibles = useMemo(() => {
     const termino = normalizar(busqueda);
     return bebidas
-      .map(bebida => ({ bebida, formato: formatoCortesia(bebida, umbral) }))
-      .filter(
-        (fila): fila is { bebida: Bebida; formato: Formato } =>
-          fila.formato !== null && !categoriaFueraDeCortesia(fila.bebida.categoria_nombre),
-      )
+      .flatMap(bebida => {
+        if (categoriaFueraDeCover(bebida.categoria_nombre)) return [];
+        const formatos = formatosCover(bebida, presupuesto, umbral);
+        // Lo ya elegido se mantiene visible aunque el presupuesto baje, para
+        // poder ajustarlo antes de entregar.
+        for (const formato of ['corte', 'botella'] as Formato[]) {
+          const clave = claveDe(bebida, formato);
+          if (seleccion[clave] && !formatos.includes(formato)) formatos.push(formato);
+        }
+        return formatos.map(formato => ({ bebida, formato }));
+      })
       .filter(
         ({ bebida, formato }) =>
           !termino ||
           Boolean(seleccion[claveDe(bebida, formato)]) ||
           normalizar(`${bebida.producto_nombre} ${bebida.presentacion_nombre}`).includes(termino),
       );
-  }, [bebidas, busqueda, seleccion, umbral]);
+  }, [bebidas, busqueda, presupuesto, seleccion, umbral]);
 
   const totalSeleccionado = useMemo(
     () => Object.values(seleccion).reduce((suma, linea) => suma + linea.cantidad, 0),
@@ -146,6 +168,41 @@ export function useEntregaCortesias({
     [acompanamientos, lineas],
   );
 
+  /** Precio de cada entrega en el orden en que se consumen las entradas. */
+  const unidadesEntrega = useMemo(
+    () =>
+      lineas.flatMap(linea =>
+        Array.from({ length: linea.cantidad }, () => ({
+          linea,
+          precio: precioVisible(linea.bebida, linea.formato),
+        })),
+      ),
+    [lineas],
+  );
+
+  const precioSeleccionado = useMemo(
+    () => unidadesEntrega.reduce((suma, unidad) => suma + unidad.precio, 0),
+    [unidadesEntrega],
+  );
+
+  // Lo que el cliente paga en la barra: la diferencia de cada unidad sobre el
+  // umbral de su entrada.
+  const cobroBarra = useMemo(
+    () =>
+      unidadesEntrega.reduce((suma, unidad, indice) => {
+        const fila = filas[indice];
+        if (!fila) return suma;
+        return (
+          suma + montoCobroBarra(unidad.precio, Number(fila.monto_entrada) || 0, topeCover)
+        );
+      }, 0),
+    [filas, topeCover, unidadesEntrega],
+  );
+
+  const excedePresupuesto = precioSeleccionado > presupuesto;
+  const excedeAdicional = cobroBarra > adicional;
+  const presupuestoInsuficiente = excedePresupuesto || excedeAdicional;
+
   const agregar = useCallback(
     (bebida: Bebida, formato: Formato) => {
       dispatch({ type: 'agregar', clave: claveDe(bebida, formato), max: filas.length });
@@ -153,9 +210,18 @@ export function useEntregaCortesias({
     [filas.length],
   );
 
-  const quitar = useCallback((clave: string) => {
-    dispatch({ type: 'quitar', clave });
-  }, []);
+  const quitar = useCallback(
+    (clave: string) => {
+      const [presentacionId, formato] = clave.split(':') as [string, Formato];
+      const bebida = bebidas.find(item => item.presentacion_id === presentacionId);
+      dispatch({
+        type: 'quitar',
+        clave,
+        unidadesPorEntrega: bebida ? unidadesPorEntrega(bebida, formato) : 0,
+      });
+    },
+    [bebidas],
+  );
 
   const agregarSabor = useCallback((clave: string, opcion: Acompanamiento) => {
     dispatch({ type: 'agregarSabor', clave, opcion });
@@ -169,8 +235,8 @@ export function useEntregaCortesias({
     dispatch({ type: 'quitarSabor', clave, presentacionId });
   }, []);
 
-  const cambiarAdicional = useCallback((clave: string, valor: string) => {
-    dispatch({ type: 'cambiarAdicional', clave, valor });
+  const cambiarMontoAdicional = useCallback((valor: string) => {
+    setMontoAdicional(valor.replace(/[^\d]/g, ''));
   }, []);
 
   const cerrar = useCallback(() => {
@@ -204,22 +270,45 @@ export function useEntregaCortesias({
       });
       return;
     }
+    if (presupuestoInsuficiente) {
+      showToast({
+        type: 'error',
+        text1: 'Presupuesto insuficiente',
+        text2: 'Sube el monto adicional o quita productos para cubrir la selección.',
+      });
+      return;
+    }
 
     const unidades: {
       presentacion_id: string;
       formato: Formato;
-      reparto: AcompanamientoBotellaItem[];
-      adicional: string;
+      reparto: { presentacion_id: string; unidades: number }[];
+      monto_adicional: number;
       producto_nombre: string;
       presentacion_nombre: string;
     }[] = [];
     for (const linea of lineas) {
+      const info = calcularReparto(
+        linea.bebida,
+        linea.formato,
+        linea.reparto,
+        linea.cantidad,
+        acompanamientos,
+      );
+      // Cada entrega recibe su propia mezcla de sabores (un corte, una bebida).
+      const repartos = info.requerido
+        ? dividirRepartoPorEntrega(linea.reparto, info.unidadesPorEntrega, linea.cantidad)
+        : [];
+      const precio = precioVisible(linea.bebida, linea.formato);
       for (let indice = 0; indice < linea.cantidad; indice += 1) {
+        const fila = filas[unidades.length];
         unidades.push({
           presentacion_id: linea.bebida.presentacion_id,
           formato: linea.formato,
-          reparto: linea.reparto,
-          adicional: linea.adicional,
+          reparto: repartos[indice] ?? [],
+          monto_adicional: fila
+            ? montoCobroBarra(precio, Number(fila.monto_entrada) || 0, topeCover)
+            : 0,
           producto_nombre: linea.bebida.producto_nombre,
           presentacion_nombre: linea.bebida.presentacion_nombre,
         });
@@ -236,24 +325,19 @@ export function useEntregaCortesias({
           tipo_entrega: unidad.formato,
           producto_nombre: unidad.producto_nombre,
           presentacion_nombre: unidad.presentacion_nombre,
-          acompanamientos: unidad.reparto.length
-            ? unidad.reparto.map(sabor => ({
-                presentacion_id: sabor.presentacion_id,
-                unidades: sabor.unidades,
-              }))
-            : null,
-          ...(unidad.adicional.trim()
-            ? { monto_adicional: Number(unidad.adicional) }
-            : {}),
+          acompanamientos: unidad.reparto.length ? unidad.reparto : null,
+          monto_adicional: unidad.monto_adicional,
         }));
         if (unidadesSolicitud.some(unidad => !unidad.entrada_id))
           throw new Error('El grupo ya no tiene entradas pendientes');
-        const res = await entradasService.solicitarEntregaCortesias({
+        const res = await entradasService.solicitarEntregaCovers({
           grupo_registro_id: grupo.id,
           cliente_nombre: grupo.cliente,
           entrada_ids: unidadesSolicitud.map(unidad => unidad.entrada_id as string),
           unidades: unidadesSolicitud,
-          monto_total: unidadesSolicitud.length * (filas[0]?.monto_entrada || 0),
+          monto_total: filas
+            .slice(0, unidadesSolicitud.length)
+            .reduce((suma, fila) => suma + (Number(fila.monto_entrada) || 0), 0),
         });
         if (!res.success) throw new Error(res.message || 'No se pudo enviar la solicitud');
         entregadas = unidadesSolicitud.length;
@@ -265,34 +349,28 @@ export function useEntregaCortesias({
         await onEntregado();
         onClose();
       } else {
-      for (const unidad of unidades) {
-        const fila = filas[entregadas];
-        if (!fila) throw new Error('El grupo ya no tiene entradas pendientes');
-        const adicional = unidad.adicional.trim();
-        const res = await entradasService.entregar(fila.id, {
-          presentacion_id: unidad.presentacion_id,
-          tipo_entrega: unidad.formato,
-          acompanamientos: unidad.reparto.length
-            ? unidad.reparto.map(sabor => ({
-                presentacion_id: sabor.presentacion_id,
-                unidades: sabor.unidades,
-              }))
-            : null,
-          ...(adicional ? { monto_adicional: Number(adicional) } : {}),
-        });
-        if (!res.success) throw new Error(res.message || 'No se pudo entregar la cortesía');
-        entregadas += 1;
-      }
+        for (const unidad of unidades) {
+          const fila = filas[entregadas];
+          if (!fila) throw new Error('El grupo ya no tiene entradas pendientes');
+          const res = await entradasService.entregar(fila.id, {
+            presentacion_id: unidad.presentacion_id,
+            tipo_entrega: unidad.formato,
+            acompanamientos: unidad.reparto.length ? unidad.reparto : null,
+            monto_adicional: unidad.monto_adicional,
+          });
+          if (!res.success) throw new Error(res.message || 'No se pudo entregar el cover');
+          entregadas += 1;
+        }
       showToast({
         type: 'success',
-        text1: entregadas === 1 ? 'Cortesía entregada' : `${entregadas} cortesías entregadas`,
+        text1: entregadas === 1 ? 'Cover entregado' : `${entregadas} covers entregados`,
         text2: grupo.cliente,
       });
       await onEntregado();
       onClose();
       }
     } catch (err) {
-      logger.fetchError(err, { context: 'EntregaCortesias:entregar' });
+      logger.fetchError(err, { context: 'EntregaCovers:entregar' });
       showToast({
         type: 'error',
         text1:
@@ -309,6 +387,7 @@ export function useEntregaCortesias({
       setEntregando(false);
     }
   }, [
+    acompanamientos,
     entregando,
     faltanAcompanamientos,
     filas,
@@ -316,6 +395,8 @@ export function useEntregaCortesias({
     lineas,
     onClose,
     onEntregado,
+    presupuestoInsuficiente,
+    topeCover,
     totalSeleccionado,
     modo,
   ]);
@@ -329,9 +410,19 @@ export function useEntregaCortesias({
     entregando,
     filas,
     umbral,
+    totalEntradas,
+    montoAdicional,
+    cambiarMontoAdicional,
+    adicional,
+    presupuesto,
     seleccion,
     visibles,
     totalSeleccionado,
+    precioSeleccionado,
+    cobroBarra,
+    presupuestoInsuficiente,
+    excedePresupuesto,
+    excedeAdicional,
     lineas,
     faltanAcompanamientos,
     agregar,
@@ -339,7 +430,6 @@ export function useEntregaCortesias({
     agregarSabor,
     ajustarSabor,
     quitarSabor,
-    cambiarAdicional,
     cerrar,
     entregar,
   };

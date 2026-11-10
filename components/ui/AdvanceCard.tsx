@@ -45,6 +45,7 @@ export function AdvanceCard({
         if (estado === 1 || estado === '1' || estado === 'confirmada' || estado === 'aprobado' || estado === 'aprobada') return 'confirmada';
         if (estado === 0 || estado === '0' || estado === 'pagada' || estado === 'pagado' || estado === 'entregada' || estado === 'entregado') return 'pagada';
         if (estado === 3 || estado === '3' || estado === 'rechazada' || estado === 'rechazado') return 'rechazada';
+        if (estado === 4 || estado === '4' || estado === 'liquidada' || estado === 'liquidado') return 'liquidada';
         return String(estado ?? '');
     });
 
@@ -52,6 +53,7 @@ export function AdvanceCard({
     const isPendiente = estado === 'pendiente';
     const isAprobada = estado === 'confirmada';
     const isPagada = estado === 'pagada';
+    const isLiquidada = estado === 'liquidada';
     const isRechazada = estado === 'rechazada';
 
     const getStatusColors = () => {
@@ -69,6 +71,13 @@ export function AdvanceCard({
                 label: 'Recibido'
             };
         }
+        if (isLiquidada) {
+            return {
+                backgroundColor: isDark ? 'rgba(139, 92, 246, 0.16)' : '#EDE9FE',
+                color: isDark ? '#C4B5FD' : '#6D28D9',
+                label: 'Liquidado'
+            };
+        }
         if (isAprobada) {
             return {
                 backgroundColor: isDark ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
@@ -76,10 +85,17 @@ export function AdvanceCard({
                 label: viewMode === 'solicitudes' ? 'Aprobado' : 'Recibido'
             };
         }
+        if (isRechazada) {
+            return {
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
+                color: isDark ? '#F87171' : '#B91C1C',
+                label: 'Rechazada'
+            };
+        }
         return {
-            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
-            color: isDark ? '#F87171' : '#B91C1C',
-            label: 'Rechazada'
+            backgroundColor: isDark ? 'rgba(107, 114, 128, 0.16)' : '#F3F4F6',
+            color: isDark ? '#9CA3AF' : '#4B5563',
+            label: 'Sin estado'
         };
     };
 
@@ -159,7 +175,7 @@ export function AdvanceCard({
                     <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
                         <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                            <Text style={[styles.amountValue, { color: isAprobada ? accentColor : isPendiente ? '#F59E0B' : '#EF4444' }]}>
+                            <Text style={[styles.amountValue, { color: isAprobada ? accentColor : isPendiente ? '#F59E0B' : isRechazada ? '#EF4444' : '#10B981' }]}>
                                 ${(item.monto || 0).toLocaleString()}
                             </Text>
                         </View>

@@ -20,7 +20,7 @@ export default function CajeroLayout() {
   if (rutaExigeAdmin(segmentos) && !isAdminRole(user)) {
     return <Redirect href="/(app)/cajero/(tabs)" />;
   }
-  if (bloqueado && rutaRequiereCajaAbierta(segmentos)) {
+  if (bloqueado && rutaRequiereCajaAbierta(segmentos) && !isAdminRole(user)) {
     return <Redirect href="/(app)/cajero/(tabs)" />;
   }
 
@@ -52,6 +52,30 @@ export default function CajeroLayout() {
           options={{ title: "Gratificaciones", headerShown: false }}
         />
         <Stack.Screen
+          name="caja"
+          options={{ title: "Estado de caja", headerShown: false }}
+        />
+        <Stack.Screen
+          name="asistencia-local"
+          options={{ title: "Asistencia en el local", headerShown: false }}
+        />
+        <Stack.Screen
+          name="compras"
+          options={{ title: "Compras", headerShown: false }}
+        />
+        <Stack.Screen
+          name="pagos"
+          options={{ title: "Pagos a trabajadores", headerShown: false }}
+        />
+        <Stack.Screen
+          name="anticipos-admin"
+          options={{ title: "Anticipos", headerShown: false }}
+        />
+        <Stack.Screen
+          name="horas-extras"
+          options={{ title: "Horas Extras", headerShown: false }}
+        />
+        <Stack.Screen
           name="pares"
           options={{ title: "Pares", headerShown: false }}
         />
@@ -81,8 +105,8 @@ export default function CajeroLayout() {
           options={{ title: "Clientes", headerShown: false }}
         />
         <Stack.Screen
-          name="cortesias"
-          options={{ title: "Cortesías", headerShown: false }}
+          name="covers"
+          options={{ title: "Covers", headerShown: false }}
         />
         <Stack.Screen
           name="entradas"

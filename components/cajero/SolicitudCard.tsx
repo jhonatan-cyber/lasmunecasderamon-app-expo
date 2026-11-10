@@ -39,6 +39,8 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
     useRenderCount('SolicitudCard', { id: item.id_solicitud || item.id_anticipo || item.id_pedido, tipo: item.tipoItem });
     const isSolicitud = item.tipoItem === 'solicitud';
     const isAnticipo = item.tipoItem === 'anticipo';
+    // Tras entregar, el anticipo conserva estado 1 y solo suma fecha_entrega.
+    const anticipoEntregado = item.tipoItem === 'anticipo' && !!item.fecha_entrega;
     const iconName = isSolicitud ? 'receipt' : isAnticipo ? 'cash' : 'beer';
     const color = isSolicitud ? accentColor : isAnticipo ? '#10B981' : '#F59E0B';
     
@@ -69,7 +71,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         if (isSolicitud) {
             onShowServiceModal(item);
         } else if (isAnticipo) {
-            if (item.estado === 1) {
+            if (item.estado === 1 && !anticipoEntregado) {
                 onAprobar(itemId, 'anticipo', item);
             }
         } else {
@@ -135,7 +137,11 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                         ]}
                     >
                         <Text style={[styles.responseTitle, { color: item.estado === 1 ? '#166534' : '#1D4ED8' }]}>
-                            {item.estado === 1 ? 'Aprobado por administrador' : 'Esperando respuesta del administrador'}
+                            {anticipoEntregado
+                                ? 'Entregado por cajero'
+                                : item.estado === 1
+                                    ? 'Aprobado por administrador'
+                                    : 'Esperando respuesta del administrador'}
                         </Text>
                         <Text style={[styles.responseText, { color: item.estado === 1 ? '#166534' : textSecondary }]}>
                             {item.motivo || 'Sin detalle adicional'}
@@ -155,6 +161,10 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                         {item.estado === 2 ? (
                             <View style={[styles.btnAction, { backgroundColor: '#3B82F620', flex: 1 }]}>
                                 <Text style={[styles.btnActionText, { color: '#3B82F6' }]}>Esp. Admin</Text>
+                            </View>
+                        ) : anticipoEntregado ? (
+                            <View style={[styles.btnAction, { backgroundColor: '#10B98120', flex: 1 }]}>
+                                <Text style={[styles.btnActionText, { color: '#10B981' }]}>Entregado</Text>
                             </View>
                         ) : (
                             <Pressable

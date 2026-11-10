@@ -41,11 +41,11 @@ export const BarmanActionGrid = ({
       route: "/barman/servicios",
     },
     {
-      title: "CORTESÍAS",
+      title: "COVERS",
       description: "Entregar entradas del día",
       icon: "ticket-outline" as const,
       color: "#F59E0B",
-      route: "/barman/cortesias",
+      route: "/barman/covers",
     },
     {
       title: "LIMPIEZA",

@@ -41,7 +41,6 @@ export type Formato = 'corte' | 'botella';
 export interface LineaSeleccion {
   cantidad: number;
   reparto: AcompanamientoBotellaItem[];
-  adicional: string;
 }
 
 export type Seleccion = Record<string, LineaSeleccion>;
@@ -56,6 +55,9 @@ export interface LineaEntrega extends LineaSeleccion {
 /** Cálculo de reparto del acompañamiento de un producto seleccionado. */
 export interface RepartoInfo {
   requerido: boolean;
+  /** Unidades que exige cada entrega del producto. */
+  unidadesPorEntrega: number;
+  /** Unidades a repartir entre todas las entregas de la línea. */
   unidadesRequeridas: number;
   asignado: number;
   restante: number;
@@ -65,7 +67,7 @@ export interface RepartoInfo {
   falta: boolean;
 }
 
-export interface EntregaCortesiasModalProps {
+export interface EntregaCoversModalProps {
   visible: boolean;
   grupo: GrupoEntrega | null;
   tope: number;

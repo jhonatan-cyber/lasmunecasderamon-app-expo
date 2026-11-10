@@ -15,9 +15,11 @@ import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { OfflineBlockedNotice } from '@/components/offline/OfflineBlockedNotice';
 import { OFFLINE_BLOCKED_ACTIONS } from '@/utils/offlineGuard';
 import { useCaja } from '@/hooks/useCaja';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { CajaSkeleton, MetricCard, StatRow, CajaModales } from '@/components/cajero/caja';
 
 export default function CajaScreen() {
+    const esAdmin = useIsAdmin();
     const {
         accentColor,
         isDark,
@@ -56,7 +58,7 @@ export default function CajaScreen() {
             <StatusBar style={isDark ? 'dark' : 'light'} />
 
             <PremiumHeader
-                title="Caja"
+                title={esAdmin ? 'Estado de caja' : 'Caja'}
                 subtitle={fromCache
                     ? 'Datos guardados en el dispositivo'
                     : cajaAbierta && cajaInfo?.fecha_apertura
@@ -99,8 +101,8 @@ export default function CajaScreen() {
                 >
                     {/* Abrir, cerrar y retirar mueven el efectivo del turno y
                         dependen del estado real del servidor: sin conexión se
-                        deshabilitan y se dice por qué. */}
-                    {isOffline && (
+                        deshabilitan y se dice por qué. El admin solo consulta. */}
+                    {!esAdmin && isOffline && (
                         <OfflineBlockedNotice message={OFFLINE_BLOCKED_ACTIONS.caja.message} />
                     )}
 
@@ -127,7 +129,7 @@ export default function CajaScreen() {
 
                     {/* El aviso puede no llegar o quedarse sin respuesta: si el cierre sigue
                         pendiente, se puede insistir sin abrir el modal ni crear otra solicitud. */}
-                    {cajaAbierta && stats?.cierre_pendiente && (
+                    {!esAdmin && cajaAbierta && stats?.cierre_pendiente && (
                         <Pressable
                             style={[
                                 styles.resendBtn,
@@ -152,7 +154,7 @@ export default function CajaScreen() {
 
                     {/* Nadie contestó el cierre: pasado el plazo se puede pedir de nuevo, lo
                         que expira la solicitud vieja y vuelve a avisar desde cero. */}
-                    {cajaAbierta && stats?.cierre_pendiente && stats?.cierre_estancado && (
+                    {!esAdmin && cajaAbierta && stats?.cierre_pendiente && stats?.cierre_estancado && (
                         <Pressable
                             style={[
                                 styles.resendBtn,
@@ -184,7 +186,7 @@ export default function CajaScreen() {
                                 </Text>
                             </View>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
-                                {cajaAbierta ? (
+                                {!esAdmin && (cajaAbierta ? (
                                     <>
                                         <Pressable
                                             style={[styles.actionBtn, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B40' }, isOffline && styles.actionBtnDisabled]}
@@ -218,7 +220,7 @@ export default function CajaScreen() {
                                         <Ionicons name="power-outline" size={15} color="#10B981" />
                                         <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Abrir Caja</Text>
                                     </Pressable>
-                                )}
+                                ))}
                             </View>
                         </View>
 
@@ -332,15 +334,19 @@ export default function CajaScreen() {
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
                             <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                                Abre la caja para comenzar a registrar movimientos del turno
+                                {esAdmin
+                                    ? 'No hay una caja abierta en este momento.'
+                                    : 'Abre la caja para comenzar a registrar movimientos del turno'}
                             </Text>
-                            <Pressable
-                                style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
-                                onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
-                            >
-                                <Ionicons name="power-outline" size={18} color="#FFF" />
-                                <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
-                            </Pressable>
+                            {!esAdmin && (
+                                <Pressable
+                                    style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
+                                    onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                >
+                                    <Ionicons name="power-outline" size={18} color="#FFF" />
+                                    <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
+                                </Pressable>
+                            )}
                         </View>
                     )}
 
@@ -351,35 +357,41 @@ export default function CajaScreen() {
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Sin datos de caja</Text>
                             <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                                No hay registros de caja aún. Abre una para comenzar.
+                                {esAdmin
+                                    ? 'No hay registros de caja aún.'
+                                    : 'No hay registros de caja aún. Abre una para comenzar.'}
                             </Text>
-                            <Pressable
-                                style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
-                                onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
-                            >
-                                <Ionicons name="power-outline" size={18} color="#FFF" />
-                                <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
-                            </Pressable>
+                            {!esAdmin && (
+                                <Pressable
+                                    style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
+                                    onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                >
+                                    <Ionicons name="power-outline" size={18} color="#FFF" />
+                                    <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
+                                </Pressable>
+                            )}
                         </View>
                     )}
                 </ScrollView>
             )}
 
-            <CajaModales
-                modalVisible={modalVisible}
-                modalType={modalType}
-                modalConfig={modalConfig}
-                isDark={isDark}
-                textPrimary={textPrimary}
-                textSecondary={textSecondary}
-                stats={stats}
-                monto={monto}
-                motivoRetiro={motivoRetiro}
-                submitting={submitting}
-                dispatch={dispatch}
-                handleMontoChange={handleMontoChange}
-                handleSubmit={handleSubmit}
-            />
+            {!esAdmin && (
+                <CajaModales
+                    modalVisible={modalVisible}
+                    modalType={modalType}
+                    modalConfig={modalConfig}
+                    isDark={isDark}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    stats={stats}
+                    monto={monto}
+                    motivoRetiro={motivoRetiro}
+                    submitting={submitting}
+                    dispatch={dispatch}
+                    handleMontoChange={handleMontoChange}
+                    handleSubmit={handleSubmit}
+                />
+            )}
         </View>
     );
 }

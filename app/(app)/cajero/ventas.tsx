@@ -19,6 +19,7 @@ import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { useTimer } from '@/context/TimerContext';
 import { useVentasScreen } from '@/hooks/useVentasScreen';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
@@ -35,6 +36,7 @@ const VENTA_SKELETON_ITEMS = [1, 2, 3, 4];
 
 export default function VentasScreen() {
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const esAdmin = useIsAdmin();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -98,6 +100,18 @@ export default function VentasScreen() {
       : activeTab === "historial" ? ventasList : processSales,
     [activeTab, loadingSales, processSales, ventasList],
   );
+  const handleCardPress = React.useCallback(
+    (item: any) => {
+      if (!esAdmin) {
+        handleOpenActionSheet(item);
+        return;
+      }
+      const ventaId = getVentaId(item);
+      if (ventaId) handleVerDetalles(ventaId);
+    },
+    [esAdmin, getVentaId, handleOpenActionSheet, handleVerDetalles],
+  );
+
   const renderVentaCard = React.useCallback(({ item }: { item: any }) => {
     return (
       <VentaCard
@@ -108,14 +122,14 @@ export default function VentasScreen() {
         textPrimary={textPrimary}
         textSecondary={textSecondary}
         isDark={isDark}
-        onPress={handleOpenActionSheet}
-        onFinalizar={handleFinalizarVenta}
+        onPress={handleCardPress}
+        onFinalizar={esAdmin ? undefined : handleFinalizarVenta}
         timers={timers}
         serverOffset={serverOffset}
         getVentaId={getVentaId}
       />
     );
-  }, [accentColor, borderColor, cardBg, getVentaId, handleFinalizarVenta, handleOpenActionSheet, isDark, serverOffset, timers, textPrimary, textSecondary]);
+  }, [accentColor, borderColor, cardBg, esAdmin, getVentaId, handleCardPress, handleFinalizarVenta, isDark, serverOffset, timers, textPrimary, textSecondary]);
 
   if (loading) {
     return (
@@ -211,48 +225,52 @@ export default function VentasScreen() {
         isDark={isDark}
       />
 
-      <VentaAnulacionModal
-        visible={anulacionModalVisible}
-        onClose={closeAnulacionModal}
-        activeVenta={activeVenta}
-        montoAnulacion={montoAnulacion}
-        onMontoChange={(value) => setMontoAnulacion(formatMontoInput(value))}
-        motivoAnulacion={motivoAnulacion}
-        onMotivoChange={setMotivoAnulacion}
-        anulandoVenta={anulandoVenta}
-        onAnular={handleAnularVenta}
-        formatMontoInput={formatMontoInput}
-        accentColor={accentColor}
-        cardBg={cardBg}
-        borderColor={borderColor}
-        textPrimary={textPrimary}
-        textSecondary={textSecondary}
-        isDark={isDark}
-        dangerColor={C.danger}
-      />
+      {!esAdmin && (
+        <>
+          <VentaAnulacionModal
+            visible={anulacionModalVisible}
+            onClose={closeAnulacionModal}
+            activeVenta={activeVenta}
+            montoAnulacion={montoAnulacion}
+            onMontoChange={(value) => setMontoAnulacion(formatMontoInput(value))}
+            motivoAnulacion={motivoAnulacion}
+            onMotivoChange={setMotivoAnulacion}
+            anulandoVenta={anulandoVenta}
+            onAnular={handleAnularVenta}
+            formatMontoInput={formatMontoInput}
+            accentColor={accentColor}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            isDark={isDark}
+            dangerColor={C.danger}
+          />
 
-      <VentaActionSheet
-        visible={actionSheetVisible}
-        onClose={() => setActionSheetVisible(false)}
-        activeVenta={activeVenta}
-        onVerDetalles={() => {
-          const ventaId = getVentaId(activeVenta);
-          if (ventaId) handleVerDetalles(ventaId);
-        }}
-        onSolicitarAnulacion={openAnulacionModal}
-        accentColor={accentColor}
-        cardBg={cardBg}
-        textPrimary={textPrimary}
-        textSecondary={textSecondary}
-        dangerColor={C.danger}
-      />
+          <VentaActionSheet
+            visible={actionSheetVisible}
+            onClose={() => setActionSheetVisible(false)}
+            activeVenta={activeVenta}
+            onVerDetalles={() => {
+              const ventaId = getVentaId(activeVenta);
+              if (ventaId) handleVerDetalles(ventaId);
+            }}
+            onSolicitarAnulacion={openAnulacionModal}
+            accentColor={accentColor}
+            cardBg={cardBg}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            dangerColor={C.danger}
+          />
 
-      <PremiumFAB
-        label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
-        icon={activeTab === "historial" ? "cart-outline" : "add"}
-        onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
-        visible={true}
-      />
+          <PremiumFAB
+            label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
+            icon={activeTab === "historial" ? "cart-outline" : "add"}
+            onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
+            visible={true}
+          />
+        </>
+      )}
 
       <PremiumAlert
         visible={alertConfig.visible}

@@ -19,7 +19,7 @@ export const CajeroActionGrid = ({
   const esAdmin = useIsAdmin();
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
-  const cols = esAdmin ? 1 : isTablet ? 3 : 2;
+  const cols = isTablet ? 3 : 2;
   const spacing = isTablet ? 24 : 16;
   const configuracion = {
     title: "CONFIGURACIÓN",
@@ -30,7 +30,72 @@ export const CajeroActionGrid = ({
   };
 
   const actions = esAdmin
-    ? [configuracion]
+    ? [
+      {
+        title: "ESTADO DE CAJA",
+        description: "Turno abierto y resumen",
+        icon: "cash" as const,
+        color: "#14B8A6",
+        route: "/cajero/caja",
+      },
+      {
+        title: "ASISTENCIA LOCAL",
+        description: "Quiénes marcaron hoy",
+        icon: "calendar" as const,
+        color: "#0EA5E9",
+        route: "/cajero/asistencia-local",
+      },
+      {
+        title: "VENTAS",
+        description: "Listado de ventas",
+        icon: "cart" as const,
+        color: "#22C55E",
+        route: "/cajero/ventas",
+      },
+      {
+        title: "SERVICIOS",
+        description: "Listado de servicios",
+        icon: "bed" as const,
+        color: "#F97316",
+        route: "/cajero/servicios",
+      },
+      {
+        title: "COMPRAS",
+        description: "Compras y proveedores",
+        icon: "bag-handle" as const,
+        color: "#8B5CF6",
+        route: "/cajero/compras",
+      },
+      {
+        title: "PAGOS",
+        description: "Pagos a trabajadores",
+        icon: "wallet" as const,
+        color: "#059669",
+        route: "/cajero/pagos",
+      },
+      {
+        title: "ANTICIPOS",
+        description: "Aprobar y rechazar",
+        icon: "card" as const,
+        color: "#EF4444",
+        route: "/cajero/anticipos-admin",
+      },
+      {
+        title: "GRATIFICACIONES",
+        description: "Registrar y revisar",
+        icon: "gift" as const,
+        color: "#EC4899",
+        route: "/cajero/gratificaciones",
+      },
+      {
+        title: "HORAS EXTRAS",
+        description: "Registrar horas",
+        icon: "time" as const,
+        color: "#F59E0B",
+        route: "/cajero/horas-extras",
+      },
+      configuracion,
+    ]
     : [
       {
         title: "VENTAS",
@@ -89,11 +154,11 @@ export const CajeroActionGrid = ({
         route: "/cajero/entradas",
       },
       {
-        title: "CORTESÍAS",
+        title: "COVERS",
         description: "Entregar entradas del día",
         icon: "ticket-outline" as const,
         color: "#D946EF",
-        route: "/cajero/cortesias",
+        route: "/cajero/covers",
       },
       {
         title: "LIMPIEZA",
@@ -138,7 +203,7 @@ export const CajeroActionGrid = ({
           {row.map((action) => (
             <BloqueoPorCaja
               key={action.title}
-              bloqueado={bloqueado && rutaExigeCajaAbierta(action.route)}
+              bloqueado={bloqueado && !esAdmin && rutaExigeCajaAbierta(action.route)}
               style={{ flex: 1 }}
             >
               <GarzonActionCard

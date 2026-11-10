@@ -20,7 +20,7 @@ type VentaCardProps = {
   textSecondary: string;
   isDark: boolean;
   onPress: (item: Venta) => void;
-  onFinalizar: (item: Venta) => void;
+  onFinalizar?: (item: Venta) => void;
   timers: Timer[];
   serverOffset: number;
   getVentaId: (item: Venta) => string | null;
@@ -119,7 +119,7 @@ export function VentaCard({
             accentColor={accentColor}
             textPrimary={textPrimary}
             textSecondary={textSecondary}
-            onFinalizar={item.estado === 2 ? () => onFinalizar(item) : undefined}
+            onFinalizar={item.estado === 2 && onFinalizar ? () => onFinalizar(item) : undefined}
           />
         </View>
       </Pressable>

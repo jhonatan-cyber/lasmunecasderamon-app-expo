@@ -53,19 +53,46 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'PEDIDOS',
     'CLIENTES',
     'ENTRADAS',
-    'CORTESÍAS',
+    'COVERS',
     'LIMPIEZA',
     'PERSONAL',
     'GRATIFICACIONES',
   ];
 
-  it('muestra sólo la tarjeta de CONFIGURACIÓN para un administrador', () => {
+  const TARJETAS_ADMIN = [
+    'ESTADO DE CAJA',
+    'ASISTENCIA LOCAL',
+    'VENTAS',
+    'SERVICIOS',
+    'COMPRAS',
+    'PAGOS',
+    'ANTICIPOS',
+    'GRATIFICACIONES',
+    'HORAS EXTRAS',
+    'CONFIGURACIÓN',
+  ];
+
+  const TARJETAS_SOLO_CAJERO = [
+    'CUENTAS',
+    'COLACIONES',
+    'CAJA',
+    'PEDIDOS',
+    'CLIENTES',
+    'ENTRADAS',
+    'COVERS',
+    'LIMPIEZA',
+    'PERSONAL',
+  ];
+
+  it('muestra los módulos de administración para un administrador', () => {
     vi.mocked(useIsAdmin).mockReturnValue(true);
 
     render(<CajeroActionGrid />);
 
-    expect(screen.getByText('CONFIGURACIÓN')).toBeDefined();
-    TARJETAS_CAJERO.forEach((titulo) => {
+    TARJETAS_ADMIN.forEach((titulo) => {
+      expect(screen.getByText(titulo)).toBeDefined();
+    });
+    TARJETAS_SOLO_CAJERO.forEach((titulo) => {
       expect(screen.queryByText(titulo)).toBeNull();
     });
   });

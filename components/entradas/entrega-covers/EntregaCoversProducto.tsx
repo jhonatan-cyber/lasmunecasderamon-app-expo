@@ -1,12 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { formatCurrency } from '@/utils/format';
-import { styles } from '../EntregaCortesiasModal.styles';
-import { EntregaCortesiasAcompanamiento } from './EntregaCortesiasAcompanamiento';
+import { styles } from '../EntregaCoversModal.styles';
+import { EntregaCoversAcompanamiento } from './EntregaCoversAcompanamiento';
 import { calcularReparto } from './helpers';
 import type { Acompanamiento, Bebida, Formato, LineaSeleccion } from './types';
 
-interface EntregaCortesiasProductoProps {
+interface EntregaCoversProductoProps {
   bebida: Bebida;
   formato: Formato;
   linea: LineaSeleccion | undefined;
@@ -18,16 +18,14 @@ interface EntregaCortesiasProductoProps {
   onAgregarSabor: (opcion: Acompanamiento) => void;
   onAjustarSabor: (presentacionId: string, delta: number) => void;
   onQuitarSabor: (presentacionId: string) => void;
-  onCambiarAdicional: (valor: string) => void;
   accentColor: string;
   textPrimary: string;
   textSecondary: string;
   borderColor: string;
-  isDark: boolean;
 }
 
-/** Fila de una bebida entregable: stepper, reparto del acompañamiento y adicional. */
-export function EntregaCortesiasProducto({
+/** Fila de una bebida entregable: stepper y reparto del acompañamiento. */
+export function EntregaCoversProducto({
   bebida,
   formato,
   linea,
@@ -39,13 +37,11 @@ export function EntregaCortesiasProducto({
   onAgregarSabor,
   onAjustarSabor,
   onQuitarSabor,
-  onCambiarAdicional,
   accentColor,
   textPrimary,
   textSecondary,
   borderColor,
-  isDark,
-}: EntregaCortesiasProductoProps) {
+}: EntregaCoversProductoProps) {
   const reparto = linea?.reparto ?? [];
   const info = calcularReparto(
     bebida,
@@ -111,7 +107,7 @@ export function EntregaCortesiasProducto({
       {linea && (
         <>
           {info.requerido && (
-            <EntregaCortesiasAcompanamiento
+            <EntregaCoversAcompanamiento
               formato={formato}
               reparto={reparto}
               info={info}
@@ -124,28 +120,6 @@ export function EntregaCortesiasProducto({
               borderColor={borderColor}
             />
           )}
-
-          <View style={{ marginTop: 8 }}>
-            <Text style={[styles.miniLabel, { color: textSecondary }]}>
-              ADICIONAL POR UNIDAD (OPCIONAL)
-            </Text>
-            <TextInput
-              value={linea.adicional}
-              onChangeText={onCambiarAdicional}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={textSecondary}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
-                  borderColor,
-                  color: textPrimary,
-                  marginTop: 4,
-                },
-              ]}
-            />
-          </View>
 
           {info.falta && (
             <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 6 }}>

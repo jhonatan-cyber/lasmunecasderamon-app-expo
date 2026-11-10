@@ -2,7 +2,7 @@ import { apiClientSafe } from '@/api/client-safe';
 
 export const attendanceService = {
   /** Asistencias registradas hoy (ruta pública): permite saber si el usuario actual ya registró. */
-  hoy: () => apiClientSafe('/attendance/today'),
+  hoy: (signal?: AbortSignal) => apiClientSafe('/attendance/today', { signal }),
 
   userDetail: (startDate: string, endDate: string) =>
     apiClientSafe(`/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`),

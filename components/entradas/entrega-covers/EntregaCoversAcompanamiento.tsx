@@ -1,10 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, Text, View } from 'react-native';
 import type { AcompanamientoBotellaItem } from '@/types/cart';
-import { styles } from '../EntregaCortesiasModal.styles';
+import { styles } from '../EntregaCoversModal.styles';
 import type { Acompanamiento, Formato, RepartoInfo } from './types';
 
-interface EntregaCortesiasAcompanamientoProps {
+interface EntregaCoversAcompanamientoProps {
   formato: Formato;
   reparto: AcompanamientoBotellaItem[];
   info: RepartoInfo;
@@ -18,7 +18,7 @@ interface EntregaCortesiasAcompanamientoProps {
 }
 
 /** Reparto del acompañamiento analcohólico de un corte o botella. */
-export function EntregaCortesiasAcompanamiento({
+export function EntregaCoversAcompanamiento({
   formato,
   reparto,
   info,
@@ -29,9 +29,10 @@ export function EntregaCortesiasAcompanamiento({
   textPrimary,
   textSecondary,
   borderColor,
-}: EntregaCortesiasAcompanamientoProps) {
+}: EntregaCoversAcompanamientoProps) {
   const unidades = info.unidadesRequeridas;
-  const sufijo = unidades === 1 ? '' : 'es';
+  const porEntrega = info.unidadesPorEntrega;
+  const sufijo = porEntrega === 1 ? '' : 'es';
 
   return (
     <View style={{ marginTop: 8 }}>
@@ -45,9 +46,11 @@ export function EntregaCortesiasAcompanamiento({
       ) : (
         <>
           <Text style={{ color: textSecondary, fontSize: 11, marginTop: 4 }}>
-            {info.restante > 0
-              ? `Reparte ${unidades} unidad${sufijo} por entrega · ${info.asignado}/${unidades}`
-              : `Reparto completo · ${unidades} unidad${sufijo} por entrega`}
+            {unidades > porEntrega
+              ? `Cada entrega lleva ${porEntrega} unidad${sufijo} · repartidas ${info.asignado}/${unidades}`
+              : info.restante > 0
+                ? `Reparte ${porEntrega} unidad${sufijo} · ${info.asignado}/${unidades}`
+                : `Reparto completo · ${info.asignado}/${unidades}`}
           </Text>
 
           {reparto.map(sabor => {

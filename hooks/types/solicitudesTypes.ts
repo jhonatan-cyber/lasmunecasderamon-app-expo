@@ -51,6 +51,8 @@ export interface AnticipoItem extends SolicitudItemBase {
   tipoItem: 'anticipo';
   fecha_crea?: string;
   fecha_mod?: string;
+  /** Se llena al entregar el efectivo; el estado sigue siendo 1. */
+  fecha_entrega?: string | null;
   motivo?: string;
 }
 
