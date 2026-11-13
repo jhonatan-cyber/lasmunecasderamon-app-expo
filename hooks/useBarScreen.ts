@@ -95,7 +95,7 @@ export interface BarMovement {
 
 type ApiList<T> = { success?: boolean; data?: T[] | { data?: T[] } | null };
 
-const unwrapList = <T,>(res: ApiList<T>): T[] => {
+const unwrapList = <T>(res: ApiList<T>): T[] => {
   const data = res?.data;
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data as T[];
@@ -115,8 +115,10 @@ export const useBarScreen = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const loadedRef = useRef(false);
+  const stockRequestRef = useRef(0);
 
   const fetchStock = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++stockRequestRef.current;
     try {
       // Red primero; sin red se sirve el stock guardado en el dispositivo: el
       // barman sigue viendo la barra aunque caiga la conexión.
@@ -125,11 +127,11 @@ export const useBarScreen = () => {
         async () => (await barService.stock(signal)) as ApiList<BarStockItem>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
-      if (signal?.aborted) return;
+      if (signal?.aborted || requestId !== stockRequestRef.current) return;
       const res = lectura.data;
       if (res?.success !== false) setStock(unwrapList<BarStockItem>(res));
     } catch (e) {
-      if (signal?.aborted) return;
+      if (signal?.aborted || requestId !== stockRequestRef.current) return;
       if (e instanceof OfflineCacheMissError) {
         setError(e.message);
         return;
@@ -143,7 +145,8 @@ export const useBarScreen = () => {
     try {
       const lectura = await getMirror().readThroughDetailed(
         MIRROR_KEYS.barTransfers,
-        async () => (await barService.pendingTransfers(signal)) as ApiList<BarTransfer>,
+        async () =>
+          (await barService.pendingTransfers(signal)) as ApiList<BarTransfer>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
       if (signal?.aborted) return;
@@ -169,7 +172,8 @@ export const useBarScreen = () => {
     try {
       const lectura = await getMirror().readThroughDetailed(
         MIRROR_KEYS.barMovements,
-        async () => (await barService.movements(100, signal)) as ApiList<BarMovement>,
+        async () =>
+          (await barService.movements(100, signal)) as ApiList<BarMovement>,
         { maxAgeMs: MIRROR_MAX_AGE_MS.operativo },
       );
       if (signal?.aborted) return;
@@ -185,14 +189,16 @@ export const useBarScreen = () => {
 
   const fetchTransferHistory = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await barService.transfers(signal) as {
+      const response = (await barService.transfers(signal)) as {
         success?: boolean;
         data?: { history?: BarTransfer[] };
       };
       if (signal?.aborted) return;
-      if (response?.success !== false) setTransferHistory(response?.data?.history ?? []);
+      if (response?.success !== false)
+        setTransferHistory(response?.data?.history ?? []);
     } catch (e) {
-      if (!signal?.aborted) logger.fetchError(e, { context: 'BarScreen:fetchTransferHistory' });
+      if (!signal?.aborted)
+        logger.fetchError(e, { context: 'BarScreen:fetchTransferHistory' });
     }
   }, []);
 
@@ -208,16 +214,34 @@ export const useBarScreen = () => {
     return () => ac.abort();
   }, [fetchStock, fetchTransfers]);
 
-  // `bar_shot_alert` (SSE): una botella bajó del umbral de shots y su ml cambió:
-  // la pantalla Bar, si está abierta, refresca el stock sin esperar al pull.
   useEffect(() => {
-    const subscription = eventBus.addListener(REALTIME_EVENT_NAMES.refreshBar, (payload) => {
-      logger.debug('[BarScreen] refresh_bar received', { type: payload?.type });
-      void fetchStock();
-      if (payload?.type === 'transfers_updated') void fetchTransfers();
-    });
-    return () => subscription.remove();
-  }, [fetchStock, fetchTransfers]);
+    const request = new AbortController();
+    const subscription = eventBus.addListener(
+      REALTIME_EVENT_NAMES.refreshBar,
+      (payload) => {
+        logger.debug('[BarScreen] refresh_bar received', {
+          type: payload?.type,
+        });
+        const signal = request.signal;
+        void fetchStock(signal);
+        const productsUpdated =
+          String(
+            payload?.data?.module ?? payload?.module ?? '',
+          ).toLowerCase() === 'products';
+        if (payload?.type === 'transfers_updated' || productsUpdated)
+          void fetchTransfers(signal);
+        // Los precios del producto también se muestran en recepciones e historial.
+        if (productsUpdated) {
+          void fetchMovements(signal);
+          void fetchTransferHistory(signal);
+        }
+      },
+    );
+    return () => {
+      subscription.remove();
+      request.abort();
+    };
+  }, [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory]);
 
   const loadMovements = useCallback(
     (signal?: AbortSignal) => {
@@ -229,7 +253,12 @@ export const useBarScreen = () => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStock(), fetchTransfers(), fetchMovements(), fetchTransferHistory()]);
+    await Promise.all([
+      fetchStock(),
+      fetchTransfers(),
+      fetchMovements(),
+      fetchTransferHistory(),
+    ]);
     setRefreshing(false);
   }, [fetchStock, fetchTransfers, fetchMovements, fetchTransferHistory]);
 
@@ -246,19 +275,31 @@ export const useBarScreen = () => {
             ? await barService.acceptTransfer(id)
             : await barService.rejectTransfer(id);
         if ((res as { success?: boolean })?.success === false) {
-          throw new Error((res as { message?: string }).message || 'No se pudo resolver la solicitud.');
+          throw new Error(
+            (res as { message?: string }).message ||
+              'No se pudo resolver la solicitud.',
+          );
         }
         showToast({
           type: 'success',
-          text1: accion === 'aprobar' ? 'Transferencia aprobada' : 'Transferencia rechazada',
+          text1:
+            accion === 'aprobar'
+              ? 'Transferencia aprobada'
+              : 'Transferencia rechazada',
         });
-        await Promise.all([fetchStock(), fetchTransfers(), fetchMovements(), fetchTransferHistory()]);
+        await Promise.all([
+          fetchStock(),
+          fetchTransfers(),
+          fetchMovements(),
+          fetchTransferHistory(),
+        ]);
         return true;
       } catch (e) {
         showToast({
           type: 'error',
           text1: 'Error',
-          text2: e instanceof Error ? e.message : 'No se pudo resolver la solicitud',
+          text2:
+            e instanceof Error ? e.message : 'No se pudo resolver la solicitud',
         });
         return false;
       } finally {

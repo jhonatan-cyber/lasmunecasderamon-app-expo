@@ -1,7 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import FlashList from '@/components/shared/FlashList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
@@ -23,10 +30,17 @@ type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 export default function BarScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string }>();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
-  const [activeTab, setActiveTab] = useState<TabId>(params.tab === 'pendientes' ? 'pendientes' : 'stock');
-  const [selectedTransfer, setSelectedTransfer] = useState<BarTransfer | null>(null);
-  const [selectedMovement, setSelectedMovement] = useState<BarMovement | null>(null);
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } =
+    useAccentColor();
+  const [activeTab, setActiveTab] = useState<TabId>(
+    params.tab === 'pendientes' ? 'pendientes' : 'stock',
+  );
+  const [selectedTransfer, setSelectedTransfer] = useState<BarTransfer | null>(
+    null,
+  );
+  const [selectedMovement, setSelectedMovement] = useState<BarMovement | null>(
+    null,
+  );
   const {
     stock,
     transfers,
@@ -88,14 +102,20 @@ export default function BarScreen() {
         title="Bar"
         subtitle={`${totalBar} unidades en barra`}
         rightComponent={
-          <Pressable onPress={() => router.replace('/(app)/barman/(tabs)')} style={styles.backBtnRight}>
+          <Pressable
+            onPress={() => router.replace('/(app)/barman/(tabs)')}
+            style={styles.backBtnRight}
+          >
             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             <Text style={styles.backTextRight}>Atrás</Text>
           </Pressable>
         }
         tabs={[
           { id: 'stock', label: 'Stock' },
-          { id: 'pendientes', label: `Pendientes${transfers.length > 0 ? ` (${transfers.length})` : ''}` },
+          {
+            id: 'pendientes',
+            label: `Pendientes${transfers.length > 0 ? ` (${transfers.length})` : ''}`,
+          },
           { id: 'historial', label: 'Historial' },
           { id: 'envases', label: 'Envases' },
         ]}
@@ -106,7 +126,9 @@ export default function BarScreen() {
       <BarmanOfflineBanner />
 
       {activeTab === 'stock' && (
-        <View style={[styles.searchWrap, { backgroundColor: cardBg, borderColor }]}>
+        <View
+          style={[styles.searchWrap, { backgroundColor: cardBg, borderColor }]}
+        >
           <Ionicons name="search" size={16} color={textSecondary} />
           <TextInput
             value={search}
@@ -134,6 +156,8 @@ export default function BarScreen() {
         {activeTab === 'stock' && (
           <BarStockList
             items={stock}
+            search={search}
+            error={error}
             loading={loading}
             refreshing={refreshing}
             onRefresh={onRefresh}
@@ -154,11 +178,19 @@ export default function BarScreen() {
               contentContainerStyle={styles.list}
               showsVerticalScrollIndicator={false}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={accentColor}
+                />
               }
               ListEmptyComponent={
                 <View style={styles.empty}>
-                  <Ionicons name="checkmark-circle-outline" size={48} color={textSecondary} />
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={48}
+                    color={textSecondary}
+                  />
                   <Text style={[styles.emptyText, { color: textSecondary }]}>
                     Sin recepciones pendientes
                   </Text>
@@ -217,15 +249,23 @@ export default function BarScreen() {
       <TransferDetailModal
         visible={selectedTransfer !== null}
         item={selectedTransfer}
-        resolving={selectedTransfer !== null && resolvingId === selectedTransfer.id}
+        resolving={
+          selectedTransfer !== null && resolvingId === selectedTransfer.id
+        }
         onClose={() => setSelectedTransfer(null)}
         onAccept={async () => {
-          if (selectedTransfer && await resolver(selectedTransfer.id, 'aprobar')) {
+          if (
+            selectedTransfer &&
+            (await resolver(selectedTransfer.id, 'aprobar'))
+          ) {
             setSelectedTransfer(null);
           }
         }}
         onReject={async () => {
-          if (selectedTransfer && await resolver(selectedTransfer.id, 'rechazar')) {
+          if (
+            selectedTransfer &&
+            (await resolver(selectedTransfer.id, 'rechazar'))
+          ) {
             setSelectedTransfer(null);
           }
         }}
@@ -233,7 +273,9 @@ export default function BarScreen() {
       <MovementDetailModal
         visible={selectedMovement !== null}
         movement={selectedMovement}
-        transfer={transferHistory.find((transfer) => transfer.id === selectedMovement?.id)}
+        transfer={transferHistory.find(
+          (transfer) => transfer.id === selectedMovement?.id,
+        )}
         onClose={() => setSelectedMovement(null)}
       />
     </View>
@@ -252,7 +294,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backTextRight: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',

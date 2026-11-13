@@ -1,5 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { View, Text, StyleSheet, RefreshControl, Image } from "react-native";
+import { memo, useCallback, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  Pressable,
+} from "react-native";
+import { Image } from "expo-image";
 import FlashList from "@/components/shared/FlashList";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -10,23 +18,92 @@ import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
 
 interface BarStockListProps {
   items: BarStockItem[];
+  search?: string;
+  error?: string | null;
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }
 
+type StockRow =
+  | { type: "header"; id: string; category: string; count: number }
+  | { type: "products"; id: string; items: BarStockItem[] };
+
+const stockRowKey = (row: StockRow) => row.id;
+const stockRowType = (row: StockRow) => row.type;
+
 export function BarStockList({
   items,
+  search = "",
+  error,
   loading,
   refreshing,
   onRefresh,
 }: BarStockListProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const categories = useMemo(() => {
+    const grouped = new Map<string, BarStockItem[]>();
+    for (const item of items) {
+      const category = item.categoria_nombre?.trim() || "Sin categoría";
+      const group = grouped.get(category) ?? [];
+      group.push(item);
+      grouped.set(category, group);
+    }
+    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b, "es"));
+  }, [items]);
+  // La búsqueda puede quitar la categoría elegida: mostrar sus resultados, no un vacío falso.
+  const activeCategory = categories.some(([name]) => name === categoryFilter)
+    ? categoryFilter
+    : null;
+  const rows = useMemo(() => {
+    const result: StockRow[] = [];
+    for (const [category, products] of categories) {
+      if (activeCategory !== null && category !== activeCategory) continue;
+      result.push({
+        type: "header",
+        id: `category:${category}`,
+        category,
+        count: products.length,
+      });
+      for (let i = 0; i < products.length; i += 2) {
+        result.push({
+          type: "products",
+          id: `products:${category}:${products[i].id}`,
+          items: products.slice(i, i + 2),
+        });
+      }
+    }
+    return result;
+  }, [categories, activeCategory]);
+  const renderRow = useCallback(
+    ({ item }: { item: StockRow }) => {
+      if (item.type === "header") {
+        return (
+          <Text
+            accessibilityRole="header"
+            style={[styles.categoryTitle, { color: textPrimary }]}
+          >
+            {item.category} ({item.count})
+          </Text>
+        );
+      }
+      return (
+        <View style={styles.row}>
+          {item.items.map((product) => (
+            <BarStockCard key={product.id} item={product} />
+          ))}
+          {item.items.length === 1 ? <View style={styles.cardSpacer} /> : null}
+        </View>
+      );
+    },
+    [textPrimary],
+  );
 
   if (loading) {
     return (
-      <View style={{ padding: 16, gap: 10 }}>
+      <View style={styles.skeletonList}>
         {[1, 2, 3, 4].map((i) => (
           <View key={i} style={styles.skeletonRow}>
             <Skeleton width="48%" height={220} borderRadius={16} />
@@ -38,173 +115,224 @@ export function BarStockList({
   }
 
   return (
-    <FlashList
-      data={items}
-      keyExtractor={(item: BarStockItem) => item.id}
-      contentContainerStyle={styles.list}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={accentColor}
-        />
-      }
-      ListEmptyComponent={
-        <View style={styles.empty}>
-          <Ionicons name="wine-outline" size={48} color={textSecondary} />
-          <Text style={[styles.emptyText, { color: textSecondary }]}>
-            Sin productos en el bar
-          </Text>
-        </View>
-      }
-      renderItem={({ item }: { item: BarStockItem }) =>
-        (() => {
-          const opcionesVenta = resolverVentaProducto(item).opciones;
-          return (
-            <View
-              style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+    <View style={styles.container}>
+      {categories.length > 0 ? (
+        <View
+          accessibilityLabel="Filtrar stock por categoría"
+          style={styles.categoryNav}
+        >
+          {[
+            { name: null, label: "Todas", count: items.length },
+            ...categories.map(([name, products]) => ({
+              name,
+              label: name,
+              count: products.length,
+            })),
+          ].map((option) => (
+            <Pressable
+              key={option.name ?? "all"}
+              accessibilityRole="button"
+              accessibilityLabel={`${option.label}, ${option.count} producto${option.count === 1 ? "" : "s"}`}
+              accessibilityState={{ selected: activeCategory === option.name }}
+              onPress={() => setCategoryFilter(option.name)}
+              style={[
+                styles.categoryButton,
+                {
+                  backgroundColor: cardBg,
+                  borderColor:
+                    activeCategory === option.name ? accentColor : borderColor,
+                },
+              ]}
             >
-              <View style={styles.imageWrap}>
-                {item.producto_foto ? (
-                  <Image
-                    source={{
-                      uri: `${BASE_URL}/api/images/products/${encodeURIComponent(item.producto_foto)}`,
-                    }}
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <Ionicons
-                      name="wine-outline"
-                      size={34}
-                      color={textSecondary}
-                    />
-                  </View>
-                )}
-                <View
-                  style={[
-                    styles.badge,
-                    { backgroundColor: `${accentColor}E8` },
-                  ]}
-                >
-                  <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
-                    {item.stock_bar ?? 0} bar
-                  </Text>
-                </View>
-              </View>
-
-              <Text
-                style={[styles.productName, { color: textPrimary }]}
-                numberOfLines={2}
-              >
-                {item.producto_nombre}
+              <Text style={[styles.categoryLabel, { color: textPrimary }]}>
+                {option.label} ({option.count})
               </Text>
-              <Text
-                style={[styles.presentation, { color: textSecondary }]}
-                numberOfLines={1}
-              >
-                {item.nombre}
-              </Text>
-
-              <View style={[styles.prices, { borderTopColor: borderColor }]}>
-                {opcionesVenta.map((option) => (
-                  <View key={option.value} style={styles.priceInfo}>
-                    <Text style={[styles.statLabel, { color: textSecondary }]}>
-                      {option.nombre}
-                    </Text>
-                    <Text style={[styles.statValue, { color: textPrimary }]}>
-                      {formatCurrency(option.precio)}
-                    </Text>
-                    <Text style={[styles.commission, { color: accentColor }]}>
-                      Comisión {formatCurrency(option.comision)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              {opcionesVenta.some((option) => option.esShot) &&
-                (item.ml_shot ?? 0) > 0 && (
-                  <Text style={[styles.shotSize, { color: textSecondary }]}>
-                    Corto: {item.ml_shot} ml
-                  </Text>
-                )}
-              {opcionesVenta.some((option) => option.esShot) &&
-                (item.ml_shot_anfitriona ?? 0) > 0 &&
-                item.ml_shot_anfitriona !== item.ml_shot && (
-                  <Text style={[styles.shotSize, { color: textSecondary }]}>
-                    Corto anfitriona: {item.ml_shot_anfitriona} ml
-                  </Text>
-                )}
-              {(item.ml_abierta ?? 0) > 0 && (
-                <Text style={[styles.served, { color: "#F59E0B" }]}>
-                  Restante: {item.ml_abierta} ml
-                </Text>
-              )}
-
-              {(item.botellas_abiertas?.length ?? 0) > 0 && (
-                <View style={[styles.bottleDetails, { borderColor }]}>
-                  <Text
-                    style={[
-                      styles.bottleDetailsTitle,
-                      { color: textSecondary },
-                    ]}
-                  >
-                    Contenido por botella
-                  </Text>
-                  {item.botellas_abiertas?.map((bottle) => (
-                    <Text
-                      key={bottle.id}
-                      style={[styles.bottleDetailsRow, { color: textPrimary }]}
-                      numberOfLines={1}
-                    >
-                      {item.producto_nombre} · {bottle.ml_restante} ml
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {(item.botellas_vacias_shots ?? 0) > 0 && (
-                <View style={[styles.returnDetails, { borderColor }]}>
-                  <Text
-                    style={[styles.returnDetailsTitle, { color: "#F59E0B" }]}
-                  >
-                    Para devolver ({item.botellas_vacias_shots})
-                  </Text>
-                  {item.botellas_por_devolver?.map((bottle) => (
-                    <Text
-                      key={bottle.id}
-                      style={[styles.bottleDetailsRow, { color: textPrimary }]}
-                      numberOfLines={1}
-                    >
-                      {bottle.codigo}:{" "}
-                      {bottle.ml_restante > 0
-                        ? `${bottle.ml_restante} ml de merma`
-                        : "vacía"}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {(item.ml_servidos ?? 0) > 0 && (
-                <Text style={[styles.served, { color: textSecondary }]}>
-                  Servido: {item.ml_servidos} ml
-                </Text>
-              )}
-            </View>
-          );
-        })()
-      }
-    />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      <FlashList
+        data={rows}
+        keyExtractor={stockRowKey}
+        getItemType={stockRowType}
+        renderItem={renderRow}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={accentColor}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="wine-outline" size={48} color={textSecondary} />
+            <Text style={[styles.emptyText, { color: textPrimary }]}>
+              {error ||
+                (search.trim()
+                  ? "Sin productos para esta búsqueda"
+                  : "Sin productos en el bar")}
+            </Text>
+          </View>
+        }
+      />
+    </View>
   );
 }
 
+const BarStockCard = memo(function BarStockCard({
+  item,
+}: {
+  item: BarStockItem;
+}) {
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
+    useAccentColor();
+  const opcionesVenta = useMemo(
+    () => resolverVentaProducto(item).opciones,
+    [item],
+  );
+  return (
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+      <View style={styles.imageWrap}>
+        {item.producto_foto ? (
+          <Image
+            source={{
+              uri: `${BASE_URL}/api/images/products/${encodeURIComponent(item.producto_foto)}`,
+            }}
+            style={styles.image}
+            contentFit="cover"
+            recyclingKey={item.id}
+          />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="wine-outline" size={34} color={textSecondary} />
+          </View>
+        )}
+        <View style={[styles.badge, { backgroundColor: `${accentColor}E8` }]}>
+          <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
+            {item.stock_bar ?? 0} bar
+          </Text>
+        </View>
+      </View>
+
+      <Text
+        style={[styles.productName, { color: textPrimary }]}
+        numberOfLines={2}
+      >
+        {item.producto_nombre}
+      </Text>
+      <Text
+        style={[styles.presentation, { color: textSecondary }]}
+        numberOfLines={1}
+      >
+        {item.nombre}
+      </Text>
+
+      <View style={[styles.prices, { borderTopColor: borderColor }]}>
+        {opcionesVenta.map((option) => (
+          <View key={option.value} style={styles.priceInfo}>
+            <Text style={[styles.statLabel, { color: textSecondary }]}>
+              {option.nombre}
+            </Text>
+            <Text style={[styles.statValue, { color: textPrimary }]}>
+              {formatCurrency(option.precio)}
+            </Text>
+            <Text style={[styles.commission, { color: accentColor }]}>
+              Comisión {formatCurrency(option.comision)}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {opcionesVenta.some((option) => option.esShot) &&
+        (item.ml_shot ?? 0) > 0 && (
+          <Text style={[styles.shotSize, { color: textSecondary }]}>
+            Corto: {item.ml_shot} ml
+          </Text>
+        )}
+      {opcionesVenta.some((option) => option.esShot) &&
+        (item.ml_shot_anfitriona ?? 0) > 0 &&
+        item.ml_shot_anfitriona !== item.ml_shot && (
+          <Text style={[styles.shotSize, { color: textSecondary }]}>
+            Corto anfitriona: {item.ml_shot_anfitriona} ml
+          </Text>
+        )}
+      {(item.ml_abierta ?? 0) > 0 && (
+        <Text style={[styles.served, { color: "#F59E0B" }]}>
+          Restante: {item.ml_abierta} ml
+        </Text>
+      )}
+
+      {(item.botellas_abiertas?.length ?? 0) > 0 && (
+        <View style={[styles.bottleDetails, { borderColor }]}>
+          <Text style={[styles.bottleDetailsTitle, { color: textSecondary }]}>
+            Contenido por botella
+          </Text>
+          {item.botellas_abiertas?.map((bottle) => (
+            <Text
+              key={bottle.id}
+              style={[styles.bottleDetailsRow, { color: textPrimary }]}
+              numberOfLines={1}
+            >
+              {item.producto_nombre} · {bottle.ml_restante} ml
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {(item.botellas_vacias_shots ?? 0) > 0 && (
+        <View style={[styles.returnDetails, { borderColor }]}>
+          <Text style={[styles.returnDetailsTitle, { color: "#F59E0B" }]}>
+            Para devolver ({item.botellas_vacias_shots})
+          </Text>
+          {item.botellas_por_devolver?.map((bottle) => (
+            <Text
+              key={bottle.id}
+              style={[styles.bottleDetailsRow, { color: textPrimary }]}
+              numberOfLines={1}
+            >
+              {bottle.codigo}:{" "}
+              {bottle.ml_restante > 0
+                ? `${bottle.ml_restante} ml de merma`
+                : "vacía"}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {(item.ml_servidos ?? 0) > 0 && (
+        <Text style={[styles.served, { color: textSecondary }]}>
+          Servido: {item.ml_servidos} ml
+        </Text>
+      )}
+    </View>
+  );
+});
+
 const styles = StyleSheet.create({
+  container: { flex: 1 },
+  skeletonList: { padding: 16, gap: 10 },
+  categoryNav: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 },
+  categoryButton: {
+    minHeight: 44,
+    maxWidth: "100%",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  categoryLabel: { fontSize: 13, fontWeight: "700", flexShrink: 1 },
+  categoryTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    paddingTop: 16,
+    paddingBottom: 4,
+  },
+  cardSpacer: { flex: 1 },
   list: { paddingHorizontal: 12, paddingBottom: 24 },
-  row: { justifyContent: "space-between", gap: 10 },
+  row: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   skeletonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
