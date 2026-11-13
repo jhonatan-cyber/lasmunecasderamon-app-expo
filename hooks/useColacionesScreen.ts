@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { colacionesService, reglaPorRol, mlDeColacion, acompanamientoDeColacion, type ColacionRegistro, type ColacionProducto, type AcompanamientoOpcion, type ReglaColacionResponse } from '@/services/colaciones-helpers';
+import { colacionesService, reglaPorRol, mlDeColacion, acompanamientoDeColacion, acompanamientosDeColacion, type ColacionRegistro, type ColacionProducto, type ReglaColacionResponse } from '@/services/colaciones-helpers';
 import { usersService } from '@/services';
 import { useCajaAbiertaStore, type CajaAbiertaInfo } from '@/store/cajaAbiertaStore';
 import { useAuthStore } from '@/store/authStore';
@@ -63,10 +63,6 @@ export function useColacionesScreen() {
   const [trabajadoresLoading, setTrabajadoresLoading] = useState(false);
   const [trabajadoresError, setTrabajadoresError] = useState<string | null>(null);
 
-  const [acompanamientos, setAcompanamientos] = useState<AcompanamientoOpcion[]>([]);
-  const [acompanamientosLoading, setAcompanamientosLoading] = useState(false);
-  const [acompanamientosError, setAcompanamientosError] = useState<string | null>(null);
-
   const [registros, setRegistros] = useState<ColacionRegistro[]>([]);
   const [registrosLoading, setRegistrosLoading] = useState(true);
   const [registrosError, setRegistrosError] = useState<string | null>(null);
@@ -92,6 +88,10 @@ export function useColacionesScreen() {
     },
     []
   );
+
+  const setSelectedAcompanamiento = useCallback((id: string) => {
+    setAcompanamientoId(id ?? '');
+  }, []);
 
   const selectedWorker = useMemo(
     () =>
@@ -132,6 +132,18 @@ export function useColacionesScreen() {
     if (!productoSeleccionado) return 0;
     return mlDeColacion(productoSeleccionado);
   }, [productoSeleccionado]);
+
+  const acompanamientos = useMemo(
+    () =>
+      acompanamientosDeColacion(
+        analcoholicas,
+        productoSeleccionado,
+        acompanamientoConfigurado.unidades
+      ),
+    [analcoholicas, productoSeleccionado, acompanamientoConfigurado.unidades]
+  );
+  const acompanamientosLoading = analcoholicasLoading;
+  const acompanamientosError = analcoholicasError;
 
   const selectedAcompanamiento = useMemo(
     () => acompanamientos.find((a) => String(a.id) === acompanamientoId) ?? null,
@@ -187,6 +199,12 @@ export function useColacionesScreen() {
     [rule]
   );
 
+  // El catálogo necesita la regla (endpoint y parámetros): se carga cuando
+  // llega, porque en el primer foco `load` corre con `rule` todavía en null.
+  useEffect(() => {
+    void cargarCatalogos();
+  }, [cargarCatalogos]);
+
   const cargarTrabajadores = useCallback(
     async (signal?: AbortSignal) => {
       try {
@@ -204,30 +222,6 @@ export function useColacionesScreen() {
       }
     },
     []
-  );
-
-  const cargarAcompanamientos = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!requiereAcompanamiento) {
-        setAcompanamientos([]);
-        setAcompanamientosLoading(false);
-        return;
-      }
-      try {
-        setAcompanamientosLoading(true);
-        const res = await colacionesService.acompanamientos(signal);
-        if (!res.success || !res.data) {
-          throw new Error(res.message || res.error || 'No se pudieron cargar los acompañamientos');
-        }
-        setAcompanamientos(Array.isArray(res.data) ? res.data : []);
-        setAcompanamientosError(null);
-      } catch (err) {
-        setAcompanamientosError(err instanceof Error ? err.message : 'Error desconocido');
-      } finally {
-        setAcompanamientosLoading(false);
-      }
-    },
-    [requiereAcompanamiento]
   );
 
   const cargarRegistros = useCallback(
@@ -271,7 +265,7 @@ export function useColacionesScreen() {
       showToast({ type: 'error', text1: 'Selecciona una bebida habilitada' });
       return;
     }
-    if (!acompanamientoId) {
+    if (requiereAcompanamiento && !acompanamientoId) {
       showToast({ type: 'error', text1: 'Selecciona el acompañamiento' });
       return;
     }
@@ -293,7 +287,7 @@ export function useColacionesScreen() {
       setWorkerId('');
       setProductoId('');
       setAcompanamientoId('');
-      await Promise.all([cargarRegistros(), cargarAcompanamientos()]);
+      await cargarRegistros();
     } catch (err) {
       showToast({
         type: 'error',
@@ -311,18 +305,17 @@ export function useColacionesScreen() {
     productoSeleccionado,
     mlPorRegistrar,
     acompanamientoId,
+    requiereAcompanamiento,
     cargarRegistros,
-    cargarAcompanamientos,
   ]);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
       void cargarReglas(signal);
-      void cargarCatalogos(signal);
       void cargarTrabajadores(signal);
       void cargarRegistros(signal);
     },
-    [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarRegistros]
+    [cargarReglas, cargarTrabajadores, cargarRegistros]
   );
 
   useFocusEffect(useCallback(() => {
@@ -362,6 +355,7 @@ export function useColacionesScreen() {
     acompanamientoId,
     setSelectedWorker,
     setSelectedProducto,
+    setSelectedAcompanamiento,
     registrar,
     cajaAbierta,
     cajaInfo,
@@ -377,7 +371,6 @@ export function useColacionesScreen() {
     cargarReglas,
     cargarCatalogos,
     cargarTrabajadores,
-    cargarAcompanamientos,
     cargarRegistros,
     fecha,
     isCajaAbierta,

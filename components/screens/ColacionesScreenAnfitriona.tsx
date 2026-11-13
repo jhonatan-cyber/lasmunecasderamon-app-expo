@@ -43,6 +43,7 @@ export default function ColacionesScreenAnfitriona() {
     acompanamientoId,
     setSelectedWorker,
     setSelectedProducto,
+    setSelectedAcompanamiento,
     registrar,
     cajaAbierta,
     cajaInfo,
@@ -51,23 +52,17 @@ export default function ColacionesScreenAnfitriona() {
     catalogoVisible,
     productoSeleccionado,
     opcionBotella,
-    acompanamientoConfigurado,
     requiereAcompanamiento,
     mlPorRegistrar,
     selectedAcompanamiento,
     cargarReglas,
     cargarCatalogos,
     cargarTrabajadores,
-    cargarAcompanamientos,
     cargarRegistros,
     isCajaAbierta,
   } = useColacionesScreen();
 
   const [workerModalVisible, setWorkerModalVisible] = React.useState(false);
-  const [showAcompanamiento, setShowAcompanamiento] = React.useState(
-    requiereAcompanamiento && productoId !== ''
-  );
-  const [acompanamientoIdState, setAcompanamientoIdState] = React.useState<string | null>(null);
 
   const roleLabel = React.useMemo(() => {
     if (rule) {
@@ -82,10 +77,9 @@ export default function ColacionesScreenAnfitriona() {
       cargarReglas(),
       cargarCatalogos(),
       cargarTrabajadores(),
-      cargarAcompanamientos(),
       cargarRegistros(),
     ]);
-  }, [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarAcompanamientos, cargarRegistros]);
+  }, [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarRegistros]);
 
   const handleSelectWorker = React.useCallback(
     (id: string) => {
@@ -98,17 +92,8 @@ export default function ColacionesScreenAnfitriona() {
   const handleSelectProducto = React.useCallback(
     (id: string) => {
       setSelectedProducto(id);
-      setShowAcompanamiento(true);
     },
     [setSelectedProducto]
-  );
-
-  const handleSelectAcompanamiento = React.useCallback(
-    (id: string) => {
-      setAcompanamientoIdState(id ?? null);
-      setShowAcompanamiento(false);
-    },
-    []
   );
 
   const acompanamientoRenderer = React.useMemo(() => {
@@ -116,16 +101,13 @@ export default function ColacionesScreenAnfitriona() {
     return (
       <ColacionAcompanamientoSelector
         acompanamientos={acompanamientos}
-        selectedId={acompanamientoIdState ?? ''}
+        selectedId={acompanamientoId}
         loading={acompanamientosLoading}
-        required={requiereAcompanamiento}
-        mlPorUnidad={acompanamientoConfigurado.ml}
-        unidadesRequeridas={acompanamientoConfigurado.unidades}
-        productoId={productoId}
-        onSelect={handleSelectAcompanamiento}
+        error={acompanamientosError}
+        onSelect={setSelectedAcompanamiento}
       />
     );
-  }, [requiereAcompanamiento, productoId, acompanamientos, acompanamientosLoading, acompanamientoConfigurado]);
+  }, [requiereAcompanamiento, productoId, acompanamientos, acompanamientoId, acompanamientosLoading, acompanamientosError, setSelectedAcompanamiento]);
 
   const canRegister = React.useMemo(() => {
     if (!isCajaAbierta) return false;
@@ -133,9 +115,9 @@ export default function ColacionesScreenAnfitriona() {
     if (!workerId) return false;
     if (!ruleFromWorker) return false;
     if (!productoSeleccionado) return false;
-    if (!selectedAcompanamiento) return false;
+    if (requiereAcompanamiento && !selectedAcompanamiento) return false;
     return true;
-  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, selectedAcompanamiento]);
+  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, requiereAcompanamiento, selectedAcompanamiento]);
 
   const hasAnyCatalogoError = React.useMemo(() => {
     if (productosLoading || analcoholicasLoading || trabajadoresLoading) return false;

@@ -34,8 +34,6 @@ export const colacionesService = {
     catalogo: CatalogoColacion,
     signal?: AbortSignal,
   ) => apiClientSafe(urlCatalogoColacion(regla, catalogo), { signal }),
-  acompanamientos: (signal?: AbortSignal) =>
-    apiClientSafe<AcompanamientoOpcion[]>('/bar?acompanamientos=1', { signal }),
   listar: (params: { fecha?: string; caja_id?: string }, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     if (params.fecha) q.set('fecha', params.fecha);
@@ -96,6 +94,31 @@ export function acompanamientoDeColacion(producto: ColacionProducto) {
   return { unidades, ml: ml > 0 ? ml : null };
 }
 
+/** Bebidas que puede recibir una colación como acompañamiento: el mismo
+ * catálogo de analcohólicas que ven cajero/garzón/barman, sin la bebida
+ * elegida y con stock de bar suficiente para las unidades configuradas.
+ */
+export function acompanamientosDeColacion(
+  catalogo: ColacionProducto[],
+  producto: ColacionProducto | null,
+  unidadesRequeridas: number,
+): AcompanamientoOpcion[] {
+  if (!producto || unidadesRequeridas <= 0) return [];
+  return catalogo
+    .filter((bebida) => String(bebida.presentacion_id) !== String(producto.presentacion_id))
+    .filter((bebida) => Number(bebida.stock_bar ?? bebida.stock ?? 0) >= unidadesRequeridas)
+    .map((bebida) => ({
+      id: Number(bebida.presentacion_id),
+      nombre: `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim(),
+      presentacion_id: Number(bebida.presentacion_id),
+      presentacion_nombre: bebida.presentacion_nombre,
+      ml: Number(bebida.ml_abierta ?? 0),
+      cantidad: unidadesRequeridas,
+      stock: Number(bebida.stock_bar ?? bebida.stock ?? 0),
+      disponible: true,
+    }));
+}
+
 export interface ColacionProducto {
   id: number;
   producto_id: number;
@@ -108,6 +131,7 @@ export interface ColacionProducto {
   precio?: number;
   costo?: number;
   stock?: number;
+  stock_bar?: number;
   opciones_venta?: Array<{
     id: number;
     tipo: string;
@@ -156,6 +180,7 @@ export interface ColacionRegistro {
   id: number;
   usuario_id?: string;
   usuario_nombre?: string;
+  rol?: string | null;
   nick?: string;
   presentacion_id?: number;
   presentacion_nombre?: string;

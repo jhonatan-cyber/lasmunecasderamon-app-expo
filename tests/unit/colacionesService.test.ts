@@ -6,6 +6,8 @@ import {
   type ReglaColacionResponse,
 } from '@/services/colaciones';
 
+import { colacionesService as historyService, type ColacionRegistro } from '@/services/colaciones-helpers';
+
 const { apiClientSafe } = vi.hoisted(() => ({ apiClientSafe: vi.fn() }));
 vi.mock('@/api/client-safe', () => ({ apiClientSafe }));
 
@@ -49,6 +51,19 @@ describe('regla compartida de colación', () => {
 
     await expect(colacionesService.regla()).resolves.toEqual({ success: true, data: regla });
     expect(apiClientSafe).toHaveBeenCalledWith('/meals/rule', { signal: undefined });
+  });
+
+  it('el historial conserva el rol real del receptor y el alcance del turno', async () => {
+    const registro: ColacionRegistro = {
+      id: 1, usuario_id: 'u1', usuario_nombre: 'Trabajador', rol: 'garzon',
+      registrado_por_nombre: 'Cajero', fecha: '2026-11-01', fecha_crea: '2026-11-01T12:00:00Z',
+    };
+    apiClientSafe.mockResolvedValueOnce({ success: true, data: [registro] });
+    const signal = new AbortController().signal;
+    const response = await historyService.listar({ fecha: '2026-11-01', caja_id: 'c1' }, signal);
+    expect(apiClientSafe).toHaveBeenCalledWith('/meals?fecha=2026-11-01&caja_id=c1', { signal });
+    expect(response.data[0].rol).toBe('garzon');
+    expect(response.data[0]).toBe(registro);
   });
 
   it('resuelve el catálogo por rol sin repetir el mapeo en la app', () => {

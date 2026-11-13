@@ -9,7 +9,17 @@ import { ColacionProductsCarousel } from '@/components/colaciones/ColacionProduc
 import { ColacionAcompanamientoSelector } from '@/components/colaciones/ColacionAcompanamientoSelector';
 import { useColacionesScreen } from '@/hooks/useColacionesScreen';
 import { showToast } from '@/utils/toast-lazy';
-import { isBarmanRole, isCajeroRole } from '@/utils/userRole';
+import { isCajeroRole } from '@/utils/userRole';
+import { useAuthStore } from '@/store/authStore';
+
+const ROLE_LABELS: Record<string, string> = {
+  anfitriona: 'Anfitriona',
+  cajero: 'Cajero',
+  garzon: 'Garzón',
+  barman: 'Barman',
+};
+const normalizeRole = (role?: string | null) => (role ?? '').trim().toLowerCase();
+const roleName = (role: string) => ROLE_LABELS[role] ?? (role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Sin rol');
 
 export default function ColacionesScreen() {
   const router = useRouter();
@@ -44,6 +54,7 @@ export default function ColacionesScreen() {
     acompanamientoId,
     setSelectedWorker,
     setSelectedProducto,
+    setSelectedAcompanamiento,
     registrar,
     cajaAbierta,
     cajaInfo,
@@ -52,31 +63,45 @@ export default function ColacionesScreen() {
     catalogoVisible,
     productoSeleccionado,
     opcionBotella,
-    acompanamientoConfigurado,
     requiereAcompanamiento,
     mlPorRegistrar,
     selectedAcompanamiento,
     cargarReglas,
     cargarCatalogos,
     cargarTrabajadores,
-    cargarAcompanamientos,
     cargarRegistros,
     isCajaAbierta,
   } = useColacionesScreen();
 
   const [workerModalVisible, setWorkerModalVisible] = useState(false);
-  const [showAcompanamiento, setShowAcompanamiento] = useState(requiereAcompanamiento && productoId !== '');
-  const [acompanamientoIdState, setAcompanamientoIdState] = useState<string | null>(null);
+  const [historyRole, setHistoryRole] = useState<string | null>(null);
+  const historyRoles = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of registros) {
+      const role = normalizeRole(row.rol);
+      counts.set(role, (counts.get(role) ?? 0) + 1);
+    }
+    // El servidor fija el orden de roles, sin duplicar las reglas del catálogo.
+    const roleOrder = Object.keys(rule?.roles ?? ROLE_LABELS);
+    const position = (role: string) => {
+      const index = roleOrder.indexOf(role);
+      return index < 0 ? roleOrder.length : index;
+    };
+    return [...counts.entries()]
+      .sort(([a], [b]) => position(a) - position(b) || a.localeCompare(b, 'es'))
+      .map(([role, count]) => ({ role, count }));
+  }, [registros, rule]);
+  const activeHistoryRole = historyRoles.some(option => option.role === historyRole) ? historyRole : null;
+  const filteredHistory = useMemo(() => activeHistoryRole === null
+    ? registros
+    : registros.filter(row => normalizeRole(row.rol) === activeHistoryRole), [registros, activeHistoryRole]);
 
-  const roleLabel = useMemo(() => {
-    if (isBarmanRole({ role: 'barman' })) return 'barman';
-    if (isCajeroRole({ role: 'cajero' })) return 'cajero';
-    return 'barman';
-  }, []);
+  const user = useAuthStore(state => state.user);
+  const roleLabel = isCajeroRole(user) ? 'cajero' : 'barman';
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([cargarReglas(), cargarCatalogos(), cargarTrabajadores(), cargarAcompanamientos(), cargarRegistros()]);
-  }, [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarAcompanamientos, cargarRegistros]);
+    await Promise.all([cargarReglas(), cargarCatalogos(), cargarTrabajadores(), cargarRegistros()]);
+  }, [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarRegistros]);
 
   const handleSelectWorker = useCallback((id: string) => {
     setSelectedWorker(id);
@@ -85,29 +110,20 @@ export default function ColacionesScreen() {
 
   const handleSelectProducto = useCallback((id: string) => {
     setSelectedProducto(id);
-    setShowAcompanamiento(true);
   }, [setSelectedProducto]);
-
-  const handleSelectAcompanamiento = useCallback((id: string) => {
-    setAcompanamientoIdState(id ?? null);
-    setShowAcompanamiento(false);
-  }, []);
 
   const acompanamientoRenderer = useMemo(() => {
     if (!requiereAcompanamiento || !productoId) return null;
     return (
       <ColacionAcompanamientoSelector
         acompanamientos={acompanamientos}
-        selectedId={acompanamientoIdState ?? ''}
+        selectedId={acompanamientoId}
         loading={acompanamientosLoading}
-        required={requiereAcompanamiento}
-        mlPorUnidad={acompanamientoConfigurado.ml}
-        unidadesRequeridas={acompanamientoConfigurado.unidades}
-        productoId={productoId}
-        onSelect={handleSelectAcompanamiento}
+        error={acompanamientosError}
+        onSelect={setSelectedAcompanamiento}
       />
     );
-  }, [requiereAcompanamiento, productoId, acompanamientos, selectedAcompanamiento, acompanamientosLoading, acompanamientoConfigurado]);
+  }, [requiereAcompanamiento, productoId, acompanamientos, acompanamientoId, acompanamientosLoading, acompanamientosError, setSelectedAcompanamiento]);
 
   const canRegister = useMemo(() => {
     if (!isCajaAbierta) return false;
@@ -116,9 +132,9 @@ export default function ColacionesScreen() {
     if (!ruleFromWorker) return false;
     if (!productoSeleccionado) return false;
     if (!rule) return false;
-    if (!selectedAcompanamiento) return false;
+    if (requiereAcompanamiento && !selectedAcompanamiento) return false;
     return true;
-  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, rule, selectedAcompanamiento]);
+  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, rule, requiereAcompanamiento, selectedAcompanamiento]);
 
   const hasAnyCatalogoError = useMemo(() => {
     if (productosLoading || analcoholicasLoading || trabajadoresLoading) return false;
@@ -289,9 +305,28 @@ export default function ColacionesScreen() {
               Colaciones del turno
             </Text>
             <Text style={[styles.listCount, { color: textSecondary }]}>
-              {registros.length} registrado{(registros.length === 1 ? '' : 's')}
+              {filteredHistory.length} registrado{(filteredHistory.length === 1 ? '' : 's')}
             </Text>
           </View>
+
+          {!registrosLoading && !registrosError && historyRoles.length > 0 ? (
+            <View accessibilityLabel="Filtrar colaciones por rol" style={styles.roleFilters}>
+              {[{ role: null, count: registros.length }, ...historyRoles].map(option => (
+                <Pressable
+                  key={option.role ?? 'all'}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${option.role === null ? 'Todos' : roleName(option.role)}, ${option.count} ${option.count === 1 ? 'colación' : 'colaciones'}`}
+                  accessibilityState={{ selected: activeHistoryRole === option.role }}
+                  onPress={() => setHistoryRole(option.role)}
+                  style={[styles.roleFilter, { borderColor: activeHistoryRole === option.role ? accentColor : borderColor }]}
+                >
+                  <Text style={[styles.roleFilterText, { color: textPrimary }]}>
+                    {option.role === null ? 'Todos' : roleName(option.role)} · {option.count}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           {registrosLoading ? (
             <View style={styles.loadingRow}>
@@ -300,11 +335,11 @@ export default function ColacionesScreen() {
             </View>
           ) : registrosError ? (
             <Text style={[styles.error, { color: '#EF4444' }]}>{registrosError}</Text>
-          ) : registros.length === 0 ? (
+          ) : filteredHistory.length === 0 ? (
             <Text style={[styles.emptyText, { color: textSecondary }]}>
               Aún no hay colaciones en este turno.
             </Text>          ) : (
-            registros.map((row) => (
+            filteredHistory.map((row) => (
               <View key={String(row.id)} style={[styles.row, { borderBottomColor: borderColor }]}>
                 <View style={styles.rowText}>
                   <Text style={[styles.rowWorker, { color: textPrimary }]}>
@@ -487,6 +522,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  roleFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  roleFilter: { minHeight: 44, maxWidth: '100%', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1.5, borderRadius: 10 },
+  roleFilterText: { fontSize: 13, fontWeight: '700', flexShrink: 1 },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
