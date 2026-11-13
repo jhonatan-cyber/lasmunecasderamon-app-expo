@@ -30,11 +30,11 @@ export function EntregaCoversModal({
 }: EntregaCoversModalProps) {
   const { accentColor, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
   const {
-    acompanamientos,
     busqueda,
     setBusqueda,
     cargando,
     error,
+    errorMonto,
     entregando,
     filas,
     totalEntradas,
@@ -44,12 +44,13 @@ export function EntregaCoversModal({
     presupuesto,
     seleccion,
     visibles,
+    gruposVisibles,
     totalSeleccionado,
     precioSeleccionado,
-    cobroBarra,
-    presupuestoInsuficiente,
     excedePresupuesto,
-    excedeAdicional,
+    excedeStock,
+    puedeAgregar,
+    repartoDeLinea,
     lineas,
     faltanAcompanamientos,
     agregar,
@@ -67,7 +68,10 @@ export function EntregaCoversModal({
     cargando ||
     lineas.length === 0 ||
     faltanAcompanamientos ||
-    presupuestoInsuficiente;
+    excedePresupuesto ||
+    excedeStock ||
+    Boolean(error) ||
+    filas.length === 0;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={cerrar}>
@@ -76,9 +80,7 @@ export function EntregaCoversModal({
         style={{ flex: 1 }}
       >
         <View style={styles.backdrop}>
-          <View
-            style={[styles.card, { backgroundColor: fondo, borderColor, maxHeight: '92%' }]}
-          >
+          <View style={[styles.card, { backgroundColor: fondo, borderColor, maxHeight: '92%' }]}>
             <ScrollView
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -90,14 +92,19 @@ export function EntregaCoversModal({
                     ENTREGAR COVERS
                   </Text>
                   <Text
-                    style={{ color: textPrimary, fontWeight: '800', fontSize: 16 }}
+                    style={{
+                      color: textPrimary,
+                      fontWeight: '800',
+                      fontSize: 16,
+                    }}
                     numberOfLines={1}
                   >
                     {grupo?.cliente || 'Cliente sin nombre'}
                   </Text>
                   <Text style={{ color: textSecondary, fontSize: 12 }}>
-                    {filas.length} {filas.length === 1 ? 'entrada pendiente' : 'entradas pendientes'}{' '}
-                    · {formatCurrency(filas.reduce((suma, fila) => suma + fila.monto_entrada, 0))}
+                    {filas.length}{' '}
+                    {filas.length === 1 ? 'entrada pendiente' : 'entradas pendientes'} ·{' '}
+                    {formatCurrency(filas.reduce((suma, fila) => suma + fila.monto_entrada, 0))}
                   </Text>
                 </View>
                 <Pressable onPress={cerrar} hitSlop={10}>
@@ -127,6 +134,8 @@ export function EntregaCoversModal({
                 <TextInput
                   value={montoAdicional}
                   onChangeText={cambiarMontoAdicional}
+                  editable={!entregando}
+                  accessibilityLabel="Monto adicional del grupo"
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={textSecondary}
@@ -143,8 +152,17 @@ export function EntregaCoversModal({
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 6 }}>
                   Entradas {formatCurrency(totalEntradas)}
                   {adicional > 0 ? ` + adicional ${formatCurrency(adicional)}` : ''} = presupuesto{' '}
-                  {formatCurrency(presupuesto)}
+                  {formatCurrency(presupuesto)}. El adicional se cobra completo con el método de
+                  pago del grupo.
                 </Text>
+                {errorMonto ? (
+                  <Text
+                    accessibilityRole="alert"
+                    style={{ color: '#EF4444', fontSize: 12, marginTop: 6 }}
+                  >
+                    {errorMonto}
+                  </Text>
+                ) : null}
               </View>
 
               {cargando ? (
@@ -152,7 +170,15 @@ export function EntregaCoversModal({
                   <ActivityIndicator color={accentColor} />
                 </View>
               ) : error ? (
-                <Text style={{ color: '#EF4444', fontSize: 12, paddingVertical: 16 }}>{error}</Text>
+                <Text
+                  style={{
+                    color: '#EF4444',
+                    fontSize: 12,
+                    paddingVertical: 16,
+                  }}
+                >
+                  {error}
+                </Text>
               ) : (
                 <>
                   {visibles.length === 0 && (
@@ -167,43 +193,55 @@ export function EntregaCoversModal({
                       Sin productos hasta {formatCurrency(presupuesto)} con stock en el bar.
                     </Text>
                   )}
-                  {visibles.map(({ bebida, formato }) => {
-                    const clave = claveDe(bebida, formato);
-                    return (
-                      <EntregaCoversProducto
-                        key={clave}
-                        bebida={bebida}
-                        formato={formato}
-                        linea={seleccion[clave]}
-                        precio={precioVisible(bebida, formato)}
-                        limiteAlcanzado={totalSeleccionado >= filas.length}
-                        acompanamientos={acompanamientos}
-                        onAgregar={() => agregar(bebida, formato)}
-                        onQuitar={() => quitar(clave)}
-                        onAgregarSabor={opcion => agregarSabor(clave, opcion)}
-                        onAjustarSabor={(presentacionId, delta) =>
-                          ajustarSabor(clave, presentacionId, delta)
-                        }
-                        onQuitarSabor={presentacionId => quitarSabor(clave, presentacionId)}
-                        accentColor={accentColor}
-                        textPrimary={textPrimary}
-                        textSecondary={textSecondary}
-                        borderColor={borderColor}
-                      />
-                    );
-                  })}
+                  {gruposVisibles.map(({ categoria, items }) => (
+                    <View key={categoria}>
+                      <Text style={[styles.sectionLabel, { color: textSecondary }]}>
+                        {categoria}
+                      </Text>
+                      {items.map(({ bebida, formato }) => {
+                        const clave = claveDe(bebida, formato);
+                        return (
+                          <EntregaCoversProducto
+                            key={clave}
+                            bebida={bebida}
+                            formato={formato}
+                            linea={seleccion[clave]}
+                            precio={precioVisible(bebida, formato)}
+                            limiteAlcanzado={!puedeAgregar(bebida, formato)}
+                            infoReparto={repartoDeLinea(bebida, formato)}
+                            onAgregar={() => agregar(bebida, formato)}
+                            onQuitar={() => quitar(clave)}
+                            onAgregarSabor={(opcion) => agregarSabor(clave, opcion)}
+                            onAjustarSabor={(presentacionId, delta) =>
+                              ajustarSabor(clave, presentacionId, delta)
+                            }
+                            onQuitarSabor={(presentacionId) => quitarSabor(clave, presentacionId)}
+                            accentColor={accentColor}
+                            textPrimary={textPrimary}
+                            textSecondary={textSecondary}
+                            borderColor={borderColor}
+                          />
+                        );
+                      })}
+                    </View>
+                  ))}
                 </>
               )}
 
               <View style={styles.resumen}>
-                <Text style={{ color: textPrimary, fontWeight: '700', fontSize: 13 }}>
-                  {totalSeleccionado} de {filas.length}{' '}
-                  {filas.length === 1 ? 'entrada' : 'entradas'} por entregar
+                <Text
+                  style={{
+                    color: textPrimary,
+                    fontWeight: '700',
+                    fontSize: 13,
+                  }}
+                >
+                  {totalSeleccionado} productos para {filas.length}{' '}
+                  {filas.length === 1 ? 'entrada' : 'entradas'}
                 </Text>
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
-                  Productos {formatCurrency(precioSeleccionado)} de{' '}
-                  {formatCurrency(presupuesto)}
-                  {cobroBarra > 0 ? ` · se cobra en barra ${formatCurrency(cobroBarra)}` : ''}
+                  Productos {formatCurrency(precioSeleccionado)} de {formatCurrency(presupuesto)}
+                  {adicional > 0 ? ` · se cobra en barra ${formatCurrency(adicional)}` : ''}
                 </Text>
                 {excedePresupuesto && (
                   <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 4 }}>
@@ -211,14 +249,14 @@ export function EntregaCoversModal({
                     esta selección.
                   </Text>
                 )}
-                {excedeAdicional && (
-                  <Text style={{ color: '#F59E0B', fontSize: 11, marginTop: 4 }}>
-                    El cobro en barra supera el monto adicional en{' '}
-                    {formatCurrency(cobroBarra - adicional)}.
+                {excedeStock ? (
+                  <Text style={{ color: '#EF4444', fontSize: 11, marginTop: 4 }}>
+                    La selección supera el stock disponible. Ajusta los productos o acompañamientos.
                   </Text>
-                )}
+                ) : null}
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 4 }}>
-                  Un corte por persona. Puedes repetir el mismo producto o elegir varios.
+                  Presupuesto compartido. Puedes repetir productos o elegir varios hasta agotar el
+                  presupuesto y stock.
                 </Text>
               </View>
 
@@ -227,7 +265,10 @@ export function EntregaCoversModal({
                 disabled={submitDeshabilitado}
                 style={[
                   styles.submit,
-                  { backgroundColor: accentColor, opacity: submitDeshabilitado ? 0.55 : 1 },
+                  {
+                    backgroundColor: accentColor,
+                    opacity: submitDeshabilitado ? 0.55 : 1,
+                  },
                 ]}
               >
                 {entregando ? (
@@ -235,12 +276,12 @@ export function EntregaCoversModal({
                 ) : (
                   <Text style={styles.submitText}>
                     {modo === 'solicitud'
-                      ? (totalSeleccionado > 0
-                          ? `SOLICITAR AUTORIZACIÓN DE ${totalSeleccionado}`
-                          : 'SOLICITAR AUTORIZACIÓN')
-                      : (totalSeleccionado > 0
-                          ? `ENTREGAR ${totalSeleccionado} EN LA BARRA`
-                          : 'ENTREGAR EN LA BARRA')}
+                      ? totalSeleccionado > 0
+                        ? `SOLICITAR AUTORIZACIÓN DE ${totalSeleccionado}`
+                        : 'SOLICITAR AUTORIZACIÓN'
+                      : totalSeleccionado > 0
+                        ? `ENTREGAR ${totalSeleccionado} EN LA BARRA`
+                        : 'ENTREGAR EN LA BARRA'}
                   </Text>
                 )}
               </AnimatedButton>

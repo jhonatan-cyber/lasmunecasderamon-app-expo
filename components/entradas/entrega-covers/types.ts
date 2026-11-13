@@ -1,7 +1,7 @@
 import type { EntradaPendiente } from '@/services/entradas';
 import type { AcompanamientoBotellaItem } from '@/types/cart';
 
-/** Grupo de entradas pendientes de un mismo cliente: se entrega una por persona. */
+/** Entradas pendientes que comparten presupuesto y aporte para una entrega atómica. */
 export interface GrupoEntrega {
   id: string;
   cliente: string;
@@ -13,6 +13,8 @@ export interface OpcionVenta {
   tipo?: string;
   precio?: number;
   precio_sin_anfitriona?: number;
+  cover_habilitado?: boolean;
+  acompanamiento_cliente?: boolean;
   acompanamiento?: { unidades?: number };
 }
 
@@ -24,6 +26,8 @@ export interface Bebida {
   precio_venta: number;
   precio_sin_anfitriona: number;
   stock_bar: number;
+  ml_botella?: number;
+  ml_shot?: number;
   categoria_nombre: string | null;
   opciones_venta: OpcionVenta[];
 }

@@ -1,36 +1,93 @@
-import { recortarReparto } from './helpers';
-import type { Acompanamiento, Seleccion } from './types';
+import {
+  calcularReparto,
+  claveDe,
+  costoSeleccion,
+  precioVisible,
+  recortarReparto,
+  stockSeleccionValido,
+} from './helpers';
+import type { Acompanamiento, Bebida, Formato, Seleccion } from './types';
+
+export interface LimitesSeleccion {
+  bebidas: Bebida[];
+  acompanamientos: Acompanamiento[];
+  presupuesto: number;
+}
 
 export type SeleccionAction =
   | { type: 'reiniciar' }
-  | { type: 'agregar'; clave: string; max: number }
+  | ({ type: 'agregar'; bebida: Bebida; formato: Formato } & LimitesSeleccion)
   | { type: 'quitar'; clave: string; unidadesPorEntrega: number }
-  | { type: 'agregarSabor'; clave: string; opcion: Acompanamiento }
-  | { type: 'ajustarSabor'; clave: string; presentacionId: string; delta: number }
+  | ({
+      type: 'agregarSabor';
+      clave: string;
+      opcion: Acompanamiento;
+    } & LimitesSeleccion)
+  | ({
+      type: 'ajustarSabor';
+      clave: string;
+      presentacionId: string;
+      delta: number;
+    } & LimitesSeleccion)
   | { type: 'quitarSabor'; clave: string; presentacionId: string };
 
 export const seleccionInicial: Seleccion = {};
 
-/**
- * Estado de selección del modal: cuántas unidades de cada producto y cómo se
- * reparte el acompañamiento. `max` es el total de entradas pendientes del grupo:
- * no se puede seleccionar más que eso.
- */
+export interface FormularioEntrega {
+  busqueda: string;
+  montoAdicional: string;
+  errorMonto: string | null;
+}
+
+export type FormularioAction =
+  | { type: 'reiniciar' }
+  | { type: 'busqueda'; valor: string }
+  | { type: 'montoAdicional'; valor: string }
+  | { type: 'errorMonto'; mensaje: string | null };
+
+export const formularioInicial: FormularioEntrega = {
+  busqueda: '',
+  montoAdicional: '',
+  errorMonto: null,
+};
+
+export function formularioReducer(
+  estado: FormularioEntrega,
+  accion: FormularioAction,
+): FormularioEntrega {
+  switch (accion.type) {
+    case 'reiniciar':
+      return formularioInicial;
+    case 'busqueda':
+      return { ...estado, busqueda: accion.valor };
+    case 'montoAdicional':
+      return { ...estado, montoAdicional: accion.valor };
+    case 'errorMonto':
+      return { ...estado, errorMonto: accion.mensaje };
+  }
+}
+
+/** Valida contra el estado más reciente, incluso si llegan varias pulsaciones seguidas. */
 export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Seleccion {
   switch (accion.type) {
     case 'reiniciar':
       return seleccionInicial;
     case 'agregar': {
-      const total = Object.values(estado).reduce((suma, linea) => suma + linea.cantidad, 0);
-      if (total >= accion.max) return estado;
-      const actual = estado[accion.clave];
-      return {
+      const clave = claveDe(accion.bebida, accion.formato);
+      const precio = precioVisible(accion.bebida, accion.formato);
+      if (precio <= 0 || costoSeleccion(estado, accion.bebidas) + precio > accion.presupuesto)
+        return estado;
+      const actual = estado[clave];
+      const siguiente = {
         ...estado,
-        [accion.clave]: {
+        [clave]: {
           cantidad: (actual?.cantidad ?? 0) + 1,
           reparto: actual?.reparto ?? [],
         },
       };
+      return stockSeleccionValido(siguiente, accion.bebidas, accion.acompanamientos)
+        ? siguiente
+        : estado;
     }
     case 'quitar': {
       const actual = estado[accion.clave];
@@ -51,40 +108,50 @@ export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Se
         },
       };
     }
-    case 'agregarSabor': {
-      const linea = estado[accion.clave];
-      if (!linea) return estado;
-      if (linea.reparto.some(sabor => sabor.presentacion_id === accion.opcion.presentacion_id)) {
-        return estado;
-      }
-      const nombre = [accion.opcion.producto_nombre, accion.opcion.presentacion_nombre]
-        .filter(Boolean)
-        .join(' ');
-      return {
-        ...estado,
-        [accion.clave]: {
-          ...linea,
-          reparto: [
-            ...linea.reparto,
-            { presentacion_id: accion.opcion.presentacion_id, unidades: 1, nombre },
-          ],
-        },
-      };
-    }
+    case 'agregarSabor':
     case 'ajustarSabor': {
       const linea = estado[accion.clave];
       if (!linea) return estado;
-      return {
-        ...estado,
-        [accion.clave]: {
-          ...linea,
-          reparto: linea.reparto.map(sabor =>
-            sabor.presentacion_id === accion.presentacionId
-              ? { ...sabor, unidades: sabor.unidades + accion.delta }
-              : sabor,
-          ),
-        },
-      };
+      const [id, formato] = accion.clave.split(':') as [string, Formato];
+      const bebida = accion.bebidas.find((item) => item.presentacion_id === id);
+      if (!bebida) return estado;
+      const info = calcularReparto(
+        bebida,
+        formato,
+        linea.reparto,
+        linea.cantidad,
+        accion.acompanamientos,
+      );
+      let reparto = linea.reparto;
+      if (accion.type === 'agregarSabor') {
+        const opcion = info.opcionesParaAgregar.find(
+          (item) => item.presentacion_id === accion.opcion.presentacion_id,
+        );
+        if (!opcion || info.restante < 1) return estado;
+        const nombre = [opcion.producto_nombre, opcion.presentacion_nombre]
+          .filter(Boolean)
+          .join(' ');
+        reparto = [...reparto, { presentacion_id: opcion.presentacion_id, unidades: 1, nombre }];
+      } else {
+        const sabor = reparto.find((item) => item.presentacion_id === accion.presentacionId);
+        if (
+          !sabor ||
+          sabor.unidades + accion.delta < 1 ||
+          (accion.delta > 0 && info.restante < accion.delta)
+        )
+          return estado;
+        reparto = reparto.map((item) =>
+          item.presentacion_id === accion.presentacionId
+            ? { ...item, unidades: item.unidades + accion.delta }
+            : item,
+        );
+      }
+      const siguiente = { ...estado, [accion.clave]: { ...linea, reparto } };
+      // Siempre permite liberar stock aunque el catálogo haya cambiado.
+      if (accion.type === 'ajustarSabor' && accion.delta < 0) return siguiente;
+      return stockSeleccionValido(siguiente, accion.bebidas, accion.acompanamientos)
+        ? siguiente
+        : estado;
     }
     case 'quitarSabor': {
       const linea = estado[accion.clave];
@@ -93,7 +160,7 @@ export function seleccionReducer(estado: Seleccion, accion: SeleccionAction): Se
         ...estado,
         [accion.clave]: {
           ...linea,
-          reparto: linea.reparto.filter(sabor => sabor.presentacion_id !== accion.presentacionId),
+          reparto: linea.reparto.filter((sabor) => sabor.presentacion_id !== accion.presentacionId),
         },
       };
     }

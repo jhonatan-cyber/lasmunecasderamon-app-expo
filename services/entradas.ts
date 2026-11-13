@@ -112,6 +112,35 @@ export interface RegistroEntradaResultado {
   cantidad_entradas: number;
 }
 
+export interface UnidadEntregaCover {
+  presentacion_id: string;
+  tipo_entrega: 'corte' | 'botella';
+  acompanamientos: { presentacion_id: string; unidades: number }[] | null;
+  producto_nombre?: string;
+  presentacion_nombre?: string;
+}
+
+export interface EntregaGrupoPayload {
+  entrada_ids: string[];
+  monto_adicional: number;
+  unidades: UnidadEntregaCover[];
+}
+
+export interface ResultadoEntregaGrupo {
+  entradas: number;
+  productos: number;
+  montoEntrada: number;
+  montoCobrarBarra: number;
+  presupuesto: number;
+}
+
+export interface SolicitudEntregaCoversPayload extends EntregaGrupoPayload {
+  grupo_registro_id: string | null;
+  cliente_nombre: string | null;
+  /** Aporte adicional íntegro, no el valor de las entradas ni de los productos. */
+  monto_total: number;
+}
+
 export const entradasService = {
   /** Listado de un día. Sin `fecha`, el servidor usa el día de negocio actual. */
   listar: (fecha?: string) =>
@@ -149,22 +178,22 @@ export const entradasService = {
       body: JSON.stringify(payload),
     }),
 
-  solicitarEntregaCovers: (payload: {
-    grupo_registro_id: string | null;
-    cliente_nombre: string | null;
-    entrada_ids: string[];
-    unidades: Array<Record<string, unknown>>;
-    monto_total: number;
-  }) =>
+  entregarGrupo: (payload: EntregaGrupoPayload) =>
+    apiClientSafe<ResultadoEntregaGrupo>('/tickets/entregar-grupo', {
+      method: 'POST',
+      retries: 0,
+      body: JSON.stringify(payload),
+    }),
+
+  solicitarEntregaCovers: (payload: SolicitudEntregaCoversPayload) =>
     apiClientSafe<{ id: string }>('/tickets/cover-solicitudes', {
       method: 'POST',
+      retries: 0,
       body: JSON.stringify(payload),
     }),
 
   listarSolicitudesCovers: (estado = 'pendiente') =>
-    apiClientSafe<any[]>(
-      `/tickets/cover-solicitudes?estado=${encodeURIComponent(estado)}`,
-    ),
+    apiClientSafe<any[]>(`/tickets/cover-solicitudes?estado=${encodeURIComponent(estado)}`),
 
   aprobarSolicitudCovers: (id: string) =>
     apiClientSafe<{ entregadas: number }>(
@@ -173,11 +202,8 @@ export const entradasService = {
     ),
 
   rechazarSolicitudCovers: (id: string, motivo: string) =>
-    apiClientSafe<unknown>(
-      `/tickets/cover-solicitudes/${encodeURIComponent(id)}/reject`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ motivo }),
-      },
-    ),
+    apiClientSafe<unknown>(`/tickets/cover-solicitudes/${encodeURIComponent(id)}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ motivo }),
+    }),
 };

@@ -1,5 +1,14 @@
 import type { AcompanamientoBotellaItem } from '@/types/cart';
-import type { Acompanamiento, Bebida, Formato, OpcionVenta, RepartoInfo } from './types';
+import type { UnidadEntregaCover } from '@/services/entradas';
+import type {
+  Acompanamiento,
+  Bebida,
+  Formato,
+  LineaEntrega,
+  OpcionVenta,
+  RepartoInfo,
+  Seleccion,
+} from './types';
 
 /** Normaliza texto para comparar nombres y categorías sin tildes ni mayúsculas. */
 export const normalizar = (valor: string) =>
@@ -40,7 +49,7 @@ export function bebidaDe(valor: unknown): Bebida | null {
   const presentacionId = String(fila.presentacion_id ?? '');
   if (!presentacionId) return null;
   const opciones = opcionesDe(fila.opciones_venta);
-  const botella = opciones.find(opcion => opcion.tipo === 'botella');
+  const botella = opciones.find((opcion) => opcion.tipo === 'botella');
   const precioSinAnfitriona = numero(botella?.precio_sin_anfitriona);
   return {
     presentacion_id: presentacionId,
@@ -50,6 +59,8 @@ export function bebidaDe(valor: unknown): Bebida | null {
     precio_sin_anfitriona:
       precioSinAnfitriona > 0 ? precioSinAnfitriona : numero(fila.precio_venta),
     stock_bar: numero(fila.stock_bar),
+    ml_botella: numero(fila.ml_botella),
+    ml_shot: numero(fila.ml_shot),
     categoria_nombre:
       typeof fila.categoria_nombre === 'string' && fila.categoria_nombre.trim()
         ? fila.categoria_nombre
@@ -73,42 +84,27 @@ export function acompanamientoDe(valor: unknown): Acompanamiento | null {
 }
 
 function precioCorte(bebida: Bebida): number | null {
-  const shot = bebida.opciones_venta.find(opcion => opcion.tipo === 'shot');
+  const shot = bebida.opciones_venta.find((opcion) => opcion.tipo === 'shot');
   const precio = numero(shot?.precio);
   return precio > 0 ? precio : null;
 }
 
 /** Unidades de cover configuradas para la botella de esta bebida. */
 function unidadesAcompanamientoBebida(bebida: Bebida): number {
-  const botella = bebida.opciones_venta.find(opcion => opcion.tipo === 'botella');
+  const botella = bebida.opciones_venta.find((opcion) => opcion.tipo === 'botella');
   const unidades = numero(botella?.acompanamiento?.unidades);
   return unidades > 0 ? Math.floor(unidades) : 0;
 }
 
-/**
- * Formatos que entran en el presupuesto del grupo (entradas + monto adicional).
- *
- * El corte se lista cuando el precio del shot entra completo. La botella se
- * lista cuando su precio sin anfitriona entra; si queda sobre el umbral se
- * cobra la diferencia en la barra, y si entra como cover el servidor además
- * exige que el precio de venta no supere el umbral.
- */
-export function formatosCover(
-  bebida: Bebida,
-  presupuesto: number,
-  umbral: number,
-): Formato[] {
+/** Cortes y botellas SIN que caben en el presupuesto común, sin tope por entrada. */
+export function formatosCover(bebida: Bebida, presupuesto: number): Formato[] {
   const formatos: Formato[] = [];
+  if (bebida.opciones_venta.find(opcion => opcion.tipo === 'botella')?.cover_habilitado === false)
+    return formatos;
   const corte = precioCorte(bebida);
   if (corte !== null && corte <= presupuesto) formatos.push('corte');
-
   const precioBotella = bebida.precio_sin_anfitriona;
-  if (
-    precioBotella <= presupuesto &&
-    (precioBotella > umbral || bebida.precio_venta <= umbral)
-  ) {
-    formatos.push('botella');
-  }
+  if (precioBotella > 0 && precioBotella <= presupuesto) formatos.push('botella');
   return formatos;
 }
 
@@ -116,35 +112,90 @@ export function precioVisible(bebida: Bebida, formato: Formato): number {
   return formato === 'corte' ? (precioCorte(bebida) ?? 0) : bebida.precio_sin_anfitriona;
 }
 
-/**
- * Diferencia que se cobra en la barra por una entrega, con la misma regla del
- * servidor: sobre `max(tope, monto_entrada)` se paga el precio menos la entrada.
- */
-export function montoCobroBarra(precio: number, montoEntrada: number, tope: number): number {
-  const umbral = Math.max(tope, montoEntrada);
-  return precio > umbral ? Math.max(0, precio - montoEntrada) : 0;
+export function costoSeleccion(seleccion: Seleccion, bebidas: Bebida[]): number {
+  return Object.entries(seleccion).reduce((total, [clave, linea]) => {
+    const [id, formato] = clave.split(':') as [string, Formato];
+    const bebida = bebidas.find((item) => item.presentacion_id === id);
+    return total + (bebida ? precioVisible(bebida, formato) * linea.cantidad : 0);
+  }, 0);
 }
 
-/** El corte siempre lleva acompañamiento; la botella solo si lo tiene configurado. */
+export function consumoProducto(bebida: Bebida, formato: Formato): number {
+  const mlShot = Number(bebida.ml_shot) || 0;
+  const mlBotella = Number(bebida.ml_botella) || 0;
+  return formato === 'corte' && mlShot > 0 && mlBotella > 0 ? mlShot / mlBotella : 1;
+}
+
+export function consumoSeleccion(
+  seleccion: Seleccion,
+  bebidas: Bebida[] = [],
+): Map<string, number> {
+  const consumo = new Map<string, number>();
+  for (const [clave, linea] of Object.entries(seleccion)) {
+    const [id, formato] = clave.split(':') as [string, Formato];
+    const bebida = bebidas.find((item) => item.presentacion_id === id);
+    const porUnidad = bebida ? consumoProducto(bebida, formato) : 1;
+    consumo.set(id, (consumo.get(id) ?? 0) + linea.cantidad * porUnidad);
+    for (const sabor of linea.reparto)
+      consumo.set(
+        sabor.presentacion_id,
+        (consumo.get(sabor.presentacion_id) ?? 0) + sabor.unidades,
+      );
+  }
+  return consumo;
+}
+
+export function stockSeleccionValido(
+  seleccion: Seleccion,
+  bebidas: Bebida[],
+  acompanamientos: Acompanamiento[],
+): boolean {
+  return [...consumoSeleccion(seleccion, bebidas)].every(([id, unidades]) => {
+    const stock =
+      bebidas.find((item) => item.presentacion_id === id)?.stock_bar ??
+      acompanamientos.find((item) => item.presentacion_id === id)?.stock_bar ??
+      0;
+    return unidades <= stock + 1e-9;
+  });
+}
+
+export function acompanamientosParaLinea(
+  clave: string,
+  seleccion: Seleccion,
+  acompanamientos: Acompanamiento[],
+): Acompanamiento[] {
+  const consumo = consumoSeleccion(seleccion);
+  const reparto = seleccion[clave]?.reparto ?? [];
+  return acompanamientos.map((opcion) => ({
+    ...opcion,
+    stock_bar: Math.max(
+      0,
+      opcion.stock_bar -
+        (consumo.get(opcion.presentacion_id) ?? 0) +
+        (reparto.find((sabor) => sabor.presentacion_id === opcion.presentacion_id)?.unidades ?? 0),
+    ),
+  }));
+}
+
 export function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
-  return formato === 'corte' || unidadesAcompanamientoBebida(bebida) > 0;
+  return unidadesPorEntrega(bebida, formato) > 0;
 }
 
-export const claveDe = (bebida: Bebida, formato: Formato) =>
-  `${bebida.presentacion_id}:${formato}`;
+export const claveDe = (bebida: Bebida, formato: Formato) => `${bebida.presentacion_id}:${formato}`;
 
 /** Unidades de cover que exige cada entrega según su formato. */
 export function unidadesPorEntrega(bebida: Bebida, formato: Formato): number {
-  return formato === 'corte' ? 1 : unidadesAcompanamientoBebida(bebida);
+  return formato === 'corte'
+    ? bebida.opciones_venta.find(opcion => opcion.tipo === 'shot')?.acompanamiento_cliente === false
+      ? 0
+      : 1
+    : unidadesAcompanamientoBebida(bebida);
 }
 
 /** Covers disponibles como acompañamiento (distintos de la bebida y con stock). */
-function opcionesCoverPara(
-  bebida: Bebida,
-  acompanamientos: Acompanamiento[],
-): Acompanamiento[] {
+function opcionesCoverPara(bebida: Bebida, acompanamientos: Acompanamiento[]): Acompanamiento[] {
   return acompanamientos.filter(
-    opcion => opcion.presentacion_id !== bebida.presentacion_id && opcion.stock_bar >= 1,
+    (opcion) => opcion.presentacion_id !== bebida.presentacion_id && opcion.stock_bar >= 1,
   );
 }
 
@@ -159,6 +210,7 @@ export function calcularReparto(
   reparto: AcompanamientoBotellaItem[],
   cantidad: number,
   acompanamientos: Acompanamiento[],
+  disponibles: Acompanamiento[] = acompanamientos,
 ): RepartoInfo {
   const entregas = Math.max(1, cantidad);
   const porEntrega = unidadesPorEntrega(bebida, formato);
@@ -166,21 +218,25 @@ export function calcularReparto(
   const opcionesCover = opcionesCoverPara(bebida, acompanamientos);
   const asignado = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
   const restante = Math.max(0, unidades - asignado);
-  const elegidos = new Set(reparto.map(sabor => sabor.presentacion_id));
-  const opcionesParaAgregar = opcionesCover.filter(
-    opcion => !elegidos.has(opcion.presentacion_id),
-  );
+  const elegidos = new Set(reparto.map((sabor) => sabor.presentacion_id));
   const stockDe = (presentacionId: string) =>
-    opcionesCover.find(opcion => opcion.presentacion_id === presentacionId)?.stock_bar ?? 0;
+    disponibles.find((opcion) => opcion.presentacion_id === presentacionId)?.stock_bar ?? 0;
+  const opcionesParaAgregar = opcionesCover.filter(
+    (opcion) => !elegidos.has(opcion.presentacion_id) && stockDe(opcion.presentacion_id) >= 1,
+  );
   const maxDe = (sabor: AcompanamientoBotellaItem) => {
     const otros = Math.max(0, asignado - sabor.unidades);
-    return Math.max(1, Math.min(unidades - otros, stockDe(sabor.presentacion_id)));
+    return Math.max(0, Math.min(unidades - otros, stockDe(sabor.presentacion_id)));
   };
   const requerido = requiereAcompanamiento(bebida, formato);
   // El corte puede salir sin bebida si no hay cover en el bar; la botella
   // con acompañamiento configurado no: el servidor la exige.
   const falta =
-    requerido && (opcionesCover.length === 0 ? formato === 'botella' : asignado !== unidades);
+    requerido &&
+    (opcionesCover.length === 0
+      ? formato === 'botella'
+      : asignado !== unidades ||
+        reparto.some((sabor) => sabor.unidades > stockDe(sabor.presentacion_id)));
 
   return {
     requerido,
@@ -207,8 +263,11 @@ export function dividirRepartoPorEntrega(
   const porEntrega = Math.max(1, Math.floor(Number(unidadesPorEntrega) || 0));
   const totalEntregas = Math.max(0, Math.floor(Number(entregas) || 0));
   const disponibles = reparto
-    .map(sabor => ({ ...sabor, unidades: Math.max(0, Math.floor(Number(sabor.unidades) || 0)) }))
-    .filter(sabor => sabor.unidades > 0);
+    .map((sabor) => ({
+      ...sabor,
+      unidades: Math.max(0, Math.floor(Number(sabor.unidades) || 0)),
+    }))
+    .filter((sabor) => sabor.unidades > 0);
 
   const resultado: AcompanamientoBotellaItem[][] = [];
   for (let indice = 0; indice < totalEntregas; indice += 1) {
@@ -225,6 +284,31 @@ export function dividirRepartoPorEntrega(
     resultado.push(grupo);
   }
   return resultado;
+}
+
+/** Cada producto es una unidad, independiente del número de entradas del grupo. */
+export function unidadesEntregaGrupo(lineas: LineaEntrega[]): UnidadEntregaCover[] {
+  return lineas.flatMap((linea) => {
+    const repartos = requiereAcompanamiento(linea.bebida, linea.formato)
+      ? dividirRepartoPorEntrega(
+          linea.reparto,
+          unidadesPorEntrega(linea.bebida, linea.formato),
+          linea.cantidad,
+        )
+      : [];
+    return Array.from({ length: linea.cantidad }, (_, indice) => ({
+      presentacion_id: linea.bebida.presentacion_id,
+      tipo_entrega: linea.formato,
+      producto_nombre: linea.bebida.producto_nombre,
+      presentacion_nombre: linea.bebida.presentacion_nombre,
+      acompanamientos: repartos[indice]?.length
+        ? repartos[indice].map(({ presentacion_id, unidades }) => ({
+            presentacion_id,
+            unidades,
+          }))
+        : null,
+    }));
+  });
 }
 
 /** Recorta el reparto a `maxUnidades`, conservando el orden de los sabores. */

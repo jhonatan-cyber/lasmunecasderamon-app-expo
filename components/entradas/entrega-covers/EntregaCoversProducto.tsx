@@ -3,8 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { formatCurrency } from '@/utils/format';
 import { styles } from '../EntregaCoversModal.styles';
 import { EntregaCoversAcompanamiento } from './EntregaCoversAcompanamiento';
-import { calcularReparto } from './helpers';
-import type { Acompanamiento, Bebida, Formato, LineaSeleccion } from './types';
+import type { Acompanamiento, Bebida, Formato, LineaSeleccion, RepartoInfo } from './types';
 
 interface EntregaCoversProductoProps {
   bebida: Bebida;
@@ -12,7 +11,7 @@ interface EntregaCoversProductoProps {
   linea: LineaSeleccion | undefined;
   precio: number;
   limiteAlcanzado: boolean;
-  acompanamientos: Acompanamiento[];
+  infoReparto: RepartoInfo;
   onAgregar: () => void;
   onQuitar: () => void;
   onAgregarSabor: (opcion: Acompanamiento) => void;
@@ -31,7 +30,7 @@ export function EntregaCoversProducto({
   linea,
   precio,
   limiteAlcanzado,
-  acompanamientos,
+  infoReparto: info,
   onAgregar,
   onQuitar,
   onAgregarSabor,
@@ -43,13 +42,6 @@ export function EntregaCoversProducto({
   borderColor,
 }: EntregaCoversProductoProps) {
   const reparto = linea?.reparto ?? [];
-  const info = calcularReparto(
-    bebida,
-    formato,
-    reparto,
-    linea?.cantidad ?? 1,
-    acompanamientos,
-  );
 
   return (
     <View
@@ -63,15 +55,12 @@ export function EntregaCoversProducto({
     >
       <View style={styles.productoFila}>
         <View style={{ flex: 1 }}>
-          <Text
-            style={{ color: textPrimary, fontWeight: '700', fontSize: 13 }}
-            numberOfLines={2}
-          >
+          <Text style={{ color: textPrimary, fontWeight: '700', fontSize: 13 }} numberOfLines={2}>
             {[bebida.producto_nombre, bebida.presentacion_nombre].filter(Boolean).join(' ')}
           </Text>
           <Text style={{ color: textSecondary, fontSize: 11 }}>
-            {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'} ·{' '}
-            {formatCurrency(precio)} · stock {bebida.stock_bar}
+            {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'} · {formatCurrency(precio)} ·
+            stock {bebida.stock_bar}
           </Text>
         </View>
         <View style={styles.stepper}>
@@ -83,9 +72,7 @@ export function EntregaCoversProducto({
           >
             <Ionicons name="remove" size={16} color={textPrimary} />
           </Pressable>
-          <Text style={[styles.stepperValue, { color: textPrimary }]}>
-            {linea?.cantidad ?? 0}
-          </Text>
+          <Text style={[styles.stepperValue, { color: textPrimary }]}>{linea?.cantidad ?? 0}</Text>
           <Pressable
             onPress={onAgregar}
             disabled={limiteAlcanzado}
