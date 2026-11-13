@@ -1,13 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClientSafe } from "@/api/client";
 import { eventBus } from "@/utils/eventBus";
 import { blockOffline } from "@/utils/offlineGuard";
 import type { Cliente } from "@lasmunecasderamon/types";
 import type { MetodoPago } from "@/types/api";
-import type {
-  PedidoItem,
-  SolicitudItem,
-} from "@/hooks/types/solicitudesTypes";
+import type { PedidoItem, SolicitudItem } from "@/hooks/types/solicitudesTypes";
 import {
   buildAccountPayload,
   buildSalesSubmitPayload,
@@ -49,13 +46,28 @@ export function useSolicitudesCheckout({
   const [pedidoDetails, setPedidoDetails] = useState<PedidoDetalle[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("");
-  const [metodoPagoAdicional, setMetodoPagoAdicional] = useState<MetodoPago>("");
+  const [metodoPagoAdicional, setMetodoPagoAdicional] =
+    useState<MetodoPago>("");
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
   const [agregarPropina, setAgregarPropina] = useState(false);
-  const [selectedMinutesPedido, setSelectedMinutesPedido] = useState<number>(30);
+  const [selectedMinutesPedido, setSelectedMinutesPedido] =
+    useState<number>(30);
   const [submittingCheckout, setSubmittingCheckout] = useState(false);
 
+  const detailRequestRef = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      detailRequestRef.current?.abort();
+      detailRequestRef.current = null;
+    },
+    [],
+  );
+
   const closeCheckout = useCallback(() => {
+    detailRequestRef.current?.abort();
+    detailRequestRef.current = null;
+    setLoadingDetails(false);
     setCheckoutModalVisible(false);
     setSelectedPedido(null);
     setPedidoDetails([]);
@@ -66,9 +78,24 @@ export function useSolicitudesCheckout({
     setSelectedMinutesPedido(30);
   }, []);
 
+  const setCheckoutVisible = useCallback(
+    (visible: boolean) => {
+      if (visible) setCheckoutModalVisible(true);
+      else closeCheckout();
+    },
+    [closeCheckout],
+  );
+
   /** Abre el cobro de un pedido y precarga detalles, cliente y propina. */
   const openPedidoCheckout = useCallback(
     async (itemInfo: SolicitudItem, id: string) => {
+      detailRequestRef.current?.abort();
+      const request = new AbortController();
+      detailRequestRef.current = request;
+      const isCurrent = () =>
+        detailRequestRef.current === request && !request.signal.aborted;
+      setPedidoDetails([]);
+      setSelectedClient(null);
       setSelectedPedido(itemInfo);
       setMetodoPago("");
       setMetodoPagoAdicional("");
@@ -79,8 +106,10 @@ export function useSolicitudesCheckout({
 
       try {
         const res = await apiClientSafe<PedidoDetalle[]>(
-          `/orders/detail?id=${id}`,
+          `/orders/detail?id=${encodeURIComponent(id)}`,
+          { signal: request.signal },
         );
+        if (!isCurrent()) return;
         if (res.success) {
           setPedidoDetails(res.data);
           const cId =
@@ -89,8 +118,10 @@ export function useSolicitudesCheckout({
             itemInfo.cliente_id;
           if (cId) {
             const cRes = await apiClientSafe<Cliente>(
-              `/clients?id=${cId}`,
+              `/clients?id=${encodeURIComponent(cId)}`,
+              { signal: request.signal },
             ).catch(() => ({ success: false, data: undefined }));
+            if (!isCurrent()) return;
             if (cRes.success && cRes.data) {
               setSelectedClient(cRes.data);
               if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
@@ -105,10 +136,11 @@ export function useSolicitudesCheckout({
           closeCheckout();
         }
       } catch {
+        if (!isCurrent()) return;
         showToast("Error", "No se pudieron cargar los detalles", "error");
         closeCheckout();
       } finally {
-        setLoadingDetails(false);
+        if (isCurrent()) setLoadingDetails(false);
       }
     },
     [closeCheckout, showToast],
@@ -242,7 +274,7 @@ export function useSolicitudesCheckout({
     agregarPropina,
     selectedMinutesPedido,
     submittingCheckout,
-    setCheckoutModalVisible,
+    setCheckoutModalVisible: setCheckoutVisible,
     setSelectedPedido,
     setPedidoDetails,
     setLoadingDetails,
