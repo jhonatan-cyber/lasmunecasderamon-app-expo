@@ -144,10 +144,12 @@ const RESOURCE_UPDATED_MODULES: Record<
   attendance: ["refreshPersonal"],
   rooms: ["refreshRooms", "refreshCuentas"],
   private_rooms: ["refreshRooms", "refreshCuentas"],
-  products: ["refreshProducts", "refreshCategories"],
+  products: ["refreshProducts", "refreshCategories", "refreshBar"],
   categories: ["refreshCategories"],
   clients: ["refreshClients"],
   entradas: ["refreshEntradas"],
+  accounts: ["refreshRooms", "refreshCuentas"],
+  sales: ["refreshRooms", "refreshSales"],
 };
 
 export const emitResourceUpdatedEvents = (

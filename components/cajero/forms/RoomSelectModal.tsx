@@ -1,12 +1,6 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import FlashList from "@/components/shared/FlashList";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRenderCount } from "@/hooks/useRenderCount";
@@ -39,7 +33,7 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
   selectedRoomId,
   requireCompleteConfig = false,
 }: RoomSelectModalProps) {
-  useRenderCount('RoomSelectModal', { visible, roomCount: rooms.length });
+  useRenderCount("RoomSelectModal", { visible, roomCount: rooms.length });
   const {
     accentColor: primaryColor,
     cardBg,
@@ -48,14 +42,22 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
     textSecondary,
   } = useAccentColor();
 
-
-  const isLibre = (room: Room) => {
-    const estado = Number(room.estado ?? room.status ?? 0);
-    return estado === 1;
+  const estadoHabitacion = (room: Room) =>
+    Number(room.estado ?? room.status ?? 0);
+  const etiquetaEstado = (estado: number) => {
+    if (estado === 0) return "INACTIVA";
+    if (estado === 1) return "LIBRE";
+    if (estado === 2) return "OCUPADA";
+    return "NO DISPONIBLE";
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>
@@ -68,19 +70,36 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
           </View>
 
           <FlashList
-            data={requireCompleteConfig
-              ? rooms.filter(room => Number(room.precio ?? 0) > 0 && Number(room.tiempo ?? 0) > 0)
-              : rooms}
-            keyExtractor={(item: Room) => (item.id_habitacion || item.id).toString()}
+            data={
+              requireCompleteConfig
+                ? rooms.filter(
+                    (room) =>
+                      Number(room.precio ?? 0) > 0 &&
+                      Number(room.tiempo ?? 0) > 0,
+                  )
+                : rooms
+            }
+            keyExtractor={(item: Room) =>
+              (item.id_habitacion || item.id).toString()
+            }
             estimatedItemSize={80}
             renderItem={({ item }: { item: Room }) => {
               const itemId = String(item.id_habitacion || item.id);
               const isSelected = String(selectedRoomId) === itemId;
-              const estaLibre = isLibre(item);
-              const roomName = item.nombre || `Habitación ${item.id_habitacion || item.id}`;
+              const estado = estadoHabitacion(item);
+              const estaLibre = estado === 1;
+              const roomName =
+                item.nombre || `Habitación ${item.id_habitacion || item.id}`;
 
               return (
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
+                  accessibilityState={{
+                    disabled: !estaLibre,
+                    selected: isSelected,
+                  }}
+                  disabled={!estaLibre}
                   onPress={() => {
                     if (estaLibre) onSelect(item);
                   }}
@@ -88,7 +107,9 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
                     styles.modalItem,
                     {
                       borderColor: isSelected ? primaryColor : borderColor,
-                      backgroundColor: isSelected ? `${primaryColor}15` : "transparent",
+                      backgroundColor: isSelected
+                        ? `${primaryColor}15`
+                        : "transparent",
                       opacity: estaLibre ? 1 : 0.6,
                       borderWidth: isSelected ? 2 : 1.5,
                     },
@@ -97,7 +118,9 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
                   <View
                     style={[
                       styles.roomIcon,
-                      { backgroundColor: estaLibre ? "#10B98120" : "#EF444420" },
+                      {
+                        backgroundColor: estaLibre ? "#10B98120" : "#EF444420",
+                      },
                     ]}
                   >
                     <Ionicons
@@ -107,12 +130,17 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
                     />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={[styles.modalItemText, { color: textPrimary }]}>
+                    <Text
+                      style={[styles.modalItemText, { color: textPrimary }]}
+                    >
                       {roomName}
                     </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
                       <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${(Number(item.precio || 0)).toLocaleString()} • {item.tiempo || 0} min
+                        ${Number(item.precio || 0).toLocaleString()} •{" "}
+                        {item.tiempo || 0} min
                       </Text>
                       <Text
                         style={{
@@ -122,11 +150,13 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
                           fontWeight: "bold",
                         }}
                       >
-                        {estaLibre ? "● LIBRE" : "● OCUPADA"}
+                        {`● ${etiquetaEstado(estado)}`}
                       </Text>
                     </View>
                   </View>
-                  {isSelected && <Ionicons name="checkmark" size={18} color={primaryColor} />}
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={18} color={primaryColor} />
+                  )}
                 </Pressable>
               );
             }}
@@ -140,10 +170,10 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
           </Pressable>
         </View>
       </View>
-</Modal>
+    </Modal>
   );
 });
-RoomSelectModal.displayName = 'RoomSelectModal';
+RoomSelectModal.displayName = "RoomSelectModal";
 
 const styles = StyleSheet.create({
   modalOverlay: {

@@ -149,8 +149,13 @@ export function handleNotificationEvent(
       case "timer_stopped":
       case "timer_updated":
       case "timers_updated":
-      case "timer_warning_5m":
       case "timer_ended_event":
+        // Iniciar o cerrar un tiempo ocupa o libera la habitación; sin esto los
+        // selectores de nueva-venta/nuevo-servicio quedan con el estado viejo.
+        emitRefreshRooms(payload);
+        break;
+
+      case "timer_warning_5m":
         break;
 
       // Una habitación quedó libre (cobro, fin de temporizador o anulación):
@@ -184,6 +189,8 @@ export function handleNotificationEvent(
           }
           emitRefreshSales();
           emitRefreshRequests();
+          // Una venta con habitación puede ocuparla; su anulación la libera.
+          emitRefreshRooms(payload);
         }
         break;
 
@@ -266,6 +273,7 @@ export function handleNotificationEvent(
           });
           showLocalNotification(title, body);
           emitRefreshRequests(payload);
+          emitRefreshRooms(payload);
           if (tipo === "cuenta") {
             emitRefreshCuentas(payload);
           } else if (tipo === "venta") {
