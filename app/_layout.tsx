@@ -61,12 +61,16 @@ if (!__DEV__ && Platform.OS !== "web") {
 
 
 export default function RootLayout() {
-  const [storageReady, setStorageReady] = useState(Platform.OS !== 'web');
+  const [storageReady, setStorageReady] = useState(false);
   useEffect(() => {
     let active = true;
     void prepareMirrorStorage().catch(() => {
       console.info('El almacenamiento offline no está disponible en este dispositivo.');
-    }).finally(() => { if (active) setStorageReady(true); });
+    }).finally(() => {
+      if (!active) return;
+      initMirror();
+      setStorageReady(true);
+    });
     return () => { active = false; };
   }, []);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -88,7 +92,6 @@ export default function RootLayout() {
 
     const startServices = () => {
       void connectivity.start();
-      initMirror();
       initOutbox();
 
       apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
