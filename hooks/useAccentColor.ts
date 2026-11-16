@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
+import { readableTextColor } from '@/utils/color';
 
 export function useAccentColor() {
     const isDark = (useColorScheme() ?? 'dark') === 'dark';
@@ -24,6 +25,8 @@ export function useAccentColor() {
 
     return {
         accentColor,
+        // Texto legible sobre el acento (el usuario puede elegir uno claro u oscuro).
+        accentText: readableTextColor(accentColor),
         gradientColors,
         isDark,
         bg,

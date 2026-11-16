@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, type ViewStyle } from 'react-native';
+import logger from '@/utils/logger';
 
 // ── Lazy show/hide API (fire-and-forget, sync-compatible) ─────────────
 
@@ -15,7 +16,7 @@ export function showToast(params: {
     .then((mod) => {
       mod.default.show(params as any);
     })
-    .catch(() => {});
+    .catch(() => { logger.debug('No se pudo cargar la librería de toast para mostrar notificación.'); });
 }
 
 /** Hide the currently visible toast. */
@@ -24,7 +25,7 @@ export function hideToast() {
     .then((mod) => {
       mod.default.hide();
     })
-    .catch(() => {});
+    .catch(() => { logger.debug('No se pudo cargar la librería de toast para ocultar notificación.'); });
 }
 
 // ── Lazy <Toast /> component with internal config ────────────────────
@@ -32,7 +33,7 @@ export function hideToast() {
 // constructors) is built INSIDE the lazy import so that toast-config.tsx
 // doesn't need to import from the library, eliminating the static import.
 
-const commonStyle: ViewStyle = {
+const commonStyleLight: ViewStyle = {
   backgroundColor: '#FFFFFF',
   borderRadius: 18,
   width: '92%',
@@ -46,71 +47,104 @@ const commonStyle: ViewStyle = {
   alignSelf: 'center',
 };
 
+const commonStyleDark: ViewStyle = {
+  backgroundColor: '#1F2937',
+  borderRadius: 18,
+  width: '92%',
+  height: 85,
+  borderLeftWidth: 8,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.3,
+  shadowRadius: 12,
+  elevation: 8,
+  alignSelf: 'center',
+};
+
 export const ToastComponent = React.lazy(async () => {
   const mod = await import('react-native-toast-message');
   const { default: Toast, BaseToast, ErrorToast, InfoToast } = mod;
+  const { useAccentColor } = await import('@/hooks/useAccentColor');
+
+  const ThemedToast = ({ type, ...props }: any) => {
+    const { isDark } = useAccentColor();
+    const commonStyle = isDark ? commonStyleDark : commonStyleLight;
+    const text1Color = isDark ? '#F9FAFB' : '#111827';
+    const text2Color = isDark ? '#9CA3AF' : '#6B7280';
+
+    const toastConfigs: Record<string, any> = {
+      success: () =>
+        React.createElement(BaseToast, {
+          ...props,
+          style: { ...commonStyle, borderLeftColor: '#10B981' },
+          contentContainerStyle: { paddingHorizontal: 20 },
+          text1Style: { fontSize: 17, fontWeight: '700', color: text1Color },
+          text2Style: { fontSize: 14, fontWeight: '500', color: text2Color },
+          text1NumberOfLines: 1,
+          text2NumberOfLines: 2,
+        }),
+
+      error: () =>
+        React.createElement(ErrorToast, {
+          ...props,
+          style: { ...commonStyle, borderLeftColor: '#EF4444' },
+          contentContainerStyle: { paddingHorizontal: 20 },
+          text1Style: { fontSize: 17, fontWeight: '700', color: text1Color },
+          text2Style: { fontSize: 14, fontWeight: '500', color: text2Color },
+          text1NumberOfLines: 1,
+          text2NumberOfLines: 2,
+        }),
+
+      info: () =>
+        React.createElement(InfoToast, {
+          ...props,
+          style: { ...commonStyle, borderLeftColor: '#3B82F6' },
+          contentContainerStyle: { paddingHorizontal: 20 },
+          text1Style: { fontSize: 17, fontWeight: '700', color: text1Color },
+          text2Style: { fontSize: 14, fontWeight: '500', color: text2Color },
+          text1NumberOfLines: 1,
+          text2NumberOfLines: 2,
+        }),
+
+      warning: () =>
+        React.createElement(BaseToast, {
+          ...props,
+          style: { ...commonStyle, borderLeftColor: '#F59E0B' },
+          contentContainerStyle: { paddingHorizontal: 20 },
+          text1Style: { fontSize: 17, fontWeight: '700', color: text1Color },
+          text2Style: { fontSize: 14, fontWeight: '500', color: text2Color },
+          text1NumberOfLines: 1,
+          text2NumberOfLines: 2,
+        }),
+
+      order: () =>
+        React.createElement(BaseToast, {
+          ...props,
+          style: { ...commonStyle, borderLeftColor: '#E11D48' },
+          contentContainerStyle: { paddingHorizontal: 20 },
+          text1Style: { fontSize: 17, fontWeight: '700', color: text1Color },
+          text2Style: { fontSize: 14, fontWeight: '500', color: text2Color },
+          text1NumberOfLines: 1,
+          text2NumberOfLines: 2,
+          renderLeadingIcon: () =>
+            React.createElement(
+              View,
+              { style: { justifyContent: 'center', paddingLeft: 15 } },
+              React.createElement(Text, { style: { fontSize: 22 } }, '\uD83D\uDCCB'),
+            ),
+        }),
+    };
+
+    const configFn = toastConfigs[type] || toastConfigs.info;
+    return configFn();
+  };
 
   const toastConfig = {
-    success: (props: any) =>
-      React.createElement(BaseToast, {
-        ...props,
-        style: { ...commonStyle, borderLeftColor: '#10B981' },
-        contentContainerStyle: { paddingHorizontal: 20 },
-        text1Style: { fontSize: 17, fontWeight: '700', color: '#111827' },
-        text2Style: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-        text1NumberOfLines: 1,
-        text2NumberOfLines: 2,
-      }),
-
-    error: (props: any) =>
-      React.createElement(ErrorToast, {
-        ...props,
-        style: { ...commonStyle, borderLeftColor: '#EF4444' },
-        contentContainerStyle: { paddingHorizontal: 20 },
-        text1Style: { fontSize: 17, fontWeight: '700', color: '#111827' },
-        text2Style: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-        text1NumberOfLines: 1,
-        text2NumberOfLines: 2,
-      }),
-
-    info: (props: any) =>
-      React.createElement(InfoToast, {
-        ...props,
-        style: { ...commonStyle, borderLeftColor: '#3B82F6' },
-        contentContainerStyle: { paddingHorizontal: 20 },
-        text1Style: { fontSize: 17, fontWeight: '700', color: '#111827' },
-        text2Style: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-        text1NumberOfLines: 1,
-        text2NumberOfLines: 2,
-      }),
-
-    warning: (props: any) =>
-      React.createElement(BaseToast, {
-        ...props,
-        style: { ...commonStyle, borderLeftColor: '#F59E0B' },
-        contentContainerStyle: { paddingHorizontal: 20 },
-        text1Style: { fontSize: 17, fontWeight: '700', color: '#111827' },
-        text2Style: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-        text1NumberOfLines: 1,
-        text2NumberOfLines: 2,
-      }),
-
-    order: (props: any) =>
-      React.createElement(BaseToast, {
-        ...props,
-        style: { ...commonStyle, borderLeftColor: '#E11D48' },
-        contentContainerStyle: { paddingHorizontal: 20 },
-        text1Style: { fontSize: 17, fontWeight: '700', color: '#111827' },
-        text2Style: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
-        text1NumberOfLines: 1,
-        text2NumberOfLines: 2,
-        renderLeadingIcon: () =>
-          React.createElement(
-            View,
-            { style: { justifyContent: 'center', paddingLeft: 15 } },
-            React.createElement(Text, { style: { fontSize: 22 } }, '\uD83D\uDCCB'),
-          ),
-      }),
+    success: (props: any) => React.createElement(ThemedToast, { type: 'success', ...props }),
+    error: (props: any) => React.createElement(ThemedToast, { type: 'error', ...props }),
+    info: (props: any) => React.createElement(ThemedToast, { type: 'info', ...props }),
+    warning: (props: any) => React.createElement(ThemedToast, { type: 'warning', ...props }),
+    order: (props: any) => React.createElement(ThemedToast, { type: 'order', ...props }),
   };
 
   const WrappedToast = (props: any) =>

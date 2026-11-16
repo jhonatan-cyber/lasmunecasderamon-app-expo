@@ -5,7 +5,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 
 import logger from '@/utils/logger';
 export const DynamicSystemBars = () => {
-  const { accentColor } = useAccentColor();
+  const { accentColor, isDark } = useAccentColor();
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -14,7 +14,8 @@ export const DynamicSystemBars = () => {
       try {
         const setButtonStyleAsync = (NavigationBar as any).setButtonStyleAsync;
         if (typeof setButtonStyleAsync === 'function') {
-          await setButtonStyleAsync('light');
+          // Los botones del sistema deben contrastar con el fondo de la app.
+          await setButtonStyleAsync(isDark ? 'light' : 'dark');
         }
 
         if (typeof NavigationBar.setVisibilityAsync === 'function') {
@@ -27,7 +28,7 @@ export const DynamicSystemBars = () => {
     };
     const timeout = setTimeout(updateNavigationBar, 100);
     return () => clearTimeout(timeout);
-  }, [accentColor]);
+  }, [accentColor, isDark]);
 
   return null;
 };
