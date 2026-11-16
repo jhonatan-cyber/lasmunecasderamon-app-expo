@@ -10,6 +10,10 @@ type Children = { children?: ReactNode };
 vi.mock('react-native', () => ({
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
+  Dimensions: { get: () => ({ width: 390, height: 844 }) },
+  Platform: { OS: "web" },
+  KeyboardAvoidingView: ({ children }: Children) => <div>{children}</div>,
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Modal: ({
     children,
     visible,
@@ -52,7 +56,7 @@ vi.mock('@/hooks/useAccentColor', () => ({
     borderColor: '#777',
   }),
 }));
-vi.mock('@/components/shared/FlashList', () => ({
+vi.mock('@/components/shared/VirtualizedList', () => ({
   default: ({
     data,
     renderItem,

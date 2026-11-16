@@ -1,20 +1,20 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
-  Text,
   TouchableOpacity,
-  useWindowDimensions,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { useTimer } from '@/context/TimerContext';
@@ -22,6 +22,7 @@ import { useVentasScreen } from '@/hooks/useVentasScreen';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import {
   VentaCard,
   VentaDetailModal,
@@ -39,10 +40,10 @@ export default function VentasScreen() {
   const esAdmin = useIsAdmin();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
   const { timers, serverOffset } = useTimer();
+  const [searchQuery, setSearchQuery] = React.useState('');
   const {
     loading,
     refreshing,
@@ -95,10 +96,23 @@ export default function VentasScreen() {
     [activeTimerServiceIds, getVentaId, ventasList],
   );
   const listData = React.useMemo(
-    () => loadingSales
-      ? VENTA_SKELETON_ITEMS
-      : activeTab === "historial" ? ventasList : processSales,
-    [activeTab, loadingSales, processSales, ventasList],
+    () => {
+      let data: any[];
+      if (loadingSales) {
+        data = VENTA_SKELETON_ITEMS;
+      } else {
+        data = activeTab === "historial" ? ventasList : processSales;
+      }
+      if (!searchQuery.trim()) return data;
+      const q = searchQuery.toLowerCase();
+      return data.filter((item: any) => {
+        const id = getVentaId(item);
+        const servicio = item.servicio || '';
+        const habitacion = item.habitacion || item.habitacion_id || '';
+        return String(id).includes(q) || String(servicio).toLowerCase().includes(q) || String(habitacion).toLowerCase().includes(q);
+      });
+    },
+    [activeTab, loadingSales, processSales, ventasList, searchQuery, getVentaId],
   );
   const handleCardPress = React.useCallback(
     (item: any) => {
@@ -147,7 +161,7 @@ export default function VentasScreen() {
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style={isDark ? 'dark' : 'light'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <PremiumHeader
         title="Ventas"
         subtitle={
@@ -158,16 +172,17 @@ export default function VentasScreen() {
               : "Ventas activas en tiempo real"
         }
         connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
+        onBack={() => router.replace("/cajero/(tabs)" as any)}
         rightComponent={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-            <TouchableOpacity onPress={onRefresh} style={styles.backBtnRight}>
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Pressable onPress={() => router.replace("/cajero/(tabs)" as any)} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextRight}>Atrás</Text>
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={onRefresh}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={styles.backBtnRight}
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar ventas"
+          >
+            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         }
       />
 
@@ -182,7 +197,16 @@ export default function VentasScreen() {
         activeTimerCount={activeVentaTimers.length}
       />
 
-      <FlashList
+      <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+        <SearchBar
+          placeholder="Buscar por código o habitación..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClear={() => setSearchQuery('')}
+        />
+      </View>
+
+      <VirtualizedList
         data={listData as any}
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
@@ -200,15 +224,11 @@ export default function VentasScreen() {
         initialNumToRender={5}
         removeClippedSubviews={true}
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { borderColor }]}>
-            <Ionicons name="receipt-outline" size={64} color={textSecondary} />
-            <Text style={[styles.emptyText, { color: textPrimary }]}>
-              No hay ventas registradas
-            </Text>
-            <Text style={[styles.emptySub, { color: textSecondary }]}>
-              Las ventas aparecerán conforme se procesen los pagos.
-            </Text>
-          </View>
+          <EmptyState
+            icon="receipt-outline"
+            title={searchQuery ? "No se encontraron ventas" : "No hay ventas registradas"}
+            message={searchQuery ? "Intenta con otros términos de búsqueda" : "Las ventas aparecerán conforme se procesen los pagos."}
+          />
         }
       />
 
@@ -289,7 +309,7 @@ export default function VentasScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContainer: { paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 100 },
+  listContainer: { ...contentColumn, paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 100 },
   backBtnRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -300,25 +320,4 @@ const styles = StyleSheet.create({
     gap: 6
   },
   backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-  emptyCard: {
-    borderRadius: 32,
-    padding: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    marginTop: 40,
-    borderStyle: "dashed",
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "800",
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  emptySub: {
-    fontSize: 14,
-    fontWeight: "500",
-    textAlign: "center",
-    opacity: 0.7,
-  },
 });

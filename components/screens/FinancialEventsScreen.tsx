@@ -5,7 +5,6 @@ import { useState, useCallback } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,7 +12,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from '@/components/shared/VirtualizedList';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
@@ -150,7 +151,7 @@ export function FinancialEventsScreen({
         <AnimatedView
           from={{ opacity: 0, translateY: 30 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: index * 100 }}
+          transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         >
           <Pressable
             onPress={() => handleItemPress(item)}
@@ -373,7 +374,7 @@ export function FinancialEventsScreen({
         ))}
       </View>
 
-      <FlashList
+      <VirtualizedList
         data={filteredData}
         keyExtractor={(item: any) =>
           (
@@ -394,16 +395,7 @@ export function FinancialEventsScreen({
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons
-              name="file-tray-outline"
-              size={48}
-              color={textSecondary}
-            />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No se encontraron registros
-            </Text>
-          </View>
+          <EmptyState icon="file-tray-outline" title="No se encontraron registros" />
         }
         getItemLayout={(_: any, index: number) => ({
           length: 180,
@@ -544,6 +536,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -620,13 +613,6 @@ const styles = StyleSheet.create({
   },
   amountLabel: { fontSize: 14, fontWeight: '600' },
   amountValue: { fontSize: 24, fontWeight: '900' },
-  emptyCard: {
-    borderRadius: 20,
-    padding: 40,
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  emptyText: { fontSize: 14, marginTop: 15, textAlign: 'center' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

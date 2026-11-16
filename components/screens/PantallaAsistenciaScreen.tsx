@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PersonalCard, PersonalQRModal } from '@/components/cajero/personal';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -162,7 +162,7 @@ export default function PantallaAsistenciaScreen() {
           ))}
         </View>
       ) : (
-        <FlashList
+        <VirtualizedList
           key={`asistencia-grid-${numColumns}`}
           data={filteredUsers}
           keyExtractor={(item: any) => item.id.toString()}
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 40,
     borderRadius: 9999,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   salirTexto: { fontSize: 13, fontWeight: '800' },
   resumen: {

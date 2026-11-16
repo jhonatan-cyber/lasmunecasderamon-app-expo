@@ -1,6 +1,7 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import FlashList from "@/components/shared/FlashList";
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Event } from "@/hooks/types/administrativoTypes";
 import { EventItemCard } from "./EventItemCard";
@@ -77,7 +78,7 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
             </Pressable>
           </View>
 
-          <FlashList
+          <VirtualizedList
             data={selectedEvents}
             keyExtractor={(item: Event, index: number) => `${item.type}-${item.id}-${index}`}
             renderItem={({ item }: { item: Event }) => (

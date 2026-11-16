@@ -1,18 +1,18 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import { useCallback } from 'react';
 import {
-    Pressable,
     RefreshControl,
     StyleSheet,
-    Text,
-    useColorScheme,
     View,
 } from 'react-native';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from '@/constants/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { CategoryCard } from '@/components/shared/CategoryCard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { usePedidosScreen, Category } from '@/hooks/usePedidosScreen';
 import { PedidosSkeleton } from '@/components/garzon/pedidos/PedidosSkeleton';
@@ -20,14 +20,15 @@ import { GarzonOfflineBanner } from '@/components/garzon/GarzonOfflineBanner';
 import { useAuthStore } from '@/store/authStore';
 import { isBarmanRole } from '@/utils/userRole';
 
-const COLUMNAS_CATEGORIAS = 2;
 
 export default function PedidosScreen() {
-    const { gradientColors, bg, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const { gradientColors, bg } = useAccentColor();
+    const { isTablet, isLandscape } = useResponsiveMetrics();
+    // 3 columnas cuando el ancho lo permite (horizontal o tablet).
+    const columnas = isTablet || isLandscape ? 3 : 2;
     const router = useRouter();
     const isBarman = isBarmanRole(useAuthStore((state) => state.user));
     const insets = useSafeAreaInsets();
-    const isDark = (useColorScheme() ?? 'dark') === 'dark';
 
     const {
         categories,
@@ -64,44 +65,37 @@ export default function PedidosScreen() {
                 title="Categorías"
                 subtitle={fromCache ? 'Catálogo guardado en el dispositivo' : 'Selecciona una para ver los productos'}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
-                rightComponent={
-                    <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextHeader}>Atrás</Text>
-                    </Pressable>
-                }
+                onBack={() => router.back()}
             />
 
             <GarzonOfflineBanner />
 
             {error ? (
-                <View style={[styles.errorCard, { backgroundColor: isDark ? '#451a1a' : '#FEF2F2' }]}>
-                    <Ionicons name="alert-circle" size={24} color="#EF4444" />
-                    <Text style={styles.errorText}>{error}</Text>
-                    <Pressable onPress={() => fetchCategories()} style={styles.retryButton}>
-                        <Text style={styles.retryText}>REINTENTAR</Text>
-                    </Pressable>
-                </View>
+                <EmployeeListError
+                    message={typeof error === 'string' ? error : 'No pudimos cargar las categorías.'}
+                    onRetry={() => fetchCategories()}
+                />
             ) : null}
 
-            <FlashList
+            <VirtualizedList
+                key={`categorias-${columnas}`}
                 data={categories}
                 keyExtractor={(item: Category) => item.id.toString()}
                 renderItem={renderItem}
-                numColumns={COLUMNAS_CATEGORIAS}
+                numColumns={columnas}
                 columnWrapperStyle={styles.columnWrapper}
                 estimatedItemSize={180}
                 contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyIconBg, { backgroundColor: cardBg }]}>
-                            <Ionicons name="basket-outline" size={60} color={textSecondary} />
-                        </View>
-                        <Text style={[styles.emptyText, { color: textPrimary }]}>No hay categorías disponibles</Text>
-                        <Text style={[styles.emptySubtext, { color: textSecondary }]}>Por el momento no se han encontrado categorías activas para mostrar.</Text>
-                    </View>
+                    <EmptyState
+                        icon="basket-outline"
+                        title="No hay categorías disponibles"
+                        message="Todavía no hay categorías activas para mostrar."
+                        actionLabel="Actualizar"
+                        onAction={() => fetchCategories()}
+                    />
                 }
             />
         </View>
@@ -120,7 +114,7 @@ const styles = StyleSheet.create({
         gap: 6
     },
     backTextHeader: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-    listContent: { paddingHorizontal: 20, paddingTop: 10 },
+    listContent: { ...contentColumn, paddingHorizontal: 20, paddingTop: 10 },
     columnWrapper: { gap: 15 },
     cardCell: { flex: 1, marginBottom: 15 },
     errorCard: {

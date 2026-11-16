@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -8,13 +9,14 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { PremiumFAB } from "@/components/ui/PremiumFAB";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { FontSize } from "@/constants/spacing";
 import { useClientes, Client } from "@/hooks/useClientes";
 import { ClientCard } from "@/components/cajero/clientes/ClientCard";
 import { ClientFormModal } from "@/components/cajero/clientes/ClientFormModal";
@@ -109,73 +111,34 @@ export default function ClientesScreen() {
       <PremiumHeader
         title="Clientes"
         subtitle="Gestión de prepago y datos"
+        onBack={() => router.back()}
         rightComponent={
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
-            <TouchableOpacity
-              onPress={() => fetchClients(true)}
-              style={styles.backBtnRight}
-            >
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backBtnRight}
-            >
-              <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => fetchClients(true)}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={styles.backBtnRight}
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar clientes"
+          >
+            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+          </Pressable>
         }
       />
 
       <View style={styles.content}>
-        <View
-          style={[
-            styles.searchOuter,
-            { backgroundColor: isDark ? "#111111" : "#FFFFFF" },
-          ]}
-        >
-          <View
-            style={[
-              styles.searchContainer,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(0,0,0,0.03)",
-              },
-            ]}
-          >
-            <Ionicons
-              name="search"
-              size={20}
-              color={isDark ? "#9CA3AF" : "#6B7280"}
-            />
-            <TextInput
-              style={[
-                styles.searchInput,
-                { color: isDark ? "#FFFFFF" : "#111827" },
-              ]}
-              placeholder="Buscar cliente por nombre, RUN o teléfono..."
-              placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch("")}>
-                <Ionicons
-                  name="close-circle"
-                  size={18}
-                  color={isDark ? "#4B5563" : "#9CA3AF"}
-                />
-              </Pressable>
-            )}
-          </View>
+        <View style={styles.searchOuter}>
+          <SearchBar
+            placeholder="Buscar cliente por nombre, RUN o teléfono..."
+            value={search}
+            onChangeText={setSearch}
+            onClear={() => setSearch("")}
+          />
 
           <View style={styles.summaryContainer}>
             <View
               style={[styles.summaryPill, { backgroundColor: "#10B98110" }]}
             >
-              <Ionicons name="wallet-outline" size={14} color="#10B981" />
+              <Ionicons name="wallet-outline" size={FontSize.xs} color="#10B981" />
               <Text
                 style={[
                   styles.summaryLabel,
@@ -191,7 +154,7 @@ export default function ClientesScreen() {
             <View
               style={[styles.summaryPill, { backgroundColor: "#EF444410" }]}
             >
-              <Ionicons name="alert-circle-outline" size={14} color="#EF4444" />
+              <Ionicons name="alert-circle-outline" size={FontSize.xs} color="#EF4444" />
               <Text
                 style={[
                   styles.summaryLabel,
@@ -220,7 +183,7 @@ export default function ClientesScreen() {
             ))}
           </View>
         ) : (
-          <FlashList
+          <VirtualizedList
             data={filteredClients}
             renderItem={renderClientCard}
             keyExtractor={(item: Client) => String(item.id)}
@@ -238,23 +201,13 @@ export default function ClientesScreen() {
             initialNumToRender={5}
             removeClippedSubviews={true}
             ListEmptyComponent={() => (
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="people-outline"
-                  size={64}
-                  color={isDark ? "#1F2937" : "#E5E7EB"}
-                />
-                <Text
-                  style={[
-                    styles.emptyText,
-                    { color: isDark ? "#4B5563" : "#9CA3AF" },
-                  ]}
-                >
-                  {search
-                    ? "No se encontraron clientes"
-                    : "No hay clientes registrados"}
-                </Text>
-              </View>
+              <EmptyState
+                icon="people-outline"
+                title={search ? "No se encontraron clientes" : "No hay clientes registrados"}
+                message={search ? "Intenta con otros términos de búsqueda" : "Agrega tu primer cliente para comenzar"}
+                actionLabel={!search ? "Nuevo Cliente" : undefined}
+                onAction={!search ? handleOpenNew : undefined}
+              />
             )}
           />
         )}
@@ -372,16 +325,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryLabel: {
-    fontSize: 8,
-    fontWeight: "900",
+    fontSize: FontSize.xs,
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
   summaryValue: {
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: FontSize.sm,
+    fontWeight: "800",
     marginLeft: "auto",
   },
   listContent: {
+    ...contentColumn,
     padding: 10,
     paddingBottom: 100,
   },
@@ -392,7 +346,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 16,
-    fontSize: 15,
+    fontSize: FontSize.sm,
     fontWeight: "700",
   },
   backBtnRight: {

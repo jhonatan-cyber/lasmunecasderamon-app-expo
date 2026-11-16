@@ -1,35 +1,25 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAsistencia } from '@/hooks/useAsistencia';
 import { useStableCallback } from '@/hooks/useStableCallback';
+import { DateRangeFilterModal } from '@/components/screens/asistencia/DateRangeFilterModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  FlatList as FlashList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 
-const MONTHS = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
-];
 
 export default function AsistenciaScreen() {
   const {
@@ -43,8 +33,6 @@ export default function AsistenciaScreen() {
   } = useAccentColor();
   const {
     isHostess,
-    allHistory,
-    setAllHistory,
     housingDiscountTotal,
     activeTab,
     setActiveTab,
@@ -56,10 +44,17 @@ export default function AsistenciaScreen() {
     filter,
     setFilter,
     onRefresh,
-    currentDate,
-    navigateMonth,
-    goToCurrentMonth,
   } = useAsistencia();
+
+  // Date range filter state
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [dateFilterVisible, setDateFilterVisible] = useState(false);
+
+  const handleDateFilterApply = useCallback((from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+  }, []);
 
   const normalizeEstado = (estado: number | string | null | undefined) => {
     if (
@@ -102,12 +97,26 @@ export default function AsistenciaScreen() {
 
   const currentData =
     activeTab === 'asistencias' ? asistencias : gratificaciones;
+
+  const filterByDate = useCallback((a: any): boolean => {
+    if (!dateFrom && !dateTo) return true;
+    const raw = a.fecha;
+    if (!raw) return false;
+    let key = raw;
+    if (raw.includes('T')) key = raw.split('T')[0];
+    else if (raw.length > 10) key = raw.substring(0, 10);
+    if (dateFrom && key < dateFrom) return false;
+    if (dateTo && key > dateTo) return false;
+    return true;
+  }, [dateFrom, dateTo]);
+
   const filteredData =
     activeTab === 'asistencias'
       ? currentData.filter((a: any) => {
           const estado = normalizeEstado(a.estado);
           if (filter === 'pendiente') return estado === 'pendiente';
           if (filter === 'pagado') return estado === 'pagado';
+          if (!filterByDate(a)) return false;
           return true;
         })
       : currentData;
@@ -150,7 +159,7 @@ export default function AsistenciaScreen() {
         <AnimatedView
           from={{ opacity: 0, translateY: 30 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: index * 100 }}
+          transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         >
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
@@ -418,60 +427,6 @@ export default function AsistenciaScreen() {
         </Pressable>
       </View>
 
-      {activeTab === 'asistencias' && !isHostess && (
-        <View
-          style={{
-            flexDirection: 'row',
-            gap: 8,
-            marginHorizontal: 16,
-            marginTop: 16,
-          }}
-        >
-          {[true, false].map((all) => (
-            <Pressable
-              key={String(all)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: allHistory === all }}
-              onPress={() => setAllHistory(all)}
-              style={{
-                borderRadius: 9999,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                backgroundColor: allHistory === all ? accentColor : cardBg,
-              }}
-            >
-              <Text
-                style={{ color: allHistory === all ? '#FFFFFF' : textPrimary }}
-              >
-                {all ? 'Historial completo' : 'Por mes'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-      {activeTab === 'asistencias' && !isHostess && !allHistory && (
-        <View
-          style={[styles.monthNav, { backgroundColor: cardBg, borderColor }]}
-        >
-          <Pressable
-            onPress={() => navigateMonth(-1)}
-            style={styles.monthNavBtn}
-          >
-            <Ionicons name="chevron-back" size={18} color={textPrimary} />
-          </Pressable>
-          <Pressable onPress={goToCurrentMonth} style={styles.monthNavLabel}>
-            <Text style={[styles.monthNavText, { color: textPrimary }]}>
-              {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => navigateMonth(1)}
-            style={styles.monthNavBtn}
-          >
-            <Ionicons name="chevron-forward" size={18} color={textPrimary} />
-          </Pressable>
-        </View>
-      )}
 
       <View
         style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}
@@ -535,37 +490,54 @@ export default function AsistenciaScreen() {
       </View>
 
       {activeTab === 'asistencias' && (
-        <View style={styles.filterRow}>
-          {(['all', 'pendiente', 'pagado'] as const).map((f) => (
+        <FilterTabs
+          tabs={[
+            { key: 'all', label: 'Todas', count: currentData.length },
+            { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
+            { key: 'pagado', label: 'Pagadas', count: pagados.length },
+          ]}
+          activeKey={filter}
+          onTabPress={setFilter}
+          accentColor={accentColor}
+          cardBg={cardBg}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+          leadingChildren={
             <Pressable
-              key={f}
               style={[
-                styles.filterButton,
+                styles.dateFilterButton,
                 {
-                  backgroundColor: filter === f ? accentColor : cardBg,
-                  borderColor: filter === f ? accentColor : borderColor,
+                  borderColor: (dateFrom || dateTo) ? accentColor : borderColor,
+                  backgroundColor: (dateFrom || dateTo)
+                    ? isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF'
+                    : cardBg,
                 },
               ]}
-              onPress={() => setFilter(f)}
+              onPress={() => setDateFilterVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filtrar por fechas"
             >
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color={(dateFrom || dateTo) ? accentColor : textSecondary}
+              />
               <Text
                 style={[
-                  styles.filterText,
-                  { color: filter === f ? '#FFFFFF' : textSecondary },
+                  styles.dateFilterText,
+                  {
+                    color: (dateFrom || dateTo) ? accentColor : textSecondary,
+                  },
                 ]}
               >
-                {f === 'all'
-                  ? `Todas (${currentData.length})`
-                  : f === 'pendiente'
-                    ? `Pendientes (${pendientes.length})`
-                    : `Pagadas (${pagados.length})`}
+                Fechas
               </Text>
             </Pressable>
-          ))}
-        </View>
+          }
+        />
       )}
 
-      <FlashList
+      <VirtualizedList
         data={filteredData}
         keyExtractor={(item: any) => (item.id_asistencia || item.id).toString()}
         renderItem={renderItem}
@@ -579,17 +551,23 @@ export default function AsistenciaScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons
-              name="clipboard-outline"
-              size={48}
-              color={textSecondary}
-            />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No se encontraron registros
-            </Text>
-          </View>
+          <EmptyState icon="clipboard-outline" title="No se encontraron registros" />
         }
+        {...LIST_PERF_PROPS}
+      />
+
+      {/* Date range filter modal */}
+      <DateRangeFilterModal
+        visible={dateFilterVisible}
+        onClose={() => setDateFilterVisible(false)}
+        onApply={handleDateFilterApply}
+        asistencias={asistencias}
+        accentColor={accentColor}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        isDark={isDark}
       />
     </View>
   );
@@ -618,6 +596,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -637,21 +616,18 @@ const styles = StyleSheet.create({
   },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
+  dateFilterButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 9999,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
   },
-  filterText: { fontSize: 11, fontWeight: '600' },
+  dateFilterText: { fontSize: 10, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 20 },
   card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
@@ -693,31 +669,4 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   paymentText: { fontSize: 12 },
-  emptyCard: {
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  monthNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-  },
-  monthNavBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  monthNavLabel: { flex: 1, alignItems: 'center' },
-  monthNavText: { fontSize: 15, fontWeight: '800' },
 });

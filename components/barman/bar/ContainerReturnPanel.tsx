@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, Text, TextInput, Pressable, RefreshControl, StyleSheet } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
@@ -174,7 +174,7 @@ export function ContainerReturnPanel({
           ))}
         </View>
       ) : (
-        <FlashList
+        <VirtualizedList
           data={devoluciones}
           keyExtractor={(item: EnvaseDevolucion) => item.id}
           contentContainerStyle={styles.list}

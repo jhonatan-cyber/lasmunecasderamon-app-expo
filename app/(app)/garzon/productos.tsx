@@ -1,5 +1,6 @@
 import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
 import { useCartDraft } from "@/hooks/useCartDraft";
+import { contentColumn } from '@/constants/layout';
 import { useCartStore } from "@/store/cartStore";
 import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -14,10 +15,10 @@ import {
   StyleSheet,
   Text,
   View,
-  Modal,
   ScrollView,
-} from "react-native";
-import FlashList from "@/components/shared/FlashList";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProductCard } from "@/components/shared/ProductCard";
 import type { Product } from "@/types/cart";
@@ -117,28 +118,23 @@ export default function ProductosScreen() {
         connectionStatus={
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
+        onBack={() => {
+          clearDraft();
+          clearCart();
+          router.back();
+        }}
         rightComponent={
-          <View style={styles.headerActions}>
-            {cart.length > 0 && (
-              <Pressable
-                onPress={() => setClearCartAlertVisible(true)}
-                style={styles.clearBtn}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FF4444" />
-              </Pressable>
-            )}
+          cart.length > 0 ? (
             <Pressable
-              onPress={() => {
-                clearDraft();
-                clearCart();
-                router.back();
-              }}
-              style={styles.backBtn}
+              onPress={() => setClearCartAlertVisible(true)}
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              style={styles.clearBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Vaciar pedido"
             >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backText}>Atrás</Text>
+              <Ionicons name="trash-outline" size={20} color="#FF4444" />
             </Pressable>
-          </View>
+          ) : undefined
         }
       />
 
@@ -149,7 +145,7 @@ export default function ProductosScreen() {
           <ActivityIndicator size="large" color={accentColor} />
         </View>
       ) : (
-        <FlashList
+        <VirtualizedList
           data={products}
           extraData={cart}
           keyExtractor={(item: Product) => String(item.id)}
@@ -367,7 +363,7 @@ export default function ProductosScreen() {
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  listContent: { padding: 16 },
+  listContent: { ...contentColumn, padding: 16 },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   clearBtn: {
     width: 38,

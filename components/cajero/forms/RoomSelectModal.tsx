@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import FlashList from "@/components/shared/FlashList";
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { ModalBottomSheet } from "@/components/ui/ModalBottomSheet";
 
 export interface Room {
   id: string | number;
@@ -36,7 +38,6 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
   useRenderCount("RoomSelectModal", { visible, roomCount: rooms.length });
   const {
     accentColor: primaryColor,
-    cardBg,
     borderColor,
     textPrimary,
     textSecondary,
@@ -52,177 +53,126 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
   };
 
   return (
-    <Modal
+    <ModalBottomSheet
       visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Seleccionar Habitación"
+      actionLabel="Listo"
+      onAction={onClose}
+      scrollable={false}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Seleccionar Habitación
-            </Text>
-            <Pressable onPress={onClose}>
-              <Ionicons name="close" size={24} color={textPrimary} />
-            </Pressable>
-          </View>
+      <View style={{ flex: 1 }}>
+        <VirtualizedList
+          data={
+            requireCompleteConfig
+              ? rooms.filter(
+                  (room) =>
+                    Number(room.precio ?? 0) > 0 &&
+                    Number(room.tiempo ?? 0) > 0,
+                )
+              : rooms
+          }
+          keyExtractor={(item: Room) =>
+            (item.id_habitacion || item.id).toString()
+          }
+          estimatedItemSize={80}
+          renderItem={({ item }: { item: Room }) => {
+            const itemId = String(item.id_habitacion || item.id);
+            const isSelected = String(selectedRoomId) === itemId;
+            const estado = estadoHabitacion(item);
+            const estaLibre = estado === 1;
+            const roomName =
+              item.nombre || `Habitación ${item.id_habitacion || item.id}`;
 
-          <FlashList
-            data={
-              requireCompleteConfig
-                ? rooms.filter(
-                    (room) =>
-                      Number(room.precio ?? 0) > 0 &&
-                      Number(room.tiempo ?? 0) > 0,
-                  )
-                : rooms
-            }
-            keyExtractor={(item: Room) =>
-              (item.id_habitacion || item.id).toString()
-            }
-            estimatedItemSize={80}
-            renderItem={({ item }: { item: Room }) => {
-              const itemId = String(item.id_habitacion || item.id);
-              const isSelected = String(selectedRoomId) === itemId;
-              const estado = estadoHabitacion(item);
-              const estaLibre = estado === 1;
-              const roomName =
-                item.nombre || `Habitación ${item.id_habitacion || item.id}`;
-
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
-                  accessibilityState={{
-                    disabled: !estaLibre,
-                    selected: isSelected,
-                  }}
-                  disabled={!estaLibre}
-                  onPress={() => {
-                    if (estaLibre) onSelect(item);
-                  }}
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
+                accessibilityState={{
+                  disabled: !estaLibre,
+                  selected: isSelected,
+                }}
+                disabled={!estaLibre}
+                onPress={() => {
+                  if (estaLibre) onSelect(item);
+                }}
+                style={[
+                  styles.modalItem,
+                  {
+                    borderColor: isSelected ? primaryColor : borderColor,
+                    backgroundColor: isSelected
+                      ? `${primaryColor}15`
+                      : "transparent",
+                    opacity: estaLibre ? 1 : 0.6,
+                    borderWidth: isSelected ? 2 : 1.5,
+                  },
+                ]}
+              >
+                <View
                   style={[
-                    styles.modalItem,
+                    styles.roomIcon,
                     {
-                      borderColor: isSelected ? primaryColor : borderColor,
-                      backgroundColor: isSelected
-                        ? `${primaryColor}15`
-                        : "transparent",
-                      opacity: estaLibre ? 1 : 0.6,
-                      borderWidth: isSelected ? 2 : 1.5,
+                      backgroundColor: estaLibre ? "#10B98120" : "#EF444420",
                     },
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.roomIcon,
-                      {
-                        backgroundColor: estaLibre ? "#10B98120" : "#EF444420",
-                      },
-                    ]}
+                  <Ionicons
+                    name="business"
+                    size={24}
+                    color={estaLibre ? "#10B981" : "#EF4444"}
+                  />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text
+                    style={[styles.modalItemText, { color: textPrimary }]}
                   >
-                    <Ionicons
-                      name="business"
-                      size={24}
-                      color={estaLibre ? "#10B981" : "#EF4444"}
-                    />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text
-                      style={[styles.modalItemText, { color: textPrimary }]}
-                    >
-                      {roomName}
+                    {roomName}
+                  </Text>
+                  <View
+                    style={{ flexDirection: "row", alignItems: "center" }}
+                  >
+                    <Text style={{ fontSize: 13, color: textSecondary }}>
+                      ${Number(item.precio || 0).toLocaleString()} •{" "}
+                      {item.tiempo || 0} min
                     </Text>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: estaLibre ? "#10B981" : "#EF4444",
+                        marginLeft: 8,
+                        fontWeight: "bold",
+                      }}
                     >
-                      <Text style={{ fontSize: 13, color: textSecondary }}>
-                        ${Number(item.precio || 0).toLocaleString()} •{" "}
-                        {item.tiempo || 0} min
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: estaLibre ? "#10B981" : "#EF4444",
-                          marginLeft: 8,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {`● ${etiquetaEstado(estado)}`}
-                      </Text>
-                    </View>
+                      {`● ${etiquetaEstado(estado)}`}
+                    </Text>
                   </View>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={18} color={primaryColor} />
-                  )}
-                </Pressable>
-              );
-            }}
-          />
-
-          <Pressable
-            style={[styles.modalActionBtn, { backgroundColor: primaryColor }]}
-            onPress={onClose}
-          >
-            <Text style={styles.modalActionBtnText}>Listo</Text>
-          </Pressable>
-        </View>
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={18} color={primaryColor} />
+                )}
+              </Pressable>
+            );
+          }}
+        />
       </View>
-    </Modal>
+    </ModalBottomSheet>
   );
 });
 RoomSelectModal.displayName = "RoomSelectModal";
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    width: "100%",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    height: "85%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-  },
   modalItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1.5,
+    borderWidth: 2,
     marginBottom: 10,
   },
   modalItemText: {
     fontSize: 16,
     fontWeight: "800",
-  },
-  modalActionBtn: {
-    height: 54,
-    borderRadius: 9999,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  modalActionBtnText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "900",
-    letterSpacing: 1,
   },
   roomIcon: {
     width: 44,

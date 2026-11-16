@@ -1,8 +1,11 @@
 import { apiClientSafe } from '@/api/client-safe';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
+import { BREAKPOINTS } from '@/constants/dimensions';
 import { User } from '@/hooks/usePersonalScreen';
 import { eventBus } from "@/utils/eventBus";
 import logger from '@/utils/logger';
@@ -11,7 +14,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack,useFocusEffect,useRouter } from 'expo-router';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import {
-Dimensions,
 Pressable,
 RefreshControl,
 StyleSheet,
@@ -25,15 +27,19 @@ PersonalCard,
 PersonalQRModal
 } from '@/components/cajero/personal';
 
-const { width } = Dimensions.get('window');
 const GRID_PADDING = 16;
 const GRID_GAP = 12;
-const NUM_COLUMNS = 2;
-const CARD_WIDTH = (width - (GRID_PADDING * 2) - GRID_GAP) / NUM_COLUMNS;
 
 export default function PersonalScreen() {
     const router = useRouter();
     const {accentColor, accentBg, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
+    // La cuadrícula gana columnas cuando hay ancho: móvil vertical 2, horizontal 3,
+    // tablet vertical 3 y tablet horizontal 4.
+    const { width: screenWidth, isTablet, isLandscape } = useResponsiveMetrics();
+    const columnas = isTablet
+        ? screenWidth >= BREAKPOINTS.xl ? 4 : 3
+        : isLandscape ? 3 : 2;
+    const cardWidth = (screenWidth - GRID_PADDING * 2 - GRID_GAP * (columnas - 1)) / columnas;
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -202,7 +208,7 @@ export default function PersonalScreen() {
         <PersonalCard
             item={item}
             index={index}
-            cardWidth={CARD_WIDTH}
+            cardWidth={cardWidth}
             setSelectedUser={setSelectedUser}
             cardBg={cardBg}
             borderColor={borderColor}
@@ -211,7 +217,7 @@ export default function PersonalScreen() {
             textPrimary={textPrimary}
             textSecondary={textSecondary}
         />
-    ), [cardBg, borderColor, accentBg, accentColor, textPrimary, textSecondary, setSelectedUser]);
+    ), [cardBg, borderColor, accentBg, accentColor, textPrimary, textSecondary, setSelectedUser, cardWidth]);
 
     if (loading) {
         return (
@@ -220,23 +226,24 @@ export default function PersonalScreen() {
                 <PremiumHeader
                     title="Personal"
                     subtitle="Lista de trabajadores"
+                    onBack={() => router.back()}
                     rightComponent={
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                            <Pressable onPress={() => fetchUsers(true)} style={styles.backBtnRight}>
-                                <Ionicons name="refresh" size={20} color="#FFFFFF" />
-                            </Pressable>
-                            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-                                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                                <Text style={styles.backTextHeader}>Atrás</Text>
-                            </Pressable>
-                        </View>
+                        <Pressable
+                            onPress={() => fetchUsers(true)}
+                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                            style={styles.backBtnRight}
+                            accessibilityRole="button"
+                            accessibilityLabel="Actualizar personal"
+                        >
+                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                        </Pressable>
                     }
                 />
                 <View style={styles.skeletonGrid}>
                     {[1, 2, 3, 4, 5, 6].map(i => (
                         <SkeletonLoader
                             key={i}
-                            width={CARD_WIDTH - 8}
+                            width={cardWidth - 8}
                             height={160}
                             borderRadius={20}
                             style={{ margin: 4 }}
@@ -253,16 +260,17 @@ export default function PersonalScreen() {
             <PremiumHeader
                 title="Personal"
                 subtitle="Selecciona un usuario para ver su QR"
+                onBack={() => router.back()}
                 rightComponent={
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                        <Pressable onPress={() => fetchUsers(true)} style={styles.backBtnRight}>
-                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
-                        </Pressable>
-                        <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextHeader}>Atrás</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        onPress={() => fetchUsers(true)}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        style={styles.backBtnRight}
+                        accessibilityRole="button"
+                        accessibilityLabel="Actualizar personal"
+                    >
+                        <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                    </Pressable>
                 }
             />
 
@@ -284,12 +292,13 @@ export default function PersonalScreen() {
                 </View>
             </View>
 
-            <FlashList
+            <VirtualizedList
+                key={`personal-${columnas}`}
                 data={filteredUsers}
                 keyExtractor={(item: any) => item.id.toString()}
                 renderItem={renderUser}
                 estimatedItemSize={180}
-                numColumns={NUM_COLUMNS}
+                numColumns={columnas}
                 contentContainerStyle={styles.listContentGrid}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -347,6 +356,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     listContentGrid: {
+        ...contentColumn,
         paddingHorizontal: GRID_PADDING,
         paddingBottom: 100,
     },

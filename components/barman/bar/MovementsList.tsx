@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
@@ -44,7 +44,7 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
   }
 
   return (
-    <FlashList
+    <VirtualizedList
       data={items}
       keyExtractor={(item: BarMovement) => item.id}
       contentContainerStyle={styles.list}

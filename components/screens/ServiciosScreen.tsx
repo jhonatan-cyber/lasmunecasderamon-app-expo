@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { useStableCallback } from "@/hooks/useStableCallback";import { eventBus } from "@/utils/eventBus";
@@ -8,18 +9,20 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View
 } from "react-native";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiClientSafe } from '@/api/client-safe';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useTimer } from '@/context/TimerContext';
 import type { Timer } from '@/context/types';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { BarmanOfflineBanner } from '@/components/barman/BarmanOfflineBanner';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { blockOffline } from '@/utils/offlineGuard';
@@ -157,8 +160,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const { accentColor, isDark } = useAccentColor();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
   const { timers, refreshTimers, serverOffset } = useTimer();
   const isFocused = useRef(true);
@@ -381,15 +383,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       <Stack.Screen options={{ headerShown: false }} />
       <PremiumHeader
         title="Servicios"
-        rightComponent={
-          <Pressable
-            onPress={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
-            style={styles.backBtnRight}
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
         tabs={[
           { id: "activos", label: "Activos" },
           { id: "finalizados", label: "Finalizados" },
@@ -405,7 +399,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       )}
 
       <View style={{ flex: 1 }}>
-        <FlashList
+        <VirtualizedList
           data={activeTab === "activos" ? activeServicios : finalizados}
           renderItem={renderItem}
           keyExtractor={(item: any) => item.id}
@@ -419,12 +413,15 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
           initialNumToRender={5}
           removeClippedSubviews={true}
           ListEmptyComponent={
-            !(loadingActivos || loadingFinalizados) ? (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
-                <Ionicons name="documents-outline" size={48} color={theme.textMuted} />
-                <Text style={{ color: theme.textMuted, marginTop: 10 }}>No hay servicios que mostrar</Text>
+            loadingActivos || loadingFinalizados ? (
+              <View style={{ padding: 16, gap: 12 }}>
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} height={96} borderRadius={16} />
+                ))}
               </View>
-            ) : null
+            ) : (
+              <EmptyState icon="documents-outline" title="No hay servicios que mostrar" />
+            )
           }
         />
       </View>
@@ -460,7 +457,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 12, paddingBottom: 100 },
+  list: { ...contentColumn, padding: 12, paddingBottom: 100 },
   backBtnRight: {
       flexDirection: 'row', 
       alignItems: 'center', 
@@ -480,10 +477,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 9999,
-    elevation: 8, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     gap: 8
   },

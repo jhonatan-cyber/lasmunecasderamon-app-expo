@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback } from "react";
@@ -10,18 +11,21 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
+import { FontSize } from '@/constants/spacing';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
 import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
 import { CuentasSkeleton } from '@/components/cajero/cuentas/CuentasSkeleton';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { useCuentasScreen } from '@/hooks/useCuentasScreen';
 import { CuentaCard } from '@/components/cajero/cuentas/CuentaCard';
 
@@ -30,8 +34,7 @@ export default function CuentasScreen() {
   const C = Colors[isDark ? 'dark' : 'light'];
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
   const screen = useCuentasScreen();
   const {
@@ -130,16 +133,17 @@ export default function CuentasScreen() {
               : "Cuentas por cobrar"
         }
         connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
+        onBack={() => router.back()}
         rightComponent={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-            <TouchableOpacity onPress={() => fetchCuentas(true)} style={styles.backBtnRight}>
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={() => fetchCuentas(true)}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={styles.backBtnRight}
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar cuentas"
+          >
+            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         }
       />
 
@@ -147,21 +151,12 @@ export default function CuentasScreen() {
 
       <View style={styles.content}>
         <View style={[styles.searchOuter, { backgroundColor: isDark ? "#111111" : "#FFFFFF" }]}>
-          <View style={[styles.searchContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)" }]}>
-            <Ionicons name="search" size={20} color={isDark ? "#9CA3AF" : "#6B7280"} />
-            <TextInput
-              style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#111827" }]}
-              placeholder="Buscar por código o cliente..."
-              placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch("")}>
-                <Ionicons name="close-circle" size={18} color={isDark ? "#4B5563" : "#9CA3AF"} />
-              </Pressable>
-            )}
-          </View>
+          <SearchBar
+            placeholder="Buscar por código o cliente..."
+            value={search}
+            onChangeText={setSearch}
+            onClear={() => setSearch("")}
+          />
 
           <View style={styles.summaryContainer}>
             <View style={[styles.summaryPill, { backgroundColor: `${accentColor}10` }]}>
@@ -217,7 +212,7 @@ export default function CuentasScreen() {
           </View>
         </View>
 
-        <FlashList
+        <VirtualizedList
           data={filteredCuentas}
           extraData={timers}
           renderItem={renderCuentaCard}
@@ -241,15 +236,11 @@ export default function CuentasScreen() {
           initialNumToRender={5}
           removeClippedSubviews={true}
           ListEmptyComponent={
-            <View style={[styles.emptyCard, { borderColor }]}>
-              <Ionicons name="receipt-outline" size={64} color={textSecondary} />
-              <Text style={[styles.emptyText, { color: textPrimary }]}>
-                No hay cuentas registradas
-              </Text>
-              <Text style={[styles.emptySub, { color: textSecondary }]}>
-                Las cuentas aparecerán cuando las crees en el registro.
-              </Text>
-            </View>
+            <EmptyState
+              icon="receipt-outline"
+              title={search ? "No se encontraron cuentas" : "No hay cuentas registradas"}
+              message={search ? "Intenta con otros términos de búsqueda" : "Las cuentas aparecerán cuando las crees en el registro."}
+            />
           }
         />
       </View>
@@ -321,9 +312,9 @@ const styles = StyleSheet.create({
       gap: 8,
       justifyContent: 'center'
   },
-  summaryLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 0.5, opacity: 0.7 },
-  summaryValue: { fontSize: 14, fontWeight: '900' },
-  listContainer: { padding: 16, paddingBottom: 100 },
+  summaryLabel: { fontSize: FontSize.xs, fontWeight: '700', letterSpacing: 0.5, opacity: 0.7 },
+  summaryValue: { fontSize: FontSize.sm, fontWeight: '800' },
+  listContainer: { ...contentColumn, padding: 16, paddingBottom: 100 },
   tabContainer: {
     flexDirection: "row",
     marginTop: 20,
@@ -346,7 +337,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 9999,
   },
-  tabBadgeText: { color: "#E11D48", fontSize: 11, fontWeight: "900" },
+  tabBadgeText: { color: "#E11D48", fontSize: FontSize.xs, fontWeight: "800" },
 
   emptyCard: {
     borderRadius: 32,
@@ -408,16 +399,16 @@ const styles = StyleSheet.create({
   },
   gridItem: { width: "47%", marginBottom: 12 },
   gridLabel: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: FontSize.xs,
+    fontWeight: "700",
     marginBottom: 4,
     letterSpacing: 0.5,
   },
-  gridValue: { fontSize: 15, fontWeight: "700" },
+  gridValue: { fontSize: FontSize.sm, fontWeight: "700" },
   hostessSection: { marginBottom: 24 },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: FontSize.xs,
+    fontWeight: "700",
     marginBottom: 10,
     letterSpacing: 0.5,
   },
@@ -474,7 +465,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     elevation: 10,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,

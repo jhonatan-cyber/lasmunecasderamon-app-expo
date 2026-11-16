@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { contentColumn } from "@/constants/layout";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,13 +11,13 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { SolicitudesSkeleton } from "@/components/cajero/solicitudes/SolicitudesSkeleton";
 
 import { CheckoutModal } from "@/components/cajero/CheckoutModal";
@@ -30,8 +31,7 @@ import { useSolicitudesActions } from "@/hooks/useSolicitudesActions";
 export default function SolicitudesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
 
   const {
@@ -195,17 +195,7 @@ export default function SolicitudesScreen() {
           isConnected: !isOffline,
           label: isOffline ? "Modo Offline" : "En Línea",
         }}
-        rightComponent={
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backBtnRight}
-            >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextRight}>Atrás</Text>
-            </Pressable>
-          </View>
-        }
+        onBack={() => router.back()}
       />
 
       <OfflineStatusBanner
@@ -304,7 +294,7 @@ export default function SolicitudesScreen() {
         </AnimatedView>
       )}
 
-      <FlashList
+      <VirtualizedList
         data={filteredSolicitudes}
         keyExtractor={(item: SolicitudItem) => item.id_unificado}
         renderItem={renderSolicitud}
@@ -433,7 +423,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.5,
   },
-  listContainer: { padding: 16, paddingBottom: 100 },
+  listContainer: { ...contentColumn, padding: 16, paddingBottom: 100 },
   cardWrapper: { paddingBottom: 16 },
   cardWrapperGrid: { flex: 1, paddingHorizontal: 8 },
   columnWrapper: { marginHorizontal: -8 },
@@ -476,7 +466,7 @@ const styles = StyleSheet.create({
   },
   totalBannerText: { flex: 1 },
   totalBannerLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,

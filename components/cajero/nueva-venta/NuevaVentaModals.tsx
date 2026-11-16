@@ -3,20 +3,20 @@ import { BASE_URL } from "@/api/base-url";
 import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Modal,
   Pressable,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import FlashList from "@/components/shared/FlashList";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 
 import {
   PaymentMethod,
@@ -81,7 +81,7 @@ function ProductThumbnail({
         <Image
           source={{ uri }}
           style={{ width: "100%", height: "100%" }}
-          resizeMode="contain"
+          contentFit="contain"
           accessibilityLabel={`Foto de ${name}`}
           onError={() => setFailedUri(uri)}
         />
@@ -137,6 +137,7 @@ export function NuevaVentaModals({
   return (
     <>
       <Modal
+        avoidKeyboard={false}
         visible={categoryModalVisible}
         onShow={() => setProductSearch("")}
         animationType="slide"
@@ -229,7 +230,7 @@ export function NuevaVentaModals({
                 style={{ margin: 40 }}
               />
             ) : (
-              <FlashList
+              <VirtualizedList
                 data={filteredProducts}
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={{ paddingBottom: 12 }}
@@ -326,6 +327,7 @@ export function NuevaVentaModals({
         visible={timeModalVisible}
         animationType="slide"
         transparent={true}
+        onRequestClose={onCloseTimeModal}
       >
         <View style={styles.modalOverlay}>
           <View
@@ -347,7 +349,7 @@ export function NuevaVentaModals({
                 <Ionicons name="close" size={26} color={textPrimary} />
               </Pressable>
             </View>
-            <FlashList
+            <VirtualizedList
               data={timeOptions}
               keyExtractor={(item: number) => item.toString()}
               estimatedItemSize={60}
@@ -387,7 +389,7 @@ export function NuevaVentaModals({
         </View>
       </Modal>
 
-      <Modal visible={loadModalVisible} animationType="fade" transparent>
+      <Modal visible={loadModalVisible} animationType="fade" transparent onRequestClose={onCloseLoadModal}>
         <View style={styles.modalOverlay}>
           <View
             style={[
@@ -426,7 +428,7 @@ export function NuevaVentaModals({
                     borderWidth: 1,
                     borderColor,
                     borderRadius: 12,
-                    padding: 15,
+                    padding: 16,
                     color: textPrimary,
                     fontSize: 18,
                     fontWeight: "700",

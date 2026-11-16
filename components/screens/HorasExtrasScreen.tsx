@@ -1,5 +1,7 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useState, useCallback } from 'react';
 import {
   Pressable,
@@ -8,9 +10,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { OvertimeCard } from '@/components/ui/OvertimeCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useHorasExtras, HoraExtra } from '@/hooks/useHorasExtras';
@@ -42,14 +46,20 @@ export default function HorasExtrasScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: HoraExtra; index: number }) => (
-      <OvertimeCard
-        item={item}
-        index={index}
-        showIndexBadge={false}
-        usePagadoLabel={true}
-        compactDate={false}
-        showPaymentDate={true}
-      />
+      <AnimatedView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
+      >
+        <OvertimeCard
+          item={item}
+          index={index}
+          showIndexBadge={false}
+          usePagadoLabel={true}
+          compactDate={false}
+          showPaymentDate={true}
+        />
+      </AnimatedView>
     ),
     [],
   );
@@ -123,7 +133,7 @@ export default function HorasExtrasScreen() {
       <View
         style={[
           styles.summaryCard,
-          { backgroundColor: cardBg, borderColor, shadowColor: accentColor },
+          { backgroundColor: cardBg, borderColor, shadowColor: accentColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
         ]}
       >
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
@@ -150,34 +160,19 @@ export default function HorasExtrasScreen() {
         </View>
       </View>
 
-      <View style={styles.filterRow}>
-        {(['all', 'pendiente', 'pagado'] as const).map((f) => (
-          <Pressable
-            key={f}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: filter === f ? accentColor : cardBg,
-                borderColor: filter === f ? accentColor : borderColor,
-              },
-            ]}
-            onPress={() => setFilter(f)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                { color: filter === f ? '#FFFFFF' : textSecondary },
-              ]}
-            >
-              {f === 'all'
-                ? `Todas (${horasExtras.length})`
-                : f === 'pendiente'
-                  ? `Pendientes (${pendientes.length})`
-                  : `Cobradas (${horasExtras.length - pendientes.length})`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <FilterTabs
+        tabs={[
+          { key: 'all', label: 'Todas', count: horasExtras.length },
+          { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
+          { key: 'pagado', label: 'Cobradas', count: horasExtras.length - pendientes.length },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       {error ? (
         <View
@@ -199,7 +194,7 @@ export default function HorasExtrasScreen() {
         </View>
       ) : null}
 
-      <FlashList
+      <VirtualizedList
         data={filteredData}
         keyExtractor={(item: HoraExtra) => item.id_hora_extra.toString()}
         renderItem={renderItem}
@@ -214,13 +209,9 @@ export default function HorasExtrasScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons name="time-outline" size={48} color={textSecondary} />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No se encontraron horas extras
-            </Text>
-          </View>
+          <EmptyState icon="time-outline" title="No se encontraron horas extras" />
         }
+        {...LIST_PERF_PROPS}
       />
     </View>
   );
@@ -236,6 +227,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -250,21 +242,6 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9999,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  filterText: { fontSize: 11, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 20 },
   errorCard: {
     marginHorizontal: 16,
@@ -286,11 +263,4 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  emptyCard: {
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

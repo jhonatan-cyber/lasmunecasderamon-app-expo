@@ -1,28 +1,22 @@
-import { styles } from "./AnticiposScreen.styles";
-import { EmployeeListError } from "@/components/shared/EmployeeListError";
-import { AdvanceCard } from "@/components/ui/AdvanceCard";
-import { PremiumHeader } from "@/components/ui/PremiumHeader";
-import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
-import { useAccentColor } from "@/hooks/useAccentColor";
-import { Anticipo, useAnticipos } from "@/hooks/useAnticipos";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  Text,
-  View,
-} from "react-native";
-import { useState, useCallback } from "react";
-
-import { showToast } from "@/utils/toast-lazy";
-import {
-  filtrarAnticipos,
-  normalizeEstado,
-  type FiltroAnticipos,
-} from "@/components/screens/anticipos/anticiposUtils";
-import { AnticiposFilterRow } from "@/components/screens/anticipos/AnticiposFilterRow";
-import { SolicitarAnticipoModal } from "@/components/screens/anticipos/SolicitarAnticipoModal";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { AnimatedView } from '@/components/ui/AnimatedView';
+import { EmployeeListError } from '@/components/shared/EmployeeListError';
+import { FilterTabs } from '@/components/ui/FilterTabs';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
+import VirtualizedList from '@/components/shared/VirtualizedList';
+import { AdvanceCard } from '@/components/ui/AdvanceCard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { LIST_PERF_PROPS } from '@/constants/listPerf';
+import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { Anticipo, useAnticipos, FiltroAnticipos } from '@/hooks/useAnticipos';
+import { useStableCallback } from '@/hooks/useStableCallback';
+import { showToast } from '@/utils/toast-lazy';
+import { SolicitarAnticipoModal } from '@/components/screens/anticipos/SolicitarAnticipoModal';
+import { AnticipoDetailModal } from '@/components/screens/anticipos/AnticipoDetailModal';
+import { StyleSheet } from 'react-native';
+import { useState } from 'react';
 
 export default function AnticiposScreen() {
   const {
@@ -34,53 +28,67 @@ export default function AnticiposScreen() {
     textSecondary,
     borderColor,
   } = useAccentColor();
+
   const {
-    solicitudes,
-    pagos,
+    todos,
     loading,
     refreshing,
     error,
+    filter,
+    setFilter,
+    selectedAnticipo,
+    modalVisible,
+    setModalVisible,
     montoMaximo,
     montoAsistencia,
     montoComisiones,
     montoPropinas,
     tieneSolicitudPendiente,
+    efectivoEnCaja,
+    filteredData,
+    pendientes,
+    totalPendiente,
+    totalGeneral,
+    normalizeEstado,
+    handleAnticipoPress,
+    formatDate,
+    formatTime,
+    fetchAnticipos,
     fetchMaximo,
     solicitarAnticipo,
     onRefresh,
   } = useAnticipos();
 
-  const [filter, setFilter] = useState<FiltroAnticipos>("todos");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [monto, setMonto] = useState("");
-  const [motivo, setMotivo] = useState("");
+  const [solicitarModalVisible, setSolicitarModalVisible] = useState(false);
+  const [monto, setMonto] = useState('');
+  const [motivo, setMotivo] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
 
   const canRequestAdvance = montoMaximo > 0;
 
   const handleMontoChange = (text: string) => {
-    const cleanNumber = text.replace(/[^0-9]/g, "");
+    const cleanNumber = text.replace(/[^0-9]/g, '');
     if (!cleanNumber) {
-      setMonto("");
+      setMonto('');
       return;
     }
-    setMonto(parseInt(cleanNumber, 10).toLocaleString("de-DE"));
+    setMonto(parseInt(cleanNumber, 10).toLocaleString('es-CL'));
   };
 
   const handleSolicitar = async () => {
-    const montoNum = parseFloat(monto.replace(/\./g, ""));
+    const montoNum = parseFloat(monto.replace(/\./g, ''));
     if (!montoNum || montoNum <= 0) {
       showToast({
-        type: "error",
-        text1: "Error",
-        text2: "Ingresa un monto válido",
+        type: 'error',
+        text1: 'Error',
+        text2: 'Ingresa un monto válido',
       });
       return;
     }
     if (montoNum > montoMaximo) {
       showToast({
-        type: "error",
-        text1: "Error",
+        type: 'error',
+        text1: 'Error',
         text2: `El monto máximo es $${montoMaximo.toLocaleString()}`,
       });
       return;
@@ -88,9 +96,9 @@ export default function AnticiposScreen() {
     setSendingRequest(true);
     const success = await solicitarAnticipo(montoNum, motivo);
     if (success) {
-      setModalVisible(false);
-      setMonto("");
-      setMotivo("");
+      setSolicitarModalVisible(false);
+      setMonto('');
+      setMotivo('');
     }
     setSendingRequest(false);
   };
@@ -99,95 +107,184 @@ export default function AnticiposScreen() {
     const availability = await fetchMaximo();
     if (!availability) {
       showToast({
-        type: "error",
-        text1: "Error",
-        text2: "No se pudo cargar el saldo disponible. Reintenta.",
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudo cargar el saldo disponible. Reintenta.',
       });
       return;
     }
     if (availability.tiene_solicitud_pendiente) {
       showToast({
-        type: "info",
-        text1: "Solicitud pendiente",
-        text2: "Ya tienes una solicitud en espera",
+        type: 'info',
+        text1: 'Solicitud pendiente',
+        text2: 'Ya tienes una solicitud en espera',
       });
       return;
     }
     if (Number(availability.monto_maximo || 0) <= 0) {
       showToast({
-        type: "warning",
-        text1: "Sin saldo disponible",
-        text2: "No tienes monto disponible para solicitar anticipo",
+        type: 'warning',
+        text1: 'Sin saldo disponible',
+        text2: 'No tienes monto disponible para solicitar anticipo',
       });
       return;
     }
-    setModalVisible(true);
+    setSolicitarModalVisible(true);
   };
 
-  const filteredData = filtrarAnticipos({ filter, solicitudes, pagos });
 
-  const renderItem = useCallback(
+  const renderItem = useStableCallback(
     ({ item, index }: { item: Anticipo; index: number }) => (
-      <AdvanceCard
-        item={item}
-        index={index}
-        showIndexBadge={false}
-        compactDate={true}
-        viewMode="solicitudes"
-        normalizeEstado={normalizeEstado}
-      />
+      <AnimatedView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
+      >
+        <AdvanceCard
+          item={item}
+          index={index}
+          showIndexBadge={false}
+          compactDate={true}
+          normalizeEstado={normalizeEstado}
+          onPress={() => handleAnticipoPress(item)}
+        />
+      </AnimatedView>
     ),
-    [],
   );
 
-  if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Anticipos" />
-        <View style={{ margin: 16 }}>
-          <SkeletonLoader width="100%" height={140} borderRadius={16} />
-        </View>
-        <View style={{ padding: 16, gap: 10 }}>
-          {[1, 2].map((i) => (
-            <SkeletonLoader
-              key={i}
-              width="100%"
-              height={100}
-              borderRadius={16}
-            />
-          ))}
-        </View>
+  const renderSkeleton = () => (
+    <View style={[styles.container, { backgroundColor: bg }]}>
+      <PremiumHeader title="Anticipos" subtitle="Mis solicitudes y anticipos recibidos" />
+      <View style={{ margin: 16 }}>
+        <Skeleton width="100%" height={140} borderRadius={16} />
       </View>
-    );
-  }
+      <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
+        <Skeleton width="20%" height={35} borderRadius={20} />
+        <Skeleton width="20%" height={35} borderRadius={20} />
+        <Skeleton width="20%" height={35} borderRadius={20} />
+      </View>
+      <View style={{ padding: 16, gap: 10 }}>
+        {[1, 2, 3].map((i) => (
+          <View
+            key={i}
+            style={{
+              padding: 16,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor,
+              backgroundColor: cardBg,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginBottom: 15,
+              }}
+            >
+              <Skeleton width={80} height={20} borderRadius={10} />
+              <Skeleton width={60} height={20} borderRadius={10} />
+            </View>
+            <Skeleton height={15} width="60%" style={{ marginBottom: 15 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+              <Skeleton width={80} height={30} />
+              <Skeleton width={80} height={30} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  if (loading) return renderSkeleton();
 
   if (error)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader title="Anticipos" />
-        <EmployeeListError message={error} onRetry={onRefresh} />
+        <EmployeeListError message={error} onRetry={() => fetchAnticipos()} />
       </View>
     );
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      <PremiumHeader
-        title="Anticipos"
-        subtitle="Mis solicitudes y anticipos recibidos"
-      />
+      <PremiumHeader title="Anticipos" subtitle="Mis solicitudes y anticipos recibidos" />
 
-      <AnticiposFilterRow
-        filter={filter}
+      {}
+      <View
+        style={[
+          styles.summaryCard,
+          {
+            backgroundColor: cardBg,
+            borderColor,
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+          },
+        ]}
+      >
+        <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+          ANTICIPOS PENDIENTES
+        </Text>
+        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+          ${totalPendiente.toLocaleString()}
+        </Text>
+        <View style={styles.summaryDetails}>
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Total: ${totalGeneral.toLocaleString()}
+          </Text>
+          <View
+            style={{
+              width: 1,
+              height: 12,
+              backgroundColor: borderColor,
+              alignSelf: 'center',
+            }}
+          />
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Items: {pendientes.length}
+          </Text>
+        </View>
+      </View>
+
+      <FilterTabs<FiltroAnticipos>
+        scrollable
+        tabs={[
+          { key: 'all', label: 'Todas', count: todos.length },
+          { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
+          { key: 'aprobado', label: 'Aprobados', count: todos.filter((a) => normalizeEstado(a.estado) === 'confirmada').length },
+          { key: 'rechazado', label: 'Rechazados', count: todos.filter((a) => normalizeEstado(a.estado) === 'rechazada').length },
+          { key: 'recibido', label: 'Recibidos', count: todos.filter((a) => ['pagada', 'liquidada'].includes(normalizeEstado(a.estado))).length },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
         accentColor={accentColor}
         cardBg={cardBg}
-        borderColor={borderColor}
         textSecondary={textSecondary}
-        onChange={setFilter}
+        borderColor={borderColor}
       />
 
-      <FlatList
+      {error ? (
+        <View
+          style={[
+            styles.errorCard,
+            { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' },
+          ]}
+        >
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <Pressable
+            onPress={() => fetchAnticipos()}
+            style={({ pressed }) => [styles.retryButton, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.retryText}>Reintentar</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <VirtualizedList
         data={filteredData}
-        keyExtractor={(item) =>
+        keyExtractor={(item: Anticipo) =>
           String((item as any).id_anticipo || item.id_solicitud)
         }
         renderItem={renderItem}
@@ -201,15 +298,12 @@ export default function AnticiposScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons name="card-outline" size={48} color={textSecondary} />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No se encontraron anticipos
-            </Text>
-          </View>
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
         }
+        {...LIST_PERF_PROPS}
       />
 
+      {}
       <Pressable
         style={[styles.fab, { backgroundColor: accentColor }]}
         accessibilityRole="button"
@@ -219,8 +313,9 @@ export default function AnticiposScreen() {
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </Pressable>
 
+      {}
       <SolicitarAnticipoModal
-        visible={modalVisible}
+        visible={solicitarModalVisible}
         isDark={isDark}
         bg={bg}
         cardBg={cardBg}
@@ -233,15 +328,90 @@ export default function AnticiposScreen() {
         montoComisiones={montoComisiones}
         montoPropinas={montoPropinas}
         tieneSolicitudPendiente={tieneSolicitudPendiente}
+        efectivoEnCaja={efectivoEnCaja}
         monto={monto}
         motivo={motivo}
         sendingRequest={sendingRequest}
         canRequestAdvance={canRequestAdvance}
         onChangeMonto={handleMontoChange}
         onChangeMotivo={setMotivo}
-        onClose={() => setModalVisible(false)}
+        onClose={() => setSolicitarModalVisible(false)}
         onSubmit={handleSolicitar}
+      />
+
+      {}
+      <AnticipoDetailModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        anticipo={selectedAnticipo}
+        formatDate={formatDate}
+        formatTime={formatTime}
+        normalizeEstado={normalizeEstado}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  summaryCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  summaryAmount: {
+    fontSize: 38,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  summaryDetails: { flexDirection: 'row', gap: 16 },
+  summaryDetail: { fontSize: 13 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  errorCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#DC2626',
+  },
+  retryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  retryText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+});

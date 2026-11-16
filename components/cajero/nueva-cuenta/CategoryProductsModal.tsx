@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import FlashList from "@/components/shared/FlashList";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getHostessLimit } from '@/hooks/utils/cuentaUtils';
 import { bloqueaChampanaSinConfigurar } from '@/hooks/utils/champagneConfig';
@@ -43,7 +44,7 @@ export const CategoryProductsModal = React.memo(function CategoryProductsModal({
 }: CategoryProductsModalProps) {
   useRenderCount('CategoryProductsModal', { visible, productCount: products.length });
   return (
-  <Modal visible={visible} animationType="slide" transparent>
+  <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
     <View style={styles.modalOverlay}>
       <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
         <View style={styles.modalHeader}>
@@ -58,7 +59,7 @@ export const CategoryProductsModal = React.memo(function CategoryProductsModal({
         {loading ? (
           <ActivityIndicator color={accentColor} size="large" />
         ) : (
-          <FlashList
+          <VirtualizedList
             data={products}
             keyExtractor={(item: any) => (item.id || item.id_producto).toString()}
             estimatedItemSize={80}
@@ -203,9 +204,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 10,
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
   confirmBtn: {
     height: 56,
@@ -215,9 +217,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     elevation: 3,
     shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
   },
   confirmBtnText: {
     color: '#FFF',

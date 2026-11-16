@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { contentColumn } from '@/constants/layout';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -10,9 +11,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { anticiposService } from '@/services/anticipos';
 import { formatCurrency } from '@/utils/format';
@@ -257,12 +261,7 @@ export default function AnticiposAdminScreen() {
       <PremiumHeader
         title="Anticipos"
         subtitle={`${pendientes} pendientes · ${data.length} en total`}
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backText}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <View style={styles.filtros}>
@@ -291,19 +290,14 @@ export default function AnticiposAdminScreen() {
       </View>
 
       {error ? (
-        <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-          <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
-          <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
-          <Pressable
-            onPress={() => {
-              setLoading(true);
-              fetchData();
-            }}
-            style={[styles.retryBtn, { backgroundColor: accentColor }]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          title="No pudimos cargar los anticipos"
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       ) : (
         <FlatList
           data={filtrados}
@@ -314,13 +308,9 @@ export default function AnticiposAdminScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
           }
           ListEmptyComponent={
-            <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-              <Ionicons name="card-outline" size={48} color={textSecondary} />
-              <Text style={[styles.emptyText, { color: textSecondary }]}>
-                No hay anticipos en este filtro
-              </Text>
-            </View>
+            <EmptyState icon="card-outline" title="No hay anticipos en este filtro" />
           }
+          {...LIST_PERF_PROPS}
         />
       )}
 
@@ -348,7 +338,7 @@ export default function AnticiposAdminScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 16, paddingTop: 4, paddingBottom: 40, gap: 10 },
+  list: { ...contentColumn, padding: 16, paddingTop: 4, paddingBottom: 40, gap: 10 },
   filtros: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -362,13 +352,13 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     borderWidth: 1,
   },
-  filtroText: { fontSize: 11, fontWeight: '700' },
+  filtroText: { fontSize: 12, fontWeight: '700' },
   card: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   nombre: { fontSize: 14, fontWeight: '800' },
   meta: { fontSize: 12, marginTop: 3 },
   badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
-  badgeText: { fontSize: 11, fontWeight: '800' },
+  badgeText: { fontSize: 12, fontWeight: '700' },
   monto: { fontSize: 20, fontWeight: '900', marginTop: 10 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
   actionBtn: {
@@ -392,8 +382,4 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-  emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
-  emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

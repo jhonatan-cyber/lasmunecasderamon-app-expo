@@ -1,8 +1,10 @@
 import { ServiceCard } from "@/components/anfitriona/ServiceCard";
 import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
@@ -31,6 +33,7 @@ export default function ServiciosScreen() {
   const [filter, setFilter] = useState<
     "all" | "pendiente" | "finalizado" | "anulado"
   >("all");
+  const [searchText, setSearchText] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(
     null,
@@ -76,6 +79,15 @@ export default function ServiciosScreen() {
       if (filter === "finalizado") return estadoNum === 1;
       if (filter === "anulado") return estadoNum === 0;
       return true;
+    })
+    .filter((s) => {
+      if (!searchText.trim()) return true;
+      const search = searchText.toLowerCase();
+      return (
+        s.habitacion?.toLowerCase().includes(search) ||
+        s.codigo?.toLowerCase().includes(search) ||
+        String(s.id_servicio).includes(search)
+      );
     });
 
   const finalizados = servicios.filter(
@@ -149,6 +161,14 @@ export default function ServiciosScreen() {
       </View>
 
       <View style={styles.filterRow}>
+        <SearchBar
+          placeholder="Buscar por habitación o código..."
+          value={searchText}
+          onChangeText={setSearchText}
+          style={{ flex: 1 }}
+        />
+      </View>
+      <View style={styles.filterRow}>
         {(["all", "pendiente", "finalizado", "anulado"] as const).map((f) => (
           <Pressable
             key={f}
@@ -160,6 +180,9 @@ export default function ServiciosScreen() {
               },
             ]}
             onPress={() => setFilter(f)}
+            accessibilityRole="button"
+            accessibilityLabel={`Filtrar: ${f === "all" ? "Todos" : f === "pendiente" ? "En proceso" : f === "finalizado" ? "Finalizados" : "Anulados"}`}
+            accessibilityState={{ selected: filter === f }}
           >
             <Text
               style={[
@@ -188,7 +211,7 @@ export default function ServiciosScreen() {
         </View>
       ) : null}
 
-      <FlashList
+      <VirtualizedList
         data={filteredData}
         keyExtractor={(item: Servicio) =>
           item?.id_servicio?.toString() || `fallback-${Math.random()}`
@@ -205,12 +228,13 @@ export default function ServiciosScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons name="diamond-outline" size={48} color={textSecondary} />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No hay servicios aquí
-            </Text>
-          </View>
+          <EmptyState
+            icon="bed-outline"
+            title="No hay servicios"
+            message={searchText ? "No se encontraron resultados para tu búsqueda." : "Cuando asignen un servicio, aparecerá aquí."}
+            actionLabel={searchText ? undefined : "Actualizar"}
+            onAction={searchText ? undefined : onRefresh}
+          />
         }
       />
 
@@ -243,8 +267,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "700",
     letterSpacing: 1.5,
     marginBottom: 8,
   },
@@ -269,7 +293,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
   },
-  filterText: { fontSize: 12, fontWeight: "700" },
+  filterText: { fontSize: 13, fontWeight: "700" },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   errorCard: {
     margin: 16,

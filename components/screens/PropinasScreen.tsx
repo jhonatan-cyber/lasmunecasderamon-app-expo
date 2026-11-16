@@ -1,6 +1,8 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import {
   Pressable,
@@ -9,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
@@ -42,6 +44,7 @@ export default function PropinasScreen() {
     parentPropina,
     filteredData,
     pendientes,
+    anuladas,
     totalPendiente,
     totalGeneral,
     onRefresh,
@@ -54,6 +57,7 @@ export default function PropinasScreen() {
   const renderItem = useStableCallback(
     ({ item, index }: { item: Propina; index: number }) => {
       const isPendiente = item.estado === 1;
+      const isAnulada = item.venta_estado === 0 || item.venta_estado === 3;
 
       const idNum =
         typeof item.id_detalle_propina === 'string'
@@ -68,7 +72,7 @@ export default function PropinasScreen() {
         <AnimatedView
           from={{ opacity: 0, translateY: 30 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: index * 100 }}
+          transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         >
           <Pressable onPress={() => handlePropinaPress(item)}>
             <View
@@ -110,37 +114,63 @@ export default function PropinasScreen() {
                       </Text>
                     </View>
                   ) : null}
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor: isPendiente
-                          ? isDark
-                            ? 'rgba(16, 185, 129, 0.2)'
-                            : '#D1FAE5'
-                          : isDark
-                            ? 'rgba(59, 130, 246, 0.2)'
-                            : '#DBEAFE',
-                      },
-                    ]}
-                  >
-                    <Text
+                  {isAnulada ? (
+                    <View
                       style={[
-                        styles.statusText,
+                        styles.statusBadge,
                         {
-                          color: isPendiente
-                            ? isDark
-                              ? '#10B981'
-                              : '#065F46'
-                            : isDark
-                              ? '#3B82F6'
-                              : '#1E40AF',
+                          backgroundColor: isDark
+                            ? 'rgba(239, 68, 68, 0.2)'
+                            : '#FEE2E2',
                         },
                       ]}
                     >
-                      {isPendiente ? 'Por cobrar' : 'Cobrada'}
-                    </Text>
-                  </View>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color: isDark ? '#FCA5A5' : '#DC2626',
+                          },
+                        ]}
+                      >
+                        {item.venta_estado === 3
+                          ? 'Pdte. Anulación'
+                          : 'Anulada'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: isPendiente
+                            ? isDark
+                              ? 'rgba(16, 185, 129, 0.2)'
+                              : '#D1FAE5'
+                            : isDark
+                              ? 'rgba(59, 130, 246, 0.2)'
+                              : '#DBEAFE',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color: isPendiente
+                              ? isDark
+                                ? '#10B981'
+                                : '#065F46'
+                              : isDark
+                                ? '#3B82F6'
+                                : '#1E40AF',
+                          },
+                        ]}
+                      >
+                        {isPendiente ? 'Por cobrar' : 'Cobrada'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -285,7 +315,7 @@ export default function PropinasScreen() {
       <View
         style={[
           styles.summaryCard,
-          { backgroundColor: cardBg, borderColor, shadowColor: accentColor },
+          { backgroundColor: cardBg, borderColor, shadowColor: accentColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
         ]}
       >
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
@@ -312,34 +342,20 @@ export default function PropinasScreen() {
         </View>
       </View>
 
-      <View style={styles.filterRow}>
-        {(['all', 'pendiente', 'pagado'] as const).map((f) => (
-          <Pressable
-            key={f}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: filter === f ? accentColor : cardBg,
-                borderColor: filter === f ? accentColor : borderColor,
-              },
-            ]}
-            onPress={() => setFilter(f)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                { color: filter === f ? '#FFFFFF' : textSecondary },
-              ]}
-            >
-              {f === 'all'
-                ? `Todas (${propinas.length})`
-                : f === 'pendiente'
-                  ? `Pendientes (${pendientes.length})`
-                  : `Cobradas (${propinas.length - pendientes.length})`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <FilterTabs
+        tabs={[
+          { key: 'all', label: 'Todas', count: propinas.length },
+          { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
+          { key: 'pagado', label: 'Cobradas', count: propinas.length - pendientes.length },
+          { key: 'anulada', label: 'Anuladas', count: anuladas.length },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       {error ? (
         <View
@@ -361,7 +377,7 @@ export default function PropinasScreen() {
         </View>
       ) : null}
 
-      <FlashList
+      <VirtualizedList
         data={filteredData}
         keyExtractor={(item: Propina, index: number) =>
           item.id_detalle_propina?.toString() ?? index.toString()
@@ -377,12 +393,7 @@ export default function PropinasScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-            <Ionicons name="cash-outline" size={48} color={textSecondary} />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              No se encontraron propinas
-            </Text>
-          </View>
+          <EmptyState icon="cash-outline" title="No se encontraron propinas" />
         }
         getItemLayout={(_: any, index: number) => ({
           length: 200,
@@ -419,6 +430,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -433,21 +445,6 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9999,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  filterText: { fontSize: 11, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 20 },
   card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
@@ -522,11 +519,4 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  emptyCard: {
-    borderRadius: 16,
-    padding: 40,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

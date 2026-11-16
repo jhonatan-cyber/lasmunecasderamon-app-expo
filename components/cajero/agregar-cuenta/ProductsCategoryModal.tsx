@@ -1,6 +1,7 @@
 import React from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import FlashList from "@/components/shared/FlashList";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRenderCount } from "@/hooks/useRenderCount";
 
@@ -35,7 +36,7 @@ export const ProductsCategoryModal = React.memo(function ProductsCategoryModal({
 }: ProductsCategoryModalProps) {
   useRenderCount('ProductsCategoryModal', { visible, productCount: products.length });
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>
@@ -49,7 +50,7 @@ export const ProductsCategoryModal = React.memo(function ProductsCategoryModal({
           {loading ? (
             <ActivityIndicator color={accentColor} size="large" />
           ) : (
-            <FlashList
+            <VirtualizedList
               data={products}
               keyExtractor={(item: any) => (item.id || item.id_producto).toString()}
               estimatedItemSize={80}

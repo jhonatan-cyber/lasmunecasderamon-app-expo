@@ -72,7 +72,7 @@ vi.mock('@/hooks/utils/saleChoice', () => ({
     ],
   }),
 }));
-vi.mock('@/components/shared/FlashList', () => ({
+vi.mock('@/components/shared/VirtualizedList', () => ({
   default: <T,>({
     data,
     renderItem,

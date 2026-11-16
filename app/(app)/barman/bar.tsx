@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import FlashList from '@/components/shared/FlashList';
+import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { BarmanOfflineBanner } from '@/components/barman/BarmanOfflineBanner';
@@ -101,15 +101,7 @@ export default function BarScreen() {
       <PremiumHeader
         title="Bar"
         subtitle={`${totalBar} unidades en barra`}
-        rightComponent={
-          <Pressable
-            onPress={() => router.replace('/(app)/barman/(tabs)')}
-            style={styles.backBtnRight}
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.replace('/(app)/barman/(tabs)')}
         tabs={[
           { id: 'stock', label: 'Stock' },
           {
@@ -172,7 +164,7 @@ export default function BarScreen() {
               ))}
             </View>
           ) : (
-            <FlashList
+            <VirtualizedList
               data={transfers}
               keyExtractor={(item: { id: string }) => item.id}
               contentContainerStyle={styles.list}

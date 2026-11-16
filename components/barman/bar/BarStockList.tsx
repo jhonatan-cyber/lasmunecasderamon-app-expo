@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { Image } from "expo-image";
-import FlashList from "@/components/shared/FlashList";
+import VirtualizedList from "@/components/shared/VirtualizedList";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
@@ -151,7 +151,7 @@ export function BarStockList({
           ))}
         </View>
       ) : null}
-      <FlashList
+      <VirtualizedList
         data={rows}
         keyExtractor={stockRowKey}
         getItemType={stockRowType}
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   categoryLabel: { fontSize: 13, fontWeight: "700", flexShrink: 1 },
   categoryTitle: {
