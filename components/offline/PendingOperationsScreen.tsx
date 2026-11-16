@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useOutbox } from '@/hooks/useOutbox';
 import type { OutboxIntent, OutboxIntentType } from '@/services/outbox';
 import { showToast } from '@/utils/toast-lazy';
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cardTitle: { flex: 1, fontSize: 14, fontWeight: '800' },
     chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-    chipText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
+    chipText: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.6 },
     cardMeta: { fontSize: 12 },
     cardError: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
     cardActions: { flexDirection: 'row', gap: 10, marginTop: 6 },

@@ -15,6 +15,7 @@ vi.mock('react-native', () => ({
     Pressable: ({ children, onPress }: any) => <button onClick={onPress}>{children}</button>,
     ScrollView: ({ children }: any) => <div>{children}</div>,
     Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
+    Dimensions: { get: () => ({ width: 390, height: 844 }) },
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     useColorScheme: () => 'dark',
 }));

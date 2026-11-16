@@ -1,12 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import type { BarTransfer } from "@/hooks/useBarScreen";

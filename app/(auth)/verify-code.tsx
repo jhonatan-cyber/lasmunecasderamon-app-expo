@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
@@ -22,6 +23,7 @@ export default function VerifyCodeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const login = useAuthStore((state) => state.login);
   const tempAuthData = useAuthStore((state) => state.tempAuthData);
@@ -29,7 +31,7 @@ export default function VerifyCodeScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
 
-  const inputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const inputRefs = useRef<(React.ComponentRef<typeof TextInput> | null)[]>([null, null, null, null]);
 
   const handleCodeChange = (text: string, index: number) => {
     setError("");
@@ -80,11 +82,20 @@ export default function VerifyCodeScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <ScrollView
-        contentContainerStyle={styles.inner}
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={[
+          styles.inner,
+          {
+            paddingLeft: 30 + insets.left,
+            paddingRight: 30 + insets.right,
+            paddingTop: insets.top + 24,
+            paddingBottom: insets.bottom + 24,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -214,10 +225,13 @@ const styles = StyleSheet.create({
   codeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 8,
     marginBottom: 30,
   },
   codeInput: {
-    width: 65,
+    flex: 1,
+    maxWidth: 65,
+    minWidth: 0,
     height: 75,
     borderRadius: 16,
     fontSize: 32,

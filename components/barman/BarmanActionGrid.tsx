@@ -1,7 +1,8 @@
 import { useRouter, type Href } from "expo-router";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Spacing } from "@/constants";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useOutbox } from "@/hooks/useOutbox";
 import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
 
@@ -12,11 +13,10 @@ export const BarmanActionGrid = ({
 }) => {
   const { accentColor } = useAccentColor();
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const { pendingCount, failedCount, isOffline } = useOutbox();
-  const isTablet = width >= 768;
+  const { isTablet, isLandscape } = useResponsiveMetrics();
 
-  const cols = isTablet ? 3 : 2;
+  const cols = isTablet ? (isLandscape ? 4 : 3) : isLandscape ? 3 : 2;
   const spacing = isTablet ? 24 : 16;
   const actions = [
     {
@@ -53,6 +53,13 @@ export const BarmanActionGrid = ({
       icon: "sparkles" as const,
       color: accentColor,
       route: "/barman/limpieza",
+    },
+    {
+      title: "RESUMEN",
+      description: "Calendario de actividad",
+      icon: "stats-chart" as const,
+      color: "#3B82F6",
+      route: "/barman/resumen",
     },
     // Solo aparece cuando hay algo que resolver: sin conexión o trabajo que el
     // servidor todavía no confirmó.

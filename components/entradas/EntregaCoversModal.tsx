@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
@@ -74,14 +74,15 @@ export function EntregaCoversModal({
     filas.length === 0;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={cerrar}>
+    <Modal visible={visible} avoidKeyboard={false} transparent animationType="slide" onRequestClose={cerrar}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <View style={styles.backdrop}>
           <View style={[styles.card, { backgroundColor: fondo, borderColor, maxHeight: '92%' }]}>
             <ScrollView
+              automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 8 }}

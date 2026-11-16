@@ -1,12 +1,12 @@
 import React from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { showToast } from "@/utils/toast-lazy";
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   modalItemText: { fontSize: 16, fontWeight: "600" },
   doneBtn: {

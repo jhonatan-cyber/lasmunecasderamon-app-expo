@@ -1,9 +1,8 @@
 import React from 'react';
-import { Dimensions, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Skeleton } from '@/components/ui/Skeleton';
-
-const { width } = Dimensions.get('window');
 
 interface PedidosSkeletonProps {
     bg: string;
@@ -11,7 +10,12 @@ interface PedidosSkeletonProps {
     insets: { top: number };
 }
 
-export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientColors, insets }) => (
+export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientColors, insets }) => {
+    const { width, isTablet, isLandscape } = useResponsiveMetrics();
+    const columnas = isTablet || isLandscape ? 3 : 2;
+    const cardWidth = (width - 55 - (columnas - 1) * 15) / columnas;
+
+    return (
     <View style={{ flex: 1, backgroundColor: bg }}>
         <LinearGradient
             colors={gradientColors as unknown as readonly [string, string, ...string[]]}
@@ -20,7 +24,7 @@ export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientCo
                 paddingBottom: 25,
                 borderBottomLeftRadius: 32,
                 borderBottomRightRadius: 32,
-                height: 160,
+                minHeight: 140,
                 paddingHorizontal: 20,
             }}
         >
@@ -33,8 +37,9 @@ export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientCo
 
         <View style={{ padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 15 }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} width={(width - 55) / 2} height={180} borderRadius={24} />
+                <Skeleton key={i} width={cardWidth} height={180} borderRadius={24} />
             ))}
         </View>
     </View>
-);
+    );
+};

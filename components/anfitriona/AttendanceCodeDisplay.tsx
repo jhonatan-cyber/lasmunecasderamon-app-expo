@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable, Modal, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { eventBus } from '@/utils/eventBus';
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { AnimatedView } from '@/components/ui/AnimatedView';
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 10,
-        borderWidth: 1.5,
+        borderWidth: 2,
     },
     label: {
         color: 'rgba(255,255,255,0.7)',

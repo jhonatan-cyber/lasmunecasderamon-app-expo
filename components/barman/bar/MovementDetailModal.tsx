@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BASE_URL } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import type { BarMovement, BarTransfer } from '@/hooks/useBarScreen';
@@ -14,7 +16,7 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ visible, movement, transfer, onClose }: MovementDetailModalProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const fecha = movement?.fecha_crea ? new Date(movement.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
   const opciones = parseOpcionesVenta(transfer?.opciones_venta ?? movement?.opciones_venta);
@@ -87,7 +89,7 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
             </ScrollView>
 
             <Pressable onPress={onClose} style={({ pressed }) => [styles.closeButton, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}>
-              <Text style={styles.closeText}>Cerrar detalle</Text>
+              <Text style={[styles.closeText, { color: accentText }]}>Cerrar detalle</Text>
             </Pressable>
           </View>
         )}
@@ -121,10 +123,10 @@ const styles = StyleSheet.create({
   productName: { fontSize: 16, fontWeight: '900' },
   productMeta: { fontSize: 11, fontWeight: '600' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  section: { gap: 9 },
+  section: { gap: 8 },
   sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
   volumeGrid: { marginTop: 8 },
-  infoTile: { width: '48%', minHeight: 58, padding: 9, borderWidth: 1, borderRadius: 13, justifyContent: 'space-between', gap: 5 },
+  infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: 12, justifyContent: 'space-between', gap: 4 },
   infoLabel: { fontSize: 9, fontWeight: '700' },
   infoValue: { fontSize: 12, fontWeight: '900' },
   closeButton: { borderRadius: 9999, alignItems: 'center', paddingVertical: 12, marginTop: 4 },

@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { contentColumn } from '@/constants/layout';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -229,12 +230,7 @@ export default function GarzonEntradasScreen() {
         <PremiumHeader
           title="Entradas"
           subtitle="Cobro de acceso en la puerta"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
+          onBack={() => router.back()}
         />
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={accentColor} />
@@ -245,23 +241,19 @@ export default function GarzonEntradasScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, backgroundColor: bg }}
     >
       <PremiumHeader
         title="Entradas"
         subtitle="Cobro de acceso en la puerta"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -488,8 +480,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 1,
     marginBottom: 8,
     marginTop: 12,

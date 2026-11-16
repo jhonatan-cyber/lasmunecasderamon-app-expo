@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import {
     ActivityIndicator,
-    Image,
     Pressable,
     StyleSheet,
     Text,
@@ -18,7 +19,7 @@ interface Props {
     isDark: boolean;
     isBiometricEnabled: boolean;
     isBiometricSupported: boolean;
-    passwordRef: React.RefObject<TextInput | null>;
+    passwordRef: React.RefObject<React.ComponentRef<typeof TextInput> | null>;
     onUsernameChange: (v: string) => void;
     onPasswordChange: (v: string) => void;
     onTogglePasswordVisibility: () => void;
@@ -46,6 +47,7 @@ export default function LoginForm({
     onBiometricPress,
     onForgotPassword,
 }: Props) {
+    const { isLandscape } = useResponsiveMetrics();
     const textColor = isDark ? '#FFFFFF' : '#111827';
     const textMuted = isDark ? '#9CA3AF' : '#6B7280';
     const cardBg = isDark ? '#1C1C1E' : '#F3F4F6';
@@ -55,17 +57,17 @@ export default function LoginForm({
     return (
         <View style={styles.formContainer}>
             {}
-            <View style={styles.logoContainer}>
+            <View style={[styles.logoContainer, isLandscape && styles.logoContainerCompact]}>
                 <Image
                     source={require('../../assets/images/logo2.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
+                    style={[styles.logo, isLandscape && styles.logoCompact]}
+                    contentFit="contain"
                 />
             </View>
 
             {}
-            <View style={styles.headerTextContainer}>
-                <Text style={[styles.title, { color: textColor }]}>
+            <View style={[styles.headerTextContainer, isLandscape && { marginBottom: 20 }]}>
+                <Text style={[styles.title, { color: textColor }, isLandscape && { fontSize: 26 }]}>
                     Iniciar Sesión
                 </Text>
                 <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
@@ -75,7 +77,11 @@ export default function LoginForm({
 
             {}
             {error ? (
-                <View style={[styles.errorContainer, { backgroundColor: errorBg }]}>
+                <View
+                    style={[styles.errorContainer, { backgroundColor: errorBg }]}
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                >
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : null}
@@ -91,9 +97,14 @@ export default function LoginForm({
                         borderColor: borderColor,
                     },
                 ]}
-                placeholder="pepe (se completará automáticamente)"
+                placeholder="Ej: pepe"
                 placeholderTextColor={textMuted}
                 autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="username"
+                textContentType="username"
+                importantForAutofill="yes"
+                accessibilityLabel="Usuario"
                 value={username}
                 onChangeText={onUsernameChange}
                 returnKeyType="next"
@@ -116,6 +127,10 @@ export default function LoginForm({
                     placeholder="Ingresa tu contraseña"
                     placeholderTextColor={textMuted}
                     secureTextEntry={!showPassword}
+                    autoComplete="current-password"
+                    textContentType="password"
+                    importantForAutofill="yes"
+                    accessibilityLabel="Contraseña"
                     value={password}
                     onChangeText={onPasswordChange}
                     ref={passwordRef}
@@ -125,6 +140,10 @@ export default function LoginForm({
                 <Pressable
                     style={styles.eyeButton}
                     onPress={onTogglePasswordVisibility}
+                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    accessibilityState={{ selected: showPassword }}
                 >
                     <Ionicons
                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -149,11 +168,14 @@ export default function LoginForm({
                     ]}
                     onPress={onLogin}
                     disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Iniciar sesión"
+                    accessibilityState={{ disabled: loading, busy: loading }}
                 >
                     {loading ? (
                         <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
                     ) : (
-                        <Text style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
                             Iniciar Sesión
                         </Text>
                     )}
@@ -173,6 +195,9 @@ export default function LoginForm({
                     ]}
                     onPress={onQRPress}
                     disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Iniciar sesión con código QR"
+                    accessibilityState={{ disabled: loading }}
                 >
                     <Ionicons name="qr-code-outline" size={28} color={textColor} />
                 </Pressable>
@@ -189,6 +214,9 @@ export default function LoginForm({
                         ]}
                         onPress={onBiometricPress}
                         disabled={loading}
+                        accessibilityRole="button"
+                        accessibilityLabel="Iniciar sesión con biometría"
+                        accessibilityState={{ disabled: loading }}
                     >
                         <Ionicons name="finger-print-outline" size={28} color={textColor} />
                     </Pressable>
@@ -198,6 +226,9 @@ export default function LoginForm({
             {}
             <Pressable
                 onPress={onForgotPassword}
+                hitSlop={{ top: 12, bottom: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel="Recuperar contraseña"
                 style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
             >
                 <Text style={[styles.forgotPasswordText, { color: textMuted }]}>
@@ -211,6 +242,8 @@ export default function LoginForm({
 const styles = StyleSheet.create({
     formContainer: {
         width: '100%',
+        maxWidth: 520,
+        alignSelf: 'center',
         flex: 1,
     },
     headerTextContainer: {
@@ -224,6 +257,14 @@ const styles = StyleSheet.create({
     logo: {
         width: 180,
         height: 120,
+    },
+    logoContainerCompact: {
+        marginTop: 4,
+        marginBottom: 8,
+    },
+    logoCompact: {
+        width: 120,
+        height: 70,
     },
     title: {
         fontSize: 32,
@@ -248,7 +289,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingHorizontal: 24,
         fontSize: 16,
-        borderWidth: 1.5,
+        borderWidth: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -305,7 +346,7 @@ const styles = StyleSheet.create({
         borderRadius: 9999,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1.5,
+        borderWidth: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -320,7 +361,9 @@ const styles = StyleSheet.create({
     },
     forgotPassword: {
         alignItems: 'center',
+        justifyContent: 'center',
         marginTop: 20,
+        minHeight: 44,
     },
     forgotPasswordText: {
         fontSize: 14,

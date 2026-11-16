@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 
 interface ActiveServiceCardProps {
     habitacion: string;
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     },
     badgeText: {
         color: '#FFF',
-        fontSize: 10,
+        fontSize: FontSize.xxs,
         fontWeight: '900',
         letterSpacing: 1,
     },
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     },
     timerSubText: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: 10,
+        fontSize: FontSize.xxs,
         fontWeight: '700',
         marginTop: -4,
     },

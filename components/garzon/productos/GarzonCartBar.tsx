@@ -1,7 +1,7 @@
 import React from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   Text,

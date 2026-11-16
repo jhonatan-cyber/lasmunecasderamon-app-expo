@@ -1,7 +1,9 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
+import { FontSize } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Modal,Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 interface ServiceDetailModalProps {
     visible: boolean;
@@ -10,7 +12,7 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetailModalProps) => {
-    const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
+    const {accentColor, accentText, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
 
     if (!servicio) return null;
 
@@ -167,7 +169,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             style={[styles.modalCloseBtn, { backgroundColor: accentColor, width: '100%' }]}
                             onPress={onClose}
                         >
-                            <Text style={styles.modalCloseBtnText}>Cerrar</Text>
+                            <Text style={[styles.modalCloseBtnText, { color: accentText }]}>Cerrar</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -178,17 +180,17 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
 
 const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-    detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%', borderTopWidth: 1 },
+    detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%', borderTopWidth: 1 },
     modalHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, gap: 12 },
     modalTitleText: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
     modalSubText: { fontSize: 13, fontWeight: "600", marginTop: 4 },
     closeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     estadoBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6, borderWidth: 1 },
     estadoDot: { width: 6, height: 6, borderRadius: 3 },
-    estadoText: { fontSize: 10, fontWeight: '900' },
+    estadoText: { fontSize: FontSize.xxs, fontWeight: '900' },
     detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 20 },
     gridItem: { width: "47%", padding: 14, borderRadius: 16, borderWidth: 1 },
-    gridLabel: { fontSize: 10, fontWeight: "800", marginBottom: 6, letterSpacing: 0.5 },
+    gridLabel: { fontSize: FontSize.xxs, fontWeight: "800", marginBottom: 6, letterSpacing: 0.5 },
     gridValue: { fontSize: 15, fontWeight: "700" },
     summarySection: { marginTop: 20, marginHorizontal: 20, padding: 20, borderRadius: 20, borderWidth: 1 },
     sectionTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1, marginBottom: 16 },

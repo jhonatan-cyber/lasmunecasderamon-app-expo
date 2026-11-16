@@ -20,6 +20,8 @@ import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
 import { QRScannerModal } from "@/components/shared/QRScannerModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import useLogin from "@/hooks/useLogin";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoginForm from "@/components/auth/LoginForm";
 import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
 import logger from "@/utils/logger";
@@ -55,6 +57,8 @@ export default function LoginScreen() {
 
   const colorScheme = useColorScheme() ?? "dark";
   const isDark = colorScheme === "dark";
+  const { isLandscape } = useResponsiveMetrics();
+  const insets = useSafeAreaInsets();
 
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const C = theme;
@@ -99,7 +103,16 @@ export default function LoginScreen() {
           style={{ flex: 1 }}
         >
           <ScrollView
-            contentContainerStyle={styles.inner}
+            automaticallyAdjustKeyboardInsets
+            contentContainerStyle={[
+              styles.inner,
+              isLandscape && { paddingTop: 16, paddingBottom: 24 },
+              {
+                paddingLeft: 25 + insets.left,
+                paddingRight: 25 + insets.right,
+                paddingBottom: (isLandscape ? 24 : 60) + insets.bottom,
+              },
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >

@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    borderWidth: 1.5,
+    borderWidth: 2,
     alignItems: 'center',
     gap: 4,
     minWidth: 80,

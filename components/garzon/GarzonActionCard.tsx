@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import { BorderRadius, FontSize } from '@/constants/spacing';
 
 interface GarzonActionCardProps {
     title: string;
@@ -16,13 +18,12 @@ interface GarzonActionCardProps {
 }
 
 export const GarzonActionCard = ({ title, description, icon, color, borderColor, onPress, disabled }: GarzonActionCardProps) => {
-    const { width } = useWindowDimensions();
     const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
-    const isTablet = width >= 768;
+    const { isTablet } = useResponsiveMetrics();
 
     const iconSize = isTablet ? 38 : 28;
-    const fontSize = isTablet ? 22 : 14;
-    const descSize = isTablet ? 14 : 10;
+    const fontSize = isTablet ? 22 : FontSize.sm;
+    const descSize = isTablet ? 14 : FontSize.xs;
     const minHeight = isTablet ? 160 : 100;
     const padding = isTablet ? 24 : 16;
 
@@ -30,6 +31,10 @@ export const GarzonActionCard = ({ title, description, icon, color, borderColor,
         <AnimatedButton
             onPress={disabled ? undefined : onPress}
             disabled={disabled}
+            accessibilityRole="button"
+            accessibilityLabel={`${title}: ${description}`}
+            accessibilityHint={disabled ? 'Desactivado' : 'Toque para abrir'}
+            accessibilityState={{ disabled: !!disabled }}
             style={[
                 styles.cardContainer,
                 {
@@ -37,7 +42,9 @@ export const GarzonActionCard = ({ title, description, icon, color, borderColor,
                     minHeight,
                     padding,
                     shadowColor: color,
-                    shadowOpacity: isDark ? 0.3 : 0.15,
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: isDark ? 0.32 : 0.16,
+                    shadowRadius: 20,
                     opacity: disabled ? 0.6 : 1,
                     borderWidth: 1,
                     borderColor: borderColor || color,
@@ -54,10 +61,14 @@ export const GarzonActionCard = ({ title, description, icon, color, borderColor,
             </View>
             
             <View style={styles.infoBox}>
-                <Text style={[styles.mainTitle, { fontSize, color: textPrimary }]} numberOfLines={1}>
+                <Text
+                    maxFontSizeMultiplier={1.3}
+                    style={[styles.mainTitle, { fontSize, color: textPrimary }]}
+                    numberOfLines={2}
+                >
                     {title}
                 </Text>
-                <Text style={[styles.subDescription, { fontSize: descSize, color: textSecondary }]} numberOfLines={2}>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.subDescription, { fontSize: descSize, color: textSecondary }]} numberOfLines={2}>
                     {description}
                 </Text>
             </View>
@@ -71,11 +82,13 @@ export const GarzonActionCard = ({ title, description, icon, color, borderColor,
 const styles = StyleSheet.create({
     cardContainer: {
         flex: 1,
-        borderRadius: 28,
+        borderRadius: BorderRadius.xxl,
         justifyContent: 'space-between',
-        shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 20,
         elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
         position: 'relative',
         overflow: 'hidden',
     },
@@ -91,13 +104,13 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
     mainTitle: {
-        fontWeight: '900',
+        fontWeight: '800',
         letterSpacing: -0.5,
     },
     subDescription: {
         fontWeight: '600',
         marginTop: 4,
-        lineHeight: 14,
+        lineHeight: 16,
     },
     sideIndicator: {
         position: 'absolute',

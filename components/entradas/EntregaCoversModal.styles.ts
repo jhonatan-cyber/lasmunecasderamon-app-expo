@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { FontSize } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   backdrop: {
@@ -27,7 +28,7 @@ export const styles = StyleSheet.create({
     marginTop: 12,
   },
   miniLabel: {
-    fontSize: 10,
+    fontSize: FontSize.xxs,
     fontWeight: '800',
     letterSpacing: 0.6,
   },

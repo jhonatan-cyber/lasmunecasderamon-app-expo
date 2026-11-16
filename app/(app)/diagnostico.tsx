@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useConnectivity } from '@/hooks/useConnectivity';
 import {
     collectOfflineDiagnostics,
@@ -285,11 +286,11 @@ const styles = StyleSheet.create({
     filaTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     filaClave: { flex: 1, fontSize: 13, fontWeight: '800' },
     filaMeta: { fontSize: 11 },
-    filaId: { fontSize: 10 },
+    filaId: { fontSize: FontSize.xxs },
     filaError: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
     filaPayload: { fontSize: 11, lineHeight: 16 },
     chip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-    chipTexto: { fontSize: 9, fontWeight: '900', letterSpacing: 0.6 },
+    chipTexto: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.6 },
     vacio: { fontSize: 12, lineHeight: 17 },
     nota: { fontSize: 11, lineHeight: 16, paddingHorizontal: 2 },
     cerrado: {

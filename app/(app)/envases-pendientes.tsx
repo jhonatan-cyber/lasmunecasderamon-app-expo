@@ -5,6 +5,8 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
+import { contentColumn } from '@/constants/layout';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole } from '@/utils/userRole';
 import { showToast } from '@/utils/toast-lazy';
@@ -105,9 +107,11 @@ export default function EnvasesPendientesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <PremiumHeader title="Devolución de envases" subtitle="Comparación y aprobación" rightComponent={
-        <Pressable onPress={() => router.back()} style={styles.back}><Ionicons name="arrow-back" size={18} color="#FFF" /><Text style={styles.backText}>Atrás</Text></Pressable>
-      } />
+      <PremiumHeader
+        title="Devolución de envases"
+        subtitle="Comparación y aprobación"
+        onBack={() => router.back()}
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void cargar(); }} tintColor={accentColor} />}
@@ -156,7 +160,7 @@ export default function EnvasesPendientesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center', padding: 24 },
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  content: { ...contentColumn, padding: 16, gap: 12, paddingBottom: 32 },
   back: { height: 38, borderRadius: 9999, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)' },
   backText: { color: '#FFF', fontWeight: '800', fontSize: 12 },
   sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 0.7, marginTop: 6 },
@@ -165,12 +169,12 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 3 },
   code: { fontSize: 12, fontWeight: '900' },
   description: { fontSize: 11, lineHeight: 16 },
-  status: { fontSize: 9, fontWeight: '900' },
+  status: { fontSize: FontSize.xxs, fontWeight: '900' },
   empty: { textAlign: 'center', padding: 12, fontSize: 13, fontWeight: '600' },
   pendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   product: { fontSize: 15, fontWeight: '900' },
   pendingBadge: { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 9999, paddingHorizontal: 9, paddingVertical: 5 },
-  pendingBadgeText: { color: '#F59E0B', fontSize: 10, fontWeight: '900' },
+  pendingBadgeText: { color: '#F59E0B', fontSize: FontSize.xxs, fontWeight: '900' },
   accept: { minHeight: 44, borderRadius: 9999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 3 },
   acceptText: { color: '#FFF', fontSize: 13, fontWeight: '900' },
 });

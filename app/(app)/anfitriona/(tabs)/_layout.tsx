@@ -27,7 +27,7 @@ export default function AnfitrionaTabsLayout() {
           options={{
             title: "Servicios",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="heart" size={size} color={color} />
+              <Ionicons name="heart" size={size} color={String(color)} />
             ),
           }}
         />
@@ -36,7 +36,7 @@ export default function AnfitrionaTabsLayout() {
           options={{
             title: "Ventas",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="wallet" size={size} color={color} />
+              <Ionicons name="wallet" size={size} color={String(color)} />
             ),
           }}
         />
@@ -46,7 +46,7 @@ export default function AnfitrionaTabsLayout() {
             title: "Inicio",
             headerShown: false,
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" size={size} color={color} />
+              <Ionicons name="home" size={size} color={String(color)} />
             ),
           }}
         />
@@ -55,7 +55,7 @@ export default function AnfitrionaTabsLayout() {
           options={{
             title: "Asistencia",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="calendar" size={size} color={color} />
+              <Ionicons name="calendar" size={size} color={String(color)} />
             ),
             headerShown: false,
           }}
@@ -65,7 +65,7 @@ export default function AnfitrionaTabsLayout() {
           options={{
             title: "Anticipos",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="card" size={size} color={color} />
+              <Ionicons name="card" size={size} color={String(color)} />
             ),
           }}
         />

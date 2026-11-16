@@ -20,7 +20,7 @@ export default function BarmanTabsLayout() {
           options={{
             title: "Asistencia",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="calendar" size={size} color={color} />
+              <Ionicons name="calendar" size={size} color={String(color)} />
             ),
           }}
         />
@@ -29,7 +29,7 @@ export default function BarmanTabsLayout() {
           options={{
             title: "Anticipos",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="card" size={size} color={color} />
+              <Ionicons name="card" size={size} color={String(color)} />
             ),
           }}
         />
@@ -38,7 +38,7 @@ export default function BarmanTabsLayout() {
           options={{
             title: "Inicio",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" size={size} color={color} />
+              <Ionicons name="home" size={size} color={String(color)} />
             ),
           }}
         />
@@ -47,7 +47,7 @@ export default function BarmanTabsLayout() {
           options={{
             title: "Propinas",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="cash" size={size} color={color} />
+              <Ionicons name="cash" size={size} color={String(color)} />
             ),
           }}
         />
@@ -56,7 +56,7 @@ export default function BarmanTabsLayout() {
           options={{
             title: "Horas Extras",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="time" size={size} color={color} />
+              <Ionicons name="time" size={size} color={String(color)} />
             ),
           }}
         />

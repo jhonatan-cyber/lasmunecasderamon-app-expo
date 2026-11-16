@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Worker {
@@ -40,29 +41,36 @@ export const ColacionWorkerModal: React.FC<Props> = ({
           {workers.length === 0 ? (
             <Text style={{ color: textSecondary, textAlign: 'center' }}>Sin trabajadores cercanos.</Text>
           ) : (
-            workers.map((w) => {
-              const isSelected = w.id === selectedId;
-              return (
-                <Pressable
-                  key={w.id}
-                  onPress={() => {
-                    onSelect(w.id);
-                    onClose();
-                  }}
-                  style={[styles.row, isSelected && { backgroundColor: accentColor + '18' }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.nameText, { color: textPrimary }]}>
-                      {w.name} {w.lastName}
-                      {w.nick ? ` · ${w.nick}` : ''}
-                    </Text>
-                  </View>
-                  {isSelected && (
-                    <Text style={{ color: accentColor, fontWeight: '800' }}>✓</Text>
-                  )}
-                </Pressable>
-              );
-            })
+            <FlatList
+              data={workers}
+              keyExtractor={(w) => w.id}
+              style={{ flexShrink: 1 }}
+              keyboardShouldPersistTaps="handled"
+              initialNumToRender={8}
+              windowSize={5}
+              renderItem={({ item: w }) => {
+                const isSelected = w.id === selectedId;
+                return (
+                  <Pressable
+                    onPress={() => {
+                      onSelect(w.id);
+                      onClose();
+                    }}
+                    style={[styles.row, isSelected && { backgroundColor: accentColor + '18' }]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.nameText, { color: textPrimary }]}>
+                        {w.name} {w.lastName}
+                        {w.nick ? ` · ${w.nick}` : ''}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Text style={{ color: accentColor, fontWeight: '800' }}>✓</Text>
+                    )}
+                  </Pressable>
+                );
+              }}
+            />
           )}
           <View style={[styles.footer, { borderTopColor: borderColor }]}>
             <Pressable onPress={onClose} style={[styles.buttonOutline, { borderColor }]}>
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: 1.5,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import type { EntradaCliente } from '@/services/entradas';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { formatCurrency } from '@/utils/format';
@@ -183,7 +184,7 @@ function FilaRegistro({ entrada, indice }: FilaRegistroProps) {
         <Text style={{ color: textPrimary, fontSize: 12, fontWeight: '800' }}>
           {formatCurrency(Number(entrada.monto_entrada))}
         </Text>
-        <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800', marginTop: 2 }}>
+        <Text style={{ color: estado.color, fontSize: FontSize.xxs, fontWeight: '800', marginTop: 2 }}>
           {estado.label}
         </Text>
       </View>
@@ -335,12 +336,12 @@ export function EntradasListadoCard({ entradas, vacio, titulo = 'HOY' }: Props) 
                       {formatCurrency(grupo.totalGrupo)}
                     </Text>
                     {grupo.adicional > 0 && (
-                      <Text style={{ color: textSecondary, fontSize: 10 }}>
+                      <Text style={{ color: textSecondary, fontSize: FontSize.xxs }}>
                         {formatCurrency(grupo.total - grupo.devueltoMonto)} + barra
                       </Text>
                     )}
                     <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
-                      <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800' }}>
+                      <Text style={{ color: estado.color, fontSize: FontSize.xxs, fontWeight: '800' }}>
                         {estado.label}
                       </Text>
                     </View>

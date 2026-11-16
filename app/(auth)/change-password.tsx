@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
@@ -28,6 +29,7 @@ export default function ChangePasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const clearForcePasswordChange = useAuthStore(
     (state) => state.clearForcePasswordChange
@@ -70,11 +72,20 @@ export default function ChangePasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <ScrollView
-        contentContainerStyle={styles.inner}
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={[
+          styles.inner,
+          {
+            paddingLeft: 30 + insets.left,
+            paddingRight: 30 + insets.right,
+            paddingTop: insets.top + 24,
+            paddingBottom: insets.bottom + 24,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

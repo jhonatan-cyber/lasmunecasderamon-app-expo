@@ -2,9 +2,9 @@ import { IncludedServiceProductSelector } from "@/components/shared/IncludedServ
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -48,7 +48,7 @@ function ServiciosSkeleton({
             paddingBottom: 25,
             borderBottomLeftRadius: 32,
             borderBottomRightRadius: 32,
-            height: 160,
+            minHeight: 140,
           },
         ]}
       >
@@ -146,24 +146,18 @@ export default function ServiciosScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: bg }}
     >
       <PremiumHeader
         title="Servicios"
         subtitle="Registrar nuevo servicio en habitación"
-        rightComponent={
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.backBtnRight}
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}

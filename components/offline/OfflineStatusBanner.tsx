@@ -23,7 +23,7 @@ export interface OfflineStatusBannerProps {
 
 export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
     pendientesHref,
-    offlineLabel = 'SIN CONEXIÓN · VIENDO DATOS GUARDADOS',
+    offlineLabel = 'Sin conexión · viendo datos guardados',
 }) => {
     const router = useRouter();
     const { pendingCount, failedCount, isOffline, isFlushing } = useOutbox();
@@ -31,17 +31,18 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
     if (!isOffline && pendingCount === 0) return null;
 
     const needsReview = failedCount > 0;
-    const backgroundColor = isOffline ? '#EF4444' : needsReview ? '#F59E0B' : '#2563EB';
+    // Tonos oscurecidos para que el texto blanco pase AA (antes 2.2:1 en ámbar).
+    const backgroundColor = isOffline ? '#B91C1C' : needsReview ? '#B45309' : '#1D4ED8';
 
     const message = isOffline
         ? pendingCount > 0
-            ? `SIN CONEXIÓN · ${pendingCount} OPERACIÓN(ES) GUARDADA(S)`
+            ? `Sin conexión · ${pendingCount} operación(es) guardada(s)`
             : offlineLabel
         : isFlushing
-          ? `ENVIANDO ${pendingCount} OPERACIÓN(ES)...`
+          ? `Enviando ${pendingCount} operación(es)…`
           : needsReview
-            ? `${failedCount} OPERACIÓN(ES) NECESITAN REVISIÓN`
-            : `${pendingCount} OPERACIÓN(ES) SIN ENVIAR`;
+            ? `${failedCount} operación(es) necesitan revisión`
+            : `${pendingCount} operación(es) sin enviar`;
 
     return (
         <AnimatedView
@@ -49,15 +50,21 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
             animate={{ opacity: 1, translateY: 0 }}
             style={[styles.banner, { backgroundColor }]}
         >
-            <Pressable onPress={() => router.push(pendientesHref)} style={styles.pressable}>
+            <Pressable
+                onPress={() => router.push(pendientesHref)}
+                style={styles.pressable}
+                accessibilityRole="button"
+                accessibilityLabel={`${message}. Ver pendientes`}
+                accessibilityLiveRegion="polite"
+            >
                 <Ionicons
                     name={isOffline ? 'cloud-offline' : 'cloud-upload'}
                     size={20}
                     color='#FFFFFF'
                 />
-                <Text style={styles.text}>{message}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.text}>{message}</Text>
                 <View style={styles.action}>
-                    <Text style={styles.actionText}>VER</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.actionText}>Ver</Text>
                     <Ionicons name='chevron-forward' size={14} color='#FFFFFF' />
                 </View>
             </Pressable>
@@ -76,11 +83,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 9,
+        minHeight: 44,
+        paddingVertical: 10,
         paddingHorizontal: 14,
         gap: 10,
     },
-    text: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 0.6, flexShrink: 1 },
+    text: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', flexShrink: 1 },
     action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    actionText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },
+    actionText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', textDecorationLine: 'underline' },
 });

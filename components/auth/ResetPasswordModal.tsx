@@ -1,12 +1,12 @@
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { Colors } from '@/constants/theme';
 
 interface Props {
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     },
     alertCard: {
         width: '85%',
+        maxWidth: 480,
         borderRadius: 32,
         padding: 24,
         alignItems: 'center',
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingHorizontal: 24,
         fontSize: 16,
-        borderWidth: 1.5,
+        borderWidth: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
