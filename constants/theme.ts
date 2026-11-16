@@ -6,8 +6,8 @@ const tintColorDark = '#FFFFFF';
 export const Colors = {
   light: {
     text: '#000000',
-    textSecondary: '#6B7280',
-    textMuted: '#9CA3AF',
+    textSecondary: '#4B5563',
+    textMuted: '#6B7280',
     background: '#FFFFFF',
     backgroundSecondary: '#F3F4F6',
     card: '#FFFFFF',
@@ -16,9 +16,9 @@ export const Colors = {
     borderLight: '#F3F4F6',
     tint: tintColorLight,
     tintSecondary: '#E11D48',
-    icon: '#6B7280',
-    iconSecondary: '#9CA3AF',
-    tabIconDefault: '#9CA3AF',
+    icon: '#4B5563',
+    iconSecondary: '#6B7280',
+    tabIconDefault: '#6B7280',
     tabIconSelected: tintColorLight,
     error: '#EF4444',
     errorLight: '#FEE2E2',
