@@ -10,7 +10,6 @@ if (process.platform === 'win32') {
   );
 }
 
-config.resolver.unstable_enablePackageExports = false;
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),
   tslib: forcedTslibPath,

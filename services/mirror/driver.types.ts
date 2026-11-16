@@ -1,8 +1,6 @@
 /**
  * Contrato del driver SQLite del almacén offline (espejo + cola de
- * intenciones). Vive sin importar nada nativo para que la variante web
- * (`driver.web.ts`) pueda compartirlo sin arrastrar el wasm de `expo-sqlite`,
- * que Metro no resuelve en la build web.
+ * intenciones).
  */
 export const MIRROR_DATABASE_NAME = 'lasmunecas-offline-mirror.db';
 

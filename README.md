@@ -1,10 +1,10 @@
 # Las Munecas de Ramon App
 
-Aplicacion `Expo Router` para operacion interna, con soporte `android`, `ios` y `web`.
+Aplicacion `Expo Router` para operacion interna, con soporte `android` e `ios`.
 
-El proyecto usa **Expo SDK 57** y React Native 0.86.3. Para abrirlo en Expo Go,
-instala la [version compatible con SDK 57](https://expo.dev/go?sdkVersion=57&platform=android&device=true).
-Expo Go para SDK 58 no puede abrir este proyecto.
+El proyecto usa **Expo SDK 58** y React Native 0.88.1. Para abrirlo en Expo Go,
+instala la [version compatible con SDK 58](https://expo.dev/go?sdkVersion=58&platform=android&device=true).
+Expo Go para SDK 57 no puede abrir este proyecto.
 
 Para desarrollo en dispositivo fisico o emulador, usa `expo-dev-client` en vez de Expo Go.
 
@@ -24,7 +24,6 @@ corepack pnpm android:dev
 corepack pnpm android:preview
 corepack pnpm android
 corepack pnpm ios
-corepack pnpm web
 corepack pnpm lint
 corepack pnpm typecheck
 ```
@@ -52,14 +51,6 @@ corepack pnpm typecheck
   (`@infinitered/react-native-mlkit-face-detection`), un modulo nativo: entra en
   el APK al recompilar. En un build viejo el enrolamiento sigue funcionando con
   captura temporizada, sin deteccion.
-- `expo-image` esta fijado en `~57.0.5` a proposito: `@infinitered/react-native-mlkit-core`
-  lo declara como peer `*`, y sin el pin pnpm instala la 58.x. Esa version omite
-  `version` en `android.publication` de su `expo-module.config.json`, y el
-  autolinking de SDK 57 falla al evaluar `settings.gradle` con
-  `Field 'version' is required ... Publication`. Si el build de Android muere en
-  `Run gradlew` con `EAS_BUILD_UNKNOWN_GRADLE_ERROR`, revisa
-  `corepack pnpm why expo-image`: debe mostrar 57.0.5. No quites el pin ni subas
-  `expo-image` sin migrar antes a SDK 58.
 - `corepack pnpm start` arranca Metro en modo `dev-client`.
 - `corepack pnpm start:tunnel` ayuda si el telefono no ve la red local.
 - Instala un build de desarrollo en tu dispositivo con `corepack pnpm android:dev`.
@@ -75,7 +66,7 @@ corepack pnpm typecheck
 - El canal `preview-testers` es solo para testers: no publicar cambios ahi que no
   quieras distribuir. El APK `preview_apk` usa el canal `preview-lan` para pruebas
   en la red local y no recibe las actualizaciones OTA de testers.
-- Si quieres seguir usando Expo Go, usa `corepack pnpm start:go` con Expo Go para SDK 57.
+- Si quieres seguir usando Expo Go, usa `corepack pnpm start:go` con Expo Go para SDK 58.
 - Las actualizaciones OTA usan `runtimeVersion.policy: fingerprint`: un cambio de SDK
   requiere un nuevo APK de desarrollo o distribucion antes de publicar actualizaciones
   compatibles con ese runtime.
@@ -84,6 +75,9 @@ corepack pnpm typecheck
 
 - `lint`: revisa hooks, imports, codigo muerto y errores de integracion.
 - `typecheck`: valida tipos antes de publicar builds o updates OTA.
+- El smoke e2e de Playwright sobre la exportacion web quedo retirado con el paso
+  a app solo nativa. `tests/e2e` y `playwright.config.ts` quedan pendientes de
+  migrar a un runner nativo; `App Quality` ya no ejecuta `smoke:web`.
 - Antes de publicar una update, correr ambos comandos y probar el login mas una ruta principal por rol.
 
 ## Ramas y merges
@@ -128,4 +122,4 @@ alguna rama vieja, usa los comandos de arriba.
 1. Confirmar bootstrap de auth y splash screen.
 2. Revisar navegacion principal por rol.
 3. Validar exportacion PDF y componentes premium.
-4. Probar `web` para detectar regresiones de layout o assets.
+4. Probar layout y assets en dispositivo Android e iOS.

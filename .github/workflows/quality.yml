@@ -45,9 +45,6 @@ jobs:
       - name: Unit Tests Coverage
         run: pnpm test:unit:coverage
 
-      - name: Smoke web export
-        run: pnpm smoke:web
-
   security:
     runs-on: ubuntu-24.04
     steps:
