@@ -1,8 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
+import logger from "@/utils/logger";
 
-/** User and flow scoped cart; restore before saving the initial empty state. */
+/**
+ * Persiste y restaura un carrito de compras por usuario y flujo en AsyncStorage.
+ * El draft se guarda automáticamente cuando el carrito cambia y se restaura
+ * al montar el componente.
+ *
+ * @param flow - Identificador del flujo (ej: 'sales', 'services').
+ * @param cart - Array de items del carrito actual.
+ * @param restore - Callback para restaurar items guardados.
+ * @returns {() => void} Función para limpiar el draft manualmente.
+ */
 export function useCartDraft<T>(
   flow: string,
   cart: T[],
@@ -29,32 +39,32 @@ export function useCartDraft<T>(
           } catch {}
         }
       })
-      .catch(() => {})
+      .catch(() => { logger.debug('No se pudo leer el draft del carrito.', { flow }); })
       .finally(() => {
         if (alive) setReadyKey(key);
       });
     return () => {
       alive = false;
     };
-  }, [key]);
+  }, [key, flow]);
   useEffect(() => {
     if (!key || readyKey !== key) return;
     const snapshot = JSON.stringify(cart);
     writes.current = writes.current
-      .catch(() => {})
+      .catch(() => { logger.debug('Error previo en escritura de draft del carrito.'); })
       .then(() =>
         cart.length
           ? AsyncStorage.setItem(key, snapshot)
           : AsyncStorage.removeItem(key),
       )
-      .catch(() => {});
-  }, [key, readyKey, cart]);
+      .catch(() => { logger.debug('No se pudo guardar el draft del carrito.', { flow, itemCount: cart.length }); });
+  }, [key, readyKey, cart, flow]);
   return () => {
     setReadyKey("");
     if (key)
       writes.current = writes.current
-        .catch(() => {})
+        .catch(() => { logger.debug('Error previo al limpiar draft del carrito.'); })
         .then(() => AsyncStorage.removeItem(key))
-        .catch(() => {});
+        .catch(() => { logger.debug('No se pudo limpiar el draft del carrito.', { flow }); });
   };
 }

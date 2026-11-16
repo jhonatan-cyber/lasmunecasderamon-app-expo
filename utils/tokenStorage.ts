@@ -1,6 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 import logger from './logger';
 
 const TOKEN_KEY = 'token';
@@ -8,24 +6,13 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 
 const storage = {
   async setItem(key: string, value: string) {
-    if (Platform.OS === 'web') {
-      await AsyncStorage.setItem(key, value);
-    } else {
-      await SecureStore.setItemAsync(key, value);
-    }
+    await SecureStore.setItemAsync(key, value);
   },
   async getItem(key: string) {
-    if (Platform.OS === 'web') {
-      return AsyncStorage.getItem(key);
-    }
     return SecureStore.getItemAsync(key);
   },
   async deleteItem(key: string) {
-    if (Platform.OS === 'web') {
-      await AsyncStorage.removeItem(key);
-    } else {
-      await SecureStore.deleteItemAsync(key);
-    }
+    await SecureStore.deleteItemAsync(key);
   },
 };
 

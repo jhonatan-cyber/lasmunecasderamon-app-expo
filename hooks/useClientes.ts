@@ -1,10 +1,11 @@
 import { useCallback, useState, useMemo } from 'react';
-import { Alert, useWindowDimensions } from 'react-native';
+import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { clientesService } from '@/services';
 import type { PrepagoPayload } from '@/services/clientes';
 import { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
@@ -27,8 +28,7 @@ export function useClientes() {
     const theme = useAccentColor();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    const { isTablet } = useResponsiveMetrics();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -216,7 +216,7 @@ export function useClientes() {
     const formatCurrency = (value: string) => {
         const cleanValue = value.replace(/\D/g, "");
         if (!cleanValue) return "";
-        return Number(cleanValue).toLocaleString('de-DE');
+        return Number(cleanValue).toLocaleString('es-CL');
     };
 
     const unformatCurrency = (value: string) => {

@@ -246,8 +246,7 @@ describe('outbox · repositorio', () => {
 });
 
 /**
- * Driver que no guarda nada: así se comporta la app en web, donde no hay
- * SQLite (ver `services/mirror/driver.web.ts`).
+ * Driver que no guarda nada: simula un entorno sin SQLite disponible.
  */
 const SIN_ALMACEN = {
     exec: () => {},
@@ -257,7 +256,7 @@ const SIN_ALMACEN = {
     transaction: (task: () => void) => task(),
 };
 
-describe('outbox · dispositivo sin almacén local (web)', () => {
+describe('outbox · dispositivo sin almacén local', () => {
     let online: boolean;
     let senders: Record<string, (intent: OutboxIntent) => Promise<unknown>>;
 

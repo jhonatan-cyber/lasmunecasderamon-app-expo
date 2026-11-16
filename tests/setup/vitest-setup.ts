@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 // Los módulos de Expo asumen el entorno de React Native (`__DEV__`).
 (globalThis as Record<string, unknown>).__DEV__ = true;
@@ -172,10 +172,19 @@ vi.mock('react-native', () => ({
     // useAccentColor: useColorScheme) en tests unitarios.
     Alert: { alert: vi.fn() },
     useWindowDimensions: vi.fn(() => ({ width: 390, height: 844, fontScale: 1 })),
+    Dimensions: {
+        get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
+    },
     useColorScheme: vi.fn(() => 'dark'),
     StyleSheet: { create: (s: any) => s },
-    Text: ({ children }: { children: any }) => children,
+    Text: ({ children }: { children: any }) => React.createElement('span', null, children),
     View: ({ children }: { children: any }) => children,
+    Pressable: ({ children, onPress, accessibilityLabel, disabled }: any) =>
+        React.createElement(
+            'button',
+            { onClick: onPress, 'aria-label': accessibilityLabel, disabled },
+            children
+        ),
     ActivityIndicator: () => null,
 }));
 
@@ -191,6 +200,17 @@ vi.mock('@tanstack/react-query', () => ({
     QueryClientProvider: vi.fn(({ children }: { children: any }) => children),
 }));
 
+
+// expo-image arrastra el runtime de desarrollo de Expo (async-require/hmr):
+// se delega al `Image` del mock de react-native de cada test.
+vi.mock('expo-image', async () => {
+    const reactNative = await import('react-native');
+    return { Image: (reactNative as GlobalThisImageModule).Image };
+});
+
+interface GlobalThisImageModule {
+    Image: unknown;
+}
 
 vi.mock('expo-image-picker', () => ({
     requestCameraPermissionsAsync: vi.fn(() => Promise.resolve({ status: 'granted' })),

@@ -43,10 +43,6 @@ function getNotifications(): NotificationsModule | null {
   if (cachedNotifications !== undefined) return cachedNotifications;
 
   try {
-    if (Platform.OS === "web") {
-      cachedNotifications = null;
-      return null;
-    }
     if (Constants.appOwnership === "expo") {
       cachedNotifications = null;
       return null;
@@ -83,8 +79,7 @@ export async function registerForPushNotificationsAsync(): Promise<
 
   const isExpoGo = Constants.appOwnership === "expo";
 
-  if (Platform.OS === "web" || isExpoGo) {
-
+  if (isExpoGo) {
     return null;
   }
 

@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { dashboardService } from '@/services/dashboard';
@@ -84,7 +83,7 @@ export function useAnalyticsScreen() {
   );
 
   const onRefresh = useCallback(() => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRefreshing(true);
     void fetchData(true);
   }, [fetchData]);

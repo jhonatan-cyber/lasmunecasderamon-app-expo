@@ -141,18 +141,14 @@ it.each([undefined, {}, [{ monto: 'incorrecto' }]])(
   },
 );
 
-it('permite consultar por mes sin cambiar el historial completo por defecto', async () => {
+it('carga todo el historial de asistencias sin filtro por mes', async () => {
   vi.mocked(apiClientSafe).mockResolvedValue({ success: true, data: [] });
   const { result } = renderHook(useAsistencia);
   await waitFor(() => expect(result.current.loading).toBe(false));
-  expect(result.current.allHistory).toBe(true);
-  act(() => result.current.setAllHistory(false));
   act(() => result.current.onRefresh());
   await waitFor(() =>
     expect(apiClientSafe).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^\/attendance\/user\?tipo=detalle&startDate=\d{4}-\d{2}-01&endDate=/,
-      ),
+      '/attendance/user?tipo=detalle',
       expect.anything(),
     ),
   );

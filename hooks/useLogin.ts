@@ -27,7 +27,7 @@ export default function useLogin() {
     const [showQRScanner, setShowQRScanner] = useState(false);
     const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
 
-    const passwordRef = useRef<TextInput>(null);
+    const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
     const login = useAuthStore((state) => state.login);
     const setTempAuthData = useAuthStore((state) => state.setTempAuthData);

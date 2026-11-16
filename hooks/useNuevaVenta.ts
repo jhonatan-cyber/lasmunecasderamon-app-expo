@@ -61,6 +61,28 @@ const filterSaleCategories = (categories: any[]) =>
     return status === 1 && total > 0;
   });
 
+/**
+ * Hook para la pantalla de nueva venta: gestiona el carrito, totales,
+ * métodos de pago, anfitrionas, y el flujo de checkout.
+ *
+ * @returns {object} Objeto con el estado y acciones de nueva venta:
+ *   - servicioId: string | undefined — ID del servicio asociado
+ *   - servicioNombre: string — nombre del servicio
+ *   - servicioAnfitrionas: string[] — IDs de anfitrionas asignadas
+ *   - state: NuevaVentaState — estado del reducer (cart, submitting, etc.)
+ *   - dispatch: React.Dispatch<NuevaVentaAction> — dispatch del reducer
+ *   - totals: object — totales calculados (subtotal, comision, total, etc.)
+ *   - hasCommissionItem: boolean — si hay items con comisión
+ *   - fromCache: boolean — si los datos vienen de cache
+ *   - processVenta: () => Promise<void> — ejecutar la venta
+ *   - processCuenta: () => Promise<void> — ejecutar como cuenta
+ *   - searchProducto: string — texto de búsqueda de producto
+ *   - setSearchProducto: (v: string) => void — setter de búsqueda
+ *   - searchResults: any[] — resultados de búsqueda
+ *   - searchLoading: boolean — si está buscando
+ *   - handleSearchNow: () => void — ejecutar búsqueda ahora
+ *   - handleClearSearch: () => void — limpiar búsqueda
+ */
 export function useNuevaVenta() {
   const router = useRouter();
   const params = useLocalSearchParams<{ servicio_id?: string }>();
@@ -987,7 +1009,9 @@ export function useNuevaVenta() {
         if (userId)
           await AsyncStorage.removeItem(
             `cart-draft:${userId}:sales:${servicioId || "general"}`,
-          ).catch(() => {});
+          ).catch(() => {
+            logger.debug('No se pudo limpiar el draft del carrito tras venta exitosa.');
+          });
       }
       if (intent.status === "aplicada") {
         dispatch({ type: "SET_CART", payload: [] });

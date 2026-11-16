@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
@@ -149,16 +148,8 @@ export function useProfile() {
       }
 
       if (formData.image) {
-        if (Platform.OS === "web") {
-          const response = await fetch(formData.image);
-          if (!response.ok) throw new Error("No se pudo leer la foto seleccionada");
-          const image = await response.blob();
-          const extension = image.type.split("/")[1] || "jpg";
-          form.append("foto", image, `profile.${extension}`);
-        } else {
-          const image = new File(formData.image);
-          form.append("foto", image, image.name);
-        }
+        const image = new File(formData.image);
+        form.append("foto", image, image.name);
       }
 
       const res = await apiClientSafe<UserProfileResponse>("/users", {

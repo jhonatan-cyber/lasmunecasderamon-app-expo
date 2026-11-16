@@ -4,7 +4,6 @@ import { showToast } from '@/utils/toast-lazy';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 
 import logger from '@/utils/logger';
@@ -33,7 +32,6 @@ export function useAsistencia() {
   const isHostess = useAuthStore(
     (state) => state.user?.role?.toLowerCase() === 'anfitriona',
   );
-  const [allHistory, setAllHistory] = useState(true);
   const [housingDiscountTotal, setHousingDiscountTotal] = useState(0);
   const [activeTab, setActiveTab] = useState<'asistencias' | 'gratificaciones'>(
     'asistencias',
@@ -45,33 +43,13 @@ export function useAsistencia() {
   const [error, setError] = useState('');
   const [gratificationsError, setGratificationsError] = useState('');
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
-  const [currentDate, setCurrentDate] = useState(new Date());
   const dataRef = useRef<string>('');
-
-  const navigateMonth = useCallback((direction: number) => {
-    setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + direction, 1),
-    );
-  }, []);
-
-  const goToCurrentMonth = useCallback(() => {
-    setCurrentDate(new Date());
-  }, []);
 
   const fetchAsistencias = useCallback(
     async (isManual = false, signal?: AbortSignal) => {
       try {
         setError('');
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-        const lastDay = new Date(year, currentDate.getMonth() + 1, 0).getDate();
-        const startDate = `${year}-${month}-01`;
-        const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-
-        const endpoint =
-          isHostess || allHistory
-            ? '/attendance/user?tipo=detalle'
-            : `/attendance/user?tipo=detalle&startDate=${startDate}&endDate=${endDate}`;
+        const endpoint = '/attendance/user?tipo=detalle';
         const data = await apiClientSafe(endpoint, { signal });
         if (signal?.aborted) return;
         if (isHostess) {
@@ -118,7 +96,7 @@ export function useAsistencia() {
         setRefreshing(false);
       }
     },
-    [currentDate, isHostess, allHistory],
+    [isHostess],
   );
 
   const fetchGratificaciones = useCallback(
@@ -164,8 +142,7 @@ export function useAsistencia() {
   );
 
   const onRefresh = useCallback(() => {
-    if (Platform.OS !== 'web')
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRefreshing(true);
     fetchAsistencias(true);
     fetchGratificaciones(true);
@@ -173,8 +150,6 @@ export function useAsistencia() {
 
   return {
     isHostess,
-    allHistory,
-    setAllHistory,
     housingDiscountTotal,
     activeTab,
     setActiveTab,
@@ -186,8 +161,5 @@ export function useAsistencia() {
     filter,
     setFilter,
     onRefresh,
-    currentDate,
-    navigateMonth,
-    goToCurrentMonth,
   };
 }

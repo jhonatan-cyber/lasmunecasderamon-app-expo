@@ -17,6 +17,7 @@ export interface Propina {
   propina_fecha_crea: string | null;
   codigo_venta: string | null;
   venta_id?: string;
+  venta_estado?: number;
   total_tip_monto?: number;
   total_participants?: number;
 }
@@ -41,7 +42,7 @@ export function usePropinasScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+  const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado' | 'anulada'>('all');
   const dataRef = useRef<string>('');
 
   const [selectedPropina, setSelectedPropina] = useState<Propina | null>(null);
@@ -176,12 +177,14 @@ export function usePropinasScreen() {
   const filteredData = propinas.filter((a) => {
     if (filter === 'pendiente') return a.estado === 1;
     if (filter === 'pagado') return a.estado === 0;
+    if (filter === 'anulada') return a.venta_estado === 0 || a.venta_estado === 3;
     return true;
   });
 
   const pendientes = propinas.filter((a) => a.estado === 1);
   const totalPendiente = pendientes.reduce((sum, a) => sum + (a.monto || 0), 0);
   const totalGeneral = propinas.reduce((sum, a) => sum + (a.monto || 0), 0);
+  const anuladas = propinas.filter((a) => a.venta_estado === 0 || a.venta_estado === 3);
 
   return {
     propinas,
@@ -201,6 +204,7 @@ export function usePropinasScreen() {
 
     filteredData,
     pendientes,
+    anuladas,
     totalPendiente,
     totalGeneral,
 

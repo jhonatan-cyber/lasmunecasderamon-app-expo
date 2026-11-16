@@ -218,7 +218,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
             // La credencial biométrica no debe sobrevivir al logout (ni al
             // force_logout / rol borrado): si no, el login biométrico
             // reviviría una sesión ya cerrada en el servidor.
-            await get().removeCredentials().catch(() => {});
+            await get().removeCredentials().catch(() => {
+                logger.debug('No se pudieron eliminar las credenciales biométricas al cerrar sesión.');
+            });
             setTokenInMemory(null);
             set({ user: null, token: null, sessionExpired: false });
         },

@@ -1,6 +1,5 @@
 import { normalizeEmployeeRecords } from '@/utils/employeeRecords';
 import { useCallback, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { apiClientSafe } from '@/api/client';
 import { showToast } from '@/utils/toast-lazy';
@@ -96,8 +95,7 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
   );
 
   const onRefresh = useCallback(() => {
-    if (Platform.OS !== 'web')
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRefreshing(true);
     fetchData(true);
   }, [fetchData]);
