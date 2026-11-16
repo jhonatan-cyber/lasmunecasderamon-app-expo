@@ -43,8 +43,8 @@ export const normalizeEstado = (
   return String(estado ?? "");
 };
 
-export const formatCurrency = (amount: any) =>
-  (Number(amount) || 0).toLocaleString("de-DE");
+export const formatCurrency = (amount: number | string | null | undefined) =>
+  (Number(amount) || 0).toLocaleString("es-CL");
 
 export function filtrarAnticipos({
   filter,

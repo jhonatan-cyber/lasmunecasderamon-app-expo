@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { ColacionWorkerModal } from '@/components/colaciones/ColacionWorkerModal';
@@ -173,9 +174,12 @@ export default function ColacionesScreen() {
               Se requiere una caja abierta para registrar una colación.
             </Text>
           ) : ruleError || hasAnyCatalogoError ? (
-            <Text style={[styles.alertText, { color: '#EF4444' }]}>
-              Ocurrió un error cargando los datos: {ruleError || hasAnyCatalogoError}
-            </Text>
+            <ErrorState
+              title="No pudimos cargar los datos"
+              message={String(ruleError || hasAnyCatalogoError)}
+              onRetry={handleRefresh}
+              style={styles.inlineError}
+            />
           ) : null}
         </View>
 
@@ -395,6 +399,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
+  },
+  inlineError: {
+    marginTop: 0,
+    marginHorizontal: 0,
+    padding: 12,
+    alignSelf: 'stretch',
   },
   registerCard: {
     padding: 16,

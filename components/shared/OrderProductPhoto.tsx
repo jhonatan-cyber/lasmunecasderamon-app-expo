@@ -1,4 +1,4 @@
-import { Image } from "react-native";
+import { Image } from "expo-image";
 import { BASE_URL } from "@/api/base-url";
 
 export function OrderProductPhoto({
@@ -18,7 +18,7 @@ export function OrderProductPhoto({
           : `${BASE_URL}/api/images/products/${encodeURIComponent(photo)}`,
       }}
       style={{ width: 52, height: 52, borderRadius: 10 }}
-      resizeMode="cover"
+      contentFit="cover"
     />
   );
 }

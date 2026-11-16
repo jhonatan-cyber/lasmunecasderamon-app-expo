@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { FontSize } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -71,7 +72,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -94,7 +95,7 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -119,7 +120,7 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -137,7 +138,7 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   pendingBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  pendingBadgeText: { fontSize: 10, fontWeight: "800" },
+  pendingBadgeText: { fontSize: FontSize.xxs, fontWeight: "800" },
   disponibleMonto: { fontSize: 36, fontWeight: "900", marginBottom: 16 },
   desgloseRow: {
     flexDirection: "row",
@@ -147,10 +148,10 @@ export const styles = StyleSheet.create({
     borderTopColor: "rgba(128,128,128,0.15)",
   },
   desgloseItem: { alignItems: "center" },
-  desgloseLabel: { fontSize: 10, fontWeight: "600", marginBottom: 4 },
+  desgloseLabel: { fontSize: FontSize.xxs, fontWeight: "600", marginBottom: 4 },
   desgloseValue: { fontSize: 15, fontWeight: "700" },
   input: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
@@ -164,7 +165,7 @@ export const styles = StyleSheet.create({
     padding: 18,
     alignItems: "center",
     marginTop: 12,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -174,5 +175,26 @@ export const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.5,
+  },
+  cajaCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  cajaHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  cajaLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  cajaMonto: {
+    fontSize: 24,
+    fontWeight: "800",
   },
 });

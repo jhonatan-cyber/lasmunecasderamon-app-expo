@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useAnalyticsScreen } from '@/hooks/useAnalyticsScreen';
 import { formatCurrency } from '@/utils/format';
 
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
     },
     statValue: { fontSize: 20, fontWeight: '900' },
     statTitle: { fontSize: 12, fontWeight: '700', marginTop: 2 },
-    statSubtitle: { fontSize: 10, marginTop: 1 },
+    statSubtitle: { fontSize: FontSize.xxs, marginTop: 1 },
     card: { borderRadius: 20, padding: 16, borderWidth: 1, marginTop: 4 },
     cardHeader: { marginBottom: 14 },
     sectionTitle: { fontSize: 15, fontWeight: '900' },
@@ -243,9 +244,9 @@ const styles = StyleSheet.create({
     },
     barColumn: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
     bar: { width: '65%', borderRadius: 6, minHeight: 6 },
-    barValue: { fontSize: 8, fontWeight: '700', marginBottom: 4, height: 12 },
+    barValue: { fontSize: FontSize.xxs, fontWeight: '700', marginBottom: 4, height: 12 },
     labelsRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
-    barLabel: { flex: 1, fontSize: 10, fontWeight: '700', textAlign: 'center' },
+    barLabel: { flex: 1, fontSize: FontSize.xxs, fontWeight: '700', textAlign: 'center' },
     emptyText: { fontSize: 13, textAlign: 'center', paddingVertical: 24 },
     distRow: { marginTop: 14 },
     distHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },

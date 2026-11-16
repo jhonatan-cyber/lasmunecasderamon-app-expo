@@ -1,16 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 
 interface TipDetailModalProps {
     visible: boolean;
@@ -97,7 +98,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 <View style={{ alignItems: 'flex-end' }}>
                                                     <Text style={[styles.productSubtotal, { color: accentColor }]}>${(p.monto || 0).toLocaleString()}</Text>
                                                     <View style={[styles.statusBadge, { backgroundColor: p.estado === 1 ? (isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5') : (isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'), marginTop: 4 }]}>
-                                                        <Text style={{ fontSize: 10, fontWeight: '700', color: p.estado === 1 ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }}>
+                                                        <Text style={{ fontSize: FontSize.xxs, fontWeight: '700', color: p.estado === 1 ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }}>
                                                             {p.estado === 1 ? 'Por cobrar' : 'Cobrada'}
                                                         </Text>
                                                     </View>
@@ -201,7 +202,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                 </>
                             ) : (
                                 !loading && (
-                                    <View style={{ padding: 30, alignItems: 'center' }}>
+                                    <View style={{ padding: 28, alignItems: 'center' }}>
                                         <Ionicons name="receipt-outline" size={40} color={textSecondary} />
                                         <Text style={{ color: textSecondary, marginTop: 10, textAlign: 'center', fontSize: 13 }}>
                                             Esta propina no tiene venta asociada

@@ -4,16 +4,16 @@ import * as Haptics from 'expo-haptics';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Linking,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -72,7 +72,7 @@ export const QRScannerModal = ({
     if (!permission.granted) {
         const canAskAgain = permission.canAskAgain ?? true;
         return (
-            <Modal visible={visible} animationType="slide" transparent>
+            <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
                 <View style={styles.container}>
                     <View style={styles.permissionContent}>
                         <Ionicons name="camera" size={60} color="#60A5FA" />
@@ -145,7 +145,7 @@ export const QRScannerModal = ({
     };
 
     return (
-        <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
+        <Modal visible={visible} animationType="fade" transparent statusBarTranslucent onRequestClose={onClose}>
             <View style={styles.fullContainer}>
                 {cameraActive && (
                     <CameraView
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     permissionContent: {
         backgroundColor: '#1E1B4B',
         borderRadius: 32,
-        padding: 30,
+        padding: 28,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 8,
         borderRadius: 12,
-        borderWidth: 1.5,
+        borderWidth: 2,
     },
     codigoLabel: {
         color: 'rgba(255,255,255,0.7)',
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 20,
         backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 15,
+        padding: 16,
         borderRadius: 20,
     },
     cerrarBtn: {

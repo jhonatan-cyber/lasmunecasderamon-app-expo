@@ -39,8 +39,7 @@ export function BloqueoPorCaja({
         <View style={[styles.contenedor, style]}>
             <View
                 testID="bloqueo-por-caja-contenido"
-                style={styles.atenuado}
-                pointerEvents="none"
+                style={[styles.atenuado, { pointerEvents: 'none' as const }]}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
             >
@@ -58,7 +57,7 @@ export function BloqueoPorCaja({
                 accessibilityLabel={`Bloqueado. ${mensaje}`}
             >
                 {mostrandoTooltip && (
-                    <View style={styles.tooltip} pointerEvents="none">
+                    <View style={[styles.tooltip, { pointerEvents: 'none' as const }]}>
                         <Ionicons name="lock-closed" size={12} color="#FFFFFF" />
                         <Text style={styles.tooltipTexto}>{mensaje}</Text>
                     </View>

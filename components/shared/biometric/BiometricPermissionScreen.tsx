@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from '../BiometricEnrollmentModal.styles';
 
 interface BiometricPermissionScreenProps {
@@ -18,7 +19,7 @@ export function BiometricPermissionScreen({
     onClose,
 }: BiometricPermissionScreenProps) {
     return (
-        <Modal visible={visible} animationType="slide" transparent>
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
             <View style={styles.permissionScreen}>
                 <View style={styles.permissionCard}>
                     <View style={styles.permissionIcon}>

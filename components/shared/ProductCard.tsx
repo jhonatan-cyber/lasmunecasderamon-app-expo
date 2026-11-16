@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { isExpensiveDrink, getHostessLimit } from "@/hooks/utils/cuentaUtils";
 import type { Anfitriona, CartItem, Product, Room } from "@/types/cart";

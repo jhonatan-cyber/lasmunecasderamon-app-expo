@@ -1,14 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useState } from 'react';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import { FontSize } from '@/constants/spacing';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
   cargarImagenBaucher,
@@ -118,7 +119,7 @@ export function BaucherFoto({ endpoint, descripcion, compacto = false }: Baucher
               {loading || (!uri && !error) ? (
                 <ActivityIndicator size="large" color={accentColor} />
               ) : uri ? (
-                <Image source={{ uri }} style={styles.imagen} resizeMode="contain" />
+                <Image source={{ uri }} style={styles.imagen} contentFit="contain" />
               ) : (
                 <View style={styles.errorBox}>
                   <Ionicons name="alert-circle-outline" size={28} color={textSecondary} />
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipTexto: { fontSize: 12, fontWeight: '800' },
-  chipTextoCompacto: { fontSize: 10, fontWeight: '800' },
+  chipTextoCompacto: { fontSize: FontSize.xxs, fontWeight: '800' },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.82)',

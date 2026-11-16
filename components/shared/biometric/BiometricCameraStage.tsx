@@ -54,7 +54,7 @@ export function BiometricCameraStage({
                     />
                 ) : null}
 
-                <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" pointerEvents="none">
+                <Svg style={StyleSheet.absoluteFill} pointerEvents="none" viewBox="0 0 100 100">
                     <Circle
                         cx="50"
                         cy="50"

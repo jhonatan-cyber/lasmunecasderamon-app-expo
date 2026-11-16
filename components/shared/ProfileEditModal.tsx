@@ -1,4 +1,5 @@
-import { Modal, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { PremiumProfileView } from "@/components/shared/PremiumProfileView";
 
 interface ProfileEditModalProps {

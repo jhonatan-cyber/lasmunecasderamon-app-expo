@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from "../PremiumProfileView.styles";
 
 export const ESTADO_CIVIL_OPTIONS = [
@@ -38,8 +39,8 @@ export function CivilStatusModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-          <Text style={[styles.modalTitle, { color: textPrimary }]}>
+        <View style={[styles.modalContent, { backgroundColor: cardBg, width: '92%', maxWidth: 480 }]} accessibilityViewIsModal>
+          <Text maxFontSizeMultiplier={1.4} style={[styles.modalTitle, { color: textPrimary }]}>
             Estado Civil
           </Text>
           <ScrollView style={{ maxHeight: 300 }}>
@@ -47,6 +48,9 @@ export function CivilStatusModal({
               <Pressable
                 key={opt}
                 style={styles.modalOption}
+                accessibilityRole="radio"
+                accessibilityLabel={opt}
+                accessibilityState={{ checked: selected === opt }}
                 onPress={() => {
                   onSelect(opt);
                   onClose();

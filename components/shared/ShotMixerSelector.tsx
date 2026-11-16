@@ -12,13 +12,13 @@ import type {
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { apiClientSafe } from "@/api/client";
 import { getMirror, MIRROR_MAX_AGE_MS } from "@/services/mirror";
@@ -205,7 +205,7 @@ export function ShotMixerSelector({
           );
         };
         return (
-          <View key={index} style={{ gap: 8 }}>
+          <View key={`${item.nombre}-${item.cantidad}`} style={{ gap: 8 }}>
             <Text style={{ color: textPrimary }}>
               {item.nombre} · {item.cantidad} {bottle ? "botellas" : "cortos"}
             </Text>

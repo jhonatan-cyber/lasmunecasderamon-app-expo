@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useRouter } from 'expo-router';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { ColacionWorkerModal } from '@/components/colaciones/ColacionWorkerModal';
@@ -152,9 +153,12 @@ export default function ColacionesScreenAnfitriona() {
               Se requiere una caja abierta para registrar una colación.
             </Text>
           ) : ruleError || hasAnyCatalogoError ? (
-            <Text style={[styles.alertText, { color: '#EF4444' }]}>
-              Ocurrió un error cargando los datos: {ruleError || hasAnyCatalogoError}
-            </Text>
+            <ErrorState
+              title="No pudimos cargar los datos"
+              message={String(ruleError || hasAnyCatalogoError)}
+              onRetry={handleRefresh}
+              style={styles.inlineError}
+            />
           ) : null}
         </View>
 
@@ -355,6 +359,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
   },
+  inlineError: {
+    marginTop: 0,
+    marginHorizontal: 0,
+    padding: 12,
+    alignSelf: 'stretch',
+  },
   registerCard: {
     padding: 16,
     borderRadius: 16,
@@ -453,7 +463,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 14,
     borderRadius: 9999,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: 'rgba(0,0,0,0.05)',
   },
   registerButtonText: {

@@ -9,6 +9,7 @@ vi.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
   Text: ({ children }: any) => <span>{children}</span>,
   View: ({ children }: any) => <div>{children}</div>,
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
 }));
 
 vi.mock('@/api/client', () => ({

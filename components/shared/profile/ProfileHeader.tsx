@@ -36,7 +36,24 @@ export function ProfileHeader({
         },
       ]}
     >
+      <View pointerEvents="none" style={[styles.scrim, { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]} />
       <View style={styles.headerTop}>
+        {!skeletonMode && (
+          <Pressable
+            onPress={onBack}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={[styles.backBtnRight, styles.backBtnLeft]}
+            accessibilityRole="button"
+            accessibilityLabel="Volver atrás"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={isTablet ? 26 : 22}
+              color="#FFFFFF"
+            />
+            <Text style={styles.backTextHeader}>Atrás</Text>
+          </Pressable>
+        )}
         <View style={{ flex: 1, gap: skeletonMode ? 8 : 2 }}>
           {skeletonMode ? (
             <>
@@ -64,22 +81,20 @@ export function ProfileHeader({
           ) : (
             <>
               <Text
+                maxFontSizeMultiplier={1.4}
                 style={[
                   styles.headerTitle,
-                  { color: isDark ? "#111827" : "#FFFFFF" },
+                  { color: "#FFFFFF" },
                   isTablet && { fontSize: 28 },
                 ]}
               >
                 Mi Perfil
               </Text>
               <Text
+                maxFontSizeMultiplier={1.4}
                 style={[
                   styles.headerSubtitle,
-                  {
-                    color: isDark
-                      ? "rgba(0,0,0,0.6)"
-                      : "rgba(255,255,255,0.8)",
-                  },
+                  { color: "rgba(255,255,255,0.92)" },
                   isTablet && { fontSize: 17 },
                 ]}
               >
@@ -88,16 +103,6 @@ export function ProfileHeader({
             </>
           )}
         </View>
-        {!skeletonMode && (
-          <Pressable onPress={onBack} style={styles.backBtnRight}>
-            <Ionicons
-              name="arrow-back"
-              size={isTablet ? 26 : 22}
-              color="#FFFFFF"
-            />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        )}
       </View>
     </LinearGradient>
   );

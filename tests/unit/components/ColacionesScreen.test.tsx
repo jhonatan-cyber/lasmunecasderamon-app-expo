@@ -36,15 +36,15 @@ vi.mock('react-native', () => ({
     >
       {children}
     </button>
-  ),
-  RefreshControl: () => null,
-  StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
-}));
+  ),  RefreshControl: () => null,  StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },}));
 vi.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useRouter: () => ({ back: vi.fn() }),
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('@/components/ui/AnimatedView', () => ({
+  AnimatedView: ({ children }: Children) => <div>{children}</div>,
+}));
 vi.mock('@/components/ui/PremiumHeader', () => ({
   PremiumHeader: ({ rightComponent }: { rightComponent?: ReactNode }) => <div>{rightComponent}</div>,
 }));

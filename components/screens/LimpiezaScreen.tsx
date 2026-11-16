@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { contentColumn } from '@/constants/layout';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { limpiezaService, type OperacionLimpieza, type AccesoLimpieza } from '@/services/limpieza';
 import { showToast } from '@/utils/toast-lazy';
@@ -69,16 +70,13 @@ export default function LimpiezaScreen() {
 
   useEffect(() => {
     if (!acceso.gestionar && ubicacionesPermitidas.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrigen(ubicacionesPermitidas[0]);
       if (tipoOperacion === 'traspaso') {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDestino(ubicacionesPermitidas.length > 1 ? ubicacionesPermitidas[1] : 'almacen');
       }
     }
   }, [acceso, ubicacionesPermitidas, tipoOperacion]);
 
-  // eslint-disable react-hooks/set-state-in-effect
   const cargar = useCallback(async () => {
     try {
       const res = await limpiezaService.refresh();
@@ -92,20 +90,16 @@ export default function LimpiezaScreen() {
       setLoading(false);
     }
   }, []);
-  // eslint-enable react-hooks/set-state-in-effect
 
   useEffect(() => {
     void cargar();
   }, [cargar]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await cargar();
     setRefreshing(false);
-    // eslint-disable-line react-hooks/set-state-in-effect
   }, [cargar]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const pendientes = useMemo(() =>
     (resumen?.movimientos ?? []).filter(m => m.estado === 'pendiente'),
@@ -167,12 +161,7 @@ export default function LimpiezaScreen() {
         <PremiumHeader
           title="Limpieza"
           subtitle="Surtidos por turno"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
+          onBack={() => router.back()}
         />
         <View style={styles.loadingBox}>
           <Ionicons name="sync" size={24} color={accentColor} />
@@ -190,17 +179,12 @@ export default function LimpiezaScreen() {
       <PremiumHeader
         title="Limpieza"
         subtitle="Surtidos por turno"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
         }
@@ -243,9 +227,7 @@ export default function LimpiezaScreen() {
                   size={16}
                   color={tipoOperacion === 'consumo' ? accentColor : textSecondary}
                 />
-                <Text style={{ color: tipoOperacion === 'consumo' ? textPrimary : textSecondary, marginLeft: 6 }}>
-                  Consumo
-                </Text>
+                <Text style={{ color: tipoOperacion === 'consumo' ? textPrimary : textSecondary, marginLeft: 6 }}>Consumo</Text>
               </Pressable>
               <Pressable
                 onPress={() => setTipoOperacion('traspaso')}
@@ -260,9 +242,7 @@ export default function LimpiezaScreen() {
                   size={16}
                   color={tipoOperacion === 'traspaso' ? accentColor : textSecondary}
                 />
-                <Text style={{ color: tipoOperacion === 'traspaso' ? textPrimary : textSecondary, marginLeft: 6 }}>
-                  Traspaso
-                </Text>
+                <Text style={{ color: tipoOperacion === 'traspaso' ? textPrimary : textSecondary, marginLeft: 6 }}>Traspaso</Text>
               </Pressable>
             </View>
 
@@ -297,9 +277,7 @@ export default function LimpiezaScreen() {
                 <View style={[styles.formGroup, { borderColor }]}>
                   <Text style={[styles.label, { color: textPrimary }]}>Detalle</Text>
                   <View style={[styles.inputBox, { borderColor }]}>
-                    <Text style={{ color: nota ? textPrimary : textSecondary }}>
-                      {nota || 'Ej: Limpieza de baños'}
-                    </Text>
+                    <Text style={{ color: nota ? textPrimary : textSecondary }}>{nota || 'Ej: Limpieza de baños'}</Text>
                   </View>
                 </View>
               </>
@@ -309,10 +287,7 @@ export default function LimpiezaScreen() {
               <>
                 <View style={[styles.formGroup, { borderColor }]}>
                   <Text style={[styles.label, { color: textPrimary }]}>Origen</Text>
-                  <Pressable
-                    onPress={() => {}}
-                    style={[styles.inputBox, { borderColor }]}
-                  >
+                  <Pressable onPress={() => {}} style={[styles.inputBox, { borderColor }]}>
                     <Text style={{ color: textPrimary }}>{NOMBRES_UBICACION[origen] || origen}</Text>
                     <Ionicons name="chevron-forward" size={16} color={textSecondary} />
                   </Pressable>
@@ -320,10 +295,7 @@ export default function LimpiezaScreen() {
 
                 <View style={[styles.formGroup, { borderColor }]}>
                   <Text style={[styles.label, { color: textPrimary }]}>Destino</Text>
-                  <Pressable
-                    onPress={() => {}}
-                    style={[styles.inputBox, { borderColor }]}
-                  >
+                  <Pressable onPress={() => {}} style={[styles.inputBox, { borderColor }]}>
                     <Text style={{ color: textPrimary }}>{NOMBRES_UBICACION[destino] || destino}</Text>
                     <Ionicons name="chevron-forward" size={16} color={textSecondary} />
                   </Pressable>
@@ -343,36 +315,43 @@ export default function LimpiezaScreen() {
           {resumen && resumen.articulos.length > 0 && (
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
               <Text style={[styles.sectionTitle, { color: textPrimary }]}>Artículos</Text>
-              {resumen.articulos.map(articulo => (
-                <Pressable
-                  key={articulo.id}
-                  onPress={() => setSelectedArticuloId(articulo.id)}
-                  style={[
-                    styles.articuloRow,
-                    { borderColor },
-                    selectedArticuloId === articulo.id && { backgroundColor: `${accentColor}10` },
-                  ]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: textPrimary, fontWeight: '600' }}>{articulo.nombre}</Text>
-                    <Text style={{ color: textSecondary, fontSize: 12 }}>
-                      {articulo.unidad} · Mín: {articulo.minimo}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    {articulo.stock.bar !== undefined && (
-                      <Text style={{ color: articulo.stock.bar <= articulo.minimo ? '#EF4444' : textSecondary, fontSize: 12 }}>
-                        Bar: {articulo.stock.bar}
+              <FlatList
+                data={resumen.articulos}
+                keyExtractor={(item) => item.id}
+                initialNumToRender={8}
+                windowSize={5}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => setSelectedArticuloId(item.id)}
+                    style={[
+                      styles.articuloRow,
+                      { borderColor },
+                      selectedArticuloId === item.id && { backgroundColor: `${accentColor}10` },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: textPrimary, fontWeight: '600' }}>{item.nombre}</Text>
+                      <Text style={{ color: textSecondary, fontSize: 12 }}>
+                        {item.unidad} · Mín: {item.minimo}
                       </Text>
-                    )}
-                    {articulo.stock.caja !== undefined && (
-                      <Text style={{ color: articulo.stock.caja <= articulo.minimo ? '#EF4444' : textSecondary, fontSize: 12 }}>
-                        Caja: {articulo.stock.caja}
-                      </Text>
-                    )}
-                  </View>
-                </Pressable>
-              ))}
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      {item.stock.bar !== undefined && (
+                        <Text style={{ color: item.stock.bar <= item.minimo ? '#EF4444' : textSecondary, fontSize: 12 }}>
+                          Bar: {item.stock.bar}
+                        </Text>
+                      )}
+                      {item.stock.caja !== undefined && (
+                        <Text style={{ color: item.stock.caja <= item.minimo ? '#EF4444' : textSecondary, fontSize: 12 }}>
+                          Caja: {item.stock.caja}
+                        </Text>
+                      )}
+                    </View>
+                  </Pressable>
+                )}
+              />
             </View>
           )}
 
@@ -380,21 +359,28 @@ export default function LimpiezaScreen() {
           {pendientes.length > 0 && (
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
               <Text style={[styles.sectionTitle, { color: textPrimary }]}>Pendientes</Text>
-              {pendientes.map(mov => (
-                <View key={mov.id} style={[styles.movRow, { borderColor }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: textPrimary, fontWeight: '600' }}>
-                      {mov.articulo} · {mov.cantidad} {mov.unidad}
-                    </Text>
-                    <Text style={{ color: textSecondary, fontSize: 12 }}>
-                      {NOMBRES_UBICACION[mov.origen || ''] || ''} → {NOMBRES_UBICACION[mov.destino || ''] || ''}
+              <FlatList
+                data={pendientes}
+                keyExtractor={(item) => item.id}
+                initialNumToRender={8}
+                windowSize={5}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <View key={item.id} style={[styles.movRow, { borderColor }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: textPrimary, fontWeight: '600' }}>
+                        {item.articulo} · {item.cantidad} {item.unidad}
+                      </Text>
+                      <Text style={{ color: textSecondary, fontSize: 12 }}>
+                        {NOMBRES_UBICACION[item.origen || ''] || ''} → {NOMBRES_UBICACION[item.destino || ''] || ''}
+                      </Text>
+                    </View>
+                    <Text style={{ color: textSecondary, fontSize: 11 }}>
+                      {new Date(item.fecha).toLocaleDateString('es-CL')}
                     </Text>
                   </View>
-                  <Text style={{ color: textSecondary, fontSize: 11 }}>
-                    {new Date(mov.fecha).toLocaleDateString('es-CL')}
-                  </Text>
-                </View>
-              ))}
+                )}
+              />
             </View>
           )}
         </View>
@@ -500,9 +486,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,      backgroundColor: '#000000',
-      borderTopWidth: 1,
-    },
+    padding: 16,
+    backgroundColor: '#000000',
+    borderTopWidth: 1,
+  },
   registerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -516,4 +503,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
   },
-});
+});

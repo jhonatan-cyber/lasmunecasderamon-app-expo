@@ -161,12 +161,7 @@ export default function LimpiezaScreenAnfitriona() {
         <PremiumHeader
           title="Limpieza"
           subtitle="Surtidos por turno"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
+          onBack={() => router.back()}
         />
         <View style={styles.loadingBox}>
           <Ionicons name="sync" size={24} color={accentColor} />
@@ -184,12 +179,7 @@ export default function LimpiezaScreenAnfitriona() {
       <PremiumHeader
         title="Limpieza"
         subtitle="Surtidos por turno"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView

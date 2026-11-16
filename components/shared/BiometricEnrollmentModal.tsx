@@ -5,7 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -440,12 +441,11 @@ export function BiometricEnrollmentModal({
     }
 
     return (
-        <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
-            <View style={styles.root}>
+        <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
+            <View style={styles.root} accessibilityViewIsModal>
                 <LinearGradient
                     colors={['rgba(5,7,13,0.96)', 'rgba(5,7,13,0.35)', 'transparent']}
-                    style={styles.gradient}
-                    pointerEvents="none"
+                    style={[styles.gradient, { pointerEvents: 'none' as const }]}
                 />
 
                 <View style={styles.header}>

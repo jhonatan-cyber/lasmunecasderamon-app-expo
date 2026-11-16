@@ -2,13 +2,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import { FontSize } from '@/constants/spacing';
 
 interface SolicitarAnticipoModalProps {
   visible: boolean;
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   pendingBadgeText: {
-    fontSize: 10,
+    fontSize: FontSize.xxs,
     fontWeight: "800",
   },
   disponibleMonto: {
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   desgloseLabel: {
-    fontSize: 10,
+    fontSize: FontSize.xxs,
     fontWeight: "600",
     marginBottom: 4,
   },
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   input: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: "center",
     marginTop: 12,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

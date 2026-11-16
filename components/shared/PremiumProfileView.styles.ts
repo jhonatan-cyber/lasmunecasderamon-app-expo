@@ -1,12 +1,25 @@
 import { StyleSheet } from 'react-native';
 
+import { formColumn } from '@/constants/layout';
+
 export const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 16 },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+  },
+  scrim: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.20)",
+  },
+  backBtnLeft: {
+    marginRight: 12,
   },
   backBtnRight: {
     flexDirection: "row",
@@ -68,7 +81,7 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   roleText: { fontSize: 12, fontWeight: "900", letterSpacing: 1 },
-  formContainer: { padding: 24 },
+  formContainer: { ...formColumn, padding: 24 },
   inputGroup: { marginBottom: 20 },
   inputLabel: {
     fontSize: 14,
@@ -107,7 +120,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

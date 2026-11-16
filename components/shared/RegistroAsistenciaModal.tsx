@@ -2,23 +2,24 @@ import { apiClientSafe } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
 import React,{ useState } from 'react';
 import {
-ActivityIndicator,
-KeyboardAvoidingView,
-Modal,
-Platform,
-Pressable,
-ScrollView,
-StyleSheet,
-Text,
-TextInput,
-View
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 interface AttendanceRegisterResponse {
     success: boolean;
@@ -164,34 +165,37 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     return (
         <>
             <Modal
+                avoidKeyboard={false}
                 visible={visible && !showScanner}
                 transparent
                 animationType="slide"
                 onRequestClose={onClose}
             >
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.overlay}
                 >
                     <AnimatedView
                         from={{ translateY: 300, opacity: 0 }}
                         animate={{ translateY: 0, opacity: 1 }}
                         transition={{ type: 'spring', damping: 20 }}
-                        style={[styles.modalContent, { backgroundColor: bg, maxHeight: '92%' }]}
+                        style={[styles.modalContent, { backgroundColor: bg, maxHeight: '85%' }]}
+                        accessibilityViewIsModal
                     >
                         <ScrollView
+                            automaticallyAdjustKeyboardInsets
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                             style={{ flexShrink: 1 }}
-                            contentContainerStyle={{ paddingBottom: 8 }}
+                            contentContainerStyle={{ paddingBottom: 4 }}
                         >
                         <View style={styles.header}>
                             <View style={[styles.iconCircle, { backgroundColor: `${accentColor}20` }]}>
-                                <Ionicons name="calendar" size={32} color={accentColor} />
+                                <Ionicons name="calendar" size={24} color={accentColor} />
                             </View>
                             <Text style={[styles.title, { color: textPrimary }]}>Registrar Asistencia</Text>
                             <Text style={[styles.subtitle, { color: textSecondary }]}>
-                                Ingresa tu código o escanea el QR para registrar tu asistencia
+                                Ingresa tu código o escanea el QR
                             </Text>
                         </View>
 
@@ -201,11 +205,13 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                                     {user?.name?.[0]}{user?.lastName?.[0]}
                                 </Text>
                             </View>
-                            <Text style={[styles.userName, { color: textPrimary }]}>
-                                {user?.name} {user?.lastName}
-                            </Text>
-                            <View style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}>
-                                <Text style={[styles.roleText, { color: accentColor }]}>{user?.role}</Text>
+                            <View style={styles.userInfoText}>
+                                <Text style={[styles.userName, { color: textPrimary }]}>
+                                    {user?.name} {user?.lastName}
+                                </Text>
+                                <View style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}>
+                                    <Text style={[styles.roleText, { color: accentColor }]}>{user?.role}</Text>
+                                </View>
                             </View>
                         </View>
 
@@ -249,19 +255,14 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                             onPress={() => setShowScanner(true)}
                         >
                             <View style={[styles.qrIconCircle, { backgroundColor: accentColor }]}>
-                                <Ionicons name="qr-code-outline" size={24} color="white" />
+                                <Ionicons name="qr-code-outline" size={20} color="white" />
                             </View>
-                            <View style={styles.qrBtnText}>
-                                <Text style={[styles.qrBtnTitle, { color: textPrimary }]}>Escanear QR</Text>
-                                <Text style={[styles.qrBtnSubtitle, { color: textSecondary }]}>
-                                    Apunta al código QR del cajero
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={24} color={textSecondary} />
+                            <Text style={[styles.qrBtnTitle, { color: textPrimary }]}>Escanear código QR</Text>
+                            <Ionicons name="chevron-forward" size={20} color={textSecondary} />
                         </Pressable>
 
                         <Pressable
-                            style={[styles.skipBtn, { borderColor }]}
+                            style={styles.skipBtn}
                             onPress={onRegistered}
                         >
                             <Text style={[styles.skipText, { color: textSecondary }]}>
@@ -296,10 +297,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     modalContent: {
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        padding: 24,
-        paddingBottom: 40,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 16,
+        paddingBottom: 24,
     },
     handle: {
         width: 40,
@@ -307,146 +308,148 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(150,150,150,0.3)',
         borderRadius: 2,
         alignSelf: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 20,
-    },
-    iconCircle: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
         marginBottom: 12,
     },
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
     title: {
-        fontSize: 22,
-        fontWeight: '900',
-        marginBottom: 4,
+        fontSize: 18,
+        fontWeight: '800',
+        marginBottom: 2,
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: 13,
         textAlign: 'center',
-        lineHeight: 20,
+        lineHeight: 18,
     },
     userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 24,
+        marginBottom: 16,
         gap: 10,
     },
+    userInfoText: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
+    },
     avatarSmall: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: 13,
     },
     userName: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
+        flexShrink: 1,
     },
     roleBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
     },
     roleText: {
-        fontSize: 11,
+        fontSize: FontSize.xxs,
         fontWeight: '700',
     },
     inputSection: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     label: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '600',
-        marginBottom: 8,
+        marginBottom: 6,
         marginLeft: 4,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        height: 56,
-        marginBottom: 16,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        height: 48,
+        marginBottom: 12,
     },
     input: {
         flex: 1,
-        marginLeft: 10,
-        fontSize: 16,
+        marginLeft: 8,
+        fontSize: 15,
         fontWeight: '600',
     },
     submitBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 54,
-        borderRadius: 9999,
+        height: 48,
+        borderRadius: 14,
         gap: 8,
     },
     submitBtnText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '700',
     },
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 16,
+        marginVertical: 12,
     },
     dividerLine: {
         flex: 1,
         height: 1,
     },
     dividerText: {
-        marginHorizontal: 16,
-        fontSize: 13,
+        marginHorizontal: 12,
+        fontSize: 12,
         fontWeight: '600',
     },
     qrBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 9999,
-        padding: 16,
+        borderRadius: 14,
+        padding: 12,
+        gap: 10,
     },
     qrIconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    qrBtnText: {
-        flex: 1,
-        marginLeft: 14,
-    },
     qrBtnTitle: {
-        fontSize: 16,
+        flex: 1,
+        fontSize: 15,
         fontWeight: '700',
-    },
-    qrBtnSubtitle: {
-        fontSize: 12,
-        marginTop: 2,
     },
     skipBtn: {
         alignItems: 'center',
-        marginTop: 16,
-        paddingVertical: 12,
+        marginTop: 12,
+        paddingVertical: 8,
     },
     skipText: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
     },
 });

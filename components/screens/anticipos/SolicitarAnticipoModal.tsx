@@ -2,14 +2,14 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from "../AnticiposScreen.styles";
 import { formatCurrency } from "./anticiposUtils";
 
@@ -27,6 +27,7 @@ interface SolicitarAnticipoModalProps {
   montoComisiones: number;
   montoPropinas: number;
   tieneSolicitudPendiente: boolean;
+  efectivoEnCaja: number;
   monto: string;
   motivo: string;
   sendingRequest: boolean;
@@ -51,6 +52,7 @@ export function SolicitarAnticipoModal({
   montoComisiones,
   montoPropinas,
   tieneSolicitudPendiente,
+  efectivoEnCaja,
   monto,
   motivo,
   sendingRequest,
@@ -62,13 +64,14 @@ export function SolicitarAnticipoModal({
 }: SolicitarAnticipoModalProps) {
   return (
     <Modal
+      avoidKeyboard={false}
       visible={visible}
       animationType="slide"
       transparent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.modalOverlay}
       >
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
@@ -149,6 +152,22 @@ export function SolicitarAnticipoModal({
                 </View>
               ))}
             </View>
+          </View>
+          <View
+            style={[
+              styles.cajaCard,
+              { backgroundColor: cardBg, borderColor },
+            ]}
+          >
+            <View style={styles.cajaHeader}>
+              <Ionicons name="wallet-outline" size={18} color={textSecondary} />
+              <Text style={[styles.cajaLabel, { color: textSecondary }]}>
+                EFECTIVO EN CAJA
+              </Text>
+            </View>
+            <Text style={[styles.cajaMonto, { color: accentColor }]}>
+              ${formatCurrency(efectivoEnCaja)}
+            </Text>
           </View>
           <TextInput
             style={[

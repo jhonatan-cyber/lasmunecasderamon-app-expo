@@ -32,6 +32,7 @@ vi.mock("react-native", () => ({
   ),
   ActivityIndicator: () => null,
   Platform: { OS: "web" },
+  KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
 }));
 vi.mock("@expo/vector-icons/Ionicons", () => ({ default: () => <span /> }));
 vi.mock("@/hooks/useAccentColor", () => ({

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { showToast } from '@/utils/toast-lazy';
 
@@ -94,12 +94,7 @@ export default function PersonalAsistenciaSummaryScreen() {
       <PremiumHeader
         title="Resumen de Asistencia"
         subtitle="Mi turno"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -258,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   empleadoBadgeText: {
-    fontSize: 10,
+    fontSize: FontSize.xxs,
     fontWeight: '800',
   },
 });

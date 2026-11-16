@@ -53,6 +53,8 @@ vi.mock('react-native', () => ({
     ),
     ActivityIndicator: () => <span>cargando</span>,
     Modal: ({ children, visible }: any) => (visible ? <div>{children}</div> : null),
+    Platform: { OS: 'web' },
+    KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
 }));
 
 vi.mock('react-native-svg', () => ({

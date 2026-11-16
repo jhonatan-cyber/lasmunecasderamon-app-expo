@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,6 +11,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { FontSize } from '@/constants/spacing';
+import { contentColumn } from '@/constants/layout';
 import {
   agruparEntradas,
   EntradasListadoCard,
@@ -29,17 +32,6 @@ import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
 import { useAuthStore } from '@/store/authStore';
 import { isBarmanRole, isCajeroRole } from '@/utils/userRole';
-
-/**
- * Covers del día (barman y cajero cuando opera la barra). Paridad con la
- * pestaña Covers de la web: la puerta cobra la entrada y aquí la barra sirve
- * la bebida; el servidor decide si es cover o adicional según
- * `max(tope, monto_entrada)`.
- *
- * La cola trae una persona por fila, pero la barra atiende la compra completa:
- * cada grupo muestra un solo botón y el modal reparte los cortes elegidos entre
- * las entradas pendientes del grupo.
- */
 
 /** Compra con al menos un cover pendiente: se muestra como en el listado del garzón. */
 interface GrupoPendiente {
@@ -78,6 +70,7 @@ export function CoversScreen() {
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
   const [solicitudesCovers, setSolicitudesCovers] = useState<any[]>([]);
+  const [solicitudesLoading, setSolicitudesLoading] = useState(false);
 
   const { fecha } = fechaHoraLocal();
 
@@ -86,8 +79,7 @@ export function CoversScreen() {
     [pendientes],
   );
 
-  // Una fila por compra, con los mismos datos que el listado del garzón. Si el
-  // listado del día no cargó, se arma con lo que trae la cola.
+  // Agrupa las entradas pendientes por su grupo_registro_id
   const gruposPendientes = useMemo<GrupoPendiente[]>(() => {
     const porGrupo = new Map<string, EntradaPendiente[]>();
     for (const fila of pendientes) {
@@ -118,6 +110,7 @@ export function CoversScreen() {
           devueltoMonto: 0,
           baucherEntradaId: null,
           registros: [],
+          filas,
         },
       filas,
     }));
@@ -132,6 +125,7 @@ export function CoversScreen() {
           if (!solicitudes.success)
             throw new Error(solicitudes.message || 'No se pudieron cargar las solicitudes');
           setSolicitudesCovers(solicitudes.data ?? []);
+          setSolicitudesLoading(false);
           return;
         }
         // La cola es la del día de negocio, igual que en el dashboard: el
@@ -152,6 +146,7 @@ export function CoversScreen() {
             { context: 'Covers:listado' },
           );
         }
+        setSolicitudesLoading(false);
       } catch (error) {
         logger.fetchError(error, { context: 'Covers:cargar' });
         showToast({
@@ -172,9 +167,7 @@ export function CoversScreen() {
     }, [cargar]),
   );
 
-  // El garzón registra entradas en la puerta mientras la cola está abierta: se
-  // refresca al recibir el aviso en vivo, sin esperar a que la pantalla reciba
-  // el foco.
+  // Refresca al recibir aviso en vivo, sin esperar a que la pantalla reciba el foco.
   useEffect(() => {
     const subscription = eventBus.addListener(
       REALTIME_EVENT_NAMES.refreshEntradas,
@@ -191,12 +184,7 @@ export function CoversScreen() {
     setRefreshing(false);
   }, [cargar]);
 
-  /**
-   * Anula todas las entradas pendientes de la compra, como el dashboard: una
-   * persona que se fue no recibe su bebida y el dinero cobrado en la puerta se
-   * le devuelve; la caja recién lo registra al servir o al cerrar el turno.
-   * El servidor anula una fila por llamada.
-   */
+  /** Anula todas las entradas pendientes de la compra. */
   const anularPendientes = useCallback(
     async (grupo: GrupoPendiente) => {
       setGrupoAnular(null);
@@ -265,12 +253,7 @@ export function CoversScreen() {
         <PremiumHeader
           title="Covers"
           subtitle="Entregas de la barra"
-          rightComponent={
-            <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          }
+          onBack={() => router.back()}
         />
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={accentColor} />
@@ -284,17 +267,12 @@ export function CoversScreen() {
       <PremiumHeader
         title="Covers"
         subtitle="Entregas de la barra"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -317,226 +295,237 @@ export function CoversScreen() {
                     {solicitudesCovers.length}
                   </Text>
                 </View>
-                <Text style={{ color: textSecondary, fontSize: 12 }}>Pendientes de autorización</Text>
+                <Text style={{ color: textSecondary, fontSize: 12 }}>
+                  Pendientes de autorización
+                </Text>
               </View>
               {solicitudesCovers.length === 0 && (
                 <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
                   No hay covers por autorizar.
                 </Text>
               )}
-              {solicitudesCovers.map((solicitud) => {
-                const unidades = Array.isArray(solicitud.unidades)
-                  ? solicitud.unidades
-                  : (() => { try { return JSON.parse(solicitud.unidades || '[]'); } catch { return []; } })();
-                return (
-                  <View key={solicitud.id} style={[styles.grupoRow, { borderColor }]}>
-                    <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
-                      {solicitud.cliente_nombre || 'Cliente sin nombre'}
-                    </Text>
-                    <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
-                      Solicitó: {solicitud.solicitado_por_nick || 'Barman'} · {unidades.length} {unidades.length === 1 ? 'bebida' : 'bebidas'}
-                    </Text>
-                    {unidades.map((unidad: any, index: number) => (
-                      <Text key={`${unidad.presentacion_id}-${index}`} style={{ color: textPrimary, fontSize: 12, marginTop: 8 }}>
-                        • {unidad.producto_nombre || 'Producto'} {unidad.presentacion_nombre ? `· ${unidad.presentacion_nombre}` : ''}
-                        {unidad.tipo_entrega === 'botella' ? ' · Botella' : ' · Corte'}
-                      </Text>
-                    ))}
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                      <Pressable
-                        onPress={() => void aprobarSolicitud(solicitud.id)}
-                        style={{ flex: 1, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
-                      >
-                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>APROBAR</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => void rechazarSolicitud(solicitud.id)}
-                        style={{ flex: 1, backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
-                      >
-                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>RECHAZAR</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-          {!esCajero && (
-          <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.listHeader}>
-              <View>
-                <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                  PENDIENTES DEL DÍA
-                </Text>
-                <Text style={[styles.totalValue, { color: textPrimary }]}>
-                  {formatCurrency(totalPendiente)}
-                </Text>
-              </View>
-              <Text style={{ color: textSecondary, fontSize: 12 }}>
-                {gruposPendientes.length}{' '}
-                {gruposPendientes.length === 1 ? 'compra' : 'compras'}
-              </Text>
-            </View>
-
-            {pendientes.length === 0 && (
-              <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
-                Sin covers pendientes por ahora.
-              </Text>
-            )}
-
-            {gruposPendientes.map(grupo => {
-              const estado = estadoDelGrupo(grupo.dia);
-              const multiple = grupo.filas.length > 1;
-              const abierto = grupoAbierto === grupo.id;
-              return (
-                <View key={grupo.id} style={[styles.grupoRow, { borderColor }]}>
-                  <View style={styles.grupoFilaSuperior}>
-                    <Pressable
-                      onPress={() => {
-                        if (multiple) {
-                          setGrupoAbierto(actual => (actual === grupo.id ? null : grupo.id));
-                          return;
-                        }
-                        abrirEntrega(grupo);
-                      }}
-                      style={styles.grupoHeader}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{ color: textPrimary, fontWeight: '700', fontSize: 14 }}
-                          numberOfLines={1}
-                        >
-                          {grupo.dia.cliente}
-                        </Text>
-                        <Text style={{ color: textSecondary, fontSize: 11 }}>
-                          {grupo.dia.hora ? `${grupo.dia.hora} · ` : ''}
-                          {grupo.dia.cantidad}{' '}
-                          {grupo.dia.cantidad === 1 ? 'entrada' : 'entradas'} ·{' '}
-                          {formatCurrency(grupo.dia.costoUnitario)} c/u · {grupo.dia.metodo}
-                        </Text>
-                        {multiple && (
-                          <Text style={{ color: textSecondary, fontSize: 11 }}>
-                            {grupo.filas.length} sin entregar
-                          </Text>
-                        )}
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
+              {solicitudesCovers.length > 0 && (
+                <FlatList
+                  data={solicitudesCovers}
+                  keyExtractor={(item) => item.id}
+                  initialNumToRender={8}
+                  windowSize={5}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item: solicitud }) => {
+                    const unidades = Array.isArray(solicitud.unidades)
+                      ? solicitud.unidades
+                      : (() => {
+                          try {
+                            return JSON.parse(solicitud.unidades || '[]');
+                          } catch {
+                            return [];
+                          }
+                        })();
+                    return (
+                      <View key={solicitud.id} style={[styles.grupoRow, { borderColor }]}>
                         <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
-                          {formatCurrency(grupo.dia.totalGrupo)}
+                          {solicitud.cliente_nombre || 'Cliente sin nombre'}
                         </Text>
-                        <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
-                          <Text style={{ color: estado.color, fontSize: 10, fontWeight: '800' }}>
-                            {estado.label}
+                        <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
+                          Solicitó: {solicitud.solicitado_por_nick || 'Barman'} ·{unidades.length} {unidades.length === 1 ? 'bebida' : 'bebidas'}
+                        </Text>
+                        {unidades.map((unidad: any, index: number) => (
+                          <Text
+                            key={`${unidad.presentacion_id}-${index}`}
+                            style={{ color: textPrimary, fontSize: 12, marginTop: 8 }}
+                          >
+                            • {unidad.producto_nombre || 'Producto'} {unidad.presentacion_nombre ? `· ${unidad.presentacion_nombre}` : ''}
+                            {unidad.tipo_entrega === 'botella' ? ' · Botella' : ' · Corte'}
                           </Text>
+                        ))}
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                          <Pressable
+                            onPress={() => void aprobarSolicitud(solicitud.id)}
+                            style={{ flex: 1, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                          >
+                            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>APROBAR</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => void rechazarSolicitud(solicitud.id)}
+                            style={{ flex: 1, backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                          >
+                            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>RECHAZAR</Text>
+                          </Pressable>
                         </View>
                       </View>
-                      {multiple && (
-                        <Ionicons
-                          name={abierto ? 'chevron-up' : 'chevron-down'}
-                          size={16}
-                          color={textSecondary}
-                        />
-                      )}
-                    </Pressable>
-
-                    <Pressable
-                      onPress={() => abrirEntrega(grupo)}
-                      style={({ pressed }) => [
-                        styles.entregarBtn,
-                        { backgroundColor: `${accentColor}1F`, opacity: pressed ? 0.7 : 1 },
-                      ]}
-                    >
-                      <Text style={{ color: accentColor, fontWeight: '800', fontSize: 11 }}>
-                        {multiple ? `ENTREGAR ${grupo.filas.length}` : 'ENTREGAR'}
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      onPress={() => setGrupoAnular(grupo)}
-                      disabled={anulandoId === grupo.id}
-                      style={({ pressed }) => [
-                        styles.anularBtn,
-                        { opacity: anulandoId === grupo.id ? 0.5 : pressed ? 0.7 : 1 },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        grupo.filas.length === 1
-                          ? 'Anular entrada pendiente'
-                          : `Anular ${grupo.filas.length} entradas pendientes`
-                      }
-                    >
-                      {anulandoId === grupo.id ? (
-                        <ActivityIndicator size="small" color="#EF4444" />
-                      ) : (
-                        <Text style={styles.anularText}>
-                          {grupo.filas.length > 1 ? `ANULAR ${grupo.filas.length}` : 'ANULAR'}
-                        </Text>
-                      )}
-                    </Pressable>
-                  </View>
-
-                  {multiple &&
-                    abierto &&
-                    grupo.filas.map(fila => (
-                      <View key={fila.id} style={styles.subFila}>
-                        <Text style={{ flex: 1, color: textSecondary, fontSize: 11 }}>
-                          {fila.hora} · {formatCurrency(fila.monto_entrada)}
-                        </Text>
-                      </View>
-                    ))}
-                </View>
-              );
-            })}
-          </View>
+                    );
+                  }}
+                />
+              )}
+            </View>
           )}
 
-          <View style={{ marginTop: 20 }}>
-            <EntradasListadoCard
-              entradas={entradasDia}
-              titulo={`HOY · ${fecha.split('-').reverse().join('/')}`}
-              vacio="Sin entradas registradas hoy."
-            />
-          </View>
+          {!esCajero && (
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+              <View style={styles.listHeader}>
+                <View>
+                  <Text style={[styles.sectionLabel, { color: textSecondary }]}>
+                    PENDIENTES DEL DÍA
+                  </Text>
+                  <Text style={[styles.totalValue, { color: textPrimary }]}>
+                    {formatCurrency(totalPendiente)}
+                  </Text>
+                </View>
+                <Text style={{ color: textSecondary, fontSize: 12 }}>
+                  {gruposPendientes.length}{' '}
+                  {gruposPendientes.length === 1 ? 'compra' : 'compras'}
+                </Text>
+              </View>
+
+              {pendientes.length === 0 && (
+                <Text style={{ color: textSecondary, fontSize: 13, textAlign: 'center' }}>
+                  Sin covers pendientes por ahora.
+                </Text>
+              )}
+
+              {gruposPendientes.length > 0 && (
+                <FlatList
+                  data={gruposPendientes}
+                  keyExtractor={(item) => item.id}
+                  initialNumToRender={8}
+                  windowSize={5}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item: grupo }) => {
+                    const estado = estadoDelGrupo(grupo.dia);
+                    const multiple = grupo.filas.length > 1;
+                    const abierto = grupoAbierto === grupo.id;
+                    return (
+                      <View key={grupo.id} style={[styles.grupoRow, { borderColor }]}>
+                        <View style={styles.grupoFilaSuperior}>
+                          <Pressable
+                            onPress={() => {
+                              if (multiple) {
+                                setGrupoAbierto(actual => (actual === grupo.id ? null : grupo.id));
+                                return;
+                              }
+                              abrirEntrega(grupo);
+                            }}
+                            style={styles.grupoHeader}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                numberOfLines={1}
+                                style={{
+                                  color: textPrimary,
+                                  fontWeight: '700',
+                                  fontSize: 14,
+                                }}>
+                                {grupo.dia.cliente}
+                              </Text>
+                              <Text style={{ color: textSecondary, fontSize: 11 }}>
+                                {grupo.dia.hora ? `${grupo.dia.hora} · ` : ''}
+                                {grupo.dia.cantidad}{' '}
+                                {grupo.dia.cantidad === 1 ? 'entrada' : 'entradas'} ·{ ' '}
+                                {formatCurrency(grupo.dia.costoUnitario)} c/u · {grupo.dia.metodo}
+                              </Text>
+                              {multiple && (
+                                <Text style={{ color: textSecondary, fontSize: 11 }}>
+                                  {grupo.filas.length} sin entregar
+                                </Text>
+                              )}
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
+                                {formatCurrency(grupo.dia.totalGrupo)}
+                              </Text>
+                              <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
+                                <Text style={{ color: estado.color, fontSize: FontSize.xxs, fontWeight: '800' }}>
+                                  {estado.label}
+                                </Text>
+                              </View>
+                            </View>
+                            {multiple && (
+                              <Ionicons
+                                name={abierto ? 'chevron-up' : 'chevron-down'}
+                                size={16}
+                                color={textSecondary}
+                              />
+                            )}
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => abrirEntrega(grupo)}
+                            style={{ flex: 1, backgroundColor: `${accentColor}1F`, opacity: 0.7 }}
+                          >
+                            <Text style={{ color: accentColor, fontWeight: '800', fontSize: 11 }}>
+                              {multiple ? `ENTREGAR ${grupo.filas.length}` : 'ENTREGAR'}
+                            </Text>
+                          </Pressable>
+
+                          <Pressable
+                            onPress={() => setGrupoAnular(grupo)}
+                            disabled={anulandoId === grupo.id}
+                            style={{ opacity: anulandoId === grupo.id ? 0.5 : 0.7 }}
+                          >
+                            {anulandoId === grupo.id ? (
+                              <ActivityIndicator size="small" color="#EF4444" />
+                            ) : (
+                              <Text style={styles.anularText}>
+                                {grupo.filas.length > 1 ? `ANULAR ${grupo.filas.length}` : 'ANULAR'}
+                              </Text>
+                            )}
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  }}
+                />
+              )}
+
+              <View style={{ marginTop: 20 }}>
+                <EntradasListadoCard
+                  entradas={entradasDia}
+                  titulo={`HOY · ${fecha.split('-').reverse().join('/')}`}
+                  vacio="Sin entradas registradas hoy."
+                />
+              </View>
+            </View>
+          )}
+
+          <PremiumAlert
+            visible={grupoAnular !== null}
+            type="danger"
+            title={grupoAnular && grupoAnular.filas.length > 1 ? 'Anular entradas' : 'Anular entrada'}
+            message={
+              grupoAnular
+                ? grupoAnular.filas.length === 1
+                  ? '¿Anular la entrada pendiente de este grupo? El dinero cobrado se devuelve en la puerta.'
+                  : `¿Anular las ${grupoAnular.filas.length} entradas pendientes de este grupo? El dinero cobrado se devuelve en la puerta.`
+                : ''
+            }
+            confirmText="Anular"
+            cancelText="Cancelar"
+            showCancel
+            onConfirm={() => {
+              if (grupoAnular) void anularPendientes(grupoAnular);
+            }}
+            onCancel={() => setGrupoAnular(null)}
+          />
+
+          <EntregaCoversModal
+            key={grupoEntrega?.id ?? 'cerrado'}
+            visible={grupoEntrega !== null}
+            grupo={
+              grupoEntrega
+                ? {
+                    id: grupoEntrega.id,
+                    cliente: grupoEntrega.dia.cliente,
+                    filas: grupoEntrega.filas,
+                  }
+                : null
+            }
+            tope={topeCover}
+            onClose={cerrarEntrega}
+            onEntregado={cargar}
+            modo={requiereSolicitud ? 'solicitud' : 'entrega'}
+          />
         </View>
       </ScrollView>
-
-      <PremiumAlert
-        visible={grupoAnular !== null}
-        type="danger"
-        title={grupoAnular && grupoAnular.filas.length > 1 ? 'Anular entradas' : 'Anular entrada'}
-        message={
-          grupoAnular
-            ? grupoAnular.filas.length === 1
-              ? '¿Anular la entrada pendiente de este grupo? El dinero cobrado se devuelve en la puerta.'
-              : `¿Anular las ${grupoAnular.filas.length} entradas pendientes de este grupo? El dinero cobrado se devuelve en la puerta.`
-            : ''
-        }
-        confirmText="Anular"
-        cancelText="Cancelar"
-        showCancel
-        onConfirm={() => {
-          if (grupoAnular) void anularPendientes(grupoAnular);
-        }}
-        onCancel={() => setGrupoAnular(null)}
-      />
-
-      <EntregaCoversModal
-        key={grupoEntrega?.id ?? 'cerrado'}
-        visible={grupoEntrega !== null}
-        grupo={
-          grupoEntrega
-            ? {
-                id: grupoEntrega.id,
-                cliente: grupoEntrega.dia.cliente,
-                filas: grupoEntrega.filas,
-              }
-            : null
-        }
-        tope={topeCover}
-        onClose={cerrarEntrega}
-        onEntregado={cargar}
-        modo={requiereSolicitud ? 'solicitud' : 'entrega'}
-      />
     </View>
   );
 }
@@ -591,27 +580,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingLeft: 4,
   },
+  anularText: { color: '#EF4444', fontWeight: '800', fontSize: 11 },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
     marginTop: 4,
   },
-  entregarBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  anularBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 64,
-  },
-  anularText: { color: '#EF4444', fontWeight: '800', fontSize: 10 },
-  
-});
+});

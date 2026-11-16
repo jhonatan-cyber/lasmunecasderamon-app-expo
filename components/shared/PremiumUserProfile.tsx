@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '@/api/client';
 import { AttendanceCodeDisplay } from '@/components/anfitriona/AttendanceCodeDisplay';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { getUserRole, isAdminRole } from '@/utils/userRole';
 
 interface PremiumUserProfileProps {
@@ -42,6 +44,8 @@ const getRoleLabel = (role?: string) => {
 };
 
 export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfileProps) => {
+    const { isTablet, isLandscape } = useResponsiveMetrics();
+    const compact = isLandscape && !isTablet;
     const [imageError, setImageError] = useState(false);
     const [prevFoto, setPrevFoto] = useState(user?.foto);
 
@@ -79,16 +83,16 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
 
     return (
         <View style={styles.headerUser}>
-            <View style={styles.avatarContainer}>
+            <View style={[styles.avatarContainer, compact && styles.avatarContainerCompact]}>
                 <Image
                     source={{ uri: avatarUri }}
-                    style={styles.avatar}
+                    style={[styles.avatar, compact && { borderRadius: 18 }]}
                     onError={() => setImageError(true)}
                 />
             </View>
             <View style={styles.headerInfo}>
                 <View style={styles.nameHeaderContainer}>
-                    <Text style={[styles.username, styles.usernameText, { color: textPrimary }]} numberOfLines={1}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.username, styles.usernameText, { color: textPrimary }, compact && { fontSize: 19 }]} numberOfLines={1}>
                         @{nick}
                     </Text>
                     {!esAdmin && <AttendanceCodeDisplay />}
@@ -122,6 +126,11 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         backgroundColor: 'rgba(255,255,255,0.12)',
         overflow: 'hidden',
+    },
+    avatarContainerCompact: {
+        width: 46,
+        height: 46,
+        borderRadius: 18,
     },
     avatar: {
         width: '100%',

@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from "../PremiumProfileView.styles";
 
 interface ProfileImagePickerModalProps {
@@ -29,23 +30,38 @@ export function ProfileImagePickerModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-          <Text style={[styles.modalTitle, { color: textPrimary }]}>
+        <View style={[styles.modalContent, { backgroundColor: cardBg, width: '92%', maxWidth: 480 }]} accessibilityViewIsModal>
+          <Text maxFontSizeMultiplier={1.4} style={[styles.modalTitle, { color: textPrimary }]}>
             Elegir Foto
           </Text>
-          <Pressable style={styles.modalOption} onPress={onTakePhoto}>
+          <Pressable
+            style={styles.modalOption}
+            onPress={onTakePhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Tomar foto con la cámara"
+          >
             <Ionicons name="camera-outline" size={24} color={accentColor} />
-            <Text style={[styles.modalOptionText, { color: textPrimary }]}>
+            <Text maxFontSizeMultiplier={1.4} style={[styles.modalOptionText, { color: textPrimary }]}>
               Cámara
             </Text>
           </Pressable>
-          <Pressable style={styles.modalOption} onPress={onPickImage}>
+          <Pressable
+            style={styles.modalOption}
+            onPress={onPickImage}
+            accessibilityRole="button"
+            accessibilityLabel="Elegir foto de la galería"
+          >
             <Ionicons name="image-outline" size={24} color={accentColor} />
-            <Text style={[styles.modalOptionText, { color: textPrimary }]}>
+            <Text maxFontSizeMultiplier={1.4} style={[styles.modalOptionText, { color: textPrimary }]}>
               Galería
             </Text>
           </Pressable>
-          <Pressable style={styles.cancelModalBtn} onPress={onClose}>
+          <Pressable
+            style={styles.cancelModalBtn}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar"
+          >
             <Text style={[styles.cancelModalBtnText, { color: "#EF4444" }]}>
               Cancelar
             </Text>

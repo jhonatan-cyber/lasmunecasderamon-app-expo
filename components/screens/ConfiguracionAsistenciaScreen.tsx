@@ -191,10 +191,14 @@ function PanelConfiguracionAsistencia() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="time-outline" size={20} color={textSecondary} />
@@ -481,7 +485,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 12, fontWeight: '700', lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.4 },
   activacionBox: { gap: 10 },
   input: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -530,7 +534,7 @@ const styles = StyleSheet.create({
   deviceName: { fontSize: 14, fontWeight: '800' },
   deviceMeta: { fontSize: 11 },
   revokeButton: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 9999,
     paddingHorizontal: 14,
     paddingVertical: 8,

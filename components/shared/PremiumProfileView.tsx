@@ -9,12 +9,12 @@ import {
   ScrollView,
   Switch,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BASE_URL } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useAuthStore } from "@/store/authStore";
 import { ProfileThemePicker } from "@/components/shared/profile/ProfileThemePicker";
 import { useProfile } from "@/hooks/useProfile";
@@ -45,8 +45,7 @@ export function PremiumProfileView({
   const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
 
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
@@ -163,7 +162,7 @@ export function PremiumProfileView({
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar style={isDark ? "dark" : "light"} />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <ProfileLoadingState
           bg={bg}
           isDark={isDark}
@@ -180,7 +179,7 @@ export function PremiumProfileView({
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style={isDark ? "dark" : "light"} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <ProfileHeader
         roleLabel={roleLabelEfectivo}
         isTablet={isTablet}
@@ -190,10 +189,12 @@ export function PremiumProfileView({
         onBack={() => router.back()}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         showsVerticalScrollIndicator={false}
