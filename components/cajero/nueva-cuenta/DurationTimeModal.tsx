@@ -37,12 +37,6 @@ export const DurationTimeModal: React.FC<DurationTimeModalProps> = ({
     setTempTime(selectedTime);
   }, [selectedTime]);
 
-  React.useEffect(() => {
-    if (visible) {
-      setTempTime(selectedTime);
-    }
-  }, [visible, selectedTime]);
-
   const handleApply = useCallback(() => {
     onSelectTime(tempTime);
     onClose();
