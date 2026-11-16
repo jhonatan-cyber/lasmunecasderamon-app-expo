@@ -1,13 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { DetailSkeleton } from "./VentasSkeletonComponent";
 import { statusColors, statusLabels, payMethodIcons } from "./constants";
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   closeBtn: { width: 40, height: 40, borderRadius: 9999, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
   statusBadgeDetail: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
   statusTextDetail: { fontSize: 11, fontWeight: "900" },
-  infoCard: { flex: 1, padding: 15, borderRadius: 18, borderWidth: 1 },
+  infoCard: { flex: 1, padding: 16, borderRadius: 18, borderWidth: 1 },
   infoLabel: { fontSize: 10, fontWeight: "900", textTransform: "uppercase", marginBottom: 6 },
   infoValue: { fontSize: 14, fontWeight: "800" },
   sectionLabel: { fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },

@@ -27,14 +27,14 @@ export const styles = StyleSheet.create({
     fontWeight: "900",
   },
   closeBtn: {
-    padding: 5,
+    padding: 4,
   },
   content: {
     padding: 20,
   },
   infoBox: {
     marginBottom: 20,
-    padding: 15,
+    padding: 16,
     backgroundColor: "rgba(139, 92, 246, 0.05)",
     borderRadius: 16,
   },
@@ -100,7 +100,7 @@ export const styles = StyleSheet.create({
   },
   saveBtn: {
     elevation: 4,
-    shadowColor: "#E11D48",
+    shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

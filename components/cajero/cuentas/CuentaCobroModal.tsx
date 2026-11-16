@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";
 import { PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";

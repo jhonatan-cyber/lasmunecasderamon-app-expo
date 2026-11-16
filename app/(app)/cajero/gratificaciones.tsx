@@ -1,18 +1,21 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList ,
+import { contentColumn } from '@/constants/layout';
+import {
+  FlatList,
   ActivityIndicator,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
+import { formatCurrency } from '@/utils/format';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -29,8 +32,6 @@ const estadoConfig: Record<number, { label: string; color: string; bg: string }>
   2: { label: 'Pendiente', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
   3: { label: 'Rechazada', color: '#EF4444', bg: 'rgba(239,68,68,0.15)' }
 };
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 export default function CajeroGratificacionesScreen() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function CajeroGratificacionesScreen() {
   const handleMontoChange = (text: string) => {
     const clean = text.replace(/\D/g, '');
     if (!clean) return setMonto('');
-    setMonto(Number(clean).toLocaleString('de-DE'));
+    setMonto(Number(clean).toLocaleString('es-CL'));
   };
 
   const resetForm = () => {
@@ -112,7 +113,7 @@ export default function CajeroGratificacionesScreen() {
       <View
         style={[
           styles.card,
-          { backgroundColor: cardBg, borderColor, shadowColor: isDark ? '#000' : '#111827' }
+          { backgroundColor: cardBg, borderColor, shadowColor: isDark ? '#000' : '#111827', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
         ]}
       >
         <View style={styles.cardHeader}>
@@ -160,12 +161,7 @@ export default function CajeroGratificacionesScreen() {
       <PremiumHeader
         title="Gratificaciones"
         subtitle="Crea solicitudes para aprobación"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
@@ -258,16 +254,19 @@ export default function CajeroGratificacionesScreen() {
               onChangeText={setEmployeeSearch}
             />
 
-            <ScrollView
+            <FlatList
               style={[styles.employeeList, { backgroundColor: cardBg, borderColor }]}
               contentContainerStyle={{ padding: 8 }}
+              data={filteredEmployees}
+              keyExtractor={(employee) => String(employee.id)}
+              keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
-            >
-              {filteredEmployees.map(employee => {
+              initialNumToRender={8}
+              windowSize={5}
+              renderItem={({ item: employee }) => {
                 const selected = selectedEmployee?.id === employee.id;
                 return (
                   <Pressable
-                    key={employee.id}
                     style={[
                       styles.employeeRow,
                       { backgroundColor: selected ? `${accentColor}20` : 'transparent' }
@@ -285,8 +284,8 @@ export default function CajeroGratificacionesScreen() {
                     {selected ? <Ionicons name="checkmark-circle" size={22} color={accentColor} /> : null}
                   </Pressable>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
 
             <TextInput
               style={[styles.input, { backgroundColor: cardBg, color: textPrimary, borderColor }]}
@@ -378,12 +377,13 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   filterText: { fontSize: 12, fontWeight: '700' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100, paddingTop: 10 },
+  listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: 100, paddingTop: 10 },
   card: {
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
     marginBottom: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -393,12 +393,12 @@ const styles = StyleSheet.create({
   indexBadge: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   indexText: { fontSize: 12, fontWeight: '800' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
-  statusText: { fontSize: 11, fontWeight: '800' },
+  statusText: { fontSize: 12, fontWeight: '700' },
   employeeName: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
   amountText: { fontSize: 24, fontWeight: '900', marginBottom: 6 },
   descriptionText: { fontSize: 13, lineHeight: 18, marginBottom: 10 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  metaText: { fontSize: 11, fontWeight: '600' },
+  metaText: { fontSize: 12, fontWeight: '600' },
   emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
   fab: {

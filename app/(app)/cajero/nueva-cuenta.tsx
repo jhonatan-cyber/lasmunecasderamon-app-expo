@@ -2,26 +2,24 @@ import { apiClientSafe } from "@/api/client-safe";
 import { CartList } from "@/components/cajero/forms/CartList";
 import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { formColumn } from "@/constants/layout";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { buildCommissionPreview,isChampagneProduct,showToast } from '@/hooks/utils/cuentaUtils';
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 import { blockOffline } from "@/utils/offlineGuard";
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack,useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback,useEffect,useMemo,useReducer } from "react";
 import {
 KeyboardAvoidingView,
 Platform,
-Pressable,
 RefreshControl,
 ScrollView,
 StyleSheet,
-Text,
-useWindowDimensions,
 View,
 } from "react-native";
 
@@ -64,12 +62,11 @@ export default function NuevaCuentaScreen() {
     submitting,
   } = state;
 
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const spacing = isTablet ? 24 : 16;
 
   const dynamicStyles = {
-    scrollContent: { padding: spacing, paddingBottom: 100 },
+    scrollContent: { ...formColumn, padding: spacing, paddingBottom: 100 },
   };
 
   const fetchInitialData = useCallback(async (isRefreshing = false) => {
@@ -399,12 +396,7 @@ export default function NuevaCuentaScreen() {
       <PremiumHeader
         title="Nueva Cuenta"
         subtitle="Cargando información..."
-        rightComponent={
-          <View style={[styles.backBtnRight, { opacity: 0.5 }]}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </View>
-        }
+        onBack={() => router.back()}
       />
       <ScrollView contentContainerStyle={dynamicStyles.scrollContent}>
         <View style={styles.browserContainer}>
@@ -471,7 +463,7 @@ export default function NuevaCuentaScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: bg }]}
     >
       <Stack.Screen options={{ headerShown: false }} />
@@ -480,17 +472,13 @@ export default function NuevaCuentaScreen() {
       <PremiumHeader
         title="Nueva Cuenta"
         subtitle="Aperturar cuenta"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[
           styles.scrollContent,
           dynamicStyles.scrollContent,
@@ -711,7 +699,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { ...formColumn, padding: 16, paddingBottom: 100 },
   browserContainer: { marginBottom: 20 },
   sectionSkeleton: {
     padding: 16,

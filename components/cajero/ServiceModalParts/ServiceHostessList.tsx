@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { formatCurrency } from "@/utils/format";
 
 interface ServiceHostessListProps {
   service: any;
@@ -87,7 +88,7 @@ export function ServiceHostessList({
                     fontWeight: "900",
                   }}
                 >
-                  + ${comisionIndividual.toLocaleString("de-DE")}
+                  + {formatCurrency(comisionIndividual)}
                 </Text>
               </View>
             </View>

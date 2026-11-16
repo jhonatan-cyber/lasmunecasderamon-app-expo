@@ -8,6 +8,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 vi.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: any) => <div>{children}</div>,
+  Text: ({ children }: any) => <div>{children}</div>,
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),

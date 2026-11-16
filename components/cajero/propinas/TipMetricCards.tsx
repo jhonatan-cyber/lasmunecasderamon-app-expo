@@ -25,7 +25,7 @@ export const TipMetricCards: React.FC<TipMetricCardsProps> = ({
     <View
       style={[
         styles.summaryCard,
-        { backgroundColor: cardBg, borderColor, shadowColor: accentColor },
+        { backgroundColor: cardBg, borderColor, shadowColor: accentColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
       ]}
     >
       <Text style={[styles.summaryLabel, { color: textSecondary }]}>
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { formatCurrency } from '@/utils/format';
 
 interface EmployeeStat {
     usuario_id: number;
@@ -23,8 +24,6 @@ interface EmployeeSummaryCardProps {
 function getInitials(name: string) {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 }
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 export function EmployeeSummaryCard({
     perEmployeeStats,
@@ -95,9 +94,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         gap: 10,
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.06, 
-        shadowRadius: 6, 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
         elevation: 1,
     },
     empSummaryAvatar: { 

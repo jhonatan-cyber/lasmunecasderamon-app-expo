@@ -2,8 +2,10 @@ import { apiClientSafe } from '@/api/client-safe';
 import { CartList } from "@/components/cajero/forms/CartList";
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { formColumn } from "@/constants/layout";
 import { useTimer } from '@/context/TimerContext';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { useDebouncedEventListeners } from '@/hooks/useDebouncedEventListener';
 import {
 buildCommissionPreview,
@@ -30,7 +32,6 @@ RefreshControl,
 ScrollView,
 StyleSheet,
 Text,
-useWindowDimensions,
 View,
 } from 'react-native';
 
@@ -169,8 +170,7 @@ export default function AgregarCuentaScreen() {
         item.selectedHostesses && item.selectedHostesses.length > 0
     );
 
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    const { isTablet } = useResponsiveMetrics();
     const { timers, refreshTimers } = useTimer();
 
     const readThroughMirror = useCallback(
@@ -182,7 +182,7 @@ export default function AgregarCuentaScreen() {
     const spacing = isTablet ? 24 : 16;
 
     const dynamicStyles = {
-        scrollContent: { padding: spacing, paddingBottom: 100 },
+        scrollContent: { ...formColumn, padding: spacing, paddingBottom: 100 },
     };
 
     const fetchInitialData = useCallback(async (isRefreshing = false) => {
@@ -431,7 +431,7 @@ export default function AgregarCuentaScreen() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={[styles.container, { backgroundColor: bg }]}
         >
             <Stack.Screen options={{ headerShown: false }} />
@@ -441,21 +441,13 @@ export default function AgregarCuentaScreen() {
                 title="Agregar Productos"
                 subtitle={fromCache ? 'Datos guardados en el dispositivo' : `Cuenta ${cuentaOriginal?.codigo}`}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
-                rightComponent={
-                    <Pressable
-                        onPress={() => router.back()}
-                        style={styles.backBtnRight}
-                        accessibilityLabel="Volver"
-                    >
-                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                        <Text style={styles.backTextRight}>ATRÁS</Text>
-                    </Pressable>
-                }
+                onBack={() => router.back()}
             />
 
             <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent]}
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
@@ -630,7 +622,7 @@ export default function AgregarCuentaScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    scrollContent: { padding: 16, paddingBottom: 100 },
+    scrollContent: { ...formColumn, padding: 16, paddingBottom: 100 },
     emptyCartBox: { padding: 20, borderRadius: 20, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     emptyCartText: { fontSize: 14, fontWeight: '600' },
     backBtnRight: {
@@ -644,6 +636,6 @@ const styles = StyleSheet.create({
     },
     backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     tiempoChip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, borderWidth: 1.5, marginBottom: 20 },
-    tiempoChipLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+    tiempoChipLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
     tiempoChipValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
 });

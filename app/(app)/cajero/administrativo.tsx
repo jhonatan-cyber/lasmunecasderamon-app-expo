@@ -1,13 +1,11 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { contentColumn } from "@/constants/layout";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -201,17 +199,7 @@ export default function AdministrativoScreen() {
       <PremiumHeader
         title="Resumen Personal"
         subtitle="Actividad y eventos"
-        rightComponent={
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backBtnRight}
-            >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backTextHeader}>Atrás</Text>
-            </Pressable>
-          </View>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
@@ -225,7 +213,7 @@ export default function AdministrativoScreen() {
           />
         }
       >
-        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+        <View style={[contentColumn, { paddingHorizontal: 20, paddingTop: 20 }]}>
           <PremiumLiquidationCard user={user} events={recentActivity} />
         </View>
 

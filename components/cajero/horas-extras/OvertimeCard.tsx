@@ -4,17 +4,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
+import { formatCurrency } from '@/utils/format';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
-    0: { label: 'Pagado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
-    1: { label: 'Por cobrar', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
+    0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
+    1: { label: 'No cobrado', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
 };
 
 function getInitials(name: string) {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 }
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 interface OvertimeCardProps {
     item: OvertimeRecord;
@@ -111,10 +110,11 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         padding: 14, 
         marginBottom: 10, 
-        shadowOffset: { width: 0, height: 4 }, 
-        shadowOpacity: 0.08, 
-        shadowRadius: 10, 
-        elevation: 2 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 2
     },
     empHeader: { 
         flexDirection: 'row', 

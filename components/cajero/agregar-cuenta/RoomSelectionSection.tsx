@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: 16,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   tiempoChipLabel: {
     fontSize: 9,

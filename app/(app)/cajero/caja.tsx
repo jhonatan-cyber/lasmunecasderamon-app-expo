@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack } from 'expo-router';
+import { contentColumn } from '@/constants/layout';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import {
@@ -55,7 +56,7 @@ export default function CajaScreen() {
     return (
         <View style={[styles.container, { backgroundColor: bg }]}>
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar style={isDark ? 'dark' : 'light'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
             <PremiumHeader
                 title={esAdmin ? 'Estado de caja' : 'Caja'}
@@ -65,24 +66,17 @@ export default function CajaScreen() {
                         ? `Abierta: ${new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
                         : 'Turno no iniciado'}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
+                onBack={() => router.replace('/(app)/cajero/(tabs)' as any)}
                 rightComponent={
-                    <View style={styles.headerActions}>
-                        <Pressable
-                            style={styles.backBtnRight}
-                            onPress={onRefresh}
-                            accessibilityLabel="Actualizar caja"
-                        >
-                            <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-                        </Pressable>
-                        <Pressable
-                            onPress={() => router.replace('/(app)/cajero/(tabs)' as any)}
-                            style={styles.backBtnRight}
-                            accessibilityLabel="Volver"
-                        >
-                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backTextRight}>Atrás</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        style={styles.backBtnRight}
+                        onPress={onRefresh}
+                        accessibilityRole="button"
+                        accessibilityLabel="Actualizar caja"
+                    >
+                        <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+                    </Pressable>
                 }
             />
 
@@ -409,7 +403,7 @@ const styles = StyleSheet.create({
     },
     backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    scroll: { padding: 16, gap: 12, paddingBottom: 40 },
+    scroll: { ...contentColumn, padding: 16, gap: 12, paddingBottom: 40 },
     card: { borderRadius: 20, borderWidth: 1, padding: 16 },
     statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     statusPill: {
@@ -444,7 +438,7 @@ const styles = StyleSheet.create({
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
     breakdownTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
     totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, marginTop: 4 },
-    totalLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+    totalLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
     totalValue: { fontSize: 22, fontWeight: '900', color: '#E11D48' },
     emptyIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
     emptyTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },

@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-    Modal, 
-    Pressable, 
-    StyleSheet, 
-    View 
+import {
+  Pressable,
+  StyleSheet,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { User } from '@/hooks/usePersonalScreen';

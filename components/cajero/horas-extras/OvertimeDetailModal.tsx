@@ -1,17 +1,17 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
+import { formatCurrency } from '@/utils/format';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
-    0: { label: 'Pagado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
-    1: { label: 'Por cobrar', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
+    0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
+    1: { label: 'No cobrado', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
 };
 
 function getInitials(name: string) {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 }
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 interface OvertimeDetailModalProps {
     visible: boolean;

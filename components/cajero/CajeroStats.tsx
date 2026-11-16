@@ -2,8 +2,9 @@ import { formatCurrency } from '@/utils/format';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 
 interface StatCardProps {
     label: string;
@@ -24,13 +25,15 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
     <AnimatedView
         from={{ opacity: 0, scale: 0.9, translateY: 10 }}
         animate={{ opacity: 1, scale: 1, translateY: 0 }}
-        transition={{ type: 'spring', delay: index * 80 }}
+        transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         style={[
             styles.statCard,
             {
                 backgroundColor: cardBg,
                 shadowColor: color,
+                shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: isDark ? 0.25 : 0.12,
+                shadowRadius: 10,
                 minWidth: isFullWidth ? (isTablet ? '100%' : '92%') : (isTablet ? '48.5%' : '47%'),
                 maxWidth: isFullWidth ? 800 : 400,
                 alignSelf: 'center',
@@ -77,8 +80,7 @@ interface StatItem {
 
 export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }: CajeroStatsProps) => {
     const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    const { isTablet } = useResponsiveMetrics();
 
     const statItems: StatItem[] = [
         {
@@ -112,7 +114,7 @@ export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }:
             <View style={[styles.grid, isTablet && styles.tabletGrid]}>
                 {tarjetasVisibles.map((item, index) => (
                     <StatCard
-                        key={index}
+                        key={item.label}
                         {...item}
                         isDark={isDark}
                         cardBg={cardBg}
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
     },
     statCard: {
         elevation: 4,
-        shadowOffset: { width: 0, height: 4 },
         position: 'relative',
         overflow: 'hidden',
     },

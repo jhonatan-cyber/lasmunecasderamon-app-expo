@@ -1,6 +1,5 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { CardHeader } from "@/components/ui/CardHeader";
 
 const statusColors: Record<number, string> = {
   0: "#10B981",
@@ -43,79 +42,17 @@ export const CuentaCardHeader: React.FC<CuentaCardHeaderProps> = ({
   const statusText = statusLabels[statusValue] || "Desconocido";
 
   return (
-    <View style={styles.cardHeader}>
-      <View style={styles.headerInfo}>
-        <View style={[styles.iconBox, { backgroundColor: accentColor + "15" }]}>
-          <Ionicons name="receipt" size={18} color={accentColor} />
-        </View>
-        <View>
-          <Text style={[styles.title, { color: textPrimary }]}>
-            {habitacionNombre || "Barra / General"}
-          </Text>
-          <Text style={[styles.subtitle, { color: textSecondary }]}>
-            Codigo : #{codigo}
-          </Text>
-          <Text style={[styles.date, { color: textSecondary }]}>
-            {formatDate(fechaCrea)}
-          </Text>
-        </View>
-      </View>
-      <View style={[styles.statusBadge, { backgroundColor: statusColor + "10" }]}>
-        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-        <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
-      </View>
-    </View>
+    <CardHeader
+      icon="receipt"
+      title={habitacionNombre || "Barra / General"}
+      subtitle={`Codigo : #${codigo}`}
+      date={fechaCrea}
+      statusColor={statusColor}
+      statusText={statusText}
+      accentColor={accentColor}
+      textColor={textPrimary}
+      textMutedColor={textSecondary}
+      formatDateTime={formatDate}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  headerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  iconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  date: {
-    fontSize: 10,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-    gap: 4,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "900",
-  },
-});

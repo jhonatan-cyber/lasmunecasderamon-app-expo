@@ -1,13 +1,13 @@
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
@@ -65,7 +65,7 @@ export function LoadBalanceModal({
     onClose
 }: LoadBalanceModalProps) {
     return (
-        <Modal visible={visible} animationType="fade" transparent>
+        <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
             <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
                 <View style={[styles.modalContent, {
                     backgroundColor: isDark ? "#111111" : "#FFFFFF",

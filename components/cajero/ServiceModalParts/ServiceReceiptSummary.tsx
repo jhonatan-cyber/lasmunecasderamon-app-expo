@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { styles } from "../ServiceModal.styles";
+import { formatCurrency } from "@/utils/format";
 
 interface ServiceReceiptSummaryProps {
   service: any;
@@ -54,7 +55,7 @@ export function ServiceReceiptSummary({
           <Text style={labelStyle}>Precio Servicio</Text>
         </View>
         <Text style={valueStyle}>
-          ${Math.floor(subtotalServicio).toLocaleString("de-DE")}
+          {formatCurrency(Math.floor(subtotalServicio))}
         </Text>
       </View>
       <View style={styles.productDetailRow}>
@@ -62,7 +63,7 @@ export function ServiceReceiptSummary({
           <Text style={labelStyle}>Precio Habitación</Text>
         </View>
         <Text style={valueStyle}>
-          ${Math.floor(subtotalHabitacion).toLocaleString("de-DE")}
+          {formatCurrency(Math.floor(subtotalHabitacion))}
         </Text>
       </View>
       {(service.iva || 0) > 0 && (
@@ -71,7 +72,7 @@ export function ServiceReceiptSummary({
             <Text style={labelStyle}>IVA / Ajuste Tarjeta</Text>
           </View>
           <Text style={valueStyle}>
-            ${Math.floor(ivaActual).toLocaleString("de-DE")}
+            {formatCurrency(Math.floor(ivaActual))}
           </Text>
         </View>
       )}
@@ -112,7 +113,7 @@ export function ServiceReceiptSummary({
             },
           ]}
         >
-          ${Math.floor(totalFinal).toLocaleString("de-DE")}
+          {formatCurrency(Math.floor(totalFinal))}
         </Text>
       </View>
     </View>

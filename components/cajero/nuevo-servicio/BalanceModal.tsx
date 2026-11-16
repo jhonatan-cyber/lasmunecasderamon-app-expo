@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Props = {
@@ -120,7 +121,7 @@ const styles = {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
   },
   modalTitleText: { fontSize: 22, fontWeight: '900' as const },
   inputWrapper: {

@@ -1,9 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { contentColumn } from '@/constants/layout';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -137,12 +138,7 @@ export default function ComprasScreen() {
       <PremiumHeader
         title="Compras"
         subtitle={`${data.length} compras · ${formatCurrency(totalCompras)}`}
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backText}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       {error ? (
@@ -257,7 +253,7 @@ export default function ComprasScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 16, paddingBottom: 40, gap: 10 },
+  list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 10 },
   card: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   folio: { fontSize: 15, fontWeight: '900' },
@@ -273,7 +269,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 9999,
   },
-  chipText: { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
+  chipText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
   proveedor: { fontSize: 12, fontWeight: '600' },
   backBtn: {
     flexDirection: 'row',
@@ -321,6 +317,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     marginTop: 12,
   },
-  modalTotalLabel: { fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  modalTotalLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
   modalTotalValue: { fontSize: 22, fontWeight: '900' },
 });

@@ -1,17 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FlatList ,
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+import { contentColumn } from '@/constants/layout';
+import { formatCurrency } from '@/utils/format';
+import {
+  FlatList,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
@@ -248,19 +250,14 @@ export default function HorasExtrasScreen() {
             <PremiumHeader
                 title="Horas Extras"
                 subtitle={`${data.length} registros · ${employees.length} empleados`}
+                onBack={() => router.back()}
                 rightComponent={
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        {esAdmin && (
-                            <Pressable onPress={openCreate} style={styles.addBtn} accessibilityLabel="Registrar hora extra">
-                                <Ionicons name="add" size={18} color="#FFFFFF" />
-                                <Text style={styles.backText}>Registrar</Text>
-                            </Pressable>
-                        )}
-                        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                            <Text style={styles.backText}>Atrás</Text>
+                    esAdmin ? (
+                        <Pressable onPress={openCreate} style={styles.addBtn} accessibilityLabel="Registrar hora extra">
+                            <Ionicons name="add" size={18} color="#FFFFFF" />
+                            <Text style={styles.backText}>Registrar</Text>
                         </Pressable>
-                    </View>
+                    ) : undefined
                 }
             />
 
@@ -356,10 +353,11 @@ export default function HorasExtrasScreen() {
             />
 
             <Modal
+                avoidKeyboard={false}
                 visible={createVisible}
                 transparent
                 animationType="slide"
-                onRequestClose={() => !submitting && setCreateVisible(false)}
+                onRequestClose={() => { if (!submitting) setCreateVisible(false); }}
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -405,10 +403,16 @@ export default function HorasExtrasScreen() {
                                     ) : filteredEmployeesList.length === 0 ? (
                                         <Text style={[styles.emptyEmployees, { color: textSecondary }]}>Sin trabajadores</Text>
                                     ) : (
-                                        <ScrollView style={{ maxHeight: 180 }} keyboardShouldPersistTaps="handled">
-                                            {filteredEmployeesList.map(emp => (
+                                        <FlatList
+                                            style={{ maxHeight: 180 }}
+                                            data={filteredEmployeesList}
+                                            keyExtractor={(emp) => String(emp.id)}
+                                            keyboardShouldPersistTaps="handled"
+                                            nestedScrollEnabled
+                                            initialNumToRender={8}
+                                            windowSize={5}
+                                            renderItem={({ item: emp }) => (
                                                 <Pressable
-                                                    key={emp.id}
                                                     style={[styles.employeeRow, { borderBottomColor: borderColor }]}
                                                     onPress={() => setSelectedEmployee({ id: emp.id, name: emp.name, lastName: emp.lastName })}
                                                 >
@@ -421,8 +425,8 @@ export default function HorasExtrasScreen() {
                                                         </Text>
                                                     ) : null}
                                                 </Pressable>
-                                            ))}
-                                        </ScrollView>
+                                            )}
+                                        />
                                     )}
                                 </View>
                             </>
@@ -450,7 +454,7 @@ export default function HorasExtrasScreen() {
                                     value={montoInput}
                                     onChangeText={(text) => {
                                         const clean = text.replace(/\D/g, '');
-                                        setMontoInput(clean ? Number(clean).toLocaleString('de-DE') : '');
+                                        setMontoInput(clean ? Number(clean).toLocaleString('es-CL') : '');
                                     }}
                                 />
                             </View>
@@ -459,7 +463,7 @@ export default function HorasExtrasScreen() {
                         <View style={[styles.totalPreview, { borderTopColor: borderColor }]}>
                             <Text style={[styles.totalPreviewLabel, { color: textSecondary }]}>TOTAL</Text>
                             <Text style={[styles.totalPreviewValue, { color: accentColor }]}>
-                                ${((Number(horasInput) || 0) * (Number(montoInput.replace(/\D/g, '')) || 0)).toLocaleString('de-DE')}
+                                {formatCurrency((Number(horasInput) || 0) * (Number(montoInput.replace(/\D/g, '')) || 0))}
                             </Text>
                         </View>
 
@@ -503,11 +507,11 @@ const styles = StyleSheet.create({
     backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
     empFilterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 16, marginTop: 12 },
     empFilterChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 9999, borderWidth: 1, maxWidth: 130 },
-    empFilterText: { fontSize: 11, fontWeight: '700' },
+    empFilterText: { fontSize: 12, fontWeight: '700' },
     filterRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingHorizontal: 16, marginTop: 8, marginBottom: 8 },
     filterBtn: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9999, borderWidth: 1 },
-    filterText: { fontSize: 11, fontWeight: '700' },
-    listContent: { paddingHorizontal: 16, paddingBottom: 100, paddingTop: 6 },
+    filterText: { fontSize: 12, fontWeight: '700' },
+    listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: 100, paddingTop: 6 },
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20, marginHorizontal: 16 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
@@ -523,7 +527,7 @@ const styles = StyleSheet.create({
     employeeList: { borderWidth: 1, borderRadius: 12, marginTop: 8, overflow: 'hidden' },
     employeeRow: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
     employeeName: { fontSize: 14, fontWeight: '700' },
-    employeeNick: { fontSize: 11, fontWeight: '500', marginTop: 1 },
+    employeeNick: { fontSize: 12, fontWeight: '500', marginTop: 1 },
     emptyEmployees: { fontSize: 13, fontWeight: '500', textAlign: 'center', paddingVertical: 20 },
     selectedEmployee: {
         flexDirection: 'row', alignItems: 'center', gap: 8,

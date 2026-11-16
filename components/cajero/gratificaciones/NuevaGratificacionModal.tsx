@@ -1,13 +1,13 @@
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { GratificacionEmployee } from '@/hooks/useGratificaciones';
 
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(128,128,128,0.15)' 
   },
   input: {
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 16,
     padding: 16,
     fontSize: 16,

@@ -1,4 +1,5 @@
 import { IncludedServiceProductSelector } from "@/components/shared/IncludedServiceProductSelector";
+import { formColumn } from "@/constants/layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -97,15 +98,11 @@ export default function NuevoServicioScreen() {
       <PremiumHeader
         title="Nuevo Servicio"
         subtitle="Agendar servicio temporal"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -262,7 +259,7 @@ export default function NuevoServicioScreen() {
                   <Text
                     style={{
                       color: textSecondary,
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: "700",
                       textTransform: "uppercase",
                     }}
@@ -471,7 +468,7 @@ export default function NuevoServicioScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
+  scrollContent: { ...formColumn, padding: 16, paddingBottom: 100, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
@@ -491,8 +488,8 @@ const styles = StyleSheet.create({
   selectorLabel: { fontSize: 12, fontWeight: "700" },
   selectorVal: { fontSize: 15, fontWeight: "800", marginTop: 2 },
   inputGroupLabel: {
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
     marginBottom: 10,
     letterSpacing: 1,
   },

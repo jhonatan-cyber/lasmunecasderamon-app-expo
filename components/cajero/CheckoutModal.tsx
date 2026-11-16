@@ -1,11 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
+import { FontSize } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { readableTextColor } from '@/utils/color';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { MetodoPago } from '../../types/api';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 
@@ -45,6 +49,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const accentText = readableTextColor(accentColor);
   const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
   const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
 
@@ -166,8 +171,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   {submittingCheckout ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={[styles.btnText, { color: "#FFF" }]}>Cuenta</Text>}
                 </Pressable>
               )}
-              <Pressable style={[styles.btn, { backgroundColor: accentColor, opacity: !metodoPago || submittingCheckout ? 0.5 : 1 }]} onPress={onCheckoutSubmit} disabled={!metodoPago || submittingCheckout}>
-                {submittingCheckout ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={[styles.btnText, { color: "#FFF" }]}>Venta</Text>}
+              <Pressable style={[styles.btn, { backgroundColor: accentColor, opacity: !metodoPago || submittingCheckout ? 0.5 : 1 }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onCheckoutSubmit(); }} disabled={!metodoPago || submittingCheckout}>
+                {submittingCheckout ? <ActivityIndicator size="small" color={accentText} /> : <Text style={[styles.btnText, { color: accentText }]}>Venta</Text>}
               </Pressable>
             </View>
           </View>
@@ -188,13 +193,13 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
   metaRow: { flexDirection: "row", borderWidth: 1, borderRadius: 12, marginBottom: 16, overflow: "hidden" },
   metaItem: { flex: 1, padding: 10, alignItems: "center", gap: 2 },
-  metaLabel: { fontSize: 10, fontWeight: "600" },
+  metaLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
   metaValue: { fontSize: 12, fontWeight: "800", textAlign: "center" },
   divider: { width: 1 },
   receipt: { borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1 },
   productRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   qtyCol: { width: 44 },
-  qtyLabel: { fontSize: 10, fontWeight: "600" },
+  qtyLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
   qty: { fontSize: 16, fontWeight: "900" },
   prodCol: { flex: 1 },
   prodName: { fontSize: 14, fontWeight: "700" },

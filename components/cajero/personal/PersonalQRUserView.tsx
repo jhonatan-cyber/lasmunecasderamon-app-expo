@@ -1,11 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { BASE_URL } from '@/api/client';
 import { User } from '@/hooks/usePersonalScreen';
-
-const { width } = Dimensions.get('window');
 
 interface PersonalQRUserViewProps {
   user: User;
@@ -30,6 +29,10 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
   isGenerating,
   onGenerateQR,
 }) => {
+  const { width } = useWindowDimensions();
+  // El QR crece con la pantalla pero se limita para no desbordar en tablet o
+  // en horizontal.
+  const qrSize = Math.min(width - 48, 320);
   const userPhoto = user.foto ? `${BASE_URL}/img/users/${user.foto}` : undefined;
 
   return (
@@ -63,7 +66,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
         <View style={[styles.qrGlow, { backgroundColor: accentColor }]} />
         <LazyQRCode
           value={user.qr_token || ''}
-          size={width - 48}
+          size={qrSize}
           backgroundColor="white"
           color={accentColor}
           ecl="H"
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 14,
-    borderWidth: 1.5,
+    borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.04)',
   },
   codigoLabel: {
@@ -222,7 +225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 9999,
-    borderWidth: 1.5,
+    borderWidth: 2,
     gap: 8,
   },
   actionBtnText: {

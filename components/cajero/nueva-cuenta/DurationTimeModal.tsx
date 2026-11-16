@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface DurationTimeModalProps {
@@ -25,7 +26,7 @@ export const DurationTimeModal: React.FC<DurationTimeModalProps> = ({
   onClose,
   onSelectTime,
 }) => (
-  <Modal visible={visible} animationType="fade" transparent>
+  <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
     <View style={styles.modalOverlay}>
       <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
         <View style={styles.modalHeader}>

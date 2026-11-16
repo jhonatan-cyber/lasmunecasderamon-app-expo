@@ -1,14 +1,14 @@
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { HistorySummaryCards } from './HistorySummaryCards';
@@ -57,7 +57,7 @@ export function ClientHistoryModal({
         .reduce((a: number, i: any) => a + Number(i.monto || 0), 0);
 
     return (
-        <Modal visible={visible} animationType="fade" transparent>
+        <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={[styles.modalContent, {
                     backgroundColor: isDark ? "#111111" : "#FFFFFF",

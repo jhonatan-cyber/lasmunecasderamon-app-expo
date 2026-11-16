@@ -47,7 +47,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
     <AnimatedView
       from={{ opacity: 0, translateY: 30 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "spring", delay: index * 100 }}
+      transition={{ type: "spring", delay: Math.min(index, 4) * 30 }}
     >
       <Pressable onPress={() => onPress(item)}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>

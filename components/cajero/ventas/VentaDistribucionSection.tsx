@@ -1,5 +1,6 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, Text, View } from "react-native";
 import { BASE_URL } from "@/api/client";
 import type { ComisionDetalle, PropinaDetalle, VentaDetail } from "./types";
 

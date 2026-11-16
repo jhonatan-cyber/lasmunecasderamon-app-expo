@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 
@@ -17,12 +16,6 @@ export function NuevaVentaSkeleton({ bg, cardBg, borderColor, spacing }: Props) 
       <PremiumHeader
         title="Nueva Venta"
         subtitle="Cargando información..."
-        rightComponent={
-          <View style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ opacity: 0.5 }} />
-            <Text style={[styles.backTextRight, { opacity: 0.5 }]}>Atrás</Text>
-          </View>
-        }
       />
       <View style={{ padding: spacing }}>
         <View style={{ marginBottom: 25 }}>

@@ -1,6 +1,6 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { CardFinance } from "@/components/ui/CardFinance";
 
 interface CuentaCardFinanceProps {
   total: number;
@@ -33,23 +33,13 @@ export const CuentaCardFinance: React.FC<CuentaCardFinanceProps> = ({
             : "Anulado";
 
   return (
-    <>
-      <View style={styles.financeBox}>
-        <View style={styles.financePill}>
-          <Ionicons name="card-outline" size={12} color={textSecondary} />
-          <Text style={[styles.financePillText, { color: textSecondary }]}>
-            {financeText}
-          </Text>
-        </View>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={[styles.totalLabelText, { color: textSecondary }]}>
-            TOTAL
-          </Text>
-          <Text style={[styles.totalValueText, { color: textPrimary }]}>
-            ${total.toLocaleString()}
-          </Text>
-        </View>
-      </View>
+    <CardFinance
+      total={total}
+      pillText={financeText}
+      label="TOTAL"
+      textColor={textPrimary}
+      textMutedColor={textSecondary}
+    >
       {isPartialPending && (
         <View
           style={[
@@ -70,38 +60,11 @@ export const CuentaCardFinance: React.FC<CuentaCardFinanceProps> = ({
           </Text>
         </View>
       )}
-    </>
+    </CardFinance>
   );
 };
 
 const styles = StyleSheet.create({
-  financeBox: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  financePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(156, 163, 175, 0.1)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  financePillText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  totalLabelText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  totalValueText: {
-    fontSize: 20,
-    fontWeight: "900",
-  },
   partialPendingRow: {
     marginTop: 12,
     paddingHorizontal: 12,

@@ -112,6 +112,9 @@ export const CuentaCardActions: React.FC<CuentaCardActionsProps> = ({
               {
                 backgroundColor: accentColor,
                 shadowColor: accentColor,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
                 opacity: pressed ? 0.7 : 1,
               },
             ]}
@@ -137,6 +140,9 @@ export const CuentaCardActions: React.FC<CuentaCardActionsProps> = ({
               {
                 backgroundColor: accentColor,
                 shadowColor: accentColor,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
                 opacity: pressed ? 0.7 : 1,
               },
             ]}
@@ -179,8 +185,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     elevation: 2,
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
 });

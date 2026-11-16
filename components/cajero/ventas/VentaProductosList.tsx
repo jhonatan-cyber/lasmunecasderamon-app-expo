@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BASE_URL } from "@/api/client";
 import type { VentaDetail, VentaDetalle } from "./types";

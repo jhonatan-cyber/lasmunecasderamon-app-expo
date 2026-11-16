@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { contentColumn } from '@/constants/layout';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -119,12 +120,7 @@ export default function AsistenciaLocalScreen() {
       <PremiumHeader
         title="Asistencia en el local"
         subtitle={`${data.length} marcas · ${personas} personas`}
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backText}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       {error ? (
@@ -166,7 +162,7 @@ export default function AsistenciaLocalScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 16, paddingBottom: 40, gap: 10 },
+  list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 10 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

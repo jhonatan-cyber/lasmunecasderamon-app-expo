@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { BASE_URL } from '@/api/client';
@@ -39,7 +40,7 @@ export function PersonalCard({
         <AnimatedView
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 40 }}
+            transition={{ delay: Math.min(index, 4) * 30 }}
             style={[styles.cardContainer, { width: cardWidth }]}
         >
             <Pressable 
@@ -63,7 +64,7 @@ export function PersonalCard({
                             <Image 
                                 source={{ uri: photoUrl }} 
                                 style={styles.avatarLarge}
-                                resizeMode="cover"
+                                contentFit="cover"
                             />
                         ) : (
                             <View style={[styles.avatarPlaceholderLarge, { backgroundColor: accentBg }]}>

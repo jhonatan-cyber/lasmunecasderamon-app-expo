@@ -20,13 +20,13 @@ import { EditServiceSummary } from "./EditServiceModalParts/EditServiceSummary";
 import { EditServiceFooter } from "./EditServiceModalParts/EditServiceFooter";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 import logger from "@/utils/logger";
 interface Anfitriona {

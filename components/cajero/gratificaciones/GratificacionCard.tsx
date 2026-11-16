@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { GratificacionItem } from '@/hooks/useGratificaciones';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { formatCurrency } from '@/utils/format';
 
 const estadoConfig: Record<number, { label: string; color: string; bg: string }> = {
   0: { label: 'Pagado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -8,8 +9,6 @@ const estadoConfig: Record<number, { label: string; color: string; bg: string }>
   2: { label: 'Pendiente', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
   3: { label: 'Rechazada', color: '#EF4444', bg: 'rgba(239,68,68,0.15)' }
 };
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 interface GratificacionCardProps {
   item: GratificacionItem;
@@ -38,7 +37,7 @@ export function GratificacionCard({
     <View
       style={[
         styles.card,
-        { backgroundColor: cardBg, borderColor, shadowColor: isDark ? '#000' : '#111827' }
+        { backgroundColor: cardBg, borderColor, shadowColor: isDark ? '#000' : '#111827', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
       ]}
     >
       <View style={styles.cardHeader}>
@@ -74,6 +73,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     marginBottom: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,

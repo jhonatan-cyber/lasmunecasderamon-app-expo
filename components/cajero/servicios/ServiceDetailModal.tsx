@@ -1,5 +1,7 @@
 import React from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BASE_URL } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
@@ -22,7 +24,7 @@ interface DetailModalProps {
 
 export function ServiceDetailModal({ visible, service, theme, onClose }: DetailModalProps) {
     return (
-        <Modal visible={visible} animationType="slide" transparent>
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <View style={styles.modalHeader}>
@@ -248,7 +250,7 @@ function InfoBanner({ text, theme }: { text: string; theme: any }) {
 
 const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-    detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
+    detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     modalTitleText: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
     modalSubText: { fontSize: 13, fontWeight: '600', marginTop: 4 },

@@ -1,6 +1,5 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { CardDetailsList, DetailRowItem } from "@/components/ui/CardDetailsList";
 
 interface ServiceCardDetailsProps {
   anfitrionas?: string;
@@ -16,48 +15,24 @@ export const ServiceCardDetails: React.FC<ServiceCardDetailsProps> = ({
   waiterName,
   textColor,
   textMutedColor,
-}) => (
-  <View style={styles.detailsList}>
-    <View style={styles.detailItem}>
-      <Ionicons name="people" size={14} color={textMutedColor} />
-      <Text style={[styles.detailText, { color: textColor }]}>
-        <Text style={styles.bold}>Anfitrionas: </Text>
-        {anfitrionas || "No asignadas"}
-      </Text>
-    </View>
-    <View style={styles.detailItem}>
-      <Ionicons name="person" size={14} color={textMutedColor} />
-      <Text style={[styles.detailText, { color: textColor }]}>
-        <Text style={styles.bold}>Cliente: </Text>
-        {(clienteNombre && clienteNombre !== 'Sin cliente') ? clienteNombre : "Sin cliente registrado"}
-      </Text>
-    </View>
-    <View style={styles.detailItem}>
-      <Ionicons name="create-outline" size={14} color={textMutedColor} />
-      <Text style={[styles.detailText, { color: textColor }]}>
-        <Text style={styles.bold}>Registrado por: </Text>
-        {waiterName || "Admin"}
-      </Text>
-    </View>
-  </View>
-);
+}) => {
+  const items: DetailRowItem[] = [
+    {
+      icon: "people",
+      label: "Anfitrionas",
+      value: anfitrionas || "No asignadas",
+    },
+    {
+      icon: "person",
+      label: "Cliente",
+      value: (clienteNombre && clienteNombre !== 'Sin cliente') ? clienteNombre : "Sin cliente registrado",
+    },
+    {
+      icon: "create-outline",
+      label: "Registrado por",
+      value: waiterName || "Admin",
+    },
+  ];
 
-const styles = StyleSheet.create({
-  detailsList: {
-    gap: 8,
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 12,
-    flex: 1,
-  },
-  bold: {
-    fontWeight: '800',
-  },
-});
+  return <CardDetailsList items={items} textColor={textColor} textMutedColor={textMutedColor} />;
+};

@@ -1,9 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Image } from 'expo-image';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 import { BASE_URL } from "@/api/client";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCuentasScreen } from "@/hooks/useCuentasScreen";
+import { readableTextColor } from "@/utils/color";
 import { parseDateSafe } from "@/utils/timeUtils";
 
 const statusColors: Record<number, string> = {
@@ -82,6 +85,7 @@ export function CuentaDetailModal({
   isDark,
 }: Props) {
   const { selectedCuenta, loadingDetail, modalVisible } = screen;
+  const accentText = readableTextColor(accentColor);
 
   return (
     <Modal
@@ -442,14 +446,14 @@ export function CuentaDetailModal({
                         <View style={{ gap: 14 }}>
                           {grouped.map((det: any, index: number) => (
                             <View
-                              key={index}
+                              key={det.groupKey}
                               style={{
                                 backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
                                 borderRadius: 24,
                                 padding: 18,
                                 borderWidth: 1,
                                 borderColor,
-                                shadowColor: "#000",
+                                shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 6 },
                                 shadowOpacity: isDark ? 0.4 : 0.08,
                                 shadowRadius: 12,
@@ -482,7 +486,7 @@ export function CuentaDetailModal({
                     style={[styles.modalCloseBtn, { backgroundColor: accentColor, marginTop: 20 }]}
                     onPress={() => screen.setModalVisible(false)}
                   >
-                    <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
+                    <Text style={[styles.modalCloseBtnText, { color: accentText }]}>Cerrar Detalles</Text>
                   </Pressable>
                 </ScrollView>
               </>

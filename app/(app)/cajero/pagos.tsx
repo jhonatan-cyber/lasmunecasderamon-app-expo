@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { contentColumn } from '@/constants/layout';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -208,12 +209,7 @@ export default function PagosTrabajadoresScreen() {
       <PremiumHeader
         title="Pagos a trabajadores"
         subtitle={`${data.length} trabajadores · ${formatCurrency(totalGeneral)}`}
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backText}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       {error ? (
@@ -272,7 +268,7 @@ export default function PagosTrabajadoresScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 16, paddingBottom: 40, gap: 12 },
+  list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 12 },
   card: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },

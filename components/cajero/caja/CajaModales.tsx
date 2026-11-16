@@ -1,13 +1,13 @@
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CajaAction } from '@/hooks/useCaja';
 
@@ -50,13 +50,14 @@ export function CajaModales({
 }: CajaModalesProps) {
     return (
         <Modal
+            avoidKeyboard={false}
             animationType="fade"
             transparent
             visible={modalVisible}
             onRequestClose={() => dispatch({ type: 'CLOSE_MODAL' })}
         >
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.modalOverlay}
             >
                 <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>

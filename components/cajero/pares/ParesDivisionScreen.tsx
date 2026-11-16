@@ -127,12 +127,7 @@ export default function ParesDivisionScreen() {
       <PremiumHeader
         title="Pares de Ventas"
         subtitle="División de pares por ventas"
-        rightComponent={
-          <Pressable onPress={() => router.back()} style={styles.backBtnRight}>
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => router.back()}
       />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>

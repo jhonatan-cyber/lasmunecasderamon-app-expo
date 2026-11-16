@@ -125,19 +125,19 @@ export function ClientCard({
 }
 
 const styles = StyleSheet.create({
-    clientCard: { 
-        flex: 1, 
+    clientCard: {
+        flex: 1,
         padding: 10,
         paddingRight: 6,
-        borderRadius: 20, 
-        borderWidth: 1, 
-        marginBottom: 12, 
+        borderRadius: 20,
+        borderWidth: 1,
+        marginBottom: 12,
         marginHorizontal: 6,
-        elevation: 2, 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.05, 
-        shadowRadius: 10 
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
     },
     clientCardMobile: {
         flex: undefined,

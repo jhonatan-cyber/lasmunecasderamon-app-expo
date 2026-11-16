@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { formatCurrency } from '@/utils/format';
 
 interface Stats {
     totalRegistros: number;
@@ -16,8 +17,6 @@ interface OvertimeStatsCardsProps {
     textPrimary: string;
     textSecondary: string;
 }
-
-const formatCurrency = (value: number) => `$${(Number(value) || 0).toLocaleString('de-DE')}`;
 
 export function OvertimeStatsCards({
     stats,

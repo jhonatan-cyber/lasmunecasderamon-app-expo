@@ -109,8 +109,11 @@ export function NewAccountSummary({
                     styles.submitBtn, 
                     dynamicStyles.submitBtn, 
                     { 
-                        backgroundColor: accentColor, 
-                        shadowColor: accentColor 
+                        backgroundColor: accentColor,
+                        shadowColor: accentColor,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 8
                     }, 
                     submitting && { opacity: 0.7 }
                 ]}
@@ -179,9 +182,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 20,
         elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 }
+        shadowRadius: 8
     },
     submitBtnText: { 
         color: '#FFF', 

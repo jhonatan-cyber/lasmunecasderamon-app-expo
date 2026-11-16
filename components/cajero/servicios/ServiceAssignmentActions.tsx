@@ -1,14 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import  { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   ActivityIndicator,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useRouter } from "expo-router";
 import { apiClientSafe } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";

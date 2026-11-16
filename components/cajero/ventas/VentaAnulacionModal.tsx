@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
+import { MODAL_MAX_WIDTH } from "@/constants/layout";
 import {
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import type { Venta } from "./types";
 
 type VentaAnulacionModalProps = {
@@ -215,6 +216,7 @@ const styles = StyleSheet.create({
   },
   anulacionModalCard: {
     width: "92%",
+    maxWidth: MODAL_MAX_WIDTH,
     borderRadius: 28,
     borderWidth: 1,
     padding: 22,

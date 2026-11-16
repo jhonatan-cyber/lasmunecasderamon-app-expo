@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 import { useCuentasScreen } from "@/hooks/useCuentasScreen";
 import { formatAmountInput } from "@/utils/money";
@@ -139,7 +140,7 @@ export function CuentaAnulacionModal({
                 justifyContent: "center",
                 alignItems: "center",
                 backgroundColor: "transparent",
-                borderWidth: 1.5,
+                borderWidth: 2,
                 borderColor: accentColor,
               }}
             >

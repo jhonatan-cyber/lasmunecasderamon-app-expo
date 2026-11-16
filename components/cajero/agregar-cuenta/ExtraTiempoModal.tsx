@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, ScrollView, Pressable, StyleSheet, Text, View } from "react-native";
+import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type ExtraTiempoModalProps = {
@@ -22,7 +23,7 @@ export function ExtraTiempoModal({
   onSelectOption,
 }: ExtraTiempoModalProps) {
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContentWide, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>

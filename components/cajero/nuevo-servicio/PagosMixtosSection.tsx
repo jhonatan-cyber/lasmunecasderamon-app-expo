@@ -60,7 +60,7 @@ export function PagosMixtosSection({
       </View>
 
       {pagosMixtos.map((pago, index) => (
-        <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <View key={`${pago.metodo}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
           <View style={{ width: 150, flexDirection: 'row', alignItems: 'center' }}>
             <Text
               style={{

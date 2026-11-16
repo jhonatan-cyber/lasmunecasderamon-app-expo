@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ComponentProps } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FontSize } from '@/constants/spacing';
 import { styles } from "../ServiceModal.styles";
 import type { MetodoPago } from "../../../types/api";
 
@@ -150,7 +151,7 @@ export function ServicePaymentSection({
                   >
                     {selectedClient.name} {selectedClient.lastName}
                   </Text>
-                  <Text style={{ color: textSecondary, fontSize: 10 }}>
+                  <Text style={{ color: textSecondary, fontSize: FontSize.xxs }}>
                     Cliente frecuente
                   </Text>
                 </View>
@@ -159,7 +160,7 @@ export function ServicePaymentSection({
                 <Text
                   style={{
                     color: textSecondary,
-                    fontSize: 10,
+                    fontSize: FontSize.xxs,
                     fontWeight: "800",
                   }}
                 >
@@ -232,7 +233,7 @@ export function ServicePaymentSection({
                   <Text
                     style={{
                       color: isSelected ? accentColor : textSecondary,
-                      fontSize: 9,
+                      fontSize: FontSize.xxs,
                       fontWeight: "800",
                       marginTop: 4,
                     }}
@@ -304,7 +305,7 @@ export function ServicePaymentSection({
                               metodoPagoAdicional === m
                                 ? accentColor
                                 : textSecondary,
-                            fontSize: 9,
+                            fontSize: FontSize.xxs,
                             fontWeight: "800",
                           }}
                         >

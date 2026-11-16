@@ -1,16 +1,16 @@
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 
@@ -52,8 +52,8 @@ export function ClientFormModal({
     onClose
 }: ClientFormModalProps) {
     return (
-        <Modal visible={visible} animationType="slide" transparent>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        <Modal visible={visible} avoidKeyboard={false} animationType="slide" transparent onRequestClose={onClose}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
                 <View style={[styles.modalContent, {
                     backgroundColor: isDark ? "#111111" : "#FFFFFF",
                     paddingBottom: Math.max(insets.bottom, 20) + 10

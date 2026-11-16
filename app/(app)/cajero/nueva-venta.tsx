@@ -1,9 +1,10 @@
 import { individualShorts } from "@/hooks/utils/individualShorts";
 import { useCartDraft } from "@/hooks/useCartDraft";
+import { formColumn } from "@/constants/layout";
 import { useCallback, useRef, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,7 +13,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
@@ -32,6 +32,7 @@ import { TimeSelector } from "@/components/ui/TimeSelector";
 import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
 import { TipCheckbox } from "@/components/cajero/forms/TipCheckbox";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useNuevaVenta } from "@/hooks/useNuevaVenta";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { getCardSplit } from "@/hooks/utils/cuentaUtils";
@@ -49,8 +50,7 @@ export default function NuevaVentaScreen() {
     borderColor,
   } = useAccentColor();
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const { isTablet } = useResponsiveMetrics();
   const splitVentaPct = Number(
     useConfigValue("comisiones", "split_tarjeta_venta", "51"),
   );
@@ -144,7 +144,7 @@ export default function NuevaVentaScreen() {
   const spacing = isTablet ? 24 : 16;
   const borderRadius = isTablet ? 28 : 24;
   const dynamicStyles = {
-    scrollContent: { padding: spacing, paddingBottom: 100 },
+    scrollContent: { ...formColumn, padding: spacing, paddingBottom: 100 },
     section: { padding: spacing, borderRadius, marginBottom: spacing },
     summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
     submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
@@ -166,7 +166,7 @@ export default function NuevaVentaScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[styles.container, { backgroundColor: bg }]}
     >
       <Stack.Screen options={{ headerShown: false }} />
@@ -182,25 +182,19 @@ export default function NuevaVentaScreen() {
         connectionStatus={
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
-        rightComponent={
-          <Pressable
-            onPress={() => {
-              clearDraft();
-              dispatch({ type: "SET_CART", payload: [] });
-              router.back();
-            }}
-            style={styles.backBtnRight}
-          >
-            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            <Text style={styles.backTextRight}>Atrás</Text>
-          </Pressable>
-        }
+        onBack={() => {
+          clearDraft();
+          dispatch({ type: "SET_CART", payload: [] });
+          router.back();
+        }}
       />
       <OfflineStatusBanner
         pendientesHref={"/(app)/cajero/pendientes" as never}
       />
 
       <ScrollView
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.scrollContent,
           dynamicStyles.scrollContent,
@@ -600,8 +594,8 @@ export default function NuevaVentaScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: 11,
-                      fontWeight: "900",
+                      fontSize: 12,
+                      fontWeight: "800",
                       textTransform: "uppercase",
                       color: isDark ? "#FCD34D" : "#92400E",
                       marginBottom: 4,
@@ -791,7 +785,7 @@ export default function NuevaVentaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { ...formColumn, padding: 16, paddingBottom: 100 },
   section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
@@ -829,7 +823,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   baucherTitulo: { fontSize: 13, fontWeight: "800" },
-  baucherHint: { fontSize: 11, fontWeight: "600", marginTop: 2, lineHeight: 15 },
+  baucherHint: { fontSize: 12, fontWeight: "600", marginTop: 2, lineHeight: 16 },
   baucherThumb: { width: 42, height: 42, borderRadius: 10 },
   baucherBtn: {
     flexDirection: "row",

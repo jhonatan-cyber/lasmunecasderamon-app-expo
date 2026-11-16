@@ -44,7 +44,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     }
 
     return (
-        <View style={[styles.container, disabled && { opacity: 0.6 }]} pointerEvents={disabled ? 'none' : 'auto'}>
+        <View style={[styles.container, disabled && { opacity: 0.6, pointerEvents: 'none' as const }, !disabled && { pointerEvents: 'auto' as const }]}>
             <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
             <View style={styles.row}>
                 {methods.map((method) => {
