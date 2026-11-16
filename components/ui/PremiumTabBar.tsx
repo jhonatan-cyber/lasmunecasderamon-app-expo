@@ -31,10 +31,10 @@ export const PremiumTabBar = ({ state, descriptors }: PremiumTabBarProps) => {
     const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const segments = useSegments();
+    const segments = [...useSegments()];
 
     // Detect the current role from segments: ['(app)', 'cajero', '(tabs)', 'index']
-    const role = segments?.[1] || segments?.[0];
+    const role = segments[1] || segments[0];
 
     // El blanco puro sobre el degradado no llega a 4.5:1 en varios acentos
     // (ámbar 3.2:1, esmeralda 3.8:1). El velo oscuro sube el contraste de toda
