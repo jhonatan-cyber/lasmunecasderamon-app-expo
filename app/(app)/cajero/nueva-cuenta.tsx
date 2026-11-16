@@ -678,6 +678,7 @@ export default function NuevaCuentaScreen() {
         borderColor={borderColor}
         textPrimary={textPrimary}
         textSecondary={textSecondary}
+        isDark={isDark}
       />
     </KeyboardAvoidingView>
   );

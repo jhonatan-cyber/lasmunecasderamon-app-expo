@@ -1,7 +1,6 @@
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useSegments } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
@@ -11,6 +10,14 @@ type PremiumTabBarProps = {
         index: number;
         routes: { key: string; name: string; params?: any }[];
     };
+    emitter: {
+        emit: (event: {
+            type: 'tabPress';
+            target: string;
+            canPreventDefault: boolean;
+        }) => { defaultPrevented: boolean };
+    };
+    navigateToTab: (routeKey: string) => void;
     descriptors: Record<
         string,
         {
@@ -25,16 +32,16 @@ type PremiumTabBarProps = {
     >;
 };
 
-export const PremiumTabBar = ({ state, descriptors }: PremiumTabBarProps) => {
+export const PremiumTabBar = ({
+    state,
+    emitter,
+    navigateToTab,
+    descriptors,
+}: PremiumTabBarProps) => {
     const { gradientColors } = useAccentColor();
     const { isTablet, isLandscape } = useResponsiveMetrics();
     const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const segments = [...useSegments()];
-
-    // Detect the current role from segments: ['(app)', 'cajero', '(tabs)', 'index']
-    const role = segments[1] || segments[0];
 
     // El blanco puro sobre el degradado no llega a 4.5:1 en varios acentos
     // (ámbar 3.2:1, esmeralda 3.8:1). El velo oscuro sube el contraste de toda
@@ -75,12 +82,14 @@ export const PremiumTabBar = ({ state, descriptors }: PremiumTabBarProps) => {
                 const isFocused = state.index === index;
 
                 const onPress = () => {
-                    if (isFocused) {
-                        // Tab already focused: no navigation needed, just return
-                        return;
+                    const event = emitter.emit({
+                        type: 'tabPress',
+                        target: route.key,
+                        canPreventDefault: true,
+                    });
+                    if (!isFocused && !event.defaultPrevented) {
+                        navigateToTab(route.key);
                     }
-                    // Navigate using expo-router with detected role
-                    router.navigate(`/(app)/${role}/(tabs)/${route.name}` as any);
                 };
 
                 const isCenter = route.name === 'index';

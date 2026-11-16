@@ -2,13 +2,13 @@ import { ServiceCard } from "@/components/anfitriona/ServiceCard";
 import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback,useState } from "react";
 import {
 Pressable,
@@ -168,39 +168,20 @@ export default function ServiciosScreen() {
           style={{ flex: 1 }}
         />
       </View>
-      <View style={styles.filterRow}>
-        {(["all", "pendiente", "finalizado", "anulado"] as const).map((f) => (
-          <Pressable
-            key={f}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: filter === f ? accentColor : cardBg,
-                borderColor: filter === f ? accentColor : borderColor,
-              },
-            ]}
-            onPress={() => setFilter(f)}
-            accessibilityRole="button"
-            accessibilityLabel={`Filtrar: ${f === "all" ? "Todos" : f === "pendiente" ? "En proceso" : f === "finalizado" ? "Finalizados" : "Anulados"}`}
-            accessibilityState={{ selected: filter === f }}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                { color: filter === f ? "#FFFFFF" : textSecondary },
-              ]}
-            >
-              {f === "all"
-                ? `Todos (${servicios.length})`
-                : f === "pendiente"
-                  ? `En Proceso (${pendientes.length})`
-                  : f === "finalizado"
-                    ? `Finalizados (${finalizados.length})`
-                    : `Anulados (${anulados.length})`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <FilterTabs
+        tabs={[
+          { key: "all", label: "Todos", count: servicios.length },
+          { key: "pendiente", label: "En Proceso", count: pendientes.length },
+          { key: "finalizado", label: "Finalizados", count: finalizados.length },
+          { key: "anulado", label: "Anulados", count: anulados.length },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       {error ? (
         <View style={styles.errorCard}>
@@ -286,14 +267,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 16,
   },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  filterText: { fontSize: 13, fontWeight: "700" },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   errorCard: {
     margin: 16,

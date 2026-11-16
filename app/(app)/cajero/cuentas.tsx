@@ -5,11 +5,9 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback } from "react";
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -19,6 +17,7 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
+import { Tabs } from '@/components/ui/Tabs';
 import { FontSize } from '@/constants/spacing';
 import { CuentasOverlays } from '@/components/cajero/CuentasOverlays';
 import type { CuentaDetalle } from '@/hooks/types/cuentaTypes';
@@ -175,41 +174,22 @@ export default function CuentasScreen() {
             </View>
           </View>
 
-          <View
-            style={[
-              styles.tabContainer,
+          <Tabs
+            tabs={[
+              { key: 'historial', label: 'Todas' },
               {
-                backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)",
-                marginTop: 15,
-                padding: 4,
-                borderRadius: 14,
-                borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-                borderWidth: 1
-              }
+                key: 'pendientes',
+                label: 'Pendientes',
+                count: pendingCount > 0 ? pendingCount : undefined,
+              },
             ]}
-          >
-            <Pressable
-              style={[styles.tab, activeTab === "historial" && { backgroundColor: accentColor }]}
-              onPress={() => setActiveTab("historial")}
-            >
-              <Text style={[styles.tabText, activeTab === "historial" ? { color: "#FFF" } : { color: textSecondary }]}>Todas</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.tab, activeTab === "pendientes" && { backgroundColor: accentColor }]}
-              onPress={() => setActiveTab("pendientes")}
-            >
-              <View style={styles.tabWithBadge}>
-                <Text style={[styles.tabText, activeTab === "pendientes" ? { color: "#FFF" } : { color: textSecondary }]}>Pendientes</Text>
-                {pendingCount > 0 && (
-                  <View style={[styles.tabBadge, activeTab === 'pendientes' ? { backgroundColor: '#FFF' } : { backgroundColor: accentColor }]}>
-                    <Text style={[styles.tabBadgeText, activeTab === 'pendientes' ? { color: accentColor } : { color: '#FFF' }]}>
-                      {pendingCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </Pressable>
-          </View>
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            accentColor={accentColor}
+            cardBg={cardBg}
+            textSecondary={textSecondary}
+            borderColor={borderColor}
+          />
         </View>
 
         <VirtualizedList
@@ -315,29 +295,6 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: FontSize.xs, fontWeight: '700', letterSpacing: 0.5, opacity: 0.7 },
   summaryValue: { fontSize: FontSize.sm, fontWeight: '800' },
   listContainer: { ...contentColumn, padding: 16, paddingBottom: 100 },
-  tabContainer: {
-    flexDirection: "row",
-    marginTop: 20,
-    borderRadius: 9999,
-    padding: 4,
-    borderWidth: 1,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 9999,
-  },
-  tabText: { fontSize: 14, fontWeight: "700" },
-  tabWithBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
-  tabBadge: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 9999,
-  },
-  tabBadgeText: { color: "#E11D48", fontSize: FontSize.xs, fontWeight: "800" },
 
   emptyCard: {
     borderRadius: 32,

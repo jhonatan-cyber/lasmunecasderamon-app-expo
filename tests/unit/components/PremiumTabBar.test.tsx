@@ -31,13 +31,11 @@ vi.mock('@/hooks/useAccentColor', () => ({
   useAccentColor: () => ({ gradientColors: ['#000000', '#111111'] }),
 }));
 
-vi.mock('expo-router', () => ({
-  useRouter: () => ({ navigate: vi.fn() }),
-  useSegments: () => ['(app)', 'cajero', '(tabs)', 'index'],
-}));
+type NavigateTabFn = (routeKey: string) => void;
 
 const renderTabBar = (
   descriptors: Record<string, { options: Record<string, unknown> }>,
+  navigateToTab: NavigateTabFn = vi.fn(),
 ) =>
   render(
     <PremiumTabBar
@@ -48,6 +46,8 @@ const renderTabBar = (
           { key: 'b', name: 'index' },
         ],
       }}
+      emitter={{ emit: () => ({ defaultPrevented: false }) }}
+      navigateToTab={navigateToTab}
       descriptors={descriptors}
     />,
   );
@@ -81,5 +81,47 @@ describe('PremiumTabBar — pestañas ocultas', () => {
 
     expect(screen.getByText('Asistencia')).toBeDefined();
     expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+});
+
+describe('PremiumTabBar — navegación', () => {
+  it('navega al tab de Inicio usando la clave de ruta del navegador', () => {
+    const navigateToTab = vi.fn<NavigateTabFn>();
+    renderTabBar(
+      {
+        a: { options: { title: 'Asistencia' } },
+        b: { options: { title: 'Inicio' } },
+      },
+      navigateToTab,
+    );
+
+    screen.getAllByRole('button')[1].click();
+
+    expect(navigateToTab).toHaveBeenCalledWith('b');
+  });
+
+  it('no navega si la pestaña ya está enfocada', () => {
+    const navigateToTab = vi.fn<NavigateTabFn>();
+    render(
+      <PremiumTabBar
+        state={{
+          index: 1,
+          routes: [
+            { key: 'a', name: 'asistencia' },
+            { key: 'b', name: 'index' },
+          ],
+        }}
+        emitter={{ emit: () => ({ defaultPrevented: false }) }}
+        navigateToTab={navigateToTab}
+        descriptors={{
+          a: { options: { title: 'Asistencia' } },
+          b: { options: { title: 'Inicio' } },
+        }}
+      />,
+    );
+
+    screen.getAllByRole('button')[1].click();
+
+    expect(navigateToTab).not.toHaveBeenCalled();
   });
 });

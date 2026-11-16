@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { BarmanOfflineBanner } from '@/components/barman/BarmanOfflineBanner';
 import { BarStockList } from '@/components/barman/bar/BarStockList';
@@ -102,17 +103,20 @@ export default function BarScreen() {
         title="Bar"
         subtitle={`${totalBar} unidades en barra`}
         onBack={() => router.replace('/(app)/barman/(tabs)')}
+      />
+      <Tabs
         tabs={[
-          { id: 'stock', label: 'Stock' },
-          {
-            id: 'pendientes',
-            label: `Pendientes${transfers.length > 0 ? ` (${transfers.length})` : ''}`,
-          },
-          { id: 'historial', label: 'Historial' },
-          { id: 'envases', label: 'Envases' },
+          { key: 'stock', label: 'Stock', icon: 'cube-outline' },
+          { key: 'pendientes', label: 'Pendientes', icon: 'time-outline', count: transfers.length },
+          { key: 'historial', label: 'Historial', icon: 'time-outline' },
+          { key: 'envases', label: 'Envases', icon: 'wine-outline' },
         ]}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
+        activeKey={activeTab}
+        onChange={onTabChange}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
       />
 
       <BarmanOfflineBanner />

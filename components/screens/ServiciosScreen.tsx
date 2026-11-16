@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiClientSafe } from '@/api/client-safe';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useTimer } from '@/context/TimerContext';
 import type { Timer } from '@/context/types';
@@ -169,18 +170,22 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig, selectedServiceDetail, detailModalVisible } = state;
 
   const colors = Colors[isDark ? 'dark' : 'light'];
+  const cardBg = colors.card;
+  const textPrimary = colors.text;
+  const textSecondary = colors.textMuted;
+  const borderColor = isDark ? `${accentColor}40` : colors.border;
   const theme = useMemo(() => ({
     bg: isDark ? "#000000" : "#F8FAFC",
-    card: colors.card,
-    text: colors.text,
-    textMuted: colors.textMuted,
-    border: isDark ? `${accentColor}40` : colors.border,
+    card: cardBg,
+    text: textPrimary,
+    textMuted: textSecondary,
+    border: borderColor,
     accent: accentColor,
     success: colors.success,
     danger: colors.danger,
     warning: colors.warning,
     info: colors.info,
-  }), [isDark, accentColor, colors]);
+  }), [isDark, accentColor, cardBg, textPrimary, textSecondary, borderColor]);
 
   const activeServicios = useMemo(() => {
     const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');
@@ -384,12 +389,18 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       <PremiumHeader
         title="Servicios"
         onBack={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
+      />
+      <Tabs
         tabs={[
-          { id: "activos", label: "Activos" },
-          { id: "finalizados", label: "Finalizados" },
+          { key: 'activos', label: 'Activos', icon: 'timer-outline' },
+          { key: 'finalizados', label: 'Finalizados', icon: 'checkmark-circle-outline' },
         ]}
-        activeTab={activeTab}
-        onTabChange={(tabId: string) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId as any })}
+        activeKey={activeTab}
+        onChange={(tabId) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId })}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
       />
 
       {esCajero ? (

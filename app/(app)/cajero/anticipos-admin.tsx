@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { contentColumn } from '@/constants/layout';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -11,11 +10,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { AdvanceCard } from '@/components/ui/AdvanceCard';
+import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { anticiposService } from '@/services/anticipos';
@@ -43,12 +44,12 @@ interface AnticipoAdmin {
 
 type Filtro = 'pendientes' | 'aprobados' | 'rechazados' | 'liquidados' | 'todos';
 
-const ESTADOS: Record<number, { label: string; color: string; bg: string }> = {
-  0: { label: 'Anulado', color: '#6B7280', bg: 'rgba(107,114,128,0.15)' },
-  1: { label: 'Aprobado', color: '#3B82F6', bg: 'rgba(59,130,246,0.15)' },
-  2: { label: 'Pendiente', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
-  3: { label: 'Rechazado', color: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
-  4: { label: 'Liquidado', color: '#8B5CF6', bg: 'rgba(139,92,246,0.15)' },
+const ESTADO_LABEL: Record<number, string> = {
+  0: 'Anulado',
+  1: 'Aprobado',
+  2: 'Pendiente',
+  3: 'Rechazado',
+  4: 'Liquidado',
 };
 
 const FILTROS: { id: Filtro; label: string }[] = [
@@ -64,9 +65,25 @@ const nombreDe = (item: AnticipoAdmin) =>
   item.nick ||
   'Sin nombre';
 
+const normalizeEstado = (estado: number | string) => {
+  switch (Number(estado)) {
+    case 2:
+      return 'pendiente';
+    case 1:
+      return 'confirmada';
+    case 3:
+    case 0:
+      return 'rechazada';
+    case 4:
+      return 'liquidada';
+    default:
+      return String(estado ?? '');
+  }
+};
+
 export default function AnticiposAdminScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, textSecondary, borderColor } =
     useAccentColor();
   const [data, setData] = useState<AnticipoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +132,37 @@ export default function AnticiposAdminScreen() {
     fetchData();
   }, [fetchData]);
 
+  const counts = useMemo(() => {
+    const base: Record<Filtro, number> = {
+      pendientes: 0,
+      aprobados: 0,
+      rechazados: 0,
+      liquidados: 0,
+      todos: data.length,
+    };
+    for (const item of data) {
+      const estado = Number(item.estado);
+      if (estado === 2) base.pendientes += 1;
+      else if (estado === 1) base.aprobados += 1;
+      else if (estado === 3) base.rechazados += 1;
+      else if (estado === 4) base.liquidados += 1;
+    }
+    return base;
+  }, [data]);
+
+  const totalPendiente = useMemo(
+    () =>
+      data
+        .filter(item => Number(item.estado) === 2)
+        .reduce((sum, item) => sum + (Number(item.monto) || 0), 0),
+    [data],
+  );
+
+  const totalGeneral = useMemo(
+    () => data.reduce((sum, item) => sum + (Number(item.monto) || 0), 0),
+    [data],
+  );
+
   const filtrados = useMemo(() => {
     const estado = (item: AnticipoAdmin) => Number(item.estado);
     if (filtro === 'todos') return data;
@@ -123,11 +171,6 @@ export default function AnticiposAdminScreen() {
     if (filtro === 'rechazados') return data.filter(item => estado(item) === 3);
     return data.filter(item => estado(item) === 4);
   }, [data, filtro]);
-
-  const pendientes = useMemo(
-    () => data.filter(item => Number(item.estado) === 2).length,
-    [data],
-  );
 
   const procesar = useCallback(
     async (item: AnticipoAdmin, estado: 1 | 3) => {
@@ -159,87 +202,75 @@ export default function AnticiposAdminScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: AnticipoAdmin }) => {
+    ({ item, index }: { item: AnticipoAdmin; index: number }) => {
       const estado = Number(item.estado);
-      const config = ESTADOS[estado] || ESTADOS[2];
       const procesandoItem = procesando === String(item.id_anticipo);
       const entregado = estado === 1 && !!item.fecha_entrega;
 
-      return (
-        <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.cardHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.nombre, { color: textPrimary }]} numberOfLines={1}>
-                {nombreDe(item)}
-              </Text>
-              <Text style={[styles.meta, { color: textSecondary }]}>
-                {parseDateSafe(item.fecha_crea).toLocaleString('es-CL', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </Text>
-            </View>
-            <View style={[styles.badge, { backgroundColor: config.bg }]}>
-              <Text style={[styles.badgeText, { color: config.color }]}>
-                {entregado ? 'Entregado' : config.label}
-              </Text>
-            </View>
+      const footer =
+        estado === 2 ? (
+          <View style={styles.actions}>
+            <Pressable
+              disabled={!!procesando}
+              onPress={() => setConfirmar({ item, estado: 1 })}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: 'rgba(16,185,129,0.14)', borderColor: 'rgba(16,185,129,0.4)' },
+                procesandoItem && { opacity: 0.5 },
+              ]}
+            >
+              {procesandoItem ? (
+                <ActivityIndicator size="small" color="#10B981" />
+              ) : (
+                <Ionicons name="checkmark" size={16} color="#10B981" />
+              )}
+              <Text style={[styles.actionText, { color: '#10B981' }]}>Aprobar</Text>
+            </Pressable>
+            <Pressable
+              disabled={!!procesando}
+              onPress={() => setConfirmar({ item, estado: 3 })}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: 'rgba(239,68,68,0.14)', borderColor: 'rgba(239,68,68,0.4)' },
+                procesandoItem && { opacity: 0.5 },
+              ]}
+            >
+              <Ionicons name="close" size={16} color="#EF4444" />
+              <Text style={[styles.actionText, { color: '#EF4444' }]}>Rechazar</Text>
+            </Pressable>
           </View>
-
-          <Text style={[styles.monto, { color: textPrimary }]}>
-            {formatCurrency(Number(item.monto))}
+        ) : entregado ? (
+          <Text style={[styles.entregado, { color: textSecondary }]}>
+            Entregó {item.entregado_por_nombre || 'cajero'}
+            {item.fecha_entrega
+              ? ` · ${parseDateSafe(item.fecha_entrega).toLocaleDateString('es-CL')}`
+              : ''}
           </Text>
-          {item.motivo ? (
-            <Text style={[styles.meta, { color: textSecondary }]}>{item.motivo}</Text>
-          ) : null}
-          {entregado ? (
-            <Text style={[styles.meta, { color: textSecondary }]}>
-              Entregó {item.entregado_por_nombre || 'cajero'}
-              {item.fecha_entrega
-                ? ` · ${parseDateSafe(item.fecha_entrega).toLocaleDateString('es-CL')}`
-                : ''}
-            </Text>
-          ) : null}
+        ) : undefined;
 
-          {estado === 2 ? (
-            <View style={styles.actions}>
-              <Pressable
-                disabled={!!procesando}
-                onPress={() => setConfirmar({ item, estado: 1 })}
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: 'rgba(16,185,129,0.14)', borderColor: 'rgba(16,185,129,0.4)' },
-                  procesandoItem && { opacity: 0.5 },
-                ]}
-              >
-                {procesandoItem ? (
-                  <ActivityIndicator size="small" color="#10B981" />
-                ) : (
-                  <Ionicons name="checkmark" size={16} color="#10B981" />
-                )}
-                <Text style={[styles.actionText, { color: '#10B981' }]}>Aprobar</Text>
-              </Pressable>
-              <Pressable
-                disabled={!!procesando}
-                onPress={() => setConfirmar({ item, estado: 3 })}
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: 'rgba(239,68,68,0.14)', borderColor: 'rgba(239,68,68,0.4)' },
-                  procesandoItem && { opacity: 0.5 },
-                ]}
-              >
-                <Ionicons name="close" size={16} color="#EF4444" />
-                <Text style={[styles.actionText, { color: '#EF4444' }]}>Rechazar</Text>
-              </Pressable>
-            </View>
-          ) : null}
-        </View>
+      return (
+        <AdvanceCard
+          item={{
+            id_solicitud: item.id_anticipo,
+            usuario_id: item.usuario_id,
+            fecha_crea: item.fecha_crea,
+            fecha_mod: null,
+            monto: Number(item.monto) || 0,
+            estado,
+            estado_texto: ESTADO_LABEL[estado] || '',
+            motivo: item.motivo || undefined,
+          }}
+          index={index}
+          showIndexBadge={false}
+          compactDate
+          normalizeEstado={normalizeEstado}
+          title={nombreDe(item)}
+          statusLabel={entregado ? 'Entregado' : ESTADO_LABEL[estado]}
+          footer={footer}
+        />
       );
     },
-    [borderColor, cardBg, procesando, textPrimary, textSecondary],
+    [procesando, textSecondary],
   );
 
   if (loading) {
@@ -247,10 +278,59 @@ export default function AnticiposAdminScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <PremiumHeader title="Anticipos" subtitle="Solicitudes del personal" />
-        <View style={{ padding: 16, gap: 12 }}>
-          <SkeletonLoader width="100%" height={130} borderRadius={20} />
-          <SkeletonLoader width="100%" height={130} borderRadius={20} />
+        <View style={{ margin: 16 }}>
+          <SkeletonLoader width="100%" height={140} borderRadius={16} />
         </View>
+        <View style={{ padding: 16, gap: 10 }}>
+          {[1, 2, 3].map(i => (
+            <View
+              key={i}
+              style={{
+                padding: 16,
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor,
+                backgroundColor: cardBg,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 15,
+                }}
+              >
+                <SkeletonLoader width={80} height={20} borderRadius={10} />
+                <SkeletonLoader width={60} height={20} borderRadius={10} />
+              </View>
+              <SkeletonLoader height={15} width="60%" style={{ marginBottom: 15 }} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <SkeletonLoader width={80} height={30} />
+                <SkeletonLoader width={80} height={30} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { backgroundColor: bg }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <PremiumHeader
+          title="Anticipos"
+          subtitle="Solicitudes del personal"
+          onBack={() => router.back()}
+        />
+        <EmployeeListError
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       </View>
     );
   }
@@ -260,59 +340,75 @@ export default function AnticiposAdminScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <PremiumHeader
         title="Anticipos"
-        subtitle={`${pendientes} pendientes · ${data.length} en total`}
+        subtitle={`${counts.pendientes} pendientes · ${data.length} en total`}
         onBack={() => router.back()}
       />
 
-      <View style={styles.filtros}>
-        {FILTROS.map(opcion => (
-          <Pressable
-            key={opcion.id}
-            onPress={() => setFiltro(opcion.id)}
-            style={[
-              styles.filtroChip,
-              {
-                backgroundColor: filtro === opcion.id ? accentColor : cardBg,
-                borderColor: filtro === opcion.id ? accentColor : borderColor,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.filtroText,
-                { color: filtro === opcion.id ? '#FFFFFF' : textSecondary },
-              ]}
-            >
-              {opcion.label}
-            </Text>
-          </Pressable>
-        ))}
+      <View
+        style={[
+          styles.summaryCard,
+          {
+            backgroundColor: cardBg,
+            borderColor,
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+          },
+        ]}
+      >
+        <Text style={[styles.summaryLabel, { color: textSecondary }]}>
+          ANTICIPOS PENDIENTES
+        </Text>
+        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+          ${totalPendiente.toLocaleString()}
+        </Text>
+        <View style={styles.summaryDetails}>
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Total: ${totalGeneral.toLocaleString()}
+          </Text>
+          <View
+            style={{
+              width: 1,
+              height: 12,
+              backgroundColor: borderColor,
+              alignSelf: 'center',
+            }}
+          />
+          <Text style={[styles.summaryDetail, { color: textSecondary }]}>
+            Items: {data.length}
+          </Text>
+        </View>
       </View>
 
-      {error ? (
-        <ErrorState
-          title="No pudimos cargar los anticipos"
-          message={error}
-          onRetry={() => {
-            setLoading(true);
-            fetchData();
-          }}
-        />
-      ) : (
-        <FlatList
-          data={filtrados}
-          keyExtractor={item => String(item.id_anticipo)}
-          renderItem={renderItem}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
-          }
-          ListEmptyComponent={
-            <EmptyState icon="card-outline" title="No hay anticipos en este filtro" />
-          }
-          {...LIST_PERF_PROPS}
-        />
-      )}
+      <FilterTabs
+        wrap
+        tabs={FILTROS.map(opcion => ({
+          key: opcion.id,
+          label: opcion.label,
+          count: counts[opcion.id],
+        }))}
+        activeKey={filtro}
+        onTabPress={setFiltro}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
+
+      <FlatList
+        data={filtrados}
+        keyExtractor={item => String(item.id_anticipo)}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
+        }
+        ListEmptyComponent={
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
+        }
+        {...LIST_PERF_PROPS}
+      />
 
       <PremiumAlert
         visible={!!confirmar}
@@ -338,29 +434,30 @@ export default function AnticiposAdminScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { ...contentColumn, padding: 16, paddingTop: 4, paddingBottom: 40, gap: 10 },
-  filtros: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingHorizontal: 16,
-    marginTop: 12,
-  },
-  filtroChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9999,
+  summaryCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
     borderWidth: 1,
   },
-  filtroText: { fontSize: 12, fontWeight: '700' },
-  card: { borderRadius: 20, borderWidth: 1, padding: 16 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  nombre: { fontSize: 14, fontWeight: '800' },
-  meta: { fontSize: 12, marginTop: 3 },
-  badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-  monto: { fontSize: 20, fontWeight: '900', marginTop: 10 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  summaryLabel: {
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  summaryAmount: {
+    fontSize: 38,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  summaryDetails: { flexDirection: 'row', gap: 16 },
+  summaryDetail: { fontSize: 13 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  actions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -372,14 +469,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   actionText: { fontSize: 13, fontWeight: '800' },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 38,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    gap: 6,
-  },
-  backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  entregado: { fontSize: 13 },
 });

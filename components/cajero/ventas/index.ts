@@ -5,7 +5,6 @@ export { VentaCardRight } from "./VentaCardRight";
 export { VentaDetailModal } from "./VentaDetailModal";
 export { VentaAnulacionModal } from "./VentaAnulacionModal";
 export { VentaActionSheet } from "./VentaActionSheet";
-export { VentaTabs } from "./VentaTabs";
 export {
   VentasSkeleton,
   VentaCardSkeleton,

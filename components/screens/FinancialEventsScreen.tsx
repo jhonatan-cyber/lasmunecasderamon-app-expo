@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -345,34 +346,23 @@ export function FinancialEventsScreen({
         </View>
       </View>
 
-      <View style={styles.filterRow}>
-        {(['all', 'pendiente', 'pagado'] as const).map((f) => (
-          <Pressable
-            key={f}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: filter === f ? accentColor : cardBg,
-                borderColor: filter === f ? accentColor : borderColor,
-              },
-            ]}
-            onPress={() => setFilter(f)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                { color: filter === f ? '#FFFFFF' : textSecondary },
-              ]}
-            >
-              {f === 'all'
-                ? `Todas (${data.length})`
-                : f === 'pendiente'
-                  ? `Pendientes (${pendientes.length})`
-                  : `Cobradas (${data.length - pendientes.length})`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <FilterTabs
+        tabs={[
+          { key: 'all', label: 'Todas', count: data.length },
+          { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
+          {
+            key: 'pagado',
+            label: 'Cobradas',
+            count: data.length - pendientes.length,
+          },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       <VirtualizedList
         data={filteredData}
@@ -551,21 +541,6 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9999,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  filterText: { fontSize: 11, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 20 },
   card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {

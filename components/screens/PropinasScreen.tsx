@@ -343,6 +343,7 @@ export default function PropinasScreen() {
       </View>
 
       <FilterTabs
+        wrap
         tabs={[
           { key: 'all', label: 'Todas', count: propinas.length },
           { key: 'pendiente', label: 'Pendientes', count: pendientes.length },

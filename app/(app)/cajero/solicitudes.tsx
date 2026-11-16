@@ -7,7 +7,6 @@ import { StatusBar } from "expo-status-bar";
 import { AnimatedView } from "@/components/ui/AnimatedView";
 import React, { useCallback, useState } from "react";
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -16,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { FilterTabs } from "@/components/ui/FilterTabs";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { SolicitudesSkeleton } from "@/components/cajero/solicitudes/SolicitudesSkeleton";
@@ -236,43 +236,21 @@ export default function SolicitudesScreen() {
       )}
 
       {}
-      <View style={[styles.filterRow, { paddingHorizontal: 16 }]}>
-        {(["all", "anticipo", "pedido", "solicitud"] as const).map((type) => {
-          const labels: Record<string, string> = {
-            all: "Todas",
-            anticipo: "Anticipos",
-            pedido: "Pedidos",
-            solicitud: "Servicios",
-          };
-          return (
-            <Pressable
-              key={type}
-              style={[
-                styles.filterTab,
-                { backgroundColor: cardBg, borderColor },
-                activeFilter === type && {
-                  backgroundColor: accentColor,
-                  borderColor: accentColor,
-                },
-              ]}
-              onPress={() => setActiveFilter(type)}
-            >
-              <Text
-                style={[
-                  styles.filterTabText,
-                  { color: textSecondary },
-                  activeFilter === type && {
-                    color: "#FFFFFF",
-                    fontWeight: "800",
-                  },
-                ]}
-              >
-                {labels[type]} ({counts[type]})
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <FilterTabs
+        scrollable
+        tabs={[
+          { key: "all", label: "Todas", count: counts.all },
+          { key: "anticipo", label: "Anticipos", count: counts.anticipo },
+          { key: "pedido", label: "Pedidos", count: counts.pedido },
+          { key: "solicitud", label: "Servicios", count: counts.solicitud },
+        ]}
+        activeKey={activeFilter}
+        onTabPress={setActiveFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       {solicitudes.length > 0 && !isOffline && (
         <AnimatedView
@@ -473,18 +451,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   totalBannerValue: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 8,
-  },
-  filterTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  filterTabText: { fontSize: 12, fontWeight: "700" },
   urgencyBar: {
     flexDirection: "row",
     alignItems: "center",

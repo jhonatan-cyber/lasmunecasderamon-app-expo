@@ -14,6 +14,8 @@ interface AnimatedButtonProps extends Omit<PressableProps, 'style'> {
     scaleTo?: number;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function AnimatedButton({
     children,
     style,
@@ -44,16 +46,14 @@ export function AnimatedButton({
     };
 
     return (
-        <Animated.View style={[style, animatedStyle]}>
-            <Pressable
-                {...props}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                disabled={disabled}
-                style={{ width: '100%', height: '100%' }}
-            >
-                {children}
-            </Pressable>
-        </Animated.View>
+        <AnimatedPressable
+            {...props}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={disabled}
+            style={[style, animatedStyle] as StyleProp<ViewStyle>}
+        >
+            {children}
+        </AnimatedPressable>
     );
 }

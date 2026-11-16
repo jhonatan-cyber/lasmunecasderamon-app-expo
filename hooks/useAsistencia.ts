@@ -52,23 +52,32 @@ export function useAsistencia() {
         const endpoint = '/attendance/user?tipo=detalle';
         const data = await apiClientSafe(endpoint, { signal });
         if (signal?.aborted) return;
+
+        // Fetch housing discount independently so it doesn't block attendance data
         if (isHostess) {
-          const summary = await apiClientSafe<any[]>('/attendance/user', {
-            signal,
-          });
-          if (signal?.aborted) return;
-          if (!summary.success)
-            throw new Error('No se pudo cargar el descuento de alojamiento');
-          setHousingDiscountTotal(
-            Number(summary.data?.[0]?.descuento_total || 0),
-          );
+          try {
+            const summary = await apiClientSafe<any[]>('/attendance/user', {
+              signal,
+            });
+            if (signal?.aborted) return;
+            if (summary.success) {
+              setHousingDiscountTotal(
+                Number(summary.data?.[0]?.descuento_total || 0),
+              );
+            }
+          } catch {
+            // Housing discount is optional; do not block attendance data
+            setHousingDiscountTotal(0);
+          }
         }
+
         if (data.success) {
-          const serialized = JSON.stringify(data.data);
+          const records = Array.isArray(data.data) ? data.data : [];
+          const serialized = JSON.stringify(records);
           const hasChanges = dataRef.current !== serialized;
           dataRef.current = serialized;
           setAsistencias(
-            normalizeEmployeeRecords<Asistencia>(data.data, [
+            normalizeEmployeeRecords<Asistencia>(records, [
               'sueldo',
               'aporte',
               'total',
@@ -109,14 +118,10 @@ export function useAsistencia() {
           throw new Error(
             data.message || 'No se pudieron cargar las gratificaciones',
           );
-        const items = Array.isArray(data) ? data : (data as any)?.data;
-        if (!Array.isArray(items))
-          throw new Error('La respuesta de gratificaciones no es válida');
-        if (Array.isArray(items)) {
-          setGratificaciones(
-            normalizeEmployeeRecords<Gratificacion>(items, ['monto', 'estado']),
-          );
-        }
+        const items = Array.isArray(data.data) ? data.data : [];
+        setGratificaciones(
+          normalizeEmployeeRecords<Gratificacion>(items, ['monto', 'estado']),
+        );
       } catch (err) {
         if ((err as any)?.name === 'AbortError') return;
         setGratificationsError(

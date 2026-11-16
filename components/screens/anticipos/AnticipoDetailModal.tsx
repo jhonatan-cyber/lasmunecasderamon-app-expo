@@ -80,14 +80,9 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
           <View style={styles.modalHeader}>
-            <View>
-              <Text style={[styles.modalTitle, { color: textPrimary }]}>
-                Detalle de Anticipo
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                ID: {anticipo.id_solicitud}
-              </Text>
-            </View>
+            <Text style={[styles.modalTitle, { color: textPrimary }]}>
+              Detalle de Anticipo
+            </Text>
             <Pressable onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
@@ -172,6 +167,9 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
                     </Text>
                     <Text style={[styles.infoValue, { color: textPrimary }]}>
                       {formatDate(anticipo.fecha_mod)}
+                      {formatTime(anticipo.fecha_mod)
+                        ? ` · ${formatTime(anticipo.fecha_mod)}`
+                        : ''}
                     </Text>
                   </View>
                 </>
@@ -259,10 +257,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-  },
-  modalSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
   },
   closeBtn: {
     width: 36,

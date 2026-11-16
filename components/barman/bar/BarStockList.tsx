@@ -5,11 +5,11 @@ import {
   Text,
   StyleSheet,
   RefreshControl,
-  Pressable,
 } from "react-native";
 import { Image } from "expo-image";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
+import { Tabs } from "@/components/ui/Tabs";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import type { BarStockItem } from "@/hooks/useBarScreen";
@@ -117,39 +117,30 @@ export function BarStockList({
   return (
     <View style={styles.container}>
       {categories.length > 0 ? (
-        <View
-          accessibilityLabel="Filtrar stock por categoría"
-          style={styles.categoryNav}
-        >
-          {[
-            { name: null, label: "Todas", count: items.length },
+        <Tabs
+          variant="pills"
+          scrollable
+          tabs={[
+            { key: "__all__", label: "Todas", count: items.length },
             ...categories.map(([name, products]) => ({
-              name,
+              key: name,
               label: name,
               count: products.length,
             })),
-          ].map((option) => (
-            <Pressable
-              key={option.name ?? "all"}
-              accessibilityRole="button"
-              accessibilityLabel={`${option.label}, ${option.count} producto${option.count === 1 ? "" : "s"}`}
-              accessibilityState={{ selected: activeCategory === option.name }}
-              onPress={() => setCategoryFilter(option.name)}
-              style={[
-                styles.categoryButton,
-                {
-                  backgroundColor: cardBg,
-                  borderColor:
-                    activeCategory === option.name ? accentColor : borderColor,
-                },
-              ]}
-            >
-              <Text style={[styles.categoryLabel, { color: textPrimary }]}>
-                {option.label} ({option.count})
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          ]}
+          activeKey={activeCategory ?? "__all__"}
+          onChange={(key) => setCategoryFilter(key === "__all__" ? null : key)}
+          accentColor={accentColor}
+          cardBg={cardBg}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+          getAccessibilityLabel={(tab) =>
+            tab.count === undefined
+              ? tab.label
+              : `${tab.label}, ${tab.count} producto${tab.count === 1 ? "" : "s"}`
+          }
+          style={{ marginTop: 12, marginBottom: 0 }}
+        />
       ) : null}
       <VirtualizedList
         data={rows}
@@ -313,17 +304,6 @@ const BarStockCard = memo(function BarStockCard({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   skeletonList: { padding: 16, gap: 10 },
-  categoryNav: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 },
-  categoryButton: {
-    minHeight: 44,
-    maxWidth: "100%",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 2,
-  },
-  categoryLabel: { fontSize: 13, fontWeight: "700", flexShrink: 1 },
   categoryTitle: {
     fontSize: 15,
     fontWeight: "800",

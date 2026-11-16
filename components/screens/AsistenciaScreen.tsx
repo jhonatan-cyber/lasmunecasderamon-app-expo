@@ -5,6 +5,7 @@ import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { FilterTabs } from '@/components/ui/FilterTabs';
+import { Tabs } from '@/components/ui/Tabs';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAsistencia } from '@/hooks/useAsistencia';
 import { useStableCallback } from '@/hooks/useStableCallback';
@@ -361,72 +362,18 @@ export default function AsistenciaScreen() {
         title="Asistencia"
         subtitle="Registro de turnos y bonificaciones"
       />
-      <View
-        style={{ flexDirection: 'row', paddingHorizontal: 16, marginTop: 16 }}
-      >
-        <Pressable
-          style={[
-            styles.mainTab,
-            activeTab === 'asistencias' && {
-              backgroundColor: accentColor,
-              borderColor: accentColor,
-            },
-            {
-              backgroundColor:
-                activeTab !== 'asistencias' ? cardBg : accentColor,
-            },
-          ]}
-          onPress={() => setActiveTab('asistencias')}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={18}
-            color={activeTab === 'asistencias' ? '#FFFFFF' : textSecondary}
-          />
-          <Text
-            style={[
-              styles.mainTabText,
-              {
-                color: activeTab === 'asistencias' ? '#FFFFFF' : textSecondary,
-              },
-            ]}
-          >
-            Turnos
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[
-            styles.mainTab,
-            activeTab === 'gratificaciones' && {
-              backgroundColor: accentColor,
-              borderColor: accentColor,
-            },
-            {
-              backgroundColor:
-                activeTab !== 'gratificaciones' ? cardBg : accentColor,
-            },
-          ]}
-          onPress={() => setActiveTab('gratificaciones')}
-        >
-          <Ionicons
-            name="gift-outline"
-            size={18}
-            color={activeTab === 'gratificaciones' ? '#FFFFFF' : textSecondary}
-          />
-          <Text
-            style={[
-              styles.mainTabText,
-              {
-                color:
-                  activeTab === 'gratificaciones' ? '#FFFFFF' : textSecondary,
-              },
-            ]}
-          >
-            Gratificaciones
-          </Text>
-        </Pressable>
-      </View>
-
+      <Tabs
+        tabs={[
+          { key: 'asistencias', label: 'Turnos', icon: 'calendar-outline' },
+          { key: 'gratificaciones', label: 'Gratificaciones', icon: 'gift-outline' },
+        ]}
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       <View
         style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}
@@ -574,19 +521,6 @@ export default function AsistenciaScreen() {
 }
 
 const styles = StyleSheet.create({
-  mainTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 8,
-    marginHorizontal: 4,
-  },
-  mainTabText: { fontSize: 13, fontWeight: '700' },
   container: { flex: 1 },
   summaryCard: {
     marginHorizontal: 16,

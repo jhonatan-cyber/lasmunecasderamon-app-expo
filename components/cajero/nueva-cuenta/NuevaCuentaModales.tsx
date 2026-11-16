@@ -53,6 +53,7 @@ interface NuevaCuentaModalesProps {
     borderColor: string;
     textPrimary: string;
     textSecondary: string;
+    isDark: boolean;
 }
 
 export function NuevaCuentaModales({
@@ -97,6 +98,7 @@ export function NuevaCuentaModales({
     borderColor,
     textPrimary,
     textSecondary,
+    isDark,
 }: NuevaCuentaModalesProps) {
     return (
         <>
@@ -167,6 +169,8 @@ export function NuevaCuentaModales({
                 cardBg={cardBg}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                isDark={isDark}
                 onClose={onCloseTime}
                 onSelectTime={onSelectTime}
             />

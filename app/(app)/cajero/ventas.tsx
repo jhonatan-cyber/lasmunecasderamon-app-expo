@@ -17,6 +17,7 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
+import { Tabs } from '@/components/ui/Tabs';
 import { useTimer } from '@/context/TimerContext';
 import { useVentasScreen } from '@/hooks/useVentasScreen';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -28,7 +29,6 @@ import {
   VentaDetailModal,
   VentaAnulacionModal,
   VentaActionSheet,
-  VentaTabs,
   VentasSkeleton,
   VentaCardSkeleton,
 } from '@/components/cajero/ventas';
@@ -188,13 +188,23 @@ export default function VentasScreen() {
 
       <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
-      <VentaTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+      <Tabs
+        tabs={[
+          { key: 'historial', label: 'Listado de Ventas' },
+          {
+            key: 'proceso',
+            label: 'Ventas con Habitación',
+            count: activeVentaTimers.length || undefined,
+          },
+        ]}
+        activeKey={activeTab}
+        onChange={setActiveTab}
         accentColor={accentColor}
-        isDark={isDark}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
         isTablet={isTablet}
-        activeTimerCount={activeVentaTimers.length}
+        style={{ marginTop: 15, gap: 12 }}
       />
 
       <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>

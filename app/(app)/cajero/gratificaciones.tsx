@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,6 +17,7 @@ import { useStableCallback } from '@/hooks/useStableCallback';
 import { formatCurrency } from '@/utils/format';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { FilterTabs } from '@/components/ui/FilterTabs';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
@@ -174,33 +174,22 @@ export default function CajeroGratificacionesScreen() {
         </View>
       </View>
 
-      <View style={styles.filterScrollWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
-        >
-          {(['todos', 'pendiente', 'por_pagar', 'pagado', 'rechazada'] as const).map(item => (
-            <Pressable
-              key={item}
-              style={[
-                styles.filterButton,
-                {
-                  backgroundColor: filter === item ? accentColor : cardBg,
-                  borderColor: filter === item ? accentColor : borderColor
-                }
-              ]}
-              onPress={() => setFilter(item)}
-            >
-              <Text style={[styles.filterText, { color: filter === item ? '#FFFFFF' : textSecondary }]}>
-                {item === 'por_pagar'
-                  ? 'Por pagar'
-                  : item.charAt(0).toUpperCase() + item.slice(1).replace('_', ' ')}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+      <FilterTabs
+        scrollable
+        tabs={[
+          { key: 'todos', label: 'Todos' },
+          { key: 'pendiente', label: 'Pendiente' },
+          { key: 'por_pagar', label: 'Por pagar' },
+          { key: 'pagado', label: 'Pagado' },
+          { key: 'rechazada', label: 'Rechazada' },
+        ]}
+        activeKey={filter}
+        onTabPress={setFilter}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+      />
 
       {error ? (
         <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
@@ -357,26 +346,6 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 34, fontWeight: '900', marginBottom: 8 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 12, fontWeight: '600' },
-  filterScrollWrapper: {
-    height: 52,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  filterScroll: {
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8
-  },
-  filterButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1
-  },
-  filterText: { fontSize: 12, fontWeight: '700' },
   listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: 100, paddingTop: 10 },
   card: {
     borderRadius: 18,

@@ -1,21 +1,25 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
-import { FilterTabs } from '@/components/ui/FilterTabs';
-import { Pressable, RefreshControl, Text, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { AdvanceCard } from '@/components/ui/AdvanceCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FilterTabs } from '@/components/ui/FilterTabs';
+import type { TabItem } from '@/components/ui/Tabs';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { Anticipo, useAnticipos, FiltroAnticipos } from '@/hooks/useAnticipos';
+import {
+  Anticipo,
+  useAnticipos,
+  type FiltroAnticipos,
+} from '@/hooks/useAnticipos';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import { showToast } from '@/utils/toast-lazy';
 import { SolicitarAnticipoModal } from '@/components/screens/anticipos/SolicitarAnticipoModal';
 import { AnticipoDetailModal } from '@/components/screens/anticipos/AnticipoDetailModal';
-import { StyleSheet } from 'react-native';
 import { useState } from 'react';
 
 export default function AnticiposScreen() {
@@ -30,12 +34,9 @@ export default function AnticiposScreen() {
   } = useAccentColor();
 
   const {
-    todos,
     loading,
     refreshing,
     error,
-    filter,
-    setFilter,
     selectedAnticipo,
     modalVisible,
     setModalVisible,
@@ -45,7 +46,10 @@ export default function AnticiposScreen() {
     montoPropinas,
     tieneSolicitudPendiente,
     efectivoEnCaja,
+    filter,
+    setFilter,
     filteredData,
+    todos,
     pendientes,
     totalPendiente,
     totalGeneral,
@@ -58,6 +62,30 @@ export default function AnticiposScreen() {
     solicitarAnticipo,
     onRefresh,
   } = useAnticipos();
+
+  const filterCounts = {
+    all: todos.length,
+    pendiente: 0,
+    aprobado: 0,
+    rechazado: 0,
+    recibido: 0,
+  };
+  for (const anticipo of todos) {
+    const estado = normalizeEstado(anticipo.estado);
+    if (estado === 'pendiente') filterCounts.pendiente += 1;
+    else if (estado === 'confirmada') filterCounts.aprobado += 1;
+    else if (estado === 'rechazada') filterCounts.rechazado += 1;
+    else if (estado === 'pagada' || estado === 'liquidada')
+      filterCounts.recibido += 1;
+  }
+
+  const filterTabs: TabItem<FiltroAnticipos>[] = [
+    { key: 'all', label: 'Todas', count: filterCounts.all },
+    { key: 'pendiente', label: 'Pendientes', count: filterCounts.pendiente },
+    { key: 'aprobado', label: 'Aprobadas', count: filterCounts.aprobado },
+    { key: 'rechazado', label: 'Rechazadas', count: filterCounts.rechazado },
+    { key: 'recibido', label: 'Recibidas', count: filterCounts.recibido },
+  ];
 
   const [solicitarModalVisible, setSolicitarModalVisible] = useState(false);
   const [monto, setMonto] = useState('');
@@ -158,11 +186,6 @@ export default function AnticiposScreen() {
       <View style={{ margin: 16 }}>
         <Skeleton width="100%" height={140} borderRadius={16} />
       </View>
-      <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16 }}>
-        <Skeleton width="20%" height={35} borderRadius={20} />
-        <Skeleton width="20%" height={35} borderRadius={20} />
-        <Skeleton width="20%" height={35} borderRadius={20} />
-      </View>
       <View style={{ padding: 16, gap: 10 }}>
         {[1, 2, 3].map((i) => (
           <View
@@ -210,7 +233,6 @@ export default function AnticiposScreen() {
     <View style={[styles.container, { backgroundColor: bg }]}>
       <PremiumHeader title="Anticipos" subtitle="Mis solicitudes y anticipos recibidos" />
 
-      {}
       <View
         style={[
           styles.summaryCard,
@@ -248,15 +270,9 @@ export default function AnticiposScreen() {
         </View>
       </View>
 
-      <FilterTabs<FiltroAnticipos>
-        scrollable
-        tabs={[
-          { key: 'all', label: 'Todas', count: todos.length },
-          { key: 'pendiente', label: 'Pendientes', count: pendientes.length },
-          { key: 'aprobado', label: 'Aprobados', count: todos.filter((a) => normalizeEstado(a.estado) === 'confirmada').length },
-          { key: 'rechazado', label: 'Rechazados', count: todos.filter((a) => normalizeEstado(a.estado) === 'rechazada').length },
-          { key: 'recibido', label: 'Recibidos', count: todos.filter((a) => ['pagada', 'liquidada'].includes(normalizeEstado(a.estado))).length },
-        ]}
+      <FilterTabs
+        wrap
+        tabs={filterTabs}
         activeKey={filter}
         onTabPress={setFilter}
         accentColor={accentColor}

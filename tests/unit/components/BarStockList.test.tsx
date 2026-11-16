@@ -42,6 +42,9 @@ vi.mock('react-native', () => ({
   RefreshControl: ({ onRefresh }: { onRefresh: () => void }) => (
     <button onClick={onRefresh}>Actualizar</button>
   ),
+  ScrollView: ({ children, accessibilityLabel }: Children) => (
+    <div aria-label={accessibilityLabel}>{children}</div>
+  ),
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
 }));
 vi.mock('expo-image', () => ({ Image: () => null }));

@@ -20,6 +20,8 @@ import { useStableCallback } from '@/hooks/useStableCallback';
 
 import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { FilterTabs } from '@/components/ui/FilterTabs';
+import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -282,40 +284,40 @@ export default function HorasExtrasScreen() {
             />
 
             {employees.length > 1 && (
-                <View style={styles.empFilterRow}>
-                    <Pressable
-                        style={[styles.empFilterChip, { backgroundColor: userFilter === 'all' ? accentColor : cardBg, borderColor: userFilter === 'all' ? accentColor : borderColor }]}
-                        onPress={() => setUserFilter('all')}
-                    >
-                        <Text style={[styles.empFilterText, { color: userFilter === 'all' ? '#FFFFFF' : textSecondary }]}>Todos</Text>
-                    </Pressable>
-                    {employees.slice(0, 8).map(emp => (
-                        <Pressable
-                            key={emp.id}
-                            style={[styles.empFilterChip, { backgroundColor: userFilter === String(emp.id) ? accentColor : cardBg, borderColor: userFilter === String(emp.id) ? accentColor : borderColor }]}
-                            onPress={() => setUserFilter(userFilter === String(emp.id) ? 'all' : String(emp.id))}
-                        >
-                            <Text style={[styles.empFilterText, { color: userFilter === String(emp.id) ? '#FFFFFF' : textSecondary }]} numberOfLines={1}>
-                                {emp.name.split(' ')[0]}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
+                <Tabs
+                    variant="pills"
+                    scrollable
+                    tabs={[
+                        { key: 'all', label: 'Todos' },
+                        ...employees.slice(0, 8).map(emp => ({
+                            key: String(emp.id),
+                            label: emp.name.split(' ')[0],
+                        })),
+                    ]}
+                    activeKey={userFilter}
+                    onChange={(key) =>
+                        setUserFilter(key === 'all' ? 'all' : userFilter === key ? 'all' : key)
+                    }
+                    accentColor={accentColor}
+                    cardBg={cardBg}
+                    textSecondary={textSecondary}
+                    borderColor={borderColor}
+                />
             )}
 
-            <View style={styles.filterRow}>
-                {(['all', 'pendiente', 'pagado'] as const).map(item => (
-                    <Pressable
-                        key={item}
-                        style={[styles.filterBtn, { backgroundColor: statusFilter === item ? accentColor : cardBg, borderColor: statusFilter === item ? accentColor : borderColor }]}
-                        onPress={() => setStatusFilter(item)}
-                    >
-                        <Text style={[styles.filterText, { color: statusFilter === item ? '#FFFFFF' : textSecondary }]}>
-                            {item === 'all' ? 'Todas' : item === 'pendiente' ? 'Por cobrar' : 'Pagado'}
-                        </Text>
-                    </Pressable>
-                ))}
-            </View>
+            <FilterTabs
+                tabs={[
+                    { key: 'all', label: 'Todas' },
+                    { key: 'pendiente', label: 'Por cobrar' },
+                    { key: 'pagado', label: 'Pagado' },
+                ]}
+                activeKey={statusFilter}
+                onTabPress={setStatusFilter}
+                accentColor={accentColor}
+                cardBg={cardBg}
+                textSecondary={textSecondary}
+                borderColor={borderColor}
+            />
 
             {error ? (
                 <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
@@ -505,13 +507,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, gap: 4,
     },
     backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-    empFilterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 16, marginTop: 12 },
-    empFilterChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 9999, borderWidth: 1, maxWidth: 130 },
-    empFilterText: { fontSize: 12, fontWeight: '700' },
-    filterRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingHorizontal: 16, marginTop: 8, marginBottom: 8 },
-    filterBtn: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 9999, borderWidth: 1 },
-    filterText: { fontSize: 12, fontWeight: '700' },
     listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: 100, paddingTop: 6 },
+
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20, marginHorizontal: 16 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },

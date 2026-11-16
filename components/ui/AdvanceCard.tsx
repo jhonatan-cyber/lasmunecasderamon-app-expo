@@ -28,6 +28,9 @@ interface AdvanceCardProps {
     viewMode?: 'solicitudes' | 'anticipos';
     normalizeEstado?: (estado: Anticipo['estado'] | number | string) => string;
     onPress?: () => void;
+    title?: string;
+    statusLabel?: string;
+    footer?: React.ReactNode;
 }
 
 export function AdvanceCard({
@@ -38,6 +41,9 @@ export function AdvanceCard({
     viewMode = 'solicitudes',
     normalizeEstado,
     onPress,
+    title,
+    statusLabel,
+    footer,
 }: AdvanceCardProps) {
     useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -133,12 +139,12 @@ export function AdvanceCard({
                         <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
                     </View>
                 ) : (
-                    <Text style={[styles.cardTitle, { color: textPrimary }]}>Anticipo</Text>
+                    <Text style={[styles.cardTitle, { color: textPrimary }]}>{title || 'Anticipo'}</Text>
                 )}
 
                 <View style={[styles.statusBadge, { backgroundColor: statusColors.backgroundColor }]}>
                     <Text style={[styles.statusText, { color: statusColors.color }]}>
-                        {statusColors.label}
+                        {statusLabel || statusColors.label}
                     </Text>
                 </View>
             </View>
@@ -190,6 +196,8 @@ export function AdvanceCard({
                         </Text>
                     </View>
                 )}
+
+                {footer ? <View style={styles.footerSlot}>{footer}</View> : null}
             </View>
         </View>
     );
@@ -333,5 +341,8 @@ const styles = StyleSheet.create({
     rejectionText: {
         fontSize: 12,
         flex: 1,
+    },
+    footerSlot: {
+        marginTop: 12,
     },
 });

@@ -224,13 +224,26 @@ export default function GarzonEntradasScreen() {
     totalPuerta,
   ]);
 
+  const headerBack = (
+    <Pressable
+      onPress={() => router.back()}
+      accessibilityRole="button"
+      accessibilityLabel="Volver atrás"
+      hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      style={styles.backBtn}
+    >
+      <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+      <Text style={styles.backTextHeader}>Atrás</Text>
+    </Pressable>
+  );
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
         <PremiumHeader
           title="Entradas"
           subtitle="Cobro de acceso en la puerta"
-          onBack={() => router.back()}
+          rightComponent={headerBack}
         />
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={accentColor} />
@@ -247,7 +260,7 @@ export default function GarzonEntradasScreen() {
       <PremiumHeader
         title="Entradas"
         subtitle="Cobro de acceso en la puerta"
-        onBack={() => router.back()}
+        rightComponent={headerBack}
       />
 
       <ScrollView
@@ -459,7 +472,7 @@ export default function GarzonEntradasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backBtnRight: {
+  backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -467,6 +480,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
+    marginLeft: 12,
   },
   backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   cardToggle: {
@@ -548,8 +562,10 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: 22, fontWeight: '900' },
   submitBtn: {
     borderRadius: 16,
+    minHeight: 52,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   submitText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
   cajaBanner: {
