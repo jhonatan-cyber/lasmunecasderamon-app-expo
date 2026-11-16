@@ -1,5 +1,6 @@
 import React, { useEffect, type ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -115,23 +116,29 @@ export function AnimatedView({
   const heightVal = useSharedValue(
     typeof from.height === 'number' ? from.height : -1,
   );
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const delay = transition.delay ?? 0;
 
-    if (animate.opacity !== undefined)
-      animateSharedValue(opacity, animate.opacity, transition, delay);
-    if (animate.translateY !== undefined)
-      animateSharedValue(translateY, animate.translateY, transition, delay);
-    if (animate.translateX !== undefined)
-      animateSharedValue(translateX, animate.translateX, transition, delay);
-    if (animate.scale !== undefined)
-      animateSharedValue(scale, animate.scale, transition, delay);
+    // Con movimiento reducido se aplica el estado final sin transición.
+    const apply = (value: SharedValue<number>, target: number) => {
+      if (reducedMotion) {
+        value.value = target;
+      } else {
+        animateSharedValue(value, target, transition, delay);
+      }
+    };
+
+    if (animate.opacity !== undefined) apply(opacity, animate.opacity);
+    if (animate.translateY !== undefined) apply(translateY, animate.translateY);
+    if (animate.translateX !== undefined) apply(translateX, animate.translateX);
+    if (animate.scale !== undefined) apply(scale, animate.scale);
     if (animate.height !== undefined && typeof animate.height === 'number')
-      animateSharedValue(heightVal, animate.height, transition, delay);
+      apply(heightVal, animate.height);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const transforms: Record<string, number>[] = [];

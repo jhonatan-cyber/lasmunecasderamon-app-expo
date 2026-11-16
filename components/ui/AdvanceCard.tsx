@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { FontSize } from '@/constants/spacing';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
 import { parseDateSafe } from '../../utils/timeUtils';
 import { useRenderCount } from '../../hooks/useRenderCount';
@@ -26,6 +27,7 @@ interface AdvanceCardProps {
     compactDate?: boolean;
     viewMode?: 'solicitudes' | 'anticipos';
     normalizeEstado?: (estado: Anticipo['estado'] | number | string) => string;
+    onPress?: () => void;
 }
 
 export function AdvanceCard({
@@ -35,6 +37,7 @@ export function AdvanceCard({
     compactDate = false,
     viewMode = 'solicitudes',
     normalizeEstado,
+    onPress,
 }: AdvanceCardProps) {
     useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
@@ -122,83 +125,96 @@ export function AdvanceCard({
         } catch { return ''; }
     };
 
-    return (
-        <AnimatedView
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'spring', delay: index * 100 }}
-        >
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                {}
-                <View style={styles.cardHeader}>
-                    {showIndexBadge ? (
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                            <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+    const content = (
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+            <View style={styles.cardHeader}>
+                {showIndexBadge ? (
+                    <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                        <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
+                    </View>
+                ) : (
+                    <Text style={[styles.cardTitle, { color: textPrimary }]}>Anticipo</Text>
+                )}
+
+                <View style={[styles.statusBadge, { backgroundColor: statusColors.backgroundColor }]}>
+                    <Text style={[styles.statusText, { color: statusColors.color }]}>
+                        {statusColors.label}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={[styles.cardBody, compactDate && styles.cardBodyCompact]}>
+                {compactDate ? (
+                    <View style={styles.dateRowCompact}>
+                        <Ionicons name="calendar-outline" size={14} color={textSecondary} />
+                        <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
+                        {item.fecha_crea && (
+                            <Text style={[styles.timeTextCompact, { color: textSecondary }]}>  |  {formatTime(item.fecha_crea)}</Text>
+                        )}
+                    </View>
+                ) : (
+                    <View style={styles.dateRow}>
+                        <View style={styles.infoInline}>
+                            <Ionicons name="calendar-outline" size={15} color={textSecondary} />
+                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
                         </View>
-                    ) : (
-                        <Text style={[styles.cardTitle, { color: textPrimary }]}>Anticipo</Text>
-                    )}
-                    
-                    <View style={[styles.statusBadge, { backgroundColor: statusColors.backgroundColor }]}>
-                        <Text style={[styles.statusText, { color: statusColors.color }]}>
-                            {statusColors.label}
+                        {item.fecha_crea && (
+                            <View style={styles.infoInline}>
+                                <Ionicons name="time-outline" size={15} color={textSecondary} />
+                                <Text style={[styles.dateText, { color: textPrimary }]}>{formatTime(item.fecha_crea)}</Text>
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
+                    <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
+                        <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
+                        <Text style={[styles.amountValue, { color: isAprobada ? accentColor : isPendiente ? '#F59E0B' : isRechazada ? '#EF4444' : '#10B981' }]}>
+                            ${(item.monto || 0).toLocaleString()}
                         </Text>
                     </View>
                 </View>
 
-                {}
-                <View style={[styles.cardBody, compactDate && styles.cardBodyCompact]}>
-                    {compactDate ? (
-                        <View style={styles.dateRowCompact}>
-                            <Ionicons name="calendar-outline" size={14} color={textSecondary} />
-                            <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                            {item.fecha_crea && (
-                                <Text style={[styles.timeTextCompact, { color: textSecondary }]}>  |  {formatTime(item.fecha_crea)}</Text>
-                            )}
-                        </View>
-                    ) : (
-                        <View style={styles.dateRow}>
-                            <View style={styles.infoInline}>
-                                <Ionicons name="calendar-outline" size={15} color={textSecondary} />
-                                <Text style={[styles.dateText, { color: textPrimary }]}>{formatDate(item.fecha_crea)}</Text>
-                            </View>
-                            {item.fecha_crea && (
-                                <View style={styles.infoInline}>
-                                    <Ionicons name="time-outline" size={15} color={textSecondary} />
-                                    <Text style={[styles.dateText, { color: textPrimary }]}>{formatTime(item.fecha_crea)}</Text>
-                                </View>
-                            )}
-                        </View>
-                    )}
-
-                    {}
-                    <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
-                        <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
-                            <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                            <Text style={[styles.amountValue, { color: isAprobada ? accentColor : isPendiente ? '#F59E0B' : isRechazada ? '#EF4444' : '#10B981' }]}>
-                                ${(item.monto || 0).toLocaleString()}
-                            </Text>
-                        </View>
+                {item.motivo ? (
+                    <View style={styles.motivoRow}>
+                        <Text style={[styles.motivoText, { color: textSecondary }]}>📝 {item.motivo}</Text>
                     </View>
+                ) : null}
 
-                    {}
-                    {item.motivo ? (
-                        <View style={styles.motivoRow}>
-                            <Text style={[styles.motivoText, { color: textSecondary }]}>📝 {item.motivo}</Text>
-                        </View>
-                    ) : null}
-
-                    {}
-                    {item.motivo_rechazo && isRechazada && (
-                        <View style={[styles.rejectionBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
-                            <Ionicons name="close-circle" size={14} color={isDark ? '#F87171' : '#B91C1C'} />
-                            <Text style={[styles.rejectionText, { color: isDark ? '#F87171' : '#991B1B' }]}>
-                                Motivo rechazo: {item.motivo_rechazo}
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                {item.motivo_rechazo && isRechazada && (
+                    <View style={[styles.rejectionBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
+                        <Ionicons name="close-circle" size={14} color={isDark ? '#F87171' : '#B91C1C'} />
+                        <Text style={[styles.rejectionText, { color: isDark ? '#F87171' : '#991B1B' }]}>
+                            Motivo rechazo: {item.motivo_rechazo}
+                        </Text>
+                    </View>
+                )}
             </View>
+        </View>
+    );
+
+    if (onPress) {
+        return (
+            <AnimatedView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
+            >
+                <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Ver detalle de anticipo ${item.monto}`}>
+                    {content}
+                </Pressable>
+            </AnimatedView>
+        );
+    }
+
+    return (
+        <AnimatedView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
+        >
+            {content}
         </AnimatedView>
     );
 }
@@ -231,7 +247,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     indexText: {
-        fontSize: 10,
+        fontSize: FontSize.xxs,
         fontWeight: '800',
     },
     statusBadge: {

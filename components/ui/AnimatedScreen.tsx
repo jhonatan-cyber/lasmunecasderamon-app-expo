@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -22,8 +23,14 @@ export function AnimatedScreen({
 }: AnimatedScreenProps) {
     const opacity = useSharedValue(0);
     const translateY = useSharedValue(initialOffset);
+    const reducedMotion = useReducedMotion();
 
     useEffect(() => {
+        if (reducedMotion) {
+            opacity.value = 1;
+            translateY.value = 0;
+            return;
+        }
         opacity.value = withDelay(
             delay,
             withTiming(1, { duration, easing: Easing.out(Easing.quad) })
@@ -32,7 +39,7 @@ export function AnimatedScreen({
             delay,
             withTiming(0, { duration, easing: Easing.out(Easing.quad) })
         );
-    }, [delay, duration, opacity, translateY]);
+    }, [delay, duration, initialOffset, opacity, reducedMotion, translateY]);
 
     const animatedStyle = useAnimatedStyle(() => {
         return {

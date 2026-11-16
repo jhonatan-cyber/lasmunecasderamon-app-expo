@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { FontSize } from '@/constants/spacing';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
@@ -54,7 +55,7 @@ export function OvertimeCard({
         <AnimatedView
             from={{ opacity: 0, translateY: 30 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'spring', delay: index * 100 }}
+            transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         >
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                 {}
@@ -71,15 +72,15 @@ export function OvertimeCard({
                         styles.statusBadge,
                         {
                             backgroundColor: isPendiente
-                                ? (isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2')
-                                : (isDark ? 'rgba(255,255,255,0.10)' : '#E5E7EB')
+                                ? (isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7')
+                                : (isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5')
                         }
                     ]}>
                         <Text style={[
                             styles.statusText,
-                            { color: isPendiente ? '#EF4444' : textPrimary }
+                            { color: isPendiente ? '#F59E0B' : '#10B981' }
                         ]}>
-                            {isPendiente ? 'Por cobrar' : (usePagadoLabel ? 'Pagado' : 'Cobrado')}
+                            {isPendiente ? 'Por cobrar' : (usePagadoLabel ? 'Cobrado' : 'Cobrado')}
                         </Text>
                     </View>
                 </View>
@@ -126,7 +127,7 @@ export function OvertimeCard({
                         <View style={styles.paymentRow}>
                             <Ionicons name="checkmark-circle" size={14} color={accentColor} />
                             <Text style={[styles.paymentText, { color: textSecondary }]}>
-                                {usePagadoLabel ? 'Pagado' : 'Cobrado'}: {formatDate(item.fecha_mod)}
+                                {usePagadoLabel ? 'Cobrado' : 'Cobrado'}: {formatDate(item.fecha_mod)}
                             </Text>
                         </View>
                     )}
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     indexText: {
-        fontSize: 10,
+        fontSize: FontSize.xxs,
         fontWeight: '800',
     },
     statusBadge: {

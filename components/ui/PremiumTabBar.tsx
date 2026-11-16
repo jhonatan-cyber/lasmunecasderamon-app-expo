@@ -1,12 +1,10 @@
-import React, { useEffect } from 'react';
-import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import React from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { useRouter, useSegments } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccentColor } from '@/hooks/useAccentColor';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 
 type PremiumTabBarProps = {
     state: {
@@ -25,63 +23,42 @@ type PremiumTabBarProps = {
             };
         }
     >;
-    navigation: {
-        emit: (event: {
-            type: 'tabPress';
-            target: string;
-            canPreventDefault: true;
-        }) => { defaultPrevented: boolean };
-        navigate: (name: string, params?: any) => void;
-    };
 };
 
-export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarProps) => {
+export const PremiumTabBar = ({ state, descriptors }: PremiumTabBarProps) => {
     const { gradientColors } = useAccentColor();
+    const { isTablet, isLandscape } = useResponsiveMetrics();
+    const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
-    const indicatorPosition = useSharedValue(0);
-    
-    
+    const router = useRouter();
+    const segments = useSegments();
+
+    // Detect the current role from segments: ['(app)', 'cajero', '(tabs)', 'index']
+    const role = segments?.[1] || segments?.[0];
+
+    // El blanco puro sobre el degradado no llega a 4.5:1 en varios acentos
+    // (ámbar 3.2:1, esmeralda 3.8:1). El velo oscuro sube el contraste de toda
+    // la barra por encima de AA sin perder el color de marca.
     const activeTintColor = '#FFFFFF';
-    const inactiveTintColor = 'rgba(255, 255, 255, 0.6)';
+    const inactiveTintColor = '#FFFFFF';
     const borderColor = 'rgba(255, 255, 255, 0.1)';
+
     const estaOculta = (options: any) =>
         options.href === null || options.tabBarItemStyle?.display === 'none';
-
-    const visibleRoutes = state.routes.filter((r: any) => {
-        const options = descriptors[r.key].options as any;
-        return !estaOculta(options);
-    });
-
-    const numTabs = visibleRoutes.length || 1;
-    const tabWidth = SCREEN_WIDTH / numTabs;
-
-    const activeRouteKey = state.routes[state.index].key;
-    const visualIndex = visibleRoutes.findIndex((r: any) => r.key === activeRouteKey);
-
-    useEffect(() => {
-        const targetPos = visualIndex >= 0 ? visualIndex * tabWidth : 0;
-        indicatorPosition.value = withSpring(targetPos, {
-            damping: 18,
-            stiffness: 150,
-        });
-    }, [visualIndex, tabWidth, indicatorPosition]);
-
-    const indicatorStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: indicatorPosition.value }],
-    }));
 
     return (
         <LinearGradient
             colors={gradientColors as unknown as readonly [string, string, ...string[]]}
-            style={[styles.tabBarContainer, { paddingBottom: insets.bottom, borderTopColor: borderColor }]}
+            style={[
+                styles.tabBarContainer,
+                {
+                    paddingBottom: insets.bottom,
+                    borderTopColor: borderColor,
+                    minHeight: compact ? 52 : Platform.OS === 'ios' ? 88 : 68,
+                },
+            ]}
         >
-            {}
-            <Animated.View style={[
-                styles.indicator,
-                { width: tabWidth },
-                indicatorStyle
-            ]}>
-            </Animated.View>
+            <View pointerEvents="none" style={styles.scrim} />
 
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -98,30 +75,30 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
                 const isFocused = state.index === index;
 
                 const onPress = () => {
-                    const event = navigation.emit({
-                        type: 'tabPress',
-                        target: route.key,
-                        canPreventDefault: true,
-                    });
-
-                    if (!isFocused && !event.defaultPrevented) {
-                        navigation.navigate(route.name, route.params);
+                    if (isFocused) {
+                        // Tab already focused: no navigation needed, just return
+                        return;
                     }
+                    // Navigate using expo-router with detected role
+                    router.navigate(`/(app)/${role}/(tabs)/${route.name}` as any);
                 };
 
                 const isCenter = route.name === 'index';
+                const labelText = typeof label === 'string' ? label : route.name;
 
                 return (
                     <Pressable
                         key={route.key}
-                        accessibilityRole="button"
+                        accessibilityRole="tab"
+                        accessibilityLabel={labelText}
                         accessibilityState={isFocused ? { selected: true } : {}}
+                        hitSlop={{ top: 6, bottom: 6 }}
                         onPress={onPress}
-                        style={styles.tabItem}
+                        style={[styles.tabItem, compact && styles.tabItemCompact]}
                     >
                         <View style={[
-                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: 'rgba(255,255,255,0.15)' }] : null,
-                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: 'rgba(255,255,255,0.15)' }] : null,
+                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: 'rgba(0,0,0,0.22)' }] : null,
+                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: 'rgba(0,0,0,0.22)' }] : null,
                             isCenter ? styles.centerTab : null
                         ]}>
                             {options.tabBarIcon && options.tabBarIcon({
@@ -131,10 +108,16 @@ export const PremiumTabBar = ({ state, descriptors, navigation }: PremiumTabBarP
                             })}
                         </View>
 
-                        {}
-                        {!isCenter && label !== 'Inicio' && (
-                            <Text style={[styles.tabLabel, { color: isFocused ? activeTintColor : inactiveTintColor }]}>
-                                {label as string}
+                        {!isCenter && !compact && labelText !== 'Inicio' && (
+                            <Text
+                                maxFontSizeMultiplier={1.3}
+                                style={[
+                                    styles.tabLabel,
+                                    { color: isFocused ? activeTintColor : inactiveTintColor },
+                                    isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+                                ]}
+                            >
+                                {labelText}
                             </Text>
                         )}
                     </Pressable>
@@ -158,44 +141,46 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 1000,
     },
-    indicator: {
+    scrim: {
         position: 'absolute',
         top: 0,
+        right: 0,
         bottom: 0,
         left: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    indicatorInner: {
-        width: '70%',
-        height: 44,
-        borderRadius: 22,
+        backgroundColor: 'rgba(0, 0, 0, 0.20)',
     },
     tabItem: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingVertical: 8,
+        minHeight: 48,
+    },
+    tabItemCompact: {
+        paddingVertical: 4,
+        minHeight: 40,
     },
     tabLabel: {
-        fontSize: 10,
-        fontWeight: '700',
+        fontSize: 12,
         marginTop: 4,
     },
+    tabLabelActive: {
+        fontWeight: '800',
+    },
+    tabLabelInactive: {
+        fontWeight: '600',
+    },
     activeIconBg: {
-        backgroundColor: 'rgba(139, 92, 246, 0.12)',
         padding: 8,
         paddingHorizontal: 12,
         borderRadius: 20,
         marginBottom: -4,
     },
     activeCenterIconBg: {
-        backgroundColor: 'rgba(139, 92, 246, 0.12)',
         padding: 10,
         borderRadius: 24,
     },
     centerTab: {
         transform: [{ scale: 1.1 }],
-    }
+    },
 });
-

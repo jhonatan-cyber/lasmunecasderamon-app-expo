@@ -5,11 +5,11 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    useWindowDimensions,
     View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 
 export interface PremiumHeaderTab {
     id: string;
@@ -30,6 +30,11 @@ export interface PremiumHeaderProps {
         isConnected: boolean;
         label?: string;
     };
+    breadcrumbs?: { label: string; onPress?: () => void }[];
+    progressSteps?: {
+        currentStep: number;
+        totalSteps: number;
+    };
 }
 
 export function PremiumHeader({
@@ -43,11 +48,14 @@ export function PremiumHeader({
     onTabChange,
     rightComponent,
     connectionStatus,
+    breadcrumbs,
+    progressSteps,
 }: PremiumHeaderProps) {
-    const { accentColor, gradientColors } = useAccentColor();
+    const { gradientColors } = useAccentColor();
     const insets = useSafeAreaInsets();
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768;
+    const { isTablet, isLandscape } = useResponsiveMetrics();
+    // En un móvil horizontal la altura es escasa: el header se compacta.
+    const compact = isLandscape && !isTablet;
 
     return (
         <LinearGradient
@@ -55,23 +63,41 @@ export function PremiumHeader({
             style={[
                 styles.header,
                 {
-                    paddingTop: insets.top + (isTablet ? 20 : 10),
-                    borderBottomLeftRadius: 32,
-                    borderBottomRightRadius: 32,
+                    paddingTop: insets.top + (compact ? 4 : isTablet ? 20 : 10),
+                    paddingBottom: compact ? 16 : 25,
+                    borderBottomLeftRadius: compact ? 24 : 32,
+                    borderBottomRightRadius: compact ? 24 : 32,
                 }
             ]}
         >
+            <View
+                pointerEvents="none"
+                style={[
+                    styles.scrim,
+                    {
+                        borderBottomLeftRadius: compact ? 24 : 32,
+                        borderBottomRightRadius: compact ? 24 : 32,
+                    },
+                ]}
+            />
             <View style={styles.headerTop}>
                 {onBack && (
-                    <Pressable onPress={onBack} style={styles.backBtn}>
+                    <Pressable
+                        onPress={onBack}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        style={styles.backBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volver atrás"
+                    >
                         <Ionicons name="arrow-back" size={isTablet ? 26 : 22} color="#FFFFFF" />
-                        <Text style={[styles.backText, isTablet && { fontSize: 18 }]}>Atrás</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.backText, isTablet && { fontSize: 18 }]}>Atrás</Text>
                     </Pressable>
                 )}
                 <View style={{ flex: 1, marginLeft: onBack ? 12 : 0 }}>
                     <Text
                         numberOfLines={1}
                         ellipsizeMode="tail"
+                        maxFontSizeMultiplier={1.4}
                         style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}
                     >
                         {title}
@@ -79,10 +105,10 @@ export function PremiumHeader({
                     {subtitle && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             {connectionStatus && (
-                                <View style={{ 
-                                    width: 8, 
-                                    height: 8, 
-                                    borderRadius: 4, 
+                                <View style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: 4,
                                     backgroundColor: connectionStatus.isConnected ? '#10B981' : '#EF4444',
                                     shadowColor: connectionStatus.isConnected ? '#10B981' : '#EF4444',
                                     shadowOffset: { width: 0, height: 0 },
@@ -94,9 +120,52 @@ export function PremiumHeader({
                             <Text
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
-                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.8)' }, isTablet && { fontSize: 17 }]}
+                                maxFontSizeMultiplier={1.4}
+                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.92)' }, isTablet && { fontSize: 17 }]}
                             >
                                 {connectionStatus ? (connectionStatus.label || (connectionStatus.isConnected ? 'Conectado' : 'Desconectado')) : subtitle}
+                            </Text>
+                        </View>
+                    )}
+                    {breadcrumbs && breadcrumbs.length > 0 && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
+                            {breadcrumbs.map((crumb, i) => (
+                                <React.Fragment key={i}>
+                                    {i > 0 && <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}> / </Text>}
+                                    <Pressable
+                                        onPress={crumb.onPress}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Navegar a ${crumb.label}`}
+                                    >
+                                        <Text style={{
+                                            color: i === breadcrumbs.length - 1 ? '#FFFFFF' : 'rgba(255,255,255,0.85)',
+                                            fontSize: 12,
+                                            fontWeight: i === breadcrumbs.length - 1 ? '600' : '400',
+                                        }}>
+                                            {crumb.label}
+                                        </Text>
+                                    </Pressable>
+                                </React.Fragment>
+                            ))}
+                        </View>
+                    )}
+                    {progressSteps && progressSteps.totalSteps > 1 && (
+                        <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            {Array.from({ length: progressSteps.totalSteps }).map((_, i) => (
+                                <View
+                                    key={i}
+                                    style={{
+                                        flex: 1,
+                                        height: 3,
+                                        borderRadius: 2,
+                                        backgroundColor: i < progressSteps.currentStep
+                                            ? '#FFFFFF'
+                                            : 'rgba(255,255,255,0.25)',
+                                    }}
+                                />
+                            ))}
+                            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '600' }}>
+                                {progressSteps.currentStep}/{progressSteps.totalSteps}
                             </Text>
                         </View>
                     )}
@@ -105,6 +174,9 @@ export function PremiumHeader({
                 {showAddButton && (
                     <Pressable
                         onPress={onAdd}
+                        accessibilityRole="button"
+                        accessibilityLabel="Agregar nuevo"
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                         style={[styles.plusBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                     >
                         <Ionicons name="add" size={isTablet ? 24 : 20} color="#FFFFFF" />
@@ -117,23 +189,34 @@ export function PremiumHeader({
                 <View style={[styles.tabContainer, {
                     borderColor: 'rgba(255,255,255,0.1)',
                     backgroundColor: 'rgba(255,255,255,0.1)',
-                    height: isTablet ? 56 : 48
+                    height: compact ? 42 : isTablet ? 56 : 48,
+                    marginTop: compact ? 10 : 20,
                 }]}>
-                    {tabs.map((tab) => (
-                        <Pressable
-                            key={tab.id}
-                            style={[styles.tab, activeTab === tab.id && { backgroundColor: accentColor }]}
-                            onPress={() => onTabChange && onTabChange(tab.id)}
-                        >
-                            <Text style={[
-                                styles.tabText,
-                                isTablet && { fontSize: 16 },
-                                activeTab === tab.id ? { color: "#FFF" } : { color: "rgba(255,255,255,0.7)" }
-                            ]}>
-                                {tab.label}
-                            </Text>
-                        </Pressable>
-                    ))}
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <Pressable
+                                key={tab.id}
+                                accessibilityRole="tab"
+                                accessibilityLabel={tab.label}
+                                accessibilityState={{ selected: isActive }}
+                                style={[styles.tab, isActive && { backgroundColor: 'rgba(0,0,0,0.38)' }]}
+                                onPress={() => onTabChange && onTabChange(tab.id)}
+                            >
+                                <Text
+                                    maxFontSizeMultiplier={1.3}
+                                    numberOfLines={1}
+                                    style={[
+                                        styles.tabText,
+                                        isTablet && { fontSize: 16 },
+                                        isActive ? { color: "#FFFFFF" } : { color: "rgba(255,255,255,0.92)" }
+                                    ]}
+                                >
+                                    {tab.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
                 </View>
             )}
         </LinearGradient>
@@ -142,6 +225,14 @@ export function PremiumHeader({
 
 const styles = StyleSheet.create({
     header: { paddingHorizontal: 16, paddingBottom: 25 },
+    scrim: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.20)',
+    },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     backBtn: { 
         flexDirection: 'row', 

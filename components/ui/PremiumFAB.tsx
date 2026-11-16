@@ -30,20 +30,20 @@ export const PremiumFAB = ({ label, icon, onPress, visible = true }: PremiumFABP
 };
 
 const styles = StyleSheet.create({
-    fab: { 
-        position: 'absolute', 
-        right: 20, 
-        bottom: 20, 
-        height: 56, 
+    fab: {
+        position: 'absolute',
+        right: 20,
+        bottom: 20,
+        height: 56,
         paddingHorizontal: 24,
         borderRadius: 9999,
         flexDirection: 'row',
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        elevation: 10, 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 4 }, 
-        shadowOpacity: 0.35, 
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
         shadowRadius: 10,
         gap: 8,
         zIndex: 100,

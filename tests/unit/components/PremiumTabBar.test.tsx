@@ -6,6 +6,7 @@ import { PremiumTabBar } from '@/components/ui/PremiumTabBar';
 
 vi.mock('react-native', () => ({
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   Pressable: ({ children, onPress }: any) => (
     <button onClick={onPress}>{children}</button>
@@ -30,10 +31,10 @@ vi.mock('@/hooks/useAccentColor', () => ({
   useAccentColor: () => ({ gradientColors: ['#000000', '#111111'] }),
 }));
 
-const navigation = {
-  emit: vi.fn(() => ({ defaultPrevented: false })),
-  navigate: vi.fn(),
-};
+vi.mock('expo-router', () => ({
+  useRouter: () => ({ navigate: vi.fn() }),
+  useSegments: () => ['(app)', 'cajero', '(tabs)', 'index'],
+}));
 
 const renderTabBar = (
   descriptors: Record<string, { options: Record<string, unknown> }>,
@@ -48,7 +49,6 @@ const renderTabBar = (
         ],
       }}
       descriptors={descriptors}
-      navigation={navigation}
     />,
   );
 

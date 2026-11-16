@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Appearance, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { isAdminRole, isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 import { BiometricEnrollmentModal } from '@/components/shared/BiometricEnrollmentModal';
 
@@ -18,6 +19,8 @@ interface PremiumHeaderActionsProps {
     onQRScannerPress?: () => void;
 }
 
+const HIT_SLOP = { top: 8, right: 8, bottom: 8, left: 8 };
+
 export const PremiumHeaderActions = ({
     hasNewAlert,
     notificationCount = 0,
@@ -29,6 +32,8 @@ export const PremiumHeaderActions = ({
     onQRScannerPress,
 }: PremiumHeaderActionsProps) => {
     const { isDark } = useAccentColor();
+    const { isTablet, isLandscape } = useResponsiveMetrics();
+    const compact = isLandscape && !isTablet;
     const logout = useAuthStore(state => state.logout);
     const user = useAuthStore(state => state.user);
     const isBiometricEnrolled = useAuthStore((state) => state.biometricoFacialEnrolled);
@@ -39,12 +44,8 @@ export const PremiumHeaderActions = ({
     const canUseCajeroActions = isCajeroRole(user);
     const isAdmin = isAdminRole(user);
     const iconColor = '#FFFFFF';
-    const btnBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.2)';
+    const btnBg = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.2)';
     const btnBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
-
-    const toggleTheme = () => {
-        Appearance.setColorScheme(isDark ? 'light' : 'dark');
-    };
 
     const handleLogout = () => {
         showAlert(
@@ -60,13 +61,17 @@ export const PremiumHeaderActions = ({
     };
 
     const showDot = hasNewAlert || notificationCount > 0;
+    const iconButtonStyle = [styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }];
 
     return (
-        <View style={styles.headerTop}>
+        <View style={[styles.headerTop, compact && { marginBottom: 10 }]}>
             {onQRScannerPress && !canUseCajeroActions && !isAdmin && (
                 <Pressable
                     onPress={onQRScannerPress}
-                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel="Registrar asistencia con código QR"
+                    style={iconButtonStyle}
                 >
                     <Ionicons name="qr-code" size={20} color={iconColor} />
                 </Pressable>
@@ -81,11 +86,18 @@ export const PremiumHeaderActions = ({
                         if (setHasNewAlert) setHasNewAlert(false);
                         showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
                     }}
-                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                        notificationCount > 0
+                            ? `Notificaciones, ${notificationCount} sin leer`
+                            : 'Notificaciones'
+                    }
+                    style={iconButtonStyle}
                 >
                     <Ionicons name="notifications-outline" size={20} color={iconColor} />
                     {showDot && (
-                        <View style={[styles.notificationBadge, { borderColor: isDark ? '#1E1B4B' : '#FFF' }]}>
+                        <View style={styles.notificationBadge}>
                             {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
                         </View>
                     )}
@@ -94,26 +106,29 @@ export const PremiumHeaderActions = ({
             {!isBiometricEnrolled && !isAdmin && (
                 <Pressable
                     onPress={() => setShowEnrollment(true)}
-                    style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel="Activar acceso biométrico"
+                    style={iconButtonStyle}
                 >
                     <Ionicons name="finger-print" size={20} color={iconColor} />
                 </Pressable>
             )}
             <Pressable
                 onPress={() => router.push(profilePath as Href)}
-                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Mi perfil y ajustes"
+                style={iconButtonStyle}
             >
                 <Ionicons name="settings-outline" size={20} color={iconColor} />
             </Pressable>
             <Pressable
-                onPress={toggleTheme}
-                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
-            >
-                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={iconColor} />
-            </Pressable>
-            <Pressable
                 onPress={handleLogout}
-                style={[styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }]}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar sesión"
+                style={iconButtonStyle}
             >
                 <Ionicons name="log-out-outline" size={20} color={iconColor} />
             </Pressable>
@@ -149,11 +164,11 @@ const styles = StyleSheet.create({
         height: 18,
         paddingHorizontal: 4,
         borderRadius: 9,
-        backgroundColor: '#EF4444',
+        backgroundColor: '#B91C1C',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#000',
+        borderColor: 'rgba(255,255,255,0.9)',
     },
     notificationText: {
         color: '#FFFFFF',

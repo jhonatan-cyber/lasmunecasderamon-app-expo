@@ -1,7 +1,12 @@
+import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MODAL_MAX_WIDTH } from '@/constants/layout';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
+import { readableTextColor } from '@/utils/color';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -26,9 +31,8 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     confirmText = 'Aceptar',
     cancelText = 'Cancelar'
 }) => {
-    const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
-    const { width } = Dimensions.get('window');
-    const isTablet = width >= 768;
+    const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { isTablet } = useResponsiveMetrics();
 
     const getIcon = () => {
         switch (type) {
@@ -39,12 +43,14 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
         }
     };
 
+    // Tonos oscurecidos: el blanco sobre los colores originales no llegaba a
+    // AA (success 2.5:1, warning 2.2:1, danger 3.8:1).
     const getColor = () => {
         switch (type) {
-            case 'danger': return '#EF4444';
-            case 'success': return '#10B981';
-            case 'warning': return '#F59E0B';
-            default: return '#E11D48';
+            case 'danger': return '#B91C1C';
+            case 'success': return '#047857';
+            case 'warning': return '#B45309';
+            default: return accentColor;
         }
     };
 
@@ -59,14 +65,18 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             animationType="fade"
             onRequestClose={onCancel ?? onConfirm}
         >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}>
+            <View style={styles.modalOverlay} accessibilityLabel="Alerta" accessibilityRole="alert" accessibilityLiveRegion="assertive">
+                <View
+                    style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}
+                    accessibilityViewIsModal
+                >
 
                     {}
                     <Pressable
                         onPress={onCancel ?? onConfirm}
+                        hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
                         style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}
-                        accessibilityLabel="Cerrar"
+                        accessibilityLabel="Cerrar alerta"
                         accessibilityRole="button"
                     >
                         <Ionicons name="close" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
@@ -76,20 +86,22 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                         <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
                     </View>
 
-                    <Text style={[styles.alertTitle, { color: textPrimary, fontSize: isTablet ? 24 : 20 }]}>{title}</Text>
-                    <Text style={[styles.alertMessage, { color: textSecondary, fontSize: isTablet ? 17 : 15 }]}>{message}</Text>
+                    <Text maxFontSizeMultiplier={1.4} style={[styles.alertTitle, { color: textPrimary, fontSize: isTablet ? 24 : 20 }]}>{title}</Text>
+                    <Text maxFontSizeMultiplier={1.4} style={[styles.alertMessage, { color: textSecondary, fontSize: isTablet ? 17 : 15 }]}>{message}</Text>
 
                     <View style={styles.alertActions}>
                         {showCancel && (
                             <Pressable
                                 onPress={onCancel}
                                 style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1, height: isTablet ? 60 : 54 }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={cancelText}
                             >
-                                <Text style={[styles.alertBtnText, { color: textPrimary, fontSize: isTablet ? 16 : 14 }]}>{cancelText}</Text>
+                                <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: textPrimary, fontSize: isTablet ? 16 : 14 }]}>{cancelText}</Text>
                             </Pressable>
                         )}
                         <Pressable
-                            onPress={onConfirm}
+                            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onConfirm?.(); }}
                             style={[
                                 styles.alertBtn,
                                 {
@@ -99,8 +111,10 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                     height: isTablet ? 60 : 54
                                 }
                             ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={confirmText}
                         >
-                            <Text style={[styles.alertBtnText, { color: '#FFF', fontSize: isTablet ? 16 : 14 }]}>{confirmText}</Text>
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: readableTextColor(getColor()), fontSize: isTablet ? 16 : 14 }]}>{confirmText}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -119,6 +133,7 @@ const styles = StyleSheet.create({
     },
     alertCard: {
         width: '90%',
+        maxWidth: MODAL_MAX_WIDTH,
         borderRadius: 32,
         padding: 24,
         alignItems: 'center',
