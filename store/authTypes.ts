@@ -18,6 +18,7 @@ export interface User {
     biometrico_codigo?: string | null;
     biometrico_huella?: number;
     biometrico_facial?: number;
+    hasCompletedOnboarding?: boolean;
 }
 
 export interface LoginPayload {

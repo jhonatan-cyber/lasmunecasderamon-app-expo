@@ -1,4 +1,5 @@
 import { DynamicSystemBars } from "@/components/ui/DynamicSystemBars";
+import { AppErrorBoundary } from "@/components/ui/AppErrorBoundary";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SalesProvider } from "@/context/SalesContext";
 import { TimerProvider } from "@/context/TimerContext";
@@ -8,13 +9,14 @@ import { initOutbox } from "@/services/outbox";
 import { useAuthStore } from "@/store/authStore";
 import { useModoPantallaStore } from "@/store/modoPantallaStore";
 import { initSentry } from "@/utils/sentry";
+import logger from "@/utils/logger";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, LogBox, Platform, View } from "react-native";
+import { ActivityIndicator, LogBox, Platform, useColorScheme, View } from "react-native";
 import { prepareMirrorStorage } from "@/services/mirror/driver";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
@@ -31,7 +33,7 @@ LogBox.ignoreLogs([
 
 setTimeout(() => {
   void initSentry({ tracesSampleRate: 0 }).catch(() => {
-    console.info('No se pudo inicializar el reporte de errores.');
+    logger.debug('No se pudo inicializar el reporte de errores.');
   });
 }, 0);
 
@@ -44,11 +46,13 @@ const queryClient = new QueryClient({
   },
 });
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => {
+  logger.debug('SplashScreen.preventAutoHideAsync falló.');
+});
 
 // Chequea OTA al arrancar: si hay update disponible lo descarga y recarga.
-// Solo corre en builds nativos (no en dev client ni web).
-if (!__DEV__ && Platform.OS !== "web") {
+// Solo corre en builds nativos (no en dev client).
+if (!__DEV__) {
   Updates.checkForUpdateAsync()
     .then(({ isAvailable }) => {
       if (!isAvailable) return;
@@ -62,10 +66,12 @@ if (!__DEV__ && Platform.OS !== "web") {
 
 export default function RootLayout() {
   const [storageReady, setStorageReady] = useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   useEffect(() => {
     let active = true;
     void prepareMirrorStorage().catch(() => {
-      console.info('El almacenamiento offline no está disponible en este dispositivo.');
+      logger.debug('El almacenamiento offline no está disponible en este dispositivo.');
     }).finally(() => {
       if (!active) return;
       initMirror();
@@ -88,7 +94,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (isLoading || !storageReady) return;
-    SplashScreen.hideAsync().catch(() => {});
+    SplashScreen.hideAsync().catch(() => {
+      logger.debug('SplashScreen.hideAsync falló.');
+    });
 
     const startServices = () => {
       void connectivity.start();
@@ -109,7 +117,9 @@ export default function RootLayout() {
         if (data?.facturacion?.impuesto_iva) {
           setIvaRate(Number(data.facturacion.impuesto_iva) / 100);
         }
-      }).catch(() => {});
+      }).catch(() => {
+        logger.debug('No se pudieron cargar las configuraciones del servidor.');
+      });
     };
 
     if (typeof requestIdleCallback === "function") {
@@ -127,10 +137,10 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#fff",
+          backgroundColor: isDark ? "#000000" : "#FFFFFF",
         }}
       >
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#111827"} />
       </View>
     );
   }
@@ -142,7 +152,9 @@ export default function RootLayout() {
           <SalesProvider>
             <TimerProvider>
               <DynamicSystemBars />
-              <Slot />
+              <AppErrorBoundary>
+                <Slot />
+              </AppErrorBoundary>
             </TimerProvider>
           </SalesProvider>
         </NotificationProvider>

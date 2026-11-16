@@ -1,18 +1,22 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, Stack, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
 import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
+import { readableTextColor } from '@/utils/color';
 import {
     RUTA_PANTALLA_ASISTENCIA,
     esRutaPantallaAsistencia,
@@ -29,31 +33,44 @@ export default function AppLayout() {
     const segmentos = useSegments();
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
+    const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const accentText = readableTextColor(accentColor);
+
     const isStaffMember = user?.role &&
         (user.role.toLowerCase().includes('garzon') ||
             user.role.toLowerCase().includes('anfitriona') ||
             user.role.toLowerCase().includes('barman'));
 
+    // El registro de asistencia solo aparece sobre el inicio del rol, no encima
+    // de una pantalla operativa abierta por deep link.
+    const rutas = segmentos as string[];
+    const enInicio = rutas.includes('(tabs)') && rutas[rutas.length - 1] === 'index';
 
     useEffect(() => {
-        if (user && isStaffMember) {
-            const checkAndShowModal = async () => {
-                try {
-                    const modalShownKey = 'asistenciaModalShown';
-                    const lastShown = await AsyncStorage.getItem(modalShownKey);
-                    const today = new Date().toDateString();
+        // El tour de bienvenida tiene prioridad: no apilamos dos modales al entrar.
+        if (!user || !isStaffMember || !enInicio || !user.hasCompletedOnboarding) return;
+        let active = true;
 
-                    if (lastShown !== today) {
-                        setShowAsistenciaModal(true);
-                        await AsyncStorage.setItem(modalShownKey, today);
-                    }
-                } catch {
+        const checkAndShowModal = async () => {
+            try {
+                const modalShownKey = 'asistenciaModalShown';
+                const lastShown = await AsyncStorage.getItem(modalShownKey);
+                const today = new Date().toDateString();
+
+                if (lastShown !== today && active) {
                     setShowAsistenciaModal(true);
+                    await AsyncStorage.setItem(modalShownKey, today);
                 }
-            };
-            checkAndShowModal();
-        }
-    }, [user, isStaffMember]);
+            } catch {
+                if (active) setShowAsistenciaModal(true);
+            }
+        };
+        void checkAndShowModal();
+
+        return () => {
+            active = false;
+        };
+    }, [user, isStaffMember, enInicio]);
 
     const handleAsistenciaRegistered = () => {
         setShowAsistenciaModal(false);
@@ -81,43 +98,76 @@ export default function AppLayout() {
 
     return (
         <>
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                    animation: 'slide_from_right',
-                    orientation: 'portrait',
-                }}
-            />
+            {/* En horizontal, el notch ocupa los laterales: contenemos el área
+                segura para que ninguna pantalla quede debajo. */}
+            <SafeAreaView
+                edges={['left', 'right']}
+                style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}
+            >
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                        // La app sigue la orientación del dispositivo (vertical u horizontal).
+                        orientation: 'default',
+                    }}
+                />
+            </SafeAreaView>
             {!enModoPantalla && <StaffCallOverlay />}
 
-            { }
             <Modal
                 visible={sessionExpired}
                 transparent
                 animationType="fade"
                 statusBarTranslucent
+                onRequestClose={handleContinueWithoutLogout}
             >
                 <View style={styles.overlay}>
-                    <View style={styles.dialog}>
+                    <View
+                        style={[
+                            styles.dialog,
+                            {
+                                backgroundColor: cardBg,
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            },
+                        ]}
+                        accessibilityViewIsModal
+                        accessibilityRole="alert"
+                    >
                         <View style={styles.iconContainer}>
-                            <Text style={styles.icon}>🔒</Text>
+                            <Ionicons name="lock-closed" size={30} color="#EF4444" />
                         </View>
-                        <Text style={styles.title}>Sesión expirada</Text>
-                        <Text style={styles.message}>
+                        <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary }]}>
+                            Sesión expirada
+                        </Text>
+                        <Text maxFontSizeMultiplier={1.4} style={[styles.message, { color: textSecondary }]}>
                             Tu sesión ha expirado o el acceso fue revocado.{'\n'}
                             Por favor, iniciá sesión nuevamente para continuar.
                         </Text>
-                        <TouchableOpacity style={styles.btn} onPress={handleLogout}>
-                            <Text style={styles.btnText}>Iniciar sesión</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.btnSecondary} onPress={handleContinueWithoutLogout}>
-                            <Text style={styles.btnSecondaryText}>Reintentar sesión</Text>
-                        </TouchableOpacity>
+                        <Pressable
+                            style={[styles.btn, { backgroundColor: accentColor }]}
+                            onPress={handleLogout}
+                            accessibilityRole="button"
+                            accessibilityLabel="Iniciar sesión de nuevo"
+                        >
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.btnText, { color: accentText }]}>
+                                Iniciar sesión
+                            </Text>
+                        </Pressable>
+                        <Pressable
+                            style={styles.btnSecondary}
+                            onPress={handleContinueWithoutLogout}
+                            accessibilityRole="button"
+                            accessibilityLabel="Reintentar sesión"
+                        >
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.btnSecondaryText, { color: textSecondary }]}>
+                                Reintentar sesión
+                            </Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
 
-            { }
             <RegistroAsistenciaModal
                 visible={showAsistenciaModal}
                 onClose={() => setShowAsistenciaModal(false)}
@@ -128,6 +178,9 @@ export default function AppLayout() {
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+    },
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.6)',
@@ -136,14 +189,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     dialog: {
-        backgroundColor: '#1a1a2e',
-        borderRadius: 20,
+        borderRadius: 24,
         padding: 28,
         width: '100%',
         maxWidth: 360,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     iconContainer: {
         width: 64,
@@ -154,48 +205,39 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 16,
     },
-    icon: {
-        fontSize: 32,
-    },
     title: {
-        color: '#fff',
         fontSize: 20,
         fontWeight: '700',
         marginBottom: 10,
         textAlign: 'center',
     },
     message: {
-        color: 'rgba(255,255,255,0.7)',
         fontSize: 14,
         lineHeight: 22,
         textAlign: 'center',
         marginBottom: 24,
     },
     btn: {
-        backgroundColor: '#6c63ff',
         borderRadius: 9999,
-        paddingVertical: 14,
+        minHeight: 52,
+        justifyContent: 'center',
         paddingHorizontal: 32,
         width: '100%',
         alignItems: 'center',
         marginBottom: 10,
     },
     btnText: {
-        color: '#fff',
         fontSize: 15,
         fontWeight: '700',
     },
     btnSecondary: {
-        paddingVertical: 10,
+        minHeight: 44,
+        justifyContent: 'center',
         paddingHorizontal: 16,
         width: '100%',
         alignItems: 'center',
     },
     btnSecondaryText: {
-        color: 'rgba(255,255,255,0.5)',
         fontSize: 13,
     },
 });
-
-
-
