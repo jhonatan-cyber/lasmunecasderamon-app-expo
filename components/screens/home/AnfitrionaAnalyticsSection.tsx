@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, Text, View } from "react-native";
+import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
 import { LazyDonutChart } from "@/components/ui/LazyDonutChart";
 import { formatCurrency } from "@/utils/format";
 import { styles } from "../HomeScreen.styles";
@@ -13,6 +14,7 @@ interface AnfitrionaAnalyticsSectionProps {
   textPrimary: string;
   textSecondary: string;
   onOpenAnalytics: () => void;
+  onOpenResumen: () => void;
 }
 
 export function AnfitrionaAnalyticsSection({
@@ -24,6 +26,7 @@ export function AnfitrionaAnalyticsSection({
   textPrimary,
   textSecondary,
   onOpenAnalytics,
+  onOpenResumen,
 }: AnfitrionaAnalyticsSectionProps) {
   return (
     <>
@@ -96,6 +99,16 @@ export function AnfitrionaAnalyticsSection({
         </View>
         <Ionicons name="chevron-forward" size={18} color={textSecondary} />
       </Pressable>
+
+      <View style={{ flexDirection: "row", marginTop: 12 }}>
+        <GarzonActionCard
+          title="RESUMEN"
+          description="Total a cobrar y calendario"
+          icon="stats-chart"
+          color="#3B82F6"
+          onPress={onOpenResumen}
+        />
+      </View>
     </>
   );
 }

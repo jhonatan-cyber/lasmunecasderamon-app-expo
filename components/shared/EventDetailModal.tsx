@@ -3,13 +3,13 @@ import { useAuthStore } from '@/store/authStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
-Modal,
-Pressable,
-ScrollView,
-StyleSheet,
-Text,
-View
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 
 interface EventDetailModalProps {
     visible: boolean;

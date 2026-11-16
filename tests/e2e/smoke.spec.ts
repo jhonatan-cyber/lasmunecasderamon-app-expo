@@ -1,6 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 
-type Role = 'cajero' | 'garzon' | 'anfitriona';
+type Role = 'cajero' | 'garzon' | 'anfitriona' | 'barman';
 
 const todayKey = new Date().toDateString();
 
@@ -31,6 +31,14 @@ const users: Record<Role, Record<string, unknown>> = {
         role: 'anfitriona',
         foto: '',
         username: 'ana.fitriona',
+    },
+    barman: {
+        id: '4',
+        name: 'Persona',
+        lastName: 'Bar',
+        role: 'barman',
+        foto: '',
+        username: 'prueba.bar',
     },
 };
 
@@ -139,6 +147,59 @@ test('root redirects garzon users to the waiter dashboard', async ({ page }) => 
     await expect(page.locator('body')).toContainText('PEDIDOS');
     await expect(page.locator('body')).toContainText('SERVICIOS');
     await expect(page.locator('body')).toContainText('ENTRADAS');
+    await expect(page.locator('body')).not.toContainText('COVERS');
+});
+
+test('la tarjeta RESUMEN del garzon abre su propia vista', async ({ page }) => {
+    await bootstrapRoleSession(page, 'garzon');
+
+    await page.goto('/');
+    await expect(page.locator('body')).toContainText('RESUMEN');
+
+    await page.getByText('RESUMEN').click();
+
+    await expect(page).toHaveURL(/garzon\/resumen/);
+    await expect(page.locator('body')).toContainText('Total a cobrar');
+    await expect(page.locator('body')).toContainText('Reportes');
+
+    const back = page.getByText('Atrás', { exact: true });
+    const title = page.getByText('Resumen', { exact: true });
+    await expect(back).toBeVisible();
+    const backBox = await back.boundingBox();
+    const titleBox = await title.boundingBox();
+    expect(backBox!.x).toBeGreaterThan(titleBox!.x + titleBox!.width);
+    await back.click();
+    await expect(page).not.toHaveURL(/\/resumen/);
+    await expect(page.getByText('RESUMEN', { exact: true })).toBeVisible();
+});
+
+for (const role of ['garzon', 'anfitriona', 'barman'] as const) {
+    test(`Atrás de Resumen sin historial vuelve al inicio de ${role}`, async ({ page }) => {
+        await bootstrapRoleSession(page, role);
+        const navigationErrors: string[] = [];
+        page.on('console', (message) => {
+            if (message.text().includes('GO_BACK')) navigationErrors.push(message.text());
+        });
+
+        await page.goto(`/${role}/resumen`);
+        await page.getByRole('button', { name: 'Atrás', exact: true }).click();
+
+        await expect(page).toHaveURL(new RegExp(`/${role}/?$`));
+        await expect(page.getByText('RESUMEN', { exact: true })).toBeVisible();
+        expect(navigationErrors).toEqual([]);
+    });
+}
+
+test('Atrás funciona al recargar Resumen después de entrar desde inicio', async ({ page }) => {
+    await bootstrapRoleSession(page, 'garzon');
+    await page.goto('/garzon');
+    await page.getByText('RESUMEN', { exact: true }).click();
+    await expect(page).toHaveURL(/garzon\/resumen/);
+    await page.reload();
+    await page.getByRole('button', { name: 'Atrás', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/garzon\/?$/);
+    await expect(page.getByText('RESUMEN', { exact: true })).toBeVisible();
 });
 
 test('root redirects anfitriona users to the hostess dashboard', async ({ page }) => {
@@ -150,6 +211,7 @@ test('root redirects anfitriona users to the hostess dashboard', async ({ page }
     await expect(page.locator('body')).toContainText('Meta Semanal');
     await expect(page.locator('body')).toContainText('SOLICITAR SERVICIO');
     await expect(page.locator('body')).toContainText('Analíticas');
+    await expect(page.locator('body')).toContainText('RESUMEN');
 });
 
 test('cajero sales screen renders its critical module shell', async ({ page }) => {

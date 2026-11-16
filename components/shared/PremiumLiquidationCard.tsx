@@ -1,11 +1,9 @@
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
 import { useCallback,useMemo,useState } from "react";
-import { Platform,Pressable,StyleSheet,Text,View } from "react-native";
+import { PermissionsAndroid,Platform,Pressable,StyleSheet,Text,View } from "react-native";
 
 import logger from "@/utils/logger";
 interface Event {
@@ -43,6 +41,7 @@ export function PremiumLiquidationCard({
   onExportSuccess,
 }: PremiumLiquidationCardProps) {
   const {accentColor, cardBg, textSecondary, borderColor} = useAccentColor();
+  const [exporting, setExporting] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
@@ -82,7 +81,19 @@ export function PremiumLiquidationCard({
   }, [totalAmount, totalCalculated]);
 
   const handleExportReport = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
     try {
+      if (Platform.OS === "android" && Number(Platform.Version) < 29) {
+        const permission = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        );
+        if (permission !== PermissionsAndroid.RESULTS.GRANTED) {
+          showAlert("Permiso requerido", "Se necesita permiso de almacenamiento para guardar el PDF en Descargas.", "warning");
+          return;
+        }
+      }
+
       const html = `
         <html>
           <head>
@@ -93,7 +104,7 @@ export function PremiumLiquidationCard({
               .logo { font-size: 28px; font-weight: 900; color: ${accentColor}; margin-bottom: 5px; }
               .subtitle { font-size: 14px; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; }
               .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
-              .info-box { background: #F9FAFB; padding: 15px; border-radius: 12px; }
+              .info-box { background: #F9FAFB; padding: 16px; border-radius: 12px; }
               .info-label { font-size: 10px; color: #9CA3AF; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
               .info-value { font-size: 16px; font-weight: bold; }
               table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
@@ -165,52 +176,30 @@ export function PremiumLiquidationCard({
       const { uri } = await Print.printToFileAsync({ html });
 
       if (Platform.OS === "android") {
-        const permissions =
-          await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-        if (permissions.granted) {
-          const fileName = `reporte_${Date.now()}.pdf`;
-          const base64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-
+        const { default: BlobUtil } = await import("react-native-blob-util");
+        const fileName = `reporte_${Date.now()}.pdf`;
+        const destination = await BlobUtil.media.createFile(
+          { name: fileName, parentFolder: "", mimeType: "application/pdf" },
+          "Download",
+        );
+        try {
+          // fs.cp evita la reapertura del destino que hace copyToMediaStore en 1.1.1.
+          await BlobUtil.fs.cp(uri, destination);
+        } catch (error) {
           try {
-            const fileUri =
-              await FileSystem.StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                fileName,
-                "application/pdf",
-              );
-
-            await FileSystem.writeAsStringAsync(fileUri, base64, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            showAlert(
-              "Descarga completada",
-              "El reporte se ha guardado correctamente en tu dispositivo.",
-              "success",
-            );
-          } catch (e) {
-            logger.captureException(e, {
-              context: "PremiumLiquidationCard:processLiquidation",
-            });
-            showAlert(
-              "Error de Guardado",
-              "No se pudo guardar el archivo en la ubicación seleccionada.",
-              "danger",
-            );
-          }
-        } else {
-
-          const canShare = await Sharing.isAvailableAsync();
-          if (canShare) {
-            await Sharing.shareAsync(uri, {
-              mimeType: "application/pdf",
-              dialogTitle: title,
-              UTI: "com.adobe.pdf",
+            await BlobUtil.fs.unlink(destination);
+          } catch (cleanupError) {
+            logger.captureException(cleanupError, {
+              context: "PremiumLiquidationCard:cleanupReport",
             });
           }
+          throw error;
         }
+        showAlert(
+          "Descarga completada",
+          `El reporte se guardó en Descargas como ${fileName}.`,
+          "success",
+        );
       } else if (Platform.OS === "ios") {
         await Print.printAsync({ html });
       }
@@ -222,13 +211,16 @@ export function PremiumLiquidationCard({
       });
       showAlert(
         "Error",
-        "No se pudo generar el reporte PDF correctamente.",
+        "No se pudo generar o guardar el reporte PDF. Intenta nuevamente.",
         "danger",
       );
+    } finally {
+      setExporting(false);
     }
   }, [
     accentColor,
     events,
+    exporting,
     onExportSuccess,
     title,
     totalDisplayed,
@@ -251,12 +243,14 @@ export function PremiumLiquidationCard({
         </View>
         <Pressable
           onPress={handleExportReport}
-          style={[styles.exportBtn, { backgroundColor: accentColor }]}
+          disabled={exporting}
+          style={[styles.exportBtn, { backgroundColor: accentColor, opacity: exporting ? 0.6 : 1 }]}
           accessibilityLabel="Exportar reporte a PDF"
           accessibilityRole="button"
+          accessibilityState={{ busy: exporting, disabled: exporting }}
         >
           <Ionicons name="document-text-outline" size={20} color="#FFF" />
-          <Text style={styles.exportBtnText}>Reportes</Text>
+          <Text style={styles.exportBtnText}>{exporting ? "Guardando…" : "Reportes"}</Text>
         </Pressable>
       </View>
 
@@ -298,11 +292,11 @@ const styles = StyleSheet.create({
   },
   miniSummary: {
     flex: 1,
-    padding: 15,
+    padding: 16,
     borderRadius: 20,
-    borderWidth: 1.5,
+    borderWidth: 2,
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,

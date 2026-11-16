@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { FlatList, Modal, Pressable, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
 import { formatCurrency } from "@/utils/format";
 import { styles } from "../HomeScreen.styles";
 import { getEventLabel } from "./eventLabels";
@@ -28,7 +29,7 @@ export function SelectedEventsModal({
   onSelect,
 }: SelectedEventsModalProps) {
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: bg }]}>
           <View style={styles.modalHeader}>

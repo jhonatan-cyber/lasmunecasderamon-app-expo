@@ -9,7 +9,7 @@ interface GarzonHomeActionsProps {
   onOpenPedidos: () => void;
   onOpenServicios: () => void;
   onOpenEntradas: () => void;
-  onOpenCovers: () => void;
+  onOpenResumen: () => void;
 }
 
 export function GarzonHomeActions({
@@ -18,7 +18,7 @@ export function GarzonHomeActions({
   onOpenPedidos,
   onOpenServicios,
   onOpenEntradas,
-  onOpenCovers,
+  onOpenResumen,
 }: GarzonHomeActionsProps) {
   return (
     <>
@@ -61,18 +61,15 @@ export function GarzonHomeActions({
             onPress={onOpenEntradas}
           />
         </BloqueoPorCaja>
-        <BloqueoPorCaja
-          bloqueado={bloqueado && rutaExigeCajaAbierta("/garzon/covers")}
-          style={{ flex: 1 }}
-        >
+        <View style={{ flex: 1 }}>
           <GarzonActionCard
-            title="COVERS"
-            description="Entregar o anular"
-            icon="gift-outline"
-            color="#8B5CF6"
-            onPress={onOpenCovers}
+            title="RESUMEN"
+            description="Total, reportes y calendario"
+            icon="stats-chart"
+            color="#3B82F6"
+            onPress={onOpenResumen}
           />
-        </BloqueoPorCaja>
+        </View>
       </View>
     </>
   );

@@ -67,6 +67,24 @@ const initialStats: DashboardStats = {
   svcCount: 0,
 };
 
+/**
+ * Hook centralizado para cargar los datos del dashboard según el rol del usuario.
+ *
+ * @returns {object} Objeto con los datos del dashboard:
+ *   - loading: boolean — si está cargando por primera vez
+ *   - refreshing: boolean — si está refrescando datos
+ *   - error: Error | null — error de la última consulta
+ *   - stats: DashboardStats — estadísticas del usuario
+ *   - userStatus: number — estado actual del usuario
+ *   - hasNewAlert: boolean — si hay alerta nueva sin leer
+ *   - activeService: ActiveService | null — servicio activo (anfitriona/garzón)
+ *   - pendingCount: number — cantidad de solicitudes pendientes (cajero)
+ *   - containerSummary: EnvaseResumen | null — resumen de envases (barman)
+ *   - selectedDates: string[] — fechas seleccionadas en el filtro
+ *   - setSelectedDates: (dates: string[]) => void — setter de fechas
+ *   - setHasNewAlert: (v: boolean) => void — setter de alerta nueva
+ *   - onRefresh: () => Promise<void> — función para refrescar datos
+ */
 export function useDashboardData(role: UserRole) {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
@@ -109,7 +127,7 @@ export function useDashboardData(role: UserRole) {
       const results = await Promise.all(
         endpoints.map((p) =>
           p.catch((e) => {
-            logger.error('Endpoint error:', e);
+            logger.fetchError(e, { context: 'useDashboardData' });
             return { success: false, data: null };
           }),
         ),
