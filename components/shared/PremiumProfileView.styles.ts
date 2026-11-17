@@ -18,26 +18,17 @@ export const styles = StyleSheet.create({
     left: 0,
     backgroundColor: "rgba(0,0,0,0.20)",
   },
-  backBtnLeft: {
-    marginRight: 12,
-  },
-  backBtnRight: {
-    flexDirection: "row",
+  backBtn: {
     alignItems: "center",
+    justifyContent: "center",
+    width: 38,
     height: 38,
+    marginLeft: 12,
     borderRadius: 9999,
     backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    gap: 6,
   },
-  backTextHeader: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
-  headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8 },
+  headerTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5, textAlign: "left" },
+  headerSubtitle: { fontSize: 13, fontWeight: "600", opacity: 0.8, textAlign: "left" },
   profileHero: { alignItems: "center", paddingVertical: 32 },
   avatarBorder: {
     width: 140,

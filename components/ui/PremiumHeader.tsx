@@ -56,6 +56,7 @@ export function PremiumHeader({
     const { isTablet, isLandscape } = useResponsiveMetrics();
     // En un móvil horizontal la altura es escasa: el header se compacta.
     const compact = isLandscape && !isTablet;
+    const backBtnSize = isTablet ? 44 : 38;
 
     return (
         <LinearGradient
@@ -81,19 +82,7 @@ export function PremiumHeader({
                 ]}
             />
             <View style={styles.headerTop}>
-                {onBack && (
-                    <Pressable
-                        onPress={onBack}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={styles.backBtn}
-                        accessibilityRole="button"
-                        accessibilityLabel="Volver atrás"
-                    >
-                        <Ionicons name="arrow-back" size={isTablet ? 26 : 22} color="#FFFFFF" />
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.backText, isTablet && { fontSize: 18 }]}>Atrás</Text>
-                    </Pressable>
-                )}
-                <View style={{ flex: 1, marginLeft: onBack ? 12 : 0 }}>
+                <View style={styles.titleBlock}>
                     <Text
                         numberOfLines={1}
                         ellipsizeMode="tail"
@@ -183,6 +172,20 @@ export function PremiumHeader({
                         <Text style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}>Nuevo</Text>
                     </Pressable>
                 )}
+                {onBack && (
+                    <Pressable
+                        onPress={onBack}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        style={[
+                            styles.backBtn,
+                            { width: backBtnSize, height: backBtnSize, borderRadius: backBtnSize / 2 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Volver atrás"
+                    >
+                        <Ionicons name="arrow-back" size={isTablet ? 24 : 20} color="#FFFFFF" />
+                    </Pressable>
+                )}
             </View>
 
             {tabs && tabs.length > 0 && (
@@ -234,19 +237,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.20)',
     },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backBtn: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingRight: 12, 
-        height: 44, 
-        borderRadius: 9999,
+    titleBlock: { flex: 1, alignItems: 'flex-start' },
+    backBtn: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 10,
         backgroundColor: 'rgba(255,255,255,0.15)',
-        paddingLeft: 8,
-        gap: 4
     },
-    backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
-    headerTitle: { fontSize: 24, fontWeight: '800' },
-    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8 },
+    headerTitle: { fontSize: 24, fontWeight: '800', textAlign: 'left' },
+    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8, textAlign: 'left' },
     plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 4 },
     plusBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
     tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: 16, padding: 4, borderWidth: 1 },

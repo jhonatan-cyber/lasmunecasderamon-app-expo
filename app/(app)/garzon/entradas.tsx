@@ -232,8 +232,7 @@ export default function GarzonEntradasScreen() {
       hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
       style={styles.backBtn}
     >
-      <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
-      <Text style={styles.backTextHeader}>Atrás</Text>
+      <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
     </Pressable>
   );
 
@@ -473,16 +472,14 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   backBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
     marginLeft: 12,
   },
-  backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   cardToggle: {
     flexDirection: 'row',
     alignItems: 'center',

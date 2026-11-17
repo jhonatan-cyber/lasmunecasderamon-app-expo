@@ -38,23 +38,7 @@ export function ProfileHeader({
     >
       <View pointerEvents="none" style={[styles.scrim, { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]} />
       <View style={styles.headerTop}>
-        {!skeletonMode && (
-          <Pressable
-            onPress={onBack}
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            style={[styles.backBtnRight, styles.backBtnLeft]}
-            accessibilityRole="button"
-            accessibilityLabel="Volver atrás"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={isTablet ? 26 : 22}
-              color="#FFFFFF"
-            />
-            <Text style={styles.backTextHeader}>Atrás</Text>
-          </Pressable>
-        )}
-        <View style={{ flex: 1, gap: skeletonMode ? 8 : 2 }}>
+        <View style={{ flex: 1, alignItems: 'flex-start', gap: skeletonMode ? 8 : 2 }}>
           {skeletonMode ? (
             <>
               <SkeletonBox
@@ -103,6 +87,21 @@ export function ProfileHeader({
             </>
           )}
         </View>
+        {!skeletonMode && (
+          <Pressable
+            onPress={onBack}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Volver atrás"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={isTablet ? 24 : 20}
+              color="#FFFFFF"
+            />
+          </Pressable>
+        )}
       </View>
     </LinearGradient>
   );

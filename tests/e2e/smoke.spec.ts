@@ -162,7 +162,7 @@ test('la tarjeta RESUMEN del garzon abre su propia vista', async ({ page }) => {
     await expect(page.locator('body')).toContainText('Total a cobrar');
     await expect(page.locator('body')).toContainText('Reportes');
 
-    const back = page.getByText('Atrás', { exact: true });
+    const back = page.getByRole('button', { name: 'Volver atrás' });
     const title = page.getByText('Resumen', { exact: true });
     await expect(back).toBeVisible();
     const backBox = await back.boundingBox();
@@ -182,7 +182,7 @@ for (const role of ['garzon', 'anfitriona', 'barman'] as const) {
         });
 
         await page.goto(`/${role}/resumen`);
-        await page.getByRole('button', { name: 'Atrás', exact: true }).click();
+        await page.getByRole('button', { name: 'Volver atrás' }).click();
 
         await expect(page).toHaveURL(new RegExp(`/${role}/?$`));
         await expect(page.getByText('RESUMEN', { exact: true })).toBeVisible();
@@ -196,7 +196,7 @@ test('Atrás funciona al recargar Resumen después de entrar desde inicio', asyn
     await page.getByText('RESUMEN', { exact: true }).click();
     await expect(page).toHaveURL(/garzon\/resumen/);
     await page.reload();
-    await page.getByRole('button', { name: 'Atrás', exact: true }).click();
+    await page.getByRole('button', { name: 'Volver atrás' }).click();
 
     await expect(page).toHaveURL(/\/garzon\/?$/);
     await expect(page.getByText('RESUMEN', { exact: true })).toBeVisible();
