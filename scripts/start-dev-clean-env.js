@@ -6,8 +6,14 @@ const cleanEnv = { ...process.env };
 delete cleanEnv.CI;
 delete cleanEnv.NO_COLOR;
 
+// metro.config.js sirve el polyfill de expo-sqlite solo con esta marca; sin
+// ella (dev client) se resuelve el módulo nativo real.
+const args = process.argv.slice(2);
+if (args.includes('--go')) cleanEnv.EXPO_GO = '1';
+else delete cleanEnv.EXPO_GO;
+
 const cli = resolve(dirname(require.resolve('expo/package.json')), 'bin', 'cli');
-const child = spawn(process.execPath, [cli, 'start', ...process.argv.slice(2)], {
+const child = spawn(process.execPath, [cli, 'start', ...args], {
   cwd: dirname(require.resolve('../package.json')),
   env: cleanEnv,
   stdio: 'inherit',

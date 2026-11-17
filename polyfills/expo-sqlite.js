@@ -1,11 +1,31 @@
-// Polyfill para expo-sqlite en Expo Go.
-// Expo Go no incluye módulos nativos personalizados como expo-sqlite.
-// Este archivo proporciona una implementación vacía para que el bundler no falle.
-// En un build con dev client o producción, se usa el módulo nativo real.
+// Polyfill de expo-sqlite para Expo Go y web, donde el módulo nativo no está
+// disponible. Se entrega una base en memoria con el contrato que usa
+// services/mirror: acepta escrituras sin persistirlas y las lecturas vienen
+// vacías. Antes exportaba `openDatabaseSync: noop`, que devolvía `undefined` y
+// hacía fallar cada escritura del espejo ("Cannot read property 'runSync' of
+// undefined"). En dev client y builds nativos se usa el módulo real
+// (ver metro.config.js).
 
-function noop() {}
+const POLYFILL_TAG = 'expo-sqlite-polyfill:expo-go';
+
+function createNoopDatabase() {
+  return {
+    tag: POLYFILL_TAG,
+    execSync() {},
+    runSync() {},
+    getFirstSync() {
+      return null;
+    },
+    getAllSync() {
+      return [];
+    },
+    withTransactionSync(task) {
+      if (typeof task === 'function') task();
+    },
+  };
+}
 
 module.exports = {
-  openDatabaseSync: noop,
-  noop,
+  POLYFILL_TAG,
+  openDatabaseSync: () => createNoopDatabase(),
 };

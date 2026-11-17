@@ -5,7 +5,7 @@
   "scripts": {
     "start": "expo start --dev-client",
     "start:remote": "node scripts/start-dev-remote.js",
-    "start:go": "node scripts/start-dev-clean-env.js",
+    "start:go": "node scripts/start-dev-clean-env.js --go",
     "start:tunnel": "expo start --dev-client --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
