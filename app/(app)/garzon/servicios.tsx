@@ -20,6 +20,7 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
+import { habitacionesParaServicio } from "@/utils/habitaciones";
 import {
   GarzonServicioSummary,
   GarzonServiciosModales,
@@ -199,7 +200,7 @@ export default function ServiciosScreen() {
                 ]}
               >
                 {selectedRoom
-                  ? `${selectedRoom.nombre || selectedRoom.name || selectedRoom.numero} - $${(selectedRoom.precio || selectedRoom.price || 0).toLocaleString()}`
+                  ? `${selectedRoom.nombre} - $${selectedRoom.precio.toLocaleString()}`
                   : "Seleccionar habitación..."}
               </Text>
             </View>
@@ -557,20 +558,7 @@ export default function ServiciosScreen() {
       <GarzonServiciosModales
         roomModalVisible={roomModalVisible}
         setRoomModalVisible={setRoomModalVisible}
-        rooms={rooms
-          .filter(
-            (r) =>
-              r.status === 1 &&
-              (r.precio || r.price || 0) > 0 &&
-              (r.tiempo || r.time || 0) > 0,
-          )
-          .map((r) => ({
-            ...r,
-            nombre: r.nombre || r.name || r.numero,
-            precio: r.precio || r.price || 0,
-            tiempo: r.tiempo || r.time || 0,
-            estado: r.status,
-          }))}
+        rooms={habitacionesParaServicio(rooms)}
         selectedRoom={selectedRoom}
         setSelectedRoom={setSelectedRoom}
         setServicePrice={setServicePrice}

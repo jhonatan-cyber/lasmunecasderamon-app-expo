@@ -6,23 +6,26 @@ import { adjuntarBaucher } from "@/utils/baucherPicker";
 import { apiClientSafe } from "@/api/client";
 import { blockOffline } from "@/utils/offlineGuard";
 import { getIvaDecimal } from "@/hooks/utils/cuentaUtils";
+import { normalizeRoom } from "@/hooks/utils/cartUtils";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 
 export interface Room {
-  id: number;
-  id_habitacion?: number;
-  name: string;
-  numero: string;
-  nombre?: string;
-  price: number;
-  precio?: number;
-  time: number;
-  tiempo?: number;
-  status: number;
+  id: string | number;
+  id_habitacion?: string | number;
+  nombre: string;
+  precio: number;
+  tiempo: number;
+  estado: number;
   comision_anfitriona?: number;
 }
+
+/** `/rooms` llega con `name`/`price`/`time` o `nombre`/`precio`/`tiempo`. */
+const normalizeRooms = (data: unknown): Room[] =>
+  (Array.isArray(data) ? data : []).map((room) =>
+    normalizeRoom(room as Record<string, unknown>),
+  );
 
 export interface Anfitriona {
   id: number;
@@ -120,8 +123,9 @@ export function useGarzonServiciosScreen() {
         const rawClients = Array.isArray(clientData)
           ? clientData
           : (clientData as any)?.data || [];
+        const normalizedRooms = normalizeRooms((roomData as any)?.data);
         const newData = {
-          rooms: (roomData as any)?.data,
+          rooms: normalizedRooms,
           anfitrionas: rawAnf,
           clients: rawClients,
         };
@@ -129,7 +133,7 @@ export function useGarzonServiciosScreen() {
         const hasChanges = dataRef.current !== serialized;
         dataRef.current = serialized;
 
-        setRooms((roomData as any)?.data || []);
+        setRooms(normalizedRooms);
 
         setAnfitrionas(deduplicate(rawAnf, "id_usuario"));
         setClients(deduplicate(rawClients, "id_cliente"));
@@ -282,9 +286,7 @@ export function useGarzonServiciosScreen() {
 
   const totals = useMemo(() => {
     const price = parseInt(servicePrice.replace(/\./g, "")) || 0;
-    const roomPrice = selectedRoom
-      ? selectedRoom.precio || selectedRoom.price || 0
-      : 0;
+    const roomPrice = selectedRoom ? selectedRoom.precio || 0 : 0;
 
     const cantAnfitrionas = selectedHostesses.length || 1;
     const cantClientes = selectedClients.length || 1;
@@ -403,7 +405,7 @@ export function useGarzonServiciosScreen() {
           ? productoIncluido
           : null,
         precio_servicio: parseInt(servicePrice.replace(/\./g, "")) || 0,
-        precio_habitacion: selectedRoom.precio || selectedRoom.price || 0,
+        precio_habitacion: selectedRoom.precio || 0,
         comision_anfitriona: selectedRoom.comision_anfitriona || 0,
         usuarios: selectedHostesses,
         anfitrionas_ids: selectedHostesses,
@@ -412,7 +414,7 @@ export function useGarzonServiciosScreen() {
         ...(paymentMethod === "transferencia" && baucherFoto
           ? { baucher_foto: baucherFoto }
           : {}),
-        tiempo: selectedRoom.tiempo || selectedRoom.time || 0,
+        tiempo: selectedRoom.tiempo || 0,
         total: totals.total,
         iva: totals.iva,
         num_clientes: selectedClients.length || 1,

@@ -92,6 +92,30 @@ describe("useGarzonServiciosScreen · baucher de transferencia", () => {
     return result;
   };
 
+  it("normaliza /rooms y conserva ocupadas e inactivas para el selector", async () => {
+    vi.mocked(apiClientSafe).mockImplementation((async (endpoint: string) => {
+      if (endpoint === "/rooms")
+        return {
+          success: true,
+          data: [
+            { id_habitacion: "a", nombre: "Suite", precio: 50000, tiempo: 60, estado: 1 },
+            { id_habitacion: "b", nombre: "Privado", precio: 40000, tiempo: 30, estado: 2 },
+            { id_habitacion: "c", nombre: "Inactiva", precio: 20000, tiempo: 30, estado: 0 },
+          ],
+        } as never;
+      return { success: true, data: [] } as never;
+    }) as never);
+
+    const { result } = renderHook(() => useGarzonServiciosScreen());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.rooms).toEqual([
+      expect.objectContaining({ nombre: "Suite", precio: 50000, tiempo: 60, estado: 1 }),
+      expect.objectContaining({ nombre: "Privado", precio: 40000, tiempo: 30, estado: 2 }),
+      expect.objectContaining({ nombre: "Inactiva", precio: 20000, tiempo: 30, estado: 0 }),
+    ]);
+  });
+
   it("al elegir transferencia abre la cámara y guarda la foto del baucher", async () => {
     imagePicker.launchCameraAsync.mockResolvedValue({
       canceled: false,

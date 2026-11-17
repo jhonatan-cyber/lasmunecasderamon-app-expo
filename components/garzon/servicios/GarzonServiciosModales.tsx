@@ -62,20 +62,7 @@ export const GarzonServiciosModales: React.FC<GarzonServiciosModalesProps> = ({
           }
           setRoomModalVisible(false);
         }}
-        rooms={rooms
-          .filter(
-            (r) =>
-              r.status === 1 &&
-              (r.precio || r.price || 0) > 0 &&
-              (r.tiempo || r.time || 0) > 0,
-          )
-          .map((r) => ({
-            ...r,
-            nombre: r.nombre || r.name || r.numero,
-            precio: r.precio || r.price || 0,
-            tiempo: r.tiempo || r.time || 0,
-            estado: r.status,
-          }))}
+        rooms={rooms}
         selectedRoomId={selectedRoom?.id_habitacion || selectedRoom?.id}
       />
 
