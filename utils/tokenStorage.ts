@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from './secureStorage';
 import logger from './logger';
 
 const TOKEN_KEY = 'token';
@@ -6,13 +6,13 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 
 const storage = {
   async setItem(key: string, value: string) {
-    await SecureStore.setItemAsync(key, value);
+    await secureStorage.setItem(key, value);
   },
   async getItem(key: string) {
-    return SecureStore.getItemAsync(key);
+    return secureStorage.getItem(key);
   },
   async deleteItem(key: string) {
-    await SecureStore.deleteItemAsync(key);
+    await secureStorage.deleteItem(key);
   },
 };
 

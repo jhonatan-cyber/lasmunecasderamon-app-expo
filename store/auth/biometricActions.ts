@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
 import logger from '@/utils/logger';
+import { secureStorage } from '@/utils/secureStorage';
 import type { AuthState } from '../authTypes';
 
 type AuthStateUpdater = (partial: Partial<AuthState>) => void;
@@ -81,16 +81,16 @@ export function createBiometricActions(set: AuthStateUpdater): BiometricActions 
         setBiometricEnabled: async (enabled) => {
             await AsyncStorage.setItem('biometricEnabled', enabled.toString());
             set({ isBiometricEnabled: enabled });
-            if (!enabled) await SecureStore.deleteItemAsync('user_credentials');
+            if (!enabled) await secureStorage.deleteItem('user_credentials');
         },
 
         saveCredentials: async (username, password) => {
-            await SecureStore.setItemAsync('user_credentials', JSON.stringify({ username, password }));
+            await secureStorage.setItem('user_credentials', JSON.stringify({ username, password }));
         },
 
         getCredentials: async () => {
             try {
-                const credentials = await SecureStore.getItemAsync('user_credentials');
+                const credentials = await secureStorage.getItem('user_credentials');
                 if (!credentials) return null;
                 const parsed = JSON.parse(credentials) as { username?: string; password?: string };
                 if (typeof parsed?.username !== 'string' || typeof parsed?.password !== 'string') return null;
@@ -101,7 +101,7 @@ export function createBiometricActions(set: AuthStateUpdater): BiometricActions 
         },
 
         removeCredentials: async () => {
-            await SecureStore.deleteItemAsync('user_credentials');
+            await secureStorage.deleteItem('user_credentials');
         },
     };
 }
