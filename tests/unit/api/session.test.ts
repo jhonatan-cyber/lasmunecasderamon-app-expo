@@ -1,8 +1,40 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { apiClient } from '@/api/request';
-import { getTokenInMemory, setTokenInMemory, setUnauthorizedHandler, setSessionConfirmedHandler, refreshAccessToken } from '@/api/token';
 import { InvalidResponseError, NetworkError, TimeoutError, UnauthorizedError, httpDetailsOf } from '@/api/errors';
 import { TokenStorage } from '@/utils/tokenStorage';
+
+// Mock de @/api/token para mantener un token en memoria durante los tests.
+// getTokenInMemory() retorna null por diseño en producción, pero los tests
+// necesitan un valor controlable.
+let testToken = 'viejo';
+
+// Mock de TokenStorage ANTES de mockear @/api/token para que refreshAccessToken
+// (la función real) actualice testToken cuando guarda/lee/borra tokens.
+vi.mock('@/utils/tokenStorage', () => ({
+  TokenStorage: {
+    saveToken: vi.fn(async (t: string) => { testToken = t; }),
+    getToken: vi.fn(async () => testToken ?? null),
+    saveRefreshToken: vi.fn(async () => {}),
+    getRefreshToken: vi.fn(async () => 'refresh'),
+    removeTokens: vi.fn(async () => { testToken = null; }),
+  },
+}));
+
+vi.mock('@/api/token', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/api/token')>();
+  // Mantener los handlers reales (Sets) para que notifyUnauthorized/Forbidden/Confirmed
+  // funcionen correctamente con setUnauthorizedHandler/setForbiddenHandler/setSessionConfirmedHandler.
+  return {
+    ...actual,
+    getTokenInMemory: () => testToken,
+    getTokenInMemoryAsync: () => Promise.resolve(testToken ?? null),
+    ensureTokenInMemory: () => Promise.resolve(testToken ?? null),
+    setTokenInMemory: (t: string | null) => { testToken = t ?? null; },
+  };
+});
+
+// Importar del módulo mockeado para usar en los tests.
+const { getTokenInMemory, setTokenInMemory, setUnauthorizedHandler, setSessionConfirmedHandler, refreshAccessToken } = await import('@/api/token');
 
 vi.mock('@/api/base-url', () => ({ API_URL: 'http://dashboard.test/api' }));
 vi.mock('@/api/retry', async importOriginal => ({
@@ -17,6 +49,7 @@ const confirmed = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  testToken = 'viejo';
   setTokenInMemory('viejo');
   setUnauthorizedHandler(unauthorized);
   setSessionConfirmedHandler(confirmed);

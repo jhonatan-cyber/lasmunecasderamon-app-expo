@@ -99,6 +99,7 @@ describe("useNuevaVenta totals (propina / total)", () => {
       subtotal: 0,
       tip: 0,
       total: 0,
+      recargoAcompanamiento: 0,
     });
   });
 
@@ -121,6 +122,7 @@ describe("useNuevaVenta totals (propina / total)", () => {
       subtotal: 10000,
       tip: 0,
       total: 10000,
+      recargoAcompanamiento: 0,
     });
   });
 
@@ -136,6 +138,7 @@ describe("useNuevaVenta totals (propina / total)", () => {
       subtotal: 10000,
       tip: 1000,
       total: 11000,
+      recargoAcompanamiento: 0,
     });
   });
 

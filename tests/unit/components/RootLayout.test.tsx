@@ -16,6 +16,10 @@ type Children = { children?: ReactNode };
 vi.mock('react-native', () => ({
   Platform: { get OS() { return h.platform; } },
   useColorScheme: () => 'dark',
+  Appearance: {
+    getColorScheme: () => 'dark',
+    addChangeListener: () => ({ remove: vi.fn() }),
+  },
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({ children, onPress }: Children & { onPress?: () => void }) => (

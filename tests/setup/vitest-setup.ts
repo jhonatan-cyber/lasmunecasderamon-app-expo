@@ -176,6 +176,12 @@ vi.mock('react-native', () => ({
         get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
     },
     useColorScheme: vi.fn(() => 'dark'),
+    Appearance: {
+        getColorSchemeManager: vi.fn(),
+        setColorSchemeManager: vi.fn(),
+        getColorScheme: vi.fn(() => 'dark'),
+        addChangeListener: vi.fn(() => ({ remove: vi.fn() })),
+    },
     StyleSheet: { create: (s: any) => s },
     Text: ({ children }: { children: any }) => React.createElement('span', null, children),
     View: ({ children }: { children: any }) => children,
