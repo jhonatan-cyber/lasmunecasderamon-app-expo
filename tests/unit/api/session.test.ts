@@ -6,7 +6,7 @@ import { TokenStorage } from '@/utils/tokenStorage';
 // Mock de @/api/token para mantener un token en memoria durante los tests.
 // getTokenInMemory() retorna null por diseño en producción, pero los tests
 // necesitan un valor controlable.
-let testToken = 'viejo';
+let testToken: string | null = 'viejo';
 
 // Mock de TokenStorage ANTES de mockear @/api/token para que refreshAccessToken
 // (la función real) actualice testToken cuando guarda/lee/borra tokens.
