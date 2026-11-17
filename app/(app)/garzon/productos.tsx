@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProductCard } from "@/components/shared/ProductCard";
 import type { Product } from "@/types/cart";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { useGarzonProductos } from "@/hooks/useGarzonProductos";
 import {
   GarzonCartBar,
@@ -52,6 +53,8 @@ export default function ProductosScreen() {
     metodoPago,
     setMetodoPago,
     baucherFoto,
+    baucherPromptVisible,
+    setBaucherPromptVisible,
     takeBaucherPhoto,
     loading,
     refreshing,
@@ -244,6 +247,20 @@ export default function ProductosScreen() {
         borderColor={borderColor}
         cardBg={cardBg}
         textPrimary={textPrimary}
+      />
+      <PremiumAlert
+        visible={baucherPromptVisible}
+        title="Foto del baucher"
+        message="El pago por transferencia requiere la foto del baucher. ¿Tomarla ahora?"
+        type="info"
+        showCancel
+        confirmText="Tomar foto"
+        cancelText="Ahora no"
+        onConfirm={() => {
+          setBaucherPromptVisible(false);
+          void takeBaucherPhoto();
+        }}
+        onCancel={() => setBaucherPromptVisible(false)}
       />
       <Modal
         visible={cartVisible}

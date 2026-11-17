@@ -81,15 +81,19 @@ export const ProductCard = React.memo(
         >
           <OrderProductPhoto foto={product.foto} name={product.name} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: textSecondary, fontSize: 11 }}>
-              {product.categoria}
-            </Text>
+            {!!product.categoria && (
+              <Text style={{ color: textSecondary, fontSize: 11 }}>
+                {product.categoria}
+              </Text>
+            )}
             <Text style={{ color: textPrimary, fontWeight: "800" }}>
               {product.producto_nombre || product.name}
             </Text>
-            <Text style={{ color: textSecondary }}>
-              {product.presentacion_nombre}
-            </Text>
+            {!!product.presentacion_nombre && (
+              <Text style={{ color: textSecondary }}>
+                {product.presentacion_nombre}
+              </Text>
+            )}
             <Text style={{ color: textPrimary }}>
               {product.tipo_venta === "shot"
                 ? product.shot_anfitriona
@@ -128,16 +132,20 @@ export const ProductCard = React.memo(
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
                 }}
               >
                 <Text
+                  numberOfLines={1}
                   style={{
                     color: textPrimary,
                     fontSize: 18,
                     fontWeight: "800",
+                    flex: 1,
                   }}
                 >
-                  Configurar producto
+                  Agregar al pedido
                 </Text>
                 <Pressable
                   accessibilityLabel="Cerrar producto"

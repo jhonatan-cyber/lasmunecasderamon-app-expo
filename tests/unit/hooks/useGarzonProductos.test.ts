@@ -264,7 +264,14 @@ describe("useGarzonProductos · pedido sin red", () => {
     await act(async () => {
       result.current.setMetodoPago("transferencia");
     });
-    // Elegir transferencia abre la cámara: la foto queda lista para el envío.
+    // Elegir transferencia muestra nuestro aviso; la cámara se abre al confirmar.
+    expect(imagePicker.launchCameraAsync).not.toHaveBeenCalled();
+    expect(result.current.baucherPromptVisible).toBe(true);
+
+    await act(async () => {
+      result.current.setBaucherPromptVisible(false);
+      await result.current.takeBaucherPhoto();
+    });
     expect(result.current.baucherFoto).toBe(
       "data:image/jpeg;base64,Zm90b19iYXVjaGVy",
     );
@@ -278,6 +285,33 @@ describe("useGarzonProductos · pedido sin red", () => {
     expect(outbox.enqueueAndSend.mock.calls[0][0].payload.baucher_foto).toBe(
       "data:image/jpeg;base64,Zm90b19iYXVjaGVy",
     );
+
+    // Para el pedido siguiente el aviso vuelve a aparecer una vez.
+    act(() => {
+      result.current.setMetodoPago("transferencia");
+    });
+    expect(result.current.baucherPromptVisible).toBe(true);
+  });
+
+  it("muestra una sola vez el aviso del baucher al elegir transferencia", async () => {
+    const { result } = renderHook(() => useGarzonProductos());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.setMetodoPago("transferencia");
+    });
+    expect(result.current.baucherPromptVisible).toBe(true);
+
+    act(() => {
+      result.current.setBaucherPromptVisible(false);
+    });
+    act(() => {
+      result.current.setMetodoPago("transferencia");
+    });
+
+    // Descartado una vez, no vuelve a saltar al reelegir el método.
+    expect(result.current.baucherPromptVisible).toBe(false);
+    expect(imagePicker.launchCameraAsync).not.toHaveBeenCalled();
   });
 
   it("no envía el pedido con transferencia si el garzón no sacó la foto del baucher", async () => {
@@ -287,6 +321,13 @@ describe("useGarzonProductos · pedido sin red", () => {
       result.current.setMetodoPago("transferencia");
     });
     // Cámara cancelada (mock por defecto): sigue sin haber foto.
+    expect(result.current.baucherPromptVisible).toBe(true);
+    expect(imagePicker.launchCameraAsync).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.setBaucherPromptVisible(false);
+      await result.current.takeBaucherPhoto();
+    });
     expect(result.current.baucherFoto).toBeNull();
 
     await act(async () => {
@@ -294,9 +335,9 @@ describe("useGarzonProductos · pedido sin red", () => {
     });
 
     expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ text1: "Falta la foto del baucher" }),
-    );
+    // Al enviar sin foto se reabre nuestro aviso, no el diálogo del teléfono.
+    expect(result.current.baucherPromptVisible).toBe(true);
+    expect(imagePicker.launchCameraAsync).toHaveBeenCalledTimes(1);
     // El carro se conserva para que el garzón saque la foto y reintente.
     expect(useCartStore.getState().cart).toHaveLength(1);
   });
@@ -318,6 +359,12 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     await act(async () => {
       result.current.setMetodoPago("transferencia");
+    });
+    expect(ajusteBaucher.ajustarFotoBaucher).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.setBaucherPromptVisible(false);
+      await result.current.takeBaucherPhoto();
     });
 
     // La foto que salió de la cámara pasa por el ajuste con su archivo temporal.
@@ -350,6 +397,10 @@ describe("useGarzonProductos · pedido sin red", () => {
     await act(async () => {
       result.current.setMetodoPago("transferencia");
     });
+    await act(async () => {
+      result.current.setBaucherPromptVisible(false);
+      await result.current.takeBaucherPhoto();
+    });
 
     expect(result.current.baucherFoto).toBeNull();
     expect(showToast).toHaveBeenCalledWith(
@@ -362,9 +413,7 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     // Sin foto válida no se encola nada y el carro queda para reintentar.
     expect(outbox.enqueueAndSend).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ text1: "Falta la foto del baucher" }),
-    );
+    expect(result.current.baucherPromptVisible).toBe(true);
     expect(useCartStore.getState().cart).toHaveLength(1);
   });
 
@@ -381,6 +430,10 @@ describe("useGarzonProductos · pedido sin red", () => {
 
     await act(async () => {
       result.current.setMetodoPago("transferencia");
+    });
+    await act(async () => {
+      result.current.setBaucherPromptVisible(false);
+      await result.current.takeBaucherPhoto();
     });
     await act(async () => {
       await result.current.submitOrder();

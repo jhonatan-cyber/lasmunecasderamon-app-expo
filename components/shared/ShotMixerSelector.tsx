@@ -45,6 +45,16 @@ type MixerSourceItem = {
   acompanamiento_botella?: AcompanamientoBotella;
 };
 
+function stockLabel(p: { stock_bar?: number; ml_abierta?: number }) {
+  const stock = Number(p.stock_bar) || 0;
+  const openMl = Number(p.ml_abierta) || 0;
+  const parts = [
+    stock > 0 ? `${stock} en bar` : null,
+    openMl > 0 ? `${openMl} ml abiertos` : null,
+  ].filter((part): part is string => !!part);
+  return parts.length ? parts.join(" · ") : null;
+}
+
 export function ShotMixerSelector({
   items,
   onChange,
@@ -431,59 +441,61 @@ export function ShotMixerSelector({
               style={{ maxHeight: 360 }}
               keyboardShouldPersistTaps="handled"
             >
-              {modalChoices.map((p) => (
-                <Pressable
-                  key={p.id}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    if (selected !== null) {
-                      if (bottle) addFlavor(selected, p);
-                      else
-                        onChange?.(selected, {
-                          presentacion_id: p.id,
-                          nombre: `${p.producto_nombre} ${p.nombre}`,
-                          foto:
-                            p.foto && p.foto !== "default.png"
-                              ? p.foto
-                              : p.producto_foto,
-                          ...shortMixerConsumption(items[selected]),
-                        });
-                    }
-                    setSelected(null);
-                  }}
-                  style={{
-                    paddingVertical: 14,
-                    borderBottomWidth: 1,
-                    borderColor,
-                  }}
-                >
-                  <View
+              {modalChoices.map((p) => {
+                const stock = stockLabel(p);
+                return (
+                  <Pressable
+                    key={p.id}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      if (selected !== null) {
+                        if (bottle) addFlavor(selected, p);
+                        else
+                          onChange?.(selected, {
+                            presentacion_id: p.id,
+                            nombre: `${p.producto_nombre} ${p.nombre}`,
+                            foto:
+                              p.foto && p.foto !== "default.png"
+                                ? p.foto
+                                : p.producto_foto,
+                            ...shortMixerConsumption(items[selected]),
+                          });
+                      }
+                      setSelected(null);
+                    }}
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 10,
+                      paddingVertical: 14,
+                      borderBottomWidth: 1,
+                      borderColor,
                     }}
                   >
-                    <OrderProductPhoto
-                      foto={
-                        p.foto && p.foto !== "default.png"
-                          ? p.foto
-                          : p.producto_foto
-                      }
-                      name={`${p.producto_nombre} ${p.nombre}`}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: textPrimary }}>
-                        {p.producto_nombre} {p.nombre}
-                      </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      <OrderProductPhoto
+                        foto={
+                          p.foto && p.foto !== "default.png"
+                            ? p.foto
+                            : p.producto_foto
+                        }
+                        name={`${p.producto_nombre} ${p.nombre}`}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: textPrimary }}>
+                          {p.producto_nombre} {p.nombre}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <Text style={{ color: textSecondary }}>
-                    {p.stock_bar} en bar · {Number(p.ml_abierta ?? 0)} ml
-                    abiertos
-                  </Text>
-                </Pressable>
-              ))}
+                    {!!stock && (
+                      <Text style={{ color: textSecondary }}>{stock}</Text>
+                    )}
+                  </Pressable>
+                );
+              })}
               {!modalChoices.length && (
                 <Text style={{ color: textSecondary }}>
                   Sin productos disponibles en el bar

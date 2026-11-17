@@ -47,6 +47,10 @@ export function useGarzonProductos() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [metodoPago, setMetodoPagoRaw] = useState<MetodoPagoPedido>("efectivo");
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
+  const [baucherPromptVisible, setBaucherPromptVisible] = useState(false);
+  // El aviso se muestra una sola vez por pedido: si el garzón lo descarta,
+  // no se repite al volver a elegir "transferencia".
+  const baucherPromptShown = useRef(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -63,9 +67,14 @@ export function useGarzonProductos() {
   const setMetodoPago = useCallback(
     (metodo: MetodoPagoPedido) => {
       setMetodoPagoRaw(metodo);
-      if (metodo === "transferencia") void takeBaucherPhoto();
+      // La cámara no se abre sola: primero se avisa con el modal de la app,
+      // y solo la primera vez por pedido.
+      if (metodo === "transferencia" && !baucherFoto && !baucherPromptShown.current) {
+        baucherPromptShown.current = true;
+        setBaucherPromptVisible(true);
+      }
     },
-    [takeBaucherPhoto],
+    [baucherFoto],
   );
 
   const [clientModalVisible, setClientModalVisible] = useState(false);
@@ -289,12 +298,7 @@ export function useGarzonProductos() {
     }
 
     if (metodoPago === "transferencia" && !baucherFoto) {
-      showToast({
-        type: "error",
-        text1: "Falta la foto del baucher",
-        text2: "El pago con transferencia requiere la foto del baucher para enviar el pedido.",
-      });
-      void takeBaucherPhoto();
+      setBaucherPromptVisible(true);
       return;
     }
 
@@ -357,6 +361,7 @@ export function useGarzonProductos() {
         clearCart();
         setMetodoPagoRaw("efectivo");
         setBaucherFoto(null);
+        baucherPromptShown.current = false;
         router.back();
         return;
       }
@@ -374,6 +379,7 @@ export function useGarzonProductos() {
       clearCart();
       setMetodoPagoRaw("efectivo");
       setBaucherFoto(null);
+      baucherPromptShown.current = false;
       router.back();
     } catch (err: any) {
       showToast({
@@ -399,6 +405,8 @@ export function useGarzonProductos() {
     metodoPago,
     setMetodoPago,
     baucherFoto,
+    baucherPromptVisible,
+    setBaucherPromptVisible,
     takeBaucherPhoto,
     loading,
     refreshing,

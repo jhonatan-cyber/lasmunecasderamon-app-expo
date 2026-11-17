@@ -123,7 +123,7 @@ describe("Configuración de producto en Expo", () => {
         name: `Soda o gaseosa para ${product.name}`,
       }),
     );
-    expect(screen.getByText("0 en bar · 350 ml abiertos")).toBeTruthy();
+    expect(screen.getByText("350 ml abiertos")).toBeTruthy();
     expect(screen.getByAltText("Sprite 500 ml").getAttribute("src")).toContain(
       "sprite.png",
     );

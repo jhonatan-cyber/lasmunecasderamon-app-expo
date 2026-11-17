@@ -41,14 +41,23 @@ export function OrderLineInfo({
       : normalizarAcompanamientoBotella(product.acompanamiento_botella);
   const mixerQuantity = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
   const unit = mixer?.ml_por_corto !== undefined ? "ml" : "unidades";
+  const stockBar = Number(product.stock_bar) || 0;
+  const mlAbierta = Number(product.ml_abierta) || 0;
+  const stockParts = [
+    stockBar > 0 ? `${stockBar} unidades` : null,
+    mlAbierta > 0 ? `${mlAbierta} ml abiertos` : null,
+  ].filter((part): part is string => !!part);
+  const commissionTotal = (Number(product.commission) || 0) * item.quantity;
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
         <OrderProductPhoto foto={product.foto} name={product.name} />
         <View style={{ flex: 1, gap: 3 }}>
-          <Text style={{ color: textSecondary, fontSize: 12 }}>
-            {product.categoria}
-          </Text>
+          {!!product.categoria && (
+            <Text style={{ color: textSecondary, fontSize: 12 }}>
+              {product.categoria}
+            </Text>
+          )}
           <Text style={{ color: textPrimary, fontWeight: "800" }}>
             {product.producto_nombre || product.name}
           </Text>
@@ -62,37 +71,42 @@ export function OrderLineInfo({
               ? product.shot_anfitriona
                 ? "Corto anfitriona"
                 : "Corto cliente"
-              : "Botella"}{" "}
-            · {item.quantity} unidades
+              : "Botella"}
+            {item.quantity > 0 ? ` · ${item.quantity} unidades` : ""}
           </Text>
         </View>
       </View>
-      <Text style={{ color: textSecondary }}>
-        Consumo:{" "}
-        {product.tipo_venta === "shot"
-          ? `${shotMl * item.quantity} ml (${shotMl} ml por corto)`
-          : `${item.quantity} unidades`}
-      </Text>
-      {product.stock_bar !== undefined && (
+      {item.quantity > 0 && (
         <Text style={{ color: textSecondary }}>
-          Stock en bar: {product.stock_bar} unidades · {product.ml_abierta || 0}{" "}
-          ml abiertos
+          Consumo:{" "}
+          {product.tipo_venta === "shot"
+            ? `${shotMl * item.quantity} ml (${shotMl} ml por corto)`
+            : `${item.quantity} unidades`}
+        </Text>
+      )}
+      {stockParts.length > 0 && (
+        <Text style={{ color: textSecondary }}>
+          Stock en bar: {stockParts.join(" · ")}
         </Text>
       )}
       <Text style={{ color: textSecondary }}>
-        Precio por unidad: {money(product.price)} · Comisión total:{" "}
-        {money((product.commission || 0) * item.quantity)}
+        Precio por unidad: {money(product.price)}
+        {commissionTotal > 0
+          ? ` · Comisión total: ${money(commissionTotal)}`
+          : ""}
       </Text>
-      <Text style={{ color: textPrimary }}>
-        Anfitrionas:{" "}
-        {item.selectedHostesses
-          .map(
-            (id) =>
-              anfitrionas.find((hostess) => String(hostess.id) === String(id))
-                ?.nick || String(id),
-          )
-          .join(", ") || "Sin asignación"}
-      </Text>
+      {item.selectedHostesses.length > 0 && (
+        <Text style={{ color: textPrimary }}>
+          Anfitrionas:{" "}
+          {item.selectedHostesses
+            .map(
+              (id) =>
+                anfitrionas.find((hostess) => String(hostess.id) === String(id))
+                  ?.nick || String(id),
+            )
+            .join(", ")}
+        </Text>
+      )}
       {!!item.selectedRoom && (
         <Text style={{ color: textSecondary }}>
           Habitación:{" "}
@@ -148,9 +162,11 @@ export function OrderLineInfo({
           ))}
         </View>
       )}
-      <Text style={{ color: "#10B981", fontWeight: "800", fontSize: 18 }}>
-        Subtotal: {money(product.price * item.quantity)}
-      </Text>
+      {item.quantity > 0 && (
+        <Text style={{ color: "#10B981", fontWeight: "800", fontSize: 18 }}>
+          Subtotal: {money(product.price * item.quantity)}
+        </Text>
+      )}
     </View>
   );
 }
