@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -10,6 +10,35 @@ interface AppearanceState {
     scheme: ThemeScheme | null;
     setScheme: (scheme: ThemeScheme) => void;
     toggleScheme: () => void;
+}
+
+/** Get system color scheme safely across platforms */
+function getSystemScheme(): ThemeScheme {
+    if (Platform.OS !== 'web') {
+        const scheme = Appearance.getColorScheme();
+        return scheme === 'dark' ? 'dark' : 'light';
+    } else {
+        // On web, use window.matchMedia to detect system preference
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return 'light';
+    }
+}
+
+/** Apply theme to web document */
+function applyWebScheme(scheme: ThemeScheme | null) {
+    if (typeof document === 'undefined') return;
+    
+    const root = document.documentElement;
+    
+    // Remove existing scheme classes
+    root.classList.remove('light', 'dark');
+    
+    // Set the color-scheme CSS property for native UI elements
+    const effectiveScheme = scheme ?? getSystemScheme();
+    root.classList.add(effectiveScheme);
+    root.style.colorScheme = effectiveScheme;
 }
 
 /**
@@ -23,12 +52,16 @@ export const useAppearanceStore = create<AppearanceState>()(
             scheme: null,
 
             setScheme: (scheme) => {
-                Appearance.setColorScheme(scheme);
+                if (Platform.OS !== 'web') {
+                    Appearance.setColorScheme(scheme);
+                } else {
+                    applyWebScheme(scheme);
+                }
                 set({ scheme });
             },
 
             toggleScheme: () => {
-                const actual = get().scheme ?? (Appearance.getColorScheme() === 'light' ? 'light' : 'dark');
+                const actual = get().scheme ?? getSystemScheme();
                 get().setScheme(actual === 'dark' ? 'light' : 'dark');
             },
         }),
@@ -38,7 +71,11 @@ export const useAppearanceStore = create<AppearanceState>()(
             partialize: (state) => ({ scheme: state.scheme }),
             onRehydrateStorage: () => (state) => {
                 if (state?.scheme) {
-                    Appearance.setColorScheme(state.scheme);
+                    if (Platform.OS !== 'web') {
+                        Appearance.setColorScheme(state.scheme);
+                    } else {
+                        applyWebScheme(state.scheme);
+                    }
                 }
             },
         },

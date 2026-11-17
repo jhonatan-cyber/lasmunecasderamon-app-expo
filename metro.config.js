@@ -27,6 +27,13 @@ config.resolver.extraNodeModules = {
 // cacheadas del otro bundle para expo-sqlite.
 config.cacheVersion = `${config.cacheVersion ?? 'expo'}-${isExpoGo ? 'expo-go' : 'native'}`;
 
+// En Windows, cuando el proyecto está en una unidad que no es C:, Metro
+// puede no detectar cambios de archivos correctamente. Forzar watchFolders
+// para que observe el directorio del proyecto explícitamente.
+if (process.platform === 'win32') {
+  config.watchFolders = [__dirname];
+}
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'tslib' || moduleName === 'tslib/modules/index.js') {
     return { type: 'sourceFile', filePath: forcedTslibPath };

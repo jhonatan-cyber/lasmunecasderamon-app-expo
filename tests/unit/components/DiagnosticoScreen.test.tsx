@@ -67,12 +67,12 @@ vi.mock('@/services/diagnostics', () => ({
             count: 1,
             rows: [
                 {
-                    key: 'cuentas.abiertas',
+                    key: 'ventas.listado',
                     syncedAt: 1_799_999_820_000,
                     ageMs: 180_000,
-                    source: '/accounts',
+                    source: '/sales',
                     bytes: 18,
-                    preview: '[{"id":"c-1"}]',
+                    preview: '[{"id":"v-1"}]',
                 },
             ],
         },
@@ -113,9 +113,9 @@ describe('pantalla de diagnóstico offline', () => {
         expect(screen.getByText(/esquema aplicado/)).toBeDefined();
 
         // Filas del espejo con su antigüedad y origen.
-        expect(screen.getByText('cuentas.abiertas')).toBeDefined();
+        expect(screen.getByText('ventas.listado')).toBeDefined();
         expect(screen.getByText(/hace 3 min/)).toBeDefined();
-        expect(screen.getByText(/origen \/accounts/)).toBeDefined();
+        expect(screen.getByText(/origen \/sales/)).toBeDefined();
 
         // Filas de la cola con su estado y cuántos intentos lleva.
         expect(screen.getByText('Venta $100 · 1 ítem(s)')).toBeDefined();
@@ -129,9 +129,9 @@ describe('pantalla de diagnóstico offline', () => {
 
         expect(screen.queryByText(/"metodo_pago"/)).toBeNull();
 
-        fireEvent.click(screen.getByText('cuentas.abiertas'));
+        fireEvent.click(screen.getByText('ventas.listado'));
 
-        expect(screen.getByText('[{"id":"c-1"}]')).toBeDefined();
+        expect(screen.getByText('[{"id":"v-1"}]')).toBeDefined();
     });
 
     it('no expone ningún dato fuera de desarrollo', () => {
@@ -140,7 +140,7 @@ describe('pantalla de diagnóstico offline', () => {
         render(<DiagnosticoScreen />);
 
         expect(screen.getByText('Diagnóstico no disponible')).toBeDefined();
-        expect(screen.queryByText('cuentas.abiertas')).toBeNull();
+        expect(screen.queryByText('ventas.listado')).toBeNull();
         expect(screen.queryByText('intencion-cajero-1')).toBeNull();
     });
 });

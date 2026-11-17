@@ -67,17 +67,6 @@ export default function CajaScreen() {
                         : 'Turno no iniciado'}
                 connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
                 onBack={() => router.replace('/(app)/cajero/(tabs)' as any)}
-                rightComponent={
-                    <Pressable
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={styles.backBtnRight}
-                        onPress={onRefresh}
-                        accessibilityRole="button"
-                        accessibilityLabel="Actualizar caja"
-                    >
-                        <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-                    </Pressable>
-                }
             />
 
             <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />

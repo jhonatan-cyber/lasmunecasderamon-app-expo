@@ -13,7 +13,7 @@ import {
 import { delay, shouldRetry } from "./retry";
 import {
   ensureTokenInMemory,
-  getTokenInMemory,
+  getTokenInMemoryAsync,
   notifyForbidden,
   notifySessionConfirmed,
   notifyUnauthorized,
@@ -194,13 +194,14 @@ export const apiClient = async <T = ApiRes<unknown>>(
       if (response.status === 401) {
         // Intentar refresh token automático (excepto para el propio endpoint de refresh)
         if (!sessionRetried && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
-          const currentToken = getTokenInMemory();
+          const currentToken = await getTokenInMemoryAsync();
           const refreshed = (currentToken && headers.get('Authorization') !== `Bearer ${currentToken}`)
             || await refreshAccessToken();
           if (refreshed) {
             sessionRetried = true;
             // Token renovado — actualizar header y reintentar
-            headers.set('Authorization', `Bearer ${getTokenInMemory()}`);
+            const newToken = await getTokenInMemoryAsync();
+            headers.set('Authorization', `Bearer ${newToken}`);
             config.headers = headers;
             logApiCall(endpoint, attempt, maxRetries, response.status, undefined, durationMs);
             // El reenvío de sesión tiene su propio presupuesto, incluso con retries=0.

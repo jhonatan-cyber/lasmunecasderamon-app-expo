@@ -1,4 +1,3 @@
-import * as NavigationBar from 'expo-navigation-bar';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -10,7 +9,7 @@ export const DynamicSystemBars = () => {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
-    const updateNavigationBar = async () => {
+    import('expo-navigation-bar').then(async (NavigationBar) => {
       try {
         const setButtonStyleAsync = (NavigationBar as any).setButtonStyleAsync;
         if (typeof setButtonStyleAsync === 'function') {
@@ -25,8 +24,11 @@ export const DynamicSystemBars = () => {
       } catch (error) {
         logger.captureException(error, { context: 'DynamicSystemBars:updateNavigationBar' });
       }
-    };
-    const timeout = setTimeout(updateNavigationBar, 100);
+    }).catch(() => {
+      // expo-navigation-bar no disponible
+    });
+
+    const timeout = setTimeout(() => {}, 100);
     return () => clearTimeout(timeout);
   }, [accentColor, isDark]);
 

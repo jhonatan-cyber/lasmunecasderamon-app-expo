@@ -95,7 +95,7 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
                     <Text maxFontSizeMultiplier={1.3} style={[styles.username, styles.usernameText, { color: textPrimary }, compact && { fontSize: 19 }]} numberOfLines={1}>
                         @{nick}
                     </Text>
-                    {!esAdmin && <AttendanceCodeDisplay />}
+                    {!esAdmin && role !== 'cajero' && <AttendanceCodeDisplay />}
                 </View>
                 {showFullName && (
                     <Text style={[styles.nickText, { color: textSecondary }]} numberOfLines={1}>

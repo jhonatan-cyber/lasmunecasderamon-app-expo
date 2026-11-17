@@ -55,26 +55,26 @@ export function VentaDetailModal({
                 <View style={styles.modalHeader}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
-                    <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <View
-                      style={[
-                        styles.statusBadgeDetail,
-                        {
-                          backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + "15",
-                          borderColor: (statusColors[selectedVenta.estado] || accentColor) + "30",
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.statusTextDetail, { color: statusColors[selectedVenta.estado] || accentColor }]}>
-                        {(statusLabels[selectedVenta.estado] || "VENTA").toUpperCase()}
-                      </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
+                      <View
+                        style={[
+                          styles.statusBadgeDetail,
+                          {
+                            backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + "15",
+                            borderColor: (statusColors[selectedVenta.estado] || accentColor) + "30",
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.statusTextDetail, { color: statusColors[selectedVenta.estado] || accentColor }]}>
+                          {(statusLabels[selectedVenta.estado] || "VENTA").toUpperCase()}
+                        </Text>
+                      </View>
                     </View>
-                    <Pressable onPress={onClose} style={styles.closeBtn}>
-                      <Ionicons name="close" size={24} color={textSecondary} />
-                    </Pressable>
                   </View>
+                  <Pressable onPress={onClose} style={styles.closeBtn}>
+                    <Ionicons name="close" size={24} color={textSecondary} />
+                  </Pressable>
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>

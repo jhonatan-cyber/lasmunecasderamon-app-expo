@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { contentColumn } from "@/constants/layout";
 import { Stack, useRouter } from "expo-router";
@@ -7,7 +6,6 @@ import React from "react";
 import {
   RefreshControl,
   StyleSheet,
-  TouchableOpacity,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -173,17 +171,6 @@ export default function VentasScreen() {
         }
         connectionStatus={fromCache ? { isConnected: false, label: 'Modo Offline' } : undefined}
         onBack={() => router.replace("/cajero/(tabs)" as any)}
-        rightComponent={
-          <TouchableOpacity
-            onPress={onRefresh}
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            style={styles.backBtnRight}
-            accessibilityRole="button"
-            accessibilityLabel="Actualizar ventas"
-          >
-            <Ionicons name="refresh" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        }
       />
 
       <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
@@ -200,8 +187,9 @@ export default function VentasScreen() {
         activeKey={activeTab}
         onChange={setActiveTab}
         accentColor={accentColor}
+        accentText={isDark ? '#FFFFFF' : '#111827'}
         cardBg={cardBg}
-        textSecondary={textSecondary}
+        textSecondary={textPrimary}
         borderColor={borderColor}
         isTablet={isTablet}
         style={{ marginTop: 15, gap: 12 }}
@@ -294,9 +282,9 @@ export default function VentasScreen() {
           />
 
           <PremiumFAB
-            label={activeTab === "historial" ? "NUEVA VENTA" : "NUEVO SERVICIO"}
-            icon={activeTab === "historial" ? "cart-outline" : "add"}
-            onPress={() => router.push(activeTab === "historial" ? "/cajero/nueva-venta" : "/cajero/nuevo-servicio")}
+            label="NUEVA VENTA"
+            icon={activeTab === "historial" ? "cart-outline" : "home-outline"}
+            onPress={() => router.push("/cajero/nueva-venta")}
             visible={true}
           />
         </>

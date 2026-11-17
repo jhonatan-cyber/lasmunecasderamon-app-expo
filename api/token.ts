@@ -3,35 +3,47 @@ import { TokenStorage } from "@/utils/tokenStorage";
 import logger from "@/utils/logger";
 import { attachHttpDetails, InvalidResponseError, NetworkError, TimeoutError } from './errors';
 
-let tokenInMemory: string | null = null;
-let onUnauthorized: (() => void) | null = null;
-let onForbidden: (() => void) | null = null;
-let onSessionConfirmed: (() => void) | null = null;
+// Cada instancia de la app (web/móvil) tiene su propio token en storage.
+// En desarrollo con Metro, web y móvil comparten el mismo proceso JS,
+// por lo que una variable global se compartiría entre instancias.
+// Para evitarlo, siempre leemos del storage que es específico por plataforma.
+// Los handlers usan Sets para soportar múltiples suscriptores (una por instancia).
+let onUnauthorizedHandlers: Set<() => void> = new Set();
+let onForbiddenHandlers: Set<() => void> = new Set();
+let onSessionConfirmedHandlers: Set<() => void> = new Set();
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
-export function setTokenInMemory(token: string | null) {
-  tokenInMemory = token;
+export function setTokenInMemory(_token: string | null) {
+  // No-op: ya no cacheamos en memoria para evitar compartir token entre
+  // instancias en desarrollo. El token se lee directamente del storage.
+}
+
+export async function getTokenInMemoryAsync(): Promise<string | null> {
+  // Lee el token del storage para evitar compartir entre instancias en desarrollo.
+  return TokenStorage.getToken();
 }
 
 export function getTokenInMemory(): string | null {
-  return tokenInMemory;
+  // Sincrono: devuelve null para forzar a los llamadores a usar la versión async.
+  // Los llamadores sincronicos se actualizaron para usar getTokenInMemoryAsync.
+  return null;
 }
 
 export async function ensureTokenInMemory(): Promise<string | null> {
-  if (!tokenInMemory) {
-    tokenInMemory = await TokenStorage.getToken();
-  }
-
-  return tokenInMemory;
+  // Siempre leemos del storage para evitar compartir token entre instancias
+  // en desarrollo (web y móvil comparten el mismo proceso Metro).
+  return TokenStorage.getToken();
 }
 
 export function setUnauthorizedHandler(handler: () => void) {
-  onUnauthorized = handler;
+  onUnauthorizedHandlers.add(handler);
+  // Retorna una función para remover el handler (útil para cleanup)
+  return () => onUnauthorizedHandlers.delete(handler);
 }
 
 export function notifyUnauthorized() {
-  onUnauthorized?.();
+  onUnauthorizedHandlers.forEach(h => h());
 }
 
 /**
@@ -40,11 +52,12 @@ export function notifyUnauthorized() {
  * /auth/me (lo registra el authStore).
  */
 export function setForbiddenHandler(handler: () => void) {
-  onForbidden = handler;
+  onForbiddenHandlers.add(handler);
+  return () => onForbiddenHandlers.delete(handler);
 }
 
 export function notifyForbidden() {
-  onForbidden?.();
+  onForbiddenHandlers.forEach(h => h());
 }
 
 /**
@@ -53,11 +66,12 @@ export function notifyForbidden() {
  * ventana de gracia offline (`utils/offlineSession`).
  */
 export function setSessionConfirmedHandler(handler: () => void) {
-  onSessionConfirmed = handler;
+  onSessionConfirmedHandlers.add(handler);
+  return () => onSessionConfirmedHandlers.delete(handler);
 }
 
 export function notifySessionConfirmed() {
-  onSessionConfirmed?.();
+  onSessionConfirmedHandlers.forEach(h => h());
 }
 
 /**
@@ -102,7 +116,6 @@ export async function refreshAccessToken(): Promise<boolean> {
             status: response.status
           });
           await TokenStorage.removeTokens();
-          tokenInMemory = null;
           return false;
         }
         throw attachHttpDetails(new NetworkError('No se pudo renovar la sesión. Intenta nuevamente.'), {
@@ -112,8 +125,8 @@ export async function refreshAccessToken(): Promise<boolean> {
 
       const data = await response.json();
       if (data?.success === true && typeof data.token === 'string' && data.token.length > 0) {
-        // Guardar nuevo access token
-        tokenInMemory = data.token;
+        // Guardar nuevo access token en storage (no en memoria para evitar
+        // compartir entre instancias en desarrollo).
         await TokenStorage.saveToken(data.token);
 
         // Si el servidor devolvió un nuevo refresh token (rotation), guardarlo

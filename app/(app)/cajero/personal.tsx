@@ -227,17 +227,6 @@ export default function PersonalScreen() {
                     title="Personal"
                     subtitle="Lista de trabajadores"
                     onBack={() => router.back()}
-                    rightComponent={
-                        <Pressable
-                            onPress={() => fetchUsers(true)}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                            style={styles.backBtnRight}
-                            accessibilityRole="button"
-                            accessibilityLabel="Actualizar personal"
-                        >
-                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
-                        </Pressable>
-                    }
                 />
                 <View style={styles.skeletonGrid}>
                     {[1, 2, 3, 4, 5, 6].map(i => (
@@ -261,17 +250,6 @@ export default function PersonalScreen() {
                 title="Personal"
                 subtitle="Selecciona un usuario para ver su QR"
                 onBack={() => router.back()}
-                rightComponent={
-                    <Pressable
-                        onPress={() => fetchUsers(true)}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={styles.backBtnRight}
-                        accessibilityRole="button"
-                        accessibilityLabel="Actualizar personal"
-                    >
-                        <Ionicons name="refresh" size={20} color="#FFFFFF" />
-                    </Pressable>
-                }
             />
 
             <View style={styles.searchBarContainer}>

@@ -1,4 +1,4 @@
-import React, { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
@@ -291,9 +291,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <NotificationContext.Provider value={contextValue}>
       {children}
-      <Suspense fallback={null}>
-        <ToastComponent position="top" topOffset={60} />
-      </Suspense>
+      <ToastComponent position="top" topOffset={60} />
     </NotificationContext.Provider>
   );
 };

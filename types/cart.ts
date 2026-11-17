@@ -3,6 +3,10 @@ export interface AcompanamientoBotellaItem {
   unidades: number;
   nombre?: string;
   foto?: string;
+  /** Precio unitario de esta presentación de acompañamiento (del catálogo de productos). */
+  precio?: number;
+  /** ML de la botella de esta presentación de acompañamiento. */
+  ml_botella?: number;
 }
 
 export type AcompanamientoBotella =

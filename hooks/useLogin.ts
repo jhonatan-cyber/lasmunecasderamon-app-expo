@@ -1,6 +1,7 @@
 import { authService } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
+import { getHomeRouteByRole } from '@/utils/userRole';
 import { resetPasswordSchema } from '@lasmunecasderamon/validations';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
@@ -140,6 +141,10 @@ export default function useLogin() {
                         text2: 'Tu asistencia ha sido registrada automáticamente',
                     });
                 }
+                // Navegar directamente a la ruta del rol para evitar la doble
+                // redirección (router.replace('/') → index.tsx → Redirect) que
+                // causa recarga visual en nativo.
+                const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
                 if (isBiometricSupported && !isBiometricEnabled) {
                     showAlert(
                         'Acceso Biométrico',
@@ -148,7 +153,7 @@ export default function useLogin() {
                         async () => {
                             await saveCredentials(u, p);
                             await setBiometricEnabled(true);
-                            router.replace('/');
+                            router.replace(homeRoute);
                         },
                         true
                     );
@@ -156,7 +161,7 @@ export default function useLogin() {
                     if (isBiometricEnabled) {
                         await saveCredentials(u, p);
                     }
-                    router.replace('/');
+                    router.replace(homeRoute);
                 }
             }
         } catch (err: any) {
@@ -185,7 +190,8 @@ export default function useLogin() {
                 });
             }
 
-            router.replace('/');
+            const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+            router.replace(homeRoute);
         } catch (err: any) {
             setError(err.message || 'Error al validar código QR');
         } finally {

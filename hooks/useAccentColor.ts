@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
 import { readableTextColor } from '@/utils/color';

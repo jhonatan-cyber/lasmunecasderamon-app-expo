@@ -13,10 +13,15 @@ type Props = {
   textSecondary: string;
   borderColor: string;
   cardBg: string;
+  cart: any[];
   onAdd: (choice: SaleChoice, cantidad: number) => void;
+  onRemove: (choice: SaleChoice) => void;
 };
 
-/** Cantidad y acción independientes para botella, shot cliente y shot anfitriona. */
+/**
+ * Contador +/- vinculado al carrito: el botón "+" agrega al carrito,
+ * el "-" remueve del carrito, y el contador muestra cuántos hay en el carrito.
+ */
 export function SaleFormatSelector({
   product,
   options,
@@ -26,11 +31,11 @@ export function SaleFormatSelector({
   textSecondary,
   borderColor,
   cardBg,
+  cart,
   onAdd,
+  onRemove,
 }: Props) {
-  const [quantities, setQuantities] = useState<
-    Partial<Record<SaleChoice, number>>
-  >({});
+  const productId = String(product.id || product.id_producto);
   const mlCliente =
     Number(product?.ml_shot) > 0 ? Number(product.ml_shot) : shotMl;
   const mlAnfitriona =
@@ -38,10 +43,36 @@ export function SaleFormatSelector({
       ? Number(product.ml_shot_anfitriona)
       : mlCliente;
 
+  // Contar cuántos de este producto+formato hay en el carrito
+  const getCartCount = (choice: SaleChoice) => {
+    return cart.reduce((sum, cartItem) => {
+      const itemProductId = String(cartItem.id || cartItem.id_producto || cartItem.producto_id || "");
+      if (itemProductId !== productId) return sum;
+      // El tipo_venta en el carrito puede ser "shot" o "botella", y el choice puede ser más específico
+      const cartTipo = cartItem.tipo_venta || cartItem.tipoVenta || "botella";
+      const choiceIsShot = esCortoAnfitriona(choice) || choice === "shot";
+      const cartIsShot = cartTipo === "shot";
+      if (choiceIsShot !== cartIsShot) return sum;
+      // Para shots, verificar si es anfitriona
+      if (choiceIsShot) {
+        const cartAnfitriona = cartItem.shot_anfitriona ?? false;
+        const choiceAnfitriona = esCortoAnfitriona(choice);
+        if (cartAnfitriona !== choiceAnfitriona) return sum;
+      }
+      // Para botellas, verificar si tiene anfitriona
+      if (!choiceIsShot) {
+        const choiceHasAnfitriona = choice !== "botella_sin_anfitriona";
+        const cartHasAnfitriona = cartItem.botella_anfitriona ?? true;
+        if (choiceHasAnfitriona !== cartHasAnfitriona) return sum;
+      }
+      return sum + (cartItem.quantity || 1);
+    }, 0);
+  };
+
   return (
     <View style={styles.list}>
       {options.map((option) => {
-        const cantidad = quantities[option.value] || 0;
+        const cantidad = getCartCount(option.value);
         const max = option.esShot ? 99 : Number(product?.stock_bar ?? 0);
         const ml = esCortoAnfitriona(option.value) ? mlAnfitriona : mlCliente;
         const label = `${option.nombre}${option.esShot ? ` · ${ml} ml` : ""}`;
@@ -64,15 +95,10 @@ export function SaleFormatSelector({
             </View>
             <View style={styles.controls}>
               <Pressable
-                onPress={() =>
-                  setQuantities((current) => ({
-                    ...current,
-                    [option.value]: Math.max(0, cantidad - 1),
-                  }))
-                }
+                onPress={() => onRemove(option.value)}
                 disabled={cantidad === 0}
                 accessibilityRole="button"
-                accessibilityLabel={`${label}: disminuir cantidad`}
+                accessibilityLabel={`${label}: quitar del carrito`}
                 style={[
                   styles.step,
                   { borderColor, opacity: cantidad === 0 ? 0.4 : 1 },
@@ -84,15 +110,10 @@ export function SaleFormatSelector({
                 {cantidad}
               </Text>
               <Pressable
-                onPress={() =>
-                  setQuantities((current) => ({
-                    ...current,
-                    [option.value]: Math.min(max, cantidad + 1),
-                  }))
-                }
+                onPress={() => onAdd(option.value, 1)}
                 disabled={max < 1 || cantidad >= max}
                 accessibilityRole="button"
-                accessibilityLabel={`${label}: aumentar cantidad`}
+                accessibilityLabel={`${label}: agregar al carrito`}
                 style={[
                   styles.step,
                   {
@@ -102,27 +123,6 @@ export function SaleFormatSelector({
                 ]}
               >
                 <Ionicons name="add" size={15} color={textPrimary} />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  onAdd(option.value, cantidad);
-                  setQuantities((current) => ({
-                    ...current,
-                    [option.value]: 0,
-                  }));
-                }}
-                disabled={cantidad === 0}
-                accessibilityRole="button"
-                accessibilityLabel={`Agregar ${label}`}
-                style={[
-                  styles.add,
-                  {
-                    backgroundColor: accentColor,
-                    opacity: cantidad === 0 ? 0.4 : 1,
-                  },
-                ]}
-              >
-                <Ionicons name="add" size={18} color="#fff" />
               </Pressable>
             </View>
           </View>

@@ -1,11 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from "expo-linear-gradient";
-import * as NavigationBar from "expo-navigation-bar";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback } from "react";
 import {
-  Appearance,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +14,7 @@ import {
 } from "react-native";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppearanceStore } from "@/store/appearanceStore";
 import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
 import { QRScannerModal } from "@/components/shared/QRScannerModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
@@ -62,23 +61,24 @@ export default function LoginScreen() {
 
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const C = theme;
-
-  const toggleTheme = () => {
-    Appearance.setColorScheme(isDark ? "light" : "dark");
-  };
+  const { toggleScheme } = useAppearanceStore();
 
   useFocusEffect(
     useCallback(() => {
       if (Platform.OS === "android") {
-        try {
-          const setButtonStyleAsync = (NavigationBar as any)
-            .setButtonStyleAsync;
-          if (typeof setButtonStyleAsync === "function") {
-            void setButtonStyleAsync(isDark ? "light" : "dark");
+        import("expo-navigation-bar").then((NavigationBar) => {
+          try {
+            const setButtonStyleAsync = (NavigationBar as any)
+              .setButtonStyleAsync;
+            if (typeof setButtonStyleAsync === "function") {
+              void setButtonStyleAsync(isDark ? "light" : "dark");
+            }
+          } catch (error) {
+            logger.warn("Failed to update navigation bar button style on login screen", { error });
           }
-        } catch (error) {
-          logger.warn("Failed to update navigation bar button style on login screen", { error });
-        }
+        }).catch(() => {
+          // expo-navigation-bar no disponible
+        });
       }
     }, [isDark]),
   );
@@ -147,7 +147,7 @@ export default function LoginScreen() {
                     styles.themeToggle,
                     pressed && { opacity: 0.6 },
                   ]}
-                  onPress={toggleTheme}
+                  onPress={toggleScheme}
                 >
                   <Ionicons
                     name={isDark ? "sunny-outline" : "moon-outline"}

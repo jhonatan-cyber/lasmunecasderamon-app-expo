@@ -100,7 +100,9 @@ const renderSearch = (
       onClearSearch={vi.fn()}
       searchLoading={false}
       searchResults={searchResults}
+      cart={[]}
       onAddProduct={onAddProduct}
+      onRemoveFromCart={vi.fn()}
       accentColor="#000000"
       cardBg="#FFFFFF"
       textPrimary="#000000"
@@ -136,10 +138,9 @@ describe("NuevaVentaSearch (vista móvil)", () => {
     expect(screen.getByText("Corona 330 ml")).toBeDefined();
   });
 
-  it("permite agregar la cantidad elegida de botella", () => {
+  it("permite agregar al carrito con el botón +", () => {
     const onAddProduct = renderSearch([conBotellaAbierta]);
-    fireEvent.click(screen.getByLabelText("Botella: aumentar cantidad"));
-    fireEvent.click(screen.getByLabelText("Agregar Botella"));
+    fireEvent.click(screen.getByLabelText("Botella: agregar al carrito"));
     expect(onAddProduct).toHaveBeenLastCalledWith(
       conBotellaAbierta,
       "botella",
@@ -150,35 +151,32 @@ describe("NuevaVentaSearch (vista móvil)", () => {
   it("sin precio de shot no muestra el selector de forma de venta", () => {
     renderSearch([sinBotellaAbierta]);
 
-    expect(screen.getByLabelText("Botella: aumentar cantidad")).toBeDefined();
+    expect(screen.getByLabelText("Botella: agregar al carrito")).toBeDefined();
     expect(screen.queryByLabelText(/Corto/)).toBeNull();
   });
 
   it("muestra Botella, Corto cliente y Corto anfitriona cuando el producto los ofrece", () => {
     renderSearch([conCorto]);
 
-    expect(screen.getByLabelText("Botella: aumentar cantidad")).toBeDefined();
+    expect(screen.getByLabelText("Botella: agregar al carrito")).toBeDefined();
     expect(
-      screen.getByLabelText("Corto cliente · 50 ml: aumentar cantidad"),
+      screen.getByLabelText("Corto cliente · 50 ml: agregar al carrito"),
     ).toBeDefined();
     expect(
-      screen.getByLabelText("Corto anfitriona · 50 ml: aumentar cantidad"),
+      screen.getByLabelText("Corto anfitriona · 50 ml: agregar al carrito"),
     ).toBeDefined();
     expect(screen.getByText(/\$25[.,]000/)).toBeDefined();
   });
 
-  it("mantiene cantidades independientes para los tres formatos del mismo producto", () => {
+  it("agrega cada formato directamente al carrito con el botón +", () => {
     const onAddProduct = renderSearch([conCorto]);
-    fireEvent.click(screen.getByLabelText("Botella: aumentar cantidad"));
+    fireEvent.click(screen.getByLabelText("Botella: agregar al carrito"));
     fireEvent.click(
-      screen.getByLabelText("Corto cliente · 50 ml: aumentar cantidad"),
+      screen.getByLabelText("Corto cliente · 50 ml: agregar al carrito"),
     );
     fireEvent.click(
-      screen.getByLabelText("Corto anfitriona · 50 ml: aumentar cantidad"),
+      screen.getByLabelText("Corto anfitriona · 50 ml: agregar al carrito"),
     );
-    fireEvent.click(screen.getByLabelText("Agregar Botella"));
-    fireEvent.click(screen.getByLabelText("Agregar Corto cliente · 50 ml"));
-    fireEvent.click(screen.getByLabelText("Agregar Corto anfitriona · 50 ml"));
     expect(onAddProduct).toHaveBeenNthCalledWith(1, conCorto, "botella", 1);
     expect(onAddProduct).toHaveBeenNthCalledWith(2, conCorto, "shot", 1);
     expect(onAddProduct).toHaveBeenNthCalledWith(
@@ -189,12 +187,11 @@ describe("NuevaVentaSearch (vista móvil)", () => {
     );
   });
 
-  it("el formato agrega una unidad de producto como línea independiente", () => {
+  it("el botón + agrega una unidad directamente al carrito", () => {
     const onAddProduct = renderSearch([conCorto]);
     fireEvent.click(
-      screen.getByLabelText("Corto anfitriona · 50 ml: aumentar cantidad"),
+      screen.getByLabelText("Corto anfitriona · 50 ml: agregar al carrito"),
     );
-    fireEvent.click(screen.getByLabelText("Agregar Corto anfitriona · 50 ml"));
     expect(onAddProduct).toHaveBeenLastCalledWith(
       conCorto,
       "shot_anfitriona",

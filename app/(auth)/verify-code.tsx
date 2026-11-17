@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
+import { getHomeRouteByRole } from "@/utils/userRole";
 
 export default function VerifyCodeScreen() {
   const [code, setCode] = useState(["", "", "", ""]);
@@ -64,7 +65,8 @@ export default function VerifyCodeScreen() {
     try {
       await login(tempAuthData.username, tempAuthData.password, fullCode);
 
-      router.replace("/");
+      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+      router.replace(homeRoute);
     } catch (err: any) {
       setError(err.message || "Código incorrecto. Intenta nuevamente.");
       setCode(["", "", "", ""]);

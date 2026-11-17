@@ -8,12 +8,14 @@ export interface SalePayloadInput {
   selectedHabitacion: any;
   metodoPago: string;
   pagosMixtos: unknown[];
-  totals: { subtotal: number; tip: number; total: number };
+  totals: { subtotal: number; tip: number; total: number; recargoAcompanamiento?: number };
   selectedTime: number;
   hasCommissionItem: boolean;
   /** Foto del baucher en data URL; obligatoria cuando el pago es transferencia. */
   baucherFoto?: string | null;
   prepagoDestinos?: { cliente_id: string; monto: number }[];
+  /** Máximo ml de acompañamiento incluido en el precio (de la configuración del bar). */
+  acompanamientoMaxMl?: number;
 }
 
 export interface SaleCreatePayload {
@@ -36,6 +38,8 @@ export interface SaleCreatePayload {
     precio: number;
     sub_total: number;
     comision: number;
+    /** Recargo cuando el acompañamiento supera el máximo incluido en el precio. */
+    recargo_acompanamiento?: number;
     hostess_id?: string;
     hostesses?: string[];
   }[];
@@ -93,6 +97,25 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
         categoria.includes("champagne") ||
         categoria.includes("champana") ||
         categoria.includes("shampana");
+      // Calcula el recargo de acompañamiento por este detalle:
+      // si la suma de ml_botella de los sabores supera el acompanamiento_max_ml,
+      // se cobra la diferencia proporcional al precio del producto.
+      let recargoAcompanamiento = 0;
+      if (!esShot && item.acompanamiento_botella) {
+        const sabores = Array.isArray(item.acompanamiento_botella)
+          ? item.acompanamiento_botella
+          : [item.acompanamiento_botella];
+        const mlTotal = sabores.reduce((sum: number, sabor: any) => {
+          const mlBotella = Number(sabor.ml_botella || 0);
+          return sum + mlBotella * (sabor.unidades || 0);
+        }, 0);
+        const maxMl = Number(input.acompanamientoMaxMl ?? 500);
+        const precioProducto = Number(item.precio || item.price || 0);
+        if (mlTotal > maxMl && maxMl > 0) {
+          const mlExcedente = mlTotal - maxMl;
+          recargoAcompanamiento = (mlExcedente / mlTotal) * precioProducto * cantidad;
+        }
+      }
       const detalle = {
         producto_id: String(item.producto_id || item.id_producto || item.id),
         presentacion_id: item.presentacion_id
@@ -111,6 +134,7 @@ export function buildSalePayload(input: SalePayloadInput): SaleCreatePayload {
         ...(esShot && item.acompanamiento_corto
           ? { acompanamiento_corto: item.acompanamiento_corto }
           : {}),
+        ...(recargoAcompanamiento > 0 ? { recargo_acompanamiento: recargoAcompanamiento } : {}),
         isChampagne,
         cantidad,
         precio: item.precio || item.price || 0,

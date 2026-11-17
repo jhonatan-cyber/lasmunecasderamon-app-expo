@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, type ViewStyle } from 'react-native';
 import logger from '@/utils/logger';
 
@@ -29,9 +29,11 @@ export function hideToast() {
 }
 
 // ── Lazy <Toast /> component with internal config ────────────────────
-// The toast config (BaseToast, ErrorToast, InfoToast component
-// constructors) is built INSIDE the lazy import so that toast-config.tsx
-// doesn't need to import from the library, eliminating the static import.
+// React.lazy() is NOT supported in React Native, so we use a state-based
+// lazy loading pattern instead. The toast config (BaseToast, ErrorToast,
+// InfoToast component constructors) is built INSIDE the dynamic import so
+// that toast-config.tsx doesn't need to import from the library, eliminating
+// the static import.
 
 const commonStyleLight: ViewStyle = {
   backgroundColor: '#FFFFFF',
@@ -61,7 +63,11 @@ const commonStyleDark: ViewStyle = {
   alignSelf: 'center',
 };
 
-export const ToastComponent = React.lazy(async () => {
+let ToastModule: any = null;
+let ToastConfig: any = null;
+
+async function loadToastModule() {
+  if (ToastModule && ToastConfig) return;
   const mod = await import('react-native-toast-message');
   const { default: Toast, BaseToast, ErrorToast, InfoToast } = mod;
   const { useAccentColor } = await import('@/hooks/useAccentColor');
@@ -139,7 +145,7 @@ export const ToastComponent = React.lazy(async () => {
     return configFn();
   };
 
-  const toastConfig = {
+  ToastConfig = {
     success: (props: any) => React.createElement(ThemedToast, { type: 'success', ...props }),
     error: (props: any) => React.createElement(ThemedToast, { type: 'error', ...props }),
     info: (props: any) => React.createElement(ThemedToast, { type: 'info', ...props }),
@@ -147,8 +153,31 @@ export const ToastComponent = React.lazy(async () => {
     order: (props: any) => React.createElement(ThemedToast, { type: 'order', ...props }),
   };
 
-  const WrappedToast = (props: any) =>
-    React.createElement(Toast, { ...props, config: toastConfig });
+  ToastModule = Toast;
+}
 
-  return { default: WrappedToast };
-});
+/**
+ * React Native-compatible lazy toast component.
+ * React.lazy() is not supported in React Native, so we use a
+ * state-based approach: the module loads asynchronously and the
+ * component re-renders once it's ready.
+ */
+export function ToastComponent(props: any) {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadToastModule().then(() => {
+      if (!cancelled) setLoaded(true);
+    }).catch(() => {
+      logger.debug('No se pudo cargar la librería de toast.');
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!loaded || !ToastModule || !ToastConfig) {
+    return null;
+  }
+
+  return React.createElement(ToastModule, { ...props, config: ToastConfig });
+}

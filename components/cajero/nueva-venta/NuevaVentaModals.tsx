@@ -1,6 +1,7 @@
 import { matchesProductSearch } from "../../../hooks/utils/productSearch";
 import { BASE_URL } from "@/api/base-url";
 import { useMemo, useState } from "react";
+import { ToastComponent } from "@/utils/toast-lazy";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
@@ -48,8 +49,11 @@ type Props = {
   loadingAmount: string;
   loadMetodoPago: PaymentMethod;
   loadSubmitting: boolean;
+  cart: any[];
+  cartItemCount: number;
   onCloseCategoryModal: () => void;
   onPressAddProduct: (item: any, choice: SaleChoice, quantity: number) => void;
+  onRemoveFromCart: (item: any, choice: SaleChoice) => void;
   onCloseTimeModal: () => void;
   onSelectTime: (time: number) => void;
   onCloseLoadModal: () => void;
@@ -113,8 +117,11 @@ export function NuevaVentaModals({
   loadingAmount,
   loadMetodoPago,
   loadSubmitting,
+  cart,
+  cartItemCount,
   onCloseCategoryModal,
   onPressAddProduct,
+  onRemoveFromCart,
   onCloseTimeModal,
   onSelectTime,
   onCloseLoadModal,
@@ -161,32 +168,6 @@ export function NuevaVentaModals({
             <View
               style={[productStyles.handle, { backgroundColor: borderColor }]}
             />
-            <View style={styles.modalHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[productStyles.eyebrow, { color: accentColor }]}>
-                  NUEVA VENTA
-                </Text>
-                <Text style={[productStyles.title, { color: textPrimary }]}>
-                  {modalCategoria?.name || "Productos"}
-                </Text>
-                <Text
-                  style={[productStyles.subtitle, { color: textSecondary }]}
-                >
-                  Elige la presentación y agrega la cantidad que necesitas.
-                </Text>
-              </View>
-              <Pressable
-                style={[
-                  productStyles.close,
-                  { backgroundColor: `${textSecondary}15` },
-                ]}
-                onPress={onCloseCategoryModal}
-                accessibilityLabel="Cerrar modal"
-                accessibilityRole="button"
-              >
-                <Ionicons name="close" size={26} color={textPrimary} />
-              </Pressable>
-            </View>
             <View
               style={[
                 productStyles.search,
@@ -219,6 +200,21 @@ export function NuevaVentaModals({
                   />
                 </Pressable>
               )}
+            </View>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[productStyles.eyebrow, { color: accentColor }]}>
+                  NUEVA VENTA
+                </Text>
+                <Text style={[productStyles.title, { color: textPrimary }]}>
+                  {modalCategoria?.name || "Productos"}
+                </Text>
+                <Text
+                  style={[productStyles.subtitle, { color: textSecondary }]}
+                >
+                  Elige la presentación y agrega la cantidad que necesitas.
+                </Text>
+              </View>
             </View>
             <Text style={[productStyles.count, { color: textSecondary }]}>
               {filteredProducts.length} productos disponibles
@@ -294,8 +290,12 @@ export function NuevaVentaModals({
                           textSecondary={textSecondary}
                           borderColor={borderColor}
                           cardBg={cardBg}
+                          cart={cart}
                           onAdd={(choice, quantity) =>
                             onPressAddProduct(item, choice, quantity)
+                          }
+                          onRemove={(choice) =>
+                            onRemoveFromCart(item, choice)
                           }
                         />
                       </View>
@@ -305,21 +305,35 @@ export function NuevaVentaModals({
               />
             )}
             <Pressable
-              style={[productStyles.done, { backgroundColor: accentColor }]}
-              onPress={onCloseCategoryModal}
+              style={[
+                productStyles.done,
+                { backgroundColor: accentColor },
+                cartItemCount === 0 && { opacity: 0.5 },
+              ]}
+              onPress={() => {
+                if (cartItemCount > 0) {
+                  onCloseCategoryModal();
+                }
+              }}
               accessibilityLabel="Volver a la venta"
               accessibilityRole="button"
             >
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={22}
-                color="#FFFFFF"
-              />
               <Text style={productStyles.doneText}>
                 Listo, volver a la venta
               </Text>
             </Pressable>
+            <Pressable
+              style={[productStyles.closeBtn, { backgroundColor: "#EF4444" }]}
+              onPress={onCloseCategoryModal}
+              accessibilityLabel="Cerrar modal"
+              accessibilityRole="button"
+            >
+              <Text style={productStyles.closeBtnText}>
+                Cerrar
+              </Text>
+            </Pressable>
           </View>
+          <ToastComponent position="top" topOffset={60} />
         </KeyboardAvoidingView>
       </Modal>
 
@@ -558,4 +572,14 @@ const productStyles = StyleSheet.create({
     marginTop: 12,
   },
   doneText: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
+  closeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 54,
+    borderRadius: 18,
+    marginTop: 10,
+  },
+  closeBtnText: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
 });

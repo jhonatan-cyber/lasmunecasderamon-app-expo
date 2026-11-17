@@ -112,17 +112,6 @@ export default function ClientesScreen() {
         title="Clientes"
         subtitle="Gestión de prepago y datos"
         onBack={() => router.back()}
-        rightComponent={
-          <Pressable
-            onPress={() => fetchClients(true)}
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            style={styles.backBtnRight}
-            accessibilityRole="button"
-            accessibilityLabel="Actualizar clientes"
-          >
-            <Ionicons name="refresh" size={20} color="#FFFFFF" />
-          </Pressable>
-        }
       />
 
       <View style={styles.content}>

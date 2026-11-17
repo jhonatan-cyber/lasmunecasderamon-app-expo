@@ -71,6 +71,7 @@ export function ShotMixerSelector({
   const { cardBg, textPrimary, textSecondary, borderColor, accentColor } =
     useAccentColor();
   const [bar, setBar] = useState<any[]>([]);
+  const [barProducts, setBarProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cached, setCached] = useState(false);
@@ -79,18 +80,28 @@ export function ShotMixerSelector({
   const [reload, setReload] = useState(0);
   useEffect(() => {
     let alive = true;
-    getMirror()
-      .readThroughDetailed<any>(
+    Promise.all([
+      getMirror().readThroughDetailed<any>(
         "bar:acompanamientos",
         () => apiClientSafe("/bar?acompanamientos=1"),
         { maxAgeMs: MIRROR_MAX_AGE_MS.catalogo },
-      )
-      .then((result) => {
+      ),
+      getMirror().readThroughDetailed<any>(
+        "bar:products",
+        () => apiClientSafe("/products?for_sale=1"),
+        { maxAgeMs: MIRROR_MAX_AGE_MS.catalogo },
+      ),
+    ])
+      .then(([barResult, productsResult]) => {
         if (!alive) return;
-        if (!result.data.success || !Array.isArray(result.data.data))
+        if (!barResult.data.success || !Array.isArray(barResult.data.data))
           throw new Error();
-        setBar(result.data.data);
-        setCached(result.fromCache);
+        setBar(barResult.data.data);
+        setCached(barResult.fromCache || productsResult.fromCache);
+        const products = (productsResult.data?.success && Array.isArray(productsResult.data?.data))
+          ? productsResult.data.data
+          : [];
+        setBarProducts(products);
       })
       .catch(() => {
         if (alive)
@@ -112,6 +123,18 @@ export function ShotMixerSelector({
   const stockOf = (presentacionId: string | undefined) =>
     Number(
       bar.find((b) => String(b.id) === String(presentacionId))?.stock_bar || 0,
+    );
+  const priceOf = (presentacionId: string | undefined) =>
+    Number(
+      barProducts.find((p) => String(p.presentacion_id) === String(presentacionId))?.precio_venta ||
+      barProducts.find((p) => String(p.id) === String(presentacionId))?.precio_venta ||
+      0,
+    );
+  const mlBotellaOf = (presentacionId: string | undefined) =>
+    Number(
+      barProducts.find((p) => String(p.presentacion_id) === String(presentacionId))?.ml_botella ||
+      barProducts.find((p) => String(p.id) === String(presentacionId))?.ml_botella ||
+      0,
     );
   const currentIndex = selected ?? -1;
   const saboresActuales = bottle
@@ -150,6 +173,8 @@ export function ShotMixerSelector({
           choice.foto && choice.foto !== "default.png"
             ? choice.foto
             : choice.producto_foto,
+        precio: priceOf(choice.id),
+        ml_botella: mlBotellaOf(choice.id),
       },
     ]);
   };
@@ -168,15 +193,10 @@ export function ShotMixerSelector({
       {!compact && (
         <Text style={{ color: textPrimary, fontWeight: "700" }}>
           {bottle
-            ? "Acompa\u00f1amiento por botella"
+            ? "Bebidas"
             : "Soda o gaseosa para los cortos"}
         </Text>
       )}
-      <Text style={{ color: textSecondary }}>
-        {bottle
-          ? "Incluido en el precio. Reparte las unidades configuradas entre los sabores que quieras."
-          : "Incluida en el precio. Cliente: producto completo. Anfitriona: ml configurados."}
-      </Text>
       {cached && (
         <Text style={{ color: textSecondary }}>
           Catálogo guardado: el stock se comprobará al sincronizar.
@@ -253,7 +273,7 @@ export function ShotMixerSelector({
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: 10,
+                        gap: 5,
                       }}
                     >
                       <OrderProductPhoto foto={sabor.foto} name={nombre} />
@@ -278,22 +298,27 @@ export function ShotMixerSelector({
                           )
                         }
                         style={{
-                          padding: 6,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          backgroundColor: "rgba(155,155,155,0.1)",
+                          justifyContent: "center",
+                          alignItems: "center",
                           opacity: sabor.unidades <= 1 ? 0.4 : 1,
                         }}
                       >
                         <Ionicons
-                          name="remove-circle-outline"
-                          size={22}
-                          color={accentColor}
+                          name="remove"
+                          size={16}
+                          color={textPrimary}
                         />
                       </Pressable>
                       <Text
                         style={{
                           color: textPrimary,
-                          fontWeight: "800",
-                          minWidth: 18,
-                          textAlign: "center",
+                          marginHorizontal: 12,
+                          fontSize: 14,
+                          fontWeight: "900",
                         }}
                       >
                         {sabor.unidades}
@@ -313,14 +338,19 @@ export function ShotMixerSelector({
                           )
                         }
                         style={{
-                          padding: 6,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          backgroundColor: "rgba(155,155,155,0.1)",
+                          justifyContent: "center",
+                          alignItems: "center",
                           opacity: sabor.unidades >= max ? 0.4 : 1,
                         }}
                       >
                         <Ionicons
-                          name="add-circle-outline"
-                          size={22}
-                          color={accentColor}
+                          name="add"
+                          size={16}
+                          color={textPrimary}
                         />
                       </Pressable>
                       <Pressable
@@ -335,12 +365,20 @@ export function ShotMixerSelector({
                             ),
                           )
                         }
-                        style={{ padding: 6 }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          backgroundColor: "rgba(239,68,68,0.1)",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginLeft: 12,
+                        }}
                       >
                         <Ionicons
-                          name="close-circle-outline"
-                          size={22}
-                          color={textSecondary}
+                          name="trash-outline"
+                          size={16}
+                          color="#EF4444"
                         />
                       </Pressable>
                     </View>

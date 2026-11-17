@@ -38,7 +38,7 @@ describe('PremiumUserProfile — rol y código de asistencia', () => {
     expect(screen.queryByText('CODIGO_ASISTENCIA')).toBeNull();
   });
 
-  it('muestra el rol de la sección y el código de asistencia para un cajero', () => {
+  it('muestra el rol de la sección y oculta el código de asistencia para un cajero', () => {
     render(
       <PremiumUserProfile
         user={{ id: 2, name: 'Luis', role: 'cajero' }}
@@ -48,6 +48,6 @@ describe('PremiumUserProfile — rol y código de asistencia', () => {
     );
 
     expect(screen.getByText('Cajero')).toBeDefined();
-    expect(screen.getByText('CODIGO_ASISTENCIA')).toBeDefined();
+    expect(screen.queryByText('CODIGO_ASISTENCIA')).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function NotFoundScreen() {
   const isDark = useColorScheme() === 'dark';

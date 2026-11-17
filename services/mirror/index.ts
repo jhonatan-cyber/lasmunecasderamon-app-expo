@@ -31,10 +31,6 @@ export const MIRROR_KEYS = {
     config: (group: string, key: string) => `config.${group}.${key}`,
     cashregisterStatus: 'caja.estado',
     cashregisterSummary: 'caja.resumen',
-    openAccounts: 'cuentas.abiertas',
-    accountsSummary: 'cuentas.resumen',
-    /** Detalle de una cuenta: lo que el cajero necesita para cargarle consumos. */
-    accountDetail: (id: string | number) => `cuentas.detalle.${id}`,
     salesList: 'ventas.listado',
     salesSummary: 'ventas.resumen',
     /** Detalle de una venta: lo que el cajero abre al tocar una tarjeta. */

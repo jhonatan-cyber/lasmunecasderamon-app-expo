@@ -120,12 +120,6 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
     describe('espejo de lectura (solo lecturas al servidor real)', () => {
         const claves = [
             {
-                nombre: 'cuentas abiertas',
-                key: () => MIRROR_KEYS.openAccounts,
-                endpoint: () => `/accounts?limit=50&_t=${Date.now()}`,
-                maxAgeMs: MIRROR_MAX_AGE_MS.dinero,
-            },
-            {
                 nombre: 'listado de ventas',
                 key: () => MIRROR_KEYS.salesList,
                 endpoint: () => `/sales?limit=50&_t=${Date.now()}`,
@@ -180,42 +174,6 @@ describe.skipIf(!serverUp)('modo offline del cajero · contra el dashboard real'
             }
         );
 
-        it('espeja el detalle de una cuenta real y lo sirve sin red', async () => {
-            const listado = await apiClientSafe<{ id_cuenta?: string }[]>('/accounts?limit=5');
-            const cuenta = (listado.data as any[])?.[0];
-
-            if (!cuenta?.id_cuenta) {
-                // Sin cuentas abiertas en la base local no hay detalle que probar.
-                console.warn('[integración] No hay cuentas abiertas: se omite el detalle.');
-                return;
-            }
-
-            const clave = MIRROR_KEYS.accountDetail(cuenta.id_cuenta);
-            const online = await mirror.readThroughDetailed<any>(
-                clave,
-                () => apiClientSafe(`/accounts/${cuenta.id_cuenta}?_t=${Date.now()}`),
-                { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
-            );
-
-            expect(online.fromCache).toBe(false);
-            expect((online.data as any)?.id_cuenta).toBe(cuenta.id_cuenta);
-
-            goOffline();
-            try {
-                const offline = await getMirror().readThroughDetailed<any>(
-                    clave,
-                    () => {
-                        throw new Error('no debería llamarse al servidor sin red');
-                    },
-                    { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
-                );
-
-                expect(offline.fromCache).toBe(true);
-                expect((offline.data as any)?.id_cuenta).toBe(cuenta.id_cuenta);
-            } finally {
-                goOnline();
-            }
-        });
     });
 
     describe('cola de intenciones', () => {

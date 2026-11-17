@@ -1,5 +1,5 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { eventBus } from "@/utils/eventBus";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { apiClientSafe } from "@/api/client";
@@ -23,12 +23,15 @@ import { useTimerActions } from "@/context/TimerContext";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import { useCajaAbiertaStore } from "@/store/cajaAbiertaStore";
 
 const initialVentasLoadedRef = { current: false };
 
 export const useVentasScreen = () => {
   const { refreshTimers } = useTimerActions();
   const { isOffline } = useConnectivity();
+  const cajaInfo = useCajaAbiertaStore((state) => state.cajaInfo);
+  const currentCajaId = cajaInfo?.id_caja ?? null;
   const params = useLocalSearchParams();
   /** `true` si el listado que se está viendo viene del espejo local. */
   const [fromCache, setFromCache] = useState(false);
@@ -385,7 +388,14 @@ export const useVentasScreen = () => {
     isOffline,
     fromCache,
     ventas: state.ventas,
-    ventasList: Array.isArray(state.ventas) ? state.ventas : [],
+    ventasList: React.useMemo(() => {
+      const all = Array.isArray(state.ventas) ? state.ventas : [];
+      // Si hay caja abierta, mostrar solo las ventas de esa caja.
+      if (currentCajaId) {
+        return all.filter((v) => String(v.caja_id || '') === String(currentCajaId));
+      }
+      return all;
+    }, [state.ventas, currentCajaId]),
     resumen: state.resumen,
     loadingSales: state.loadingSales,
     selectedVenta: state.selectedVenta,

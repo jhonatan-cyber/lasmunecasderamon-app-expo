@@ -9,7 +9,6 @@ export { clientesService } from './clientes';
 export { codigoService } from './codigo';
 export { colacionesService } from './colaciones';
 export { commissionsService } from './commissions';
-export { cuentasService } from './cuentas';
 export { dashboardService } from './dashboard';
 export { entradasService } from './entradas';
 export { eventsService } from './events';

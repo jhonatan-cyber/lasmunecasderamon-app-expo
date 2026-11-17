@@ -62,10 +62,12 @@ export const PremiumTabBar = ({
                     paddingBottom: insets.bottom,
                     borderTopColor: borderColor,
                     minHeight: compact ? 52 : Platform.OS === 'ios' ? 88 : 68,
+                    borderRadius: 24,
+                    overflow: 'hidden',
                 },
             ]}
         >
-            <View pointerEvents="none" style={styles.scrim} />
+                <View pointerEvents="none" style={styles.scrim} />
 
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -140,15 +142,8 @@ const styles = StyleSheet.create({
     tabBarContainer: {
         flexDirection: 'row',
         minHeight: Platform.OS === 'ios' ? 88 : 68,
-        borderTopWidth: 1,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
         justifyContent: 'space-around',
         alignItems: 'center',
-        zIndex: 1000,
     },
     scrim: {
         position: 'absolute',

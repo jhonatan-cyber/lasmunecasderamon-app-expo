@@ -16,12 +16,13 @@ import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, LogBox, Platform, useColorScheme, View } from "react-native";
+import { ActivityIndicator, LogBox, Platform, View } from "react-native";
 import { prepareMirrorStorage } from "@/services/mirror/driver";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
 import { configurationsSchema } from "@lasmunecasderamon/validations";
 import { setExpensiveDrinkThreshold, setCardSplit, setIvaRate } from "@/hooks/utils/cuentaUtils";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "setBackgroundColorAsync is not supported",

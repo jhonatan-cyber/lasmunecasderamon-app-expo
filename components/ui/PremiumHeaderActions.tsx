@@ -3,6 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
+import { useAppearanceStore } from '@/store/appearanceStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { isAdminRole, isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
@@ -36,6 +37,7 @@ export const PremiumHeaderActions = ({
     const compact = isLandscape && !isTablet;
     const logout = useAuthStore(state => state.logout);
     const user = useAuthStore(state => state.user);
+    const { toggleScheme, scheme } = useAppearanceStore();
     const isBiometricEnrolled = useAuthStore((state) => state.biometricoFacialEnrolled);
     const [showEnrollment, setShowEnrollment] = useState(false);
     const router = useRouter();
@@ -122,6 +124,15 @@ export const PremiumHeaderActions = ({
                 style={iconButtonStyle}
             >
                 <Ionicons name="settings-outline" size={20} color={iconColor} />
+            </Pressable>
+            <Pressable
+                onPress={toggleScheme}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Cambiar tema"
+                style={iconButtonStyle}
+            >
+                <Ionicons name={scheme === 'dark' ? 'sunny-outline' : scheme === 'light' ? 'moon-outline' : 'moon-outline'} size={20} color={iconColor} />
             </Pressable>
             <Pressable
                 onPress={handleLogout}

@@ -19,6 +19,7 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services";
 import { changePasswordSchema } from "@lasmunecasderamon/validations";
+import { getHomeRouteByRole } from "@/utils/userRole";
 import { showToast } from "@/utils/toast-lazy";
 
 export default function ChangePasswordScreen() {
@@ -62,7 +63,8 @@ export default function ChangePasswordScreen() {
         text1: "Contraseña actualizada",
         text2: "Ya puedes continuar con tu sesión",
       });
-      router.replace("/");
+      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+      router.replace(homeRoute);
     } catch (err: any) {
       setError(err.message || "Error al cambiar la contraseña");
     } finally {

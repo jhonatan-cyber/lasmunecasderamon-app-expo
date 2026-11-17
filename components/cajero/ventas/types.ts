@@ -128,6 +128,8 @@ export function ventasReducer(state: VentasState, action: VentasAction): VentasS
 export interface Venta {
   id: string | number;
   codigo: string;
+  /** ID de la caja/turno al que pertenece esta venta. */
+  caja_id?: string | null;
   cliente_id: string | number | null;
   cliente_nombre?: string | null;
   habitacion_id: string | number | null;

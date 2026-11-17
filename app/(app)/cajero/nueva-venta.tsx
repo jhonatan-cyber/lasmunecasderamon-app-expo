@@ -20,7 +20,6 @@ import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
 import { CartList } from "@/components/cajero/forms/CartList";
-import { CategorySelector } from "@/components/cajero/forms/CategorySelector";
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
 import { NuevaVentaHostessModal } from "@/components/cajero/nueva-venta/NuevaVentaHostessModal";
 import { PaymentMethodSelect } from "@/components/cajero/forms/PaymentMethodSelect";
@@ -125,6 +124,17 @@ export default function NuevaVentaScreen() {
   /** Foto del baucher en data URL; se exige con transferencia al finalizar. */
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [clientSelectionTarget, setClientSelectionTarget] = useState<"primary" | "secondary">("primary");
+
+  // Collapsible card states (all expanded by default)
+  const [sections, setSections] = useState({
+    categories: true,
+    detalles: true,
+    carrito: true,
+    bebidas: true,
+    soda: true,
+  });
+  const toggleSection = (key: keyof typeof sections) =>
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }));
   const handleAdjuntarBaucher = useCallback(async () => {
     const dataUrl = await adjuntarBaucher("NuevaVenta:baucher");
     if (dataUrl) setBaucherFoto(dataUrl);
@@ -216,7 +226,28 @@ export default function NuevaVentaScreen() {
           onClearSearch={handleClearSearch}
           searchLoading={searchLoading}
           searchResults={searchResults}
+          cart={cart}
           onAddProduct={handlePressAddProduct}
+          onRemoveFromCart={(item, choice) => {
+            const productId = String(item.id || item.id_producto);
+            const choiceIsShot = choice === "shot" || choice === "shot_anfitriona";
+            const choiceAnfitriona = choice === "shot_anfitriona";
+            const idx = cart.findIndex((ci) => {
+              const ciProductId = String(ci.id || ci.id_producto || ci.producto_id || "");
+              if (ciProductId !== productId) return false;
+              const ciTipo = ci.tipo_venta || "botella";
+              if (choiceIsShot && ciTipo === "shot") {
+                return (ci.shot_anfitriona ?? false) === choiceAnfitriona;
+              }
+              if (!choiceIsShot && ciTipo === "botella") {
+                return (ci.botella_anfitriona ?? true) === (choice !== "botella_sin_anfitriona");
+              }
+              return false;
+            });
+            if (idx >= 0) {
+              removeFromCart(idx);
+            }
+          }}
           accentColor={accentColor}
           cardBg={cardBg}
           textPrimary={textPrimary}
@@ -224,26 +255,61 @@ export default function NuevaVentaScreen() {
           borderColor={borderColor}
         />
 
-        <CategorySelector
-          categories={categories}
-          onSelectCategory={handleOpenCategory}
-        />
+        {/* 1. Selección de Categoría - Collapsible */}
+        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
+          <Pressable onPress={() => toggleSection("categories")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
+            <Text style={{ color: textPrimary, fontWeight: "900", fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+              1. Selección de Categoría
+            </Text>
+            <Ionicons name={sections.categories ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
+          </Pressable>
+          {sections.categories && (
+            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                {categories.map((cat, idx) => {
+                  const n = (cat.name || cat.nombre || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  let icon: string = "pricetags";
+                  if (/cerve/.test(n)) icon = "beer";
+                  else if (/vino/.test(n)) icon = "wine";
+                  else if (/cocktail|coctail/.test(n)) icon = "wine";
+                  else if (/cafe|café|coffee/.test(n)) icon = "cafe";
+                  else if (/pizza/.test(n)) icon = "pizza";
+                  else if (/hamburguesa|burger/.test(n)) icon = "fast-food";
+                  else if (/helado|ice cream/.test(n)) icon = "ice-cream";
+                  else if (/pasta/.test(n)) icon = "restaurant";
+                  else if (/pescado|fish/.test(n)) icon = "fish";
+                  else if (/bebida|drink/.test(n)) icon = "cafe";
+                  return (
+                    <Pressable
+                      key={cat.id || idx}
+                      onPress={() => handleOpenCategory(cat)}
+                      style={{ minWidth: 120, padding: 12, borderRadius: 20, borderWidth: 1, borderColor, backgroundColor: "rgba(155,155,155,0.03)", alignItems: "center" }}
+                      accessibilityRole="button"
+                    >
+                      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${accentColor}15`, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
+                        <Ionicons name={icon as any} size={20} color={accentColor} />
+                      </View>
+                      <Text style={{ color: textPrimary, fontSize: 12, fontWeight: "800", textAlign: "center" }}>
+                        {cat.name || cat.nombre}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+        </View>
 
-        <View
-          style={[
-            styles.section,
-            dynamicStyles.section,
-            { backgroundColor: cardBg, borderColor },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: textPrimary, fontSize: isTablet ? 16 : 13 },
-            ]}
-          >
-            2. Detalles de la Venta
-          </Text>
+        {/* 2. Detalles de la Venta - Collapsible */}
+        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: borderRadius, overflow: "hidden", marginBottom: 12 }}>
+          <Pressable onPress={() => toggleSection("detalles")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing }}>
+            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: isTablet ? 16 : 13 }}>
+              2. Detalles de la Venta
+            </Text>
+            <Ionicons name={sections.detalles ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
+          </Pressable>
+          {sections.detalles && (
+            <View style={{ paddingHorizontal: spacing, paddingBottom: spacing }}>
           {servicioId && (
             <Text style={{ color: textPrimary, padding: 12 }}>
               Venta adicional · {servicioNombre || "Cargando habitación…"}
@@ -477,45 +543,90 @@ export default function NuevaVentaScreen() {
               )}
             </View>
           )}
+          </View>
+          )}
         </View>
 
-        <CartList
-          items={cart as any}
-          onUpdateQuantity={updateQuantity}
-          onRemove={removeFromCart}
-        />
-        <ShotMixerSelector
-          bottle
-          items={cart.map((p) => ({
-            ...p,
-            nombre: p.nombre || p.name || "",
-            cantidad: p.quantity,
-          }))}
-          onChangeBottle={(index, sabores) =>
-            dispatch({
-              type: "SET_CART",
-              payload: cart.map((p, i) =>
-                i === index ? { ...p, acompanamiento_botella: sabores } : p,
-              ),
-            })
-          }
-        />
+        {/* 3. Carrito - Collapsible */}
+        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
+          <Pressable onPress={() => toggleSection("carrito")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
+            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
+              3. Carrito
+            </Text>
+            <Ionicons name={sections.carrito ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
+          </Pressable>
+          {sections.carrito && (
+            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+              <CartList
+                items={cart as any}
+                onUpdateQuantity={updateQuantity}
+                onRemove={removeFromCart}
+                title={""}
+              />
+            </View>
+          )}
+        </View>
+
+        {/* Bebidas - Collapsible */}
+        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
+          <Pressable onPress={() => toggleSection("bebidas")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
+            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
+              Bebidas
+            </Text>
+            <Ionicons name={sections.bebidas ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
+          </Pressable>
+          {sections.bebidas && (
+            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+              <ShotMixerSelector
+                bottle
+                compact
+                items={cart.map((p) => ({
+                  ...p,
+                  nombre: p.nombre || p.name || "",
+                  cantidad: p.quantity,
+                }))}
+                onChangeBottle={(index, sabores) =>
+                  dispatch({
+                    type: "SET_CART",
+                    payload: cart.map((p, i) =>
+                      i === index ? { ...p, acompanamiento_botella: sabores } : p,
+                    ),
+                  })
+                }
+              />
+            </View>
+          )}
+        </View>
+
         {cart.some((p) => p.tipo_venta === "shot") && (
-          <ShotMixerSelector
-            items={cart.map((p) => ({
-              ...p,
-              nombre: p.nombre || p.name || "",
-              cantidad: p.quantity,
-            }))}
-            onChange={(index, mixer) =>
-              dispatch({
-                type: "SET_CART",
-                payload: cart.map((p, i) =>
-                  i === index ? { ...p, acompanamiento_corto: mixer } : p,
-                ),
-              })
-            }
-          />
+          <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
+            <Pressable onPress={() => toggleSection("soda")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
+              <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
+                Soda o gaseosa para los cortos
+              </Text>
+              <Ionicons name={sections.soda ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
+            </Pressable>
+            {sections.soda && (
+              <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+                <ShotMixerSelector
+                  compact
+                  items={cart.map((p) => ({
+                    ...p,
+                    nombre: p.nombre || p.name || "",
+                    cantidad: p.quantity,
+                  }))}
+                  onChange={(index, mixer) =>
+                    dispatch({
+                      type: "SET_CART",
+                      payload: cart.map((p, i) =>
+                        i === index ? { ...p, acompanamiento_corto: mixer } : p,
+                      ),
+                    })
+                  }
+                />
+              </View>
+            )}
+          </View>
         )}
 
         <View
@@ -533,6 +644,16 @@ export default function NuevaVentaScreen() {
               ${totals.subtotal.toLocaleString()}
             </Text>
           </View>
+          {totals.recargoAcompanamiento && totals.recargoAcompanamiento > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: "#F59E0B" }]}>
+                Acompañamiento extra
+              </Text>
+              <Text style={[styles.summaryVal, { color: "#F59E0B" }]}>
+                +${totals.recargoAcompanamiento.toLocaleString()}
+              </Text>
+            </View>
+          )}
           {state.cart.some(
             (item) => item.tipo_venta === "shot" && item.quantity > 1,
           ) && (
@@ -669,6 +790,8 @@ export default function NuevaVentaScreen() {
         loadingAmount={loadingAmount}
         loadMetodoPago={loadMetodoPago}
         loadSubmitting={loadSubmitting}
+        cart={cart}
+        cartItemCount={cart.length}
         onCloseCategoryModal={() =>
           dispatch({
             type: "SET_MODAL_VISIBLE",
@@ -677,6 +800,26 @@ export default function NuevaVentaScreen() {
           })
         }
         onPressAddProduct={handlePressAddProduct}
+        onRemoveFromCart={(item, choice) => {
+          const productId = String(item.id || item.id_producto);
+          const choiceIsShot = choice === "shot" || choice === "shot_anfitriona";
+          const choiceAnfitriona = choice === "shot_anfitriona";
+          const idx = cart.findIndex((ci) => {
+            const ciProductId = String(ci.id || ci.id_producto || ci.producto_id || "");
+            if (ciProductId !== productId) return false;
+            const ciTipo = ci.tipo_venta || "botella";
+            if (choiceIsShot && ciTipo === "shot") {
+              return (ci.shot_anfitriona ?? false) === choiceAnfitriona;
+            }
+            if (!choiceIsShot && ciTipo === "botella") {
+              return (ci.botella_anfitriona ?? true) === (choice !== "botella_sin_anfitriona");
+            }
+            return false;
+          });
+          if (idx >= 0) {
+            removeFromCart(idx);
+          }
+        }}
         onCloseTimeModal={() =>
           dispatch({ type: "SET_MODAL_VISIBLE", modal: "time", visible: false })
         }
@@ -803,7 +946,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(155,155,155,0.03)",
   },
   selectorText: { fontSize: 14, fontWeight: "700" },
-  summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1 },
+  summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1, marginTop: 12 },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",

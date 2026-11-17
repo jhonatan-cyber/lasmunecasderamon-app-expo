@@ -13,7 +13,9 @@ interface NuevaVentaSearchProps {
   onClearSearch: () => void;
   searchLoading: boolean;
   searchResults: any[];
+  cart: any[];
   onAddProduct: (item: any, choice: any, quantity: number) => void;
+  onRemoveFromCart: (item: any, choice: any) => void;
   accentColor: string;
   cardBg: string;
   textPrimary: string;
@@ -38,7 +40,9 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
   onClearSearch,
   searchLoading,
   searchResults,
+  cart,
   onAddProduct,
+  onRemoveFromCart,
   accentColor,
   cardBg,
   textPrimary,
@@ -56,7 +60,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
       <View style={styles.inputRow}>
         <Ionicons name="search" size={18} color={textSecondary} />
         <TextInput
-          style={[styles.input, { color: textPrimary, borderColor }]}
+          style={[styles.input, { color: textPrimary, borderColor, paddingRight: hasText ? 36 : 12 }]}
           placeholder="Buscar Producto"
           placeholderTextColor={textSecondary}
           value={searchProducto}
@@ -67,23 +71,14 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
           returnKeyType="search"
           accessibilityLabel="Buscar Producto"
         />
-        <Pressable
-          onPress={onSearchNow}
-          style={styles.searchBtn}
-          accessibilityLabel="Buscar"
-          accessibilityRole="button"
-        >
-          <Text style={styles.searchBtnText}>Buscar</Text>
-        </Pressable>
         {hasText && (
           <Pressable
             onPress={onClearSearch}
-            style={[styles.clearBtn, { borderColor }]}
+            style={styles.clearIconBtn}
             accessibilityLabel="Limpiar búsqueda"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={14} color={textPrimary} />
-            <Text style={[styles.clearBtnText, { color: textPrimary }]}>Limpiar</Text>
+            <Ionicons name="close-circle" size={20} color={textSecondary} />
           </Pressable>
         )}
       </View>
@@ -134,7 +129,9 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                       textSecondary={textSecondary}
                       borderColor={borderColor}
                       cardBg={cardBg}
+                      cart={cart}
                       onAdd={(choice, quantity) => onAddProduct(producto, choice, quantity)}
+                      onRemove={(choice) => onRemoveFromCart(producto, choice)}
                     />
                   </View>
                 </View>
@@ -166,6 +163,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    position: 'relative',
   },
   input: {
     flex: 1,
@@ -176,32 +174,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  searchBtn: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 9999,
-    backgroundColor: '#000000',
+  clearIconBtn: {
+    position: 'absolute',
+    right: 8,
+    top: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  clearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 9999,
-    borderWidth: 1,
-    backgroundColor: 'rgba(155,155,155,0.06)',
-  },
-  clearBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
+    padding: 4,
   },
   results: {
     marginTop: 14,

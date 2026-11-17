@@ -133,7 +133,7 @@ test('root redirects cajero users to the cashier dashboard', async ({ page }) =>
 
     await expect(page).toHaveURL(/cajero/);
     await expect(page.locator('body')).toContainText('VENTAS');
-    await expect(page.locator('body')).toContainText('CUENTAS');
+    await expect(page.locator('body')).toContainText('SERVICIOS');
     // ANALÍTICAS solo es visible para administradores (oculta para cajero sin rol admin)
     await expect(page.locator('body')).toContainText('PEDIDOS');
 });

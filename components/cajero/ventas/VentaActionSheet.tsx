@@ -28,7 +28,7 @@ export function VentaActionSheet({
     {
       icon: "eye-outline",
       label: "Ver Detalles",
-      color: accentColor,
+      color: "#22C55E",
       onPress: onVerDetalles,
     },
   ];
@@ -37,7 +37,7 @@ export function VentaActionSheet({
     items.push({
       icon: "trash-outline",
       label: "Solicitar Anulación",
-      color: dangerColor,
+      color: "#EF4444",
       onPress: onSolicitarAnulacion,
     });
   }
@@ -49,6 +49,7 @@ export function VentaActionSheet({
       title="Opciones de Venta"
       subtitle={`Código: ${activeVenta?.codigo}`}
       items={items}
+      cancelLabel="Cerrar"
     />
   );
 }

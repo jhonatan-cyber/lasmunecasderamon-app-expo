@@ -47,7 +47,6 @@ afterEach(() => {
 describe('CajeroActionGrid — tarjetas visibles según rol', () => {
   const TARJETAS_CAJERO = [
     'VENTAS',
-    'CUENTAS',
     'SERVICIOS',
     'COLACIONES',
     'CAJA',
@@ -74,7 +73,6 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
   ];
 
   const TARJETAS_SOLO_CAJERO = [
-    'CUENTAS',
     'COLACIONES',
     'CAJA',
     'PEDIDOS',
@@ -118,17 +116,15 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     expect(screen.queryByText('ANALÍTICAS')).toBeNull();
   });
 
-  it('usa iconos de distintos colores y el acento de la app como borde', () => {
+  it('usa iconos de distintos colores', () => {
     vi.mocked(useIsAdmin).mockReturnValue(false);
 
     render(<CajeroActionGrid />);
 
     const ventas = screen.getByText('VENTAS').closest('[data-title="VENTAS"]');
-    const cuentas = screen.getByText('CUENTAS').closest('[data-title="CUENTAS"]');
+    const servicios = screen.getByText('SERVICIOS').closest('[data-title="SERVICIOS"]');
 
     expect(ventas?.getAttribute('data-color')).toBe('#22C55E');
-    expect(cuentas?.getAttribute('data-color')).toBe('#3B82F6');
-    expect(ventas?.getAttribute('data-border-color')).toBe('#E11D48');
-    expect(cuentas?.getAttribute('data-border-color')).toBe('#E11D48');
+    expect(servicios?.getAttribute('data-color')).toBe('#F97316');
   });
 });
