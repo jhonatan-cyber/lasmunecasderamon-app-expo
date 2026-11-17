@@ -186,6 +186,80 @@ describe("useNuevaVenta totals (propina / total)", () => {
     expect(payload.cargo_tarjeta).toBeUndefined(); // el cargo por tarjeta ya no existe
   });
 
+  it("calcula recargo cuando acompañamiento supera el máximo configurado", async () => {
+    configValues.set("acompanamiento_max_ml", "500");
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    // Producto botella con acompañamiento: 2 sabores de 750ml cada uno = 1500ml total
+    // Supera el máximo de 500ml, debe cobrar recargo proporcional
+    setCart(result, [
+      {
+        id: "p1",
+        precio: 10000,
+        quantity: 1,
+        tipo_venta: "botella",
+        acompanamiento_botella: [
+          { presentacion_id: "s1", unidades: 1, ml_botella: 750 },
+          { presentacion_id: "s2", unidades: 1, ml_botella: 750 },
+        ],
+      },
+    ]);
+
+    const totals = result.current.totals;
+    // mlTotal = 750 + 750 = 1500, maxMl = 500, mlExcedente = 1000
+    // recargo = (1000 / 1500) * 10000 * 1 = 6666.67
+    expect(totals.recargoAcompanamiento).toBeGreaterThan(0);
+    expect(totals.recargoAcompanamiento).toBeCloseTo(6666.67, -1);
+    // El subtotal incluye el recargo
+    expect(totals.subtotal).toBeCloseTo(10000 + totals.recargoAcompanamiento, -1);
+  });
+
+  it("no calcula recargo cuando acompañamiento está dentro del máximo", async () => {
+    configValues.set("acompanamiento_max_ml", "1000");
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    // Producto botella con acompañamiento: 2 sabores de 300ml = 600ml total
+    // No supera el máximo de 1000ml, no debe cobrar recargo
+    setCart(result, [
+      {
+        id: "p1",
+        precio: 10000,
+        quantity: 1,
+        tipo_venta: "botella",
+        acompanamiento_botella: [
+          { presentacion_id: "s1", unidades: 1, ml_botella: 300 },
+          { presentacion_id: "s2", unidades: 1, ml_botella: 300 },
+        ],
+      },
+    ]);
+
+    expect(result.current.totals.recargoAcompanamiento).toBe(0);
+    expect(result.current.totals.subtotal).toBe(10000);
+  });
+
+  it("no calcula recargo para productos tipo shot", async () => {
+    configValues.set("acompanamiento_max_ml", "500");
+    const { result } = renderSaleHook();
+    await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));
+
+    setCart(result, [
+      {
+        id: "p1",
+        precio: 5000,
+        quantity: 2,
+        tipo_venta: "shot",
+        acompanamiento_botella: [
+          { presentacion_id: "s1", unidades: 1, ml_botella: 750 },
+        ],
+      },
+    ]);
+
+    expect(result.current.totals.recargoAcompanamiento).toBe(0);
+    expect(result.current.totals.subtotal).toBe(10000);
+  });
+
   it("bloquea el cobro de una champaña sin tabla de precios ni máximo configurado", async () => {
     const { result } = renderSaleHook();
     await waitFor(() => expect(result.current.state.cajaAbierta).toBe(true));

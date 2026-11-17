@@ -44,6 +44,8 @@ export function normalizarAcompanamientoBotella(
       unidades: Math.floor(Number(item.unidades)),
       ...(item.nombre !== undefined ? { nombre: item.nombre } : {}),
       ...(item.foto !== undefined ? { foto: item.foto } : {}),
+      ...(item.precio !== undefined ? { precio: Number(item.precio) } : {}),
+      ...(item.ml_botella !== undefined ? { ml_botella: Number(item.ml_botella) } : {}),
     }));
 }
 export function totalUnidadesAcompanamientoBotella(
