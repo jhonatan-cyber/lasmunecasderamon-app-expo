@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
 
 type Props = {
@@ -44,6 +45,8 @@ export function ServiceSummaryCard({
   isDark,
   onSubmit,
 }: Props) {
+  const { cardBg } = useAccentColor();
+
   return (
     <View
       style={{
@@ -52,7 +55,7 @@ export function ServiceSummaryCard({
         borderRadius: 32,
         borderWidth: 1,
         elevation: 20,
-        backgroundColor: isDark ? '#1E1B4B' : '#FFFFFF',
+        backgroundColor: cardBg,
         borderTopColor: borderColor,
       }}
     >

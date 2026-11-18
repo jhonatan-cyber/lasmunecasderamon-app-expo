@@ -136,4 +136,22 @@ describe('NuevaVentaModals: filas de productos', () => {
 
     expect(h.rowRenders['1']).toBe(2);
   });
+
+  it('muestra el stock en bar de cada producto', () => {
+    render(
+      <NuevaVentaModals
+        {...(baseProps({
+          modalProducts: [
+            { id: 1, name: 'Agua', stock_bar: 4 },
+            { id: 2, name: 'Cerveza', stock_bar: 1 },
+            { id: 3, name: 'Caña', stock_bar: 0 },
+          ],
+        }) as any)}
+      />,
+    );
+
+    expect(screen.getByText('Stock en bar: 4 unidades')).toBeTruthy();
+    expect(screen.getByText('Stock en bar: 1 unidad')).toBeTruthy();
+    expect(screen.getByText('Stock en bar: 0 unidades')).toBeTruthy();
+  });
 });

@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { View } from "react-native";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
+import { useAccentColor } from "@/hooks/useAccentColor";
 import { styles } from "../HomeScreen.styles";
 
 interface HomeScreenSkeletonProps {
@@ -14,6 +15,8 @@ export function HomeScreenSkeleton({
   gradientColors,
   topInset,
 }: HomeScreenSkeletonProps) {
+  const { gradientControlBg } = useAccentColor();
+
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <LinearGradient
@@ -26,25 +29,25 @@ export function HomeScreenSkeleton({
           width={40}
           height={40}
           borderRadius={20}
-          style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+          style={{ backgroundColor: gradientControlBg }}
         />
         <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
           <SkeletonLoader
             width={60}
             height={60}
             borderRadius={30}
-            style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+            style={{ backgroundColor: gradientControlBg }}
           />
           <View style={{ gap: 8 }}>
             <SkeletonLoader
               width={120}
               height={20}
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+              style={{ backgroundColor: gradientControlBg }}
             />
             <SkeletonLoader
               width={80}
               height={15}
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+              style={{ backgroundColor: gradientControlBg }}
             />
           </View>
         </View>

@@ -34,7 +34,7 @@ import {
 const VENTA_SKELETON_ITEMS = [1, 2, 3, 4];
 
 export default function VentasScreen() {
-  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const esAdmin = useIsAdmin();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -187,7 +187,7 @@ export default function VentasScreen() {
         activeKey={activeTab}
         onChange={setActiveTab}
         accentColor={accentColor}
-        accentText={isDark ? '#FFFFFF' : '#111827'}
+        accentText={accentText}
         cardBg={cardBg}
         textSecondary={textPrimary}
         borderColor={borderColor}

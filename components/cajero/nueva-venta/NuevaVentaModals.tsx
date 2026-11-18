@@ -127,6 +127,7 @@ const ProductRow = memo(function ProductRow({
   onRemove,
 }: ProductRowProps) {
   const venta = resolverVentaProducto(item);
+  const stockBar = Number(item.stock_bar ?? 0);
   return (
     <View
       style={[
@@ -144,14 +145,22 @@ const ProductRow = memo(function ProductRow({
             name={item.name || item.nombre || "Producto"}
             accentColor={accentColor}
           />
-          <Text
-            style={[
-              productStyles.productName,
-              { color: textPrimary, flex: 1 },
-            ]}
-          >
-            {item.name || item.nombre}
-          </Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={[
+                productStyles.productName,
+                { color: textPrimary, marginBottom: 0 },
+              ]}
+              numberOfLines={2}
+            >
+              {item.name || item.nombre}
+            </Text>
+            {item.stock_bar != null && (
+              <Text style={[productStyles.stock, { color: textSecondary }]}>
+                {`Stock en bar: ${stockBar} ${stockBar === 1 ? "unidad" : "unidades"}`}
+              </Text>
+            )}
+          </View>
         </View>
         <SaleFormatSelector
           product={item}
@@ -633,6 +642,7 @@ const productStyles = StyleSheet.create({
     justifyContent: "center",
   },
   productName: { fontSize: 17, fontWeight: "800", marginBottom: 10 },
+  stock: { fontSize: 11, fontWeight: "700", marginTop: 3 },
   empty: { alignItems: "center", paddingVertical: 40, gap: 12 },
   emptyTitle: { fontSize: 17, fontWeight: "700" },
   done: {

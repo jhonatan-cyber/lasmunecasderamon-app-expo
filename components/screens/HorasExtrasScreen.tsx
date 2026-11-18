@@ -2,7 +2,7 @@ import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FilterTabs } from '@/components/ui/FilterTabs';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -14,6 +14,8 @@ import VirtualizedList from '@/components/shared/VirtualizedList';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { OvertimeCard } from '@/components/ui/OvertimeCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -31,6 +33,34 @@ export default function HorasExtrasScreen() {
     fetchData,
   } = useHorasExtras();
   const [filter, setFilter] = useState<'all' | 'pendiente' | 'pagado'>('all');
+
+  // Alert state for PremiumHeaderActions
+  const [alertConfig, setAlertConfig] = useState<any>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: any = 'info',
+      onConfirm?: () => void,
+      showCancel = false,
+    ) => {
+      setAlertConfig({
+        visible: true,
+        title,
+        message,
+        type,
+        onConfirm,
+        showCancel,
+      });
+    },
+    [],
+  );
 
   const filteredData = horasExtras.filter((a) => {
     if (filter === 'pendiente') return a.estado === 1;
@@ -69,6 +99,12 @@ export default function HorasExtrasScreen() {
       <PremiumHeader
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
       />
       <View style={{ margin: 16 }}>
         <Skeleton width="100%" height={140} borderRadius={16} />
@@ -118,7 +154,15 @@ export default function HorasExtrasScreen() {
   if (error)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Horas Extras" />
+        <PremiumHeader
+          title="Horas Extras"
+          rightComponent={
+            <PremiumHeaderActions
+              showAlert={showAlert}
+              profilePath="/barman/perfil"
+            />
+          }
+        />
         <EmployeeListError message={error} onRetry={() => fetchData()} />
       </View>
     );
@@ -128,6 +172,12 @@ export default function HorasExtrasScreen() {
       <PremiumHeader
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
       />
 
       <View
@@ -212,6 +262,15 @@ export default function HorasExtrasScreen() {
           <EmptyState icon="time-outline" title="No se encontraron horas extras" />
         }
         {...LIST_PERF_PROPS}
+      />
+
+      <PremiumAlert
+        {...alertConfig}
+        onConfirm={() => {
+          alertConfig.onConfirm?.();
+          setAlertConfig({ ...alertConfig, visible: false });
+        }}
+        onCancel={() => setAlertConfig({ ...alertConfig, visible: false })}
       />
     </View>
   );

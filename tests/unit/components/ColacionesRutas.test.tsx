@@ -51,12 +51,25 @@ describe('rutas de colaciones — acceso por rol', () => {
     expect(screen.queryByText('colaciones-anfitriona')).toBeNull();
   });
 
-  it('mantiene el acceso para cajero y administración', () => {
+  it('expulsa al cajero de la pantalla de registro de cajero', () => {
     mocks.user = { role: 'cajero' };
-    const cajero = render(<CajeroColacionesRoute />);
-    expect(screen.getByText('colaciones-cajero')).toBeDefined();
-    cajero.unmount();
 
+    render(<CajeroColacionesRoute />);
+
+    expect(screen.getByText('redirect:/(app)/cajero/(tabs)')).toBeDefined();
+    expect(screen.queryByText('colaciones-cajero')).toBeNull();
+  });
+
+  it('expulsa al cajero de la pantalla de registro de anfitriona', () => {
+    mocks.user = { role: 'cajera' };
+
+    render(<AnfitrionaColacionesRoute />);
+
+    expect(screen.getByText('redirect:/(app)/cajero/(tabs)')).toBeDefined();
+    expect(screen.queryByText('colaciones-anfitriona')).toBeNull();
+  });
+
+  it('mantiene el acceso a administración', () => {
     mocks.user = { role: 'administrador' };
     render(<CajeroColacionesRoute />);
     expect(screen.getByText('colaciones-cajero')).toBeDefined();

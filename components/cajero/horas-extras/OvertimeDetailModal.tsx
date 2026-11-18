@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 import { formatCurrency } from '@/utils/format';
 
@@ -34,8 +35,9 @@ export function OvertimeDetailModal({
     borderColor,
     textPrimary,
     textSecondary,
-    isDark,
 }: OvertimeDetailModalProps) {
+    const { surfaceMuted } = useAccentColor();
+
     if (!record) return null;
 
     const status = statusConfig[record.estado] || statusConfig[1];
@@ -70,7 +72,7 @@ export function OvertimeDetailModal({
                             </View>
                             <Pressable 
                                 onPress={onClose} 
-                                style={[styles.modalCloseBtn, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }]}
+                                style={[styles.modalCloseBtn, { backgroundColor: surfaceMuted }]}
                             >
                                 <Ionicons name="close" size={20} color={textPrimary} />
                             </Pressable>
@@ -85,7 +87,7 @@ export function OvertimeDetailModal({
                         </View>
 
                         {}
-                        <View style={[styles.modalDetailCard, { backgroundColor: isDark ? '#1A1A1A' : '#F9FAFB', borderColor }]}>
+                        <View style={[styles.modalDetailCard, { backgroundColor: cardBg, borderColor }]}>
                             <Text style={[styles.modalDetailSectionTitle, { color: textSecondary }]}>Información del Registro</Text>
                             <View style={styles.detailsList}>
                                 <View style={styles.modalDetailRow}>
@@ -130,7 +132,7 @@ export function OvertimeDetailModal({
                         </View>
 
                         {}
-                        <View style={[styles.modalDetailCard, { backgroundColor: isDark ? '#1A1A1A' : '#F9FAFB', borderColor }]}>
+                        <View style={[styles.modalDetailCard, { backgroundColor: cardBg, borderColor }]}>
                             <Text style={[styles.modalDetailSectionTitle, { color: textSecondary }]}>Metadatos</Text>
                             <View style={styles.metadataList}>
                                 <View style={styles.modalMetaRow}>

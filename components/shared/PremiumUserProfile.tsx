@@ -10,6 +10,10 @@ interface PremiumUserProfileProps {
     user: any;
     userStatus: number;
     role?: 'anfitriona' | 'garzon' | 'cajero' | string;
+    /** Colores del contenido sobre el degradado del acento. */
+    gradientText?: string;
+    gradientTextMuted?: string;
+    controlBg?: string;
 }
 
 export const getStatusColor = (status: number, isDark: boolean = true) => {
@@ -43,7 +47,14 @@ const getRoleLabel = (role?: string) => {
     }
 };
 
-export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfileProps) => {
+export const PremiumUserProfile = ({
+    user,
+    userStatus,
+    role,
+    gradientText = '#FFFFFF',
+    gradientTextMuted = 'rgba(255,255,255,0.7)',
+    controlBg = 'rgba(255,255,255,0.12)',
+}: PremiumUserProfileProps) => {
     const { isTablet, isLandscape } = useResponsiveMetrics();
     const compact = isLandscape && !isTablet;
     const [imageError, setImageError] = useState(false);
@@ -66,8 +77,9 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
         return `${BASE_URL}/api/images/users/default.png`;
     }, [imageError, user?.foto]);
 
-    const textPrimary = '#FFFFFF';
-    const textSecondary = 'rgba(255,255,255,0.7)';
+    // El bloque se dibuja sobre el degradado del acento.
+    const textPrimary = gradientText;
+    const textSecondary = gradientTextMuted;
 
     const lastName =
         user?.lastName ||
@@ -83,7 +95,7 @@ export const PremiumUserProfile = ({ user, userStatus, role }: PremiumUserProfil
 
     return (
         <View style={styles.headerUser}>
-            <View style={[styles.avatarContainer, compact && styles.avatarContainerCompact]}>
+            <View style={[styles.avatarContainer, { backgroundColor: controlBg }, compact && styles.avatarContainerCompact]}>
                 <Image
                     source={{ uri: avatarUri }}
                     style={[styles.avatar, compact && { borderRadius: 18 }]}

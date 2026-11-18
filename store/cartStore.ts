@@ -6,6 +6,7 @@ import {
   totalUnidadesAcompanamientoBotella,
 } from "@/hooks/utils/productConfiguration";
 import { saleInventoryFields } from "@/hooks/utils/saleInventoryFields";
+import { recargoAcompanamientoDeProducto } from "@/hooks/utils/recargoAcompanamiento";
 import { create } from "zustand";
 import type {
   AcompanamientoBotellaItem,
@@ -40,6 +41,9 @@ interface CartState {
   cart: CartItem[];
   tipEnabled: boolean;
   tipPercentage: number;
+  /** Precio máximo de acompañamiento incluido; 0 desactiva la regla. */
+  topeAcompanamiento: number;
+  setTopeAcompanamiento: (tope: number) => void;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateItemHostesses: (
@@ -71,6 +75,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
   tipEnabled: false,
   tipPercentage: 10,
+  topeAcompanamiento: 0,
+
+  setTopeAcompanamiento: (tope) =>
+    set({ topeAcompanamiento: Number(tope) || 0 }),
 
   addToCart: (product) => {
     set((state) => {
@@ -227,7 +235,14 @@ export const useCartStore = create<CartState>((set, get) => ({
   clearCart: () => set({ cart: [], tipEnabled: false }),
 
   getSubtotal: () => {
-    return get().cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
+    const tope = get().topeAcompanamiento;
+    return get().cart.reduce(
+      (s, i) =>
+        s +
+        (i.product.price + recargoAcompanamientoDeProducto(i.product, tope)) *
+          i.quantity,
+      0,
+    );
   },
 
   getTipAmount: () => {
@@ -286,21 +301,28 @@ export const useCartStore = create<CartState>((set, get) => ({
       metodoPago,
       device_date,
       ...(baucherFoto ? { baucher_foto: baucherFoto } : {}),
-      detalles: state.cart.map((item) => ({
-        ...saleInventoryFields(item.product),
-        productoId: item.product.producto_id || item.product.id,
-        precio: item.product.price,
-        comision: (item.product.commission || 0) * item.quantity,
-        cantidad: item.quantity,
-        subtotal: item.product.price * item.quantity,
-        generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
-        hostessId:
-          item.selectedHostesses.length === 1
-            ? String(item.selectedHostesses[0])
-            : null,
-        selectedHostesses: item.selectedHostesses.map(String),
-        roomId: item.selectedRoom,
-      })),
+      detalles: state.cart.map((item) => {
+        const recargo = recargoAcompanamientoDeProducto(
+          item.product,
+          state.topeAcompanamiento,
+        );
+        return {
+          ...saleInventoryFields(item.product),
+          productoId: item.product.producto_id || item.product.id,
+          precio: item.product.price,
+          recargo_acompanamiento: recargo,
+          comision: (item.product.commission || 0) * item.quantity,
+          cantidad: item.quantity,
+          subtotal: (item.product.price + recargo) * item.quantity,
+          generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
+          hostessId:
+            item.selectedHostesses.length === 1
+              ? String(item.selectedHostesses[0])
+              : null,
+          selectedHostesses: item.selectedHostesses.map(String),
+          roomId: item.selectedRoom,
+        };
+      }),
       usuarios: Array.from(
         new Set(state.cart.flatMap((i) => i.selectedHostesses)),
       ).map((id) => ({ usuarioId: String(id) })),

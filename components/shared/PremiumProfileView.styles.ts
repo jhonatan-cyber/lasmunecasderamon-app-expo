@@ -116,7 +116,7 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-  saveBtnText: { color: "#FFF", fontSize: 18, fontWeight: "800" },
+  saveBtnText: { fontSize: 18, fontWeight: "800" },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",

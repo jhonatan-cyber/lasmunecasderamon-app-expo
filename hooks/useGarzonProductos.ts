@@ -93,6 +93,7 @@ export function useGarzonProductos() {
     tipEnabled,
     setTipEnabled,
     setTipPercentage,
+    setTopeAcompanamiento,
     clearCart,
     getTipAmount,
     getTotal,
@@ -102,10 +103,17 @@ export function useGarzonProductos() {
   const propinaPct = Number(
     useConfigValue("facturacion", "propina_venta", "10"),
   );
+  const topeAcompanamiento = Number(
+    useConfigValue("comisiones", "tope_precio_acompañamiento", "0"),
+  );
 
   useEffect(() => {
     setTipPercentage(propinaPct);
   }, [propinaPct, setTipPercentage]);
+
+  useEffect(() => {
+    setTopeAcompanamiento(topeAcompanamiento);
+  }, [topeAcompanamiento, setTopeAcompanamiento]);
 
 
   const readThroughMirror = useCallback(

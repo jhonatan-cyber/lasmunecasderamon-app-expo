@@ -28,7 +28,7 @@ export function EntregaCoversModal({
   onEntregado,
   modo = 'entrega',
 }: EntregaCoversModalProps) {
-  const { accentColor, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
+  const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
   const {
     busqueda,
     setBusqueda,
@@ -62,7 +62,7 @@ export function EntregaCoversModal({
     entregar,
   } = useEntregaCovers({ visible, grupo, tope, onClose, onEntregado, modo });
 
-  const fondo = isDark ? '#111827' : '#FFFFFF';
+  const fondo = cardBg;
   const submitDeshabilitado =
     entregando ||
     cargando ||
@@ -121,7 +121,7 @@ export function EntregaCoversModal({
                 style={[
                   styles.input,
                   {
-                    backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                    backgroundColor: surfaceMuted,
                     borderColor,
                     color: textPrimary,
                   },
@@ -143,7 +143,7 @@ export function EntregaCoversModal({
                   style={[
                     styles.input,
                     {
-                      backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                      backgroundColor: surfaceMuted,
                       borderColor,
                       color: textPrimary,
                       marginTop: 0,

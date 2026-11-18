@@ -25,7 +25,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     style,
     debounceMs = 300,
 }) => {
-    const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const { cardBg, surfaceMuted, textPrimary, textSecondary } = useAccentColor();
     const [internalText, setInternalText] = useState(value);
     const [prevValue, setPrevValue] = useState(value);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -93,7 +93,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 {internalText.length > 0 && (
                     <Pressable
                         onPress={handleClear}
-                        style={[styles.clearBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}
+                        style={[styles.clearBtn, { backgroundColor: surfaceMuted }]}
                         accessibilityRole="button"
                         accessibilityLabel="Limpiar búsqueda"
                     >

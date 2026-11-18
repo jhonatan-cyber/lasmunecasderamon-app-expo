@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
 import { SkeletonBox } from "./SkeletonBox";
+import { readableTextColor } from "@/utils/color";
 
 interface ProfileHeaderProps {
   skeletonMode?: boolean;
@@ -10,6 +11,8 @@ interface ProfileHeaderProps {
   isTablet: boolean;
   isDark: boolean;
   gradientColors: string[];
+  accentColor: string;
+  textPrimary: string;
   topInset: number;
   onBack: () => void;
 }
@@ -18,11 +21,20 @@ export function ProfileHeader({
   skeletonMode = false,
   roleLabel,
   isTablet,
-  isDark,
   gradientColors,
   topInset,
   onBack,
 }: ProfileHeaderProps) {
+  // El header se dibuja sobre el degradado del acento: con el tema negro en
+  // modo claro el degradado es blanco, así que el contenido debe ser oscuro.
+  const finalHeaderText = readableTextColor(gradientColors[0] ?? '#FFFFFF');
+  const isHeaderLight = finalHeaderText !== "#FFFFFF";
+  const subtitleColor = isHeaderLight ? "rgba(17,24,39,0.75)" : "rgba(255,255,255,0.92)";
+  const scrimColor = isHeaderLight ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.20)";
+  const controlBg = isHeaderLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.20)";
+  const skeletonColor = isHeaderLight ? "rgba(17,24,39,0.12)" : "rgba(255,255,255,0.25)";
+  const skeletonColorSoft = isHeaderLight ? "rgba(17,24,39,0.08)" : "rgba(255,255,255,0.18)";
+
   return (
     <LinearGradient
       colors={gradientColors as unknown as readonly [string, string, ...string[]]}
@@ -36,7 +48,7 @@ export function ProfileHeader({
         },
       ]}
     >
-      <View pointerEvents="none" style={[styles.scrim, { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }]} />
+      <View pointerEvents="none" style={[styles.scrim, { borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: scrimColor }]} />
       <View style={styles.headerTop}>
         <View style={{ flex: 1, alignItems: 'flex-start', gap: skeletonMode ? 8 : 2 }}>
           {skeletonMode ? (
@@ -45,21 +57,13 @@ export function ProfileHeader({
                 width={140}
                 height={20}
                 borderRadius={8}
-                style={{
-                  backgroundColor: isDark
-                    ? "rgba(17, 24, 39, 0.15)"
-                    : "rgba(255, 255, 255, 0.25)",
-                }}
+                style={{ backgroundColor: skeletonColor }}
               />
               <SkeletonBox
                 width={90}
                 height={13}
                 borderRadius={6}
-                style={{
-                  backgroundColor: isDark
-                    ? "rgba(17, 24, 39, 0.1)"
-                    : "rgba(255, 255, 255, 0.18)",
-                }}
+                style={{ backgroundColor: skeletonColorSoft }}
               />
             </>
           ) : (
@@ -68,7 +72,7 @@ export function ProfileHeader({
                 maxFontSizeMultiplier={1.4}
                 style={[
                   styles.headerTitle,
-                  { color: "#FFFFFF" },
+                  { color: finalHeaderText },
                   isTablet && { fontSize: 28 },
                 ]}
               >
@@ -78,7 +82,7 @@ export function ProfileHeader({
                 maxFontSizeMultiplier={1.4}
                 style={[
                   styles.headerSubtitle,
-                  { color: "rgba(255,255,255,0.92)" },
+                  { color: subtitleColor },
                   isTablet && { fontSize: 17 },
                 ]}
               >
@@ -91,14 +95,14 @@ export function ProfileHeader({
           <Pressable
             onPress={onBack}
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            style={styles.backBtn}
+            style={[styles.backBtn, { backgroundColor: controlBg }]}
             accessibilityRole="button"
             accessibilityLabel="Volver atrás"
           >
             <Ionicons
               name="arrow-back"
               size={isTablet ? 24 : 20}
-              color="#FFFFFF"
+              color={finalHeaderText}
             />
           </Pressable>
         )}

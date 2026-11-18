@@ -38,7 +38,14 @@ export const PremiumTabBar = ({
     navigateToTab,
     descriptors,
 }: PremiumTabBarProps) => {
-    const { gradientColors } = useAccentColor();
+    const {
+        gradientColors,
+        gradientText,
+        gradientTextMuted,
+        gradientOverlay,
+        gradientActiveBg,
+        gradientControlBorder,
+    } = useAccentColor();
     const { isTablet, isLandscape } = useResponsiveMetrics();
     const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
@@ -46,9 +53,9 @@ export const PremiumTabBar = ({
     // El blanco puro sobre el degradado no llega a 4.5:1 en varios acentos
     // (ámbar 3.2:1, esmeralda 3.8:1). El velo oscuro sube el contraste de toda
     // la barra por encima de AA sin perder el color de marca.
-    const activeTintColor = '#FFFFFF';
-    const inactiveTintColor = '#FFFFFF';
-    const borderColor = 'rgba(255, 255, 255, 0.1)';
+    const activeTintColor = gradientText;
+    const inactiveTintColor = gradientTextMuted;
+    const borderColor = gradientControlBorder;
 
     const estaOculta = (options: any) =>
         options.href === null || options.tabBarItemStyle?.display === 'none';
@@ -67,7 +74,7 @@ export const PremiumTabBar = ({
                 },
             ]}
         >
-                <View pointerEvents="none" style={styles.scrim} />
+                <View pointerEvents="none" style={[styles.scrim, { backgroundColor: gradientOverlay }]} />
 
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -108,8 +115,8 @@ export const PremiumTabBar = ({
                         style={[styles.tabItem, compact && styles.tabItemCompact]}
                     >
                         <View style={[
-                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: 'rgba(0,0,0,0.22)' }] : null,
-                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: 'rgba(0,0,0,0.22)' }] : null,
+                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: gradientActiveBg }] : null,
+                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: gradientActiveBg }] : null,
                             isCenter ? styles.centerTab : null
                         ]}>
                             {options.tabBarIcon && options.tabBarIcon({

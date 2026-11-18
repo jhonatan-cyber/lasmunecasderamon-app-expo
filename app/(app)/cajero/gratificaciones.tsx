@@ -35,7 +35,7 @@ const estadoConfig: Record<number, { label: string; color: string; bg: string }>
 
 export default function CajeroGratificacionesScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
   const { gratificaciones, employees, loading, refreshing, submitting, error, createGratificacion, onRefresh } =
     useGratificaciones();
 
@@ -117,7 +117,7 @@ export default function CajeroGratificacionesScreen() {
         ]}
       >
         <View style={styles.cardHeader}>
-          <View style={[styles.indexBadge, { backgroundColor: isDark ? '#1F2937' : '#E5E7EB' }]}>
+          <View style={[styles.indexBadge, { backgroundColor: surfaceMuted }]}>
             <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>

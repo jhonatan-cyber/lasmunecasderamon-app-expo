@@ -1,21 +1,25 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export default function NotFoundScreen() {
-  const isDark = useColorScheme() === 'dark';
-  const textPrimary = isDark ? '#FFFFFF' : '#111827';
-  const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+  const { accentColor, accentText, bg, textPrimary, textSecondary } = useAccentColor();
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}>
+    <View style={[styles.container, { backgroundColor: bg }]}>
       <Text style={[styles.title, { color: textPrimary }]}>Pantalla no encontrada</Text>
       <Text style={[styles.message, { color: textSecondary }]}>
         La dirección a la que intentaste acceder no existe o fue movida.
       </Text>
       <Link href="/" asChild>
-        <Pressable style={({ pressed }) => [styles.btn, pressed && styles.pressed]}>
-          <Text style={styles.btnText}>Volver al inicio</Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.btn,
+            { backgroundColor: accentColor },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[styles.btnText, { color: accentText }]}>Volver al inicio</Text>
         </Pressable>
       </Link>
     </View>
@@ -32,12 +36,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '900', marginBottom: 8, textAlign: 'center' },
   message: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   btn: {
-    backgroundColor: '#E11D48',
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 32,
     alignItems: 'center',
   },
-  btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  btnText: { fontSize: 15, fontWeight: '800' },
   pressed: { opacity: 0.7 },
 });

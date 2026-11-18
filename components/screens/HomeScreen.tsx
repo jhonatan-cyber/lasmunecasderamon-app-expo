@@ -38,11 +38,13 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ role }: HomeScreenProps) {
-  const compactHome = role === 'cajero' || role === 'barman';
   const {
     accentColor,
     accentText,
     gradientColors,
+    gradientText,
+    gradientTextMuted,
+    gradientControlBg,
     isDark,
     bg,
     cardBg,
@@ -148,7 +150,14 @@ export function HomeScreen({ role }: HomeScreenProps) {
               : undefined
           }
         />
-        <PremiumUserProfile user={user} userStatus={userStatus} role={role} />
+        <PremiumUserProfile
+          user={user}
+          userStatus={userStatus}
+          role={role}
+          gradientText={gradientText}
+          gradientTextMuted={gradientTextMuted}
+          controlBg={gradientControlBg}
+        />
 
         {role === 'anfitriona' && !activeService && (
           <AnimatedView
@@ -199,7 +208,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               onRetry={onRefresh}
             />
           )}
-          <View style={[contentColumn, { padding: compactHome ? 0 : 16 }]}>
+          <View style={[contentColumn, { padding: 16 }]}>
             {role === 'anfitriona' && activeService && (
               <ActiveServiceCard
                 habitacion={activeService.habitacion}
@@ -232,21 +241,9 @@ export function HomeScreen({ role }: HomeScreenProps) {
               />
             )}
 
-            {role === 'cajero' && (
-              <>
-                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
-                  <CajeroActionGrid fullWidth />
-                </View>
-              </>
-            )}
+            {role === 'cajero' && <CajeroActionGrid />}
 
-            {role === 'barman' && (
-              <>
-                <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
-                  <BarmanActionGrid fullWidth />
-                </View>
-              </>
-            )}
+            {role === 'barman' && <BarmanActionGrid />}
 
           </View>
         </AnimatedScreen>

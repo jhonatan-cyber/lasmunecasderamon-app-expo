@@ -33,7 +33,7 @@ export default function AppLayout() {
     const segmentos = useSegments();
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
-    const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { isDark, bg, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
     const accentText = readableTextColor(accentColor);
 
     const isStaffMember = user?.role &&
@@ -102,7 +102,7 @@ export default function AppLayout() {
                 segura para que ninguna pantalla quede debajo. */}
             <SafeAreaView
                 edges={['left', 'right']}
-                style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}
+                style={[styles.safeArea, { backgroundColor: bg }]}
             >
                 <Stack
                     screenOptions={{

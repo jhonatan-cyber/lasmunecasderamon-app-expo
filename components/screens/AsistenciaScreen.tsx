@@ -3,6 +3,8 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { Tabs } from '@/components/ui/Tabs';
@@ -28,6 +30,7 @@ export default function AsistenciaScreen() {
     isDark,
     bg,
     cardBg,
+    surfaceMuted,
     textPrimary,
     textSecondary,
     borderColor,
@@ -51,6 +54,34 @@ export default function AsistenciaScreen() {
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [dateFilterVisible, setDateFilterVisible] = useState(false);
+
+  // Alert state for PremiumHeaderActions
+  const [alertConfig, setAlertConfig] = useState<any>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: any = 'info',
+      onConfirm?: () => void,
+      showCancel = false,
+    ) => {
+      setAlertConfig({
+        visible: true,
+        title,
+        message,
+        type,
+        onConfirm,
+        showCancel,
+      });
+    },
+    [],
+  );
 
   const handleDateFilterApply = useCallback((from: string, to: string) => {
     setDateFrom(from);
@@ -167,7 +198,7 @@ export default function AsistenciaScreen() {
               <View
                 style={[
                   styles.indexBadge,
-                  { backgroundColor: isDark ? '#374151' : '#E5E7EB' },
+                  { backgroundColor: surfaceMuted },
                 ]}
               >
                 <Text style={[styles.indexText, { color: textPrimary }]}>
@@ -331,7 +362,15 @@ export default function AsistenciaScreen() {
   if (loading)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Asistencia" />
+        <PremiumHeader
+          title="Asistencia"
+          rightComponent={
+            <PremiumHeaderActions
+              showAlert={showAlert}
+              profilePath="/barman/perfil"
+            />
+          }
+        />
         <View style={{ margin: 16 }}>
           <SkeletonLoader width="100%" height={140} borderRadius={16} />
         </View>
@@ -351,7 +390,15 @@ export default function AsistenciaScreen() {
   if (error)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Asistencia" />
+        <PremiumHeader
+          title="Asistencia"
+          rightComponent={
+            <PremiumHeaderActions
+              showAlert={showAlert}
+              profilePath="/barman/perfil"
+            />
+          }
+        />
         <EmployeeListError message={error} onRetry={onRefresh} />
       </View>
     );
@@ -361,6 +408,12 @@ export default function AsistenciaScreen() {
       <PremiumHeader
         title="Asistencia"
         subtitle="Registro de turnos y bonificaciones"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
       />
       <Tabs
         tabs={[
@@ -515,6 +568,15 @@ export default function AsistenciaScreen() {
         cardBg={cardBg}
         borderColor={borderColor}
         isDark={isDark}
+      />
+
+      <PremiumAlert
+        {...alertConfig}
+        onConfirm={() => {
+          alertConfig.onConfirm?.();
+          setAlertConfig({ ...alertConfig, visible: false });
+        }}
+        onCancel={() => setAlertConfig({ ...alertConfig, visible: false })}
       />
     </View>
   );

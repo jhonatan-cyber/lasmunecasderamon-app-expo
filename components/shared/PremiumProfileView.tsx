@@ -42,7 +42,7 @@ export function PremiumProfileView({
   onLogout,
   onClose,
 }: PremiumProfileViewProps) {
-  const { accentColor, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, accentUi, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsiveMetrics();
@@ -169,6 +169,8 @@ export function PremiumProfileView({
           roleLabel={roleLabelEfectivo}
           isTablet={isTablet}
           gradientColors={gradientColors as unknown as string[]}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
           topInset={insets.top}
           onBack={() => router.back()}
         />
@@ -185,6 +187,8 @@ export function PremiumProfileView({
         isTablet={isTablet}
         isDark={isDark}
         gradientColors={gradientColors as unknown as string[]}
+        accentColor={accentColor}
+        textPrimary={textPrimary}
         topInset={insets.top}
         onBack={() => router.back()}
       />
@@ -210,6 +214,8 @@ export function PremiumProfileView({
           userName={`${user?.name ?? ""} ${user?.lastName ?? ""}`}
           roleLabel={roleLabelEfectivo || user?.role?.toUpperCase()}
           accentColor={accentColor}
+          accentText={accentText}
+          accentUi={accentUi}
           cardBg={cardBg}
           textPrimary={textPrimary}
           onEditPhoto={() => setImagePickerVisible(true)}
@@ -221,6 +227,7 @@ export function PremiumProfileView({
             textPrimary={textPrimary}
             textSecondary={textSecondary}
             borderColor={borderColor}
+            isDark={isDark}
           />
 
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -229,6 +236,7 @@ export function PremiumProfileView({
             formData={formData}
             updateField={updateField}
             accentColor={accentColor}
+            accentUi={accentUi}
             cardBg={cardBg}
             borderColor={borderColor}
             textPrimary={textPrimary}

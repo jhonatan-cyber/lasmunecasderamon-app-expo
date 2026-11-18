@@ -32,7 +32,7 @@ export const PremiumHeaderActions = ({
     showNotifications = true,
     onQRScannerPress,
 }: PremiumHeaderActionsProps) => {
-    const { isDark } = useAccentColor();
+    const { gradientText, gradientControlBg, gradientControlBorder } = useAccentColor();
     const { isTablet, isLandscape } = useResponsiveMetrics();
     const compact = isLandscape && !isTablet;
     const logout = useAuthStore(state => state.logout);
@@ -45,9 +45,11 @@ export const PremiumHeaderActions = ({
     const isRestrictedRole = isGarzonRole(user) || isHostessRole(user) || isBarmanRole(user);
     const canUseCajeroActions = isCajeroRole(user);
     const isAdmin = isAdminRole(user);
-    const iconColor = '#FFFFFF';
-    const btnBg = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.2)';
-    const btnBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
+    // Íconos y botones van sobre el degradado del acento: con el tema negro en
+    // modo claro el degradado es blanco, así que el contenido pasa a negro.
+    const iconColor = gradientText;
+    const btnBg = gradientControlBg;
+    const btnBorder = gradientControlBorder;
 
     const handleLogout = () => {
         showAlert(
@@ -78,7 +80,7 @@ export const PremiumHeaderActions = ({
                     <Ionicons name="qr-code" size={20} color={iconColor} />
                 </Pressable>
             )}
-            {showNotifications && !isRestrictedRole && !isAdmin && (
+            {showNotifications && !isAdmin && (
                 <Pressable
                     onPress={() => {
                         if (onNotificationPress) {

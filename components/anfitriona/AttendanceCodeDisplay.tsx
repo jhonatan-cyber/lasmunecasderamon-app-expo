@@ -63,7 +63,16 @@ export const AttendanceCodeDisplay = () => {
         };
     }, [fetchCodigo]);
 
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const {
+        accentColor,
+        isDark,
+        cardBg,
+        textPrimary,
+        textSecondary,
+        gradientText,
+        gradientTextMuted,
+        gradientControlBg,
+    } = useAccentColor();
 
     const handleOpenQR = async () => {
         setLoading(true);
@@ -85,12 +94,12 @@ export const AttendanceCodeDisplay = () => {
                 onPress={handleOpenQR}
                 style={({ pressed }) => [
                     styles.badge, 
-                    { borderColor: accentColor },
+                    { borderColor: accentColor, backgroundColor: gradientControlBg },
                     pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }
                 ]}
             >
-                <Text style={styles.label}>Código: </Text>
-                <Text style={styles.code}>{codigo || '****'}</Text>
+                <Text style={[styles.label, { color: gradientTextMuted }]}>Código: </Text>
+                <Text style={[styles.code, { color: gradientText }]}>{codigo || '****'}</Text>
             </Pressable>
 
             <Modal

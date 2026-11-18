@@ -429,120 +429,6 @@ export default function NuevaVentaScreen() {
               )}
             </View>
           </Pressable>
-          {metodoPago === "prepago" &&
-            clientes.some((cliente) => {
-              const id = String(cliente.id_cliente ?? cliente.id);
-              const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
-              return id !== primaryId &&
-                Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
-            }) && (
-              <View style={{ marginTop: spacing / 2 }}>
-                <Pressable
-                  style={[
-                    styles.selectorBtn,
-                    dynamicStyles.selectorBtn,
-                    { borderColor: selectedSegundoCliente ? accentColor : borderColor },
-                  ]}
-                  onPress={() => {
-                    if (selectedSegundoCliente) {
-                      dispatch({ type: "SET_SELECTED_SEGUNDO_CLIENTE", payload: null });
-                    } else {
-                      setClientSelectionTarget("secondary");
-                      dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
-                    }
-                  }}
-                >
-                  <Ionicons
-                    name={selectedSegundoCliente ? "people" : "person-add"}
-                    size={20}
-                    color={accentColor}
-                  />
-                  <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
-                    {selectedSegundoCliente
-                      ? `${selectedSegundoCliente.nombre || selectedSegundoCliente.name || ""} ${selectedSegundoCliente.apellido || selectedSegundoCliente.lastName || ""}`.trim()
-                      : "Repartir prepago con otro cliente"}
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-          <PaymentMethodSelect
-            selectedMethod={metodoPago}
-            onSelect={(val) => {
-              if (val !== "transferencia") setBaucherFoto(null);
-              dispatch({ type: "SET_METODO_PAGO", payload: val as any });
-            }}
-            showPrepago={
-              !!selectedCliente &&
-              Number(
-                selectedCliente.saldo ??
-                (selectedCliente as any).saldo_prepago ??
-                0,
-              ) > 0
-            }
-            disabledMethods={
-              selectedCliente &&
-                Number(
-                  selectedCliente.saldo ??
-                  (selectedCliente as any).saldo_prepago ??
-                  0,
-                ) <= 0
-                ? ["prepago"]
-                : []
-            }
-          />
-
-          {metodoPago === "transferencia" && (
-            <View
-              style={[
-                styles.baucherCard,
-                {
-                  borderColor: baucherFoto ? "#10B981" : "#EF4444",
-                  backgroundColor: baucherFoto
-                    ? "rgba(16,185,129,0.08)"
-                    : "rgba(239,68,68,0.08)",
-                },
-              ]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.baucherTitulo, { color: textPrimary }]}>
-                  Baucher de la transferencia
-                </Text>
-                <Text style={[styles.baucherHint, { color: textSecondary }]}>
-                  {baucherFoto
-                    ? "Foto adjunta lista para enviar."
-                    : "Obligatorio: adjunta la foto o captura del comprobante."}
-                </Text>
-              </View>
-              {baucherFoto && (
-                <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
-              )}
-              <Pressable
-                onPress={handleAdjuntarBaucher}
-                style={[styles.baucherBtn, { borderColor: accentColor }]}
-                accessibilityRole="button"
-                accessibilityLabel="Adjuntar baucher de la transferencia"
-              >
-                <Ionicons
-                  name={baucherFoto ? "refresh" : "camera"}
-                  size={18}
-                  color={accentColor}
-                />
-                <Text style={[styles.baucherBtnText, { color: accentColor }]}>
-                  {baucherFoto ? "Repetir" : "Adjuntar"}
-                </Text>
-              </Pressable>
-              {baucherFoto && (
-                <Pressable
-                  onPress={() => setBaucherFoto(null)}
-                  style={styles.baucherQuitar}
-                  accessibilityRole="button"
-                  accessibilityLabel="Quitar baucher"
-                >
-                  <Ionicons name="close" size={16} color={textSecondary} />
-                </Pressable>
-              )}
-            </View>
-          )}
           </View>
           )}
         </View>
@@ -625,6 +511,122 @@ export default function NuevaVentaScreen() {
                   }
                 />
               </View>
+            )}
+          </View>
+        )}
+
+        <PaymentMethodSelect
+          selectedMethod={metodoPago}
+          onSelect={(val) => {
+            if (val !== "transferencia") setBaucherFoto(null);
+            dispatch({ type: "SET_METODO_PAGO", payload: val as any });
+          }}
+          showPrepago={
+            !!selectedCliente &&
+            Number(
+              selectedCliente.saldo ??
+              (selectedCliente as any).saldo_prepago ??
+              0,
+            ) > 0
+          }
+          disabledMethods={
+            selectedCliente &&
+              Number(
+                selectedCliente.saldo ??
+                (selectedCliente as any).saldo_prepago ??
+                0,
+              ) <= 0
+              ? ["prepago"]
+              : []
+          }
+        />
+
+        {metodoPago === "prepago" &&
+          clientes.some((cliente) => {
+            const id = String(cliente.id_cliente ?? cliente.id);
+            const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
+            return id !== primaryId &&
+              Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
+          }) && (
+            <View style={{ marginTop: spacing / 2 }}>
+              <Pressable
+                style={[
+                  styles.selectorBtn,
+                  dynamicStyles.selectorBtn,
+                  { borderColor: selectedSegundoCliente ? accentColor : borderColor },
+                ]}
+                onPress={() => {
+                  if (selectedSegundoCliente) {
+                    dispatch({ type: "SET_SELECTED_SEGUNDO_CLIENTE", payload: null });
+                  } else {
+                    setClientSelectionTarget("secondary");
+                    dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
+                  }
+                }}
+              >
+                <Ionicons
+                  name={selectedSegundoCliente ? "people" : "person-add"}
+                  size={20}
+                  color={accentColor}
+                />
+                <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
+                  {selectedSegundoCliente
+                    ? `${selectedSegundoCliente.nombre || selectedSegundoCliente.name || ""} ${selectedSegundoCliente.apellido || selectedSegundoCliente.lastName || ""}`.trim()
+                    : "Repartir prepago con otro cliente"}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+        {metodoPago === "transferencia" && (
+          <View
+            style={[
+              styles.baucherCard,
+              {
+                borderColor: baucherFoto ? "#10B981" : "#EF4444",
+                backgroundColor: baucherFoto
+                  ? "rgba(16,185,129,0.08)"
+                  : "rgba(239,68,68,0.08)",
+              },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.baucherTitulo, { color: textPrimary }]}>
+                Baucher de la transferencia
+              </Text>
+              <Text style={[styles.baucherHint, { color: textSecondary }]}>
+                {baucherFoto
+                  ? "Foto adjunta lista para enviar."
+                  : "Obligatorio: adjunta la foto o captura del comprobante."}
+              </Text>
+            </View>
+            {baucherFoto && (
+              <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
+            )}
+            <Pressable
+              onPress={handleAdjuntarBaucher}
+              style={[styles.baucherBtn, { borderColor: accentColor }]}
+              accessibilityRole="button"
+              accessibilityLabel="Adjuntar baucher de la transferencia"
+            >
+              <Ionicons
+                name={baucherFoto ? "refresh" : "camera"}
+                size={18}
+                color={accentColor}
+              />
+              <Text style={[styles.baucherBtnText, { color: accentColor }]}>
+                {baucherFoto ? "Repetir" : "Adjuntar"}
+              </Text>
+            </Pressable>
+            {baucherFoto && (
+              <Pressable
+                onPress={() => setBaucherFoto(null)}
+                style={styles.baucherQuitar}
+                accessibilityRole="button"
+                accessibilityLabel="Quitar baucher"
+              >
+                <Ionicons name="close" size={16} color={textSecondary} />
+              </Pressable>
             )}
           </View>
         )}

@@ -10,6 +10,7 @@ import {
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CajaAction } from '@/hooks/useCaja';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface CajaModalesProps {
     modalVisible: boolean;
@@ -48,6 +49,8 @@ export function CajaModales({
     handleMontoChange,
     handleSubmit
 }: CajaModalesProps) {
+    const { cardBg, surfaceMuted, borderColor } = useAccentColor();
+
     return (
         <Modal
             avoidKeyboard={false}
@@ -60,7 +63,7 @@ export function CajaModales({
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.modalOverlay}
             >
-                <View style={[styles.modalCard, { backgroundColor: isDark ? '#111827' : '#FFF' }]}>
+                <View style={[styles.modalCard, { backgroundColor: cardBg }]}>
                     {}
                     <View style={[styles.modalAccent, { backgroundColor: modalConfig.color }]} />
 
@@ -73,13 +76,13 @@ export function CajaModales({
                             {modalConfig.title}
                         </Text>
 
-                        <Text style={[styles.modalSubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                        <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
                             {modalConfig.subtitle}
                         </Text>
 
                         {}
                         {modalType === 'cerrar' && stats && (
-                            <View style={[styles.modalBreakdown, { backgroundColor: isDark ? '#11111150' : '#F3F4F6', borderColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                            <View style={[styles.modalBreakdown, { backgroundColor: surfaceMuted, borderColor }]}>
                                 <View style={styles.breakdownItem}>
                                     <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Monto Apertura (Base)</Text>
                                     <Text style={[styles.breakdownItemValue, { color: textPrimary }]}>${(stats.monto_apertura || 0).toLocaleString()}</Text>
@@ -108,7 +111,7 @@ export function CajaModales({
                                         <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.prepago_pendiente_clientes || 0).toLocaleString()}</Text>
                                     </View>
                                 )}
-                                <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#E5E7EB', marginTop: 8, paddingTop: 8 }]}>
+                                <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: borderColor, marginTop: 8, paddingTop: 8 }]}>
                                     <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>MONTO DE CIERRE</Text>
                                     <Text style={[styles.breakdownItemValue, { color: '#E11D48', fontWeight: '900', fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
                                 </View>
@@ -117,22 +120,22 @@ export function CajaModales({
 
                         {}
                         {modalType === 'cerrar' ? (
-                            <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC', justifyContent: 'center' }]}>
-                                <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
-                                <Text style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                            <View style={[styles.inputBox, { borderColor, backgroundColor: surfaceMuted, justifyContent: 'center' }]}>
+                                <Text style={[styles.currencySign, { color: textPrimary }]}>$</Text>
+                                <Text style={[styles.input, { color: textPrimary }]}>
                                     {(stats?.monto_cierre_previsto ?? stats?.balance_total ?? 0).toLocaleString()}
                                 </Text>
                             </View>
                         ) : (
-                            <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC' }]}>
-                                <Text style={[styles.currencySign, { color: isDark ? '#F9FAFB' : '#111827' }]}>$</Text>
+                            <View style={[styles.inputBox, { borderColor, backgroundColor: surfaceMuted }]}>
+                                <Text style={[styles.currencySign, { color: textPrimary }]}>$</Text>
                                 <TextInput
-                                    style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827' }]}
+                                    style={[styles.input, { color: textPrimary }]}
                                     value={monto}
                                     onChangeText={handleMontoChange}
                                     keyboardType="numeric"
                                     placeholder="0"
-                                    placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
+                                    placeholderTextColor={textSecondary}
                                     autoFocus
                                 />
                             </View>
@@ -140,14 +143,14 @@ export function CajaModales({
 
                         {}
                         {modalType === 'retiro' && (
-                            <View style={[styles.inputBox, { borderColor: isDark ? '#374151' : '#E2E8F0', backgroundColor: isDark ? '#0D1117' : '#F8FAFC', marginBottom: 0 }]}>
-                                <Ionicons name="document-text-outline" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} style={{ marginRight: 8 }} />
+                            <View style={[styles.inputBox, { borderColor, backgroundColor: surfaceMuted, marginBottom: 0 }]}>
+                                <Ionicons name="document-text-outline" size={18} color={textSecondary} style={{ marginRight: 8 }} />
                                 <TextInput
-                                    style={[styles.input, { color: isDark ? '#F9FAFB' : '#111827', fontSize: 15 }]}
+                                    style={[styles.input, { color: textPrimary, fontSize: 15 }]}
                                     value={motivoRetiro}
                                     onChangeText={val => dispatch({ type: 'SET_MOTIVO', payload: val })}
                                     placeholder="Motivo del retiro"
-                                    placeholderTextColor={isDark ? '#4B5563' : '#CBD5E1'}
+                                    placeholderTextColor={textSecondary}
                                 />
                             </View>
                         )}
@@ -175,11 +178,11 @@ export function CajaModales({
                         {}
                         <View style={styles.modalActions}>
                             <Pressable
-                                style={[styles.modalBtn, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}
+                                style={[styles.modalBtn, { backgroundColor: surfaceMuted }]}
                                 onPress={() => dispatch({ type: 'CLOSE_MODAL' })}
                                 disabled={submitting}
                             >
-                                <Text style={[styles.modalBtnCancel, { color: isDark ? '#9CA3AF' : '#475569' }]}>Cancelar</Text>
+                                <Text style={[styles.modalBtnCancel, { color: textSecondary }]}>Cancelar</Text>
                             </Pressable>
                             <Pressable
                                 style={[styles.modalBtn, { backgroundColor: modalConfig.color, opacity: submitting ? 0.7 : 1 }]}

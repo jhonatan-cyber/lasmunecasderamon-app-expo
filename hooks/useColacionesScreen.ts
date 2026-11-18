@@ -42,7 +42,7 @@ function parseTrabajador(data: any[]): LimpioTrabajador[] {
 }
 
 export function useColacionesScreen() {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
   const user = useAuthStore((s) => s.user);
   const cajaAbierta = useCajaAbiertaStore((s) => s.cajaAbierta);
   const cajaInfo = useCajaAbiertaStore((s) => s.cajaInfo);
@@ -326,6 +326,7 @@ export function useColacionesScreen() {
 
   return {
     accentColor,
+    surfaceMuted,
     bg,
     cardBg,
     textPrimary,

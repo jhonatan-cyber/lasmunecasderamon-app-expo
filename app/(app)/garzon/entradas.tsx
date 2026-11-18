@@ -54,7 +54,7 @@ function fechaHoraLocal() {
 }
 
 export default function GarzonEntradasScreen() {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, isDark } =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, isDark } =
     useAccentColor();
   const router = useRouter();
 
@@ -317,7 +317,7 @@ export default function GarzonEntradasScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                  backgroundColor: surfaceMuted,
                   borderColor,
                   color: textPrimary,
                 },
@@ -331,7 +331,7 @@ export default function GarzonEntradasScreen() {
               style={[
                 styles.stepper,
                 {
-                  backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                  backgroundColor: surfaceMuted,
                   borderColor,
                 },
               ]}
@@ -368,7 +368,7 @@ export default function GarzonEntradasScreen() {
                     style={[
                       styles.metodoChip,
                       {
-                        backgroundColor: activo ? `${accentColor}1F` : isDark ? '#1F2937' : '#F9FAFB',
+                        backgroundColor: activo ? `${accentColor}1F` : surfaceMuted,
                         borderColor: activo ? accentColor : borderColor,
                       },
                     ]}

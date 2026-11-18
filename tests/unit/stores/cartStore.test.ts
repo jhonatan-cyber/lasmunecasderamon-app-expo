@@ -1,7 +1,9 @@
 import { apiClientSafe } from "@/api/client";
 vi.mock("@/api/client", () => ({ apiClientSafe: vi.fn() }));
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useCartStore } from "@/store/cartStore";
+
+afterEach(() => useCartStore.setState({ topeAcompanamiento: 0 }));
 
 const mockProduct = {
   id: "prod-1",
@@ -31,7 +33,12 @@ const mockChampagne = {
 
 describe("cartStore", () => {
   beforeEach(() => {
-    useCartStore.setState({ cart: [], tipEnabled: false, tipPercentage: 10 });
+    useCartStore.setState({
+      cart: [],
+      tipEnabled: false,
+      tipPercentage: 10,
+      topeAcompanamiento: 0,
+    });
   });
 
   it("debe iniciar con carrito vacio y tip deshabilitado", () => {
@@ -179,6 +186,69 @@ describe("cartStore", () => {
     useCartStore.getState().addToCart(mockProduct as any);
     const total = useCartStore.getState().getTotal();
     expect(total).toBe(15000);
+  });
+
+  it("getSubtotal: suma el exceso del acompañamiento sobre el tope", () => {
+    useCartStore.getState().setTopeAcompanamiento(5000);
+    useCartStore.getState().addToCart({
+      ...mockProduct,
+      tipo_venta: "botella",
+      acompanamiento_botella: [
+        { presentacion_id: "s1", unidades: 2, precio: 8000 },
+        { presentacion_id: "s2", unidades: 1, precio: 4000 },
+      ],
+    } as any);
+
+    // 15000 + (8000 - 5000) × 2; el acompañamiento bajo el tope no suma.
+    expect(useCartStore.getState().getSubtotal()).toBe(21000);
+  });
+
+  it("getSubtotal: no suma nada sin tope configurado", () => {
+    useCartStore.getState().addToCart({
+      ...mockProduct,
+      tipo_venta: "botella",
+      acompanamiento_botella: [
+        { presentacion_id: "s1", unidades: 1, precio: 8000 },
+      ],
+    } as any);
+
+    expect(useCartStore.getState().getSubtotal()).toBe(15000);
+  });
+
+  it("buildOrderPayload: envía el recargo por unidad y el subtotal con exceso", () => {
+    useCartStore.getState().setTopeAcompanamiento(5000);
+    useCartStore.getState().addToCart({
+      ...mockProduct,
+      producto_id: "prod-1",
+      presentacion_id: "pres-1",
+      tipo_venta: "botella",
+      acompanamiento_botella: [
+        { presentacion_id: "s1", unidades: 2, precio: 8000 },
+      ],
+    } as any);
+    useCartStore.getState().addToCart({
+      ...mockProduct,
+      producto_id: "prod-1",
+      presentacion_id: "pres-1",
+      tipo_venta: "botella",
+      acompanamiento_botella: [
+        { presentacion_id: "s1", unidades: 2, precio: 8000 },
+      ],
+    } as any);
+
+    const result = useCartStore
+      .getState()
+      .buildOrderPayload({ meseroId: "u1", codigo: "ABC" });
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error(result.errors.join(", "));
+
+    expect(result.data.detalles[0]).toMatchObject({
+      recargo_acompanamiento: 6000,
+      cantidad: 2,
+      subtotal: 42000,
+    });
+    expect(result.data.subtotal).toBe(42000);
+    expect(result.data.total).toBe(42000);
   });
 });
 

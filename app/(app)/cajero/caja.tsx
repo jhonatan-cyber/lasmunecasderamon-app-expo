@@ -26,6 +26,7 @@ export default function CajaScreen() {
         isDark,
         bg,
         cardBg,
+        surfaceMuted,
         textPrimary,
         textSecondary,
         router,
@@ -312,7 +313,7 @@ export default function CajaScreen() {
 
                     {!cajaAbierta && stats && (
                         <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
-                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: surfaceMuted }]}>
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
@@ -335,7 +336,7 @@ export default function CajaScreen() {
 
                     {!cajaAbierta && !stats && (
                         <View style={[styles.card, { backgroundColor: cardBg, borderColor, alignItems: 'center', paddingVertical: 40 }]}>
-                            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: surfaceMuted }]}>
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Sin datos de caja</Text>

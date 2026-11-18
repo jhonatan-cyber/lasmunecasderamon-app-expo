@@ -32,7 +32,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     confirmText = 'Aceptar',
     cancelText = 'Cancelar'
 }) => {
-    const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { isDark, cardBg, surfaceMuted, textPrimary, textSecondary, accentColor } = useAccentColor();
     const { isTablet } = useResponsiveMetrics();
 
     const getIcon = () => {
@@ -76,7 +76,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                     <Pressable
                         onPress={onCancel ?? onConfirm}
                         hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                        style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F1F5F9' }]}
+                        style={[styles.closeBtn, { backgroundColor: surfaceMuted }]}
                         accessibilityLabel="Cerrar alerta"
                         accessibilityRole="button"
                     >
@@ -94,7 +94,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                         {showCancel && (
                             <Pressable
                                 onPress={onCancel}
-                                style={[styles.alertBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB', flex: 1, height: isTablet ? 60 : 54 }]}
+                                style={[styles.alertBtn, { backgroundColor: surfaceMuted, flex: 1, height: isTablet ? 60 : 54 }]}
                                 accessibilityRole="button"
                                 accessibilityLabel={cancelText}
                             >

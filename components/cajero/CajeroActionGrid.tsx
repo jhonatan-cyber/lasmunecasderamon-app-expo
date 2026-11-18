@@ -1,12 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter, type Href } from "expo-router";
-import { StyleSheet, View } from "react-native";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useCajaAbierta } from "@/hooks/useCajaAbierta";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { BloqueoPorCaja } from "@/components/shared/BloqueoPorCaja";
 import { rutaExigeCajaAbierta } from "@/utils/cajaGate";
-import { GarzonActionCard } from "@/components/garzon/GarzonActionCard";
+import { ActionGrid, type ActionGridItem } from "@/components/ui/ActionGrid";
 
 type AccionCajero = {
   title: string;
@@ -16,13 +13,8 @@ type AccionCajero = {
   route: string;
 };
 
-export const CajeroActionGrid = ({
-  fullWidth = false,
-}: {
-  fullWidth?: boolean;
-}) => {
+export const CajeroActionGrid = () => {
   const { accentColor } = useAccentColor();
-  const router = useRouter();
   const { bloqueado } = useCajaAbierta();
   const esAdmin = useIsAdmin();
 
@@ -157,13 +149,6 @@ export const CajeroActionGrid = ({
           route: "/cajero/covers",
         },
         {
-          title: "LIMPIEZA",
-          description: "Surtidos de limpieza",
-          icon: "brush" as const,
-          color: "#06B6D4",
-          route: "/cajero/limpieza",
-        },
-        {
           title: "PERSONAL",
           description: "Personal y códigos QR",
           icon: "people" as const,
@@ -179,44 +164,11 @@ export const CajeroActionGrid = ({
         },
       ];
 
-  // Dividir acciones en pares para el layout 2x2 como el garzón
-  const rows: AccionCajero[][] = [];
-  for (let i = 0; i < acciones.length; i += 2) {
-    rows.push(acciones.slice(i, i + 2));
-  }
+  const actions: ActionGridItem[] = acciones.map((action) => ({
+    ...action,
+    bloqueoPorCaja:
+      bloqueado && !esAdmin && rutaExigeCajaAbierta(action.route),
+  }));
 
-  return (
-    <View style={styles.container}>
-      {rows.map((row, rowIndex) => (
-        <View key={rowIndex} style={[styles.actionGrid, { marginTop: rowIndex > 0 ? 12 : 15 }]}>
-          {row.map((action) => (
-            <BloqueoPorCaja
-              key={action.title}
-              bloqueado={bloqueado && !esAdmin && rutaExigeCajaAbierta(action.route)}
-              style={{ flex: 1 }}
-            >
-              <GarzonActionCard
-                title={action.title}
-                description={action.description}
-                icon={action.icon}
-                color={action.color}
-                onPress={() => router.push(action.route as Href)}
-              />
-            </BloqueoPorCaja>
-          ))}
-        </View>
-      ))}
-    </View>
-  );
+  return <ActionGrid actions={actions} />;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-  },
-  actionGrid: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: 12,
-  },
-});

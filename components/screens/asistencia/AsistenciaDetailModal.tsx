@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
 
 type AsistenciaItem = {
@@ -89,6 +90,7 @@ export function AsistenciaDetailModal({
   borderColor,
   isDark,
 }: AsistenciaDetailModalProps) {
+  const { surfaceMuted } = useAccentColor();
   const totalSueldo = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
   const totalAporte = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
   const totalNeto = asistencias.reduce((sum, a) => sum + (a.total || a.sueldo - a.aporte || 0), 0);
@@ -115,7 +117,7 @@ export function AsistenciaDetailModal({
             </View>
             <Pressable
               onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}
+              style={[styles.closeBtn, { backgroundColor: surfaceMuted }]}
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
             >

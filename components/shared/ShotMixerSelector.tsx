@@ -23,7 +23,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { apiClientSafe } from "@/api/client";
 import { getMirror, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useConfigValue } from "@/hooks/useConfigValue";
 import { availableOrderMixers } from "@/hooks/utils/orderMixers";
+import { parseOpcionesVenta } from "@/hooks/utils/saleChoice";
 import { OrderProductPhoto } from "./OrderProductPhoto";
 
 export type ShortMixer = {
@@ -32,6 +34,8 @@ export type ShortMixer = {
   unidades?: number;
   ml_por_corto?: number;
   foto?: string;
+  /** Precio unitario de la bebida elegida (del catálogo de productos). */
+  precio?: number;
 };
 
 type MixerSourceItem = {
@@ -70,6 +74,8 @@ export function ShotMixerSelector({
 }) {
   const { cardBg, textPrimary, textSecondary, borderColor, accentColor } =
     useAccentColor();
+  const topeAcompanamiento =
+    Number(useConfigValue("comisiones", "tope_precio_acompañamiento", "0")) || 0;
   const [bar, setBar] = useState<any[]>([]);
   const [barProducts, setBarProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,12 +130,28 @@ export function ShotMixerSelector({
     Number(
       bar.find((b) => String(b.id) === String(presentacionId))?.stock_bar || 0,
     );
-  const priceOf = (presentacionId: string | undefined) =>
-    Number(
-      barProducts.find((p) => String(p.presentacion_id) === String(presentacionId))?.precio_venta ||
-      barProducts.find((p) => String(p.id) === String(presentacionId))?.precio_venta ||
-      0,
+  const priceOf = (presentacionId: string | undefined) => {
+    const product = barProducts.find(
+      (p) =>
+        String(p.presentacion_id) === String(presentacionId) ||
+        String(p.id) === String(presentacionId),
     );
+    if (!product) return 0;
+    const botella = parseOpcionesVenta(product.opciones_venta).find(
+      (option) => option.tipo === "botella",
+    );
+    for (const candidate of [
+      botella?.precio,
+      botella?.precio_sin_anfitriona,
+      product.precio_venta,
+      product.precio,
+      product.producto_precio,
+    ]) {
+      const precio = Number(candidate);
+      if (Number.isFinite(precio) && precio > 0) return Math.round(precio);
+    }
+    return 0;
+  };
   const mlBotellaOf = (presentacionId: string | undefined) =>
     Number(
       barProducts.find((p) => String(p.presentacion_id) === String(presentacionId))?.ml_botella ||
@@ -152,6 +174,7 @@ export function ShotMixerSelector({
   const modalChoices = bottle
     ? choices.filter((choice) => !elegidos.has(String(choice.id)))
     : choices;
+  const sinRecargo = !bottle && Boolean(items[currentIndex]?.shot_anfitriona);
   if (!items.some(needsMixer)) return null;
 
   const distribute = (index: number, next: AcompanamientoBotellaItem[]) =>
@@ -481,6 +504,8 @@ export function ShotMixerSelector({
             >
               {modalChoices.map((p) => {
                 const stock = stockLabel(p);
+                const precio = priceOf(p.id);
+                const exceso = Math.max(0, precio - topeAcompanamiento);
                 return (
                   <Pressable
                     key={p.id}
@@ -496,6 +521,7 @@ export function ShotMixerSelector({
                               p.foto && p.foto !== "default.png"
                                 ? p.foto
                                 : p.producto_foto,
+                            precio: priceOf(p.id),
                             ...shortMixerConsumption(items[selected]),
                           });
                       }
@@ -526,6 +552,18 @@ export function ShotMixerSelector({
                         <Text style={{ color: textPrimary }}>
                           {p.producto_nombre} {p.nombre}
                         </Text>
+                        {!sinRecargo && topeAcompanamiento > 0 && precio <= 0 && (
+                          <Text style={{ color: "#F59E0B", fontSize: 12, marginTop: 2 }}>
+                            Sin precio configurado: no suma excedente
+                          </Text>
+                        )}
+                        {!sinRecargo && topeAcompanamiento > 0 && precio > 0 && (
+                          <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>
+                            {exceso > 0
+                              ? `Suma $${exceso.toLocaleString("es-CL")} sobre el tope de $${topeAcompanamiento.toLocaleString("es-CL")}`
+                              : "Incluido en el tope"}
+                          </Text>
+                        )}
                       </View>
                     </View>
                     {!!stock && (

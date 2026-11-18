@@ -1,49 +1,40 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Spacing } from '@/constants';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
-import { GarzonActionCard } from '@/components/garzon/GarzonActionCard';
+import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
+import { DashboardActionCard } from '@/components/shared/DashboardActionCard';
 
 export interface ActionGridItem {
   title: string;
   description: string;
-  icon: any;
+  icon: keyof typeof Ionicons.glyphMap;
   color: string;
+  borderColor?: string;
   route?: string;
   onPress?: () => void;
   disabled?: boolean;
-  borderColor?: string;
-  childrenWrapper?: (child: React.ReactNode) => React.ReactNode;
+  bloqueoPorCaja?: boolean;
 }
 
 export interface ActionGridProps {
   actions: ActionGridItem[];
-  fullWidth?: boolean;
-  cols?: number;
 }
 
-/**
- * Reusable action grid layout.
- * Unifies CajeroActionGrid and BarmanActionGrid which share the same
- * row-based grid layout with GarzonActionCard items.
- */
-export const ActionGrid: React.FC<ActionGridProps> = ({
-  actions,
-  fullWidth = false,
-  cols,
-}) => {
-  const { accentColor } = useAccentColor();
-  const router = useRouter();
-  const { isTablet } = useResponsiveMetrics();
+const COLUMNS = 2;
+const ROW_GAP = 12;
+const TOP_GAP = 15;
 
-  const columnCount = cols ?? (isTablet ? 3 : 2);
-  const spacing = isTablet ? 24 : 16;
+/**
+ * Tablero de acciones del dashboard con el mismo layout para todos los roles:
+ * dos columnas, tarjetas DashboardActionCard y separación uniforme.
+ */
+export const ActionGrid: React.FC<ActionGridProps> = ({ actions }) => {
+  const router = useRouter();
 
   const rows: ActionGridItem[][] = [];
-  for (let i = 0; i < actions.length; i += columnCount) {
-    rows.push(actions.slice(i, i + columnCount));
+  for (let i = 0; i < actions.length; i += COLUMNS) {
+    rows.push(actions.slice(i, i + COLUMNS));
   }
 
   const handlePress = (action: ActionGridItem) => {
@@ -54,46 +45,44 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
     }
   };
 
+  const renderCard = (action: ActionGridItem) => {
+    const card = (
+      <DashboardActionCard
+        title={action.title}
+        description={action.description}
+        icon={action.icon}
+        color={action.color}
+        borderColor={action.borderColor}
+        onPress={() => handlePress(action)}
+        disabled={action.disabled}
+      />
+    );
+    if (!action.bloqueoPorCaja) return card;
+    return (
+      <BloqueoPorCaja bloqueado style={styles.cell}>
+        {card}
+      </BloqueoPorCaja>
+    );
+  };
+
   return (
-    <View style={[styles.container, { paddingHorizontal: fullWidth ? 0 : spacing }]}>
+    <View>
       {rows.map((row, rowIndex) => (
         <View
           key={rowIndex}
           style={[
             styles.row,
-            { marginTop: rowIndex > 0 ? spacing / 2 : 0, gap: spacing / 2 },
+            { marginTop: rowIndex === 0 ? TOP_GAP : ROW_GAP, gap: ROW_GAP },
           ]}
         >
           {row.map((action) => (
-            <View key={action.title} style={{ flex: 1 }}>
-              {action.childrenWrapper ? (
-                action.childrenWrapper(
-                  <GarzonActionCard
-                    title={action.title}
-                    description={action.description}
-                    icon={action.icon}
-                    color={action.color}
-                    borderColor={action.borderColor || accentColor}
-                    onPress={() => handlePress(action)}
-                    disabled={action.disabled}
-                  />
-                )
-              ) : (
-                <GarzonActionCard
-                  title={action.title}
-                  description={action.description}
-                  icon={action.icon}
-                  color={action.color}
-                  borderColor={action.borderColor || accentColor}
-                  onPress={() => handlePress(action)}
-                  disabled={action.disabled}
-                />
-              )}
+            <View key={action.title} style={styles.cell}>
+              {renderCard(action)}
             </View>
           ))}
-          {row.length < columnCount &&
-            Array.from({ length: columnCount - row.length }).map((_, i) => (
-              <View key={`empty-${i}`} style={{ flex: 1 }} />
+          {row.length < COLUMNS &&
+            Array.from({ length: COLUMNS - row.length }).map((_, i) => (
+              <View key={`empty-${i}`} style={styles.cell} />
             ))}
         </View>
       ))}
@@ -102,12 +91,11 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: Spacing.md,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: Spacing.sm,
+  },
+  cell: {
+    flex: 1,
   },
 });

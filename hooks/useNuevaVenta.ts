@@ -4,8 +4,8 @@ import {
   requiresShortMixer,
   bottleMixerUnits,
   totalUnidadesAcompanamientoBotella,
-  normalizarAcompanamientoBotella,
 } from "@/hooks/utils/productConfiguration";
+import { recargoAcompanamientoDeProducto } from "@/hooks/utils/recargoAcompanamiento";
 import {
   useCallback,
   useEffect,
@@ -188,10 +188,10 @@ export function useNuevaVenta() {
   const habitacionDesde = Number(
     useConfigValue("comisiones", "umbral_habitacion_desde", "30000"),
   );
-  // Máximo ml de acompañamiento incluido en el precio del producto.
-  // Si el acompañamiento seleccionado supera este ml, se cobra la diferencia.
-  const acompanamientoMaxMl = Number(
-    useConfigValue("bar", "acompanamiento_max_ml", "500"),
+  // Precio máximo de acompañamiento incluido en el producto. Cada unidad que
+  // supere este tope suma su exceso; sobre el tope no se descuenta nada.
+  const acompanamientoTope = Number(
+    useConfigValue("comisiones", "tope_precio_acompañamiento", "0"),
   );
 
   useEffect(() => {
@@ -208,37 +208,20 @@ export function useNuevaVenta() {
         acc + (item.precio || item.price || 0) * (item.quantity || 1),
       0,
     );
-    // Calcula el recargo de acompañamientos por botella:
-    // cada sabor tiene un ml_botella; si la suma de ml de los sabores
-    // seleccionados supera el acompanamiento_max_ml configurado, se cobra
-    // la diferencia proporcional al precio del producto.
-    const recargoAcompanamiento = cart.reduce((acc, item) => {
-      if (item.tipo_venta === "shot" || !item.acompanamiento_botella) return acc;
-      const sabores = totalUnidadesAcompanamientoBotella(item.acompanamiento_botella) > 0
-        ? normalizarAcompanamientoBotella(item.acompanamiento_botella)
-        : [];
-      if (sabores.length === 0) return acc;
-      // Suma el ml_botella de cada sabor × unidades seleccionadas
-      const mlTotal = sabores.reduce((sum, sabor) => {
-        const mlBotella = Number(sabor.ml_botella || 0);
-        return sum + mlBotella * (sabor.unidades || 0);
-      }, 0);
-      // Si supera el máximo configurado, cobra la diferencia proporcional
-      const precioProducto = Number(item.precio || item.price || 0);
-      const cantidad = Number(item.quantity || 1);
-      if (mlTotal > acompanamientoMaxMl && acompanamientoMaxMl > 0) {
-        // La diferencia es proporcional: (ml_excedente / ml_total_sabores) × precio
-        const mlExcedente = mlTotal - acompanamientoMaxMl;
-        const extra = (mlExcedente / mlTotal) * precioProducto * cantidad;
-        return acc + extra;
-      }
-      return acc;
-    }, 0);
+    // Cada unidad de acompañamiento que supera el tope suma su exceso
+    // (`precio - tope`) por la cantidad vendida. Bajo el tope no suma nada.
+    const recargoAcompanamiento = cart.reduce(
+      (acc, item) =>
+        acc +
+        recargoAcompanamientoDeProducto(item, acompanamientoTope) *
+          Number(item.quantity || 1),
+      0,
+    );
     const subtotalConRecargo = subtotal + recargoAcompanamiento;
     const tip = calcularPropina(subtotalConRecargo, propinaPct, enableTip);
     const total = calcularTotalVenta({ subtotal: subtotalConRecargo, propina: tip });
     return { subtotal: subtotalConRecargo, tip, total, recargoAcompanamiento };
-  }, [cart, enableTip, propinaPct, acompanamientoMaxMl]);
+  }, [cart, enableTip, propinaPct, acompanamientoTope]);
 
   const hasCommissionItem = useMemo(() => {
     return (
@@ -1023,7 +1006,7 @@ export function useNuevaVenta() {
         hasCommissionItem,
         baucherFoto,
         prepagoDestinos,
-        acompanamientoMaxMl,
+        acompanamientoTope,
       });
 
       const items = cart.reduce(

@@ -8,14 +8,12 @@ import ProfileEditModal from "@/components/shared/ProfileEditModal";
 import { RegistroAsistenciaModal } from "@/components/shared/RegistroAsistenciaModal";
 
 export default function AnfitrionaTabsLayout() {
-  const { isDark } = useAccentColor();
+  const { bg } = useAccentColor();
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
-  const bgColor = isDark ? "#000000" : "#F3F4F6";
-
   return (
-    <View style={{ flex: 1, backgroundColor: bgColor }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       <Tabs
         tabBar={(props: any) => <PremiumTabBar {...props} />}
         screenOptions={{

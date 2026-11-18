@@ -80,12 +80,12 @@ const styles = StyleSheet.create({
   cardDetailsList: { gap: 6 },
   detailItemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   rowIcon: { width: 16, textAlign: "center" },
-  detailValue: { fontSize: 14, fontFamily: FontFamily.medium },
+  detailValue: { fontSize: 14, fontFamily: FontFamily.medium, flexShrink: 1 },
   hostessPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     flexShrink: 1,
   },
-  hostessText: { fontSize: 13, fontFamily: FontFamily.semibold },
+  hostessText: { fontSize: 13, fontFamily: FontFamily.semibold, flexShrink: 1 },
 });

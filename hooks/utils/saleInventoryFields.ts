@@ -13,7 +13,10 @@ export interface SaleInventoryFields {
     unidades?: number;
     ml_por_corto?: number;
     nombre?: string;
+    precio?: number;
   };
+  /** Exceso por unidad del producto cuando el acompañamiento supera el tope. */
+  recargo_acompanamiento?: number;
 }
 
 /** Conserva el consumo al pasar de pedido a cuenta y de cuenta a venta. */
@@ -49,6 +52,9 @@ export function saleInventoryFields(
     ...(data.acompanamiento_botella ? { acompanamiento_botella: data.acompanamiento_botella } : {}),
     ...(data.acompanamiento_corto
       ? { acompanamiento_corto: data.acompanamiento_corto }
+      : {}),
+    ...(data.recargo_acompanamiento !== undefined
+      ? { recargo_acompanamiento: data.recargo_acompanamiento }
       : {}),
   };
 }

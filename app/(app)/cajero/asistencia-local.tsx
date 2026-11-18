@@ -29,7 +29,7 @@ const horaCorta = (hora: string) => String(hora ?? '').slice(0, 5);
 
 export default function AsistenciaLocalScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
     useAccentColor();
   const [data, setData] = useState<AsistenciaHoy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +90,7 @@ export default function AsistenciaLocalScreen() {
                 'Sin rol'}
             </Text>
           </View>
-          <View style={[styles.timePill, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
+          <View style={[styles.timePill, { backgroundColor: surfaceMuted }]}>
             <Ionicons name="time-outline" size={13} color={textSecondary} />
             <Text style={[styles.timeText, { color: textPrimary }]}>{horaCorta(item.hora)}</Text>
           </View>

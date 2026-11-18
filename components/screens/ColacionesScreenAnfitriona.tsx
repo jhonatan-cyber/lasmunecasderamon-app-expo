@@ -17,6 +17,7 @@ export default function ColacionesScreenAnfitriona() {
     accentColor,
     bg,
     cardBg,
+    surfaceMuted,
     textPrimary,
     textSecondary,
     borderColor,
@@ -182,7 +183,7 @@ export default function ColacionesScreenAnfitriona() {
           </View>
 
           <View style={styles.selectorsRow}>
-            <View style={[styles.selectorBlock, { backgroundColor: '#F9FAFB', borderColor }]}>
+            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
               <Text style={[styles.label, { color: textPrimary }]}>Trabajador</Text>
               <Pressable
                 onPress={() => setWorkerModalVisible(true)}
@@ -196,7 +197,7 @@ export default function ColacionesScreenAnfitriona() {
               </Pressable>
             </View>
 
-            <View style={[styles.selectorBlock, { backgroundColor: '#F9FAFB', borderColor }]}>
+            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
               <Text style={[styles.label, { color: textPrimary }]}>Bebida</Text>
               <Pressable
                 onPress={() => {}}

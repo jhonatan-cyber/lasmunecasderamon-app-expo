@@ -6,6 +6,7 @@ import PersonalScreen from '@/app/(app)/cajero/personal';
 const h = vi.hoisted(() => ({
   rowRenders: {} as Record<string, number>,
   apiClientSafe: vi.fn(),
+  user: null as { role?: string } | null,
 }));
 
 type RenderProps = {
@@ -60,11 +61,16 @@ vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 vi.mock('expo-router', async () => {
   const { useEffect } = await import('react');
   return {
+    Redirect: ({ href }: { href: string }) => <div>{`redirect:${href}`}</div>,
     Stack: { Screen: () => null },
     useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
     useFocusEffect: (callback: () => void | (() => void)) => useEffect(callback, [callback]),
   };
 });
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (selector: (state: { user: typeof h.user }) => unknown) =>
+    selector({ user: h.user }),
+}));
 vi.mock('@/components/ui/AnimatedView', () => ({
   AnimatedView: ({ children }: RenderProps) => <div>{children}</div>,
 }));
@@ -110,12 +116,32 @@ const STAFF = [
 
 beforeEach(() => {
   h.rowRenders = {};
+  h.user = { role: 'administrador' };
   h.apiClientSafe.mockReset().mockImplementation(async (path: string) => {
     if (path.startsWith('/users')) return { success: true, data: STAFF };
     return { success: false };
   });
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
+
+describe('CajeroPersonalRoute: acceso por rol', () => {
+  it.each(['cajero', 'Cajera'])('expulsa al cajero (%s) de la gestión de personal', (role) => {
+    h.user = { role };
+
+    render(<PersonalScreen />);
+
+    expect(screen.getByText('redirect:/(app)/cajero/(tabs)')).toBeDefined();
+    expect(screen.queryByText('Ana')).toBeNull();
+  });
+
+  it('mantiene el acceso a administración', async () => {
+    h.user = { role: 'administrador' };
+
+    render(<PersonalScreen />);
+
+    await waitFor(() => expect(screen.getByText('Ana')).toBeTruthy());
+  });
+});
 
 describe('PersonalScreen: repintado de filas al buscar', () => {
   it('no vuelve a renderizar las tarjetas que siguen en la lista', async () => {

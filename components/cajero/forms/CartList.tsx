@@ -25,8 +25,7 @@ export const CartList = React.memo(
     hideQuantityControls = false,
   }: CartListProps) => {
     useRenderCount("CartList", { itemsCount: items.length });
-    const { accentColor, cardBg, borderColor, textPrimary, textSecondary } =
-      useAccentColor();
+    const { accentColor, textPrimary, textSecondary } = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
       const ObjectGroups: Record<
@@ -80,7 +79,7 @@ export const CartList = React.memo(
     if (items.length === 0) return null;
 
     return (
-      <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+      <View>
         {title ? (
           <Text style={[styles.sectionTitle, { color: textPrimary }]}>
             {title}
@@ -204,7 +203,6 @@ export const CartList = React.memo(
 CartList.displayName = "CartList";
 
 const styles = StyleSheet.create({
-  section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "900",

@@ -30,7 +30,7 @@ const fechaCorta = (fecha: string) =>
 
 export default function ComprasScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
     useAccentColor();
   const [data, setData] = useState<Compra[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +102,7 @@ export default function ComprasScreen() {
               </Text>
             </View>
             {item.metodo_pago ? (
-              <View style={[styles.chip, { backgroundColor: isDark ? '#111111' : '#F1F5F9' }]}>
+              <View style={[styles.chip, { backgroundColor: surfaceMuted }]}>
                 <Text style={[styles.chipText, { color: textSecondary }]}>
                   {item.metodo_pago}
                 </Text>

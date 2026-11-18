@@ -22,6 +22,7 @@ export type VentaCartItem = Producto & {
     unidades?: number;
     ml_por_corto?: number;
     nombre?: string;
+    precio?: number;
   };
   quantity: number;
   cantidad?: number;

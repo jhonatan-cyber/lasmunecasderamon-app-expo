@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type Props = {
   visible: boolean;
@@ -34,6 +35,8 @@ export function BalanceModal({
   onAmountChange,
   onConfirm,
 }: Props) {
+  const { surfaceMuted } = useAccentColor();
+
   return (
     <Modal
       animationType="fade"
@@ -70,7 +73,7 @@ export function BalanceModal({
                 flex: 1,
                 height: 50,
                 borderRadius: 12,
-                backgroundColor: isDark ? '#374151' : '#F3F4F6',
+                backgroundColor: surfaceMuted,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}

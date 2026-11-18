@@ -11,6 +11,8 @@ interface ProfileHeroProps {
   userName: string;
   roleLabel?: string;
   accentColor: string;
+  accentText: string;
+  accentUi: string;
   cardBg: string;
   textPrimary: string;
   onEditPhoto: () => void;
@@ -24,13 +26,15 @@ export function ProfileHero({
   userName,
   roleLabel,
   accentColor,
+  accentText,
+  accentUi,
   cardBg,
   textPrimary,
   onEditPhoto,
 }: ProfileHeroProps) {
   return (
     <View style={styles.profileHero}>
-      <View style={[styles.avatarBorder, { borderColor: accentColor }]}>
+      <View style={[styles.avatarBorder, { borderColor: accentUi }]}>
         {photoUri && failedPhotoUri !== photoUri ? (
           <Image
             key={photoUri}
@@ -52,12 +56,12 @@ export function ProfileHero({
           ]}
           onPress={onEditPhoto}
         >
-          <Ionicons name="camera" size={16} color="#FFF" />
+          <Ionicons name="camera" size={16} color={accentText} />
         </Pressable>
       </View>
       <Text style={[styles.userName, { color: textPrimary }]}>{userName}</Text>
-      <View style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}>
-        <Text style={[styles.roleText, { color: accentColor }]}>
+      <View style={[styles.roleBadge, { backgroundColor: `${accentUi}20` }]}>
+        <Text style={[styles.roleText, { color: accentUi }]}>
           {roleLabel}
         </Text>
       </View>

@@ -20,8 +20,8 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
     max = 999,
     label = "Tiempo (minutos)"
 }) => {
-    const { accentColor, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
-    const cardBg = isDark ? '#1F2937' : '#F9FAFB';
+    const { accentColor, textPrimary, textSecondary, borderColor, surfaceMuted } = useAccentColor();
+    const cardBg = surfaceMuted;
 
     const handleIncrement = () => {
         if (value + step <= max) {

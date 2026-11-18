@@ -46,7 +46,7 @@ export function AdvanceCard({
     footer,
 }: AdvanceCardProps) {
     useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     
     const normalize = normalizeEstado || ((estado: Anticipo['estado'] | number | string) => {
@@ -135,7 +135,7 @@ export function AdvanceCard({
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
                 {showIndexBadge ? (
-                    <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                    <View style={[styles.indexBadge, { backgroundColor: surfaceMuted }]}>
                         <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
                     </View>
                 ) : (

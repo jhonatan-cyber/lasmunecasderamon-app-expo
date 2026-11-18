@@ -19,6 +19,7 @@ export const THEME_OPTIONS = [
     { name: 'Cian', color: '#0891B2', gradient: ['#0891B2', '#0E7490', '#155E75'] },
     { name: 'Ámbar', color: '#D97706', gradient: ['#D97706', '#B45309', '#92400E'] },
     { name: 'Pizarra', color: '#475569', gradient: ['#475569', '#334155', '#1E293B'] },
+    { name: 'Negro', color: '#171717', gradient: ['#262626', '#171717', '#0A0A0A'] },
 ];
 
 interface ThemeState {

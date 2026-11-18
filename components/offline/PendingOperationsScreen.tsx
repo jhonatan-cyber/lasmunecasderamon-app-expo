@@ -47,7 +47,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
     createsWorkOffline = true,
     onBack,
 }) => {
-    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, isDark } =
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted } =
         useAccentColor();
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -247,7 +247,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                     intents.map(renderIntent)
                 )}
 
-                <View style={[styles.note, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }]}>
+                <View style={[styles.note, { backgroundColor: surfaceMuted }]}>
                     <Ionicons name='information-circle-outline' size={18} color={textSecondary} />
                     <Text style={[styles.noteText, { color: textSecondary }]}>
                         Cada operación viaja con su propia clave, así que reenviarla nunca la

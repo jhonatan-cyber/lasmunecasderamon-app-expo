@@ -8,6 +8,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import type { TabItem } from '@/components/ui/Tabs';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -20,7 +22,7 @@ import { useStableCallback } from '@/hooks/useStableCallback';
 import { showToast } from '@/utils/toast-lazy';
 import { SolicitarAnticipoModal } from '@/components/screens/anticipos/SolicitarAnticipoModal';
 import { AnticipoDetailModal } from '@/components/screens/anticipos/AnticipoDetailModal';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export default function AnticiposScreen() {
   const {
@@ -91,6 +93,34 @@ export default function AnticiposScreen() {
   const [monto, setMonto] = useState('');
   const [motivo, setMotivo] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
+
+  // Alert state for PremiumHeaderActions
+  const [alertConfig, setAlertConfig] = useState<any>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: any = 'info',
+      onConfirm?: () => void,
+      showCancel = false,
+    ) => {
+      setAlertConfig({
+        visible: true,
+        title,
+        message,
+        type,
+        onConfirm,
+        showCancel,
+      });
+    },
+    [],
+  );
 
   const canRequestAdvance = montoMaximo > 0;
 
@@ -182,7 +212,16 @@ export default function AnticiposScreen() {
 
   const renderSkeleton = () => (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      <PremiumHeader title="Anticipos" subtitle="Mis solicitudes y anticipos recibidos" />
+      <PremiumHeader
+        title="Anticipos"
+        subtitle="Mis solicitudes y anticipos recibidos"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
+      />
       <View style={{ margin: 16 }}>
         <Skeleton width="100%" height={140} borderRadius={16} />
       </View>
@@ -224,14 +263,31 @@ export default function AnticiposScreen() {
   if (error)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Anticipos" />
+        <PremiumHeader
+          title="Anticipos"
+          rightComponent={
+            <PremiumHeaderActions
+              showAlert={showAlert}
+              profilePath="/barman/perfil"
+            />
+          }
+        />
         <EmployeeListError message={error} onRetry={() => fetchAnticipos()} />
       </View>
     );
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      <PremiumHeader title="Anticipos" subtitle="Mis solicitudes y anticipos recibidos" />
+      <PremiumHeader
+        title="Anticipos"
+        subtitle="Mis solicitudes y anticipos recibidos"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
+      />
 
       <View
         style={[
@@ -363,6 +419,15 @@ export default function AnticiposScreen() {
         formatDate={formatDate}
         formatTime={formatTime}
         normalizeEstado={normalizeEstado}
+      />
+
+      <PremiumAlert
+        {...alertConfig}
+        onConfirm={() => {
+          alertConfig.onConfirm?.();
+          setAlertConfig({ ...alertConfig, visible: false });
+        }}
+        onCancel={() => setAlertConfig({ ...alertConfig, visible: false })}
       />
     </View>
   );

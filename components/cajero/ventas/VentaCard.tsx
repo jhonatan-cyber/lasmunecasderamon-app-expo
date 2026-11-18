@@ -1,5 +1,4 @@
 import React, { memo } from "react";
-import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { parseDateSafe } from "@/utils/timeUtils";
 import { rotateColor } from "@/utils/colors";
@@ -30,6 +29,9 @@ type VentaCardProps = {
 // Buscar/filtrar entrega las mismas referencias de venta: sin `memo` cada tecla
 // repintaba todas las tarjetas visibles. El contador sigue avanzando porque
 // `TimerPill` se suscribe por su cuenta al tick.
+// Sin animación de entrada: el historial monta hasta 50 tarjetas y FlatList
+// recicla las visibles al desplazar, así que un fade desde opacity 0 dejaba
+// las filas en blanco mientras se recorrían.
 export const VentaCard = memo(function VentaCard({
   item,
   accentColor,
@@ -66,12 +68,7 @@ export const VentaCard = memo(function VentaCard({
     });
 
   return (
-    <AnimatedView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 400 }}
-      style={{ marginHorizontal: 8 }}
-    >
+    <View style={{ marginHorizontal: 8 }}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
@@ -127,7 +124,7 @@ export const VentaCard = memo(function VentaCard({
           />
         </View>
       </Pressable>
-    </AnimatedView>
+    </View>
   );
 });
 

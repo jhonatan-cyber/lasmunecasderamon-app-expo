@@ -23,6 +23,8 @@ const BAUCHER_DATA_URL = /^data:image\/(?:jpeg|jpg|png|webp);base64,[A-Za-z0-9+/
 const acompanamientoBotellaItemSchema = object({
   presentacion_id: string().min(1),
   unidades: number().int().min(1).max(1000),
+  /** Precio del acompañamiento: con él se calcula el recargo sobre el tope. */
+  precio: number().min(0).optional(),
 });
 
 const acompanamientoBotellaSchema = union([
@@ -79,6 +81,7 @@ export const OrderCreateSchema = object({
         unidades: number().int().min(1).max(1000).optional(),
         ml_por_corto: number().int().min(1).max(10000).optional(),
         nombre: string().optional(),
+        precio: number().min(0).optional(),
       })
         .refine(
           (value) =>
@@ -89,6 +92,7 @@ export const OrderCreateSchema = object({
         .optional(),
       productoId: string().min(1),
       precio: number().min(0),
+      recargo_acompanamiento: number().min(0).optional(),
       comision: number().optional().default(0),
       generaComision: number().optional().default(1),
       cantidad: number().min(1),
@@ -120,6 +124,12 @@ export const OrderCreateSchema = object({
           );
         },
         "Acompa\u00f1amiento de botella inv\u00e1lido",
+      )
+      .refine(
+        (d) =>
+          d.subtotal ===
+          (d.precio + (d.recargo_acompanamiento ?? 0)) * d.cantidad,
+        "Subtotal del producto incorrecto",
       )
       .transform((d) =>
         d.tipo_venta === "shot" && !d.shot_anfitriona

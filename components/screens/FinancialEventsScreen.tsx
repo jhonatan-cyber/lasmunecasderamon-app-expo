@@ -48,6 +48,7 @@ export function FinancialEventsScreen({
     isDark,
     bg,
     cardBg,
+    surfaceMuted,
     textPrimary,
     textSecondary,
     borderColor,
@@ -169,7 +170,7 @@ export function FinancialEventsScreen({
               <View
                 style={[
                   styles.indexBadge,
-                  { backgroundColor: isDark ? '#374151' : '#E5E7EB' },
+                  { backgroundColor: surfaceMuted },
                 ]}
               >
                 <Text style={[styles.indexText, { color: textPrimary }]}>

@@ -14,6 +14,7 @@ interface ProfileFormFieldsProps {
   formData: ProfileFormData;
   updateField: (field: string, value: any) => void;
   accentColor: string;
+  accentUi: string;
   cardBg: string;
   borderColor: string;
   textPrimary: string;
@@ -25,6 +26,7 @@ export function ProfileFormFields({
   formData,
   updateField,
   accentColor,
+  accentUi,
   cardBg,
   borderColor,
   textPrimary,
@@ -43,7 +45,7 @@ export function ProfileFormFields({
           <Ionicons
             name="star-outline"
             size={20}
-            color={accentColor}
+            color={accentUi}
             style={styles.inputIcon}
           />
           <TextInput
@@ -64,7 +66,7 @@ export function ProfileFormFields({
           <Ionicons
             name="call-outline"
             size={20}
-            color={accentColor}
+            color={accentUi}
             style={styles.inputIcon}
           />
           <TextInput
@@ -84,7 +86,7 @@ export function ProfileFormFields({
           <Ionicons
             name="location-outline"
             size={20}
-            color={accentColor}
+            color={accentUi}
             style={styles.inputIcon}
           />
           <TextInput
@@ -102,7 +104,7 @@ export function ProfileFormFields({
           <Ionicons
             name="heart-outline"
             size={20}
-            color={accentColor}
+            color={accentUi}
             style={styles.inputIcon}
           />
           <Text style={[styles.input, { color: textPrimary, paddingTop: 12 }]}>
@@ -122,7 +124,7 @@ export function ProfileFormFields({
           <Ionicons
             name="lock-closed-outline"
             size={20}
-            color={accentColor}
+            color={accentUi}
             style={styles.inputIcon}
           />
           <TextInput

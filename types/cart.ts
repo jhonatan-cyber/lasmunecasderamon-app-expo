@@ -29,6 +29,8 @@ export interface Product {
     ml_por_corto?: number;
     nombre?: string;
     foto?: string;
+    /** Precio unitario de la bebida elegida (del catálogo de productos). */
+    precio?: number;
   };
   id: string;
   code: string;

@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
+import { readableTextColor } from "@/utils/color";
 
 interface ProfileActionsProps {
   saving: boolean;
@@ -15,6 +16,8 @@ export function ProfileActions({
   onSave,
   onLogout,
 }: ProfileActionsProps) {
+  const accentText = readableTextColor(accentColor);
+
   return (
     <View style={styles.actionContainer}>
       <Pressable
@@ -27,9 +30,9 @@ export function ProfileActions({
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color={accentText} />
         ) : (
-          <Text style={styles.saveBtnText}>Guardar Cambios</Text>
+          <Text style={[styles.saveBtnText, { color: accentText }]}>Guardar Cambios</Text>
         )}
       </Pressable>
 

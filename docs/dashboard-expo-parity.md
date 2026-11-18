@@ -2,10 +2,18 @@
 
 La app móvil cubre los flujos de anfitriona, garzón, cajero y barman. No replica todas las pantallas administrativas del dashboard.
 
+## Tope de precio del acompañamiento — revisión del 17/11/2026
+
+- Regla de Configuraciones → Bar → Comisiones → reglas: `tope_precio_acompañamiento` (0 = desactivada). Cada unidad de acompañamiento que supera el tope suma su exceso (`precio - tope`); las que están en el tope o bajo él no suman ni descuentan.
+- El exceso se calcula por unidad del acompañamiento y se multiplica por la cantidad vendida del producto. Ejemplo: tope 5000, dos acompañamientos de 8000 y cantidad 2 → (8000 − 5000) × 2 × 2 = 12000.
+- Aplica a botellas (`acompanamiento_botella`) y a cortos de cliente (`acompanamiento_corto.precio`). Los cortos de anfitriona consumen ml de la botella y no llevan recargo.
+- El recargo viaja como `recargo_acompanamiento` por unidad en ventas (`POST /sales`) y pedidos (`POST /orders`); el servidor lo vuelve a multiplicar por la cantidad, y el subtotal local se valida como `(precio + recargo) × cantidad` antes de encolar.
+- En la UI de cortos y botellas se indica cuánto suma cada acompañamiento sobre el tope; sin precio de catálogo se avisa que no suma excedente.
+
 ## Limpieza y Colaciones — revisión del 05/11/2026
 
-- Limpieza: disponible para barman (`/barman/limpieza`) y cajero (`/cajero/limpieza`). Ambos roles ven el inventario según su ubicación (bar/caja) y pueden registrar consumos sin permiso de gestión.
-- Colaciones: disponible para cajero (`/cajero/colaciones`) con la misma lógica que barman: requiere caja abierta, muestra catálogo de bebidas analcohólicas y permite registrar con acompañamiento si la bebida lo tiene configurado.
+- Limpieza: se eliminaron las tarjetas y pantallas de barman (`/barman/limpieza`), cajero (`/cajero/limpieza`) y anfitriona (`/anfitriona/limpieza`).
+- Colaciones: registro disponible solo para administración (`/cajero/colaciones`). Cajero, anfitriona y garzón reciben colación pero no la registran: no tienen la tarjeta en su inicio y un enlace directo a las pantallas de registro los redirige. Requiere caja abierta, muestra catálogo de bebidas analcohólicas y permite registrar con acompañamiento si la bebida lo tiene configurado.
 
 ## Anfitrionas — revisión del 14/10/2026
 

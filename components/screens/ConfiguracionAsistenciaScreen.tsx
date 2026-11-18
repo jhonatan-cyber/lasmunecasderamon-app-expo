@@ -65,7 +65,7 @@ function AccesoRestringido() {
 function PanelConfiguracionAsistencia() {
   const router = useRouter();
   const activarModoPantalla = useModoPantallaStore((state) => state.activar);
-  const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
     useAccentColor();
 
   const {
@@ -258,7 +258,7 @@ function PanelConfiguracionAsistencia() {
               <View
                 style={[
                   styles.previewRow,
-                  { borderColor, backgroundColor: isDark ? '#000000' : '#F9FAFB' },
+                  { borderColor, backgroundColor: surfaceMuted },
                 ]}
               >
                 <Text style={[styles.previewLabel, { color: textSecondary }]}>

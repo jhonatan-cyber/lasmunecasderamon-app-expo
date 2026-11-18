@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import type { MetodoPagoMonto } from './types';
 
 type Props = {
@@ -27,11 +28,11 @@ export function PagosMixtosSection({
   borderColor,
   textPrimary,
   textSecondary,
-  isDark,
   onUpdatePago,
   onRemovePago,
   onAddPago,
 }: Props) {
+  const { surfaceMuted } = useAccentColor();
   const sumaActual = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
   const yaCompleto = sumaActual >= totalsTotal;
 
@@ -40,7 +41,7 @@ export function PagosMixtosSection({
       style={{
         marginTop: 16,
         padding: 12,
-        backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+        backgroundColor: surfaceMuted,
         borderRadius: 12,
       }}
     >

@@ -96,7 +96,7 @@ const onboardingData: Record<string, OnboardingStep[]> = {
 };
 
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, onClose }) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary } = useAccentColor();
     const steps = onboardingData[role] || onboardingData.anfitriona;
     const [currentStep, setCurrentStep] = useState(0);
     const fadeOpacity = useSharedValue(0);
@@ -158,7 +158,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, o
                                 style={[
                                     styles.dot,
                                     {
-                                        backgroundColor: i === currentStep ? accentColor : (isDark ? '#374151' : '#E5E7EB'),
+                                        backgroundColor: i === currentStep ? accentColor : surfaceMuted,
                                         width: i === currentStep ? 24 : 8,
                                     },
                                 ]}
@@ -168,7 +168,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, o
 
                     <View style={styles.actions}>
                         <Pressable
-                            style={[styles.skipBtn, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}
+                            style={[styles.skipBtn, { backgroundColor: surfaceMuted }]}
                             onPress={finishOnboarding}
                             accessibilityRole="button"
                             accessibilityLabel="Saltar recorrido"

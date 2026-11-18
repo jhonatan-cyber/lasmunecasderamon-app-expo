@@ -32,8 +32,8 @@ vi.mock('@/components/shared/BloqueoPorCaja', () => ({
   BloqueoPorCaja: ({ children }: any) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/garzon/GarzonActionCard', () => ({
-  GarzonActionCard: ({ title, color, borderColor }: any) => (
+vi.mock('@/components/shared/DashboardActionCard', () => ({
+  DashboardActionCard: ({ title, color, borderColor }: any) => (
     <div data-title={title} data-color={color} data-border-color={borderColor}>
       {title}
     </div>
@@ -54,7 +54,6 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'CLIENTES',
     'ENTRADAS',
     'COVERS',
-    'LIMPIEZA',
     'PERSONAL',
     'GRATIFICACIONES',
   ];
@@ -79,7 +78,6 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'CLIENTES',
     'ENTRADAS',
     'COVERS',
-    'LIMPIEZA',
     'PERSONAL',
   ];
 

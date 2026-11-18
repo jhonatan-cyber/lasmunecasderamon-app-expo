@@ -27,7 +27,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     message,
     style,
 }) => {
-    const { accentColor, isDark, textSecondary } = useAccentColor();
+    const { accentColor, surfaceMuted, textSecondary } = useAccentColor();
     const barColor = color || accentColor;
     const indeterminateTranslateX = useSharedValue(-100);
 
@@ -63,7 +63,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                 {
                     height,
                     borderRadius: BorderRadius.xs,
-                    backgroundColor: isDark ? '#374151' : '#E5E7EB',
+                    backgroundColor: surfaceMuted,
                 },
             ]}>
                 <Animated.View

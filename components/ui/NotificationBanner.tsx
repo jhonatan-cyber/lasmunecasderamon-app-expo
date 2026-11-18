@@ -37,7 +37,7 @@ const TYPE_META: Record<
 };
 
 export function NotificationBanner({ layer = 'root' }: Props) {
-  const { isDark } = useAccentColor();
+  const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
   const insets = useSafeAreaInsets();
   const modalLayerOpen = useModalLayerOpen();
   const notification = useSyncExternalStore(subscribeNotifications, getCurrentNotification);
@@ -97,8 +97,8 @@ export function NotificationBanner({ layer = 'root' }: Props) {
   if (layer === 'root' && modalLayerOpen) return null;
 
   const meta = TYPE_META[notification.type];
-  const titleColor = isDark ? '#F9FAFB' : '#111827';
-  const messageColor = isDark ? '#9CA3AF' : '#6B7280';
+  const titleColor = textPrimary;
+  const messageColor = textSecondary;
   const label = [notification.text1, notification.text2].filter(Boolean).join('. ');
 
   return (
@@ -115,7 +115,7 @@ export function NotificationBanner({ layer = 'root' }: Props) {
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+            backgroundColor: cardBg,
             shadowOpacity: isDark ? 0.3 : 0.1,
             opacity,
             transform: [{ translateY }],

@@ -39,7 +39,7 @@ import {
 export default function HorasExtrasScreen() {
     const router = useRouter();
     const esAdmin = useIsAdmin();
-    const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -393,7 +393,7 @@ export default function HorasExtrasScreen() {
                         ) : (
                             <>
                                 <TextInput
-                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: isDark ? '#111111' : '#F8FAFC' }]}
+                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: surfaceMuted }]}
                                     placeholder="Buscar trabajador…"
                                     placeholderTextColor={textSecondary}
                                     value={employeeSearch}
@@ -438,7 +438,7 @@ export default function HorasExtrasScreen() {
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.fieldLabel, { color: textSecondary }]}>Horas</Text>
                                 <TextInput
-                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: isDark ? '#111111' : '#F8FAFC' }]}
+                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: surfaceMuted }]}
                                     placeholder="0"
                                     placeholderTextColor={textSecondary}
                                     keyboardType="number-pad"
@@ -449,7 +449,7 @@ export default function HorasExtrasScreen() {
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.fieldLabel, { color: textSecondary }]}>Tarifa por hora</Text>
                                 <TextInput
-                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: isDark ? '#111111' : '#F8FAFC' }]}
+                                    style={[styles.input, { color: textPrimary, borderColor, backgroundColor: surfaceMuted }]}
                                     placeholder="0"
                                     placeholderTextColor={textSecondary}
                                     keyboardType="number-pad"

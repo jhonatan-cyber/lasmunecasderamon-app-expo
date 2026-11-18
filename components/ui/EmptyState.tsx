@@ -24,7 +24,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     onAction,
     style,
 }) => {
-    const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { cardBg, surfaceMuted, textPrimary, textSecondary, accentColor } = useAccentColor();
 
     return (
         <AnimatedView
@@ -33,7 +33,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             transition={{ type: 'spring', delay: 100 }}
         >
             <View style={[styles.container, { backgroundColor: cardBg }, style]}>
-                <View style={[styles.iconContainer, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6' }]}>
+                <View style={[styles.iconContainer, { backgroundColor: surfaceMuted }]}>
                     <Ionicons name={icon} size={48} color={textSecondary} />
                 </View>
                 <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary }]}>{title}</Text>

@@ -54,7 +54,15 @@ export function PremiumHeader({
     breadcrumbs,
     progressSteps,
 }: PremiumHeaderProps) {
-    const { gradientColors } = useAccentColor();
+    const {
+        gradientColors,
+        gradientText,
+        gradientTextMuted,
+        gradientOverlay,
+        gradientControlBg,
+        gradientControlBorder,
+        gradientActiveBg,
+    } = useAccentColor();
     const insets = useSafeAreaInsets();
     const { isTablet, isLandscape } = useResponsiveMetrics();
     // En un móvil horizontal la altura es escasa: el header se compacta.
@@ -79,6 +87,7 @@ export function PremiumHeader({
                 style={[
                     styles.scrim,
                     {
+                        backgroundColor: gradientOverlay,
                         borderBottomLeftRadius: compact ? 24 : 32,
                         borderBottomRightRadius: compact ? 24 : 32,
                     },
@@ -90,7 +99,7 @@ export function PremiumHeader({
                         numberOfLines={1}
                         ellipsizeMode="tail"
                         maxFontSizeMultiplier={1.4}
-                        style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 30 }]}
+                        style={[styles.headerTitle, { color: gradientText }, isTablet && { fontSize: 30 }]}
                     >
                         {title}
                     </Text>
@@ -113,7 +122,7 @@ export function PremiumHeader({
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                                 maxFontSizeMultiplier={1.4}
-                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.92)' }, isTablet && { fontSize: 16 }]}
+                                style={[styles.headerSubtitle, { color: gradientTextMuted }, isTablet && { fontSize: 16 }]}
                             >
                                 {connectionStatus ? (connectionStatus.label || (connectionStatus.isConnected ? 'Conectado' : 'Desconectado')) : subtitle}
                             </Text>
@@ -123,14 +132,14 @@ export function PremiumHeader({
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
                             {breadcrumbs.map((crumb, i) => (
                                 <React.Fragment key={i}>
-                                    {i > 0 && <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12 }}> / </Text>}
+                                    {i > 0 && <Text style={{ color: gradientTextMuted, fontSize: 12 }}> / </Text>}
                                     <Pressable
                                         onPress={crumb.onPress}
                                         accessibilityRole="button"
                                         accessibilityLabel={`Navegar a ${crumb.label}`}
                                     >
                                         <Text style={{
-                                            color: i === breadcrumbs.length - 1 ? '#FFFFFF' : 'rgba(255,255,255,0.85)',
+                                            color: i === breadcrumbs.length - 1 ? gradientText : gradientTextMuted,
                                             fontSize: 12,
                                             fontFamily: i === breadcrumbs.length - 1 ? FontFamily.semibold : FontFamily.medium,
                                         }}>
@@ -151,12 +160,12 @@ export function PremiumHeader({
                                         height: 3,
                                         borderRadius: 2,
                                         backgroundColor: i < progressSteps.currentStep
-                                            ? '#FFFFFF'
-                                            : 'rgba(255,255,255,0.25)',
+                                            ? gradientText
+                                            : gradientControlBg,
                                     }}
                                 />
                             ))}
-                            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontFamily: FontFamily.semibold }}>
+                            <Text style={{ color: gradientTextMuted, fontSize: 12, fontFamily: FontFamily.semibold }}>
                                 {progressSteps.currentStep}/{progressSteps.totalSteps}
                             </Text>
                         </View>
@@ -169,10 +178,10 @@ export function PremiumHeader({
                         accessibilityRole="button"
                         accessibilityLabel="Agregar nuevo"
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={[styles.plusBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                        style={[styles.plusBtn, { backgroundColor: gradientControlBg }]}
                     >
-                        <Ionicons name="add" size={isTablet ? 24 : 20} color="#FFFFFF" />
-                        <Text style={[styles.plusBtnText, isTablet && { fontSize: 18 }]}>Nuevo</Text>
+                        <Ionicons name="add" size={isTablet ? 24 : 20} color={gradientText} />
+                        <Text style={[styles.plusBtnText, { color: gradientText }, isTablet && { fontSize: 18 }]}>Nuevo</Text>
                     </Pressable>
                 )}
                 {onBack && (
@@ -181,20 +190,25 @@ export function PremiumHeader({
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                         style={[
                             styles.backBtn,
-                            { width: backBtnSize, height: backBtnSize, borderRadius: backBtnSize / 2 },
+                            {
+                                width: backBtnSize,
+                                height: backBtnSize,
+                                borderRadius: backBtnSize / 2,
+                                backgroundColor: gradientControlBg,
+                            },
                         ]}
                         accessibilityRole="button"
                         accessibilityLabel="Volver atrás"
                     >
-                        <Ionicons name="arrow-back" size={isTablet ? 24 : 20} color="#FFFFFF" />
+                        <Ionicons name="arrow-back" size={isTablet ? 24 : 20} color={gradientText} />
                     </Pressable>
                 )}
             </View>
 
             {tabs && tabs.length > 0 && (
                 <View style={[styles.tabContainer, {
-                    borderColor: 'rgba(255,255,255,0.1)',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderColor: gradientControlBorder,
+                    backgroundColor: gradientControlBg,
                     height: compact ? 42 : isTablet ? 56 : 48,
                     marginTop: compact ? 10 : 20,
                 }]}>
@@ -206,7 +220,7 @@ export function PremiumHeader({
                                 accessibilityRole="tab"
                                 accessibilityLabel={tab.label}
                                 accessibilityState={{ selected: isActive }}
-                                style={[styles.tab, isActive && { backgroundColor: 'rgba(0,0,0,0.38)' }]}
+                                style={[styles.tab, isActive && { backgroundColor: gradientActiveBg }]}
                                 onPress={() => {
                                     haptic.select();
                                     onTabChange && onTabChange(tab.id);
@@ -218,7 +232,7 @@ export function PremiumHeader({
                                     style={[
                                         styles.tabText,
                                         isTablet && { fontSize: 16 },
-                                        isActive ? { color: "#FFFFFF" } : { color: "rgba(255,255,255,0.92)" }
+                                        isActive ? { color: gradientText } : { color: gradientTextMuted }
                                     ]}
                                 >
                                     {tab.label}

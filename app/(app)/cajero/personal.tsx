@@ -12,7 +12,7 @@ import { eventBus } from "@/utils/eventBus";
 import logger from '@/utils/logger';
 import { showToast } from '@/utils/toast-lazy';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack,useFocusEffect,useRouter } from 'expo-router';
+import { Redirect,Stack,useFocusEffect,useRouter } from 'expo-router';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import {
 Pressable,
@@ -26,12 +26,24 @@ import {
 PersonalCard,
 PersonalQRModal
 } from '@/components/cajero/personal';
+import { useAuthStore } from '@/store/authStore';
+import { isAdminRole,isCajeroRole } from '@/utils/userRole';
+
+// El cajero no gestiona personal (listado ni códigos QR): un enlace directo a
+// /cajero/personal lo regresa a su home. Solo administración conserva acceso.
+export default function CajeroPersonalRoute() {
+    const user = useAuthStore((state) => state.user);
+
+    if (isCajeroRole(user) && !isAdminRole(user)) return <Redirect href="/(app)/cajero/(tabs)" />;
+
+    return <PersonalScreen />;
+}
 
 const GRID_PADDING = 16;
 const GRID_GAP = 12;
 const userKey = (item: User) => item.id.toString();
 
-export default function PersonalScreen() {
+function PersonalScreen() {
     const router = useRouter();
     const {accentColor, accentBg, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
     // La cuadrícula gana columnas cuando hay ancho: móvil vertical 2, horizontal 3,

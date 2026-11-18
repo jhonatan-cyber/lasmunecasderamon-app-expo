@@ -68,7 +68,8 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
       <View style={[styles.methodBadgeContainer, { marginTop: 4 }]}>
         <View style={[styles.statusBadgeSmall, { backgroundColor: `${statusColor}15` }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          <Text style={[styles.statusTextSmall, { color: statusColor }]}>
+          {/* El color del estado queda en el punto; el texto usa el color primario. */}
+          <Text style={[styles.statusTextSmall, { color: textPrimary }]}>
             {statusLabels[estado] || "Desconocido"}
           </Text>
         </View>
@@ -113,9 +114,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    opacity: 0.8,
   },
-  methodText: { fontSize: 10, fontFamily: FontFamily.bold, letterSpacing: 1 },
+  methodText: { fontSize: 11, fontFamily: FontFamily.bold, letterSpacing: 0.8 },
   cardTotalBig: { fontSize: 22, fontFamily: FontFamily.extrabold, ...TabularNumbers },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   cardSubCount: { fontSize: 12, fontFamily: FontFamily.medium },

@@ -13,11 +13,14 @@ import {
 } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
+import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { rotateColor } from '@/utils/colors';
 import { usePropinasScreen, Propina } from '@/hooks/usePropinasScreen';
+import { useCallback, useState } from 'react';
 
 export default function PropinasScreen() {
   const {
@@ -25,6 +28,7 @@ export default function PropinasScreen() {
     isDark,
     bg,
     cardBg,
+    surfaceMuted,
     textPrimary,
     textSecondary,
     borderColor,
@@ -54,6 +58,34 @@ export default function PropinasScreen() {
     fetchData,
   } = usePropinasScreen();
 
+  // Alert state for PremiumHeaderActions
+  const [alertConfig, setAlertConfig] = useState<any>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+
+  const showAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: any = 'info',
+      onConfirm?: () => void,
+      showCancel = false,
+    ) => {
+      setAlertConfig({
+        visible: true,
+        title,
+        message,
+        type,
+        onConfirm,
+        showCancel,
+      });
+    },
+    [],
+  );
+
   const renderItem = useStableCallback(
     ({ item, index }: { item: Propina; index: number }) => {
       const isPendiente = item.estado === 1;
@@ -82,7 +114,7 @@ export default function PropinasScreen() {
                 <View
                   style={[
                     styles.indexBadge,
-                    { backgroundColor: isDark ? '#374151' : '#E5E7EB' },
+                    { backgroundColor: surfaceMuted },
                   ]}
                 >
                   <Text style={[styles.indexText, { color: textPrimary }]}>
@@ -250,7 +282,16 @@ export default function PropinasScreen() {
 
   const renderPropinasSkeleton = () => (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      <PremiumHeader title="Propinas" subtitle="Mis ganancias por servicio" />
+      <PremiumHeader
+        title="Propinas"
+        subtitle="Mis ganancias por servicio"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
+      />
       <View style={{ margin: 16 }}>
         <Skeleton width="100%" height={140} borderRadius={16} />
       </View>
@@ -303,14 +344,31 @@ export default function PropinasScreen() {
   if (error)
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
-        <PremiumHeader title="Propinas" />
+        <PremiumHeader
+          title="Propinas"
+          rightComponent={
+            <PremiumHeaderActions
+              showAlert={showAlert}
+              profilePath="/barman/perfil"
+            />
+          }
+        />
         <EmployeeListError message={error} onRetry={() => fetchData()} />
       </View>
     );
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      <PremiumHeader title="Propinas" subtitle="Mis ganancias por servicio" />
+      <PremiumHeader
+        title="Propinas"
+        subtitle="Mis ganancias por servicio"
+        rightComponent={
+          <PremiumHeaderActions
+            showAlert={showAlert}
+            profilePath="/barman/perfil"
+          />
+        }
+      />
 
       <View
         style={[
@@ -414,6 +472,15 @@ export default function PropinasScreen() {
         selectedPropina={selectedPropina}
         parentPropina={parentPropina}
         saleDetail={saleDetail}
+      />
+
+      <PremiumAlert
+        {...alertConfig}
+        onConfirm={() => {
+          alertConfig.onConfirm?.();
+          setAlertConfig({ ...alertConfig, visible: false });
+        }}
+        onCancel={() => setAlertConfig({ ...alertConfig, visible: false })}
       />
     </View>
   );

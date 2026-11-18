@@ -34,7 +34,7 @@ export function OvertimeCard({
     compactDate = false,
     showPaymentDate = true,
 }: OvertimeCardProps) {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
 
     const isPendiente = item.estado === 1;
     const hourLabel = item.hora ? `${item.hora} hrs` : null;
@@ -61,7 +61,7 @@ export function OvertimeCard({
                 {}
                 <View style={styles.cardHeader}>
                     {showIndexBadge ? (
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                        <View style={[styles.indexBadge, { backgroundColor: surfaceMuted }]}>
                             <Text style={[styles.indexText, { color: textPrimary }]}>{index + 1}</Text>
                         </View>
                     ) : (

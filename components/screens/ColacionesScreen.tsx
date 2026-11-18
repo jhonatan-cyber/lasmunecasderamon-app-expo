@@ -28,6 +28,7 @@ export default function ColacionesScreen() {
     accentColor,
     bg,
     cardBg,
+    surfaceMuted,
     textPrimary,
     textSecondary,
     borderColor,
@@ -203,7 +204,7 @@ export default function ColacionesScreen() {
           </View>
 
           <View style={styles.selectorsRow}>
-            <View style={[styles.selectorBlock, { backgroundColor: '#F9FAFB', borderColor }]}>
+            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
               <Text style={[styles.label, { color: textPrimary }]}>Trabajador</Text>
               <Pressable
                 onPress={handleAbrirModalTrabajador}
@@ -217,7 +218,7 @@ export default function ColacionesScreen() {
               </Pressable>
             </View>
 
-            <View style={[styles.selectorBlock, { backgroundColor: '#F9FAFB', borderColor }]}>
+            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
               <Text style={[styles.label, { color: textPrimary }]}>Bebida</Text>
               <Pressable
                 onPress={() => {}}

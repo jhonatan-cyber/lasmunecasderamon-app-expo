@@ -113,10 +113,6 @@ export default function CajeroLayout() {
           options={{ title: "Entradas", headerShown: false }}
         />
         <Stack.Screen
-          name="limpieza"
-          options={{ title: "Limpieza", headerShown: false }}
-        />
-        <Stack.Screen
           name="configuracion-asistencia"
           options={{ title: "Configuración", headerShown: false }}
         />

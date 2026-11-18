@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { buildAttendanceMap } from './CalendarFilter';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 
@@ -41,6 +42,7 @@ export function DateRangeFilterModal({
   borderColor,
   isDark,
 }: DateRangeFilterModalProps) {
+  const { surfaceMuted } = useAccentColor();
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<[number, number]>([
     now.getFullYear(),
@@ -165,7 +167,7 @@ export function DateRangeFilterModal({
             </View>
             <Pressable
               onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}
+              style={[styles.closeBtn, { backgroundColor: surfaceMuted }]}
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
             >
@@ -271,7 +273,7 @@ export function DateRangeFilterModal({
           {/* Actions */}
           <View style={styles.actions}>
             <Pressable
-              style={[styles.actionBtn, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}
+              style={[styles.actionBtn, { backgroundColor: surfaceMuted }]}
               onPress={handleClear}
               accessibilityRole="button"
               accessibilityLabel="Limpiar filtro"

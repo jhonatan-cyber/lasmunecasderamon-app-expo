@@ -87,6 +87,53 @@ describe("buildSalePayload", () => {
     expect(payload.detalles[0].acompanamiento_botella).toEqual(mixer);
   });
 
+  it("suma el exceso sobre el tope por unidad y lo refleja en el subtotal", () => {
+    const payload = buildSalePayload({
+      ...base,
+      acompanamientoTope: 5000,
+      cart: [
+        {
+          ...base.cart[0],
+          acompanamiento_botella: [
+            { presentacion_id: "sprite", unidades: 2, precio: 8000 },
+          ],
+        },
+      ],
+      totals: { subtotal: 22000, tip: 0, total: 22000 },
+    } as any);
+
+    // El recargo viaja por unidad: (8000 - 5000) × 2 unidades = 6000.
+    expect(payload.detalles[0].recargo_acompanamiento).toBe(6000);
+    expect(payload.detalles[0].sub_total).toBe(22000);
+  });
+
+  it("no suma recargo a los cortos de anfitriona", () => {
+    const payload = buildSalePayload({
+      ...base,
+      acompanamientoTope: 5000,
+      cart: [
+        {
+          producto_id: "prod-1",
+          presentacion_id: "pres-1",
+          tipo_venta: "shot",
+          shot_anfitriona: true,
+          precio: 3500,
+          quantity: 1,
+          comision: 0,
+          anfitrionas: [],
+          acompanamiento_corto: {
+            presentacion_id: "sprite",
+            ml_por_corto: 100,
+            precio: 8000,
+          },
+        },
+      ],
+    } as any);
+
+    expect(payload.detalles[0].recargo_acompanamiento).toBeUndefined();
+    expect(payload.detalles[0].sub_total).toBe(3500);
+  });
+
   it("sin presentación no debe declarar tipo_venta", () => {
     const payload = buildSalePayload({
       ...base,
