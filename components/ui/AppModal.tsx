@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     KeyboardAvoidingView,
     Modal,
@@ -6,6 +6,8 @@ import {
     View,
     type ModalProps,
 } from 'react-native';
+import { NotificationBanner } from '@/components/ui/NotificationBanner';
+import { setModalLayerOpen } from '@/utils/modalLayer';
 
 export type AppModalProps = ModalProps & {
     /**
@@ -28,9 +30,16 @@ export type AppModalProps = ModalProps & {
  * import { AppModal as Modal } from '@/components/ui/AppModal';
  * ```
  */
-export function AppModal({ children, onRequestClose, avoidKeyboard = true, ...rest }: AppModalProps) {
+export function AppModal({ children, onRequestClose, avoidKeyboard = true, visible, ...rest }: AppModalProps) {
+    useEffect(() => {
+        if (!visible) return;
+        setModalLayerOpen(true);
+        return () => setModalLayerOpen(false);
+    }, [visible]);
+
     return (
         <Modal
+            visible={visible}
             onRequestClose={onRequestClose ?? (() => { })}
             {...rest}
         >
@@ -48,6 +57,8 @@ export function AppModal({ children, onRequestClose, avoidKeyboard = true, ...re
                     {children}
                 </View>
             </KeyboardAvoidingView>
+            {/* Un modal nativo queda por encima de la raíz: el banner viaja con él. */}
+            <NotificationBanner layer="modal" />
         </Modal>
     );
 }

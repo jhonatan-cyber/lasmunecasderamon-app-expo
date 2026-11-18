@@ -65,6 +65,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     syncTimersRef(timers);
   }, [syncTimersRef, timers]);
 
+  const hasActiveTimers = timers.some(
+    (timer) => timer.isActive && !timer.isPaused && timer.estado !== 3,
+  );
+
   // Voice announcements and overdue detection (5s polling) — delegated to extracted hook
   useTimerVoiceAnnouncer({
     timersRef,
@@ -72,6 +76,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     user,
     setTimers,
     setExpiredTimer,
+    hasActiveTimers,
   });
 
   // El tick visual vive en un contexto separado: solo las tarjetas que muestran

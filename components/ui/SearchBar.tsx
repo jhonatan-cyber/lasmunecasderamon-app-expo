@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 export interface SearchBarProps {
     placeholder?: string;
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: FontSize.sm,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         minHeight: 22,
     },
     clearBtn: {

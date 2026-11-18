@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -6,6 +6,8 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { BASE_URL } from '@/api/client';
 import { User } from '@/hooks/usePersonalScreen';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { FontFamily } from '@/constants/fonts';
+import { haptic } from '@/utils/haptics';
 
 interface PersonalCardProps {
     item: User;
@@ -20,7 +22,9 @@ interface PersonalCardProps {
     textSecondary: string;
 }
 
-export function PersonalCard({
+// La búsqueda filtra la cuadrícula con las mismas referencias de usuario:
+// sin `memo`, cada tecla repintaba todas las tarjetas visibles.
+export const PersonalCard = memo(function PersonalCard({
     item,
     index,
     cardWidth,
@@ -44,7 +48,10 @@ export function PersonalCard({
             style={[styles.cardContainer, { width: cardWidth }]}
         >
             <Pressable 
-                onPress={() => setSelectedUser(item)}
+                onPress={() => {
+                    haptic.tap();
+                    setSelectedUser(item);
+                }}
                 style={({ pressed }) => [
                     styles.card, 
                     { backgroundColor: cardBg, borderColor },
@@ -112,7 +119,7 @@ export function PersonalCard({
             </Pressable>
         </AnimatedView>
     );
-}
+});
 
 const styles = StyleSheet.create({
     cardContainer: {
@@ -136,8 +143,8 @@ const styles = StyleSheet.create({
     cardRoleText: {
         color: 'white',
         fontSize: 10,
-        fontWeight: '900',
-        letterSpacing: 1,
+        fontFamily: FontFamily.bold,
+        letterSpacing: 1.2,
     },
     gridContent: {
         alignItems: 'center',
@@ -166,7 +173,7 @@ const styles = StyleSheet.create({
     },
     placeholderTextLarge: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontFamily: FontFamily.bold,
     },
     gridInfo: {
         alignItems: 'center',
@@ -174,11 +181,12 @@ const styles = StyleSheet.create({
     },
     gridUserName: {
         fontSize: 14,
-        fontWeight: 'bold',
+        fontFamily: FontFamily.semibold,
         textAlign: 'center',
     },
     gridUserNick: {
         fontSize: 12,
+        fontFamily: FontFamily.regular,
         marginTop: 2,
         opacity: 0.7,
     },
@@ -205,6 +213,6 @@ const styles = StyleSheet.create({
     },
     qrStatusText: {
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: FontFamily.semibold,
     },
 });

@@ -24,6 +24,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import type { Product } from "@/types/cart";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useGarzonProductos } from "@/hooks/useGarzonProductos";
 import {
   GarzonCartBar,
@@ -189,16 +190,10 @@ export default function ProductosScreen() {
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="fast-food-outline"
-                size={48}
-                color={textSecondary}
-              />
-              <Text style={[styles.emptyText, { color: textSecondary }]}>
-                No hay productos disponibles en esta categoría
-              </Text>
-            </View>
+            <EmptyState
+              icon="fast-food-outline"
+              title="No hay productos disponibles en esta categoría"
+            />
           }
         />
       )}
@@ -404,12 +399,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 13,
     letterSpacing: 0.5,
-  },
-  emptyContainer: { alignItems: "center", padding: 40, marginTop: 40 },
-  emptyText: {
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: 12,
   },
 });

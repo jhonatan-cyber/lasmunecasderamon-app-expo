@@ -146,14 +146,6 @@ vi.mock('expo-router', () => ({
 }));
 
 
-vi.mock('react-native-toast-message', () => ({
-    default: {
-        show: vi.fn(),
-        hide: vi.fn(),
-    },
-}));
-
-
 vi.mock('expo-haptics', () => ({
     impactAsync: vi.fn(() => Promise.resolve()),
     notificationAsync: vi.fn(() => Promise.resolve()),

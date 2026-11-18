@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState } from "react-native";
 import { useRouter } from "expo-router";
 import EventSource from "react-native-sse";
-import { ToastComponent } from '@/utils/toast-lazy';
+import { NotificationBanner } from '@/components/ui/NotificationBanner';
 import { API_URL } from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 import { ensureTokenInMemory, refreshAccessToken } from "@/api/token";
@@ -10,12 +10,12 @@ import { connectivity } from "@/services/connectivity";
 import { emitSseEvent, isSseControlEvent } from "@/utils/realtime";
 import type { SSEPayload } from '../types/realtime';
 import { handleNotificationEvent } from './notifications/handleServerEvent';
+import { notifyInBackground } from './notifications/systemNotifications';
 
 import logger from '@/utils/logger';
 import {
   configureNotifications,
   registerForPushNotificationsAsync,
-  scheduleLocalNotificationAsync,
 } from '@/services/pushNotifications';
 
 interface NotificationContextType {
@@ -86,7 +86,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [user?.id]);
 
   const showLocalNotification = useCallback(async (title: string, body: string) => {
-    await scheduleLocalNotificationAsync(title, body);
+    await notifyInBackground(title, body);
   }, []);
 
   const handleServerEvent = useCallback(
@@ -241,7 +241,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user?.id) return;
 
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active' || !isMountedRef.current) return;
+      if (!isMountedRef.current) return;
+
+      // Con la app oculta nadie ve el banner y el servidor ya manda push:
+      // mantener el socket (y sus reintentos) solo gastaría batería.
+      if (state === 'background') {
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
+        setIsConnected(false);
+        return;
+      }
+
+      if (state !== 'active') return;
 
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
@@ -291,7 +308,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <NotificationContext.Provider value={contextValue}>
       {children}
-      <ToastComponent position="top" topOffset={60} />
+      <NotificationBanner />
     </NotificationContext.Provider>
   );
 };

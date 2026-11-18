@@ -3,6 +3,7 @@ import VirtualizedList from "@/components/shared/VirtualizedList";
 import { contentColumn } from "@/constants/layout";
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { BREAKPOINTS } from '@/constants/dimensions';
@@ -12,12 +13,11 @@ import logger from '@/utils/logger';
 import { showToast } from '@/utils/toast-lazy';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack,useFocusEffect,useRouter } from 'expo-router';
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import {
 Pressable,
 RefreshControl,
 StyleSheet,
-Text,
 TextInput,
 View,
 } from 'react-native';
@@ -29,6 +29,7 @@ PersonalQRModal
 
 const GRID_PADDING = 16;
 const GRID_GAP = 12;
+const userKey = (item: User) => item.id.toString();
 
 export default function PersonalScreen() {
     const router = useRouter();
@@ -156,11 +157,11 @@ export default function PersonalScreen() {
         }
     }, [selectedUser]);
 
-    const filteredUsers = users.filter(u =>
+    const filteredUsers = useMemo(() => users.filter(u =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.nick?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ), [users, searchTerm]);
 
     useEffect(() => {
         if (!selectedUser) return;
@@ -273,7 +274,7 @@ export default function PersonalScreen() {
             <VirtualizedList
                 key={`personal-${columnas}`}
                 data={filteredUsers}
-                keyExtractor={(item: any) => item.id.toString()}
+                keyExtractor={userKey}
                 renderItem={renderUser}
                 estimatedItemSize={180}
                 numColumns={columnas}
@@ -283,12 +284,10 @@ export default function PersonalScreen() {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
                 }
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="people-outline" size={64} color={textSecondary} />
-                        <Text style={[styles.emptyText, { color: textSecondary }]}>
-                            {searchTerm ? 'No se encontraron resultados' : 'No hay personal registrado'}
-                        </Text>
-                    </View>
+                    <EmptyState
+                        icon="people-outline"
+                        title={searchTerm ? 'No se encontraron resultados' : 'No hay personal registrado'}
+                    />
                 }
             />
 
@@ -337,16 +336,6 @@ const styles = StyleSheet.create({
         ...contentColumn,
         paddingHorizontal: GRID_PADDING,
         paddingBottom: 100,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 60,
-    },
-    emptyText: {
-        marginTop: 16,
-        fontSize: 16,
-        fontWeight: '500',
     },
     backBtnRight: {
         flexDirection: 'row',

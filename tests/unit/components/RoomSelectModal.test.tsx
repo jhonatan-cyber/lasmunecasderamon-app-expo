@@ -7,6 +7,7 @@ import {
 } from '@/components/cajero/forms/RoomSelectModal';
 
 type Children = { children?: ReactNode };
+vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock('react-native', () => ({
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,

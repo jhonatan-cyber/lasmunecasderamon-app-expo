@@ -1,9 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { parseDateSafe } from "@/utils/timeUtils";
 import { rotateColor } from "@/utils/colors";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { FontFamily } from "@/constants/fonts";
 import { TimerPill } from "./TimerPill";
 import { statusColors } from "./constants";
 import { VentaCardDetails } from "./VentaCardDetails";
@@ -26,7 +27,10 @@ type VentaCardProps = {
   getVentaId: (item: Venta) => string | null;
 };
 
-export function VentaCard({
+// Buscar/filtrar entrega las mismas referencias de venta: sin `memo` cada tecla
+// repintaba todas las tarjetas visibles. El contador sigue avanzando porque
+// `TimerPill` se suscribe por su cuenta al tick.
+export const VentaCard = memo(function VentaCard({
   item,
   accentColor,
   cardBg,
@@ -125,7 +129,7 @@ export function VentaCard({
       </Pressable>
     </AnimatedView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -149,5 +153,5 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  cardCode: { fontSize: 17, fontWeight: "900", letterSpacing: -0.5 },
+  cardCode: { fontSize: 17, fontFamily: FontFamily.bold, letterSpacing: -0.5 },
 });

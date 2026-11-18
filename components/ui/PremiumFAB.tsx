@@ -3,6 +3,9 @@ import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FontFamily } from '@/constants/fonts';
+import { haptic } from '@/utils/haptics';
+import { BorderRadius } from '@/constants/spacing';
 
 interface PremiumFABProps {
     label: string;
@@ -20,7 +23,10 @@ export const PremiumFAB = ({ label, icon, onPress, visible = true }: PremiumFABP
     return (
         <TouchableOpacity 
             style={[styles.fab, { backgroundColor: accentColor, bottom: Math.max(insets.bottom, 16) + 16 }]} 
-            onPress={onPress}
+            onPress={() => {
+                haptic.confirm();
+                onPress();
+            }}
             activeOpacity={0.8}
         >
             <Ionicons name={icon} size={22} color="#FFFFFF" />
@@ -36,7 +42,7 @@ const styles = StyleSheet.create({
         bottom: 20,
         height: 56,
         paddingHorizontal: 24,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -50,9 +56,9 @@ const styles = StyleSheet.create({
     },
     fabText: {
         color: '#FFFFFF',
-        fontWeight: '900',
+        fontFamily: FontFamily.bold,
         fontSize: 14,
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
         textTransform: 'uppercase'
     },
 });

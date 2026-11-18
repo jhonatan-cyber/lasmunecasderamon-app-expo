@@ -27,6 +27,8 @@ interface UseTimerVoiceAnnouncerParams {
   user: UserLike;
   setTimers: React.Dispatch<React.SetStateAction<Timer[]>>;
   setExpiredTimer: React.Dispatch<React.SetStateAction<Timer | null>>;
+  /** Sin timers en curso no hay nada que anunciar: no se mantiene el intervalo. */
+  hasActiveTimers: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export function useTimerVoiceAnnouncer({
   user,
   setTimers,
   setExpiredTimer,
+  hasActiveTimers,
 }: UseTimerVoiceAnnouncerParams) {
   const checkTimers = useCallback(() => {
       const currentTimers = timersRef.current;
@@ -93,7 +96,7 @@ export function useTimerVoiceAnnouncer({
   }, [serverOffset, setExpiredTimer, setTimers, timersRef]);
 
   useEffect(() => {
-    if (!isCajeroRole(user)) return;
+    if (!isCajeroRole(user) || !hasActiveTimers) return;
 
     let interval: ReturnType<typeof setInterval> | undefined;
     const stop = () => {
@@ -118,5 +121,5 @@ export function useTimerVoiceAnnouncer({
       stop();
       subscription.remove();
     };
-  }, [checkTimers, user]);
+  }, [checkTimers, hasActiveTimers, user]);
 }

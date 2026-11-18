@@ -200,6 +200,21 @@ describe('authStore', () => {
         });
     });
 
+    describe('logout', () => {
+        it('envía el refresh token para revocar la sesión aunque el access token esté vencido', async () => {
+            const { TokenStorage } = await import('@/utils/tokenStorage');
+            vi.mocked(TokenStorage.getRefreshToken).mockResolvedValueOnce('refresh-abc');
+            vi.mocked(apiClientSafe).mockClear();
+
+            await useAuthStore.getState().logout();
+
+            expect(apiClientSafe).toHaveBeenCalledWith('/auth/logout', {
+                method: 'POST',
+                headers: { 'x-refresh-token': 'refresh-abc' },
+            });
+        });
+    });
+
     describe('checkAuth', () => {
         it('debe establecer isLoading en false al finalizar', async () => {
             await useAuthStore.getState().checkAuth();

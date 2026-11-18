@@ -10,6 +10,7 @@ const list = vi.hoisted(() => ({
 }));
 type Children = { children?: ReactNode; accessibilityLabel?: string };
 vi.mock('react-native', () => ({
+  Dimensions: { get: () => ({ width: 390, height: 844 }) },
   View: ({ children, accessibilityLabel }: Children) => (
     <div aria-label={accessibilityLabel}>{children}</div>
   ),

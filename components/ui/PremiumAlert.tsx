@@ -7,6 +7,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { readableTextColor } from '@/utils/color';
+import { FontFamily } from '@/constants/fonts';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -164,12 +165,13 @@ const styles = StyleSheet.create({
     },
     alertTitle: {
         fontSize: 20,
-        fontWeight: '900',
+        fontFamily: FontFamily.bold,
         textAlign: 'center',
         marginBottom: 10,
     },
     alertMessage: {
         fontSize: 15,
+        fontFamily: FontFamily.regular,
         textAlign: 'center',
         lineHeight: 22,
         marginBottom: 25,
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
     },
     alertBtnText: {
         fontSize: 14,
-        fontWeight: '800',
+        fontFamily: FontFamily.semibold,
         textAlign: 'center',
     },
 });

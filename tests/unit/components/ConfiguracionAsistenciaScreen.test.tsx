@@ -11,6 +11,7 @@ import { useModoPantallaStore } from '@/store/modoPantallaStore';
 // pantalla necesita además TextInput, ScrollView, Pressable y
 // KeyboardAvoidingView, así que se re-declara lo mínimo para renderizar y
 // verificar qué se muestra.
+vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: any) => <div>{children}</div>,

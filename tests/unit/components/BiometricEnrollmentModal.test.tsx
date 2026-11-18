@@ -15,6 +15,7 @@ const { takePictureMock, setBiometricoFacialEnrolled, medirMock, disponibleMock 
 
 // El detector nativo no existe en tests: se controla desde acá si está
 // disponible y qué rotación informa para cada foto.
+vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock('@/components/shared/biometric/deteccionGiro', async (importOriginal) => {
     const actual =
         await importOriginal<typeof import('@/components/shared/biometric/deteccionGiro')>();

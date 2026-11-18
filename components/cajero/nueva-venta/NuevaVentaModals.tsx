@@ -1,7 +1,6 @@
 import { matchesProductSearch } from "../../../hooks/utils/productSearch";
 import { BASE_URL } from "@/api/base-url";
-import { useMemo, useState } from "react";
-import { ToastComponent } from "@/utils/toast-lazy";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
@@ -98,6 +97,82 @@ function ProductThumbnail({
 
 const timeOptions = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 
+type ProductRowProps = {
+  item: any;
+  accentColor: string;
+  cardBg: string;
+  borderColor: string;
+  textPrimary: string;
+  textSecondary: string;
+  isDark: boolean;
+  shotMl: number;
+  cart: any[];
+  onAdd: (item: any, choice: SaleChoice, quantity: number) => void;
+  onRemove: (item: any, choice: SaleChoice) => void;
+};
+
+// Fila memoizada: escribir en el buscador re-renderiza el modal completo,
+// pero las filas que siguen visibles conservan sus props y no se repintan.
+const ProductRow = memo(function ProductRow({
+  item,
+  accentColor,
+  cardBg,
+  borderColor,
+  textPrimary,
+  textSecondary,
+  isDark,
+  shotMl,
+  cart,
+  onAdd,
+  onRemove,
+}: ProductRowProps) {
+  const venta = resolverVentaProducto(item);
+  return (
+    <View
+      style={[
+        productStyles.product,
+        {
+          borderColor,
+          backgroundColor: isDark ? "#ffffff05" : "#00000002",
+        },
+      ]}
+    >
+      <View style={{ flex: 1 }}>
+        <View style={productStyles.productHeader}>
+          <ProductThumbnail
+            photo={item.foto || item.producto_foto}
+            name={item.name || item.nombre || "Producto"}
+            accentColor={accentColor}
+          />
+          <Text
+            style={[
+              productStyles.productName,
+              { color: textPrimary, flex: 1 },
+            ]}
+          >
+            {item.name || item.nombre}
+          </Text>
+        </View>
+        <SaleFormatSelector
+          product={item}
+          options={venta.opciones}
+          shotMl={shotMl}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+          cart={cart}
+          onAdd={(choice, quantity) => onAdd(item, choice, quantity)}
+          onRemove={(choice) => onRemove(item, choice)}
+        />
+      </View>
+    </View>
+  );
+});
+
+const productKey = (item: any) => (item.id || item.id_producto).toString();
+
 export function NuevaVentaModals({
   styles,
   accentColor,
@@ -131,6 +206,25 @@ export function NuevaVentaModals({
 }: Props) {
   const [productSearch, setProductSearch] = useState("");
   const insets = useSafeAreaInsets();
+
+  // Los callbacks del padre llegan inline (cambian de identidad en cada
+  // render); el ref guarda la versión vigente y los wrappers quedan estables
+  // para que `ProductRow` no se re-renderice de más.
+  const callbacksRef = useRef({ onPressAddProduct, onRemoveFromCart });
+  useEffect(() => {
+    callbacksRef.current = { onPressAddProduct, onRemoveFromCart };
+  });
+  const handleAdd = useCallback(
+    (item: any, choice: SaleChoice, quantity: number) =>
+      callbacksRef.current.onPressAddProduct(item, choice, quantity),
+    [],
+  );
+  const handleRemove = useCallback(
+    (item: any, choice: SaleChoice) =>
+      callbacksRef.current.onRemoveFromCart(item, choice),
+    [],
+  );
+
   const filteredProducts = useMemo(() => {
     const normalize = (value: string) =>
       value
@@ -141,6 +235,36 @@ export function NuevaVentaModals({
     return modalProducts.filter((item) => matchesProductSearch(item, query));
   }, [modalProducts, productSearch]);
   const shotMl = useConfigValue<number>("bar", "shot_ml", 50);
+
+  const renderProductItem = useCallback(
+    ({ item }: { item: any }) => (
+      <ProductRow
+        item={item}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        isDark={isDark}
+        shotMl={shotMl}
+        cart={cart}
+        onAdd={handleAdd}
+        onRemove={handleRemove}
+      />
+    ),
+    [
+      accentColor,
+      cardBg,
+      borderColor,
+      textPrimary,
+      textSecondary,
+      isDark,
+      shotMl,
+      cart,
+      handleAdd,
+      handleRemove,
+    ],
+  );
   return (
     <>
       <Modal
@@ -249,59 +373,9 @@ export function NuevaVentaModals({
                     </Text>
                   </View>
                 }
-                keyExtractor={(item: any) =>
-                  (item.id || item.id_producto).toString()
-                }
+                keyExtractor={productKey}
                 estimatedItemSize={80}
-                renderItem={({ item }: { item: any }) => {
-                  const venta = resolverVentaProducto(item);
-                  return (
-                    <View
-                      style={[
-                        productStyles.product,
-                        {
-                          borderColor,
-                          backgroundColor: isDark ? "#ffffff05" : "#00000002",
-                        },
-                      ]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <View style={productStyles.productHeader}>
-                          <ProductThumbnail
-                            photo={item.foto || item.producto_foto}
-                            name={item.name || item.nombre || "Producto"}
-                            accentColor={accentColor}
-                          />
-                          <Text
-                            style={[
-                              productStyles.productName,
-                              { color: textPrimary, flex: 1 },
-                            ]}
-                          >
-                            {item.name || item.nombre}
-                          </Text>
-                        </View>
-                        <SaleFormatSelector
-                          product={item}
-                          options={venta.opciones}
-                          shotMl={shotMl}
-                          accentColor={accentColor}
-                          textPrimary={textPrimary}
-                          textSecondary={textSecondary}
-                          borderColor={borderColor}
-                          cardBg={cardBg}
-                          cart={cart}
-                          onAdd={(choice, quantity) =>
-                            onPressAddProduct(item, choice, quantity)
-                          }
-                          onRemove={(choice) =>
-                            onRemoveFromCart(item, choice)
-                          }
-                        />
-                      </View>
-                    </View>
-                  );
-                }}
+                renderItem={renderProductItem}
               />
             )}
             <Pressable
@@ -333,7 +407,6 @@ export function NuevaVentaModals({
               </Text>
             </Pressable>
           </View>
-          <ToastComponent position="top" topOffset={60} />
         </KeyboardAvoidingView>
       </Modal>
 

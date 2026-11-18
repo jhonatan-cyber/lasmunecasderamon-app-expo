@@ -30,7 +30,7 @@
     "android": {
       "package": "com.lasmunecasderamon.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0B0F",
         "foregroundImage": "./assets/images/logo1.png",
         "backgroundImage": "./assets/images/logo1.png",
         "monochromeImage": "./assets/images/logo1.png"
@@ -71,7 +71,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/logo1.png",
-          "color": "#8B5CF6"
+          "color": "#E11D48"
         }
       ],
       [
@@ -82,7 +82,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0B0B0F"
           }
         }
       ],

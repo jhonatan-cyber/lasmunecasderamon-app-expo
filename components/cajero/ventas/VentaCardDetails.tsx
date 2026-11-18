@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { FontFamily } from "@/constants/fonts";
 
 interface VentaCardDetailsProps {
   clienteNombre?: string;
@@ -79,12 +80,12 @@ const styles = StyleSheet.create({
   cardDetailsList: { gap: 6 },
   detailItemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   rowIcon: { width: 16, textAlign: "center" },
-  detailValue: { fontSize: 14, fontWeight: "600" },
+  detailValue: { fontSize: 14, fontFamily: FontFamily.medium },
   hostessPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     flexShrink: 1,
   },
-  hostessText: { fontSize: 13, fontWeight: "800" },
+  hostessText: { fontSize: 13, fontFamily: FontFamily.semibold },
 });

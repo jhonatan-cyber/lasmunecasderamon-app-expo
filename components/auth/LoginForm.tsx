@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
+import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import {
     ActivityIndicator,
     Pressable,
@@ -67,7 +69,7 @@ export default function LoginForm({
 
             {}
             <View style={[styles.headerTextContainer, isLandscape && { marginBottom: 20 }]}>
-                <Text style={[styles.title, { color: textColor }, isLandscape && { fontSize: 26 }]}>
+                <Text style={[styles.title, { color: textColor }, isLandscape && { fontSize: 28 }]}>
                     Iniciar Sesión
                 </Text>
                 <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
@@ -267,28 +269,30 @@ const styles = StyleSheet.create({
         height: 70,
     },
     title: {
-        fontSize: 32,
-        fontWeight: '900',
+        fontSize: 34,
+        fontFamily: FontFamily.display,
         textAlign: 'center',
         marginBottom: 8,
-        letterSpacing: -0.5,
+        letterSpacing: -0.3,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
+        fontFamily: FontFamily.regular,
         textAlign: 'center',
         lineHeight: 22,
     },
     label: {
-        fontSize: 15,
-        fontWeight: '700',
+        fontSize: 14,
+        fontFamily: FontFamily.semibold,
         marginBottom: 10,
         marginLeft: 4,
     },
     input: {
         height: 60,
-        borderRadius: 20,
+        borderRadius: BorderRadius.xl,
         paddingHorizontal: 24,
         fontSize: 16,
+        fontFamily: FontFamily.medium,
         borderWidth: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -305,7 +309,7 @@ const styles = StyleSheet.create({
         right: 14,
         height: 36,
         width: 36,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -315,18 +319,18 @@ const styles = StyleSheet.create({
     },
     errorContainer: {
         padding: 12,
-        borderRadius: 12,
+        borderRadius: BorderRadius.md,
         marginBottom: 16,
     },
     errorText: {
         color: '#EF4444',
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         textAlign: 'center',
     },
     loginButton: {
         height: 60,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -343,7 +347,7 @@ const styles = StyleSheet.create({
     biometricButton: {
         height: 60,
         width: 60,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
@@ -354,9 +358,9 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     loginButtonText: {
-        fontSize: 18,
-        fontWeight: '900',
-        letterSpacing: 1,
+        fontSize: 17,
+        fontFamily: FontFamily.bold,
+        letterSpacing: 1.2,
         textTransform: 'uppercase',
     },
     forgotPassword: {
@@ -367,7 +371,7 @@ const styles = StyleSheet.create({
     },
     forgotPasswordText: {
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         textDecorationLine: 'underline',
     },
 });

@@ -16,13 +16,14 @@ import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, LogBox, Platform, View } from "react-native";
+import { ActivityIndicator, LogBox, View } from "react-native";
 import { prepareMirrorStorage } from "@/services/mirror/driver";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
 import { configurationsSchema } from "@lasmunecasderamon/validations";
 import { setExpensiveDrinkThreshold, setCardSplit, setIvaRate } from "@/hooks/utils/cuentaUtils";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppFonts } from "@/hooks/useAppFonts";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "setBackgroundColorAsync is not supported",
@@ -65,20 +66,39 @@ if (!__DEV__) {
 }
 
 
+// Un driver SQLite colgado (no falla, tampoco responde) no debe dejar el
+// splash para siempre: pasado este plazo se arranca sin espejo offline.
+const MIRROR_STORAGE_TIMEOUT_MS = 3000;
+
+
 export default function RootLayout() {
   const [storageReady, setStorageReady] = useState(false);
+  const fontsReady = useAppFonts();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   useEffect(() => {
     let active = true;
+    let settled = false;
+    const markReady = (timedOut: boolean) => {
+      if (!active || settled) return;
+      settled = true;
+      if (timedOut) {
+        logger.debug('El almacenamiento offline no respondió a tiempo; se arranca sin espejo.');
+      }
+      initMirror();
+      setStorageReady(true);
+    };
+    const timeout = setTimeout(() => markReady(true), MIRROR_STORAGE_TIMEOUT_MS);
     void prepareMirrorStorage().catch(() => {
       logger.debug('El almacenamiento offline no está disponible en este dispositivo.');
     }).finally(() => {
-      if (!active) return;
-      initMirror();
-      setStorageReady(true);
+      clearTimeout(timeout);
+      markReady(false);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+    };
   }, []);
   const isLoading = useAuthStore((state) => state.isLoading);
   const checkAuth = useAuthStore((state) => state.checkAuth);
@@ -123,15 +143,12 @@ export default function RootLayout() {
       });
     };
 
-    if (typeof requestIdleCallback === "function") {
-      const task = requestIdleCallback(startServices, { timeout: 1000 });
-      return () => cancelIdleCallback(task);
-    }
-    const task = setTimeout(startServices, 0);
-    return () => clearTimeout(task);
+    // La petición ya es asíncrona: diferirla al hilo libre solo retrasaba hasta
+    // un segundo los umbrales de propina/IVA sin liberar nada.
+    startServices();
   }, [isLoading, storageReady]);
 
-  if (isLoading || !storageReady || !modoPantallaCargado) {
+  if (isLoading || !storageReady || !modoPantallaCargado || !fontsReady) {
     return (
       <View
         style={{

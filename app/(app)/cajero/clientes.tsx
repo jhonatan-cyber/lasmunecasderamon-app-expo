@@ -5,7 +5,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -16,12 +15,17 @@ import { PremiumFAB } from "@/components/ui/PremiumFAB";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { FontSize } from "@/constants/spacing";
+import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { useClientes, Client } from "@/hooks/useClientes";
 import { ClientCard } from "@/components/cajero/clientes/ClientCard";
 import { ClientFormModal } from "@/components/cajero/clientes/ClientFormModal";
 import { LoadBalanceModal } from "@/components/cajero/clientes/LoadBalanceModal";
 import { ClientHistoryModal } from "@/components/cajero/clientes/ClientHistoryModal";
+
+const clientKey = (item: Client) => String(item.id);
+const formatSummaryMoney = (value: number) => `$${Math.round(value).toLocaleString()}`;
 
 export default function ClientesScreen() {
   const {
@@ -84,7 +88,7 @@ export default function ClientesScreen() {
     confirmDelete,
   } = useClientes();
 
-  const renderClientCard = ({ item }: { item: Client }) => (
+  const renderClientCard = React.useCallback(({ item }: { item: Client }) => (
     <ClientCard
       item={item}
       isDark={isDark}
@@ -96,7 +100,7 @@ export default function ClientesScreen() {
       handleOpenEdit={handleOpenEdit}
       confirmDelete={confirmDelete}
     />
-  );
+  ), [confirmDelete, handleOpenEdit, handleOpenHistory, handleOpenLoad, isDark, isTablet, textPrimary, textSecondary]);
 
   return (
     <View
@@ -136,9 +140,11 @@ export default function ClientesScreen() {
               >
                 TOTAL SALDO
               </Text>
-              <Text style={[styles.summaryValue, { color: "#10B981" }]}>
-                ${Number(totals.totalSaldo || 0).toLocaleString()}
-              </Text>
+              <AnimatedNumber
+                style={[styles.summaryValue, { color: "#10B981" }]}
+                value={Number(totals.totalSaldo || 0)}
+                format={formatSummaryMoney}
+              />
             </View>
             <View
               style={[styles.summaryPill, { backgroundColor: "#EF444410" }]}
@@ -152,9 +158,11 @@ export default function ClientesScreen() {
               >
                 TOTAL DEUDA
               </Text>
-              <Text style={[styles.summaryValue, { color: "#EF4444" }]}>
-                ${Number(totals.totalDeuda || 0).toLocaleString()}
-              </Text>
+              <AnimatedNumber
+                style={[styles.summaryValue, { color: "#EF4444" }]}
+                value={Number(totals.totalDeuda || 0)}
+                format={formatSummaryMoney}
+              />
             </View>
           </View>
         </View>
@@ -175,7 +183,7 @@ export default function ClientesScreen() {
           <VirtualizedList
             data={filteredClients}
             renderItem={renderClientCard}
-            keyExtractor={(item: Client) => String(item.id)}
+            keyExtractor={clientKey}
             numColumns={isTablet ? 2 : 1}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -315,13 +323,14 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: FontSize.xs,
-    fontWeight: "700",
+    fontFamily: FontFamily.semibold,
     letterSpacing: 0.5,
   },
   summaryValue: {
     fontSize: FontSize.sm,
-    fontWeight: "800",
+    fontFamily: FontFamily.bold,
     marginLeft: "auto",
+    ...TabularNumbers,
   },
   listContent: {
     ...contentColumn,

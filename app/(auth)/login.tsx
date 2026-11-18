@@ -140,26 +140,35 @@ export default function LoginScreen() {
                   onBiometricPress={handleBiometricLogin}
                   onForgotPassword={() => setShowResetPasswordModal(true)}
                 />
-
-                {/* Theme toggle */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.themeToggle,
-                    pressed && { opacity: 0.6 },
-                  ]}
-                  onPress={toggleScheme}
-                >
-                  <Ionicons
-                    name={isDark ? "sunny-outline" : "moon-outline"}
-                    size={28}
-                    color={C.textSecondary}
-                  />
-                </Pressable>
               </AnimatedScreen>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </ImageBackground>
+
+      {/* Theme toggle: esquina superior derecha, fija sobre el fondo */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.themeToggle,
+          {
+            top: insets.top + 12,
+            right: insets.right + 16,
+            backgroundColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.06)",
+            borderColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.12)",
+            opacity: pressed ? 0.6 : 1,
+          },
+        ]}
+        onPress={toggleScheme}
+      >
+        <Ionicons
+          name={isDark ? "sunny-outline" : "moon-outline"}
+          size={22}
+          color={C.textSecondary}
+        />
+      </Pressable>
 
       {/* Reusable Premium Alert Modal */}
       <PremiumAlert
@@ -204,7 +213,13 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   themeToggle: {
+    position: "absolute",
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
     alignItems: "center",
-    marginTop: 24,
+    justifyContent: "center",
   },
 });

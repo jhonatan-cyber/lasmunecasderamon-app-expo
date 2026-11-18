@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import { useCartStore } from "@/store/cartStore";
 
+vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock("react-native", () => ({
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,

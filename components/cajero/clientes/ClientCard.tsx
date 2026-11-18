@@ -1,7 +1,10 @@
+import { memo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { FontFamily, TabularNumbers } from '@/constants/fonts';
+import { haptic } from '@/utils/haptics';
 
 interface ClientCardProps {
     item: Client;
@@ -15,7 +18,9 @@ interface ClientCardProps {
     confirmDelete: (client: Client) => void;
 }
 
-export function ClientCard({
+// La búsqueda reordena y filtra la lista con las mismas referencias de cliente:
+// sin `memo`, cada tecla repintaba todas las tarjetas visibles.
+export const ClientCard = memo(function ClientCard({
     item,
     isDark,
     isTablet,
@@ -96,25 +101,37 @@ export function ClientCard({
                 <View style={styles.cardActionsSidebar}>
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)' }]}
-                        onPress={() => handleOpenHistory(item)}
+                        onPress={() => {
+                            haptic.tap();
+                            handleOpenHistory(item);
+                        }}
                     >
                         <Ionicons name="eye-outline" size={22} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
-                        onPress={() => handleOpenLoad(item)}
+                        onPress={() => {
+                            haptic.tap();
+                            handleOpenLoad(item);
+                        }}
                     >
                         <Ionicons name="wallet" size={22} color="#FFFFFF" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}
-                        onPress={() => handleOpenEdit(item)}
+                        onPress={() => {
+                            haptic.tap();
+                            handleOpenEdit(item);
+                        }}
                     >
                         <Ionicons name="create-outline" size={22} color="#3B82F6" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)' }]}
-                        onPress={() => confirmDelete(item)}
+                        onPress={() => {
+                            haptic.tap();
+                            confirmDelete(item);
+                        }}
                     >
                         <Ionicons name="trash-outline" size={22} color="#EF4444" />
                     </TouchableOpacity>
@@ -122,7 +139,7 @@ export function ClientCard({
             </View>
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create({
     clientCard: {
@@ -169,14 +186,15 @@ const styles = StyleSheet.create({
     },
     clientName: { 
         fontSize: 16, 
-        fontWeight: '900', 
+        fontFamily: FontFamily.bold, 
         letterSpacing: -0.2 
     },
     clientSub: { 
-        fontSize: 11, 
-        fontWeight: '700', 
+        fontSize: 10.5, 
+        fontFamily: FontFamily.semibold, 
         textTransform: 'uppercase', 
-        opacity: 0.8 
+        letterSpacing: 0.4,
+        opacity: 0.75 
     },
     statusArea: { 
         marginTop: 12, 
@@ -194,14 +212,15 @@ const styles = StyleSheet.create({
     },
     pillLabel: { 
         fontSize: 8, 
-        fontWeight: '900', 
-        letterSpacing: 0.5, 
+        fontFamily: FontFamily.bold, 
+        letterSpacing: 0.6, 
         marginBottom: -2, 
         opacity: 0.7 
     },
     balanceValue: { 
         fontSize: 15, 
-        fontWeight: '900' 
+        fontFamily: FontFamily.bold,
+        ...TabularNumbers
     },
     cardActionsSidebar: { 
         paddingLeft: 12, 

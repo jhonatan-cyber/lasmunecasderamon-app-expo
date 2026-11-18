@@ -125,23 +125,23 @@ export function useClientes() {
         }, { totalSaldo: 0, totalDeuda: 0 });
     }, [filteredClients]);
 
-    const handleOpenEdit = (client: Client) => {
+    const handleOpenEdit = useCallback((client: Client) => {
         setEditingClient(client);
         setFormName(client.name || "");
         setFormLastName(client.lastName || "");
         setFormRun(client.run || "");
         setFormPhone(client.phone || "");
         setClientModalVisible(true);
-    };
+    }, []);
 
-    const handleOpenNew = () => {
+    const handleOpenNew = useCallback(() => {
         setEditingClient(null);
         setFormName("");
         setFormLastName("");
         setFormRun("");
         setFormPhone("");
         setClientModalVisible(true);
-    };
+    }, []);
 
     const handleSaveClient = async () => {
         if (!formName || !formLastName) {
@@ -179,16 +179,16 @@ export function useClientes() {
         }
     };
 
-    const handleOpenLoad = (client: Client) => {
+    const handleOpenLoad = useCallback((client: Client) => {
         setEditingClient(client);
         setLoadingAmount("");
         setLoadMetodoPago('efectivo');
         setPrimaryAmount("");
         setSecondaryAmount("");
         setLoadModalVisible(true);
-    };
+    }, []);
 
-    const fetchHistory = async (clientId: string | number) => {
+    const fetchHistory = useCallback(async (clientId: string | number) => {
         try {
             const res = await clientesService.getHistory(clientId);
             const historyRes = res as unknown as { success: boolean; data: any[] };
@@ -203,15 +203,15 @@ export function useClientes() {
             setHistoryLoading(false);
             setRefreshingHistory(false);
         }
-    };
+    }, []);
 
-    const handleOpenHistory = async (client: Client) => {
+    const handleOpenHistory = useCallback(async (client: Client) => {
         setEditingClient(client);
         setHistoryModalVisible(true);
         setHistoryLoading(true);
         setHistoryData([]);
         fetchHistory(client.id);
-    }; 
+    }, [fetchHistory]); 
     
     const formatCurrency = (value: string) => {
         const cleanValue = value.replace(/\D/g, "");
@@ -280,7 +280,7 @@ export function useClientes() {
         }
     };
 
-    const confirmDelete = (client: Client) => {
+    const confirmDelete = useCallback((client: Client) => {
         Alert.alert(
             "Eliminar Cliente",
             `¿Está seguro que desea eliminar a ${client.name} ${client.lastName}?`,
@@ -304,7 +304,7 @@ export function useClientes() {
                 }
             ]
         );
-    };
+    }, [fetchClients]);
 
     return {
         ...theme,

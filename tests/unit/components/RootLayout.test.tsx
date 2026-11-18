@@ -6,11 +6,13 @@ import RootLayout from '@/app/_layout';
 const h = vi.hoisted(() => ({
   platform: 'web',
   ready: false,
+  fontsReady: true,
   events: [] as string[],
   prepare: vi.fn<() => Promise<void>>(),
   init: vi.fn(),
   checkAuth: vi.fn(),
   cargar: vi.fn(),
+  apiClientSafe: vi.fn(),
 }));
 type Children = { children?: ReactNode };
 vi.mock('react-native', () => ({
@@ -46,7 +48,7 @@ vi.mock('@/services/mirror', () => ({ initMirror: h.init }));
 vi.mock('@/services/outbox', () => ({ initOutbox: vi.fn() }));
 vi.mock('@/services/connectivity', () => ({ connectivity: { start: vi.fn() } }));
 vi.mock('@/utils/sentry', () => ({ initSentry: vi.fn().mockResolvedValue(undefined) }));
-vi.mock('@/api/client-safe', () => ({ apiClientSafe: vi.fn().mockResolvedValue({ success: false }) }));
+vi.mock('@/api/client-safe', () => ({ apiClientSafe: h.apiClientSafe }));
 vi.mock('@/hooks/utils/cuentaUtils', () => ({
   setExpensiveDrinkThreshold: vi.fn(), setCardSplit: vi.fn(), setIvaRate: vi.fn(),
 }));
@@ -57,6 +59,7 @@ vi.mock('@/store/modoPantallaStore', () => ({
   useModoPantallaStore: (selector: (state: unknown) => unknown) => selector({ cargado: true, cargar: h.cargar }),
 }));
 vi.mock('@/components/ui/DynamicSystemBars', () => ({ DynamicSystemBars: () => null }));
+vi.mock('@/hooks/useAppFonts', () => ({ useAppFonts: () => h.fontsReady }));
 vi.mock('@/context/NotificationContext', () => ({ NotificationProvider: ({ children }: Children) => children }));
 vi.mock('@/context/SalesContext', () => ({ SalesProvider: ({ children }: Children) => children }));
 vi.mock('@tanstack/react-query', () => ({
@@ -66,9 +69,11 @@ vi.mock('@tanstack/react-query', () => ({
 
 beforeEach(() => {
   h.ready = false;
+  h.fontsReady = true;
   h.events.length = 0;
   h.platform = 'web';
   h.prepare.mockReset();
+  h.apiClientSafe.mockReset().mockResolvedValue({ success: false });
   h.init.mockReset().mockImplementation(() => {
     h.events.push('schema');
     h.ready = true;
@@ -91,7 +96,8 @@ describe('RootLayout: almacenamiento antes de montar pantallas', () => {
     expect(screen.getByText('Pantalla lista')).toBeTruthy();
     expect(h.events).toEqual(['schema']);
     expect(h.init).toHaveBeenCalledTimes(1);
-    expect(requestIdleCallback).toHaveBeenCalledTimes(1);
+    expect(h.apiClientSafe).toHaveBeenCalledWith('/configurations', { retries: 1 });
+    expect(requestIdleCallback).not.toHaveBeenCalled();
   });
 
   it('conserva el camino online si la preparación offline falla', async () => {
@@ -109,5 +115,33 @@ describe('RootLayout: almacenamiento antes de montar pantallas', () => {
     view.unmount();
     await act(async () => { finish(); });
     expect(h.init).not.toHaveBeenCalled();
+  });
+
+  it('no deja el arranque bloqueado si el almacenamiento offline no responde', async () => {    vi.useFakeTimers();
+    try {
+      h.prepare.mockReturnValue(new Promise<void>(() => {}));
+      render(<RootLayout />);
+      expect(screen.getByText('Cargando')).toBeTruthy();
+
+      await act(async () => { vi.advanceTimersByTime(3000); });
+
+      expect(screen.getByText('Pantalla lista')).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('espera a que las fuentes estén listas antes de montar pantallas', async () => {
+    h.fontsReady = false;
+    h.ready = true;
+    h.prepare.mockResolvedValue(undefined);
+    let view!: ReturnType<typeof render>;
+    await act(async () => { view = render(<RootLayout />); });
+    expect(screen.getByText('Cargando')).toBeTruthy();
+
+    h.fontsReady = true;
+    view.rerender(<RootLayout />);
+
+    expect(screen.getByText('Pantalla lista')).toBeTruthy();
   });
 });

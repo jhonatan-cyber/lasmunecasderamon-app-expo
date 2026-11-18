@@ -3,8 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { readableTextColor } from '@/utils/color';
+import { FontFamily } from '@/constants/fonts';
 
 export interface EmptyStateProps {
     icon?: keyof typeof Ionicons.glyphMap;
@@ -57,7 +58,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 const styles = StyleSheet.create({
     container: {
         padding: 40,
-        borderRadius: 24,
+        borderRadius: BorderRadius.xxl,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 40,
@@ -66,19 +67,20 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 96,
         height: 96,
-        borderRadius: 48,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     title: {
         fontSize: FontSize.lg,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         textAlign: 'center',
         marginBottom: 8,
     },
     message: {
         fontSize: FontSize.sm,
+        fontFamily: FontFamily.regular,
         textAlign: 'center',
         lineHeight: 20,
         marginBottom: 20,
@@ -87,13 +89,13 @@ const styles = StyleSheet.create({
     actionButton: {
         paddingHorizontal: 24,
         paddingVertical: 14,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         minWidth: 160,
         alignItems: 'center',
     },
     actionText: {
         color: '#FFFFFF',
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontFamily: FontFamily.semibold,
     },
 });

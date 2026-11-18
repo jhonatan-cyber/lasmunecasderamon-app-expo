@@ -205,8 +205,16 @@ export const useAuthStore = create<AuthState>((set, get) => {
         },
 
         logout: async () => {
+            // El refresh token identifica la sesión a revocar aunque el access
+            // token ya haya vencido; sin él el servidor no puede cerrar el sid.
+            const refreshToken = await TokenStorage.getRefreshToken().catch(() => null);
             try {
-                await apiClientSafe('/auth/logout', { method: 'POST' });
+                await apiClientSafe(
+                    '/auth/logout',
+                    refreshToken
+                        ? { method: 'POST', headers: { 'x-refresh-token': refreshToken } }
+                        : { method: 'POST' }
+                );
             } catch (e) {
                 logger.error('API Logout failed', { error: e });
             }

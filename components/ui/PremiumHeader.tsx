@@ -10,6 +10,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
+import { FontFamily } from "@/constants/fonts";
+import { haptic } from '@/utils/haptics';
+import { BorderRadius } from '@/constants/spacing';
 
 export interface PremiumHeaderTab {
     id: string;
@@ -87,7 +90,7 @@ export function PremiumHeader({
                         numberOfLines={1}
                         ellipsizeMode="tail"
                         maxFontSizeMultiplier={1.4}
-                        style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 28 }]}
+                        style={[styles.headerTitle, { color: '#FFFFFF' }, isTablet && { fontSize: 30 }]}
                     >
                         {title}
                     </Text>
@@ -110,7 +113,7 @@ export function PremiumHeader({
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                                 maxFontSizeMultiplier={1.4}
-                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.92)' }, isTablet && { fontSize: 17 }]}
+                                style={[styles.headerSubtitle, { color: 'rgba(255,255,255,0.92)' }, isTablet && { fontSize: 16 }]}
                             >
                                 {connectionStatus ? (connectionStatus.label || (connectionStatus.isConnected ? 'Conectado' : 'Desconectado')) : subtitle}
                             </Text>
@@ -129,7 +132,7 @@ export function PremiumHeader({
                                         <Text style={{
                                             color: i === breadcrumbs.length - 1 ? '#FFFFFF' : 'rgba(255,255,255,0.85)',
                                             fontSize: 12,
-                                            fontWeight: i === breadcrumbs.length - 1 ? '600' : '400',
+                                            fontFamily: i === breadcrumbs.length - 1 ? FontFamily.semibold : FontFamily.medium,
                                         }}>
                                             {crumb.label}
                                         </Text>
@@ -153,7 +156,7 @@ export function PremiumHeader({
                                     }}
                                 />
                             ))}
-                            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '600' }}>
+                            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontFamily: FontFamily.semibold }}>
                                 {progressSteps.currentStep}/{progressSteps.totalSteps}
                             </Text>
                         </View>
@@ -204,7 +207,10 @@ export function PremiumHeader({
                                 accessibilityLabel={tab.label}
                                 accessibilityState={{ selected: isActive }}
                                 style={[styles.tab, isActive && { backgroundColor: 'rgba(0,0,0,0.38)' }]}
-                                onPress={() => onTabChange && onTabChange(tab.id)}
+                                onPress={() => {
+                                    haptic.select();
+                                    onTabChange && onTabChange(tab.id);
+                                }}
                             >
                                 <Text
                                     maxFontSizeMultiplier={1.3}
@@ -244,12 +250,12 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         backgroundColor: 'rgba(255,255,255,0.15)',
     },
-    headerTitle: { fontSize: 24, fontWeight: '800', textAlign: 'left' },
-    headerSubtitle: { fontSize: 15, fontWeight: '500', opacity: 0.8, textAlign: 'left' },
-    plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 4 },
-    plusBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-    tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: 16, padding: 4, borderWidth: 1 },
-    tab: { flex: 1, height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
-    tabText: { fontSize: 14, fontWeight: '700' },
+    headerTitle: { fontSize: 27, lineHeight: 34, fontFamily: FontFamily.display, letterSpacing: -0.2, textAlign: 'left' },
+    headerSubtitle: { fontSize: 14, fontFamily: FontFamily.medium, opacity: 0.85, textAlign: 'left' },
+    plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.xl, gap: 4 },
+    plusBtnText: { color: '#FFFFFF', fontFamily: FontFamily.semibold, fontSize: 14 },
+    tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: BorderRadius.lg, padding: 4, borderWidth: 1 },
+    tab: { flex: 1, height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: BorderRadius.md },
+    tabText: { fontSize: 14, fontFamily: FontFamily.semibold },
 });
 

@@ -2,6 +2,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { statusColors, statusLabels, payMethodIcons } from "./constants";
+import { FontFamily, TabularNumbers } from "@/constants/fonts";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { haptic } from "@/utils/haptics";
+
+const formatTotal = (value: number) =>
+  `$${Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 
 interface VentaCardRightProps {
   estado: number;
@@ -38,7 +44,10 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
             { backgroundColor: accentColor },
             pressed && { opacity: 0.7 },
           ]}
-          onPress={onFinalizar}
+          onPress={() => {
+            haptic.confirm();
+            onFinalizar();
+          }}
         >
           <Ionicons name="stop-circle" size={16} color="#FFF" />
           <Text style={styles.finishBtnText}>Finalizar</Text>
@@ -66,9 +75,11 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
       </View>
 
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={[styles.cardTotalBig, { color: textPrimary }]}>
-          ${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
-        </Text>
+        <AnimatedNumber
+          value={total}
+          format={formatTotal}
+          style={[styles.cardTotalBig, { color: textPrimary }]}
+        />
         <View style={styles.subInfoRow}>
           <Text style={[styles.cardSubCount, { color: textSecondary }]}>
             {productCount} items
@@ -104,11 +115,11 @@ const styles = StyleSheet.create({
     gap: 4,
     opacity: 0.8,
   },
-  methodText: { fontSize: 10, fontWeight: "900", letterSpacing: 1 },
-  cardTotalBig: { fontSize: 22, fontWeight: "900" },
+  methodText: { fontSize: 10, fontFamily: FontFamily.bold, letterSpacing: 1 },
+  cardTotalBig: { fontSize: 22, fontFamily: FontFamily.extrabold, ...TabularNumbers },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  cardSubCount: { fontSize: 12, fontWeight: "600" },
-  cardPropinaGreen: { fontSize: 12, fontWeight: "800", color: "#10B981" },
+  cardSubCount: { fontSize: 12, fontFamily: FontFamily.medium },
+  cardPropinaGreen: { fontSize: 12, fontFamily: FontFamily.semibold, color: "#10B981", ...TabularNumbers },
   finishBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -118,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     marginBottom: 8,
   },
-  finishBtnText: { color: "#FFF", fontSize: 11, fontWeight: "900" },
+  finishBtnText: { color: "#FFF", fontSize: 11, fontFamily: FontFamily.bold },
   statusBadgeSmall: {
     flexDirection: "row",
     alignItems: "center",
@@ -127,5 +138,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  statusTextSmall: { fontSize: 11, fontWeight: "800", textTransform: "uppercase" },
+  statusTextSmall: { fontSize: 11, fontFamily: FontFamily.bold, textTransform: "uppercase" },
 });

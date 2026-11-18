@@ -10,6 +10,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { readableTextColor } from '@/utils/color';
+import { haptic } from '@/utils/haptics';
+import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 
 export type TabItem<T extends string> = {
   key: T;
@@ -126,7 +129,10 @@ export function Tabs<T extends string>({
     return (
       <Pressable
         key={tab.key}
-        onPress={() => onChange(tab.key)}
+        onPress={() => {
+          haptic.select();
+          onChange(tab.key);
+        }}
         accessibilityRole="tab"
         accessibilityLabel={
           getAccessibilityLabel
@@ -295,7 +301,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     gap: 8,
   },
@@ -304,14 +310,14 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FontFamily.semibold,
     flexShrink: 1,
   },
   pill: {
     minWidth: 72,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -322,7 +328,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   segmentTextTablet: {
     fontSize: 16,
@@ -332,12 +338,12 @@ const styles = StyleSheet.create({
     minHeight: 18,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: FontFamily.bold,
   },
 });

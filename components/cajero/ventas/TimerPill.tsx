@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 import type { Timer } from "@/context/types";
 import { useTimerTick } from "@/context/TimerContext";
@@ -74,12 +75,12 @@ const styles = StyleSheet.create({
   },
   timerLabel: {
     fontSize: 8,
-    fontWeight: "800",
+    fontFamily: FontFamily.bold,
     letterSpacing: 0.5,
   },
   timerValue: {
     fontSize: 16,
-    fontWeight: "900",
-    fontFamily: "monospace",
+    fontFamily: FontFamily.bold,
+    ...TabularNumbers,
   },
 });
