@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -61,20 +61,30 @@ export const PremiumTabBar = ({
         options.href === null || options.tabBarItemStyle?.display === 'none';
 
     return (
-        <LinearGradient
-            colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+        <View
             style={[
-                styles.tabBarContainer,
+                styles.tabBarWrapper,
+                compact && styles.tabBarWrapperCompact,
                 {
-                    paddingBottom: insets.bottom,
-                    borderTopColor: borderColor,
-                    minHeight: compact ? 52 : Platform.OS === 'ios' ? 88 : 68,
-                    borderRadius: 24,
-                    overflow: 'hidden',
+                    // El fondo sólido del envoltorio evita que asome ningún color
+                    // claro (blanco) por las esquinas redondeadas de la barra.
+                    backgroundColor: gradientColors[0],
                 },
             ]}
         >
-                <View pointerEvents="none" style={[styles.scrim, { backgroundColor: gradientOverlay }]} />
+            <LinearGradient
+                colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+                style={[
+                    styles.tabBarContainer,
+                    compact && styles.tabBarContainerCompact,
+                    {
+                        borderColor,
+                        minHeight: compact ? 52 : 60,
+                        paddingBottom: insets.bottom,
+                    },
+                ]}
+            >
+            <View pointerEvents="none" style={[styles.scrim, { backgroundColor: gradientOverlay }]} />
 
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -101,7 +111,6 @@ export const PremiumTabBar = ({
                     }
                 };
 
-                const isCenter = route.name === 'index';
                 const labelText = typeof label === 'string' ? label : route.name;
 
                 return (
@@ -114,21 +123,24 @@ export const PremiumTabBar = ({
                         onPress={onPress}
                         style={[styles.tabItem, compact && styles.tabItemCompact]}
                     >
-                        <View style={[
-                            isFocused && !isCenter ? [styles.activeIconBg, { backgroundColor: gradientActiveBg }] : null,
-                            isCenter && isFocused ? [styles.activeCenterIconBg, { backgroundColor: gradientActiveBg }] : null,
-                            isCenter ? styles.centerTab : null
-                        ]}>
+                        <View
+                            style={[
+                                styles.iconSlot,
+                                compact && styles.iconSlotCompact,
+                                isFocused ? { backgroundColor: gradientActiveBg } : null,
+                            ]}
+                        >
                             {options.tabBarIcon && options.tabBarIcon({
                                 focused: isFocused,
                                 color: isFocused ? activeTintColor : inactiveTintColor,
-                                size: isCenter ? 26 : 22,
+                                size: 22,
                             })}
                         </View>
 
-                        {!isCenter && !compact && labelText !== 'Inicio' && (
+                        {!compact && (
                             <Text
-                                maxFontSizeMultiplier={1.3}
+                                maxFontSizeMultiplier={1.2}
+                                numberOfLines={1}
                                 style={[
                                     styles.tabLabel,
                                     { color: isFocused ? activeTintColor : inactiveTintColor },
@@ -141,16 +153,49 @@ export const PremiumTabBar = ({
                     </Pressable>
                 );
             })}
-        </LinearGradient>
+            </LinearGradient>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    tabBarWrapper: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 20,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 16,
+        elevation: 16,
+    },
+    // En horizontal la barra es más baja y la sombra más corta: con la pantalla
+    // reducida, una sombra amplia se ve pesada y roba altura.
+    tabBarWrapperCompact: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        elevation: 8,
+    },
     tabBarContainer: {
         flexDirection: 'row',
-        minHeight: Platform.OS === 'ios' ? 88 : 68,
+        minHeight: 60,
         justifyContent: 'space-around',
         alignItems: 'center',
+        paddingHorizontal: 6,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
+    tabBarContainerCompact: {
+        minHeight: 52,
     },
     scrim: {
         position: 'absolute',
@@ -164,7 +209,8 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingHorizontal: 4,
+        paddingVertical: 6,
         minHeight: 48,
     },
     tabItemCompact: {
@@ -172,8 +218,9 @@ const styles = StyleSheet.create({
         minHeight: 40,
     },
     tabLabel: {
-        fontSize: 12,
-        marginTop: 4,
+        fontSize: 11,
+        marginTop: 2,
+        textAlign: 'center',
     },
     tabLabelActive: {
         fontWeight: '800',
@@ -181,17 +228,18 @@ const styles = StyleSheet.create({
     tabLabelInactive: {
         fontWeight: '600',
     },
-    activeIconBg: {
-        padding: 8,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        marginBottom: -4,
+    // Cuadrado fijo con radio = mitad del lado: así el fondo del ítem activo
+    // siempre es un círculo perfecto y no una píldora o un cuadrado redondeado.
+    iconSlot: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    activeCenterIconBg: {
-        padding: 10,
-        borderRadius: 24,
-    },
-    centerTab: {
-        transform: [{ scale: 1.1 }],
+    iconSlotCompact: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
     },
 });

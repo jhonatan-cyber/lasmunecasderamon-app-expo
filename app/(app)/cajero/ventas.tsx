@@ -282,7 +282,6 @@ export default function VentasScreen() {
           />
 
           <PremiumFAB
-            label="NUEVA VENTA"
             icon={activeTab === "historial" ? "cart-outline" : "home-outline"}
             onPress={() => router.push("/cajero/nueva-venta")}
             visible={true}

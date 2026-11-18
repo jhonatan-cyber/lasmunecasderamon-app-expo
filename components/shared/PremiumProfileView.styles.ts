@@ -18,12 +18,17 @@ export const styles = StyleSheet.create({
     left: 0,
     backgroundColor: "rgba(0,0,0,0.20)",
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 12,
+  },
   backBtn: {
     alignItems: "center",
     justifyContent: "center",
     width: 38,
     height: 38,
-    marginLeft: 12,
     borderRadius: 9999,
     backgroundColor: "rgba(255,255,255,0.2)",
   },

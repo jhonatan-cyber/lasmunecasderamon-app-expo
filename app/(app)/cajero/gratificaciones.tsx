@@ -17,6 +17,7 @@ import { useStableCallback } from '@/hooks/useStableCallback';
 import { formatCurrency } from '@/utils/format';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -216,12 +217,11 @@ export default function CajeroGratificacionesScreen() {
         />
       )}
 
-      {!modalVisible && (
-        <Pressable style={[styles.fab, { backgroundColor: accentColor }]} onPress={() => setModalVisible(true)}>
-          <Ionicons name="add" size={22} color="#FFFFFF" />
-          <Text style={styles.fabText}>Nueva gratificación</Text>
-        </Pressable>
-      )}
+      <PremiumFAB
+        icon="add"
+        onPress={() => setModalVisible(true)}
+        visible={!modalVisible}
+      />
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
@@ -370,24 +370,6 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, fontWeight: '600' },
   emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  fab: {
-    position: 'absolute',
-    bottom: 42,
-    right: 20,
-    height: 56,
-    borderRadius: 9999,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8
-  },
-  fabText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: {

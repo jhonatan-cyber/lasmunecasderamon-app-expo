@@ -382,7 +382,6 @@ export default function AnticiposAdminScreen() {
       </View>
 
       <FilterTabs
-        wrap
         tabs={FILTROS.map(opcion => ({
           key: opcion.id,
           label: opcion.label,

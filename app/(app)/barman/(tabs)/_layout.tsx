@@ -13,19 +13,6 @@ export default function BarmanTabsLayout() {
         tabBar={(props: any) => <PremiumTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarStyle: {
-            position: 'absolute',
-            left: 16,
-            right: 16,
-            bottom: 0,
-            borderRadius: 24,
-            elevation: 16,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.18,
-            shadowRadius: 16,
-            borderTopWidth: 0,
-          },
         }}
       >
         <Tabs.Screen
@@ -67,7 +54,7 @@ export default function BarmanTabsLayout() {
         <Tabs.Screen
           name="horas-extras"
           options={{
-            title: "Horas Extras",
+            title: "Extras",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="time" size={size} color={String(color)} />
             ),

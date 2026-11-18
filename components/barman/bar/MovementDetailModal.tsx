@@ -5,7 +5,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BASE_URL } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import type { BarMovement, BarTransfer } from '@/hooks/useBarScreen';
-import { parseOpcionesVenta } from '@/hooks/utils/saleChoice';
+import { parseOpcionesVenta, preciosOpcionesVenta } from '@/hooks/utils/saleChoice';
 import { formatCurrency } from '@/utils/format';
 
 interface MovementDetailModalProps {
@@ -20,6 +20,7 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
   const fecha = movement?.fecha_crea ? new Date(movement.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
   const opciones = parseOpcionesVenta(transfer?.opciones_venta ?? movement?.opciones_venta);
+  const precios = preciosOpcionesVenta(transfer?.opciones_venta ?? movement?.opciones_venta);
   const estado = transfer?.estado ?? movement?.estado;
   const imageName = movement?.producto_foto;
 
@@ -63,7 +64,9 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
                 <Info label="Cantidad" value={`${movement.cantidad} unidades`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
                 {!!movement.ml && <Info label="Volumen" value={`${movement.ml} ml`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />}
                 <Info label="Precio unitario" value={movement.precio_venta !== null ? formatCurrency(movement.precio_venta) : '—'} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
-                <Info label="Comisión" value={movement.comision !== null ? formatCurrency(movement.comision) : '—'} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
+                {Number(movement.comision ?? 0) > 0 && (
+                  <Info label="Comisión" value={formatCurrency(Number(movement.comision))} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
+                )}
                 <Info label="Registrado por" value={movement.usuario_nombre || movement.usuario_nick || '—'} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
                 {movement.referencia && <Info label="Referencia" value={movement.referencia} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />}
                 {transfer?.aceptado_nombre && <Info label="Recibido / aprobado por" value={transfer.aceptado_nombre} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />}
@@ -71,14 +74,27 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
                 <Info label="Fecha" value={fechaValida ? fecha!.toLocaleString('es-BO', { dateStyle: 'medium', timeStyle: 'short' }) : '—'} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
               </View>
 
-              {opciones.length > 0 && (
+              {precios.length > 0 && (
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: textSecondary }]}>PRECIOS CONFIGURADOS EN EL TRASPASO</Text>
                   <View style={styles.grid}>
-                    {opciones.map((opcion, index) => <Info key={`${opcion.tipo}-${index}`} label={opcion.tipo === 'botella' ? 'Botella' : 'Shot cliente'} value={`${formatCurrency(opcion.precio)} · comisión ${formatCurrency(opcion.comision)}`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />)}
-                    {opciones.filter((opcion) => opcion.tipo === 'shot' && Number(opcion.precio_anfitriona ?? 0) > 0 && Number(opcion.precio_anfitriona) !== Number(opcion.precio)).map((opcion) => <Info key="shot-anfitriona" label="Shot anfitriona" value={`${formatCurrency(Number(opcion.precio_anfitriona))} · comisión ${formatCurrency(opcion.comision)}`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />)}
+                    {precios.map((precio, index) => (
+                      <Info
+                        key={`${precio.label}-${index}`}
+                        label={precio.label}
+                        value={
+                          precio.comision > 0
+                            ? `${formatCurrency(precio.precio)} · comisión ${formatCurrency(precio.comision)}`
+                            : formatCurrency(precio.precio)
+                        }
+                        accentColor={accentColor}
+                        textPrimary={textPrimary}
+                        textSecondary={textSecondary}
+                      />
+                    ))}
                   </View>
-                  {(transfer?.ml_shot ?? movement.ml_shot ?? 0) > 0 && (
+                  {opciones.some((opcion) => opcion.tipo === 'shot') &&
+                    (transfer?.ml_shot ?? movement.ml_shot ?? 0) > 0 && (
                     <View style={[styles.grid, styles.volumeGrid]}>
                       <Info label="Ml shot cliente" value={`${transfer?.ml_shot ?? movement.ml_shot} ml`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />
                       <Info label="Ml shot anfitriona" value={`${transfer?.ml_shot_anfitriona ?? movement.ml_shot_anfitriona ?? transfer?.ml_shot ?? movement.ml_shot} ml`} accentColor={accentColor} textPrimary={textPrimary} textSecondary={textSecondary} />

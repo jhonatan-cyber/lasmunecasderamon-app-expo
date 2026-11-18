@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import type { TabItem } from '@/components/ui/Tabs';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
+import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
@@ -216,7 +216,7 @@ export default function AnticiposScreen() {
         title="Anticipos"
         subtitle="Mis solicitudes y anticipos recibidos"
         rightComponent={
-          <PremiumHeaderActions
+          <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
             profilePath="/barman/perfil"
           />
@@ -266,7 +266,7 @@ export default function AnticiposScreen() {
         <PremiumHeader
           title="Anticipos"
           rightComponent={
-            <PremiumHeaderActions
+            <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
               profilePath="/barman/perfil"
             />
@@ -282,7 +282,7 @@ export default function AnticiposScreen() {
         title="Anticipos"
         subtitle="Mis solicitudes y anticipos recibidos"
         rightComponent={
-          <PremiumHeaderActions
+          <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
             profilePath="/barman/perfil"
           />
@@ -327,7 +327,6 @@ export default function AnticiposScreen() {
       </View>
 
       <FilterTabs
-        wrap
         tabs={filterTabs}
         activeKey={filter}
         onTabPress={setFilter}
@@ -376,14 +375,12 @@ export default function AnticiposScreen() {
       />
 
       {}
-      <Pressable
-        style={[styles.fab, { backgroundColor: accentColor }]}
-        accessibilityRole="button"
-        accessibilityLabel="Solicitar anticipo"
+      <PremiumFAB
+        icon="add"
         onPress={openSolicitarModal}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </Pressable>
+        visible={true}
+        withTabBar
+      />
 
       {}
       <SolicitarAnticipoModal
@@ -458,21 +455,6 @@ const styles = StyleSheet.create({
   summaryDetails: { flexDirection: 'row', gap: 16 },
   summaryDetail: { fontSize: 13 },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
   errorCard: {
     marginHorizontal: 16,
     marginTop: 8,

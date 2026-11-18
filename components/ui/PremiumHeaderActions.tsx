@@ -18,6 +18,11 @@ interface PremiumHeaderActionsProps {
     profilePath: string;
     showNotifications?: boolean;
     onQRScannerPress?: () => void;
+    /**
+     * Deja solo el botón de cambio de tema (claro/oscuro) en el topbar.
+     * Se usa en las pantallas de asistencia, anticipos, propinas y horas extras.
+     */
+    onlyTheme?: boolean;
 }
 
 const HIT_SLOP = { top: 8, right: 8, bottom: 8, left: 8 };
@@ -31,6 +36,7 @@ export const PremiumHeaderActions = ({
     profilePath,
     showNotifications = true,
     onQRScannerPress,
+    onlyTheme = false,
 }: PremiumHeaderActionsProps) => {
     const { gradientText, gradientControlBg, gradientControlBorder } = useAccentColor();
     const { isTablet, isLandscape } = useResponsiveMetrics();
@@ -66,6 +72,26 @@ export const PremiumHeaderActions = ({
 
     const showDot = hasNewAlert || notificationCount > 0;
     const iconButtonStyle = [styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }];
+
+    const themeButton = (
+        <Pressable
+            onPress={toggleScheme}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel="Cambiar tema"
+            style={iconButtonStyle}
+        >
+            <Ionicons name={scheme === 'dark' ? 'sunny-outline' : scheme === 'light' ? 'moon-outline' : 'moon-outline'} size={20} color={iconColor} />
+        </Pressable>
+    );
+
+    if (onlyTheme) {
+        return (
+            <View style={[styles.headerTop, compact && { marginBottom: 10 }]}>
+                {themeButton}
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.headerTop, compact && { marginBottom: 10 }]}>
@@ -125,17 +151,9 @@ export const PremiumHeaderActions = ({
                 accessibilityLabel="Mi perfil y ajustes"
                 style={iconButtonStyle}
             >
-                <Ionicons name="settings-outline" size={20} color={iconColor} />
+                <Ionicons name="person-outline" size={20} color={iconColor} />
             </Pressable>
-            <Pressable
-                onPress={toggleScheme}
-                hitSlop={HIT_SLOP}
-                accessibilityRole="button"
-                accessibilityLabel="Cambiar tema"
-                style={iconButtonStyle}
-            >
-                <Ionicons name={scheme === 'dark' ? 'sunny-outline' : scheme === 'light' ? 'moon-outline' : 'moon-outline'} size={20} color={iconColor} />
-            </Pressable>
+            {themeButton}
             <Pressable
                 onPress={handleLogout}
                 hitSlop={HIT_SLOP}

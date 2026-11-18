@@ -13,6 +13,7 @@ interface CategoryCardProps {
     };
     index: number;
     onPress: (categoryId: string, categoryName: string) => void;
+    compact?: boolean;
 }
 
 /**
@@ -87,7 +88,7 @@ function getCategoryIcon(name: string): string {
     return 'pricetags';
 }
 
-const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
+const CategoryCardComponent = ({ item, index, onPress, compact = false }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
     // Alterna el color del icono para que la rejilla no se vea plana.
@@ -97,6 +98,7 @@ const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
         <Pressable
             style={({ pressed }) => [
                 styles.categoryCard,
+                compact && styles.categoryCardCompact,
                 { backgroundColor: cardBg, borderColor },
                 pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
             ]}
@@ -104,19 +106,21 @@ const CategoryCardComponent = ({ item, index, onPress }: CategoryCardProps) => {
             accessibilityRole="button"
             accessibilityLabel={`${item.name}, ${item.total_products} productos`}
         >
-            <View style={[styles.iconContainer, { backgroundColor: `${tone}20` }]}>
-                <Ionicons name={getCategoryIcon(item.name) as any} size={30} color={tone} />
+            <View style={[styles.iconContainer, compact && styles.iconContainerCompact, { backgroundColor: `${tone}20` }]}>
+                <Ionicons name={getCategoryIcon(item.name) as any} size={compact ? 22 : 30} color={tone} />
             </View>
 
-            <Text style={[styles.categoryName, { color: textPrimary }]} numberOfLines={2}>
+            <Text style={[styles.categoryName, compact && styles.categoryNameCompact, { color: textPrimary }]} numberOfLines={2}>
                 {item.name}
             </Text>
+            {!compact && (
             <Text style={[styles.categoryDescription, { color: textSecondary }]} numberOfLines={2}>
                 {item.description || `Ver productos de ${item.name}`}
             </Text>
+            )}
 
-            <View style={[styles.productsBadge, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
-                <Text style={[styles.productsCount, { color: accentColor }]}>
+            <View style={[styles.productsBadge, compact && styles.productsBadgeCompact, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
+                <Text style={[styles.productsCount, compact && styles.productsCountCompact, { color: accentColor }]}>
                     {item.total_products}
                 </Text>
             </View>
@@ -149,6 +153,12 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    categoryCardCompact: {
+        minHeight: 110,
+        borderRadius: 18,
+        padding: 10,
+        gap: 4,
+    },
     iconContainer: {
         width: 56,
         height: 56,
@@ -156,11 +166,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    iconContainerCompact: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+    },
     categoryName: {
         fontSize: 16,
         fontWeight: '800',
         letterSpacing: -0.3,
         textAlign: 'center',
+    },
+    categoryNameCompact: {
+        fontSize: 13,
+        letterSpacing: 0,
     },
     categoryDescription: {
         fontSize: 12,
@@ -175,9 +194,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    productsBadgeCompact: {
+        minWidth: 26,
+        height: 22,
+        paddingHorizontal: 8,
+        borderRadius: 10,
+    },
     productsCount: {
         fontSize: 13,
         fontWeight: '900'
+    },
+    productsCountCompact: {
+        fontSize: 11,
     },
 });
 

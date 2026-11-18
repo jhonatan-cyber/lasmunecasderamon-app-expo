@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
     flexDirection: 'row',

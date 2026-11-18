@@ -10,7 +10,10 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import type { BarTransfer } from "@/hooks/useBarScreen";
-import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
+import {
+  etiquetaOpcionVenta,
+  resolverVentaProducto,
+} from "@/hooks/utils/saleChoice";
 import { TransferActions } from "./TransferCard";
 
 interface TransferDetailModalProps {
@@ -35,6 +38,9 @@ export function TransferDetailModal({
   const fecha = item?.fecha_crea ? new Date(item.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
   const opcionesVenta = resolverVentaProducto(item ?? {}).opciones;
+  // Sin corto en la configuración del traspaso no hay volumen por corto que mostrar:
+  // el ml del producto (o el global) no describe nada de lo que se va a servir.
+  const muestraVolumenCorto = opcionesVenta.some((option) => option.esShot);
   const mlShotCliente = Number(item?.ml_shot || 0);
   const mlShotAnfitriona = Number(item?.ml_shot_anfitriona || mlShotCliente);
 
@@ -57,26 +63,11 @@ export function TransferDetailModal({
             style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
           >
             <View style={styles.header}>
-              <View
-                style={[
-                  styles.iconWrap,
-                  { backgroundColor: `${accentColor}20` },
-                ]}
-              >
-                <Ionicons
-                  name="swap-horizontal"
-                  size={22}
-                  color={accentColor}
-                />
-              </View>
               <View style={styles.headerText}>
                 <Text style={[styles.eyebrow, { color: textSecondary }]}>
                   DETALLE DEL TRASPASO
                 </Text>
-                <Text
-                  style={[styles.title, { color: textPrimary }]}
-                  numberOfLines={2}
-                >
+                <Text style={[styles.title, { color: textPrimary }]}>
                   {item.producto_nombre}
                 </Text>
               </View>
@@ -113,6 +104,26 @@ export function TransferDetailModal({
                 </Text>
               </View>
 
+              <View style={styles.detailRowGroup}>
+                {item.categoria_nombre && (
+                  <View style={styles.detailRowHalf}>
+                    <Ionicons name="pricetag-outline" size={18} color={textSecondary} />
+                    <View style={styles.detailText}>
+                      <Text style={[styles.detailLabel, { color: textSecondary }]}>Categoría</Text>
+                      <Text style={[styles.detailValue, { color: textPrimary }]}>{item.categoria_nombre}</Text>
+                    </View>
+                  </View>
+                )}
+                <View style={styles.detailRowHalf}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={textSecondary} />
+                  <View style={styles.detailText}>
+                    <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
+                    <Text style={[styles.detailValue, { color: textPrimary }]}>
+                      {item.estado ? item.estado.charAt(0).toUpperCase() + item.estado.slice(1) : "—"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
               <DetailRow
                 icon="person-outline"
                 label="Enviado por"
@@ -134,56 +145,110 @@ export function TransferDetailModal({
                 textPrimary={textPrimary}
                 textSecondary={textSecondary}
               />
+              {item.aceptado_nombre && (
+                <DetailRow
+                  icon="checkmark-circle-outline"
+                  label="Aceptado por"
+                  value={item.aceptado_nombre}
+                  textPrimary={textPrimary}
+                  textSecondary={textSecondary}
+                />
+              )}
+              {item.fecha_aceptacion && (
+                <DetailRow
+                  icon="time-outline"
+                  label="Fecha de aceptación"
+                  value={
+                    !Number.isNaN(new Date(item.fecha_aceptacion).getTime())
+                      ? new Date(item.fecha_aceptacion).toLocaleString("es-BO", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })
+                      : "—"
+                  }
+                  textPrimary={textPrimary}
+                  textSecondary={textSecondary}
+                />
+              )}
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: textSecondary }]}>
                   PRECIOS DE VENTA
                 </Text>
-                <View style={styles.infoGrid}>
-                  {opcionesVenta.map((option) => (
+                {opcionesVenta.length > 0 ? (
+                  <View style={styles.infoGrid}>
+                    {opcionesVenta.map((option) => (
+                      <InfoTile
+                        key={option.value}
+                        icon="beer-outline"
+                        label={etiquetaOpcionVenta(option, opcionesVenta)}
+                        value={
+                          option.comision > 0
+                            ? `${formatCurrency(option.precio)} · comisión ${formatCurrency(option.comision)}`
+                            : formatCurrency(option.precio)
+                        }
+                        accentColor={accentColor}
+                        textPrimary={textPrimary}
+                        textSecondary={textSecondary}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.infoGrid}>
                     <InfoTile
-                      key={option.value}
-                      icon="beer-outline"
-                      label={option.nombre}
-                      value={`${formatCurrency(option.precio)} · comisión ${formatCurrency(option.comision)}`}
+                      icon="pricetag-outline"
+                      label="Precio de venta"
+                      value={formatCurrency(item.precio_venta || 0)}
                       accentColor={accentColor}
                       textPrimary={textPrimary}
                       textSecondary={textSecondary}
                     />
-                  ))}
-                </View>
+                    {Number(item.comision) > 0 && (
+                      <InfoTile
+                        icon="cash-outline"
+                        label="Comisión"
+                        value={formatCurrency(item.comision)}
+                        accentColor={accentColor}
+                        textPrimary={textPrimary}
+                        textSecondary={textSecondary}
+                      />
+                    )}
+                  </View>
+                )}
               </View>
 
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: textSecondary }]}>
-                  VOLUMEN POR CORTO
-                </Text>
-                <View style={styles.infoGrid}>
-                  <InfoTile
-                    icon="flask-outline"
-                    label="Corto cliente"
-                    value={
-                      mlShotCliente > 0
-                        ? `${mlShotCliente} ml`
-                        : "No configurado"
-                    }
-                    accentColor={accentColor}
-                    textPrimary={textPrimary}
-                    textSecondary={textSecondary}
-                  />
-                  <InfoTile
-                    icon="flask-outline"
-                    label="Corto anfitriona"
-                    value={
-                      mlShotAnfitriona > 0
-                        ? `${mlShotAnfitriona} ml`
-                        : "No configurado"
-                    }
-                    accentColor={accentColor}
-                    textPrimary={textPrimary}
-                    textSecondary={textSecondary}
-                  />
+              {muestraVolumenCorto && (
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: textSecondary }]}>
+                    VOLUMEN POR CORTO
+                  </Text>
+                  <View style={styles.infoGrid}>
+                    <InfoTile
+                      icon="flask-outline"
+                      label="Corto cliente"
+                      value={
+                        mlShotCliente > 0
+                          ? `${mlShotCliente} ml`
+                          : "No configurado"
+                      }
+                      accentColor={accentColor}
+                      textPrimary={textPrimary}
+                      textSecondary={textSecondary}
+                    />
+                    <InfoTile
+                      icon="flask-outline"
+                      label="Corto anfitriona"
+                      value={
+                        mlShotAnfitriona > 0
+                          ? `${mlShotAnfitriona} ml`
+                          : "No configurado"
+                      }
+                      accentColor={accentColor}
+                      textPrimary={textPrimary}
+                      textSecondary={textSecondary}
+                    />
+                  </View>
                 </View>
-              </View>
+              )}
 
               <View
                 style={[
@@ -272,14 +337,12 @@ function InfoTile({
         <Ionicons name={icon} size={15} color={accentColor} />
         <Text
           style={[styles.infoTileTitle, { color: textSecondary }]}
-          numberOfLines={2}
         >
           {label}
         </Text>
       </View>
       <Text
         style={[styles.infoTileValue, { color: textPrimary }]}
-        numberOfLines={1}
       >
         {value}
       </Text>
@@ -312,13 +375,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(148,163,184,0.25)",
   },
-  iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   headerText: { flex: 1 },
   eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   title: { fontSize: 19, fontWeight: "900", marginTop: 3 },
@@ -348,6 +404,8 @@ const styles = StyleSheet.create({
   quantityValue: { fontSize: 26, fontWeight: "900", marginTop: 4 },
   presentation: { fontSize: 14, fontWeight: "700", marginTop: 2 },
   detailRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  detailRowGroup: { flexDirection: "row", gap: 12 },
+  detailRowHalf: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   detailText: { flex: 1 },
   detailLabel: { fontSize: 11, fontWeight: "700" },
   detailValue: { fontSize: 14, fontWeight: "800", marginTop: 2 },

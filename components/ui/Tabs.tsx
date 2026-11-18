@@ -150,10 +150,10 @@ export function Tabs<T extends string>({
           },
         ]}
       >
-        {!isPills && tab.icon ? (
+        {tab.icon ? (
           <Ionicons
             name={tab.icon}
-            size={isTablet ? 20 : 18}
+            size={isPills ? 14 : (isTablet ? 20 : 18)}
             color={isActive ? activeTextColor : textSecondary}
           />
         ) : null}
@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   pillsRow: {
     marginTop: 16,
     marginBottom: 8,
+    minHeight: 40,
   },
   scrollContent: {
     flexDirection: 'row',
@@ -301,6 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
+    minHeight: 44,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     gap: 8,
@@ -314,13 +316,16 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   pill: {
+    flexDirection: 'row',
     minWidth: 72,
-    paddingVertical: 6,
+    minHeight: 24,
+    paddingVertical: 2,
     paddingHorizontal: 12,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
   pillTablet: {
     paddingVertical: 8,

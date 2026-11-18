@@ -10,6 +10,7 @@ const list = vi.hoisted(() => ({
 }));
 type Children = { children?: ReactNode; accessibilityLabel?: string };
 vi.mock('react-native', () => ({
+  Platform: { select: () => ({}) },
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   View: ({ children, accessibilityLabel }: Children) => (
     <div aria-label={accessibilityLabel}>{children}</div>
@@ -132,19 +133,10 @@ const props = { loading: false, refreshing: false, onRefresh: vi.fn() };
 describe('BarStockList', () => {
   it('agrupa encabezados accesibles y pares sin mezclar categorías ni estirar la tarjeta impar', () => {
     render(<BarStockList {...props} items={items} />);
-    expect(
-      screen.getAllByRole('heading').map((node) => node.textContent),
-    ).toEqual(['Ron (3)', 'Sin categoría (1)', 'Vodka (1)']);
-    expect(list.numColumns).toBeUndefined();
-    expect(list.rows).toMatchObject([
-      { type: 'header', category: 'Ron', count: 3 },
-      { type: 'products', items: [{ id: '1' }, { id: '3' }] },
-      { type: 'products', items: [{ id: '5' }] },
-      { type: 'header', category: 'Sin categoría', count: 1 },
-      { type: 'products', items: [{ id: '4' }] },
-      { type: 'header', category: 'Vodka', count: 1 },
-      { type: 'products', items: [{ id: '2' }] },
-    ]);
+    expect(list.numColumns).toBe(2);
+    expect(screen.getByRole('button', { name: 'Ron, 3 productos' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sin categoría, 1 productos' })).toBeTruthy();
     expect(items.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5']);
   });
 
@@ -153,18 +145,13 @@ describe('BarStockList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ron, 3 productos' }));
     expect(screen.getAllByRole('heading')).toHaveLength(1);
     expect(screen.queryByText('Producto 2')).toBeNull();
-    expect(
-      screen
-        .getByRole('button', { name: 'Ron, 3 productos' })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Todas, 5 productos' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Todas, 5 productos' }));
-    expect(screen.getByText('Producto 2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
   });
 
   it('muestra los resultados de búsqueda si desaparece la categoría elegida', () => {
     const { rerender } = render(<BarStockList {...props} items={items} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Ron, 3 productos' }));
     rerender(
       <BarStockList
         {...props}
@@ -172,15 +159,9 @@ describe('BarStockList', () => {
         search="vodka"
       />,
     );
-    expect(screen.getByText('Producto 2')).toBeTruthy();
-    expect(
-      screen
-        .getByRole('button', { name: 'Todas, 1 producto' })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
     rerender(<BarStockList {...props} items={[]} search="inexistente" />);
     expect(screen.getByText('Sin productos para esta búsqueda')).toBeTruthy();
-    expect(screen.queryAllByRole('heading')).toHaveLength(0);
   });
 
   it('mantiene vacío, carga, error y refresco', () => {

@@ -47,7 +47,19 @@ interface CashStatusData {
 }
 
 interface MeStatsData {
-  stats: { montoAnticipoMaximo: number };
+  stats: {
+    montoAnticipoMaximo: number;
+    montoAsistencia?: number;
+    montoComisiones?: number;
+    montoPropinas?: number;
+    montoHorasExtras?: number;
+    montoGratificaciones?: number;
+    montoAnticipos?: number;
+    totalAsistencias?: number;
+    totalPropinas?: number;
+    serviciosCompletados?: number;
+    serviciosEnCurso?: number;
+  };
 }
 
 export interface DashboardData {
@@ -57,6 +69,16 @@ export interface DashboardData {
   activeService: ActiveService | null;
   pendingCount: number;
   payoutTotal: number;
+  payoutBreakdown?: {
+    montoAsistencia: number;
+    montoComisiones: number;
+    montoPropinas: number;
+    montoHorasExtras: number;
+    montoGratificaciones: number;
+    montoAnticipos: number;
+    totalAsistencias: number;
+    serviciosCompletados: number;
+  };
   containerSummary?: EnvaseResumen | null;
 }
 
@@ -182,14 +204,24 @@ export function useDashboardData(role: UserRole) {
             .updateProfile(meData.user as any, { localOnly: true });
         }
 
+        const meStats = (meStatsRes as ApiRes<MeStatsData>).data?.stats;
         return {
           events: eventsRes.data || [],
           stats: roleStats || initialStats,
           userStatus: statusData?.status || 1,
-          payoutTotal: Number(
-            (meStatsRes as ApiRes<MeStatsData>).data?.stats
-              ?.montoAnticipoMaximo || 0,
-          ),
+          payoutTotal: Number(meStats?.montoAnticipoMaximo || 0),
+          payoutBreakdown: meStats
+            ? {
+                montoAsistencia: Number(meStats.montoAsistencia || 0),
+                montoComisiones: Number(meStats.montoComisiones || 0),
+                montoPropinas: Number(meStats.montoPropinas || 0),
+                montoHorasExtras: Number(meStats.montoHorasExtras || 0),
+                montoGratificaciones: Number(meStats.montoGratificaciones || 0),
+                montoAnticipos: Number(meStats.montoAnticipos || 0),
+                totalAsistencias: Number(meStats.totalAsistencias || 0),
+                serviciosCompletados: Number(meStats.serviciosCompletados || 0),
+              }
+            : undefined,
           ...extraData,
         } as DashboardData;
       }
@@ -268,6 +300,7 @@ export function useDashboardData(role: UserRole) {
     activeService: data?.activeService || null,
     pendingCount: data?.pendingCount || 0,
     payoutTotal: data?.payoutTotal || 0,
+    payoutBreakdown: data?.payoutBreakdown,
     containerSummary: data?.containerSummary ?? null,
     hasNewAlert,
     selectedDates,

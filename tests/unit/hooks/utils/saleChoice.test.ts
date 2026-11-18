@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  etiquetaOpcionVenta,
   etiquetaTipoVenta,
   parseOpcionesVenta,
+  preciosOpcionesVenta,
   resolverVentaProducto,
 } from "@/hooks/utils/saleChoice";
 
@@ -202,4 +204,88 @@ it("resuelve cada precio de anfitriona con su propia comision y cliente sin comi
   ]);
   expect(resolverVentaProducto(p, choices[1].value).comision).toBe(2000);
   expect(resolverVentaProducto(p, "shot").comision).toBe(0);
+});
+
+describe("etiquetaOpcionVenta", () => {
+  it("distingue la botella con anfitriona cuando también existe la sin anfitriona", () => {
+    const { opciones } = resolverVentaProducto({
+      opciones_venta: [
+        { tipo: "botella", precio: 30000, comision: 5000, precio_sin_anfitriona: 18000 },
+      ],
+    });
+    const conAnfitriona = opciones.find((o) => o.value === "botella")!;
+    const sinAnfitriona = opciones.find((o) => o.value === "botella_sin_anfitriona")!;
+    expect(etiquetaOpcionVenta(conAnfitriona, opciones)).toBe("Botella con anfitriona");
+    expect(etiquetaOpcionVenta(sinAnfitriona, opciones)).toBe("Botella sin anfitriona");
+  });
+
+  it("mantiene el nombre original cuando no hay botella sin anfitriona", () => {
+    const { opciones } = resolverVentaProducto({
+      opciones_venta: [{ tipo: "botella", precio: 12000 }],
+    });
+    expect(etiquetaOpcionVenta(opciones[0], opciones)).toBe("Botella");
+  });
+});
+
+describe("preciosOpcionesVenta", () => {
+  it("lista botella con y sin anfitriona y los cortos configurados", () => {
+    expect(
+      preciosOpcionesVenta([
+        {
+          tipo: "botella",
+          precio: 30000,
+          comision: 5000,
+          precio_sin_anfitriona: 18000,
+        },
+        {
+          tipo: "shot",
+          precio: 3000,
+          comision: 0,
+          precios_anfitriona: [{ precio: 5000, comision: 1000 }],
+        },
+      ]),
+    ).toEqual([
+      { label: "Con anfitriona", precio: 30000, comision: 5000 },
+      { label: "Botella sin anfitriona", precio: 18000, comision: 0 },
+      { label: "Corto cliente", precio: 3000, comision: 0 },
+      { label: "Corto anfitriona", precio: 5000, comision: 1000 },
+    ]);
+  });
+
+  it("con la venta con anfitriona desactivada solo queda el precio sin anfitriona", () => {
+    expect(
+      preciosOpcionesVenta([
+        {
+          tipo: "botella",
+          precio: 0,
+          comision: 0,
+          precio_sin_anfitriona: 18000,
+          vender_con_anfitriona: false,
+        },
+      ]),
+    ).toEqual([{ label: "Botella sin anfitriona", precio: 18000, comision: 0 }]);
+  });
+
+  it("numera los cortos de anfitriona cuando hay varios precios", () => {
+    const filas = preciosOpcionesVenta([
+      {
+        tipo: "shot",
+        precio: 0,
+        comision: 0,
+        precios_anfitriona: [
+          { precio: 5000, comision: 1000 },
+          { precio: 7000, comision: 2000 },
+        ],
+      },
+    ]);
+    expect(filas.map((fila) => fila.label)).toEqual([
+      "Corto anfitriona 1",
+      "Corto anfitriona 2",
+    ]);
+  });
+
+  it("sin opciones guardadas no inventa precios", () => {
+    expect(preciosOpcionesVenta(null)).toEqual([]);
+    expect(preciosOpcionesVenta([])).toEqual([]);
+  });
 });

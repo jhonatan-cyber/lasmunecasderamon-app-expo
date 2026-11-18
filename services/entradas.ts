@@ -196,7 +196,7 @@ export const entradasService = {
     apiClientSafe<any[]>(`/tickets/cover-solicitudes?estado=${encodeURIComponent(estado)}`),
 
   aprobarSolicitudCovers: (id: string) =>
-    apiClientSafe<{ entregadas: number }>(
+    apiClientSafe<{ entradas: number; productos: number }>(
       `/tickets/cover-solicitudes/${encodeURIComponent(id)}/approve`,
       { method: 'PATCH' },
     ),

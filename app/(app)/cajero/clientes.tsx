@@ -211,7 +211,6 @@ export default function ClientesScreen() {
       </View>
 
       <PremiumFAB
-        label="NUEVO CLIENTE"
         icon="person-add"
         onPress={handleOpenNew}
         visible={

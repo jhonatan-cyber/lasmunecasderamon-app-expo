@@ -1,6 +1,6 @@
-import { Pressable, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { AnimatedView } from "@/components/ui/AnimatedView";
-import { styles } from "../HomeScreen.styles";
 
 interface SelectedEventsBarProps {
   count: number;
@@ -17,21 +17,83 @@ export function SelectedEventsBar({
   textPrimary,
   onOpenDetails,
 }: SelectedEventsBarProps) {
+  const label =
+    count === 1 ? "1 día seleccionado" : `${count} días seleccionados`;
+
   return (
     <AnimatedView
       from={{ translateY: 100 }}
       animate={{ translateY: 0 }}
-      style={[styles.selectionFloat, { backgroundColor: cardBg }]}
+      style={[styles.bar, { backgroundColor: cardBg }]}
     >
-      <Text style={{ color: textPrimary, fontWeight: "700" }}>
-        {count} seleccionados
-      </Text>
+      <View style={styles.info}>
+        <View style={[styles.iconBadge, { backgroundColor: `${accentColor}22` }]}>
+          <Ionicons name="calendar" size={18} color={accentColor} />
+        </View>
+        <Text style={[styles.count, { color: textPrimary }]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
       <Pressable
         onPress={onOpenDetails}
-        style={[styles.viewBtn, { backgroundColor: accentColor }]}
+        accessibilityRole="button"
+        accessibilityLabel="Ver detalles de los días seleccionados"
+        style={({ pressed }) => [
+          styles.btn,
+          { backgroundColor: accentColor, opacity: pressed ? 0.85 : 1 },
+        ]}
       >
-        <Text style={{ color: "#FFF", fontWeight: "800" }}>DETALLES</Text>
+        <Text style={styles.btnText}>DETALLES</Text>
       </Pressable>
     </AnimatedView>
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    position: "absolute",
+    bottom: 28,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: 10,
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  info: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  count: {
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  btn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  btnText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+});

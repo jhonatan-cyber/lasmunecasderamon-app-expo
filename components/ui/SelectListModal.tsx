@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 
 export interface SelectListItem<T = any> {
   id: string | number;
@@ -109,7 +109,7 @@ export const SelectListModal = <T = any>({
               accessibilityRole="button"
               accessibilityLabel={confirmLabel}
             >
-              <Text style={[styles.confirmBtnText, { color: readableTextColor(accentColor) }]}>{confirmLabel}</Text>
+              <Text style={[styles.confirmBtnText, { color: accentTextColor(accentColor) }]}>{confirmLabel}</Text>
             </Pressable>
           )}
         </View>

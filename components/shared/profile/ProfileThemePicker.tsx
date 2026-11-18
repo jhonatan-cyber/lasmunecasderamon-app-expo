@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { THEME_OPTIONS, useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
-import { readableTextColor, relativeLuminance } from "@/utils/color";
+import { accentTextColor, relativeLuminance } from "@/utils/color";
 
 interface Props {
   accentColor: string;
@@ -34,8 +34,9 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
     ? ['#FFFFFF', '#F9FAFB', '#F3F4F6']
     : selectedTheme.gradient;
 
-  // Calcular colores de texto e íconos según el brillo del preview
-  const previewTextColor = isBlackSelected && !isDark ? '#111827' : readableTextColor(selectedTheme.color);
+  // Texto e íconos del preview: blanco en toda la paleta salvo Negro y Pizarra
+  // (con el tema negro en modo claro el degradado es blanco y el texto oscuro).
+  const previewTextColor = accentTextColor(previewGradient[0]);
   const isPreviewLight = previewTextColor === "#FFFFFF";
 
   return (
@@ -68,7 +69,7 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
           const swatchGradient = isThemeBlack && !isDark
             ? ['#FFFFFF', '#F9FAFB', '#F3F4F6']
             : theme.gradient;
-          const swatchTextColor = isThemeBlack && !isDark ? '#111827' : readableTextColor(theme.color);
+          const swatchTextColor = accentTextColor(swatchGradient[0]);
           const isThemeLight = relativeLuminance(theme.color) > 0.7;
           // Para colores claros, usar un fondo gris en lugar de `${theme.color}18` (invisible en blanco)
           const optionBg = isSelected ? (isThemeLight ? "rgba(107,114,128,0.12)" : `${theme.color}18`) : "transparent";

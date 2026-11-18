@@ -3,7 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
 import { SkeletonBox } from "./SkeletonBox";
-import { readableTextColor } from "@/utils/color";
+import { accentTextColor } from "@/utils/color";
+import { useAppearanceStore } from "@/store/appearanceStore";
 
 interface ProfileHeaderProps {
   skeletonMode?: boolean;
@@ -25,9 +26,10 @@ export function ProfileHeader({
   topInset,
   onBack,
 }: ProfileHeaderProps) {
-  // El header se dibuja sobre el degradado del acento: con el tema negro en
-  // modo claro el degradado es blanco, así que el contenido debe ser oscuro.
-  const finalHeaderText = readableTextColor(gradientColors[0] ?? '#FFFFFF');
+  // El header se dibuja sobre el degradado del acento: blanco en toda la paleta
+  // salvo Negro y Pizarra, que calculan su color por contraste.
+  const finalHeaderText = accentTextColor(gradientColors[0] ?? '#FFFFFF');
+  const { scheme, toggleScheme } = useAppearanceStore();
   const isHeaderLight = finalHeaderText !== "#FFFFFF";
   const subtitleColor = isHeaderLight ? "rgba(17,24,39,0.75)" : "rgba(255,255,255,0.92)";
   const scrimColor = isHeaderLight ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.20)";
@@ -92,19 +94,34 @@ export function ProfileHeader({
           )}
         </View>
         {!skeletonMode && (
-          <Pressable
-            onPress={onBack}
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            style={[styles.backBtn, { backgroundColor: controlBg }]}
-            accessibilityRole="button"
-            accessibilityLabel="Volver atrás"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={isTablet ? 24 : 20}
-              color={finalHeaderText}
-            />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={toggleScheme}
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              style={[styles.backBtn, { backgroundColor: controlBg }]}
+              accessibilityRole="button"
+              accessibilityLabel="Cambiar tema"
+            >
+              <Ionicons
+                name={scheme === "dark" ? "sunny-outline" : "moon-outline"}
+                size={isTablet ? 24 : 20}
+                color={finalHeaderText}
+              />
+            </Pressable>
+            <Pressable
+              onPress={onBack}
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              style={[styles.backBtn, { backgroundColor: controlBg }]}
+              accessibilityRole="button"
+              accessibilityLabel="Volver atrás"
+            >
+              <Ionicons
+                name="arrow-back"
+                size={isTablet ? 24 : 20}
+                color={finalHeaderText}
+              />
+            </Pressable>
+          </View>
         )}
       </View>
     </LinearGradient>

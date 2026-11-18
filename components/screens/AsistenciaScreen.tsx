@@ -365,7 +365,7 @@ export default function AsistenciaScreen() {
         <PremiumHeader
           title="Asistencia"
           rightComponent={
-            <PremiumHeaderActions
+            <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
               profilePath="/barman/perfil"
             />
@@ -393,7 +393,7 @@ export default function AsistenciaScreen() {
         <PremiumHeader
           title="Asistencia"
           rightComponent={
-            <PremiumHeaderActions
+            <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
               profilePath="/barman/perfil"
             />
@@ -409,7 +409,7 @@ export default function AsistenciaScreen() {
         title="Asistencia"
         subtitle="Registro de turnos y bonificaciones"
         rightComponent={
-          <PremiumHeaderActions
+          <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
             profilePath="/barman/perfil"
           />
@@ -498,42 +498,12 @@ export default function AsistenciaScreen() {
           ]}
           activeKey={filter}
           onTabPress={setFilter}
+          dateFilterLabel="Fechas"
+          onDateFilterPress={() => setDateFilterVisible(true)}
           accentColor={accentColor}
           cardBg={cardBg}
           textSecondary={textSecondary}
           borderColor={borderColor}
-          leadingChildren={
-            <Pressable
-              style={[
-                styles.dateFilterButton,
-                {
-                  borderColor: (dateFrom || dateTo) ? accentColor : borderColor,
-                  backgroundColor: (dateFrom || dateTo)
-                    ? isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF'
-                    : cardBg,
-                },
-              ]}
-              onPress={() => setDateFilterVisible(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Filtrar por fechas"
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={14}
-                color={(dateFrom || dateTo) ? accentColor : textSecondary}
-              />
-              <Text
-                style={[
-                  styles.dateFilterText,
-                  {
-                    color: (dateFrom || dateTo) ? accentColor : textSecondary,
-                  },
-                ]}
-              >
-                Fechas
-              </Text>
-            </Pressable>
-          }
         />
       )}
 
@@ -612,19 +582,7 @@ const styles = StyleSheet.create({
   },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  dateFilterButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 4,
-  },
-  dateFilterText: { fontSize: 10, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
     flexDirection: 'row',

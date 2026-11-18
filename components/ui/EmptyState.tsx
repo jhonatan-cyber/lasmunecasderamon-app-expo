@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
 
 export interface EmptyStateProps {
@@ -47,7 +47,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                         accessibilityRole="button"
                         accessibilityLabel={actionLabel}
                     >
-                        <Text style={[styles.actionText, { color: readableTextColor(accentColor) }]}>{actionLabel}</Text>
+                        <Text style={[styles.actionText, { color: accentTextColor(accentColor) }]}>{actionLabel}</Text>
                     </Pressable>
                 )}
             </View>

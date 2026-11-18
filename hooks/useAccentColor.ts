@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import { THEME_OPTIONS, useThemeStore } from '@/store/themeStore';
-import { readableTextColor, relativeLuminance } from '@/utils/color';
+import { accentTextColor, relativeLuminance } from '@/utils/color';
 
 const DEFAULT_ACCENT = '#E11D48';
 const BLACK_ACCENT = '#171717';
@@ -109,7 +109,8 @@ export function useAccentColor() {
     return {
         accentColor,
         // Texto legible sobre el acento (el usuario puede elegir uno claro u oscuro).
-        accentText: readableTextColor(accentColor),
+        // Texto sobre el acento: blanco en toda la paleta salvo Negro y Pizarra.
+        accentText: accentTextColor(accentColor),
         // Color de UI adaptativo para íconos, bordes y badges sobre fondos claros
         accentUi,
         gradientColors,

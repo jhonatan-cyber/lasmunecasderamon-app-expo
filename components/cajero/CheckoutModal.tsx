@@ -7,7 +7,7 @@ import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { MetodoPago } from '../../types/api';
@@ -49,7 +49,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const accentText = readableTextColor(accentColor);
+  const accentText = accentTextColor(accentColor);
   const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
   const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
 

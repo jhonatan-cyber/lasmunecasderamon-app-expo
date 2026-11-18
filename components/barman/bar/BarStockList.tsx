@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 import { Image } from "expo-image";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
-import { Tabs } from "@/components/ui/Tabs";
+import { CategoryCard } from "@/components/shared/CategoryCard";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import type { BarStockItem } from "@/hooks/useBarScreen";
@@ -23,6 +23,10 @@ interface BarStockListProps {
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  /** Currently selected category (null = showing categories grid). */
+  selectedCategory?: string | null;
+  /** Called when the selected category changes. */
+  onSelectedCategoryChange?: (category: string | null) => void;
 }
 
 type StockRow =
@@ -39,13 +43,21 @@ export function BarStockList({
   loading,
   refreshing,
   onRefresh,
+  selectedCategory,
+  onSelectedCategoryChange,
 }: BarStockListProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+  const setSelectedCategoryWrapper = useCallback((cat: string | null) => {
+    onSelectedCategoryChange?.(cat);
+  }, [onSelectedCategoryChange]);
+
   const categories = useMemo(() => {
     const grouped = new Map<string, BarStockItem[]>();
     for (const item of items) {
+      // Solo se listan las categorías que tienen stock mayor a 0 en el bar.
+      if (Number(item.stock_bar ?? 0) <= 0) continue;
       const category = item.categoria_nombre?.trim() || "Sin categoría";
       const group = grouped.get(category) ?? [];
       group.push(item);
@@ -53,10 +65,33 @@ export function BarStockList({
     }
     return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b, "es"));
   }, [items]);
-  // La búsqueda puede quitar la categoría elegida: mostrar sus resultados, no un vacío falso.
-  const activeCategory = categories.some(([name]) => name === categoryFilter)
-    ? categoryFilter
+
+  // Si la categoría elegida deja de existir (búsqueda/filtro), volvemos a las
+  // tarjetas en lugar de mostrar un vacío falso.
+  const activeCategory = categories.some(([name]) => name === selectedCategory)
+    ? selectedCategory
     : null;
+
+  const categoryCards = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase("es");
+    const cards = categories.map(([name, list]) => ({
+      id: name,
+      name,
+      description: "",
+      total_products: list.length,
+    }));
+    const visible = term
+      ? cards.filter((card) =>
+          card.name.toLocaleLowerCase("es").includes(term),
+        )
+      : cards;
+    return visible.sort((a, b) => {
+      if (a.name === "Sin categoría") return 1;
+      if (b.name === "Sin categoría") return -1;
+      return a.name.localeCompare(b.name, "es");
+    });
+  }, [categories, search]);
+
   const rows = useMemo(() => {
     const result: StockRow[] = [];
     for (const [category, products] of categories) {
@@ -77,6 +112,7 @@ export function BarStockList({
     }
     return result;
   }, [categories, activeCategory]);
+
   const renderRow = useCallback(
     ({ item }: { item: StockRow }) => {
       if (item.type === "header") {
@@ -101,6 +137,20 @@ export function BarStockList({
     [textPrimary],
   );
 
+  const renderCategory = useCallback(
+    ({ item, index }: { item: (typeof categoryCards)[number]; index: number }) => (
+      <View style={styles.cardCell}>
+        <CategoryCard
+          item={item}
+          index={index}
+          compact
+          onPress={(_id, name) => setSelectedCategoryWrapper(name)}
+        />
+      </View>
+    ),
+    [setSelectedCategoryWrapper],
+  );
+
   if (loading) {
     return (
       <View style={styles.skeletonList}>
@@ -114,35 +164,44 @@ export function BarStockList({
     );
   }
 
+  if (activeCategory === null) {
+    return (
+      <View style={[styles.container, { marginTop: 8 }]}>
+        <VirtualizedList
+          data={categoryCards}
+          keyExtractor={(item: { id: string }) => item.id}
+          renderItem={renderCategory}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={[styles.list, { paddingTop: 8 }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={accentColor}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="wine-outline" size={48} color={textSecondary} />
+              <Text style={[styles.emptyText, { color: textPrimary }]}>
+                {error ||
+                  (search.trim()
+                    ? "Sin productos para esta búsqueda"
+                    : "Sin productos en el bar")}
+              </Text>
+            </View>
+          }
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {categories.length > 0 ? (
-        <Tabs
-          variant="pills"
-          scrollable
-          tabs={[
-            { key: "__all__", label: "Todas", count: items.length },
-            ...categories.map(([name, products]) => ({
-              key: name,
-              label: name,
-              count: products.length,
-            })),
-          ]}
-          activeKey={activeCategory ?? "__all__"}
-          onChange={(key) => setCategoryFilter(key === "__all__" ? null : key)}
-          accentColor={accentColor}
-          cardBg={cardBg}
-          textSecondary={textSecondary}
-          borderColor={borderColor}
-          getAccessibilityLabel={(tab) =>
-            tab.count === undefined
-              ? tab.label
-              : `${tab.label}, ${tab.count} producto${tab.count === 1 ? "" : "s"}`
-          }
-          style={{ marginTop: 12, marginBottom: 0 }}
-        />
-      ) : null}
       <VirtualizedList
+        key={activeCategory}
         data={rows}
         keyExtractor={stockRowKey}
         getItemType={stockRowType}
@@ -207,16 +266,10 @@ const BarStockCard = memo(function BarStockCard({
         </View>
       </View>
 
-      <Text
-        style={[styles.productName, { color: textPrimary }]}
-        numberOfLines={2}
-      >
+      <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={2}>
         {item.producto_nombre}
       </Text>
-      <Text
-        style={[styles.presentation, { color: textSecondary }]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.presentation, { color: textSecondary }]} numberOfLines={1}>
         {item.nombre}
       </Text>
 
@@ -341,7 +394,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(127,127,127,0.12)",
   },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   productName: { fontSize: 15, fontWeight: "800" },
   presentation: { fontSize: 12, marginTop: 2 },
   badge: {
@@ -359,10 +411,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     gap: 9,
   },
-  priceRow: { flexDirection: "row", gap: 6 },
   priceInfo: { flex: 1, minWidth: 0 },
-  rightPrice: { alignItems: "flex-end" },
-  stat: { alignItems: "flex-start" },
   statLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -403,4 +452,18 @@ const styles = StyleSheet.create({
   },
   empty: { alignItems: "center", paddingTop: 60, gap: 10 },
   emptyText: { fontSize: 14, fontWeight: "600" },
+  cardCell: { flex: 1, marginBottom: 15 },
+  columnWrapper: { gap: 15 },
+  categoryCard: {
+    flex: 1,
+    minHeight: 100,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  categoryName: { fontSize: 15, fontWeight: "800", textAlign: "center" },
+  categoryCount: { fontSize: 12, fontWeight: "700" },
 });

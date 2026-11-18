@@ -9,7 +9,7 @@ const native = vi.hoisted(() => ({
   printToFile: vi.fn(),
   print: vi.fn(),
   createFile: vi.fn(),
-  copyFile: vi.fn(),
+  writeFile: vi.fn(),
   deleteFile: vi.fn(),
   captureException: vi.fn(),
   chooseDirectory: vi.fn(),
@@ -42,7 +42,7 @@ vi.mock('expo-file-system/legacy', () => ({
 }));
 vi.mock('expo-sharing', () => ({ shareAsync: native.share, isAvailableAsync: async () => true }));
 vi.mock('react-native-blob-util', () => ({
-  default: { media: { createFile: native.createFile }, fs: { cp: native.copyFile, unlink: native.deleteFile } },
+  default: { media: { createFile: native.createFile, write: native.writeFile }, fs: { unlink: native.deleteFile } },
 }));
 vi.mock('@/utils/logger', () => ({ default: { captureException: native.captureException } }));
 vi.mock('@/components/ui/PremiumAlert', () => ({
@@ -63,7 +63,7 @@ beforeEach(() => {
   native.requestPermission.mockResolvedValue('granted');
   native.printToFile.mockResolvedValue({ uri: 'file:///cache/reporte.pdf', numberOfPages: 1 });
   native.createFile.mockResolvedValue('content://media/external/downloads/42');
-  native.copyFile.mockResolvedValue(undefined);
+  native.writeFile.mockResolvedValue(undefined);
   native.deleteFile.mockResolvedValue(undefined);
   native.chooseDirectory.mockResolvedValue({ granted: false });
 });
@@ -74,8 +74,8 @@ describe('descarga automática del reporte en Android', () => {
     render(<PremiumLiquidationCard {...props} onExportSuccess={onExportSuccess} />);
     fireEvent.click(exportButton());
 
-    await waitFor(() => expect(native.copyFile).toHaveBeenCalledWith(
-      'file:///cache/reporte.pdf', 'content://media/external/downloads/42',
+    await waitFor(() => expect(native.writeFile).toHaveBeenCalledWith(
+      'content://media/external/downloads/42', 'file:///cache/reporte.pdf',
     ));
     expect(native.createFile).toHaveBeenCalledWith({
       name: expect.stringMatching(/^reporte_\d+\.pdf$/),
@@ -92,7 +92,7 @@ describe('descarga automática del reporte en Android', () => {
   });
 
   it('elimina solo el PDF incompleto y no anuncia éxito si falla el guardado', async () => {
-    native.copyFile.mockRejectedValueOnce(new Error('Sin espacio'));
+    native.writeFile.mockRejectedValueOnce(new Error('Sin espacio'));
     const onExportSuccess = vi.fn();
     render(<PremiumLiquidationCard {...props} onExportSuccess={onExportSuccess} />);
     fireEvent.click(exportButton());
@@ -106,7 +106,7 @@ describe('descarga automática del reporte en Android', () => {
   it('conserva el error de copia y permite reintentar si también falla la limpieza', async () => {
     const copyError = new Error('Sin espacio');
     const cleanupError = new Error('No se pudo eliminar');
-    native.copyFile.mockRejectedValueOnce(copyError);
+    native.writeFile.mockRejectedValueOnce(copyError);
     native.deleteFile.mockRejectedValueOnce(cleanupError);
     const onExportSuccess = vi.fn();
     render(<PremiumLiquidationCard {...props} onExportSuccess={onExportSuccess} />);
@@ -121,11 +121,11 @@ describe('descarga automática del reporte en Android', () => {
 
   it('bloquea pulsaciones repetidas mientras guarda y espera antes de avisar', async () => {
     let finishCopy!: () => void;
-    native.copyFile.mockImplementationOnce(() => new Promise<void>((resolve) => { finishCopy = resolve; }));
+    native.writeFile.mockImplementationOnce(() => new Promise<void>((resolve) => { finishCopy = resolve; }));
     const onExportSuccess = vi.fn();
     render(<PremiumLiquidationCard {...props} onExportSuccess={onExportSuccess} />);
     fireEvent.click(exportButton());
-    await waitFor(() => expect(native.copyFile).toHaveBeenCalledOnce());
+    await waitFor(() => expect(native.writeFile).toHaveBeenCalledOnce());
     fireEvent.click(exportButton());
 
     expect(exportButton().hasAttribute('disabled')).toBe(true);
@@ -142,7 +142,7 @@ describe('descarga automática del reporte en Android', () => {
     render(<PremiumLiquidationCard {...props} />);
     fireEvent.click(exportButton());
 
-    await waitFor(() => expect(native.copyFile).toHaveBeenCalledOnce());
+    await waitFor(() => expect(native.writeFile).toHaveBeenCalledOnce());
     expect(native.requestPermission).toHaveBeenCalledWith('android.permission.WRITE_EXTERNAL_STORAGE');
     expect(native.chooseDirectory).not.toHaveBeenCalled();
   });
@@ -157,6 +157,20 @@ describe('descarga automática del reporte en Android', () => {
     await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/permiso/i));
     expect(native.printToFile).not.toHaveBeenCalled();
     expect(native.createFile).not.toHaveBeenCalled();
+    expect(onExportSuccess).not.toHaveBeenCalled();
+  });
+
+  it('avisa que la app instalada no incluye la descarga directa cuando falta el módulo nativo', async () => {
+    native.createFile.mockRejectedValueOnce(new Error(
+      'react-native-blob-util: the native module is not available. Rebuild the app after installing the package and make sure autolinking picked it up - a JS-only reload is not enough.',
+    ));
+    const onExportSuccess = vi.fn();
+    render(<PremiumLiquidationCard {...props} onExportSuccess={onExportSuccess} />);
+    fireEvent.click(exportButton());
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/no incluye el guardado en Descargas/i));
+    expect(native.printToFile).toHaveBeenCalledOnce();
+    expect(native.writeFile).not.toHaveBeenCalled();
     expect(onExportSuccess).not.toHaveBeenCalled();
   });
 

@@ -30,7 +30,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     getEventLabel,
     getStatusLabel
 }) => {
-    const {accentColor, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
+    const {accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted} = useAccentColor();
     const user = useAuthStore((state) => state.user);
     const formatAmount = (value: any) =>
         Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -81,9 +81,14 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                         </View>
                         <Pressable
                             onPress={onClose}
-                            style={styles.detailCloseBtn}
+                            accessibilityRole="button"
+                            accessibilityLabel="Cerrar detalle"
+                            style={({ pressed }) => [
+                                styles.detailCloseBtn,
+                                { backgroundColor: surfaceMuted, opacity: pressed ? 0.7 : 1 },
+                            ]}
                         >
-                            <Ionicons name="close" size={24} color={textPrimary} />
+                            <Ionicons name="close" size={22} color={textPrimary} />
                         </Pressable>
                     </View>
 
@@ -318,9 +323,10 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
                     <Pressable
                         onPress={onClose}
+                        accessibilityRole="button"
                         style={[styles.confirmBtn, { backgroundColor: accentColor }]}
                     >
-                        <Text style={styles.confirmBtnText}>Entendido</Text>
+                        <Text style={[styles.confirmBtnText, { color: accentText }]}>Entendido</Text>
                     </Pressable>
                 </View>
             </View>
@@ -365,8 +371,7 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 9999,
         justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.05)'
+        alignItems: 'center'
     },
     detailBody: {
         alignItems: 'center',
@@ -423,7 +428,6 @@ const styles = StyleSheet.create({
         marginTop: 16
     },
     confirmBtnText: {
-        color: '#FFF',
         fontSize: 16,
         fontWeight: '800'
     },

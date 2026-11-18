@@ -16,7 +16,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 import {
     RUTA_PANTALLA_ASISTENCIA,
     esRutaPantallaAsistencia,
@@ -34,7 +34,7 @@ export default function AppLayout() {
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
     const { isDark, bg, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
-    const accentText = readableTextColor(accentColor);
+    const accentText = accentTextColor(accentColor);
 
     const isStaffMember = user?.role &&
         (user.role.toLowerCase().includes('garzon') ||

@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
-import { readableTextColor } from "@/utils/color";
+import { accentTextColor } from "@/utils/color";
 
 interface ProfileActionsProps {
   saving: boolean;
@@ -16,7 +16,7 @@ export function ProfileActions({
   onSave,
   onLogout,
 }: ProfileActionsProps) {
-  const accentText = readableTextColor(accentColor);
+  const accentText = accentTextColor(accentColor);
 
   return (
     <View style={styles.actionContainer}>

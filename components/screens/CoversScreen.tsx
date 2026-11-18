@@ -25,6 +25,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { entradasService, type EntradaCliente, type EntradaPendiente } from '@/services/entradas';
+import { productsService } from '@/services/products';
 import { eventBus } from '@/utils/eventBus';
 import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
@@ -70,7 +71,7 @@ export function CoversScreen() {
   const [anulandoId, setAnulandoId] = useState<string | null>(null);
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
   const [solicitudesCovers, setSolicitudesCovers] = useState<any[]>([]);
-  const [solicitudesLoading, setSolicitudesLoading] = useState(false);
+  const [nombresBebida, setNombresBebida] = useState<Record<string, string>>({});
 
   const { fecha } = fechaHoraLocal();
 
@@ -121,11 +122,29 @@ export function CoversScreen() {
       if (mostrarLoading) setLoading(true);
       try {
         if (esCajero) {
-          const solicitudes = await entradasService.listarSolicitudesCovers('pendiente');
+          // La solicitud guarda solo la presentación; el catálogo traduce el nombre.
+          const [solicitudes, catalogo] = await Promise.all([
+            entradasService.listarSolicitudesCovers('pendiente'),
+            productsService.forSale(),
+          ]);
           if (!solicitudes.success)
             throw new Error(solicitudes.message || 'No se pudieron cargar las solicitudes');
           setSolicitudesCovers(solicitudes.data ?? []);
-          setSolicitudesLoading(false);
+          const mapa: Record<string, string> = {};
+          if (catalogo.success && Array.isArray(catalogo.data)) {
+            for (const item of catalogo.data as {
+              presentacion_id?: unknown;
+              producto_nombre?: unknown;
+              presentacion_nombre?: unknown;
+            }[]) {
+              if (!item?.presentacion_id) continue;
+              const etiqueta = [item.producto_nombre, item.presentacion_nombre]
+                .filter(Boolean)
+                .join(' · ');
+              if (etiqueta) mapa[String(item.presentacion_id)] = etiqueta;
+            }
+          }
+          setNombresBebida(mapa);
           return;
         }
         // La cola es la del día de negocio, igual que en el dashboard: el
@@ -146,7 +165,6 @@ export function CoversScreen() {
             { context: 'Covers:listado' },
           );
         }
-        setSolicitudesLoading(false);
       } catch (error) {
         logger.fetchError(error, { context: 'Covers:cargar' });
         showToast({
@@ -230,7 +248,11 @@ export function CoversScreen() {
       showToast({ type: 'error', text1: 'No se pudo aprobar', text2: res.message });
       return;
     }
-    showToast({ type: 'success', text1: 'Entrega aprobada', text2: `${res.data?.entregadas || 0} covers entregados` });
+    showToast({
+      type: 'success',
+      text1: 'Entrega aprobada',
+      text2: `${res.data?.entradas ?? 0} covers entregados`,
+    });
     await cargar();
   }, [cargar]);
 
@@ -334,7 +356,10 @@ export function CoversScreen() {
                             key={`${unidad.presentacion_id}-${index}`}
                             style={{ color: textPrimary, fontSize: 12, marginTop: 8 }}
                           >
-                            • {unidad.producto_nombre || 'Producto'} {unidad.presentacion_nombre ? `· ${unidad.presentacion_nombre}` : ''}
+                            •{' '}
+                            {unidad.producto_nombre
+                              ? `${unidad.producto_nombre}${unidad.presentacion_nombre ? ` · ${unidad.presentacion_nombre}` : ''}`
+                              : nombresBebida[unidad.presentacion_id] || 'Producto'}
                             {unidad.tipo_entrega === 'botella' ? ' · Botella' : ' · Corte'}
                           </Text>
                         ))}

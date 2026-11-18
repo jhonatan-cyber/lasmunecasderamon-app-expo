@@ -4,6 +4,7 @@ import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
+import { preciosOpcionesVenta } from '@/hooks/utils/saleChoice';
 import type { BarMovement } from '@/hooks/useBarScreen';
 
 interface MovementsListProps {
@@ -62,6 +63,17 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
       }
       renderItem={({ item }: { item: BarMovement }) => {
         const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
+        // Un traspaso lista el precio de cada forma de venta configurada; una
+        // venta (sin opciones) conserva el precio y la comisión del movimiento.
+        const precios = preciosOpcionesVenta(item.opciones_venta);
+        const precioRegistrado =
+          item.precio_venta !== null && item.precio_venta !== undefined
+            ? formatCurrency(item.precio_venta)
+            : null;
+        const comisionRegistrada =
+          Number(item.comision ?? 0) > 0
+            ? formatCurrency(Number(item.comision))
+            : null;
         return (
           <Pressable
             accessibilityRole="button"
@@ -90,13 +102,40 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
                 {item.cantidad} und.
                 {(item.ml ?? 0) > 0 ? ` · ${item.ml} ml` : ''}
               </Text>
-              <Text style={[styles.amount, { color: accentColor }]}>
-                {item.precio_venta !== null ? formatCurrency(item.precio_venta) : '—'}
-              </Text>
-              <Text style={[styles.amount, { color: textSecondary }]}>
-                {item.comision !== null ? formatCurrency(item.comision) : '—'}
-              </Text>
+              {precios.length === 0 && (
+                <View style={styles.amountRight}>
+                  <Text style={[styles.amount, { color: accentColor }]}>
+                    {precioRegistrado ?? '—'}
+                  </Text>
+                  {comisionRegistrada && (
+                    <Text style={[styles.amount, { color: textSecondary }]}>
+                      Comisión {comisionRegistrada}
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
+
+            {precios.length > 0 && (
+              <View style={styles.amountsList}>
+                {precios.map((precio, index) => (
+                  <View key={`${precio.label}-${index}`} style={styles.amountRow}>
+                    <Text
+                      style={[styles.priceLabel, { color: textSecondary }]}
+                      numberOfLines={1}
+                    >
+                      {precio.label}
+                    </Text>
+                    <Text style={[styles.amount, { color: textPrimary }]}>
+                      {formatCurrency(precio.precio)}
+                      {precio.comision > 0
+                        ? ` · Comisión ${formatCurrency(precio.comision)}`
+                        : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
             <View style={styles.footer}>
               <Ionicons name="person-outline" size={13} color={textSecondary} />
@@ -130,6 +169,15 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
   statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 },
+  amountRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  amountsList: { gap: 4, marginTop: 8 },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  priceLabel: { flexShrink: 1, fontSize: 12, fontWeight: '700' },
   amount: { fontSize: 13, fontWeight: '700' },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
   footerText: { fontSize: 11, fontWeight: '600' },

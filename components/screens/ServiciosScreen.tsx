@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { contentColumn } from "@/constants/layout";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
@@ -12,9 +11,9 @@ import {
   View
 } from "react-native";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiClientSafe } from '@/api/client-safe';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -159,7 +158,6 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const esAdmin = variant === 'admin';
   const soloLectura = esAdmin;
   const { accentColor, isDark } = useAccentColor();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
@@ -437,14 +435,16 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         />
       </View>
 
-      {!esAdmin && !editModalVisible && !detailModalVisible && !alertConfig.visible && (
-        <Pressable
-          style={[styles.fab, { backgroundColor: accentColor, bottom: Math.max(80, insets.bottom + 65) }]}
-          onPress={() => router.push('/cajero/nuevo-servicio')}
-        >
-          <Ionicons name="add" size={32} color="#FFFFFF" />
-          <Text style={styles.fabText}>NUEVO SERVICIO</Text>
-        </Pressable>
+      {!esAdmin && (
+        <PremiumFAB
+          icon="add"
+          onPress={() =>
+            router.push(
+              (esCajero ? '/cajero/nuevo-servicio' : '/barman/solicitar-servicio') as never,
+            )
+          }
+          visible={!editModalVisible && !detailModalVisible && !alertConfig.visible}
+        />
       )}
 
       <ServiciosModales
@@ -479,26 +479,4 @@ const styles = StyleSheet.create({
       gap: 6
   },
   backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-  fab: { 
-    position: 'absolute', 
-    bottom: 30, 
-    right: 20, 
-    flexDirection: 'row',
-    alignItems: 'center', 
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 9999,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    gap: 8
-  },
-  fabText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 14,
-    letterSpacing: 1
-  },
 });

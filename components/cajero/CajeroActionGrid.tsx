@@ -143,7 +143,7 @@ export const CajeroActionGrid = () => {
         },
         {
           title: "COVERS",
-          description: "Entregar entradas del día",
+          description: "Autorizar covers del barman",
           icon: "ticket-outline" as const,
           color: "#D946EF",
           route: "/cajero/covers",

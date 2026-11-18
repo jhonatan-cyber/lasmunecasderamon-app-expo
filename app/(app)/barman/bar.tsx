@@ -82,8 +82,11 @@ export default function BarScreen() {
     limpiarSesion,
   } = useEnvasesScreen();
   const [scannerVisible, setScannerVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const onTabChange = (tabId: string) => {
+    // Reset category when switching tabs
+    setSelectedCategory(null);
     setActiveTab(tabId as TabId);
     if (tabId === 'historial') loadMovements();
     if (tabId === 'historial') fetchTransferHistory();
@@ -102,7 +105,13 @@ export default function BarScreen() {
       <PremiumHeader
         title="Bar"
         subtitle={`${totalBar} unidades en barra`}
-        onBack={() => router.replace('/(app)/barman/(tabs)')}
+        onBack={() => {
+          if (selectedCategory !== null) {
+            setSelectedCategory(null);
+          } else {
+            router.replace('/(app)/barman/(tabs)');
+          }
+        }}
       />
       <Tabs
         tabs={[
@@ -157,6 +166,8 @@ export default function BarScreen() {
             loading={loading}
             refreshing={refreshing}
             onRefresh={onRefresh}
+            selectedCategory={selectedCategory}
+            onSelectedCategoryChange={setSelectedCategory}
           />
         )}
 

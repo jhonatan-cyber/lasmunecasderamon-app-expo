@@ -13,6 +13,7 @@ import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { FontFamily } from "@/constants/fonts";
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
+import { useAppearanceStore } from '@/store/appearanceStore';
 
 export interface PremiumHeaderTab {
     id: string;
@@ -38,6 +39,7 @@ export interface PremiumHeaderProps {
         currentStep: number;
         totalSteps: number;
     };
+    showThemeToggle?: boolean;
 }
 
 export function PremiumHeader({
@@ -53,6 +55,7 @@ export function PremiumHeader({
     connectionStatus,
     breadcrumbs,
     progressSteps,
+    showThemeToggle = false,
 }: PremiumHeaderProps) {
     const {
         gradientColors,
@@ -65,6 +68,7 @@ export function PremiumHeader({
     } = useAccentColor();
     const insets = useSafeAreaInsets();
     const { isTablet, isLandscape } = useResponsiveMetrics();
+    const { toggleScheme, scheme } = useAppearanceStore();
     // En un móvil horizontal la altura es escasa: el header se compacta.
     const compact = isLandscape && !isTablet;
     const backBtnSize = isTablet ? 44 : 38;
@@ -182,6 +186,25 @@ export function PremiumHeader({
                     >
                         <Ionicons name="add" size={isTablet ? 24 : 20} color={gradientText} />
                         <Text style={[styles.plusBtnText, { color: gradientText }, isTablet && { fontSize: 18 }]}>Nuevo</Text>
+                    </Pressable>
+                )}
+                {showThemeToggle && (
+                    <Pressable
+                        onPress={toggleScheme}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        style={[
+                            styles.backBtn,
+                            {
+                                width: backBtnSize,
+                                height: backBtnSize,
+                                borderRadius: backBtnSize / 2,
+                                backgroundColor: gradientControlBg,
+                            },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cambiar tema"
+                    >
+                        <Ionicons name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={isTablet ? 24 : 20} color={gradientText} />
                     </Pressable>
                 )}
                 {onBack && (

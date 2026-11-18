@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 
 export interface ErrorStateProps {
     icon?: keyof typeof Ionicons.glyphMap;
@@ -48,8 +48,8 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                         accessibilityRole="button"
                         accessibilityLabel={retryLabel}
                     >
-                        <Ionicons name="refresh" size={18} color={readableTextColor(accentColor)} />
-                        <Text style={[styles.actionText, { color: readableTextColor(accentColor) }]}>{retryLabel}</Text>
+                        <Ionicons name="refresh" size={18} color={accentTextColor(accentColor)} />
+                        <Text style={[styles.actionText, { color: accentTextColor(accentColor) }]}>{retryLabel}</Text>
                     </Pressable>
                 )}
             </View>

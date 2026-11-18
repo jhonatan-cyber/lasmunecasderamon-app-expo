@@ -1,5 +1,6 @@
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { formatCurrency } from "@/utils/format";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Print from "expo-print";
 import { useCallback,useMemo,useState } from "react";
@@ -40,7 +41,7 @@ export function PremiumLiquidationCard({
   totalAmount,
   onExportSuccess,
 }: PremiumLiquidationCardProps) {
-  const {accentColor, cardBg, textSecondary, borderColor} = useAccentColor();
+  const {accentColor, accentText, cardBg, textSecondary, borderColor} = useAccentColor();
   const [exporting, setExporting] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -183,8 +184,7 @@ export function PremiumLiquidationCard({
           "Download",
         );
         try {
-          // fs.cp evita la reapertura del destino que hace copyToMediaStore en 1.1.1.
-          await BlobUtil.fs.cp(uri, destination);
+          await BlobUtil.media.write(destination, uri);
         } catch (error) {
           try {
             await BlobUtil.fs.unlink(destination);
@@ -209,11 +209,20 @@ export function PremiumLiquidationCard({
       logger.captureException(error, {
         context: "PremiumLiquidationCard:fetchLiquidacion",
       });
-      showAlert(
-        "Error",
-        "No se pudo generar o guardar el reporte PDF. Intenta nuevamente.",
-        "danger",
-      );
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      if (/native module|TurboModuleRegistry|not registered/i.test(message)) {
+        showAlert(
+          "Falta actualizar la app",
+          "La versión instalada no incluye el guardado en Descargas. Instala la última compilación de la app; recargar solo el JS no basta.",
+          "warning",
+        );
+      } else {
+        showAlert(
+          "Error",
+          "No se pudo generar o guardar el reporte PDF. Intenta nuevamente.",
+          "danger",
+        );
+      }
     } finally {
       setExporting(false);
     }
@@ -230,27 +239,40 @@ export function PremiumLiquidationCard({
 
   return (
     <View style={styles.container}>
-      <View style={styles.actionsRow}>
-        <View
-          style={[styles.miniSummary, { backgroundColor: cardBg, borderColor }]}
-        >
-          <Text style={[styles.label, { color: textSecondary }]}>
-            {totalLabel}
-          </Text>
-          <Text style={[styles.value, { color: "#10B981" }]}>
-            ${totalDisplayed.toLocaleString()}
+      <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+        <View style={styles.summaryBlock}>
+          <View style={styles.labelRow}>
+            <Ionicons name="wallet-outline" size={13} color={textSecondary} />
+            <Text style={[styles.label, { color: textSecondary }]}>
+              {totalLabel}
+            </Text>
+          </View>
+          <Text
+            style={[styles.value, { color: accentColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {formatCurrency(totalDisplayed)}
           </Text>
         </View>
         <Pressable
           onPress={handleExportReport}
           disabled={exporting}
-          style={[styles.exportBtn, { backgroundColor: accentColor, opacity: exporting ? 0.6 : 1 }]}
           accessibilityLabel="Exportar reporte a PDF"
           accessibilityRole="button"
           accessibilityState={{ busy: exporting, disabled: exporting }}
+          style={({ pressed }) => [
+            styles.exportBtn,
+            {
+              backgroundColor: accentColor,
+              opacity: exporting ? 0.6 : pressed ? 0.85 : 1,
+            },
+          ]}
         >
-          <Ionicons name="document-text-outline" size={20} color="#FFF" />
-          <Text style={styles.exportBtnText}>{exporting ? "Guardando…" : "Reportes"}</Text>
+          <Ionicons name="document-text-outline" size={18} color={accentText} />
+          <Text style={[styles.exportBtnText, { color: accentText }]}>
+            {exporting ? "Guardando…" : "Descargar PDF"}
+          </Text>
         </Pressable>
       </View>
 
@@ -271,60 +293,51 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 10,
   },
-  header: {
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  actionsRow: {
+  card: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
-  },
-  miniSummary: {
-    flex: 1,
     padding: 16,
     borderRadius: 20,
-    borderWidth: 2,
-    justifyContent: "center",
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 3,
   },
+  summaryBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   label: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "800",
     textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   value: {
-    fontSize: 24,
-    fontWeight: "800",
-    marginTop: 4,
+    fontSize: 26,
+    fontWeight: "900",
+    letterSpacing: -0.5,
   },
   exportBtn: {
-    flex: 1,
-    height: 48,
-    alignSelf: "center",
-    borderRadius: 12,
+    height: 52,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
+    minWidth: 118,
   },
   exportBtnText: {
-    color: "#FFF",
     fontWeight: "800",
-    fontSize: 15,
+    fontSize: 12,
   },
 });

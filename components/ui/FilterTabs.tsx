@@ -2,6 +2,12 @@ import { Tabs, type TabItem } from '@/components/ui/Tabs';
 
 export type FilterTabItem<T extends string> = TabItem<T>;
 
+/**
+ * Etiqueta especial para el tab de filtro de fechas.
+ * Cuando un tab tiene esta key, `onDateFilterPress` se invoca en lugar de `onTabPress`.
+ */
+const DATE_FILTER_KEY = 'dateFilter';
+
 type FilterTabsProps<T extends string> = {
   tabs: FilterTabItem<T>[];
   activeKey: T;
@@ -21,6 +27,14 @@ type FilterTabsProps<T extends string> = {
   wrap?: boolean;
   /** Optional leading children rendered before the tabs (e.g. a date filter button) */
   leadingChildren?: React.ReactNode;
+  /**
+   * Si se proporciona, agrega automáticamente un tab de filtro de fechas
+   * con icono `calendar-outline` al final de la lista de tabs.
+   * El tab no cambia el filtro activo; en su lugar, invoca `onDateFilterPress`.
+   */
+  dateFilterLabel?: string;
+  /** Se invoca cuando se presiona el tab de filtro de fechas. */
+  onDateFilterPress?: () => void;
 };
 
 export function FilterTabs<T extends string>({
@@ -35,13 +49,31 @@ export function FilterTabs<T extends string>({
   scrollable,
   wrap,
   leadingChildren,
+  dateFilterLabel,
+  onDateFilterPress,
 }: FilterTabsProps<T>) {
+  // Construir la lista de tabs con el tab de fechas opcional
+  const allTabs: (FilterTabItem<T> | FilterTabItem<typeof DATE_FILTER_KEY>)[] = [
+    ...tabs,
+    ...(dateFilterLabel && onDateFilterPress
+      ? [{ key: DATE_FILTER_KEY as T, label: dateFilterLabel, icon: 'calendar-outline' as any }]
+      : []),
+  ];
+
+  const handleTabPress = (key: T) => {
+    if (key === DATE_FILTER_KEY as T) {
+      onDateFilterPress?.();
+    } else {
+      onTabPress(key);
+    }
+  };
+
   return (
     <Tabs
       variant="pills"
-      tabs={tabs}
+      tabs={allTabs as FilterTabItem<T>[] as TabItem<T>[]}
       activeKey={activeKey}
-      onChange={onTabPress}
+      onChange={handleTabPress}
       accentColor={accentColor}
       accentText={accentText}
       cardBg={cardBg}

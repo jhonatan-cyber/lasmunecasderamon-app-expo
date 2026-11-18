@@ -1,4 +1,5 @@
 import { apiClientSafe } from "@/api/client";
+import { BreakdownCard } from "@/components/shared/BreakdownCard";
 import { EventDetailModal } from "@/components/shared/EventDetailModal";
 import { PremiumLiquidationCard } from "@/components/shared/PremiumLiquidationCard";
 import { SelectedEventsBar } from "@/components/screens/home/SelectedEventsBar";
@@ -18,7 +19,7 @@ import { useAuthStore } from "@/store/authStore";
 import logger from "@/utils/logger";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
 
 interface ResumenScreenProps {
   role: "anfitriona" | "garzon" | "barman";
@@ -28,11 +29,13 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const esAdmin = useIsAdmin();
-  const { accentColor, bg, cardBg, borderColor, textPrimary } = useAccentColor();
+  const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } =
+    useAccentColor();
 
   const {
     events,
     payoutTotal,
+    payoutBreakdown,
     selectedDates,
     refreshing,
     onRefresh,
@@ -44,7 +47,6 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const showLiquidation = role !== "barman";
   const showCalendar = !esAdmin;
 
   const selectedEvents = useMemo(
@@ -93,11 +95,9 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
       <PremiumHeader
         title="Resumen"
         subtitle={
-          showLiquidation
-            ? showCalendar
-              ? "Total a cobrar y calendario"
-              : "Total a cobrar y reportes"
-            : "Calendario de actividad"
+          showCalendar
+            ? "Total a cobrar y calendario"
+            : "Total a cobrar y reportes"
         }
         onBack={() => {
           if (router.canGoBack()) {
@@ -106,9 +106,11 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
             router.replace(`/${role}`);
           }
         }}
+        showThemeToggle
       />
 
       <ScrollView
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -119,24 +121,29 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
         contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
       >
         <View style={{ paddingHorizontal: 16 }}>
-          {showLiquidation && (
-            <View style={{ marginTop: 20 }}>
-              <PremiumLiquidationCard
-                user={user}
-                events={events}
-                totalAmount={payoutTotal}
-              />
-            </View>
-          )}
-
-          {showCalendar && (
-            <PremiumCalendar
+          {/* Total a cobrar y botón PDF - siempre visible */}
+          <View style={{ marginTop: 20 }}>
+            <PremiumLiquidationCard
+              user={user}
               events={events}
-              selectedDates={selectedDates}
-              onDateToggle={toggleDate}
+              totalAmount={payoutTotal}
             />
+          </View>
+
+          {/* Desglose de ingresos - solo para usuarios */}
+          {showCalendar && (
+            <BreakdownCard breakdown={payoutBreakdown} role={role} />
           )}
         </View>
+
+        {/* Calendario con márgenes propios para que use todo el ancho útil */}
+        {showCalendar && (
+          <PremiumCalendar
+            events={events}
+            selectedDates={selectedDates}
+            onDateToggle={toggleDate}
+          />
+        )}
       </ScrollView>
 
       {selectedDates.length > 0 && (
@@ -156,6 +163,7 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
         cardBg={cardBg}
         borderColor={borderColor}
         textPrimary={textPrimary}
+        textSecondary={textSecondary}
         accentColor={accentColor}
         onClose={() => setIsModalVisible(false)}
         onSelect={handleSelectEvent}
@@ -173,18 +181,3 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    minHeight: 44,
-    marginLeft: 12,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  backText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
-});

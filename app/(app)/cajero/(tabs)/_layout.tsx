@@ -64,7 +64,7 @@ export default function CajeroTabsLayout() {
           name="horas-extras"
           options={{
             ...soloAdminOculto,
-            title: "Horas Extras",
+            title: "Extras",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="time" size={size} color={String(color)} />
             ),

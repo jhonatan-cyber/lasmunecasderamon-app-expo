@@ -3,6 +3,7 @@ export const RUTAS_QUE_REQUIEREN_CAJA = new Set([
     'productos',
     'solicitudes',
     'servicios',
+    'solicitar-servicio',
     'entradas',
     'covers',
 ]);

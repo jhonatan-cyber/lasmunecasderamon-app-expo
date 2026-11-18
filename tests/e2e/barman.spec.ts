@@ -92,7 +92,7 @@ test('barman home renders its tab bar labels', async ({ page }) => {
     await expect(page.locator('body')).toContainText('Asistencia');
     await expect(page.locator('body')).toContainText('Anticipos');
     await expect(page.locator('body')).toContainText('Propinas');
-    await expect(page.locator('body')).toContainText('Horas Extras');
+    await expect(page.locator('body')).toContainText('Extras');
 });
 
 test('barman attendance screen renders its shell', async ({ page }) => {

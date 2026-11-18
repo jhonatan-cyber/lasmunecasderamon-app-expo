@@ -2,7 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
+import { readableTextColor } from '@/utils/color';
 import type { BarTransfer } from '@/hooks/useBarScreen';
+import {
+  etiquetaOpcionVenta,
+  resolverVentaProducto,
+  type OpcionVentaProducto,
+} from '@/hooks/utils/saleChoice';
 
 interface TransferCardProps {
   item: BarTransfer;
@@ -12,6 +18,21 @@ interface TransferCardProps {
 export function TransferCard({ item, onPress }: TransferCardProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
+  const opciones = resolverVentaProducto(item).opciones;
+  // Traspasos antiguos sin opciones guardadas: queda el precio del movimiento.
+  const precios: OpcionVentaProducto[] = opciones.length
+    ? opciones
+    : Number(item.precio_venta) > 0
+      ? [
+          {
+            value: 'botella',
+            nombre: 'Botella',
+            precio: Number(item.precio_venta),
+            comision: Number(item.comision ?? 0),
+            esShot: false,
+          },
+        ]
+      : [];
 
   return (
     <Pressable
@@ -52,14 +73,21 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
         )}
       </View>
 
-      <View style={styles.amountsRow}>
-        <Text style={[styles.amount, { color: textSecondary }]}>
-          Venta: {formatCurrency(item.precio_venta || 0)}
-        </Text>
-        <Text style={[styles.amount, { color: textSecondary }]}>
-          Comisión: {formatCurrency(item.comision || 0)}
-        </Text>
-      </View>
+      {precios.length > 0 && (
+        <View style={styles.amountsList}>
+          {precios.map((opcion) => (
+            <View key={opcion.value} style={styles.amountRow}>
+              <Text style={[styles.optionLabel, { color: textSecondary }]} numberOfLines={1}>
+                {etiquetaOpcionVenta(opcion, precios)}
+              </Text>
+              <Text style={[styles.optionAmount, { color: textPrimary }]}>
+                {formatCurrency(opcion.precio)}
+                {opcion.comision > 0 ? ` · Comisión ${formatCurrency(opcion.comision)}` : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
         <Text style={[styles.detailHintText, { color: accentColor }]}>Ver detalle</Text>
@@ -79,6 +107,7 @@ export function TransferActions({
   onReject: () => void;
 }) {
   const { accentColor } = useAccentColor();
+  const btnTextColor = readableTextColor(accentColor);
 
   return (
     <View style={styles.actionsRow}>
@@ -96,11 +125,11 @@ export function TransferActions({
         style={({ pressed }) => [styles.actionBtn, styles.acceptBtn, { backgroundColor: accentColor }, pressed && { opacity: 0.7 }, resolving && { opacity: 0.5 }]}
       >
         {resolving ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator size="small" color={btnTextColor} />
         ) : (
           <>
-            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            <Text style={styles.acceptText}>Aceptar</Text>
+            <Ionicons name="checkmark" size={16} color={btnTextColor} />
+            <Text style={[styles.acceptText, { color: btnTextColor }]}>Aceptar</Text>
           </>
         )}
       </Pressable>
@@ -118,11 +147,13 @@ const styles = StyleSheet.create({
   pendingText: { color: '#F59E0B', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
   metaText: { fontSize: 12, fontWeight: '600' },
-  amountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  amount: { fontSize: 12, fontWeight: '700' },
+  amountsList: { gap: 4, marginTop: 8 },
+  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  optionLabel: { flexShrink: 1, fontSize: 12, fontWeight: '700' },
+  optionAmount: { fontSize: 12, fontWeight: '800' },
   detailHint: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
   detailHintText: { fontSize: 12, fontWeight: '800' },
-  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  actionsRow: { flexDirection: 'column', gap: 10, marginTop: 14 },
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -130,10 +161,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
+    minHeight: 44,
     borderRadius: 12,
   },
   rejectBtn: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' },
   rejectText: { color: '#EF4444', fontWeight: '800', fontSize: 13 },
   acceptBtn: {},
-  acceptText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
+  acceptText: { fontWeight: '800', fontSize: 13 },
 });

@@ -174,3 +174,77 @@ export function etiquetaTipoVenta(item: {
   if (item?.tipo_venta !== "shot") return null;
   return item?.shot_anfitriona ? "Corto anfitriona" : "Corto cliente";
 }
+
+/**
+ * Etiqueta de una opción en listados de traspaso: la botella con anfitriona
+ * se nombra así cuando la misma presentación también ofrece la botella sin
+ * anfitriona, para que ambas se distingan.
+ */
+export function etiquetaOpcionVenta(
+  opcion: OpcionVentaProducto,
+  opciones: OpcionVentaProducto[],
+): string {
+  if (opcion.value !== "botella") return opcion.nombre;
+  return opciones.some((otra) => otra.value === "botella_sin_anfitriona")
+    ? opcion.nombre.replace(/^Botella/, "Botella con anfitriona")
+    : opcion.nombre;
+}
+
+export interface PrecioOpcionVenta {
+  label: string;
+  precio: number;
+  comision: number;
+}
+
+/**
+ * Precios de un traspaso tal como quedaron configurados, una fila por forma de
+ * venta: botella con/sin anfitriona y corto de cliente o de anfitriona. El
+ * historial no debe mostrar un "$0" de comisión ni esconder un precio solo
+ * porque el movimiento guarda uno de los dos.
+ */
+export function preciosOpcionesVenta(raw: unknown): PrecioOpcionVenta[] {
+  const filas: PrecioOpcionVenta[] = [];
+  for (const option of parseOpcionesVenta(raw)) {
+    if (option.en_venta === false) continue;
+    if (option.tipo === "botella") {
+      const sinAnfitriona = Number(option.precio_sin_anfitriona ?? 0);
+      const precio =
+        option.vender_con_anfitriona === false ? 0 : Number(option.precio ?? 0);
+      if (precio > 0) {
+        filas.push({
+          label: sinAnfitriona > 0 ? "Con anfitriona" : "Botella",
+          precio,
+          comision: Number(option.comision ?? 0),
+        });
+      }
+      if (sinAnfitriona > 0) {
+        filas.push({
+          label: "Botella sin anfitriona",
+          precio: sinAnfitriona,
+          comision: 0,
+        });
+      }
+      continue;
+    }
+    const anfitrionas = preciosCortoAnfitriona(option);
+    const precioCliente = Number(option.precio ?? 0);
+    if (precioCliente > 0) {
+      filas.push({
+        label: anfitrionas.length > 0 ? "Corto cliente" : "Corto",
+        precio: precioCliente,
+        comision: 0,
+      });
+    }
+    anfitrionas.forEach((row, index) => {
+      filas.push({
+        label:
+          anfitrionas.length > 1
+            ? `Corto anfitriona ${index + 1}`
+            : "Corto anfitriona",
+        precio: Number(row.precio ?? 0),
+        comision: Number(row.comision ?? 0),
+      });
+    });
+  }
+  return filas;
+}

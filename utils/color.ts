@@ -26,11 +26,27 @@ export function contrastRatio(background: string, foreground: string): number {
 
 /**
  * Devuelve el color de texto (blanco o casi negro) con mejor contraste sobre
- * `background`. Se usa cuando el fondo viene del acento elegido por el usuario,
- * que puede ser claro (ámbar) u oscuro (pizarra).
+ * `background`. Se usa cuando el fondo es de un color arbitrario (alertas,
+ * estados) y no del acento de perfil, que tiene su propia regla en
+ * `accentTextColor`.
  */
 export function readableTextColor(background: string): string {
     return contrastRatio(background, '#FFFFFF') >= contrastRatio(background, '#111827')
         ? '#FFFFFF'
         : '#111827';
+}
+
+/**
+ * Acentos que conservan el color calculado por contraste. El resto de la paleta
+ * usa siempre texto blanco sobre el acento, en modo claro y oscuro:
+ * - `#171717` (Negro) y `#475569` (Pizarra) son los temas elegidos en perfil.
+ * - `#FFFFFF` es el negro cuando se muestra como blanco en modo oscuro.
+ */
+const ACCENTS_WITH_ADAPTIVE_TEXT = new Set(['#171717', '#475569', '#ffffff']);
+
+/** Color de texto para dibujar sobre el color de acento elegido en perfil. */
+export function accentTextColor(accent: string): string {
+    return ACCENTS_WITH_ADAPTIVE_TEXT.has(accent.toLowerCase())
+        ? readableTextColor(accent)
+        : '#FFFFFF';
 }

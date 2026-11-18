@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
-import { readableTextColor } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 
 export interface ModalBottomSheetProps {
   visible: boolean;
@@ -100,7 +100,7 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
               style={[styles.actionBtn, { backgroundColor: accentColor }]}
               onPress={onAction}
             >
-              <Text style={[styles.actionBtnText, { color: readableTextColor(accentColor) }]}>{actionLabel}</Text>
+              <Text style={[styles.actionBtnText, { color: accentTextColor(accentColor) }]}>{actionLabel}</Text>
             </Pressable>
           )}
         </View>

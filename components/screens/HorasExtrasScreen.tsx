@@ -100,7 +100,7 @@ export default function HorasExtrasScreen() {
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
         rightComponent={
-          <PremiumHeaderActions
+          <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
             profilePath="/barman/perfil"
           />
@@ -157,7 +157,7 @@ export default function HorasExtrasScreen() {
         <PremiumHeader
           title="Horas Extras"
           rightComponent={
-            <PremiumHeaderActions
+            <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
               profilePath="/barman/perfil"
             />
@@ -173,7 +173,7 @@ export default function HorasExtrasScreen() {
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
         rightComponent={
-          <PremiumHeaderActions
+          <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
             profilePath="/barman/perfil"
           />
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   errorCard: {
     marginHorizontal: 16,
     padding: 16,
