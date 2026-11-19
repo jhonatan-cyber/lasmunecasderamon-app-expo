@@ -8,6 +8,7 @@ import type { ColacionProducto } from '@/services/colaciones';
 type Children = { children?: React.ReactNode };
 vi.mock('@/api/client-safe', () => ({ apiClientSafe: vi.fn() }));
 vi.mock('react-native', () => ({
+  Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({
@@ -28,8 +29,14 @@ vi.mock('react-native', () => ({
       {children}
     </button>
   ),
+  Image: () => null,
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
+  ScrollView: ({ children }: Children) => <div>{children}</div>,
+  Modal: ({ children, visible }: any) => (visible ? <div>{children}</div> : null),
+  KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
   StyleSheet: { create: (styles: unknown) => styles },
 }));
+vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 vi.mock('@/hooks/useAccentColor', () => ({
   useAccentColor: () => ({
     accentColor: '#933333',
@@ -77,7 +84,7 @@ describe('ColacionProductsCarousel', () => {
     expect(onSelect).toHaveBeenCalledWith('11');
   });
 
-  it('muestra el nombre del producto y los ml del corto, no el tamaño de la botella', () => {
+  it('muestra el nombre del producto, la presentación y los ml de colación', () => {
     render(
       <ColacionProductsCarousel
         products={[producto(11, 'Vodka', '750 ml', 60)]}
@@ -88,7 +95,8 @@ describe('ColacionProductsCarousel', () => {
     );
 
     expect(screen.getByText('Vodka')).toBeTruthy();
-    expect(screen.getByText('750 ml · 60 ml')).toBeTruthy();
+    expect(screen.getByText('750 ml')).toBeTruthy();
+    expect(screen.getByText('Colación: 60 ml')).toBeTruthy();
     expect(
       screen
         .getByRole('button', { name: /Vodka 750 ml, colación de 60 ml/ })
@@ -96,7 +104,7 @@ describe('ColacionProductsCarousel', () => {
     ).toBe('true');
   });
 
-  it('avisa cuando la bebida no tiene ml de colación configurados', () => {
+  it('no muestra ml de colación cuando la bebida no los tiene configurados', () => {
     render(
       <ColacionProductsCarousel
         products={[{ ...producto(11, 'Vodka', '750 ml', 0), ml_botella: 0 }]}
@@ -106,6 +114,7 @@ describe('ColacionProductsCarousel', () => {
       />,
     );
 
-    expect(screen.getByText('750 ml · sin ml')).toBeTruthy();
+    expect(screen.getByText('750 ml')).toBeTruthy();
+    expect(screen.queryByText(/Colación:/)).toBeNull();
   });
 });

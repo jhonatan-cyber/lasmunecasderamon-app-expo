@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -47,7 +47,7 @@ export function BarStockList({
   onSelectedCategoryChange,
 }: BarStockListProps) {
   const [internalCategory, setInternalCategory] = useState<string | null>(null);
-  const selected = selectedCategory ?? internalCategory;
+  const selected = selectedCategory !== undefined ? selectedCategory : internalCategory;
   const setSelectedCategoryWrapper = useCallback((cat: string | null) => {
     if (onSelectedCategoryChange) {
       onSelectedCategoryChange(cat);
@@ -56,12 +56,7 @@ export function BarStockList({
     }
   }, [onSelectedCategoryChange]);
 
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
-    useAccentColor();
-
-  const setSelectedCategoryWrapper = useCallback((cat: string | null) => {
-    onSelectedCategoryChange?.(cat);
-  }, [onSelectedCategoryChange]);
+  const { accentColor, textPrimary, textSecondary } = useAccentColor();
 
   const categories = useMemo(() => {
     const grouped = new Map<string, BarStockItem[]>();
@@ -78,8 +73,8 @@ export function BarStockList({
 
   // Si la categoría elegida deja de existir (búsqueda/filtro), volvemos a las
   // tarjetas en lugar de mostrar un vacío falso.
-  const activeCategory = categories.some(([name]) => name === selectedCategory)
-    ? selectedCategory
+  const activeCategory = categories.some(([name]) => name === selected)
+    ? selected
     : null;
 
   const categoryCards = useMemo(() => {
@@ -178,37 +173,6 @@ export function BarStockList({
     return (
       <View style={[styles.container, { marginTop: 8 }]}
         >
-        <VirtualizedList
-          data={categoryCards}
-          keyExtractor={(item: { id: string }) => item.id}
-          renderItem={renderCategory}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={[styles.list, { paddingTop: 8 }]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={accentColor}
-            />
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="wine-outline" size={48} color={textSecondary} />
-              <Text style={[styles.emptyText, { color: textPrimary }]}>
-                {error ||
-                  (search.trim()
-                    ? "Sin productos para esta búsqueda"
-                    : "Sin productos en el bar")}
-              </Text>
-            </View>
-          }
-        />
-      </View>
-    );
-    return (
-      <View style={[styles.container, { marginTop: 8 }]}>
         <VirtualizedList
           data={categoryCards}
           keyExtractor={(item: { id: string }) => item.id}

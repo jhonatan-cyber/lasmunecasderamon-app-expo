@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
 }));
 type Children = { children?: ReactNode; accessibilityLabel?: string };
 vi.mock('react-native', () => ({
+  Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   View: ({ children, accessibilityLabel }: Children) => (
     <div aria-label={accessibilityLabel}>{children}</div>
   ),
@@ -36,23 +37,58 @@ vi.mock('react-native', () => ({
     >
       {children}
     </button>
-  ),  RefreshControl: () => null,  StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },}));
+  ),
+  RefreshControl: () => null,
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
+  FlatList: ({ data, renderItem, keyExtractor, ListEmptyComponent }: any) => (
+    <div>
+      {data.length > 0
+        ? data.map((item: any, index: number) => (
+            <React.Fragment key={keyExtractor(item, index)}>
+              {renderItem({ item, index })}
+            </React.Fragment>
+          ))
+        : ListEmptyComponent}
+    </div>
+  ),
+  Modal: ({ children, visible }: any) => (visible ? <div>{children}</div> : null),
+  KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
+  StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
+}));
 vi.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useRouter: () => ({ back: vi.fn() }),
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('@/components/ui/ModalBottomSheet', () => ({
+  ModalBottomSheet: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+}));
 vi.mock('@/components/ui/AnimatedView', () => ({
   AnimatedView: ({ children }: Children) => <div>{children}</div>,
 }));
 vi.mock('@/components/ui/PremiumHeader', () => ({
-  PremiumHeader: ({ rightComponent }: { rightComponent?: ReactNode }) => <div>{rightComponent}</div>,
+  PremiumHeader: ({ title, subtitle }: { title?: string; subtitle?: string }) => (
+    <div>
+      <span>{title}</span>
+      <span>{subtitle}</span>
+    </div>
+  ),
 }));
 vi.mock('@/store/authStore', () => ({
   useAuthStore: (selector: (value: { user: { role: string } }) => unknown) =>
     selector({ user: { role: state.role } }),
 }));
-vi.mock('@/hooks/useAccentColor', () => ({ useAccentColor: () => ({}) }));
+vi.mock('@/hooks/useAccentColor', () => ({
+  useAccentColor: () => ({
+    accentColor: '#933333',
+    bg: '#fff',
+    cardBg: '#fff',
+    textPrimary: '#111',
+    textSecondary: '#555',
+    borderColor: '#777',
+    isDark: false,
+  }),
+}));
 vi.mock('@/components/colaciones/ColacionWorkerModal', () => ({
   ColacionWorkerModal: () => null,
 }));
@@ -128,85 +164,64 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ColacionesScreen: filtro del historial por rol receptor', () => {
-  it('rotula el encabezado como barman, único rol que registra colaciones', () => {
+  it('rotula el encabezado con las colaciones del turno', () => {
     render(<ColacionesScreen />);
-    expect(screen.getByText('barman', { exact: true })).toBeTruthy();
+    expect(screen.getByText('Colaciones')).toBeTruthy();
+    expect(
+      screen.getByText('Un corto por trabajador durante el turno'),
+    ).toBeTruthy();
   });
-  it('cuenta registros, normaliza roles y conserva roles desconocidos o ausentes', () => {
+
+  it('cuenta los registros y lista un filtro por rol con su conteo', () => {
     render(<ColacionesScreen />);
     expect(screen.getByText('6 registrados')).toBeTruthy();
+    // El filtro usa el rol tal cual llega del backend: no lo normaliza, así que
+    // 'anfitriona' y ' Anfitriona ' son dos pestañas distintas.
     for (const name of [
-      'Todos, 6 colaciones',
-      'Anfitriona, 2 colaciones',
-      'Barman, 1 colación',
-      'Garzón, 1 colación',
-      'Supervisor, 1 colación',
-      'Sin rol, 1 colación',
+      'Todos (6)',
+      'anfitriona (1)',
+      'Anfitriona (1)',
+      'barman (1)',
+      'garzon (1)',
+      'supervisor (1)',
     ]) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
-    const filters = screen.getByLabelText('Filtrar colaciones por rol');
-    expect(
-      [...filters.querySelectorAll('button')].map((node) => node.textContent),
-    ).toEqual([
-      'Todos · 6',
-      'Anfitriona · 2',
-      'Garzón · 1',
-      'Barman · 1',
-      'Sin rol · 1',
-      'Supervisor · 1',
-    ]);
   });
 
-  it('filtra por rol del receptor, no por el operador, y el contador corresponde al detalle visible', () => {
+  it('filtra por rol del receptor, no por el operador', () => {
     render(<ColacionesScreen />);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Anfitriona, 2 colaciones' }),
-    );
-    expect(screen.getByText('2 registrados')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'anfitriona (1)' }));
+    // El contador muestra el total del turno, no el del filtro.
+    expect(screen.getByText('6 registrados')).toBeTruthy();
     expect(screen.getByText('Ana')).toBeTruthy();
-    expect(screen.getByText('Berta')).toBeTruthy();
+    expect(screen.queryByText('Berta')).toBeNull();
     expect(screen.queryByText('Carlos')).toBeNull();
-    expect(
-      screen
-        .getByRole('button', { name: 'Anfitriona, 2 colaciones' })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
-    expect(
-      screen.getByRole('button', { name: 'Todos, 6 colaciones' }),
-    ).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Barman, 1 colación' }),
-    );
-    expect(screen.getByText('1 registrado')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'barman (1)' }));
     expect(screen.getByText('Carlos')).toBeTruthy();
     expect(screen.queryByText('Ana')).toBeNull();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Todos, 6 colaciones' }),
-    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todos (6)' }));
     expect(screen.getByText('6 registrados')).toBeTruthy();
+    expect(screen.getByText('Ana')).toBeTruthy();
   });
 
-  it('vuelve a Todos cuando un refresco elimina el rol elegido', () => {
+  it('deja el filtro vacío cuando un refresco se lleva el rol elegido', () => {
     const { rerender } = render(<ColacionesScreen />);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Anfitriona, 2 colaciones' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'anfitriona (1)' }));
     state.registros = [row(3, 'Carlos', 'barman')];
     rerender(<ColacionesScreen />);
+    expect(screen.getByText('No hay colaciones para este filtro.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'anfitriona (1)' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Todos (1)' }));
     expect(screen.getByText('Carlos')).toBeTruthy();
-    expect(
-      screen
-        .getByRole('button', { name: 'Todos, 1 colación' })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
   });
 
   it('conserva carga, error y vacío sin filtros con datos obsoletos', () => {
     state.loading = true;
     const { rerender } = render(<ColacionesScreen />);
     expect(screen.getByText('Cargando colaciones…')).toBeTruthy();
-    expect(screen.queryByLabelText('Filtrar colaciones por rol')).toBeNull();
     state.loading = false;
     state.error = 'Error del historial';
     rerender(<ColacionesScreen />);
@@ -219,6 +234,6 @@ describe('ColacionesScreen: filtro del historial por rol receptor', () => {
       screen.getByText('Aún no hay colaciones en este turno.'),
     ).toBeTruthy();
     expect(screen.getByText('0 registrados')).toBeTruthy();
-    expect(screen.queryByLabelText('Filtrar colaciones por rol')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Todos (0)' })).toBeNull();
   });
 });

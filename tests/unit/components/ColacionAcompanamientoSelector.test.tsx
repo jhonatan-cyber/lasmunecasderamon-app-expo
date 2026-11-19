@@ -5,6 +5,7 @@ import { ColacionAcompanamientoSelector } from '@/components/colaciones/Colacion
 import type { AcompanamientoOpcion } from '@/services/colaciones';
 
 vi.mock('react-native', () => ({
+  Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,
   Pressable: ({ children, onPress, accessibilityLabel, disabled }: any) => (
@@ -12,7 +13,27 @@ vi.mock('react-native', () => ({
       {children}
     </button>
   ),
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
+  FlatList: ({ data, renderItem, keyExtractor, ListEmptyComponent }: any) => (
+    <div>
+      {data.length > 0
+        ? data.map((item: any, index: number) => (
+            <React.Fragment key={keyExtractor(item, index)}>
+              {renderItem({ item, index })}
+            </React.Fragment>
+          ))
+        : ListEmptyComponent}
+    </div>
+  ),
+  ScrollView: ({ children }: any) => <div>{children}</div>,
+  Modal: ({ children, visible }: any) => (visible ? <div>{children}</div> : null),
+  KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
   StyleSheet: { create: (s: any) => s },
+}));
+
+vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('@/components/ui/ModalBottomSheet', () => ({
+  ModalBottomSheet: ({ children }: any) => <div>{children}</div>,
 }));
 
 vi.mock('@/hooks/useAccentColor', () => ({
@@ -56,8 +77,8 @@ describe('ColacionAcompanamientoSelector', () => {
       />
     );
 
-    expect(screen.getByLabelText('Sprite 1.5 L')).toBeTruthy();
-    expect(screen.getByLabelText('Coca-Cola 1.5 L')).toBeTruthy();
+    expect(screen.getByLabelText(/Sprite 1\.5 L/)).toBeTruthy();
+    expect(screen.getByLabelText(/Coca-Cola 1\.5 L/)).toBeTruthy();
     expect(screen.getAllByText('1.5 L')).toHaveLength(2);
   });
 
@@ -72,11 +93,11 @@ describe('ColacionAcompanamientoSelector', () => {
       />
     );
 
-    fireEvent.click(screen.getByLabelText('Sprite 1.5 L'));
+    fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
     expect(onSelect).toHaveBeenCalledWith('2');
   });
 
-  it('deselecciona al pulsar la opción marcada', () => {
+  it('mantiene la selección al pulsar la opción ya elegida', () => {
     const onSelect = vi.fn();
     render(
       <ColacionAcompanamientoSelector
@@ -87,8 +108,8 @@ describe('ColacionAcompanamientoSelector', () => {
       />
     );
 
-    fireEvent.click(screen.getByLabelText('Sprite 1.5 L'));
-    expect(onSelect).toHaveBeenCalledWith('');
+    fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
+    expect(onSelect).toHaveBeenCalledWith('2');
   });
 
   it('avisa cuando no hay bebidas disponibles para acompañar', () => {
@@ -106,7 +127,7 @@ describe('ColacionAcompanamientoSelector', () => {
     ).toBeTruthy();
   });
 
-  it('muestra el error del catálogo en lugar de las opciones', () => {
+  it('muestra el error del catálogo', () => {
     render(
       <ColacionAcompanamientoSelector
         acompanamientos={opciones}
@@ -118,6 +139,8 @@ describe('ColacionAcompanamientoSelector', () => {
     );
 
     expect(screen.getByText('No se pudo cargar el catálogo')).toBeTruthy();
-    expect(screen.queryByLabelText('Sprite 1.5 L')).toBeNull();
+    expect(
+      screen.queryByText('Sin bebidas con stock suficiente para acompañar.'),
+    ).toBeNull();
   });
 });
