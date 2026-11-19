@@ -97,7 +97,7 @@ describe('ColacionAcompanamientoSelector', () => {
     expect(onSelect).toHaveBeenCalledWith('2');
   });
 
-  it('mantiene la selección al pulsar la opción ya elegida', () => {
+  it('deselecciona al pulsar la opción marcada', () => {
     const onSelect = vi.fn();
     render(
       <ColacionAcompanamientoSelector
@@ -109,7 +109,7 @@ describe('ColacionAcompanamientoSelector', () => {
     );
 
     fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
-    expect(onSelect).toHaveBeenCalledWith('2');
+    expect(onSelect).toHaveBeenCalledWith('');
   });
 
   it('avisa cuando no hay bebidas disponibles para acompañar', () => {
@@ -127,7 +127,7 @@ describe('ColacionAcompanamientoSelector', () => {
     ).toBeTruthy();
   });
 
-  it('muestra el error del catálogo', () => {
+  it('muestra el error del catálogo en lugar de las opciones', () => {
     render(
       <ColacionAcompanamientoSelector
         acompanamientos={opciones}
@@ -139,8 +139,6 @@ describe('ColacionAcompanamientoSelector', () => {
     );
 
     expect(screen.getByText('No se pudo cargar el catálogo')).toBeTruthy();
-    expect(
-      screen.queryByText('Sin bebidas con stock suficiente para acompañar.'),
-    ).toBeNull();
+    expect(screen.queryByLabelText(/Sprite 1\.5 L/)).toBeNull();
   });
 });

@@ -84,7 +84,7 @@ describe('ColacionProductsCarousel', () => {
     expect(onSelect).toHaveBeenCalledWith('11');
   });
 
-  it('muestra el nombre del producto, la presentación y los ml de colación', () => {
+  it('muestra el nombre del producto y los ml del corto, no el tamaño de la botella', () => {
     render(
       <ColacionProductsCarousel
         products={[producto(11, 'Vodka', '750 ml', 60)]}
@@ -95,8 +95,7 @@ describe('ColacionProductsCarousel', () => {
     );
 
     expect(screen.getByText('Vodka')).toBeTruthy();
-    expect(screen.getByText('750 ml')).toBeTruthy();
-    expect(screen.getByText('Colación: 60 ml')).toBeTruthy();
+    expect(screen.getByText('750 ml · 60 ml')).toBeTruthy();
     expect(
       screen
         .getByRole('button', { name: /Vodka 750 ml, colación de 60 ml/ })
@@ -104,7 +103,7 @@ describe('ColacionProductsCarousel', () => {
     ).toBe('true');
   });
 
-  it('no muestra ml de colación cuando la bebida no los tiene configurados', () => {
+  it('avisa cuando la bebida no tiene ml de colación configurados', () => {
     render(
       <ColacionProductsCarousel
         products={[{ ...producto(11, 'Vodka', '750 ml', 0), ml_botella: 0 }]}
@@ -114,7 +113,6 @@ describe('ColacionProductsCarousel', () => {
       />,
     );
 
-    expect(screen.getByText('750 ml')).toBeTruthy();
-    expect(screen.queryByText(/Colación:/)).toBeNull();
+    expect(screen.getByText('750 ml · sin ml')).toBeTruthy();
   });
 });

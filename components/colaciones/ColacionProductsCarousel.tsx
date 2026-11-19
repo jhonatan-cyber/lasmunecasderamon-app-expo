@@ -108,7 +108,7 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
                       style={[styles.cardPresentacion, { color: textSecondary }]}
                       numberOfLines={1}
                     >
-                      {product.presentacion_nombre}
+                      {`${product.presentacion_nombre} · ${ml > 0 ? `${ml} ml` : 'sin ml'}`}
                     </Text>
                     <View style={styles.cardMetaRow}>
                       {categoria ? (
@@ -134,11 +134,6 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
                       {mlBotella > 0 ? (
                         <Text style={[styles.metaChip, { color: textSecondary }]}>
                           Producto: {mlBotella} ml
-                        </Text>
-                      ) : null}
-                      {ml > 0 ? (
-                        <Text style={[styles.metaChip, { color: textSecondary }]}>
-                          Colación: {ml} ml
                         </Text>
                       ) : null}
                       {acompanamiento.unidades > 0 ? (
