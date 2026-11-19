@@ -1,9 +1,9 @@
+// StaffCallOverlay component with urgent call styling and haptic feedback
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useEffect, useState } from 'react';
 import { eventBus } from '@/utils/eventBus';
 import {
     ActivityIndicator,
-
     Pressable,
     StyleSheet,
     Text,
@@ -16,7 +16,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 import { getUserRole, isAdminRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
-
+import { haptic } from '@/utils/haptics';
 import logger from '@/utils/logger';
 
 interface PendingNotificationsResponse {
@@ -35,12 +35,12 @@ interface StaffCall {
     assistanceType: string;
     message?: string;
     timestamp: string;
-    habitacion_nombre?: string; 
-    anfitriona_nick_api?: string; 
+    habitacion_nombre?: string;
+    anfitriona_nick_api?: string;
 }
 
 export function StaffCallOverlay() {
-    const user = useAuthStore((state) => state.user);
+    const user = useAuthStore(state => state.user);
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
     const [accepting, setAccepting] = useState<number | string | null>(null);
     const { accentColor, isDark, cardBg } = useAccentColor();
@@ -52,17 +52,9 @@ export function StaffCallOverlay() {
     const mapPendingCall = useCallback((item: any): StaffCall => {
         let parsedData: any = {};
         const rawData = item?.data ?? item?.datos;
-
         if (typeof rawData === 'string') {
-            try {
-                parsedData = JSON.parse(rawData);
-            } catch {
-                parsedData = {};
-            }
-        } else if (rawData && typeof rawData === 'object') {
-            parsedData = rawData;
-        }
-
+            try { parsedData = JSON.parse(rawData); } catch { parsedData = {}; }
+        } else if (rawData && typeof rawData === 'object') { parsedData = rawData; }
         return {
             id: item.id ?? item.id_notificacion,
             anfitriona_id: item.anfitriona_id ?? item.usuario_id ?? parsedData.anfitriona_id ?? '',
@@ -81,9 +73,8 @@ export function StaffCallOverlay() {
             const res = await apiClientSafe('/notifications/pending');
             const pendingData = res as unknown as PendingNotificationsResponse;
             if (pendingData.success) {
-                const pending = Array.isArray(pendingData.notifications) ? pendingData.notifications : Array.isArray(pendingData.data) ? pendingData.data : [];
-                const mapped = pending.map(mapPendingCall);
-                setPendingCalls(mapped);
+                const pending = pendingData.notifications ?? pendingData.data ?? [];
+                setPendingCalls(pending.map(mapPendingCall));
             }
         } catch (error) {
             logger.fetchError(error, { context: 'StaffCallOverlay:fetchPending' });
@@ -95,52 +86,35 @@ export function StaffCallOverlay() {
             const timer = setTimeout(() => setPendingCalls([]), 0);
             return () => clearTimeout(timer);
         }
-
-        const timers: (ReturnType<typeof setTimeout>)[] = [];
+        const timers: ReturnType<typeof setTimeout>[] = [];
         if (isStaff) {
-            const timer = setTimeout(() => {
-                void fetchPending();
-            }, 0);
+            const timer = setTimeout(() => { void fetchPending(); }, 0);
             timers.push(timer);
         }
-
-        
-        const subscription = eventBus.addListener("sse_event", (payload: any) => {
+        const subscription = eventBus.addListener('sse_event', (payload: any) => {
             if (!payload) return;
-
-            
             if ((payload.type === 'staff_call' || payload.type === 'assistance_request') && isStaff) {
                 const callData = payload.type === 'assistance_request'
                     ? mapPendingCall(payload.data)
                     : payload.data;
                 setPendingCalls(prev => {
-                    
                     if (prev.find(c => c.id === callData.id)) return prev;
-
-                    
                     const hostessName = callData.anfitriona_nick || 'Anfitriona';
                     const location = callData.roomName !== 'N/A' ? `en la habitación ${callData.roomName}` : 'en el salón';
                     const typeNormalized = (callData.assistanceType || '').toLowerCase().includes('general') ? 'atención' : (callData.assistanceType || '');
                     const voiceMessage = `Solicitud de asistencia. La anfitriona ${hostessName} se encuentra ${location} y solicita ${typeNormalized}.`;
-
-                    triggerNotificationEffects("Solicitud de Personal", voiceMessage, safeRole, true);
-
+                    triggerNotificationEffects('Solicitud de Personal', voiceMessage, safeRole, true);
                     return [callData, ...prev];
                 });
-            }
-
-            
-            else if (payload.type === 'staff_call_accepted') {
+            } else if (payload.type === 'staff_call_accepted') {
                 if (isStaff) {
                     setPendingCalls(prev => prev.filter(c => c.id !== payload.data.id));
                 }
-
                 if (isHostess && payload.data.anfitriona_id === user?.id) {
                     logger.debug('[StaffCallOverlay] Asistencia aceptada por:', payload.data.atendido_por_nombre);
                 }
             }
         });
-
         return () => {
             timers.forEach(clearTimeout);
             subscription.remove();
@@ -151,12 +125,7 @@ export function StaffCallOverlay() {
         setAccepting(id);
         try {
             const now = new Date();
-            const atendidoPorNombre =
-                user?.name ||
-                user?.username ||
-                `${user?.name || ''} ${user?.lastName || ''}`.trim() ||
-                'Staff';
-
+            const atendidoPorNombre = user?.name || user?.username || `${user?.name || ''} ${user?.lastName || ''}`.trim() || 'Staff';
             const res = await apiClientSafe('/notifications/assistance/accept', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -167,10 +136,10 @@ export function StaffCallOverlay() {
                     fecha_atencion: now.toISOString().slice(0, 10),
                     hora_atencion: now.toTimeString().slice(0, 8),
                     atendido_en: now.toISOString(),
-                })
+                }),
             });
-
             if (res.success) {
+                haptic.success();
                 showToast({
                     type: 'success',
                     text1: 'Llamado atendido',
@@ -178,74 +147,86 @@ export function StaffCallOverlay() {
                 });
                 setPendingCalls(prev => prev.filter(c => c.id !== id));
             } else {
+                haptic.error();
                 showToast({ type: 'error', text1: 'Atención', text2: res.message });
                 setPendingCalls(prev => prev.filter(c => c.id !== id));
             }
         } catch (error: any) {
+            haptic.error();
             showToast({ type: 'error', text1: 'Error', text2: error.message });
             setPendingCalls(prev => prev.filter(c => c.id !== id));
         } finally {
             setAccepting(null);
         }
     };
-    if ((!isStaff && !isHostess) || (isStaff && pendingCalls.length === 0) || (isHostess)) {
-        
+
+    if ((!isStaff && !isHostess) || (isStaff && pendingCalls.length === 0) || isHostess) {
         if (isHostess || pendingCalls.length === 0) return null;
     }
 
     return (
         <View style={styles.container}>
-            {pendingCalls.map((call, index) => (
-                <Animated.View
-                    key={call.id}
-                    entering={FadeInUp}
-                    exiting={FadeOutUp}
-                    style={[
-                        styles.card,
-                        {
-                            backgroundColor: cardBg,
-                            borderColor: '#E11D48',
-                            zIndex: 1000 - index
-                        }
-                    ]}
-                >
-                    <View style={styles.cardHeader}>
-                        <View style={styles.iconBox}>
-                            <Ionicons name="notifications" size={20} color="#E11D48" />
-                        </View>
-                        <View style={styles.textContainer}>
-                            <Text style={[styles.title, { color: isDark ? '#FFF' : '#000' }]}>
-                                SOLICITUD DE PERSONAL
-                            </Text>
-                            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                                {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <Text style={[styles.typeText, { color: isDark ? '#FFF' : '#333' }]}>
-                        {call.assistanceType}{call.message ? `: ${call.message}` : ''}
-                    </Text>
-
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.btn,
+            {pendingCalls.map((call, index) => {
+                const elapsedMins = Math.max(0, Math.floor((Date.now() - new Date(call.timestamp).getTime()) / 60000));
+                const isUrgent = elapsedMins >= 2;
+                return (
+                    <Animated.View
+                        key={call.id}
+                        entering={FadeInUp}
+                        exiting={FadeOutUp}
+                        style={[
+                            styles.card,
                             {
-                                backgroundColor: accentColor,
-                                opacity: (pressed || accepting === call.id) ? 0.7 : 1
-                            }
+                                backgroundColor: cardBg,
+                                borderColor: isUrgent ? '#EF4444' : '#E11D48',
+                                borderWidth: isUrgent ? 2 : 1,
+                                zIndex: 1000 - index,
+                            },
                         ]}
-                        onPress={() => handleAccept(call.id)}
-                        disabled={accepting !== null}
                     >
-                        {accepting === call.id ? (
-                            <ActivityIndicator size="small" color="#FFF" />
-                        ) : (
-                            <Text style={styles.btnText}>ACEPTAR Y ATENDER</Text>
-                        )}
-                    </Pressable>
-                </Animated.View>
-            ))}
+                        <View style={styles.cardHeader}>
+                            <View style={[styles.iconBox, isUrgent && { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
+                                <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#E11D48"} />
+                            </View>
+                            <View style={styles.textContainer}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={[styles.title, { color: isUrgent ? '#EF4444' : (isDark ? '#FFF' : '#000') }]}>
+                                        {isUrgent ? "LLAMADO URGENTE" : "SOLICITUD DE PERSONAL"}
+                                    </Text>
+                                    {elapsedMins > 0 && (
+                                        <Text style={{ fontSize: 11, fontWeight: '700', color: isUrgent ? '#EF4444' : (isDark ? '#9CA3AF' : '#6B7280') }}>
+                                            hace {elapsedMins} min
+                                        </Text>
+                                    )}
+                                </View>
+                                <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                                    {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
+                                </Text>
+                            </View>
+                        </View>
+                        <Text style={[styles.typeText, { color: isDark ? '#FFF' : '#333' }]}>
+                            {call.assistanceType}{call.message ? `: ${call.message}` : ''}
+                        </Text>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.btn,
+                                {
+                                    backgroundColor: isUrgent ? '#EF4444' : accentColor,
+                                    opacity: (pressed || accepting === call.id) ? 0.7 : 1,
+                                },
+                            ]}
+                            onPress={() => handleAccept(call.id)}
+                            disabled={accepting !== null}
+                        >
+                            {accepting === call.id ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                            ) : (
+                                <Text style={styles.btnText}>ACEPTAR Y ATENDER</Text>
+                            )}
+                        </Pressable>
+                    </Animated.View>
+                );
+            })}
         </View>
     );
 }
@@ -258,7 +239,7 @@ const styles = StyleSheet.create({
         right: 0,
         paddingHorizontal: 20,
         zIndex: 9999,
-        gap: 10
+        gap: 10,
     },
     card: {
         borderRadius: 20,
@@ -314,8 +295,5 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '900',
-    }
+    },
 });
-
-
-

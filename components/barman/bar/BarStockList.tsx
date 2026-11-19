@@ -46,6 +46,16 @@ export function BarStockList({
   selectedCategory,
   onSelectedCategoryChange,
 }: BarStockListProps) {
+  const [internalCategory, setInternalCategory] = useState<string | null>(null);
+  const selected = selectedCategory ?? internalCategory;
+  const setSelectedCategoryWrapper = useCallback((cat: string | null) => {
+    if (onSelectedCategoryChange) {
+      onSelectedCategoryChange(cat);
+    } else {
+      setInternalCategory(cat);
+    }
+  }, [onSelectedCategoryChange]);
+
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
 
@@ -165,6 +175,38 @@ export function BarStockList({
   }
 
   if (activeCategory === null) {
+    return (
+      <View style={[styles.container, { marginTop: 8 }]}
+        >
+        <VirtualizedList
+          data={categoryCards}
+          keyExtractor={(item: { id: string }) => item.id}
+          renderItem={renderCategory}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={[styles.list, { paddingTop: 8 }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={accentColor}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="wine-outline" size={48} color={textSecondary} />
+              <Text style={[styles.emptyText, { color: textPrimary }]}>
+                {error ||
+                  (search.trim()
+                    ? "Sin productos para esta búsqueda"
+                    : "Sin productos en el bar")}
+              </Text>
+            </View>
+          }
+        />
+      </View>
+    );
     return (
       <View style={[styles.container, { marginTop: 8 }]}>
         <VirtualizedList

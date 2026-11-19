@@ -33,7 +33,10 @@ export default function CajeroLayout() {
           headerTitleStyle: { fontWeight: "700" },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="personal"
           options={{ title: "Personal", headerShown: false }}
@@ -119,6 +122,14 @@ export default function CajeroLayout() {
         <Stack.Screen
           name="pantalla-asistencia"
           options={{ title: "Asistencia", headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="analytics"
+          options={{ title: "Analíticas", headerShown: false }}
+        />
+        <Stack.Screen
+          name="financieros"
+          options={{ title: "Financieros", headerShown: false }}
         />
       </Stack>
       {!enModoPantalla && <GlobalTimerAlert />}

@@ -40,6 +40,35 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
   },
+  // Category card styles
+  categoryCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  categoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignItems: 'center',
+  },
   producto: {
     borderWidth: 1,
     borderRadius: 16,

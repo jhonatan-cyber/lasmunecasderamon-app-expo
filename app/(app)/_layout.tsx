@@ -111,7 +111,14 @@ export default function AppLayout() {
                         // La app sigue la orientación del dispositivo (vertical u horizontal).
                         orientation: 'default',
                     }}
-                />
+                >
+                    <Stack.Screen name="barman" options={{ headerShown: false }} />
+                    <Stack.Screen name="garzon" options={{ headerShown: false }} />
+                    <Stack.Screen name="cajero" options={{ headerShown: false }} />
+                    <Stack.Screen name="anfitriona" options={{ headerShown: false }} />
+                    <Stack.Screen name="diagnostico" options={{ headerShown: false }} />
+                    <Stack.Screen name="envases-pendientes" options={{ headerShown: false }} />
+                </Stack>
             </SafeAreaView>
             {!enModoPantalla && <StaffCallOverlay />}
 

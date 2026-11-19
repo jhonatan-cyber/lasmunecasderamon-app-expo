@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ColacionAcompanamientoSelector } from '@/components/colaciones/ColacionAcompanamientoSelector';
-import type { AcompanamientoOpcion } from '@/services/colaciones-helpers';
+import type { AcompanamientoOpcion } from '@/services/colaciones';
 
 vi.mock('react-native', () => ({
   View: ({ children }: any) => <div>{children}</div>,

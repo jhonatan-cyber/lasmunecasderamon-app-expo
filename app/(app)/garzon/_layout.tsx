@@ -29,7 +29,6 @@ export default function GarzonLayout() {
             <Stack.Screen name="perfil" options={{ headerShown: false }} />
             <Stack.Screen name="servicios" options={{ headerShown: false }} />
             <Stack.Screen name="entradas" options={{ headerShown: false }} />
-            <Stack.Screen name="covers" options={{ headerShown: false }} />
             <Stack.Screen name="resumen" options={{ headerShown: false }} />
         </Stack>
     );

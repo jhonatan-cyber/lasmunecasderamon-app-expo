@@ -80,10 +80,6 @@ export const ActionGrid: React.FC<ActionGridProps> = ({ actions }) => {
               {renderCard(action)}
             </View>
           ))}
-          {row.length < COLUMNS &&
-            Array.from({ length: COLUMNS - row.length }).map((_, i) => (
-              <View key={`empty-${i}`} style={styles.cell} />
-            ))}
         </View>
       ))}
     </View>

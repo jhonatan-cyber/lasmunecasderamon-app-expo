@@ -102,14 +102,22 @@ export function formatosCover(bebida: Bebida, presupuesto: number): Formato[] {
   if (bebida.opciones_venta.find(opcion => opcion.tipo === 'botella')?.cover_habilitado === false)
     return formatos;
   const corte = precioCorte(bebida);
-  if (corte !== null && corte <= presupuesto) formatos.push('corte');
+  // Si hay precio de shot configurado, usarlo; si no, usar precio_venta como fallback
+  // para que el producto sea visible aunque no tenga shot configurado.
+  const precioCorteEfectivo = corte ?? bebida.precio_venta;
+  if (precioCorteEfectivo > 0 && precioCorteEfectivo <= presupuesto) formatos.push('corte');
   const precioBotella = bebida.precio_sin_anfitriona;
   if (precioBotella > 0 && precioBotella <= presupuesto) formatos.push('botella');
   return formatos;
 }
 
 export function precioVisible(bebida: Bebida, formato: Formato): number {
-  return formato === 'corte' ? (precioCorte(bebida) ?? 0) : bebida.precio_sin_anfitriona;
+  if (formato === 'corte') {
+    const corte = precioCorte(bebida);
+    // Usar precio_venta como fallback si no hay shot configurado
+    return corte ?? bebida.precio_venta;
+  }
+  return bebida.precio_sin_anfitriona;
 }
 
 export function costoSeleccion(seleccion: Seleccion, bebidas: Bebida[]): number {

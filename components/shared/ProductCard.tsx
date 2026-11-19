@@ -9,6 +9,8 @@ import { OrderProductPhoto } from "./OrderProductPhoto";
 import { ShotMixerSelector } from "./ShotMixerSelector";
 import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import { useCartStore } from "@/store/cartStore";
+import { haptic } from "@/utils/haptics";
+import { FontFamily } from "@/constants/fonts";
 
 export type { Anfitriona, CartItem, Product, Room };
 interface ProductCardProps {
@@ -34,29 +36,32 @@ export const ProductCard = React.memo(
     const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
       useAccentColor();
     const [open, setOpen] = useState(false);
-    // Cantidad local del modal — parte en 0 al abrir, no refleja el carrito hasta Agregar
-    const [localQty, setLocalQty] = useState(0);
     const selectedProduct = cartItem?.product || product;
     const quantity = cartItem?.quantity || 0;
+    // Si ya está en carrito inicia en 0 para configurar; si es nuevo, arranca en 1
+    const [localQty, setLocalQty] = useState(quantity > 0 ? 0 : 1);
     const hasCommission = Number(selectedProduct.commission) > 0;
     const hostessLimit =
       selectedProduct.tipo_venta === "shot"
-        ? quantity
-        : getHostessLimit(selectedProduct, quantity);
+        ? (quantity + localQty)
+        : getHostessLimit(selectedProduct, quantity + localQty);
     const configure = (type: "hostess" | "room") => {
       setOpen(false);
       onConfigPress(product.id, type);
     };
 
     const handleOpen = () => {
-      setLocalQty(0); // siempre empieza en 0 al abrir
+      haptic.tap();
+      setLocalQty(quantity > 0 ? 0 : 1);
       setOpen(true);
     };
 
     const handleAgregar = () => {
       if (localQty > 0) {
-        // Agrega localQty unidades al carrito
         for (let i = 0; i < localQty; i++) onAdd(selectedProduct);
+        haptic.success();
+      } else {
+        haptic.tap();
       }
       setLocalQty(0);
       setOpen(false);
@@ -170,35 +175,76 @@ export const ProductCard = React.memo(
                   anfitrionas={anfitrionas}
                   rooms={rooms}
                 />
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 16,
-                  }}
-                >
-                  <Pressable
-                    disabled={localQty === 0}
-                    accessibilityLabel={`Disminuir ${product.name}`}
-                    onPress={() => setLocalQty((q) => Math.max(0, q - 1))}
-                    style={{ padding: 10 }}
+                <View style={{ gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
                   >
-                    <Ionicons
-                      name="remove-circle"
-                      size={30}
-                      color={localQty > 0 ? accentColor : textSecondary}
-                    />
-                  </Pressable>
-                  <Text style={{ color: textPrimary, fontWeight: "800" }}>
-                    {localQty}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={`Aumentar ${product.name}`}
-                    onPress={() => setLocalQty((q) => q + 1)}
-                    style={{ padding: 10 }}
-                  >
-                    <Ionicons name="add-circle" size={30} color={accentColor} />
-                  </Pressable>
+                    <Pressable
+                      disabled={quantity === 0 ? localQty <= 1 : localQty === 0}
+                      accessibilityLabel={`Disminuir ${product.name}`}
+                      onPress={() => {
+                        haptic.tap();
+                        setLocalQty((q) => Math.max(quantity === 0 ? 1 : 0, q - 1));
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={{ padding: 6, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                    >
+                      <Ionicons
+                        name="remove-circle"
+                        size={32}
+                        color={(quantity === 0 ? localQty > 1 : localQty > 0) ? accentColor : textSecondary}
+                      />
+                    </Pressable>
+                    <Text style={{ color: textPrimary, fontFamily: FontFamily.bold, fontSize: 20, minWidth: 32, textAlign: 'center' }}>
+                      {localQty}
+                    </Text>
+                    <Pressable
+                      accessibilityLabel={`Aumentar ${product.name}`}
+                      onPress={() => {
+                        haptic.tap();
+                        setLocalQty((q) => q + 1);
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={{ padding: 6, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                    >
+                      <Ionicons name="add-circle" size={32} color={accentColor} />
+                    </Pressable>
+                  </View>
+
+                  {/* Acceso rápido a cantidades frecuentes para ritmo nocturno */}
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <Text style={{ color: textSecondary, fontFamily: FontFamily.regular, fontSize: 12 }}>
+                      Rápido:
+                    </Text>
+                    {[1, 2, 5, 10].map((addNum) => (
+                      <Pressable
+                        key={addNum}
+                        onPress={() => {
+                          haptic.tap();
+                          setLocalQty((q) => q + addNum);
+                        }}
+                        style={{
+                          paddingVertical: 6,
+                          paddingHorizontal: 12,
+                          borderRadius: 12,
+                          backgroundColor: `${accentColor}15`,
+                          borderWidth: 1,
+                          borderColor: `${accentColor}35`,
+                          minHeight: 34,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ color: accentColor, fontFamily: FontFamily.bold, fontSize: 13 }}>
+                          +{addNum}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
                 {quantity > 0 && (
                   <>
@@ -233,7 +279,7 @@ export const ProductCard = React.memo(
                           borderRadius: 12,
                         }}
                       >
-                        <Text style={{ color: textPrimary }}>
+                        <Text style={{ color: textPrimary, fontFamily: FontFamily.medium }}>
                           {cartItem?.selectedHostesses.length || 0} de{" "}
                           {hostessLimit} anfitrionas seleccionadas · Cambiar
                         </Text>
@@ -246,7 +292,7 @@ export const ProductCard = React.memo(
                           onPress={() => configure("room")}
                           style={{ padding: 12 }}
                         >
-                          <Text style={{ color: textPrimary }}>
+                          <Text style={{ color: textPrimary, fontFamily: FontFamily.medium }}>
                             Seleccionar habitación
                           </Text>
                         </Pressable>
@@ -254,37 +300,42 @@ export const ProductCard = React.memo(
                   </>
                 )}
               </ScrollView>
-              <Text
-                style={{
-                  color: "#10B981",
-                  fontWeight: "900",
-                  fontSize: 22,
-                  textAlign: "right",
-                }}
-              >
-                $
-                {(selectedProduct.price * Math.max(1, localQty)).toLocaleString(
-                  "es-CL",
-                )}
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: textSecondary, fontFamily: FontFamily.medium, fontSize: 14 }}>
+                  {localQty > 0 ? (quantity > 0 ? "Adicional:" : "Subtotal:") : (quantity > 0 ? "Total en pedido:" : "Precio:")}
+                </Text>
+                <Text
+                  style={{
+                    color: "#10B981",
+                    fontFamily: FontFamily.bold,
+                    fontSize: 22,
+                  }}
+                >
+                  $
+                  {(selectedProduct.price * (localQty > 0 ? localQty : (quantity || 1))).toLocaleString(
+                    "es-CL",
+                  )}
+                </Text>
+              </View>
               <Pressable
-                disabled={localQty === 0}
                 onPress={handleAgregar}
                 style={{
                   backgroundColor: accentColor,
                   padding: 14,
                   borderRadius: 14,
-                  opacity: localQty === 0 ? 0.4 : 1,
                 }}
               >
                 <Text
                   style={{
                     color: "#FFF",
                     textAlign: "center",
-                    fontWeight: "800",
+                    fontFamily: FontFamily.bold,
+                    fontSize: 16,
                   }}
                 >
-                  {localQty === 0 ? "Selecciona cantidad" : `Agregar ${localQty} al pedido`}
+                  {localQty > 0
+                    ? (quantity > 0 ? `Agregar +${localQty} al pedido` : `Agregar ${localQty} al pedido`)
+                    : (quantity > 0 ? `Listo (${quantity} en pedido)` : "Cerrar")}
                 </Text>
               </Pressable>
             </View>

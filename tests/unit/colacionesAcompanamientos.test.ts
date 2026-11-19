@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   acompanamientosDeColacion,
   type ColacionProducto,
-} from '@/services/colaciones-helpers';
+} from '@/services/colaciones';
 
 vi.mock('@/api/client-safe', () => ({ apiClientSafe: vi.fn() }));
 
@@ -13,7 +13,6 @@ function bebida(
   stock_bar: number,
 ): ColacionProducto {
   return {
-    id: presentacion_id,
     producto_id: presentacion_id,
     producto_nombre: nombre,
     presentacion_id,

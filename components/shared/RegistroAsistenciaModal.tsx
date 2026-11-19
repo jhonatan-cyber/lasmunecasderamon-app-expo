@@ -5,6 +5,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
+import { haptic } from '@/utils/haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
 import React,{ useState } from 'react';

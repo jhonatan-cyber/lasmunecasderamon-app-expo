@@ -12,6 +12,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { adjuntarBaucher } from '@/utils/baucherPicker';
 
 interface LoadBalanceModalProps {
     visible: boolean;
@@ -36,6 +37,8 @@ interface LoadBalanceModalProps {
     formatCurrency: (value: string) => string;
     unformatCurrency: (value: string) => string;
     handleLoadBalance: () => Promise<void>;
+    loadBaucherFoto: string | null;
+    onBaucherFotoChange: (foto: string | null) => void;
     onClose: () => void;
 }
 
@@ -62,8 +65,15 @@ export function LoadBalanceModal({
     formatCurrency,
     unformatCurrency,
     handleLoadBalance,
+    loadBaucherFoto,
+    onBaucherFotoChange,
     onClose
 }: LoadBalanceModalProps) {
+    const hasTransferencia =
+        loadMetodoPago === 'transferencia' ||
+        (loadMetodoPago === 'mixto' &&
+            (primaryMethod === 'transferencia' || secondaryMethod === 'transferencia'));
+
     return (
         <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
             <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
@@ -178,6 +188,60 @@ export function LoadBalanceModal({
                                         />
                                     </View>
                                 </View>
+                            </View>
+                        )}
+
+                        {hasTransferencia && (
+                            <View>
+                                <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>
+                                    COMPROBANTE DE TRANSFERENCIA
+                                </Text>
+                                <TouchableOpacity
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        paddingVertical: 14,
+                                        paddingHorizontal: 20,
+                                        borderRadius: 14,
+                                        borderWidth: 1,
+                                        borderColor: isDark ? '#374151' : '#E5E7EB',
+                                        backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                                    }}
+                                    onPress={async () => {
+                                        const foto = await adjuntarBaucher('LoadBalanceModal');
+                                        onBaucherFotoChange(foto);
+                                    }}
+                                >
+                                    <Ionicons
+                                        name={loadBaucherFoto ? 'checkmark-circle' : 'camera-outline'}
+                                        size={20}
+                                        color={loadBaucherFoto ? '#10B981' : accentColor}
+                                    />
+                                    <Text style={{
+                                        color: loadBaucherFoto ? '#10B981' : isDark ? '#E5E7EB' : '#374151',
+                                        fontWeight: '700',
+                                        fontSize: 13,
+                                        marginLeft: 8,
+                                    }}>
+                                        {loadBaucherFoto ? 'Comprobante adjuntado' : 'Tomar foto del comprobante'}
+                                    </Text>
+                                </TouchableOpacity>
+                                {loadBaucherFoto && (
+                                    <TouchableOpacity
+                                        style={{
+                                            alignSelf: 'flex-start',
+                                            marginTop: 6,
+                                            paddingVertical: 4,
+                                            paddingHorizontal: 8,
+                                        }}
+                                        onPress={() => onBaucherFotoChange(null)}
+                                    >
+                                        <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '700' }}>
+                                            Quitar comprobante
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         )}
 

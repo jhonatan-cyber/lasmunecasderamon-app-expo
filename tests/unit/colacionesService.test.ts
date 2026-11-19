@@ -3,10 +3,9 @@ import {
   colacionesService,
   reglaPorRol,
   urlCatalogoColacion,
+  type ColacionRegistro,
   type ReglaColacionResponse,
 } from '@/services/colaciones';
-
-import { colacionesService as historyService, type ColacionRegistro } from '@/services/colaciones-helpers';
 
 const { apiClientSafe } = vi.hoisted(() => ({ apiClientSafe: vi.fn() }));
 vi.mock('@/api/client-safe', () => ({ apiClientSafe }));
@@ -60,7 +59,7 @@ describe('regla compartida de colación', () => {
     };
     apiClientSafe.mockResolvedValueOnce({ success: true, data: [registro] });
     const signal = new AbortController().signal;
-    const response = await historyService.listar({ fecha: '2026-11-01', caja_id: 'c1' }, signal);
+    const response = await colacionesService.listar({ fecha: '2026-11-01', caja_id: 'c1' }, signal);
     expect(apiClientSafe).toHaveBeenCalledWith('/meals?fecha=2026-11-01&caja_id=c1', { signal });
     expect(response.data[0].rol).toBe('garzon');
     expect(response.data[0]).toBe(registro);
@@ -74,12 +73,14 @@ describe('regla compartida de colación', () => {
     expect(reglaPorRol(regla, null)).toBeNull();
   });
 
-  it('construye la URL del catálogo con el parámetro que indica el servidor', () => {
+  it('construye la URL del catálogo sin prefijo /api (apiClientSafe lo agrega)', () => {
+    // El backend devuelve /api/products/for-sale, pero urlCatalogoColacion
+    // quita el prefijo /api porque apiClientSafe ya lo agrega vía API_URL.
     expect(urlCatalogoColacion(regla, 'productos')).toBe(
-      '/api/products/for-sale?solo_colaciones=true',
+      '/products/for-sale?solo_colaciones=true',
     );
     expect(urlCatalogoColacion(regla, 'analcoholicas')).toBe(
-      '/api/products/for-sale?solo_colaciones_analcoholicas=true',
+      '/products/for-sale?solo_colaciones_analcoholicas=true',
     );
   });
 });

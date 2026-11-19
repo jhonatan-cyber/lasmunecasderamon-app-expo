@@ -63,7 +63,7 @@ const onboardingData: Record<string, OnboardingStep[]> = {
         {
             icon: 'cart-outline',
             title: 'Ventas y Cuentas',
-            description: 'Procesa ventas, gestiona cuentas pendientes y controla las entradas desde el grid de acciones.',
+            description: 'Procesa ventas y gestiona cuentas pendientes desde el grid de acciones.',
         },
         {
             icon: 'cash-outline',

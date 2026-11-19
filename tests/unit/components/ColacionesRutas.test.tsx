@@ -2,8 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import CajeroColacionesRoute from '@/app/(app)/cajero/colaciones';
-import AnfitrionaColacionesRoute from '@/app/(app)/anfitriona/colaciones';
+import BarmanColacionesRoute from '@/app/(app)/barman/colaciones';
 
 const mocks = vi.hoisted(() => ({ user: null as { role?: string } | null }));
 
@@ -12,11 +11,7 @@ vi.mock('expo-router', () => ({
 }));
 
 vi.mock('@/components/screens/ColacionesScreen', () => ({
-  default: () => <div>colaciones-cajero</div>,
-}));
-
-vi.mock('@/components/screens/ColacionesScreenAnfitriona', () => ({
-  default: () => <div>colaciones-anfitriona</div>,
+  default: () => <div>colaciones-registro</div>,
 }));
 
 vi.mock('@/store/authStore', () => ({
@@ -33,66 +28,26 @@ beforeEach(() => {
 });
 
 describe('rutas de colaciones — acceso por rol', () => {
-  it('expulsa al garzón de la pantalla de cajero', () => {
-    mocks.user = { role: 'Garzon' };
+  it('permite al barman entregar las colaciones', () => {
+    mocks.user = { role: 'Barman' };
 
-    render(<CajeroColacionesRoute />);
+    render(<BarmanColacionesRoute />);
 
-    expect(screen.getByText('redirect:/(app)/garzon/(tabs)')).toBeDefined();
-    expect(screen.queryByText('colaciones-cajero')).toBeNull();
+    expect(screen.getByText('colaciones-registro')).toBeDefined();
   });
 
-  it('expulsa al garzón de la pantalla de anfitriona', () => {
-    mocks.user = { role: 'garzon' };
+  it.each([
+    ['cajero', '/(app)/cajero/(tabs)'],
+    ['cajera', '/(app)/cajero/(tabs)'],
+    ['administrador', '/(app)/cajero/(tabs)'],
+    ['garzon', '/(app)/garzon/(tabs)'],
+    ['anfitriona', '/(app)/anfitriona/(tabs)'],
+  ])('expulsa al rol %s de la pantalla de colaciones del barman', (role, home) => {
+    mocks.user = { role };
 
-    render(<AnfitrionaColacionesRoute />);
+    render(<BarmanColacionesRoute />);
 
-    expect(screen.getByText('redirect:/(app)/garzon/(tabs)')).toBeDefined();
-    expect(screen.queryByText('colaciones-anfitriona')).toBeNull();
-  });
-
-  it('expulsa al cajero de la pantalla de registro de cajero', () => {
-    mocks.user = { role: 'cajero' };
-
-    render(<CajeroColacionesRoute />);
-
-    expect(screen.getByText('redirect:/(app)/cajero/(tabs)')).toBeDefined();
-    expect(screen.queryByText('colaciones-cajero')).toBeNull();
-  });
-
-  it('expulsa al cajero de la pantalla de registro de anfitriona', () => {
-    mocks.user = { role: 'cajera' };
-
-    render(<AnfitrionaColacionesRoute />);
-
-    expect(screen.getByText('redirect:/(app)/cajero/(tabs)')).toBeDefined();
-    expect(screen.queryByText('colaciones-anfitriona')).toBeNull();
-  });
-
-  it('mantiene el acceso a administración', () => {
-    mocks.user = { role: 'administrador' };
-    render(<CajeroColacionesRoute />);
-    expect(screen.getByText('colaciones-cajero')).toBeDefined();
-  });
-
-  it.each(['anfitriona', ' Anfitriona '])(
-    'expulsa a la anfitriona (%s) de la pantalla de cajero',
-    (role) => {
-      mocks.user = { role };
-
-      render(<CajeroColacionesRoute />);
-
-      expect(screen.getByText('redirect:/(app)/anfitriona/(tabs)')).toBeDefined();
-      expect(screen.queryByText('colaciones-cajero')).toBeNull();
-    },
-  );
-
-  it('expulsa a la anfitriona de su propia pantalla de registro', () => {
-    mocks.user = { role: 'anfitriona' };
-
-    render(<AnfitrionaColacionesRoute />);
-
-    expect(screen.getByText('redirect:/(app)/anfitriona/(tabs)')).toBeDefined();
-    expect(screen.queryByText('colaciones-anfitriona')).toBeNull();
+    expect(screen.getByText(`redirect:${home}`)).toBeDefined();
+    expect(screen.queryByText('colaciones-registro')).toBeNull();
   });
 });

@@ -26,10 +26,11 @@ interface ServiceCardProps {
   };
   activeTab: string;
   serverOffset: number;
-  onFinalizar: (t: Timer) => void;
+  onFinalizar?: (t: Timer) => void;
   onEditar?: (t: Timer) => void;
   onPress?: (t: any) => void;
   readOnly?: boolean;
+  sinAccionesBarman?: boolean;
   theme: any;
 }
 
@@ -42,6 +43,7 @@ export const ServiceCard = memo(
     onEditar,
     onPress,
     readOnly,
+    sinAccionesBarman,
     theme,
   }: ServiceCardProps) => {
     useTimerTick();
@@ -161,8 +163,8 @@ export const ServiceCard = memo(
             dangerColor={theme.danger}
           />
 
-          {!readOnly && activeTab === "activos" && <ServiceAssignmentActions item={item} />}
-          {!readOnly && activeTab === "activos" && (
+          {!readOnly && !sinAccionesBarman && activeTab === "activos" && <ServiceAssignmentActions item={item} />}
+          {!readOnly && !sinAccionesBarman && activeTab === "activos" && (
             <ServiceCardActions
               showEdit={
                 !item.es_temporal &&
@@ -172,7 +174,7 @@ export const ServiceCard = memo(
               warningColor={theme.warning}
               dangerColor={theme.danger}
               onEditar={() => onEditar && onEditar(item)}
-              onFinalizar={() => onFinalizar(item)}
+              onFinalizar={() => onFinalizar?.(item)}
             />
           )}
         </Pressable>

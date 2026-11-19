@@ -1,4 +1,4 @@
-import * as Haptics from 'expo-haptics';
+import { haptic } from '@/utils/haptics';
 import React from 'react';
 import { Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
@@ -12,6 +12,7 @@ interface AnimatedButtonProps extends Omit<PressableProps, 'style'> {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
     scaleTo?: number;
+    enableHaptics?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -21,6 +22,7 @@ export function AnimatedButton({
     style,
     scaleTo = 0.95,
     disabled,
+    enableHaptics = true,
     ...props
 }: AnimatedButtonProps) {
     const scale = useSharedValue(1);
@@ -35,7 +37,9 @@ export function AnimatedButton({
 
     const handlePressIn = () => {
         if (disabled) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (enableHaptics) {
+            haptic.tap();
+        }
         scale.set(withSpring(scaleTo, { damping: 18, stiffness: 200 }));
         opacity.set(withTiming(0.85, { duration: 100 }));
     };

@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { accentTextColor } from '@/utils/color';
+import { haptic } from '@/utils/haptics';
 
 export interface ErrorStateProps {
     icon?: keyof typeof Ionicons.glyphMap;
@@ -44,7 +45,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                 {retryLabel && onRetry && (
                     <Pressable
                         style={[styles.actionButton, { backgroundColor: accentColor }]}
-                        onPress={onRetry}
+                        onPress={() => {
+                            haptic.tap();
+                            onRetry();
+                        }}
                         accessibilityRole="button"
                         accessibilityLabel={retryLabel}
                     >

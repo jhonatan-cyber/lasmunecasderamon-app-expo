@@ -212,7 +212,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
             {role === 'anfitriona' && activeService && (
               <ActiveServiceCard
                 habitacion={activeService.habitacion}
-                onPress={() => router.push('/anfitriona/servicios')}
+                onPress={() => router.push('/(app)/anfitriona/(tabs)/servicios' as any)}
               />
             )}
 

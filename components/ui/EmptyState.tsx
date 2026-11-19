@@ -6,6 +6,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { accentTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
+import { haptic } from '@/utils/haptics';
 
 export interface EmptyStateProps {
     icon?: keyof typeof Ionicons.glyphMap;
@@ -43,7 +44,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 {actionLabel && onAction && (
                     <Pressable
                         style={[styles.actionButton, { backgroundColor: accentColor }]}
-                        onPress={onAction}
+                        onPress={() => {
+                            haptic.tap();
+                            onAction();
+                        }}
                         accessibilityRole="button"
                         accessibilityLabel={actionLabel}
                     >

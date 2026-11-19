@@ -44,8 +44,19 @@ export const SalesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
-      const data = await apiClientSafe<Venta[]>("/sales?limit=50");
-      return data.success && Array.isArray(data.data) ? data.data : [];
+      try {
+        const data = await apiClientSafe<Venta[]>("/sales?limit=50");
+        // Si el rol no tiene permisos para ventas (403), devolver lista vacía
+        // en lugar de crash. El barman, por ejemplo, no puede acceder a /sales.
+        if (!data.success || !Array.isArray(data.data)) {
+          return [];
+        }
+        return data.data;
+      } catch {
+        // 403 Forbidden: el rol no tiene permisos para ventas.
+        // Devolver lista vacía en lugar de crash.
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 2,
     enabled: userId != null,

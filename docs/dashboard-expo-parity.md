@@ -13,7 +13,7 @@ La app móvil cubre los flujos de anfitriona, garzón, cajero y barman. No repli
 ## Limpieza y Colaciones — revisión del 05/11/2026
 
 - Limpieza: se eliminaron las tarjetas y pantallas de barman (`/barman/limpieza`), cajero (`/cajero/limpieza`) y anfitriona (`/anfitriona/limpieza`).
-- Colaciones: registro disponible solo para administración (`/cajero/colaciones`). Cajero, anfitriona y garzón reciben colación pero no la registran: no tienen la tarjeta en su inicio y un enlace directo a las pantallas de registro los redirige. Requiere caja abierta, muestra catálogo de bebidas analcohólicas y permite registrar con acompañamiento si la bebida lo tiene configurado.
+- Colaciones: las entrega únicamente el barman (`/barman/colaciones`); la pantalla del cajero se retiró. Cajero, anfitriona y garzón reciben colación pero no la registran: no tienen la tarjeta en su inicio y un enlace directo a la pantalla de registro los redirige. Requiere caja abierta, muestra catálogo de bebidas analcohólicas y permite registrar con acompañamiento si la bebida lo tiene configurado.
 
 ## Anfitrionas — revisión del 14/10/2026
 

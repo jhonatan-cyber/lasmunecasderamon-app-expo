@@ -48,11 +48,9 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
   const TARJETAS_CAJERO = [
     'VENTAS',
     'SERVICIOS',
-    'COLACIONES',
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
-    'ENTRADAS',
     'COVERS',
     'PERSONAL',
     'GRATIFICACIONES',
@@ -76,7 +74,6 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
-    'ENTRADAS',
     'COVERS',
     'PERSONAL',
   ];
@@ -103,6 +100,8 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
       expect(screen.getByText(titulo)).toBeDefined();
     });
     expect(screen.queryByText('CONFIGURACIÓN')).toBeNull();
+    // El cajero no cobra entradas en la puerta: esa tarjeta es del garzón.
+    expect(screen.queryByText('ENTRADAS')).toBeNull();
   });
 
   it('oculta las tarjetas FINANCIERO y ANALÍTICAS para el cajero', () => {

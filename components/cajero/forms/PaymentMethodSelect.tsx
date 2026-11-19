@@ -7,6 +7,8 @@ import {
     View
 } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { haptic } from '@/utils/haptics';
+import { FontFamily } from '@/constants/fonts';
 
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago' | 'mixto';
 
@@ -62,12 +64,19 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 isSelected && { borderColor: accentColor },
                                 isMethodDisabled && { opacity: 0.35 },
                             ]}
-                            onPress={() => !isMethodDisabled && onSelect(method.id)}
+                            onPress={() => {
+                                if (!isMethodDisabled) {
+                                    haptic.select();
+                                    onSelect(method.id);
+                                }
+                            }}
                             disabled={isMethodDisabled}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isSelected, disabled: isMethodDisabled }}
                         >
                             <Ionicons
                                 name={method.icon}
-                                size={18}
+                                size={22}
                                 color={isSelected ? accentColor : textSecondary}
                             />
                             <Text
@@ -77,7 +86,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 ]}
                                 numberOfLines={1}
                                 adjustsFontSizeToFit
-                                minimumFontScale={0.6}
+                                minimumFontScale={0.7}
                             >
                                 {method.label}
                             </Text>
@@ -94,29 +103,30 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     label: {
-        fontSize: 11,
-        fontWeight: '900',
+        fontSize: 12,
+        fontFamily: FontFamily.bold,
         marginBottom: 10,
         letterSpacing: 1,
     },
     row: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 8,
     },
     card: {
         flex: 1,
-        paddingVertical: 8,
+        minHeight: 52,
+        paddingVertical: 10,
         paddingHorizontal: 4,
-        borderRadius: 10,
-        borderWidth: 1,
+        borderRadius: 14,
+        borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
+        gap: 6,
         minWidth: 0,
     },
     methodText: {
-        fontSize: 8,
-        fontWeight: '900',
+        fontSize: 11,
+        fontFamily: FontFamily.bold,
         textTransform: 'uppercase',
         textAlign: 'center',
     },

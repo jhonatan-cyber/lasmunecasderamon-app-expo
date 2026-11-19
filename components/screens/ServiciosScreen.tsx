@@ -156,7 +156,9 @@ interface ServiciosScreenProps {
 export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const esCajero = variant === 'cajero';
   const esAdmin = variant === 'admin';
+  const esBarman = variant === 'barman';
   const soloLectura = esAdmin;
+  const sinAccionesBarman = esBarman;
   const { accentColor, isDark } = useAccentColor();
   const router = useRouter();
   const { isTablet } = useResponsiveMetrics();
@@ -184,6 +186,16 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     warning: colors.warning,
     info: colors.info,
   }), [isDark, accentColor, cardBg, textPrimary, textSecondary, borderColor]);
+
+  const tabsList = useMemo(() => {
+    const base: Array<{ key: 'activos' | 'finalizados'; label: string; icon: any }> = [
+      { key: 'activos', label: 'Activos', icon: 'timer-outline' },
+    ];
+    if (!esBarman) {
+      base.push({ key: 'finalizados', label: 'Finalizados', icon: 'checkmark-circle-outline' });
+    }
+    return base;
+  }, [esBarman]);
 
   const activeServicios = useMemo(() => {
     const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');
@@ -373,9 +385,10 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       item={item}
       activeTab={activeTab}
       serverOffset={serverOffset}
-      onFinalizar={onFinalizar}
-      onEditar={onEditar}
+      onFinalizar={esBarman ? undefined : onFinalizar}
+      onEditar={esBarman ? undefined : onEditar}
       readOnly={soloLectura}
+      sinAccionesBarman={sinAccionesBarman}
       onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: formatServiceDetail(t, esCajero || esAdmin) })}
       theme={theme}
     />
@@ -389,10 +402,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         onBack={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
       />
       <Tabs
-        tabs={[
-          { key: 'activos', label: 'Activos', icon: 'timer-outline' },
-          { key: 'finalizados', label: 'Finalizados', icon: 'checkmark-circle-outline' },
-        ]}
+        tabs={tabsList}
         activeKey={activeTab}
         onChange={(tabId) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId })}
         accentColor={accentColor}

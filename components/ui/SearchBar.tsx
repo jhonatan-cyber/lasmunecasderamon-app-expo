@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
+import { haptic } from '@/utils/haptics';
 
 export interface SearchBarProps {
     placeholder?: string;
@@ -58,6 +59,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }, []);
 
     const handleClear = useCallback(() => {
+        haptic.tap();
         setInternalText('');
         if (onChangeText) onChangeText('');
         if (onClear) onClear();

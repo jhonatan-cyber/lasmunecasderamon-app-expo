@@ -1,14 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { colacionesService, reglaPorRol, mlDeColacion, acompanamientoDeColacion, acompanamientosDeColacion, type ColacionRegistro, type ColacionProducto, type ReglaColacionResponse } from '@/services/colaciones-helpers';
+import { colacionesService, reglaPorRol, mlDeColacion, acompanamientoDeColacion, acompanamientosDeColacion, type ColacionRegistro, type ColacionProducto, type ReglaColacionResponse } from '@/services/colaciones';
 import { usersService } from '@/services';
-import { useCajaAbiertaStore, type CajaAbiertaInfo } from '@/store/cajaAbiertaStore';
-import { useAuthStore } from '@/store/authStore';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
+import type { CajaAbiertaInfo } from '@/store/cajaAbiertaStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { showToast } from '@/utils/toast-lazy';
-import logger from '@/utils/logger';
-import { eventBus } from '@/utils/eventBus';
-import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 
 interface LimpioTrabajador {
   id: string;
@@ -26,15 +23,14 @@ function parseTrabajador(data: any[]): LimpioTrabajador[] {
             u &&
             u.id &&
             u.name &&
-            String(u.estado ?? 1) === '1' &&
-            String(u.nombre?.toLowerCase() ?? '').toLowerCase() !== 'administrador' &&
-            (u.last_name ?? '').toString().trim().length > 0 &&
-            !/^admin/i.test((u.last_name ?? '').toString())
+            String(u.status ?? u.estado ?? 1) === '1' &&
+            (u.role ?? '').toString().toLowerCase() !== 'administrador' &&
+            (u.lastName ?? u.apellido ?? '').toString().trim().length > 0
         )
         .map((u) => ({
           id: String(u.id),
           name: String(u.name),
-          lastName: String(u.last_name ?? ''),
+          lastName: String(u.lastName ?? u.apellido ?? ''),
           nick: u.nick ? String(u.nick) : undefined,
           role: u.role ? String(u.role) : undefined,
         }))
@@ -43,9 +39,10 @@ function parseTrabajador(data: any[]): LimpioTrabajador[] {
 
 export function useColacionesScreen() {
   const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
-  const user = useAuthStore((s) => s.user);
-  const cajaAbierta = useCajaAbiertaStore((s) => s.cajaAbierta);
-  const cajaInfo = useCajaAbiertaStore((s) => s.cajaInfo);
+  const { cajaAbierta, cajaInfo } = useCajaAbierta();
+  // useCajaAbierta garantiza que el estado se refresca al montar y al recibir
+  // eventos de caja abierta/cerrada, evitando que la pantalla muestre el mensaje
+  // de "caja cerrada" cuando ya hay una caja abierta.
 
   const [rule, setRule] = useState<ReglaColacionResponse | null>(null);
   const [ruleLoading, setRuleLoading] = useState(true);
@@ -150,11 +147,20 @@ export function useColacionesScreen() {
     [acompanamientos, acompanamientoId]
   );
 
-  const fecha = new Date().toISOString().slice(0, 10);
   const isCajaAbierta = cajaAbierta === true;
 
+  /** Colaciones ya recibidas por trabajador en el turno visible. */
+  const recepcionesPorTrabajador = useMemo(() => {
+    const conteos: Record<string, number> = {};
+    for (const fila of registros) {
+      if (!fila.usuario_id) continue;
+      conteos[fila.usuario_id] = (conteos[fila.usuario_id] ?? 0) + 1;
+    }
+    return conteos;
+  }, [registros]);
+
   const cargarReglas = useCallback(
-    async (signal?: AbortSignal) => {
+    async (signal?: AbortSignal): Promise<ReglaColacionResponse | null> => {
       try {
         setRuleLoading(true);
         const res = await colacionesService.regla(signal);
@@ -163,8 +169,10 @@ export function useColacionesScreen() {
         }
         setRule(res.data);
         setRuleError(null);
+        return res.data;
       } catch (err) {
         setRuleError(err instanceof Error ? err.message : 'Error desconocido');
+        return null;
       } finally {
         setRuleLoading(false);
       }
@@ -173,14 +181,13 @@ export function useColacionesScreen() {
   );
 
   const cargarCatalogos = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!rule) return;
+    async (regla: ReglaColacionResponse, signal?: AbortSignal) => {
       try {
         setProductosLoading(true);
         setAnalcoholicasLoading(true);
         const [pr, ar] = await Promise.all([
-          colacionesService.catalogo(rule, 'productos', signal),
-          colacionesService.catalogo(rule, 'analcoholicas', signal),
+          colacionesService.catalogo(regla, 'productos', signal),
+          colacionesService.catalogo(regla, 'analcoholicas', signal),
         ]);
         if (!pr.success || !ar.success) {
           if (!pr.success) setProductosError(pr.message || pr.error || 'No se pudo cargar el catálogo');
@@ -191,19 +198,18 @@ export function useColacionesScreen() {
         setAnalcoholicas(Array.isArray(ar.data) ? ar.data : []);
         setProductosError(null);
         setAnalcoholicasError(null);
+      } catch (err) {
+        const mensaje =
+          err instanceof Error ? err.message : 'No se pudo cargar el catálogo de colaciones';
+        setProductosError(mensaje);
+        setAnalcoholicasError(mensaje);
       } finally {
         setProductosLoading(false);
         setAnalcoholicasLoading(false);
       }
     },
-    [rule]
+    []
   );
-
-  // El catálogo necesita la regla (endpoint y parámetros): se carga cuando
-  // llega, porque en el primer foco `load` corre con `rule` todavía en null.
-  useEffect(() => {
-    void cargarCatalogos();
-  }, [cargarCatalogos]);
 
   const cargarTrabajadores = useCallback(
     async (signal?: AbortSignal) => {
@@ -228,7 +234,9 @@ export function useColacionesScreen() {
     async (signal?: AbortSignal) => {
       try {
         setRegistrosLoading(true);
-        const params: { fecha?: string; caja_id?: string } = { fecha };
+        // Sin caja abierta el servidor usa su fecha de negocio; mandar la del
+        // dispositivo desfasaba el turno después de las 21:00 en Chile.
+        const params: { caja_id?: string } = {};
         const caja = cajaInfo as CajaAbiertaInfo | undefined;
         if (caja?.id_caja) {
           params.caja_id = String(caja.id_caja);
@@ -245,7 +253,7 @@ export function useColacionesScreen() {
         setRegistrosLoading(false);
       }
     },
-    [fecha, cajaInfo]
+    [cajaInfo]
   );
 
   const registrar = useCallback(async () => {
@@ -263,6 +271,10 @@ export function useColacionesScreen() {
     }
     if (!productoSeleccionado) {
       showToast({ type: 'error', text1: 'Selecciona una bebida habilitada' });
+      return;
+    }
+    if (mlPorRegistrar <= 0) {
+      showToast({ type: 'error', text1: 'La bebida no tiene la colación configurada' });
       return;
     }
     if (requiereAcompanamiento && !acompanamientoId) {
@@ -287,7 +299,11 @@ export function useColacionesScreen() {
       setWorkerId('');
       setProductoId('');
       setAcompanamientoId('');
-      await cargarRegistros();
+      // El stock y los ml abiertos cambian con lo recién entregado.
+      await Promise.all([
+        cargarRegistros(),
+        rule ? cargarCatalogos(rule) : Promise.resolve(),
+      ]);
     } catch (err) {
       showToast({
         type: 'error',
@@ -306,22 +322,34 @@ export function useColacionesScreen() {
     mlPorRegistrar,
     acompanamientoId,
     requiereAcompanamiento,
+    rule,
     cargarRegistros,
+    cargarCatalogos,
   ]);
 
-  const load = useCallback(
+  /**
+   * Recarga la pantalla. El catálogo depende de la regla (endpoint y
+   * parámetros), así que se pide en cadena: en el primer foco `rule` todavía
+   * es null y las demás cargas no necesitan esperarla.
+   */
+  const recargar = useCallback(
     async (signal?: AbortSignal) => {
-      void cargarReglas(signal);
-      void cargarTrabajadores(signal);
-      void cargarRegistros(signal);
+      await Promise.all([
+        cargarTrabajadores(signal),
+        cargarRegistros(signal),
+        (async () => {
+          const regla = await cargarReglas(signal);
+          if (regla) await cargarCatalogos(regla, signal);
+        })(),
+      ]);
     },
-    [cargarReglas, cargarTrabajadores, cargarRegistros]
+    [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarRegistros]
   );
 
   useFocusEffect(useCallback(() => {
-    void load();
+    void recargar();
     return () => {};
-  }, [load]));
+  }, [recargar]));
 
 
   return {
@@ -369,11 +397,8 @@ export function useColacionesScreen() {
     requiereAcompanamiento,
     mlPorRegistrar,
     selectedAcompanamiento,
-    cargarReglas,
-    cargarCatalogos,
-    cargarTrabajadores,
-    cargarRegistros,
-    fecha,
+    recargar,
+    recepcionesPorTrabajador,
     isCajaAbierta,
   };
 }

@@ -61,6 +61,30 @@ export function isPushAvailable(): boolean {
   return getNotifications() != null;
 }
 
+/**
+ * Canal Android por el que salen todos los avisos. Alta importancia (heads-up),
+ * sonido del sistema y vibración: es el contrato con el servidor, que manda el
+ * push con este mismo `channelId`. Si el equipo todavía no lo tiene, expo usa
+ * el canal de respaldo, así que el aviso no se pierde.
+ */
+export const ANDROID_NOTIFICATION_CHANNEL_ID = "alertas";
+
+export const NOTIFICATION_VIBRATION_PATTERN = [0, 250, 250, 250];
+
+async function ensureAndroidNotificationChannel(N: NotificationsModule): Promise<void> {
+  if (Platform.OS !== "android") return;
+  await N.setNotificationChannelAsync(ANDROID_NOTIFICATION_CHANNEL_ID, {
+    name: "Alertas",
+    description: "Pedidos, solicitudes y avisos del local",
+    importance: N.AndroidImportance.MAX,
+    sound: "default",
+    vibrationPattern: NOTIFICATION_VIBRATION_PATTERN,
+    enableVibrate: true,
+    lightColor: "#E11D48",
+    enableLights: true,
+  });
+}
+
 /** Expo Constants extended with runtime app config fields not in the published types */
 interface ConstantsWithExpoConfig {
   appOwnership: string | null;
@@ -129,12 +153,7 @@ export async function registerForPushNotificationsAsync(): Promise<
 
   if (Platform.OS === "android") {
     try {
-      await N.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: N.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#E11D48",
-      });
+      await ensureAndroidNotificationChannel(N);
     } catch (e) {
       logger.debug("[PushNotifications] No se pudo crear canal Android", { e });
     }
@@ -209,11 +228,19 @@ export function configureNotifications() {
         shouldSetBadge: false,
         shouldShowBanner: true,
         shouldShowList: true,
+        // En primer plano Android usa la prioridad y el canal para decidir
+        // si suena y vibra; sin esto el aviso puede quedar mudo.
+        priority: N.AndroidNotificationPriority.MAX,
       }),
     });
   } catch (e) {
     logger.debug("[PushNotifications] configureNotifications omitido (Expo Go)", { e });
   }
+  // El canal se crea al arrancar (no depende del permiso de push): así existe
+  // aunque el aviso llegue antes de que termine el registro del token.
+  void ensureAndroidNotificationChannel(N).catch((e) => {
+    logger.debug("[PushNotifications] No se pudo crear canal Android", { e });
+  });
 }
 
 export async function scheduleLocalNotificationAsync(
@@ -225,8 +252,19 @@ export async function scheduleLocalNotificationAsync(
   if (!N) return;
   try {
     await N.scheduleNotificationAsync({
-      content: { title, body, data: data ?? { data: "local" } },
-      trigger: null,
+      content: {
+        title,
+        body,
+        // iOS no suena si la notificación local no trae sonido; Android 8+
+        // toma sonido y vibración del canal, pero el patrón viaja igual para
+        // versiones anteriores.
+        sound: "default",
+        vibrate: NOTIFICATION_VIBRATION_PATTERN,
+        priority: N.AndroidNotificationPriority.MAX,
+        data: data ?? { data: "local" },
+      },
+      // Sin trigger con canal, Android manda la local al canal de respaldo.
+      trigger: Platform.OS === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : null,
     });
   } catch {
     // Expo Go / sin soporte: no-op, el toast/SSE ya avisa.

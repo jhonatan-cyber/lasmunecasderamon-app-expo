@@ -1,11 +1,12 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
-
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { FontFamily, TabularNumbers } from '@/constants/fonts';
+import { FontSize } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'medium' | 'subtitle' | 'caption' | 'number' | 'link';
 };
 
 export function ThemedText({
@@ -15,17 +16,29 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const { isDark, textPrimary, textSecondary, accentColor } = useAccentColor();
+
+  const color = lightColor && darkColor
+    ? (isDark ? darkColor : lightColor)
+    : type === 'caption'
+      ? textSecondary
+      : type === 'link'
+        ? accentColor
+        : textPrimary;
 
   return (
     <Text
+      maxFontSizeMultiplier={1.3}
       style={[
         { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        type === 'default' && styles.default,
+        type === 'medium' && styles.medium,
+        type === 'defaultSemiBold' && styles.defaultSemiBold,
+        type === 'subtitle' && styles.subtitle,
+        type === 'title' && styles.title,
+        type === 'caption' && styles.caption,
+        type === 'number' && styles.number,
+        type === 'link' && styles.link,
         style,
       ]}
       {...rest}
@@ -35,27 +48,45 @@ export function ThemedText({
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.md,
+    lineHeight: 22,
+  },
+  medium: {
+    fontFamily: FontFamily.medium,
+    fontSize: FontSize.md,
+    lineHeight: 22,
   },
   defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSize.md,
+    lineHeight: 22,
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.lg,
+    lineHeight: 26,
+  },
+  title: {
+    fontFamily: FontFamily.display,
+    fontSize: FontSize.xxl,
+    lineHeight: 32,
+  },
+  caption: {
+    fontFamily: FontFamily.regular,
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+  },
+  number: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.lg,
+    ...TabularNumbers,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
+    fontFamily: FontFamily.semibold,
+    fontSize: FontSize.md,
+    lineHeight: 22,
   },
 });
+
 

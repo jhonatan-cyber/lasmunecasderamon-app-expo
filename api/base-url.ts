@@ -113,6 +113,9 @@ export const resolveBaseUrl = (): string =>
 export const BASE_URL = resolveBaseUrl();
 export const API_URL = `${BASE_URL}${API_PREFIX}`;
 
+/** Alias funcional para obtener la URL base de la API en tiempo de ejecución. */
+export const getBaseUrl = resolveBaseUrl;
+
 if (__DEV__) {
   logger.debug("API base URL", { baseUrl: BASE_URL, apiUrl: API_URL });
 }

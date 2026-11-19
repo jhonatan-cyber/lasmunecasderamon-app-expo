@@ -51,6 +51,7 @@ interface UseEntregaCoversParams {
 export function useEntregaCovers({
   visible,
   grupo,
+  tope,
   onClose,
   onEntregado,
   modo = 'entrega',
@@ -88,6 +89,9 @@ export function useEntregaCovers({
   const filas = useMemo(() => grupo?.filas ?? [], [grupo]);
   const totalEntradas = filas.reduce((total, fila) => total + (Number(fila.monto_entrada) || 0), 0);
   const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
+  // El presupuesto para filtrar productos es igual al del dashboard:
+  // suma de entradas + monto adicional. El `tope` solo se usa como referencia
+  // visual, no como filtro de precio.
   const presupuesto = totalEntradas + adicional;
   const limites = useMemo(
     () => ({ bebidas, acompanamientos, presupuesto }),

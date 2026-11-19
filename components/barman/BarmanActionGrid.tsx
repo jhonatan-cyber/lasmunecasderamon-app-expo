@@ -34,6 +34,13 @@ export const BarmanActionGrid = () => {
       route: "/barman/covers",
     },
     {
+      title: "COLACIONES",
+      description: "Entregar el corto por turno",
+      icon: "beer-outline",
+      color: "#EAB308",
+      route: "/barman/colaciones",
+    },
+    {
       title: "RESUMEN",
       description: "Calendario de actividad",
       icon: "stats-chart",

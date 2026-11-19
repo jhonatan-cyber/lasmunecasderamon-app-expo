@@ -1,13 +1,23 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { ColacionProducto } from '@/services/colaciones-helpers';
+import { mlDeColacion, acompanamientoDeColacion, type ColacionProducto } from '@/services/colaciones';
+import { BASE_URL } from '@/api/base-url';
 
 interface Props {
   products: ColacionProducto[];
   selectedId: string;
   loading: boolean;
   onSelect: (id: string) => void;
+  /** Hint text shown below the grid (role-specific). */
+  hint?: string;
+}
+
+function productoFotoUrl(foto?: string | null) {
+  const photo = foto && foto !== 'default.png' ? foto : 'default.png';
+  return `${BASE_URL}/api/images/products/${encodeURIComponent(photo)}`;
 }
 
 export const ColacionProductsCarousel: React.FC<Props> = ({
@@ -15,76 +25,251 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
   selectedId,
   loading,
   onSelect,
+  hint,
 }) => {
-  const { accentColor, bg, textPrimary, textSecondary } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: bg }]}>
-      <Text style={[styles.title, { color: textPrimary }]}>Bebidas</Text>
-      <View style={styles.row}>
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <View key={i} style={[styles.skeleton, { backgroundColor: '#E5E7EB' }]} />
-          ))
-        ) : products.length === 0 ? (
-          <Text style={{ color: textSecondary }}>Sin bebidas disponibles.</Text>
-        ) : (
-          products.map((product) => {
-            const isSelected = String(product.id) === selectedId;
-            return (
-              <Pressable
-                key={product.id}
-                onPress={() => onSelect(String(product.id))}
-                style={[styles.chip, { borderColor: isSelected ? accentColor : '#E5E7EB' }]}
-              >
-                <Text style={[styles.chipText, { color: isSelected ? accentColor : textPrimary }]}>
-                  {product.presentacion_nombre}
-                </Text>
-                <Text style={{ color: textSecondary }}>{product.ml_botella} ml</Text>
-              </Pressable>
-            );
-          })
-        )}
+    <>
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: textPrimary }]}>Bebidas</Text>
+        <Text style={[styles.count, { color: textSecondary }]}>
+          {products.length} {products.length === 1 ? 'opción' : 'opciones'}
+        </Text>
       </View>
-    </View>
+      {loading ? (
+        <View style={styles.loadingList}>
+          {Array.from({ length: 2 }).map((_, i) => (
+            <View key={i} style={[styles.skeletonCard, { backgroundColor: '#E5E7EB' }]} />
+          ))}
+        </View>
+      ) : products.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Ionicons name="beer-outline" size={24} color="#9CA3AF" />
+          <Text style={[styles.emptyText, { color: textSecondary }]}>
+            Sin bebidas disponibles.
+          </Text>
+        </View>
+      ) : (
+        <>
+          <View style={styles.list}>
+            {products.map((product) => {
+              const id = String(product.presentacion_id);
+              const isSelected = id === selectedId;
+              const ml = mlDeColacion(product);
+              const mlBotella = Number(product.ml_botella ?? 0);
+              const mlAbierto = Number(product.ml_abierta ?? 0);
+              const stockBar = Number(product.stock_bar ?? product.stock ?? 0);
+              const categoria = product.categoria_nombre ?? product.categoria ?? null;
+              const fotoUrl = productoFotoUrl(product.producto_foto);
+              const acompanamiento = acompanamientoDeColacion(product);
+              return (
+                <Pressable
+                  key={id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${product.producto_nombre} ${product.presentacion_nombre}, colación de ${ml} ml`}
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => onSelect(id)}
+                  style={[
+                    styles.card,
+                    {
+                      borderColor: isSelected ? accentColor : borderColor,
+                      backgroundColor: cardBg,
+                      ...(isSelected ? styles.selectedRing : {}),
+                    },
+                  ]}
+                >
+                  <View style={styles.cardImageWrap}>
+                    {fotoUrl ? (
+                      <Image
+                        source={{ uri: fotoUrl }}
+                        style={styles.cardImage}
+                        contentFit="contain"
+                      />
+                    ) : (
+                      <View style={[styles.cardImagePlaceholder, { backgroundColor: '#F3F4F6' }]}>
+                        <Ionicons name="beer-outline" size={24} color="#9CA3AF" />
+                      </View>
+                    )}
+                    {isSelected && (
+                      <View style={[styles.checkBadge, { backgroundColor: accentColor }]}>
+                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.cardBody}>
+                    <Text
+                      style={[styles.cardProductName, { color: textPrimary }]}
+                      numberOfLines={2}
+                    >
+                      {product.producto_nombre}
+                    </Text>
+                    <Text
+                      style={[styles.cardPresentacion, { color: textSecondary }]}
+                      numberOfLines={1}
+                    >
+                      {product.presentacion_nombre}
+                    </Text>
+                    <View style={styles.cardMetaRow}>
+                      {categoria ? (
+                        <Text style={[styles.metaChip, { color: textSecondary, borderColor }]}>
+                          {categoria}
+                        </Text>
+                      ) : null}
+                      {stockBar > 0 ? (
+                        <Text style={[styles.metaChip, { color: textSecondary }]}>
+                          {stockBar} en bar
+                        </Text>
+                      ) : null}
+                      {mlAbierto > 0 ? (
+                        <Text
+                          style={[
+                            styles.metaChip,
+                            { color: textSecondary },
+                          ]}
+                        >
+                          Abierta: {mlAbierto} ml
+                        </Text>
+                      ) : null}
+                      {mlBotella > 0 ? (
+                        <Text style={[styles.metaChip, { color: textSecondary }]}>
+                          Producto: {mlBotella} ml
+                        </Text>
+                      ) : null}
+                      {ml > 0 ? (
+                        <Text style={[styles.metaChip, { color: textSecondary }]}>
+                          Colación: {ml} ml
+                        </Text>
+                      ) : null}
+                      {acompanamiento.unidades > 0 ? (
+                        <Text style={[styles.metaChip, { color: textSecondary }]}>
+                          Acomp: {acompanamiento.unidades}
+                          {acompanamiento.ml !== null ? ` × ${acompanamiento.ml} ml` : ''}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          {hint ? (
+            <Text style={[styles.hint, { color: textSecondary }]}>{hint}</Text>
+          ) : null}
+        </>
+      )}
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  wrap: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 8,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 14,
     fontWeight: '700',
   },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  count: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 2,
+  list: {
+    gap: 10,
+  },
+  loadingList: {
+    gap: 10,
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+  },
+  selectedRing: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardImageWrap: {
+    height: 140,
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    padding: 8,
+  },
+  cardImagePlaceholder: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
-    gap: 4,
-    minWidth: 80,
     justifyContent: 'center',
   },
-  chipText: {
-    fontSize: 14,
-    fontWeight: '700',
+  checkBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  skeleton: {
-    height: 40,
-    width: 120,
+  cardBody: {
+    padding: 8,
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  cardProductName: {
+    fontSize: 12,
+    fontWeight: '700',
+    maxWidth: '100%',
+  },
+  cardPresentacion: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  metaChip: {
+    fontSize: 10,
+    fontWeight: '600',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 999,
-    marginRight: 8,
+    borderWidth: 1,
+  },
+  skeletonCard: {
+    height: 200,
+    borderRadius: 16,
+  },
+  emptyBox: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  hint: {
+    fontSize: 11,
+    fontWeight: '500',
+    fontStyle: 'italic',
   },
 });

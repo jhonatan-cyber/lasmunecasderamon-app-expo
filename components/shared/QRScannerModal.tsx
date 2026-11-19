@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Haptics from 'expo-haptics';
+import { haptic } from '@/utils/haptics';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -118,9 +118,7 @@ export const QRScannerModal = ({
         if (scanning || loading) return;
         setScanning(true);
         
-        if (Haptics.notificationAsync) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
+        haptic.success();
 
         try {
             const trimmed = (data ?? '').trim();
@@ -130,7 +128,7 @@ export const QRScannerModal = ({
             onClose(); 
             await onScanned(trimmed);
         } catch (error: any) {
-            
+            haptic.error();
             onClose();
             showToast({
                 type: 'error',

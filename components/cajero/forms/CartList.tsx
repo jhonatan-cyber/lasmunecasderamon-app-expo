@@ -1,5 +1,7 @@
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { haptic } from "@/utils/haptics";
+import { FontFamily } from "@/constants/fonts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -141,49 +143,63 @@ export const CartList = React.memo(
                       <View style={styles.qtyControls}>
                         {onUpdateQuantity && (
                           <Pressable
-                            onPress={() =>
-                              onUpdateQuantity(sub.originalIndex, -1)
-                            }
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            onPress={() => {
+                              haptic.tap();
+                              onUpdateQuantity(sub.originalIndex, -1);
+                            }}
                             style={styles.qtyBtn}
+                            accessibilityLabel="Disminuir cantidad"
+                            accessibilityRole="button"
                           >
                             <Ionicons
                               name="remove"
-                              size={16}
+                              size={18}
                               color={textPrimary}
                             />
                           </Pressable>
                         )}
-                        <Text style={[styles.qtyText, { color: textPrimary }]}>
+                        <Text style={[styles.qtyText, { color: textPrimary, fontFamily: FontFamily.bold }]}>
                           {sub.quantity || sub.cantidad || 1}
                         </Text>
                         {onUpdateQuantity && (
                           <Pressable
-                            onPress={() =>
-                              onUpdateQuantity(sub.originalIndex, 1)
-                            }
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            onPress={() => {
+                              haptic.tap();
+                              onUpdateQuantity(sub.originalIndex, 1);
+                            }}
                             style={styles.qtyBtn}
+                            accessibilityLabel="Aumentar cantidad"
+                            accessibilityRole="button"
                           >
                             <Ionicons
                               name="add"
-                              size={16}
+                              size={18}
                               color={textPrimary}
                             />
                           </Pressable>
                         )}
                         {onRemove && (
                           <Pressable
-                            onPress={() => onRemove(sub.originalIndex)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            onPress={() => {
+                              haptic.confirm();
+                              onRemove(sub.originalIndex);
+                            }}
                             style={[
                               styles.deleteBtnOnly,
                               {
-                                backgroundColor: "rgba(239,68,68,0.1)",
+                                backgroundColor: "rgba(239,68,68,0.12)",
                                 marginLeft: 12,
                               },
                             ]}
+                            accessibilityLabel="Eliminar producto"
+                            accessibilityRole="button"
                           >
                             <Ionicons
                               name="trash-outline"
-                              size={16}
+                              size={18}
                               color="#EF4444"
                             />
                           </Pressable>
@@ -220,18 +236,18 @@ const styles = StyleSheet.create({
   itemSub: { fontSize: 13, fontWeight: "500", marginTop: 2 },
   qtyControls: { flexDirection: "row", alignItems: "center" },
   qtyBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: "rgba(155,155,155,0.1)",
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "rgba(155,155,155,0.12)",
     justifyContent: "center",
     alignItems: "center",
   },
-  qtyText: { marginHorizontal: 12, fontSize: 14, fontWeight: "900" },
+  qtyText: { marginHorizontal: 12, fontSize: 16 },
   deleteBtnOnly: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
   },

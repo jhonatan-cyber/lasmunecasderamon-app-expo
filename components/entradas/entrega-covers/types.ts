@@ -6,6 +6,10 @@ export interface GrupoEntrega {
   id: string;
   cliente: string;
   filas: EntradaPendiente[];
+  /** Método de pago del grupo (para mostrar al cajero en la solicitud). */
+  metodo_pago?: string;
+  /** Baucher de transferencia (si aplica). */
+  baucher_foto?: string | null;
 }
 
 /** Fila cruda de `opciones_venta` tal como la devuelve el bar. */

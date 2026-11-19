@@ -1,31 +1,11 @@
 import { apiClientSafe } from '@/api/client-safe';
 
-/** Ml que se descuenta del bar al registrar la colación. */
-export function mlDeColacion(producto: unknown) {
-  const opcion = (producto as any)?.opciones_venta || [];
-  const encontrado = opcion.find((o: any) => o.tipo === 'botella');
-  if (encontrado?.ml_colacion) return Number(encontrado.ml_colacion);
-  const mlBotella = Number((producto as any)?.ml_botella ?? 0);
-  return Number.isFinite(mlBotella) && mlBotella > 0 ? mlBotella : 0;
-}
-
-/** Acompanamiento configurado en la transferencia de esa presentación. */
-export function acompanamientoDeColacion(producto: unknown) {
-  const opcion = (producto as any)?.opciones_venta || [];
-  const encontrado = opcion.find((o: any) => o.tipo === 'botella');
-  const propio =
-    encontrado?.acompanamiento_colacion?.unidades ??
-    encontrado?.acompanamiento?.unidades ??
-    0;
-  const unidades = Math.max(0, Math.floor(Number(propio)));
-  const ml = Math.floor(Number(encontrado?.acompanamiento_colacion?.ml ?? 0));
-  return { unidades, ml: ml > 0 ? ml : null };
-}
-
 export type CatalogoColacion = 'productos' | 'analcoholicas';
 
 export interface DefinicionCatalogoColacion {
+  /** Parámetro de query que entiende el endpoint de catálogo. */
   parametroCatalogo: string;
+  /** Categoría protegida exigida; null = cualquier producto habilitado. */
   categoriaSistema: string | null;
 }
 
@@ -42,21 +22,29 @@ export interface ReglaColacionResponse {
   roles: Record<string, ReglaColacion>;
 }
 
+/** Regla compartida de colación servida por el dashboard. La app no repite el
+ * mapeo rol → catálogo ni la categoría protegida: los consume de acá.
+ */
 export const colacionesService = {
   regla: (signal?: AbortSignal) =>
     apiClientSafe<ReglaColacionResponse>('/meals/rule', { signal }),
+  /** Anfitriona (`productos`) o barman/cajero/garzón (`analcoholicas`). */
   catalogo: (
     regla: ReglaColacionResponse,
     catalogo: CatalogoColacion,
     signal?: AbortSignal,
   ) => apiClientSafe(urlCatalogoColacion(regla, catalogo), { signal }),
-  acompanamientos: (signal?: AbortSignal) =>
-    apiClientSafe('/bar?acompanamientos=1', { signal }),
+  /** Sin `fecha` el servidor filtra por la fecha de negocio; con `caja_id`
+   * filtra por el turno de caja y la fecha deja de importar.
+   */
   listar: (params: { fecha?: string; caja_id?: string }, signal?: AbortSignal) => {
     const q = new URLSearchParams();
     if (params.fecha) q.set('fecha', params.fecha);
     if (params.caja_id) q.set('caja_id', params.caja_id);
-    return apiClientSafe(`/meals${q.toString() ? `?${q.toString()}` : ''}`, { signal });
+    return apiClientSafe<ColacionRegistro[]>(
+      `/meals${q.toString() ? `?${q.toString()}` : ''}`,
+      { signal },
+    );
   },
   registrar: (payload: {
     usuario_id: string;
@@ -65,9 +53,14 @@ export const colacionesService = {
     nombre_bebida: string;
     acompanamiento?: 'gaseosa' | 'soda' | null;
     acompanamiento_presentacion_id?: string | null;
-  }) => apiClientSafe('/meals', { method: 'POST', body: JSON.stringify(payload) }),
+  }) =>
+    apiClientSafe<ColacionRegistro>('/meals', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
+/** Regla del rol (case-insensitive), o null si ese rol no recibe colación. */
 export function reglaPorRol(
   regla: ReglaColacionResponse,
   rol?: string | null,
@@ -75,10 +68,140 @@ export function reglaPorRol(
   return regla.roles[(rol ?? '').trim().toLowerCase()] ?? null;
 }
 
+/** URL del catálogo de colación con el parámetro que indica el servidor.
+ * El backend devuelve el endpoint con prefijo `/api` (ej. `/api/products/for-sale`),
+ * pero `apiClientSafe` ya agrega ese prefijo automáticamente. Se quita para evitar
+ * duplicarlo (`/api/api/products/for-sale` → 404). */
 export function urlCatalogoColacion(
   regla: ReglaColacionResponse,
   catalogo: CatalogoColacion,
 ): string {
   const { parametroCatalogo } = regla.catalogos[catalogo];
-  return `${regla.endpointCatalogo}?${parametroCatalogo}=true`;
+  // Quitar prefijo /api que ya agrega apiClientSafe via API_URL
+  const endpoint = regla.endpointCatalogo.replace(/^\/api\b/, '');
+  return `${endpoint}?${parametroCatalogo}=true`;
+}
+
+/** Ml que se descuenta del bar al registrar la colación. */
+export function mlDeColacion(producto: ColacionProducto) {
+  const opcion = (producto.opciones_venta || []).find((o) => o.tipo === 'botella');
+  if (opcion?.ml_colacion) return Number(opcion.ml_colacion);
+  const mlBotella = Number(producto.ml_botella ?? 0);
+  return Number.isFinite(mlBotella) && mlBotella > 0 ? mlBotella : 0;
+}
+
+/** Acompanamiento configurado en la transferencia de esa presentación. */
+export function acompanamientoDeColacion(producto: ColacionProducto) {
+  const opcion = (producto.opciones_venta || []).find((o) => o.tipo === 'botella');
+  const propio =
+    opcion?.acompanamiento_colacion?.unidades ??
+    opcion?.acompanamiento?.unidades ??
+    0;
+  const unidades = Math.max(0, Math.floor(Number(propio)));
+  const ml = Math.floor(Number(opcion?.acompanamiento_colacion?.ml ?? 0));
+  return { unidades, ml: ml > 0 ? ml : null };
+}
+
+/** Bebidas que puede recibir una colación como acompañamiento: el mismo
+ * catálogo de analcohólicas que ven cajero/garzón/barman, sin la bebida
+ * elegida y con stock de bar suficiente para las unidades configuradas.
+ */
+export function acompanamientosDeColacion(
+  catalogo: ColacionProducto[],
+  producto: ColacionProducto | null,
+  unidadesRequeridas: number,
+): AcompanamientoOpcion[] {
+  if (!producto || unidadesRequeridas <= 0) return [];
+  return catalogo
+    .filter((bebida) => String(bebida.presentacion_id) !== String(producto.presentacion_id))
+    .filter((bebida) => Number(bebida.stock_bar ?? bebida.stock ?? 0) >= unidadesRequeridas)
+    .map((bebida) => ({
+      id: Number(bebida.presentacion_id),
+      nombre: `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim(),
+      presentacion_id: Number(bebida.presentacion_id),
+      presentacion_nombre: bebida.presentacion_nombre,
+      ml: Number(bebida.ml_abierta ?? 0),
+      cantidad: unidadesRequeridas,
+      stock: Number(bebida.stock_bar ?? bebida.stock ?? 0),
+      disponible: true,
+    }));
+}
+
+export interface ColacionProducto {
+  producto_id: number;
+  producto_nombre: string;
+  presentacion_id: number;
+  presentacion_nombre: string;
+  ml_botella: number;
+  ml_abierta: number;
+  ml_colacion: number;
+  precio?: number;
+  costo?: number;
+  stock?: number;
+  stock_bar?: number;
+  opciones_venta?: {
+    id: number;
+    tipo: string;
+    ml_colacion?: number;
+    acompanamiento?: { unidades: number; ml: number };
+    acompanamiento_colacion?: { unidades: number; ml: number };
+  }[];
+  unidades?: number;
+  stock_pendiente?: number;
+  categoria_id?: number;
+  categoria_nombre?: string;
+  producto_categoria?: string;
+  producto_categoria_nombre?: string;
+  categoria?: string;
+  producto_foto?: string | null;
+  presentacion_compartida?: boolean;
+  precio_compartido?: number;
+  cantidad?: number;
+  stock_minimo?: number;
+  stock_maximo?: number;
+  precio_unitario?: number;
+  acompanamiento?: {
+    unidades: number;
+    ml: number;
+  };
+  acompanamiento_colacion?: {
+    unidades: number;
+    ml: number;
+  };
+}
+
+export interface AcompanamientoOpcion {
+  id: number;
+  nombre: string;
+  presentacion_id: number;
+  presentacion_nombre: string;
+  ml: number;
+  cantidad?: number;
+  cantidad_servir?: number;
+  disponible?: boolean;
+  stock?: number;
+  stock_minimo?: number;
+  stock_maximo?: number;
+}
+
+export interface ColacionRegistro {
+  id: number;
+  usuario_id?: string;
+  usuario_nombre?: string;
+  rol?: string | null;
+  nick?: string;
+  presentacion_id?: number;
+  presentacion_nombre?: string;
+  producto_nombre?: string;
+  nombre_bebida?: string | null;
+  ml_bebida?: number;
+  acompanamiento?: 'gaseosa' | 'soda' | null;
+  acompanamiento_presentacion_id?: string | null;
+  acompanamiento_nombre?: string | null;
+  registrado_por_nombre: string;
+  registrado_por_nick?: string | null;
+  fecha: string;
+  fecha_crea: string;
+  fecha_resolucion?: string | null;
+  id_caja?: string | null;
 }

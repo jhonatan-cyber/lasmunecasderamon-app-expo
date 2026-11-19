@@ -1,26 +1,44 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { ColacionWorkerModal } from '@/components/colaciones/ColacionWorkerModal';
+import { ModalBottomSheet } from '@/components/ui/ModalBottomSheet';
 import { ColacionProductsCarousel } from '@/components/colaciones/ColacionProductsCarousel';
 import { ColacionAcompanamientoSelector } from '@/components/colaciones/ColacionAcompanamientoSelector';
 import { useColacionesScreen } from '@/hooks/useColacionesScreen';
-import { showToast } from '@/utils/toast-lazy';
-import { isCajeroRole } from '@/utils/userRole';
-import { useAuthStore } from '@/store/authStore';
 
-const ROLE_LABELS: Record<string, string> = {
-  anfitriona: 'Anfitriona',
-  cajero: 'Cajero',
-  garzon: 'Garzón',
-  barman: 'Barman',
-};
-const normalizeRole = (role?: string | null) => (role ?? '').trim().toLowerCase();
-const roleName = (role: string) => ROLE_LABELS[role] ?? (role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Sin rol');
+
+/** Color según la categoría del producto para el card de ml. */
+function colorDeCategoria(nombre?: string | null): string {
+  const n = (nombre ?? '').toLowerCase();
+  if (n.includes('whisky') || n.includes('whisk')) return '#F59E0B';
+  if (n.includes('ron') || n.includes('rum')) return '#B45309';
+  if (n.includes('vino')) return '#DC2626';
+  if (n.includes('cerveza') || n.includes('beer')) return '#D97706';
+  if (n.includes('tequila')) return '#EF4444';
+  if (n.includes('vodka')) return '#60A5FA';
+  if (n.includes('ginebra') || n.includes('gin')) return '#10B981';
+  if (n.includes('mezcla') || n.includes('mixer') || n.includes('refresco')) return '#3B82F6';
+  if (n.includes('coctel') || n.includes('cocktail')) return '#F97316';
+  if (n.includes('licor')) return '#A855F7';
+  if (n.includes('aguardiente')) return '#84CC16';
+  if (n.includes('cafe') || n.includes('coffee')) return '#92400E';
+  if (n.includes('jugo') || n.includes('juice')) return '#F97316';
+  if (n.includes('agua')) return '#0EA5E9';
+  if (n.includes('postre') || n.includes('dessert')) return '#F59E0B';
+  if (n.includes('snack') || n.includes('botana')) return '#F59E0B';
+  return '#6B7280';
+}
+
+/** Construye un fondo sutil a partir de un color hexadecimal. */
+function colorConOpacidad(hex: string, alpha: number): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 export default function ColacionesScreen() {
   const router = useRouter();
@@ -33,12 +51,8 @@ export default function ColacionesScreen() {
     textSecondary,
     borderColor,
     rule,
-    ruleLoading,
-    ruleError,
-    productos,
     productosLoading,
     productosError,
-    analcoholicas,
     analcoholicasLoading,
     analcoholicasError,
     trabajadores,
@@ -58,57 +72,26 @@ export default function ColacionesScreen() {
     setSelectedProducto,
     setSelectedAcompanamiento,
     registrar,
-    cajaAbierta,
-    cajaInfo,
     selectedWorker,
     ruleFromWorker,
     catalogoVisible,
     productoSeleccionado,
     opcionBotella,
+    acompanamientoConfigurado,
     requiereAcompanamiento,
     mlPorRegistrar,
     selectedAcompanamiento,
-    cargarReglas,
-    cargarCatalogos,
-    cargarTrabajadores,
-    cargarRegistros,
+    recargar,
     isCajaAbierta,
   } = useColacionesScreen();
 
   const [workerModalVisible, setWorkerModalVisible] = useState(false);
-  const [historyRole, setHistoryRole] = useState<string | null>(null);
-  const historyRoles = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const row of registros) {
-      const role = normalizeRole(row.rol);
-      counts.set(role, (counts.get(role) ?? 0) + 1);
-    }
-    // El servidor fija el orden de roles, sin duplicar las reglas del catálogo.
-    const roleOrder = Object.keys(rule?.roles ?? ROLE_LABELS);
-    const position = (role: string) => {
-      const index = roleOrder.indexOf(role);
-      return index < 0 ? roleOrder.length : index;
-    };
-    return [...counts.entries()]
-      .sort(([a], [b]) => position(a) - position(b) || a.localeCompare(b, 'es'))
-      .map(([role, count]) => ({ role, count }));
-  }, [registros, rule]);
-  const activeHistoryRole = historyRoles.some(option => option.role === historyRole) ? historyRole : null;
-  const filteredHistory = useMemo(() => activeHistoryRole === null
-    ? registros
-    : registros.filter(row => normalizeRole(row.rol) === activeHistoryRole), [registros, activeHistoryRole]);
-
-  const user = useAuthStore(state => state.user);
-  const roleLabel = isCajeroRole(user) ? 'cajero' : 'barman';
-
-  const handleRefresh = useCallback(async () => {
-    await Promise.all([cargarReglas(), cargarCatalogos(), cargarTrabajadores(), cargarRegistros()]);
-  }, [cargarReglas, cargarCatalogos, cargarTrabajadores, cargarRegistros]);
-
-  const handleSelectWorker = useCallback((id: string) => {
-    setSelectedWorker(id);
-    setWorkerModalVisible(false);
-  }, [setSelectedWorker]);
+  const [registerCardCollapsed, setRegisterCardCollapsed] = useState(false);
+  const [historyRole, setHistoryRole] = useState('Todos');
+  const filteredHistory = useMemo(() => {
+    if (historyRole === 'Todos') return registros;
+    return registros.filter(r => r.rol === historyRole);
+  }, [registros, historyRole]);
 
   const handleSelectProducto = useCallback((id: string) => {
     setSelectedProducto(id);
@@ -122,10 +105,12 @@ export default function ColacionesScreen() {
         selectedId={acompanamientoId}
         loading={acompanamientosLoading}
         error={acompanamientosError}
+        unidadesRequeridas={acompanamientoConfigurado.unidades}
+        mlPorUnidad={acompanamientoConfigurado.ml}
         onSelect={setSelectedAcompanamiento}
       />
     );
-  }, [requiereAcompanamiento, productoId, acompanamientos, acompanamientoId, acompanamientosLoading, acompanamientosError, setSelectedAcompanamiento]);
+  }, [requiereAcompanamiento, productoId, acompanamientos, acompanamientoId, acompanamientosLoading, acompanamientosError, acompanamientoConfigurado, setSelectedAcompanamiento]);
 
   const canRegister = useMemo(() => {
     if (!isCajaAbierta) return false;
@@ -134,19 +119,27 @@ export default function ColacionesScreen() {
     if (!ruleFromWorker) return false;
     if (!productoSeleccionado) return false;
     if (!rule) return false;
+    if (mlPorRegistrar <= 0) return false;
     if (requiereAcompanamiento && !selectedAcompanamiento) return false;
     return true;
-  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, rule, requiereAcompanamiento, selectedAcompanamiento]);
+  }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, rule, mlPorRegistrar, requiereAcompanamiento, selectedAcompanamiento]);
 
-  const hasAnyCatalogoError = useMemo(() => {
-    if (productosLoading || analcoholicasLoading || trabajadoresLoading) return false;
-    if (productosError || analcoholicasError || trabajadoresError) return productosError || analcoholicasError || trabajadoresError;
-    return null;
-  }, [productosLoading, analcoholicasLoading, trabajadoresLoading, productosError, analcoholicasError, trabajadoresError]);
-
-  const handleAbrirModalTrabajador = useCallback(() => {
-    setWorkerModalVisible(true);
-  }, []);
+  // La bebida se elige en el carrusel; este bloque solo resume la selección.
+  const resumenBebida = useMemo(() => {
+    if (productosLoading || analcoholicasLoading) return 'Cargando…';
+    if (productoSeleccionado)
+      return `${productoSeleccionado.producto_nombre} ${productoSeleccionado.presentacion_nombre}`.trim();
+    if (!selectedWorker) return 'Selecciona un trabajador';
+    if (!ruleFromWorker) return 'Este rol no recibe colación';
+    return catalogoVisible.length ? 'Elige una de la lista' : 'Sin bebidas disponibles';
+  }, [
+    productosLoading,
+    analcoholicasLoading,
+    productoSeleccionado,
+    selectedWorker,
+    ruleFromWorker,
+    catalogoVisible.length,
+  ]);
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -155,46 +148,30 @@ export default function ColacionesScreen() {
         title="Colaciones"
         subtitle="Un corto por trabajador durante el turno"
         onBack={() => router.back()}
-        rightComponent={
-          <View style={[styles.brandRow, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-            <Text style={[styles.brandText, { color: '#FFFFFF' }]}>{roleLabel}</Text>
-          </View>
-        }
+        showThemeToggle
       />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={productosLoading || trabajadoresLoading || registrosLoading} onRefresh={handleRefresh} tintColor={accentColor} />
+          <RefreshControl refreshing={productosLoading || trabajadoresLoading || registrosLoading} onRefresh={recargar} tintColor={accentColor} />
         }
       >
-        <View style={[styles.alert, { borderColor }]}>
-          {!cajaAbierta ? (
-            <Text style={[styles.alertText, { color: accentColor }]}>
-              Se requiere una caja abierta para registrar una colación.
-            </Text>
-          ) : ruleError || hasAnyCatalogoError ? (
-            <ErrorState
-              title="No pudimos cargar los datos"
-              message={String(ruleError || hasAnyCatalogoError)}
-              onRetry={handleRefresh}
-              style={styles.inlineError}
-            />
-          ) : null}
-        </View>
-
         <View style={[styles.registerCard, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.registerCardHeader}>
+          <Pressable onPress={() => setRegisterCardCollapsed(!registerCardCollapsed)} style={styles.registerCardHeader}>
             <Ionicons name="beer-outline" size={20} color={accentColor} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: textPrimary }]}>Registrar colación</Text>
               <Text style={[styles.cardSubtitle, { color: textSecondary }]}>
                 Un trabajador, un corto por turno.
               </Text>
             </View>
-          </View>
+            <Ionicons name={registerCardCollapsed ? "chevron-down" : "chevron-up"} size={20} color={accentColor} />
+          </Pressable>
 
+          {!registerCardCollapsed && (
+          <>
           <View style={[styles.errorBox, { borderBottomColor: borderColor }]}>
             {productosError || analcoholicasError || trabajadoresError ? (
               <Text style={[styles.error, { color: '#EF4444' }]}>
@@ -203,81 +180,76 @@ export default function ColacionesScreen() {
             ) : null}
           </View>
 
-          <View style={styles.selectorsRow}>
-            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
-              <Text style={[styles.label, { color: textPrimary }]}>Trabajador</Text>
-              <Pressable
-                onPress={handleAbrirModalTrabajador}
-                style={[styles.selectButton, { borderColor }]}
-                disabled={trabajadoresLoading || trabajadores.length === 0}
-              >
-                <Text style={[styles.selectButtonText, { color: trabajadoresLoading || trabajadores.length === 0 ? textSecondary : textPrimary }]}>
-                  {trabajadoresLoading ? 'Cargando…' : selectedWorker ? `${selectedWorker.name} ${selectedWorker.lastName}${selectedWorker.nick ? ` · ${selectedWorker.nick}` : ''}` : 'Selecciona un trabajador'}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={textSecondary} />
-              </Pressable>
-            </View>
+          <Pressable
+            onPress={() => !trabajadoresLoading && trabajadores.length > 0 && setWorkerModalVisible(true)}
+            style={[styles.selectButton, { borderColor, opacity: trabajadoresLoading || trabajadores.length === 0 ? 0.5 : 1 }]}
+          >
+            <Text
+              style={[
+                styles.selectButtonText,
+                { color: selectedWorker ? textPrimary : textSecondary },
+              ]}
+            >
+              {selectedWorker
+                ? `${selectedWorker.name} ${selectedWorker.lastName}${selectedWorker.nick ? ` · ${selectedWorker.nick}` : ''}`
+                : 'Selecciona un trabajador'}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color={textSecondary} />
+          </Pressable>
 
-            <View style={[styles.selectorBlock, { backgroundColor: surfaceMuted, borderColor }]}>
-              <Text style={[styles.label, { color: textPrimary }]}>Bebida</Text>
-              <Pressable
-                onPress={() => {}}
-                style={[styles.selectButton, { borderColor }]}
-                disabled={!catalogoVisible.length || productosLoading || analcoholicasLoading}
-              >
-                <Text style={[styles.selectButtonText, { color: !catalogoVisible.length || productosLoading || analcoholicasLoading ? textSecondary : textPrimary }]}>
-                  {productoSeleccionado ? `${productoSeleccionado.producto_nombre} ${productoSeleccionado.presentacion_nombre}` : 'Selecciona una bebida'}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={textSecondary} />
-              </Pressable>
-            </View>
-          </View>
-
-          {catalogoVisible.length > 0 && (
+          {ruleFromWorker && (
             <View style={styles.productsCarousel}>
               <ColacionProductsCarousel
                 products={catalogoVisible}
                 selectedId={productoId}
                 loading={productosLoading || analcoholicasLoading}
                 onSelect={handleSelectProducto}
+                hint="Este rol recibe bebidas analcohólicas habilitadas para colación."
               />
             </View>
           )}
 
           {acompanamientoRenderer}
 
-          <View style={styles.datasetosRow}>
-            {productoSeleccionado && (
-              <View style={styles.datasetoItem}>
-                <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '500' }}>Producto</Text>
-                <Text style={[styles.datasetoValue, { color: textPrimary }]}>
-                  {Number(productoSeleccionado.ml_botella ?? 0) > 0
-                    ? `${Number(productoSeleccionado.ml_botella)} ml`
-                    : 'Sin ml'}
+          {(() => {
+            const catColor = productoSeleccionado
+              ? colorDeCategoria(productoSeleccionado.categoria_nombre ?? productoSeleccionado.categoria ?? productoSeleccionado.producto_categoria)
+              : null;
+            return (
+              <View style={[styles.mlCard, {
+                backgroundColor: catColor ? colorConOpacidad(catColor, 0.1) : surfaceMuted,
+                borderColor: catColor ?? borderColor,
+              }]}>
+                <Text style={[styles.mlCardTitle, { color: catColor ?? textSecondary }]}>
+                  Ml del producto seleccionado
                 </Text>
+                {productoSeleccionado ? (
+                  <View style={styles.mlGrid}>
+                    <Text style={[styles.mlLabel, { color: textSecondary }]}>Producto</Text>
+                    <Text style={[styles.mlValue, { color: catColor ?? textPrimary }]}>
+                      {Number(productoSeleccionado.ml_botella ?? 0) > 0
+                        ? `${Number(productoSeleccionado.ml_botella)} ml`
+                        : 'Sin ml'}
+                    </Text>
+                    <Text style={[styles.mlLabel, { color: textSecondary }]}>Colación</Text>
+                    <Text style={[styles.mlValue, { color: catColor ?? textPrimary }]}>
+                      {opcionBotella ? `${mlPorRegistrar} ml` : 'Sin configurar'}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.mlCardHint, { color: textSecondary }]}>
+                    Selecciona una bebida.
+                  </Text>
+                )}
               </View>
-            )}
-            {productoSeleccionado && (
-              <View style={styles.datasetoItem}>
-                <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '500' }}>Colación</Text>
-                <Text style={[styles.datasetoValue, { color: textPrimary }]}>
-                  {opcionBotella ? `${mlPorRegistrar} ml` : 'Sin configurar'}
-                </Text>
-              </View>
-            )}
-          </View>
+            );
+          })()}
 
           {productoSeleccionado && Number(productoSeleccionado.ml_abierta ?? 0) > 0 ? (
             <Text style={[styles.mlAbierto, { color: textSecondary }]}>
               Quedan {Number(productoSeleccionado.ml_abierta)} ml en la botella abierta.
             </Text>
           ) : null}
-
-          <Text style={[styles.helpText, { color: textSecondary }]}>
-            {ruleFromWorker?.catalogo === 'productos'
-              ? 'La anfitriona recibe los productos habilitados para colación.'
-              : 'Este rol recibe bebidas analcohólicas habilitadas para colación.'}
-          </Text>
 
           <View style={styles.actionsRow}>
             <View style={styles.registerButtonWrap}>
@@ -302,36 +274,38 @@ export default function ColacionesScreen() {
               </Pressable>
             </View>
           </View>
+          </>
+          )}
         </View>
 
-        <View style={[styles.listCard, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.listCardHeader}>
-            <Text style={[styles.listTitle, { color: textPrimary }]}>
-              Colaciones del turno
-            </Text>
-            <Text style={[styles.listCount, { color: textSecondary }]}>
-              {filteredHistory.length} registrado{(filteredHistory.length === 1 ? '' : 's')}
-            </Text>
-          </View>
+        {/* — Colaciones del turno — */}
+        <View style={styles.historySection}>
+          <Text style={[styles.listTitle, { color: textPrimary }]}>
+            Colaciones del turno
+          </Text>
+          <Text style={[styles.listCount, { color: textSecondary }]}>
+            {registros.length} registrado{(registros.length === 1 ? '' : 's')}
+          </Text>
 
-          {!registrosLoading && !registrosError && historyRoles.length > 0 ? (
-            <View accessibilityLabel="Filtrar colaciones por rol" style={styles.roleFilters}>
-              {[{ role: null, count: registros.length }, ...historyRoles].map(option => (
-                <Pressable
-                  key={option.role ?? 'all'}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${option.role === null ? 'Todos' : roleName(option.role)}, ${option.count} ${option.count === 1 ? 'colación' : 'colaciones'}`}
-                  accessibilityState={{ selected: activeHistoryRole === option.role }}
-                  onPress={() => setHistoryRole(option.role)}
-                  style={[styles.roleFilter, { borderColor: activeHistoryRole === option.role ? accentColor : borderColor }]}
-                >
-                  <Text style={[styles.roleFilterText, { color: textPrimary }]}>
-                    {option.role === null ? 'Todos' : roleName(option.role)} · {option.count}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+          {registros.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roleTabs}>
+              {['Todos', ...new Set(registros.map(r => r.rol).filter((r): r is string => Boolean(r)))].map(role => {
+                const count = role === 'Todos' ? registros.length : registros.filter(r => r.rol === role).length;
+                const isActive = historyRole === role;
+                return (
+                  <Pressable
+                    key={role}
+                    onPress={() => setHistoryRole(role)}
+                    style={[styles.roleTab, { backgroundColor: isActive ? accentColor : surfaceMuted, borderColor: isActive ? accentColor : borderColor }]}
+                  >
+                    <Text style={[styles.roleTabText, { color: isActive ? '#FFFFFF' : textPrimary }]}>
+                      {role} ({count})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
 
           {registrosLoading ? (
             <View style={styles.loadingRow}>
@@ -342,39 +316,102 @@ export default function ColacionesScreen() {
             <Text style={[styles.error, { color: '#EF4444' }]}>{registrosError}</Text>
           ) : filteredHistory.length === 0 ? (
             <Text style={[styles.emptyText, { color: textSecondary }]}>
-              Aún no hay colaciones en este turno.
-            </Text>          ) : (
-            filteredHistory.map((row) => (
-              <View key={String(row.id)} style={[styles.row, { borderBottomColor: borderColor }]}>
-                <View style={styles.rowText}>
-                  <Text style={[styles.rowWorker, { color: textPrimary }]}>
-                    {row.usuario_nombre ?? row.registrado_por_nombre}
-                    {row.nick ? ` (${row.nick})` : ''}
-                  </Text>
-                  <Text style={[styles.rowDrink, { color: textSecondary }]}>
-                    {row.producto_nombre ?? 'Corto'}
-                  </Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text style={[styles.rowMl, { color: textPrimary }]}>{row.ml_bebida ?? 0} ml</Text>
-                  <Text style={[styles.rowBy, { color: textSecondary }]}>
-                    {row.registrado_por_nombre}
-                  </Text>
-                </View>
-              </View>
-            ))
+              {registros.length === 0 ? 'Aún no hay colaciones en este turno.' : 'No hay colaciones para este filtro.'}
+            </Text>
+          ) : (
+            <View style={styles.historyCards}>
+              {filteredHistory.map((row) => {
+                const fecha = row.fecha_crea || row.fecha || '';
+                const fechaStr = fecha ? new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : '';
+                const hora = fecha ? new Date(fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                const nickRecibio = row.nick || row.usuario_nombre || '';
+                const nickAtendio = row.registrado_por_nick || row.registrado_por_nombre || '';
+                const nombreBebida = row.nombre_bebida || row.producto_nombre || 'Corto';
+                const acomp = row.acompanamiento_nombre || row.acompanamiento || null;
+                const ml = row.ml_bebida ?? 0;
+                return (
+                  <View key={String(row.id)} style={[styles.historyCard, { backgroundColor: cardBg, borderColor }]}>
+                    <View style={styles.historyCardLeft}>
+                      <Text style={[styles.historyCardNick, { color: textPrimary }]}>
+                        {nickRecibio}
+                      </Text>
+                      <Text style={[styles.historyCardProduct, { color: textSecondary }]}>
+                        {nombreBebida}
+                      </Text>
+                      <View style={styles.historyCardMeta}>
+                        <Text style={[styles.historyCardMetaText, { color: textSecondary }]}>
+                          {ml} ml
+                        </Text>
+                        {acomp ? (
+                          <Text style={[styles.historyCardMetaText, { color: textSecondary }]}>
+                            · {acomp}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    <View style={styles.historyCardRight}>
+                      <Text style={[styles.historyCardBy, { color: textSecondary }]}>↘ {nickAtendio}</Text>
+                      <View style={styles.historyCardDateTime}>
+                        {fechaStr ? (
+                          <Text style={[styles.historyCardDate, { color: textSecondary }]}>{fechaStr}</Text>
+                        ) : null}
+                        {hora ? (
+                          <Text style={[styles.historyCardTime, { color: textSecondary }]}>{hora}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
       </ScrollView>
 
-      <ColacionWorkerModal
+      <ModalBottomSheet
         visible={workerModalVisible}
         onClose={() => setWorkerModalVisible(false)}
-        workers={trabajadores.filter((t) => t.id !== workerId)}
-        selectedId={workerId ?? null}
-        onSelect={handleSelectWorker}
-        error={trabajadoresError}
-      />
+        title="Seleccionar trabajador"
+        subtitle={`${trabajadores.length} trabajadores disponibles`}
+        actionLabel="Listo"
+        onAction={() => setWorkerModalVisible(false)}
+      >
+        <FlatList
+          data={trabajadores}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const isSelected = workerId === item.id;
+            return (
+              <Pressable
+                onPress={() => {
+                  setSelectedWorker(item.id);
+                  setWorkerModalVisible(false);
+                }}
+                style={[
+                  styles.workerItem,
+                  {
+                    borderColor: isSelected ? accentColor : borderColor,
+                    backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
+                  },
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.workerName, { color: textPrimary }]}>
+                    {item.name} {item.lastName}
+                  </Text>
+                  {item.nick ? (
+                    <Text style={[styles.workerNick, { color: textSecondary }]}>{item.nick}</Text>
+                  ) : null}
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={24} color={accentColor} />
+                )}
+              </Pressable>
+            );
+          }}
+        />
+      </ModalBottomSheet>
+
     </View>
   );
 }
@@ -387,25 +424,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     gap: 14,
-  },
-  alert: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'flex-start',
-    gap: 4,
-  },
-  alertText: {
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  inlineError: {
-    marginTop: 0,
-    marginHorizontal: 0,
-    padding: 12,
-    alignSelf: 'stretch',
   },
   registerCard: {
     padding: 16,
@@ -434,11 +452,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  selectorsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
-  },
   selectorBlock: {
     flex: 1,
     borderRadius: 12,
@@ -465,32 +478,63 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
+  workerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    marginBottom: 10,
+  },
+  workerName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  workerNick: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   productsCarousel: {
     marginTop: 4,
   },
-  datasetosRow: {
+  mlCard: {
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  mlCardTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  mlGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingVertical: 4,
+    flexWrap: 'wrap',
+    gap: 4,
   },
-  datasetoItem: {
+  mlLabel: {
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
-    gap: 2,
   },
-  datasetoValue: {
+  mlValue: {
     fontSize: 13,
     fontWeight: '700',
+    textAlign: 'right',
+    flex: 1,
+  },
+  mlCardHint: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   mlAbierto: {
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
-  },
-  helpText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: -4,
   },
   actionsRow: {
     marginTop: 4,
@@ -514,16 +558,76 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  listCard: {
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
+  historySection: {
+    gap: 8,
   },
-  listCardHeader: {
+  roleTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 2,
+    marginBottom: 4,
+  },
+  roleTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    borderWidth: 1.5,
+    marginRight: 8,
+  },
+  roleTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  historyCards: {
+    gap: 8,
+  },
+  historyCard: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  historyCardLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  historyCardNick: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  historyCardProduct: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyCardRight: {
+    alignItems: 'flex-end',
+  },
+  historyCardBy: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyCardMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  historyCardMetaText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  historyCardDateTime: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 2,
+  },
+  historyCardDate: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  historyCardTime: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   listTitle: {
     fontSize: 15,
@@ -533,9 +637,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  roleFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  roleFilter: { minHeight: 44, maxWidth: '100%', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1.5, borderRadius: 10 },
-  roleFilterText: { fontSize: 13, fontWeight: '700', flexShrink: 1 },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -547,51 +648,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     paddingVertical: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 9,
-    paddingHorizontal: 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowText: {
-    flex: 1,
-    gap: 4,
-  },
-  rowWorker: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  rowDrink: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  rowMl: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  rowBy: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  brandRow: {
-    height: 38,
-    borderRadius: 9999,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginRight: 12,
-  },
-  brandText: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
 });
 

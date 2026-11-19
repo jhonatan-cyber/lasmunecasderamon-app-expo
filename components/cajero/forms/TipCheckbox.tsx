@@ -1,5 +1,7 @@
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useConfigValue } from "@/hooks/useConfigValue";
+import { haptic } from "@/utils/haptics";
+import { FontFamily } from "@/constants/fonts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -21,27 +23,36 @@ export const TipCheckbox: React.FC<TipCheckboxProps> = ({
   const propinaPct = Number(
     useConfigValue("facturacion", "propina_venta", "10"),
   );
-  const resolvedLabel = label || `Propina (${propinaPct}%)`;
+  const resolvedLabel = label || `Propina sugerida (${propinaPct}%)`;
 
   return (
     <Pressable
-      style={[styles.container]}
-      onPress={() => onToggle(!enabled)}
-      accessibilityRole="button"
-      accessibilityState={{ selected: enabled }}
+      style={[
+        styles.container,
+        {
+          backgroundColor: enabled ? `${accentColor}12` : "transparent",
+          borderColor: enabled ? `${accentColor}40` : "rgba(155,155,155,0.15)",
+        },
+      ]}
+      onPress={() => {
+        haptic.select();
+        onToggle(!enabled);
+      }}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: enabled }}
     >
       <View style={styles.leftContent}>
         <Ionicons
-          name="cash-outline"
-          size={20}
+          name={enabled ? "checkbox" : "square-outline"}
+          size={22}
           color={enabled ? accentColor : textSecondary}
-          style={{ marginRight: 8 }}
+          style={{ marginRight: 10 }}
         />
-        <Text style={[styles.label, { color: textSecondary }]}>
+        <Text style={[styles.label, { color: enabled ? textPrimary : textSecondary, fontFamily: FontFamily.medium }]}>
           {resolvedLabel}
         </Text>
       </View>
-      <Text style={[styles.val, { color: textPrimary }]}>
+      <Text style={[styles.val, { color: enabled ? accentColor : textSecondary, fontFamily: FontFamily.bold }]}>
         ${tipAmount.toLocaleString()}
       </Text>
     </Pressable>
@@ -53,7 +64,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 6,
+    marginBottom: 6,
   },
   leftContent: {
     flexDirection: "row",
@@ -61,10 +77,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
   },
   val: {
     fontSize: 15,
-    fontWeight: "800",
   },
 });

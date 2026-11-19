@@ -14,6 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -37,6 +38,7 @@ import { useConfigValue } from "@/hooks/useConfigValue";
 import { getCardSplit } from "@/hooks/utils/cuentaUtils";
 import { NuevaVentaSkeleton } from "@/components/cajero/nueva-venta/NuevaVentaSkeleton";
 import { adjuntarBaucher } from "@/utils/baucherPicker";
+import { haptic } from "@/utils/haptics";
 
 export default function NuevaVentaScreen() {
   const {
@@ -49,6 +51,8 @@ export default function NuevaVentaScreen() {
     borderColor,
   } = useAccentColor();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<any>(null);
   const { isTablet } = useResponsiveMetrics();
   const splitVentaPct = Number(
     useConfigValue("comisiones", "split_tarjeta_venta", "51"),
@@ -133,8 +137,10 @@ export default function NuevaVentaScreen() {
     bebidas: true,
     soda: true,
   });
-  const toggleSection = (key: keyof typeof sections) =>
+  const toggleSection = (key: keyof typeof sections) => {
+    haptic.tap();
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
   const handleAdjuntarBaucher = useCallback(async () => {
     const dataUrl = await adjuntarBaucher("NuevaVenta:baucher");
     if (dataUrl) setBaucherFoto(dataUrl);
@@ -153,8 +159,14 @@ export default function NuevaVentaScreen() {
 
   const spacing = isTablet ? 24 : 16;
   const borderRadius = isTablet ? 28 : 24;
+  const isReadyToSubmit =
+    cajaAbierta !== false &&
+    cart.length > 0 &&
+    !!metodoPago &&
+    (metodoPago !== "transferencia" || !!baucherFoto);
+
   const dynamicStyles = {
-    scrollContent: { ...formColumn, padding: spacing, paddingBottom: 100 },
+    scrollContent: { ...formColumn, padding: spacing, paddingBottom: cart.length > 0 ? (insets.bottom + 120) : 100 },
     section: { padding: spacing, borderRadius, marginBottom: spacing },
     summaryCard: { padding: spacing + 8, borderRadius: borderRadius + 4 },
     submitBtn: { height: isTablet ? 70 : 60, borderRadius: isTablet ? 24 : 20 },
@@ -203,6 +215,7 @@ export default function NuevaVentaScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
@@ -282,7 +295,10 @@ export default function NuevaVentaScreen() {
                   return (
                     <Pressable
                       key={cat.id || idx}
-                      onPress={() => handleOpenCategory(cat)}
+                      onPress={() => {
+                        haptic.select();
+                        handleOpenCategory(cat);
+                      }}
                       style={{ minWidth: 120, padding: 12, borderRadius: 20, borderWidth: 1, borderColor, backgroundColor: "rgba(155,155,155,0.03)", alignItems: "center" }}
                       accessibilityRole="button"
                     >
@@ -742,6 +758,32 @@ export default function NuevaVentaScreen() {
                 </View>
               );
             })()}
+          {cart.length > 0 && (
+            (() => {
+              if (cajaAbierta === false) {
+                return (
+                  <Text style={{ textAlign: "center", color: "#EF4444", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
+                    Caja cerrada: debe abrirse para registrar ventas
+                  </Text>
+                );
+              }
+              if (!metodoPago) {
+                return (
+                  <Text style={{ textAlign: "center", color: "#F59E0B", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
+                    Seleccioná un método de pago para finalizar
+                  </Text>
+                );
+              }
+              if (metodoPago === "transferencia" && !baucherFoto) {
+                return (
+                  <Text style={{ textAlign: "center", color: "#F59E0B", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
+                    Adjuntá el baucher de la transferencia
+                  </Text>
+                );
+              }
+              return null;
+            })()
+          )}
           <Pressable
             style={[
               styles.submitBtn,
@@ -753,7 +795,10 @@ export default function NuevaVentaScreen() {
                 !metodoPago ||
                 (metodoPago === "transferencia" && !baucherFoto)) && { opacity: 0.7 },
             ]}
-            onPress={() => handleSubmit(baucherFoto)}
+            onPress={() => {
+              haptic.success();
+              handleSubmit(baucherFoto);
+            }}
             disabled={
               submitting ||
               cajaAbierta === false ||
@@ -772,6 +817,89 @@ export default function NuevaVentaScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {cart.length > 0 && (
+        <View
+          style={[
+            styles.stickyCheckoutBar,
+            {
+              backgroundColor: cardBg,
+              borderColor,
+              paddingBottom: Math.max(insets.bottom, 12),
+            },
+          ]}
+        >
+          <Pressable
+            style={styles.stickyLeft}
+            onPress={() => {
+              haptic.tap();
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Ver detalle del total"
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <View
+                style={[
+                  styles.stickyBadge,
+                  { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}40` },
+                ]}
+              >
+                <Text style={[styles.stickyBadgeText, { color: accentColor }]}>
+                  {cart.reduce((s, i) => s + (i.quantity || 1), 0)} {cart.reduce((s, i) => s + (i.quantity || 1), 0) === 1 ? "ítem" : "ítems"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-up" size={16} color={textSecondary} />
+            </View>
+            <Text style={[styles.stickyTotal, { color: textPrimary }]}>
+              ${totals.total.toLocaleString()}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.stickySubmitBtn,
+              {
+                backgroundColor: isReadyToSubmit ? accentColor : (isDark ? "#262626" : "#E5E7EB"),
+              },
+            ]}
+            disabled={submitting || cajaAbierta === false}
+            onPress={() => {
+              if (isReadyToSubmit) {
+                haptic.success();
+                handleSubmit(baucherFoto);
+              } else {
+                haptic.tap();
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={isReadyToSubmit ? "Finalizar venta" : "Completar datos de pago"}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Text
+                  style={[
+                    styles.stickySubmitText,
+                    { color: isReadyToSubmit ? "#FFF" : (isDark ? "#A3A3A3" : "#4B5563") },
+                  ]}
+                >
+                  {isReadyToSubmit
+                    ? "Cobrar"
+                    : (!metodoPago ? "Elegir pago" : "Falta baucher")}
+                </Text>
+                <Ionicons
+                  name={isReadyToSubmit ? "checkmark-circle" : "arrow-down"}
+                  size={18}
+                  color={isReadyToSubmit ? "#FFF" : (isDark ? "#A3A3A3" : "#4B5563")}
+                />
+              </>
+            )}
+          </Pressable>
+        </View>
+      )}
 
       <NuevaVentaModals
         styles={styles}
@@ -1003,5 +1131,55 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 13,
     letterSpacing: 0.5,
+  },
+  stickyCheckoutBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 99,
+  },
+  stickyLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  stickyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  stickyBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  stickyTotal: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  stickySubmitBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 16,
+    minWidth: 130,
+  },
+  stickySubmitText: {
+    fontSize: 15,
+    fontWeight: "800",
   },
 });

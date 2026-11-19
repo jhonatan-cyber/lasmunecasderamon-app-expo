@@ -2,7 +2,7 @@ import React, { type ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ColacionesScreen from '@/components/screens/ColacionesScreen';
-import type { ColacionRegistro } from '@/services/colaciones-helpers';
+import type { ColacionRegistro } from '@/services/colaciones';
 
 const state = vi.hoisted(() => ({
   registros: [] as ColacionRegistro[],
@@ -95,10 +95,8 @@ vi.mock('@/hooks/useColacionesScreen', () => ({
     setSelectedProducto: vi.fn(),
     setSelectedAcompanamiento: vi.fn(),
     registrar: vi.fn(),
-    cargarReglas: vi.fn(),
-    cargarCatalogos: vi.fn(),
-    cargarTrabajadores: vi.fn(),
-    cargarRegistros: vi.fn(),
+    recargar: vi.fn(),
+    recepcionesPorTrabajador: {},
   }),
 }));
 const row = (
@@ -130,10 +128,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ColacionesScreen: filtro del historial por rol receptor', () => {
-  it.each(['cajero', 'barman'])('muestra el rol %s de la sesión en el encabezado', role => {
-    state.role = role;
+  it('rotula el encabezado como barman, único rol que registra colaciones', () => {
     render(<ColacionesScreen />);
-    expect(screen.getByText(role, { exact: true })).toBeTruthy();
+    expect(screen.getByText('barman', { exact: true })).toBeTruthy();
   });
   it('cuenta registros, normaliza roles y conserva roles desconocidos o ausentes', () => {
     render(<ColacionesScreen />);

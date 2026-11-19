@@ -50,6 +50,8 @@ export default function ClientesScreen() {
     setLoadingAmount,
     loadMetodoPago,
     setLoadMetodoPago,
+    loadBaucherFoto,
+    setLoadBaucherFoto,
     submitting,
     historyModalVisible,
     setHistoryModalVisible,
@@ -262,6 +264,8 @@ export default function ClientesScreen() {
         formatCurrency={formatCurrency}
         unformatCurrency={unformatCurrency}
         handleLoadBalance={handleLoadBalance}
+        loadBaucherFoto={loadBaucherFoto}
+        onBaucherFotoChange={setLoadBaucherFoto}
         onClose={() => setLoadModalVisible(false)}
       />
 

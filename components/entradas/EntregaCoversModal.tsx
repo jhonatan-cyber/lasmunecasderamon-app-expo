@@ -18,6 +18,29 @@ import { EntregaCoversProducto } from './entrega-covers/EntregaCoversProducto';
 import { claveDe, precioVisible } from './entrega-covers/helpers';
 import type { EntregaCoversModalProps } from './entrega-covers/types';
 import { useEntregaCovers } from './entrega-covers/useEntregaCovers';
+import { useEffect, useState } from 'react';
+
+/** Icono Ionicons según el nombre de la categoría. */
+function iconoDeCategoria(nombre: string): [string, string] {
+  const n = nombre.toLowerCase();
+  if (n.includes('whisky') || n.includes('whisk')) return ['wine', '#F59E0B'];
+  if (n.includes('ron') || n.includes('rum')) return ['wine', '#B45309'];
+  if (n.includes('vino')) return ['wine', '#DC2626'];
+  if (n.includes('cerveza') || n.includes('beer')) return ['beer', '#D97706'];
+  if (n.includes('tequila')) return ['flame', '#EF4444'];
+  if (n.includes('vodka')) return ['snow', '#60A5FA'];
+  if (n.includes('ginebra') || n.includes('gin')) return ['leaf', '#10B981'];
+  if (n.includes('mezcla') || n.includes('mixer') || n.includes('refresco')) return ['water', '#3B82F6'];
+  if (n.includes('coctel') || n.includes('cocktail')) return ['flame', '#F97316'];
+  if (n.includes('licor')) return ['flame', '#A855F7'];
+  if (n.includes('aguardiente')) return ['flame', '#84CC16'];
+  if (n.includes('cafe') || n.includes('coffee')) return ['cafe', '#92400E'];
+  if (n.includes('jugo') || n.includes('juice')) return ['water', '#F97316'];
+  if (n.includes('agua')) return ['water', '#0EA5E9'];
+  if (n.includes('postre') || n.includes('dessert')) return ['cafe', '#F59E0B'];
+  if (n.includes('snack') || n.includes('botana')) return ['cafe', '#F59E0B'];
+  return ['pricetag', '#6B7280'];
+}
 
 export type { GrupoEntrega } from './entrega-covers/types';
 export function EntregaCoversModal({
@@ -29,6 +52,17 @@ export function EntregaCoversModal({
   modo = 'entrega',
 }: EntregaCoversModalProps) {
   const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const [categoriasExpandidas, setCategoriasExpandidas] = useState<Set<string>>(() => new Set());
+
+  const toggleCategoria = (cat: string) => {
+    setCategoriasExpandidas(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   const {
     busqueda,
     setBusqueda,
@@ -62,6 +96,13 @@ export function EntregaCoversModal({
     entregar,
   } = useEntregaCovers({ visible, grupo, tope, onClose, onEntregado, modo });
 
+  // Expandir automáticamente las categorías cuando se abre el modal
+  useEffect(() => {
+    if (visible && gruposVisibles.length > 0) {
+      setCategoriasExpandidas(new Set(gruposVisibles.map(g => g.categoria)));
+    }
+  }, [visible, gruposVisibles]);
+
   const fondo = cardBg;
   const submitDeshabilitado =
     entregando ||
@@ -90,7 +131,7 @@ export function EntregaCoversModal({
               <View style={styles.header}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
-                    ENTREGAR COVERS
+                    {modo === 'solicitud' ? 'SOLICITAR COVERS' : 'ENTREGAR COVERS'}
                   </Text>
                   <Text
                     style={{
@@ -107,6 +148,64 @@ export function EntregaCoversModal({
                     {filas.length === 1 ? 'entrada pendiente' : 'entradas pendientes'} ·{' '}
                     {formatCurrency(filas.reduce((suma, fila) => suma + fila.monto_entrada, 0))}
                   </Text>
+                  {modo === 'solicitud' && grupo?.metodo_pago && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 8,
+                        backgroundColor: `${accentColor}18`,
+                      }}>
+                        <Ionicons
+                          name={
+                            grupo.metodo_pago === 'efectivo' ? 'cash-outline' :
+                            grupo.metodo_pago === 'tarjeta' ? 'card-outline' :
+                            'send-outline'
+                          }
+                          size={12}
+                          color={accentColor}
+                        />
+                        <Text style={{ color: accentColor, fontSize: 11, fontWeight: '700' }}>
+                          {grupo.metodo_pago === 'efectivo' ? 'Efectivo' :
+                           grupo.metodo_pago === 'tarjeta' ? 'Tarjeta' :
+                           grupo.metodo_pago === 'transferencia' ? 'Transferencia' : grupo.metodo_pago}
+                        </Text>
+                      </View>
+                      {grupo.metodo_pago === 'transferencia' && grupo.baucher_foto && (
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 8,
+                          backgroundColor: `${textSecondary}15`,
+                        }}>
+                          <Ionicons name="document-text-outline" size={12} color={textSecondary} />
+                          <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '600' }}>
+                            Con baucher
+                          </Text>
+                        </View>
+                      )}
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 8,
+                        backgroundColor: '#F59E0B18',
+                      }}>
+                        <Ionicons name="information-circle-outline" size={12} color="#F59E0B" />
+                        <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '600' }}>
+                          Requiere aprobación del cajero
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
                 <Pressable onPress={cerrar} hitSlop={10}>
                   <Ionicons name="close" size={22} color={textSecondary} />
@@ -194,38 +293,113 @@ export function EntregaCoversModal({
                       Sin productos hasta {formatCurrency(presupuesto)} con stock en el bar.
                     </Text>
                   )}
-                  {gruposVisibles.map(({ categoria, items }) => (
-                    <View key={categoria}>
-                      <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                        {categoria}
-                      </Text>
-                      {items.map(({ bebida, formato }) => {
-                        const clave = claveDe(bebida, formato);
-                        return (
-                          <EntregaCoversProducto
-                            key={clave}
-                            bebida={bebida}
-                            formato={formato}
-                            linea={seleccion[clave]}
-                            precio={precioVisible(bebida, formato)}
-                            limiteAlcanzado={!puedeAgregar(bebida, formato)}
-                            infoReparto={repartoDeLinea(bebida, formato)}
-                            onAgregar={() => agregar(bebida, formato)}
-                            onQuitar={() => quitar(clave)}
-                            onAgregarSabor={(opcion) => agregarSabor(clave, opcion)}
-                            onAjustarSabor={(presentacionId, delta) =>
-                              ajustarSabor(clave, presentacionId, delta)
-                            }
-                            onQuitarSabor={(presentacionId) => quitarSabor(clave, presentacionId)}
-                            accentColor={accentColor}
-                            textPrimary={textPrimary}
-                            textSecondary={textSecondary}
-                            borderColor={borderColor}
+                  {gruposVisibles.map(({ categoria, items }) => {
+                    const expandida = categoriasExpandidas.has(categoria);
+                    const [icono, colorIcono] = iconoDeCategoria(categoria);
+                    const seleccionadosEnCategoria = items.reduce((sum, { bebida, formato }) => {
+                      const clave = claveDe(bebida, formato);
+                      return sum + (seleccion[clave]?.cantidad ?? 0);
+                    }, 0);
+
+                    return (
+                      <View
+                        key={categoria}
+                        style={[
+                          styles.categoryCard,
+                          {
+                            borderColor: expandida ? accentColor : borderColor,
+                            backgroundColor: expandida ? `${accentColor}08` : 'transparent',
+                          },
+                        ]}
+                      >
+                        <Pressable
+                          onPress={() => toggleCategoria(categoria)}
+                          style={styles.categoryHeader}
+                        >
+                          <View
+                            style={[
+                              styles.categoryIcon,
+                              { backgroundColor: `${colorIcono}1F` },
+                            ]}
+                          >
+                            <Ionicons name={icono as any} size={20} color={colorIcono} />
+                          </View>
+                          <View style={styles.categoryInfo}>
+                            <Text
+                              style={{
+                                color: textPrimary,
+                                fontWeight: '700',
+                                fontSize: 14,
+                              }}
+                              numberOfLines={1}
+                            >
+                              {categoria}
+                            </Text>
+                            <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
+                              {items.length}{' '}
+                              {items.length === 1 ? 'producto' : 'productos'}
+                              {seleccionadosEnCategoria > 0
+                                ? ` · ${seleccionadosEnCategoria} seleccionado${seleccionadosEnCategoria > 1 ? 's' : ''}`
+                                : ''}
+                            </Text>
+                          </View>
+                          {seleccionadosEnCategoria > 0 && (
+                            <View
+                              style={[
+                                styles.categoryBadge,
+                                { backgroundColor: `${accentColor}25` },
+                              ]}
+                            >
+                              <Text
+                                style={{
+                                  color: accentColor,
+                                  fontWeight: '800',
+                                  fontSize: 12,
+                                }}
+                              >
+                                {seleccionadosEnCategoria}
+                              </Text>
+                            </View>
+                          )}
+                          <Ionicons
+                            name={expandida ? 'chevron-up' : 'chevron-down'}
+                            size={18}
+                            color={textSecondary}
                           />
-                        );
-                      })}
-                    </View>
-                  ))}
+                        </Pressable>
+
+                        {expandida && (
+                          <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
+                            {items.map(({ bebida, formato }) => {
+                              const clave = claveDe(bebida, formato);
+                              return (
+                                <EntregaCoversProducto
+                                  key={clave}
+                                  bebida={bebida}
+                                  formato={formato}
+                                  linea={seleccion[clave]}
+                                  precio={precioVisible(bebida, formato)}
+                                  limiteAlcanzado={!puedeAgregar(bebida, formato)}
+                                  infoReparto={repartoDeLinea(bebida, formato)}
+                                  onAgregar={() => agregar(bebida, formato)}
+                                  onQuitar={() => quitar(clave)}
+                                  onAgregarSabor={(opcion) => agregarSabor(clave, opcion)}
+                                  onAjustarSabor={(presentacionId, delta) =>
+                                    ajustarSabor(clave, presentacionId, delta)
+                                  }
+                                  onQuitarSabor={(presentacionId) => quitarSabor(clave, presentacionId)}
+                                  accentColor={accentColor}
+                                  textPrimary={textPrimary}
+                                  textSecondary={textSecondary}
+                                  borderColor={borderColor}
+                                />
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
                 </>
               )}
 

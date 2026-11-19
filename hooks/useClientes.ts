@@ -53,6 +53,7 @@ export function useClientes() {
     const [formLastName, setFormLastName] = useState("");
     const [formRun, setFormRun] = useState("");
     const [formPhone, setFormPhone] = useState("");
+    const [loadBaucherFoto, setLoadBaucherFoto] = useState<string | null>(null);
 
     const fetchClients = useCallback(async (showRefreshing = false, signal?: AbortSignal) => {
         if (showRefreshing) setRefreshing(true);
@@ -185,6 +186,7 @@ export function useClientes() {
         setLoadMetodoPago('efectivo');
         setPrimaryAmount("");
         setSecondaryAmount("");
+        setLoadBaucherFoto(null);
         setLoadModalVisible(true);
     }, []);
 
@@ -254,6 +256,15 @@ export function useClientes() {
                 metodo_pago: loadMetodoPago,
                 motivo: 'Carga de saldo prepago (Módulo Clientes)'
             };
+
+            const hasTransferencia =
+              loadMetodoPago === 'transferencia' ||
+              (loadMetodoPago === 'mixto' &&
+                (primaryMethod === 'transferencia' || secondaryMethod === 'transferencia'));
+
+            if (hasTransferencia && loadBaucherFoto) {
+                (body as any).metadatos = { baucher_foto: loadBaucherFoto };
+            }
 
             if (loadMetodoPago === 'mixto') {
                 body.pagos_mixtos = [
@@ -327,6 +338,8 @@ export function useClientes() {
         setLoadingAmount,
         loadMetodoPago,
         setLoadMetodoPago,
+        loadBaucherFoto,
+        setLoadBaucherFoto,
         submitting,
         historyModalVisible,
         setHistoryModalVisible,
