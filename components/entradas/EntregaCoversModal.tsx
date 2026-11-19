@@ -18,7 +18,7 @@ import { EntregaCoversProducto } from './entrega-covers/EntregaCoversProducto';
 import { claveDe, precioVisible } from './entrega-covers/helpers';
 import type { EntregaCoversModalProps } from './entrega-covers/types';
 import { useEntregaCovers } from './entrega-covers/useEntregaCovers';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /** Icono Ionicons según el nombre de la categoría. */
 function iconoDeCategoria(nombre: string): [string, string] {
@@ -52,10 +52,13 @@ export function EntregaCoversModal({
   modo = 'entrega',
 }: EntregaCoversModalProps) {
   const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
-  const [categoriasExpandidas, setCategoriasExpandidas] = useState<Set<string>>(() => new Set());
+  // Las categorías arrancan abiertas: se guarda cuáles están plegadas y no
+  // cuáles están abiertas, así no hace falta sincronizar el estado con un
+  // efecto cada vez que el modal se abre o cambia la lista.
+  const [categoriasColapsadas, setCategoriasColapsadas] = useState<Set<string>>(() => new Set());
 
   const toggleCategoria = (cat: string) => {
-    setCategoriasExpandidas(prev => {
+    setCategoriasColapsadas(prev => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat);
       else next.add(cat);
@@ -95,13 +98,6 @@ export function EntregaCoversModal({
     cerrar,
     entregar,
   } = useEntregaCovers({ visible, grupo, tope, onClose, onEntregado, modo });
-
-  // Expandir automáticamente las categorías cuando se abre el modal
-  useEffect(() => {
-    if (visible && gruposVisibles.length > 0) {
-      setCategoriasExpandidas(new Set(gruposVisibles.map(g => g.categoria)));
-    }
-  }, [visible, gruposVisibles]);
 
   const fondo = cardBg;
   const submitDeshabilitado =
@@ -294,7 +290,7 @@ export function EntregaCoversModal({
                     </Text>
                   )}
                   {gruposVisibles.map(({ categoria, items }) => {
-                    const expandida = categoriasExpandidas.has(categoria);
+                    const expandida = !categoriasColapsadas.has(categoria);
                     const [icono, colorIcono] = iconoDeCategoria(categoria);
                     const seleccionadosEnCategoria = items.reduce((sum, { bebida, formato }) => {
                       const clave = claveDe(bebida, formato);

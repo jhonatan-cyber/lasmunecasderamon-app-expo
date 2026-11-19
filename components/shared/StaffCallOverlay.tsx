@@ -43,6 +43,15 @@ export function StaffCallOverlay() {
     const user = useAuthStore(state => state.user);
     const [pendingCalls, setPendingCalls] = useState<StaffCall[]>([]);
     const [accepting, setAccepting] = useState<number | string | null>(null);
+    // El reloj no se lee durante el render: se guarda un timestamp que se
+    // refresca cada 30 s, así el contador de "hace X min" avanza solo.
+    const [now, setNow] = useState(() => Date.now());
+
+    // Refresca el timestamp para que los minutos transcurridos avancen solos.
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 30_000);
+        return () => clearInterval(id);
+    }, []);
     const { accentColor, isDark, cardBg } = useAccentColor();
     const safeRole = getUserRole(user);
 
@@ -167,7 +176,7 @@ export function StaffCallOverlay() {
     return (
         <View style={styles.container}>
             {pendingCalls.map((call, index) => {
-                const elapsedMins = Math.max(0, Math.floor((Date.now() - new Date(call.timestamp).getTime()) / 60000));
+                const elapsedMins = Math.max(0, Math.floor((now - new Date(call.timestamp).getTime()) / 60000));
                 const isUrgent = elapsedMins >= 2;
                 return (
                     <Animated.View
