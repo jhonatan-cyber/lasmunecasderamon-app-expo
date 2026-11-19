@@ -38,9 +38,10 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
   const mlATotales = mlPorUnidad != null ? mlPorUnidad * (unidadesRequeridas ?? 0) : null;
 
   const handleSelect = React.useCallback((id: string) => {
-    onSelect(id);
+    // Pulsar la opción que ya está elegida la deselecciona.
+    onSelect(id === selectedId ? '' : id);
     setModalVisible(false);
-  }, [onSelect]);
+  }, [onSelect, selectedId]);
 
   // Info de ml restante debajo del botón cuando hay selección.
   const infoLinea = React.useMemo(() => {
@@ -95,6 +96,11 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
         title="Acompañamiento"
         subtitle={subtitleText}
       >
+        {error ? (
+          <Text style={[styles.error, { color: '#EF4444' }]}>
+            No se pudieron cargar las bebidas. Cierra e inténtalo de nuevo.
+          </Text>
+        ) : (
         <FlatList
           data={acompanamientos}
           keyExtractor={(item) => String(item.id)}
@@ -134,6 +140,7 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
           }}
           style={{ flex: 1 }}
         />
+        )}
       </ModalBottomSheet>
     </>
   );

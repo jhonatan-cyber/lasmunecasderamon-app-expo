@@ -39,6 +39,19 @@ export const userRoleMatches = (user: UserLike, expectedRole: string) =>
   getUserRole(user).includes(expectedRole.trim().toLowerCase());
 
 /**
+ * Etiqueta legible de un rol: sin espacios sobrantes, con mayúscula inicial y
+ * con los acentos de los roles conocidos ("garzon" → "Garzón"). Un rol vacío
+ * se muestra como "Sin rol", para que un registro sin rol no se pierda del
+ * historial ni se mezcle con otro.
+ */
+export function nombreRolLegible(rol?: string | null): string {
+  const limpio = (rol ?? '').trim();
+  if (!limpio) return 'Sin rol';
+  const base = limpio.toLowerCase() === 'garzon' ? 'garzón' : limpio.toLowerCase();
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+/**
  * Devuelve la ruta de navegación principal según el rol del usuario.
  * Se usa para evitar redirecciones intermedias que causan recargas en nativo.
  */

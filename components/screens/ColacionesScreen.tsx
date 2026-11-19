@@ -7,6 +7,12 @@ import { ModalBottomSheet } from '@/components/ui/ModalBottomSheet';
 import { ColacionProductsCarousel } from '@/components/colaciones/ColacionProductsCarousel';
 import { ColacionAcompanamientoSelector } from '@/components/colaciones/ColacionAcompanamientoSelector';
 import { useColacionesScreen } from '@/hooks/useColacionesScreen';
+import { nombreRolLegible } from '@/utils/userRole';
+
+/** Filtro que muestra el turno completo. */
+const ROL_TODOS = 'Todos';
+/** Único rol con permiso para registrar colaciones (ver app/(app)/barman/colaciones.tsx). */
+const ROL_QUE_REGISTRA = 'barman';
 
 
 /** Color según la categoría del producto para el card de ml. */
@@ -87,11 +93,29 @@ export default function ColacionesScreen() {
 
   const [workerModalVisible, setWorkerModalVisible] = useState(false);
   const [registerCardCollapsed, setRegisterCardCollapsed] = useState(false);
-  const [historyRole, setHistoryRole] = useState('Todos');
+  const [historyRole, setHistoryRole] = useState(ROL_TODOS);
+  // Roles del historial, ya normalizados: " Anfitriona " y "anfitriona" son la
+  // misma pestaña. Se ordenan por cantidad y, a igual, alfabéticamente.
+  const rolesHistorial = useMemo(() => {
+    const conteo = new Map<string, number>();
+    for (const registro of registros) {
+      const rol = nombreRolLegible(registro.rol);
+      conteo.set(rol, (conteo.get(rol) ?? 0) + 1);
+    }
+    return [...conteo.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+      .map(([rol, cantidad]) => ({ rol, cantidad }));
+  }, [registros]);
+  // Si un refresco se lleva el rol elegido, el filtro vuelve a "Todos" sin
+  // tener que guardar nada: el rol efectivo se deriva del que sigue existiendo.
+  const rolEfectivo =
+    historyRole !== ROL_TODOS && rolesHistorial.some((r) => r.rol === historyRole)
+      ? historyRole
+      : ROL_TODOS;
   const filteredHistory = useMemo(() => {
-    if (historyRole === 'Todos') return registros;
-    return registros.filter(r => r.rol === historyRole);
-  }, [registros, historyRole]);
+    if (rolEfectivo === ROL_TODOS) return registros;
+    return registros.filter(r => nombreRolLegible(r.rol) === rolEfectivo);
+  }, [registros, rolEfectivo]);
 
   const handleSelectProducto = useCallback((id: string) => {
     setSelectedProducto(id);
@@ -149,6 +173,12 @@ export default function ColacionesScreen() {
         subtitle="Un corto por trabajador durante el turno"
         onBack={() => router.back()}
         showThemeToggle
+        rightComponent={
+          <View style={[styles.registraBadge, { borderColor, backgroundColor: surfaceMuted }]}>
+            <Text style={[styles.registraBadgeLabel, { color: textSecondary }]}>Registra</Text>
+            <Text style={[styles.registraBadgeValor, { color: accentColor }]}>{ROL_QUE_REGISTRA}</Text>
+          </View>
+        }
       />
 
       <ScrollView
@@ -284,22 +314,29 @@ export default function ColacionesScreen() {
             Colaciones del turno
           </Text>
           <Text style={[styles.listCount, { color: textSecondary }]}>
-            {registros.length} registrado{(registros.length === 1 ? '' : 's')}
+            {filteredHistory.length} registrado{(filteredHistory.length === 1 ? '' : 's')}
           </Text>
 
-          {registros.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roleTabs}>
-              {['Todos', ...new Set(registros.map(r => r.rol).filter((r): r is string => Boolean(r)))].map(role => {
-                const count = role === 'Todos' ? registros.length : registros.filter(r => r.rol === role).length;
-                const isActive = historyRole === role;
+          {!registrosLoading && !registrosError && registros.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.roleTabs}
+              accessibilityLabel="Filtrar colaciones por rol"
+            >
+              {[{ rol: ROL_TODOS, cantidad: registros.length }, ...rolesHistorial].map(({ rol, cantidad }) => {
+                const isActive = rolEfectivo === rol;
                 return (
                   <Pressable
-                    key={role}
-                    onPress={() => setHistoryRole(role)}
+                    key={rol}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${rol}, ${cantidad} ${cantidad === 1 ? 'colación' : 'colaciones'}`}
+                    accessibilityState={{ selected: isActive }}
+                    onPress={() => setHistoryRole(rol)}
                     style={[styles.roleTab, { backgroundColor: isActive ? accentColor : surfaceMuted, borderColor: isActive ? accentColor : borderColor }]}
                   >
                     <Text style={[styles.roleTabText, { color: isActive ? '#FFFFFF' : textPrimary }]}>
-                      {role} ({count})
+                      {rol} · {cantidad}
                     </Text>
                   </Pressable>
                 );
@@ -576,6 +613,25 @@ const styles = StyleSheet.create({
   roleTabText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  registraBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    borderWidth: 1,
+  },
+  registraBadgeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  registraBadgeValor: {
+    fontSize: 12,
+    fontWeight: '900',
   },
   historyCards: {
     gap: 8,

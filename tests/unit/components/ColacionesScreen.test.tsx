@@ -16,7 +16,9 @@ vi.mock('react-native', () => ({
   View: ({ children, accessibilityLabel }: Children) => (
     <div aria-label={accessibilityLabel}>{children}</div>
   ),
-  ScrollView: ({ children }: Children) => <div>{children}</div>,
+  ScrollView: ({ children, accessibilityLabel }: Children) => (
+    <div aria-label={accessibilityLabel}>{children}</div>
+  ),
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({
     children,
@@ -67,10 +69,19 @@ vi.mock('@/components/ui/AnimatedView', () => ({
   AnimatedView: ({ children }: Children) => <div>{children}</div>,
 }));
 vi.mock('@/components/ui/PremiumHeader', () => ({
-  PremiumHeader: ({ title, subtitle }: { title?: string; subtitle?: string }) => (
+  PremiumHeader: ({
+    title,
+    subtitle,
+    rightComponent,
+  }: {
+    title?: string;
+    subtitle?: string;
+    rightComponent?: ReactNode;
+  }) => (
     <div>
       <span>{title}</span>
       <span>{subtitle}</span>
+      {rightComponent}
     </div>
   ),
 }));
@@ -164,64 +175,87 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ColacionesScreen: filtro del historial por rol receptor', () => {
-  it('rotula el encabezado con las colaciones del turno', () => {
+  it('rotula el encabezado como barman, único rol que registra colaciones', () => {
     render(<ColacionesScreen />);
-    expect(screen.getByText('Colaciones')).toBeTruthy();
-    expect(
-      screen.getByText('Un corto por trabajador durante el turno'),
-    ).toBeTruthy();
+    expect(screen.getByText('barman', { exact: true })).toBeTruthy();
   });
 
-  it('cuenta los registros y lista un filtro por rol con su conteo', () => {
+  it('cuenta registros, normaliza roles y conserva roles desconocidos o ausentes', () => {
     render(<ColacionesScreen />);
     expect(screen.getByText('6 registrados')).toBeTruthy();
-    // El filtro usa el rol tal cual llega del backend: no lo normaliza, así que
-    // 'anfitriona' y ' Anfitriona ' son dos pestañas distintas.
     for (const name of [
-      'Todos (6)',
-      'anfitriona (1)',
-      'Anfitriona (1)',
-      'barman (1)',
-      'garzon (1)',
-      'supervisor (1)',
+      'Todos, 6 colaciones',
+      'Anfitriona, 2 colaciones',
+      'Barman, 1 colación',
+      'Garzón, 1 colación',
+      'Supervisor, 1 colación',
+      'Sin rol, 1 colación',
     ]) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
+    const filters = screen.getByLabelText('Filtrar colaciones por rol');
+    // Las pestañas van por cantidad y, a igual, por orden alfabético.
+    expect(
+      [...filters.querySelectorAll('button')].map((node) => node.textContent),
+    ).toEqual([
+      'Todos · 6',
+      'Anfitriona · 2',
+      'Barman · 1',
+      'Garzón · 1',
+      'Sin rol · 1',
+      'Supervisor · 1',
+    ]);
   });
 
-  it('filtra por rol del receptor, no por el operador', () => {
+  it('filtra por rol del receptor, no por el operador, y el contador corresponde al detalle visible', () => {
     render(<ColacionesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'anfitriona (1)' }));
-    // El contador muestra el total del turno, no el del filtro.
-    expect(screen.getByText('6 registrados')).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Anfitriona, 2 colaciones' }),
+    );
+    expect(screen.getByText('2 registrados')).toBeTruthy();
     expect(screen.getByText('Ana')).toBeTruthy();
-    expect(screen.queryByText('Berta')).toBeNull();
+    expect(screen.getByText('Berta')).toBeTruthy();
     expect(screen.queryByText('Carlos')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'barman (1)' }));
+    expect(
+      screen
+        .getByRole('button', { name: 'Anfitriona, 2 colaciones' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('button', { name: 'Todos, 6 colaciones' }),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Barman, 1 colación' }),
+    );
+    expect(screen.getByText('1 registrado')).toBeTruthy();
     expect(screen.getByText('Carlos')).toBeTruthy();
     expect(screen.queryByText('Ana')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Todos (6)' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Todos, 6 colaciones' }),
+    );
     expect(screen.getByText('6 registrados')).toBeTruthy();
-    expect(screen.getByText('Ana')).toBeTruthy();
   });
 
-  it('deja el filtro vacío cuando un refresco se lleva el rol elegido', () => {
+  it('vuelve a Todos cuando un refresco elimina el rol elegido', () => {
     const { rerender } = render(<ColacionesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'anfitriona (1)' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Anfitriona, 2 colaciones' }),
+    );
     state.registros = [row(3, 'Carlos', 'barman')];
     rerender(<ColacionesScreen />);
-    expect(screen.getByText('No hay colaciones para este filtro.')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'anfitriona (1)' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Todos (1)' }));
     expect(screen.getByText('Carlos')).toBeTruthy();
+    expect(
+      screen
+        .getByRole('button', { name: 'Todos, 1 colación' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('conserva carga, error y vacío sin filtros con datos obsoletos', () => {
     state.loading = true;
     const { rerender } = render(<ColacionesScreen />);
     expect(screen.getByText('Cargando colaciones…')).toBeTruthy();
+    expect(screen.queryByLabelText('Filtrar colaciones por rol')).toBeNull();
     state.loading = false;
     state.error = 'Error del historial';
     rerender(<ColacionesScreen />);
@@ -234,6 +268,6 @@ describe('ColacionesScreen: filtro del historial por rol receptor', () => {
       screen.getByText('Aún no hay colaciones en este turno.'),
     ).toBeTruthy();
     expect(screen.getByText('0 registrados')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Todos (0)' })).toBeNull();
+    expect(screen.queryByLabelText('Filtrar colaciones por rol')).toBeNull();
   });
 });
