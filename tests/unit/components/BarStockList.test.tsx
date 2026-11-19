@@ -141,13 +141,47 @@ describe('BarStockList', () => {
   });
 
   it('navega a una categoría y vuelve a todas conservando conteos', () => {
+    const onSelectedCategoryChange = vi.fn();
+    const { rerender } = render(
+      <BarStockList
+        {...props}
+        items={items}
+        selectedCategory={null}
+        onSelectedCategoryChange={onSelectedCategoryChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ron, 3 productos' }));
+    expect(onSelectedCategoryChange).toHaveBeenCalledWith('Ron');
+
+    rerender(
+      <BarStockList
+        {...props}
+        items={items}
+        selectedCategory="Ron"
+        onSelectedCategoryChange={onSelectedCategoryChange}
+      />,
+    );
+    expect(screen.getAllByRole('heading')).toHaveLength(1);
+    expect(screen.queryByText('Producto 2')).toBeNull();
+
+    rerender(
+      <BarStockList
+        {...props}
+        items={items}
+        selectedCategory={null}
+        onSelectedCategoryChange={onSelectedCategoryChange}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Ron, 3 productos' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
+  });
+
+  it('elige la categoría internamente cuando no recibe props de control', () => {
     render(<BarStockList {...props} items={items} />);
     fireEvent.click(screen.getByRole('button', { name: 'Ron, 3 productos' }));
     expect(screen.getAllByRole('heading')).toHaveLength(1);
     expect(screen.queryByText('Producto 2')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Todas, 5 productos' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Todas, 5 productos' }));
-    expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ron, 3 productos' })).toBeNull();
   });
 
   it('muestra los resultados de búsqueda si desaparece la categoría elegida', () => {
