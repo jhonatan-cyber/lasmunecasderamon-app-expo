@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BASE_URL } from "@/api/client";
 import type { VentaDetail, VentaDetalle } from "./types";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface VentaProductosListProps {
     selectedVenta: VentaDetail;
@@ -43,6 +44,7 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
     textSecondary,
     isDark,
 }) => {
+    const { accentOnSurface } = useAccentColor();
     const grouped = useMemo(
         () => groupDetalles(selectedVenta.detalles || [], selectedVenta.usuarios_nicks || ""),
         [selectedVenta.detalles, selectedVenta.usuarios_nicks],
@@ -55,7 +57,7 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
                 <View key={idx} style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                     <View style={styles.cardHeader}>
                         <View style={[styles.cantBadge, { backgroundColor: `${accentColor}10` }]}>
-                            <Text style={[styles.cantText, { color: accentColor }]}>CANT: {det.cantidad}</Text>
+                            <Text style={[styles.cantText, { color: accentOnSurface }]}>CANT: {det.cantidad}</Text>
                         </View>
                         <Text style={[styles.precioUnit, { color: textSecondary }]}>
                             ${Number(det.precio).toLocaleString("es-CL")} c/u

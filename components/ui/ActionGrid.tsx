@@ -3,7 +3,11 @@ import { useRouter, type Href } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
-import { DashboardActionCard } from '@/components/shared/DashboardActionCard';
+import {
+  DashboardActionCard,
+  type DashboardCardVariant,
+} from '@/components/shared/DashboardActionCard';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 
 export interface ActionGridItem {
   title: string;
@@ -15,26 +19,48 @@ export interface ActionGridItem {
   onPress?: () => void;
   disabled?: boolean;
   bloqueoPorCaja?: boolean;
+  /** Contador que se muestra como pastilla sobre la tarjeta. */
+  badge?: number;
+  /** Cómo se anuncia el contador a lectores de pantalla. */
+  badgeLabel?: string;
+  /** Variante de la tarjeta; por defecto usa la del grid. */
+  variant?: DashboardCardVariant;
 }
 
 export interface ActionGridProps {
   actions: ActionGridItem[];
+  /**
+   * `tile` (por defecto) dibuja el cuadro vertical del dashboard. `row` mantiene
+   * la fila compacta para los bloques que acompañan a otros datos.
+   */
+  variant?: DashboardCardVariant;
+  /** Fuerza el número de columnas; por defecto 2 en móvil y 3 en tablet/horizontal. */
+  columns?: number;
 }
 
-const COLUMNS = 2;
 const ROW_GAP = 12;
 const TOP_GAP = 15;
 
 /**
- * Tablero de acciones del dashboard con el mismo layout para todos los roles:
- * dos columnas, tarjetas DashboardActionCard y separación uniforme.
+ * Tablero de acciones del dashboard: dos columnas en móvil y tres cuando hay
+ * ancho de sobra (tablet o landscape), con tarjetas DashboardActionCard y
+ * separación uniforme.
  */
-export const ActionGrid: React.FC<ActionGridProps> = ({ actions }) => {
+export const ActionGrid: React.FC<ActionGridProps> = ({
+  actions,
+  variant = 'tile',
+  columns,
+}) => {
   const router = useRouter();
+  const { isTablet, isLandscape } = useResponsiveMetrics();
+
+  const columnCount =
+    columns ??
+    (variant === 'row' ? 2 : isTablet || isLandscape ? 3 : 2);
 
   const rows: ActionGridItem[][] = [];
-  for (let i = 0; i < actions.length; i += COLUMNS) {
-    rows.push(actions.slice(i, i + COLUMNS));
+  for (let i = 0; i < actions.length; i += columnCount) {
+    rows.push(actions.slice(i, i + columnCount));
   }
 
   const handlePress = (action: ActionGridItem) => {
@@ -55,6 +81,10 @@ export const ActionGrid: React.FC<ActionGridProps> = ({ actions }) => {
         borderColor={action.borderColor}
         onPress={() => handlePress(action)}
         disabled={action.disabled}
+        variant={action.variant ?? variant}
+        badge={action.badge}
+        badgeLabel={action.badgeLabel}
+        bloqueado={!!action.bloqueoPorCaja}
       />
     );
     if (!action.bloqueoPorCaja) return card;
@@ -80,6 +110,11 @@ export const ActionGrid: React.FC<ActionGridProps> = ({ actions }) => {
               {renderCard(action)}
             </View>
           ))}
+          {/* Rellena la última fila para que las tarjetas conserven el ancho. */}
+          {row.length < columnCount &&
+            Array.from({ length: columnCount - row.length }).map((_, index) => (
+              <View key={`empty-${index}`} style={styles.cell} />
+            ))}
         </View>
       ))}
     </View>

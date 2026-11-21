@@ -184,7 +184,8 @@ export function AdvanceCard({
 
                 {item.motivo ? (
                     <View style={styles.motivoRow}>
-                        <Text style={[styles.motivoText, { color: textSecondary }]}>📝 {item.motivo}</Text>
+                        <Ionicons name="document-text-outline" size={14} color={textSecondary} style={{ marginRight: 4 }} />
+                        <Text style={[styles.motivoText, { color: textSecondary }]}>{item.motivo}</Text>
                     </View>
                 ) : null}
 

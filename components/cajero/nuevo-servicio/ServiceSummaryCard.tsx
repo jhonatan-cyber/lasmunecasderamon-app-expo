@@ -45,6 +45,7 @@ export function ServiceSummaryCard({
   isDark,
   onSubmit,
 }: Props) {
+    const { accentOnSurface } = useAccentColor();
   const { cardBg } = useAccentColor();
 
   return (
@@ -113,7 +114,7 @@ export function ServiceSummaryCard({
         ]}
       >
         <Text style={[totalLabelFinal, { color: textPrimary }]}>TOTAL SERVICIO</Text>
-        <Text style={[totalValFinal, { color: accentColor }]}>
+        <Text style={[totalValFinal, { color: accentOnSurface }]}>
           ${totals.total.toLocaleString()}
         </Text>
       </View>

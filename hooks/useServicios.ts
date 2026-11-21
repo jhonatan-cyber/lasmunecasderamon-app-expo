@@ -1,27 +1,12 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { apiClientSafe } from "@/api/client";
+import { serviciosService } from "@/services/servicios";
+import type { Servicio } from "@lasmunecasderamon/types";
 import { showToast } from '@/utils/toast-lazy';
-import * as Haptics from "expo-haptics";
+import * as Haptics from 'expo-haptics';
 
-export interface Servicio {
-  id_servicio: number;
-  codigo: string;
-  tiempo: number;
-  fecha_crea: string;
-  precio_servicio: number;
-  precio_habitacion?: number;
-  total?: number;
-  metodo_pago?: string;
-  creado_por?: string;
-  comision_usuario: number;
-  habitacion: string;
-  anfitriona: string;
-  cliente: string;
-  estado: number;
-  pago_estado?: number;
-  habitacion_comision?: number;
-}
+export type { Servicio };
 
 export function useServicios() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
@@ -32,18 +17,15 @@ export function useServicios() {
   const fetchData = useCallback(async (isManual = false) => {
     try {
       setError('');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-      const res = await apiClientSafe('/services/user', { signal: controller.signal });
-      clearTimeout(timeoutId);
+      const res = await serviciosService.getUserServices();
 
-      if ((res as any).success) {
-        setServicios((res as any).data || []);
+      if (res.success) {
+        setServicios(res.items);
         if (isManual) {
           showToast({ type: 'success', text1: 'Sincronizado', text2: 'Datos actualizados desde el servidor' });
         }
       } else {
-        setError((res as any).message || 'Error al cargar servicios');
+        setError(res.message || 'Error al cargar servicios');
       }
     } catch (err: any) {
       const msg = err.name === 'AbortError' ? 'Tiempo de espera agotado' : (err.message || 'Error de conexión');

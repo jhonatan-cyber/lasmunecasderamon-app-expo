@@ -3,9 +3,10 @@ import { formColumn } from "@/constants/layout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   Pressable,
   ScrollView,
@@ -78,6 +79,13 @@ export default function NuevoServicioScreen() {
     balanceSubmitting,
   } = state;
 
+  const [formCollapsed, setFormCollapsed] = useState(false);
+
+  const toggleFormCollapse = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFormCollapsed((prev) => !prev);
+  };
+
   if (loadingInitial)
     return (
       <NuevoServicioSkeleton
@@ -101,19 +109,35 @@ export default function NuevoServicioScreen() {
         onBack={() => router.back()}
       />
 
-      <ScrollView
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View
-          style={[styles.section, { backgroundColor: cardBg, borderColor }]}
+      <View style={styles.body}>
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.sectionTitle, { color: textPrimary }]}>
-            Formulario de Servicio
-          </Text>
+          <View
+            style={[styles.section, { backgroundColor: cardBg, borderColor }]}
+          >
+          <Pressable
+            onPress={toggleFormCollapse}
+            style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: formCollapsed ? 0 : 20 }}
+            accessibilityRole="button"
+            accessibilityLabel={formCollapsed ? "Expandir formulario" : "Contraer formulario"}
+          >
+            <Text style={[styles.sectionTitle, { color: textPrimary }]}>
+              Formulario de Servicio
+            </Text>
+            <Ionicons
+              name={formCollapsed ? "chevron-down" : "chevron-up"}
+              size={18}
+              color={textPrimary}
+              style={{ opacity: 0.6 }}
+            />
+          </Pressable>
 
-          {}
+          {!formCollapsed && (
+            <>
+          <Text style={[styles.selectorLabel, { color: textSecondary }]}>Habitación (Requerido)</Text>
           <Pressable
             style={[styles.selectorBtn, { borderColor }]}
             onPress={() =>
@@ -128,9 +152,6 @@ export default function NuevoServicioScreen() {
           >
             <Ionicons name="business" size={22} color={accentColor} />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.selectorLabel, { color: textSecondary }]}>
-                Habitación (Requerido)
-              </Text>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedHabitacion?.nombre || "Seleccionar habitación"}
               </Text>
@@ -138,9 +159,9 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          {}
+          <Text style={[styles.selectorLabel, { color: textSecondary, marginTop: 12 }]}>Anfitrionas ({selectedHostesses.length}) (Requerido)</Text>
           <Pressable
-            style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
+            style={[styles.selectorBtn, { borderColor }]}
             onPress={() =>
               dispatch({
                 type: "SET_MODAL_VISIBLE",
@@ -153,9 +174,6 @@ export default function NuevoServicioScreen() {
           >
             <Ionicons name="people" size={22} color="#10B981" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.selectorLabel, { color: textSecondary }]}>
-                Anfitrionas ({selectedHostesses.length})
-              </Text>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedHostesses.length > 0
                   ? selectedHostesses
@@ -172,9 +190,9 @@ export default function NuevoServicioScreen() {
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
           </Pressable>
 
-          {}
+          <Text style={[styles.selectorLabel, { color: textSecondary, marginTop: 12 }]}>Clientes ({selectedClients.length}) (Opcional)</Text>
           <Pressable
-            style={[styles.selectorBtn, { borderColor, marginTop: 12 }]}
+            style={[styles.selectorBtn, { borderColor }]}
             onPress={() =>
               dispatch({
                 type: "SET_MODAL_VISIBLE",
@@ -187,9 +205,6 @@ export default function NuevoServicioScreen() {
           >
             <Ionicons name="person" size={22} color="#3B82F6" />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.selectorLabel, { color: textSecondary }]}>
-                Clientes ({selectedClients.length})
-              </Text>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedClients.length > 0
                   ? selectedClients
@@ -204,7 +219,7 @@ export default function NuevoServicioScreen() {
                           : "Cliente";
                       })
                       .join(", ")
-                  : "Seleccionar clientes (Opcional)"}
+                  : "Seleccionar clientes"}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={textSecondary} />
@@ -213,9 +228,7 @@ export default function NuevoServicioScreen() {
           {}
           {!hasAnfitrionaComision && (
             <View style={{ marginTop: 20 }}>
-              <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>
-                PRECIO DE SERVICIO
-              </Text>
+              <Text style={[styles.inputGroupLabel, { color: textSecondary }]}>PRECIO DE SERVICIO (Opcional)</Text>
               <View style={[styles.inputWrapper, { borderColor }]}>
                 <Ionicons name="cash-outline" size={20} color={textSecondary} />
                 <TextInput
@@ -345,33 +358,38 @@ export default function NuevoServicioScreen() {
               }
             />
           )}
-        </View>
+            </>
+          )}
+          </View>
 
-        {hasAnfitrionaComision && (
-          <IncludedServiceProductSelector
-            value={productoIncluido}
-            onChange={setProductoIncluido}
+          {hasAnfitrionaComision && (
+            <IncludedServiceProductSelector
+              value={productoIncluido}
+              onChange={setProductoIncluido}
+            />
+          )}
+        </ScrollView>
+
+        <View style={styles.stickyFooter}>
+          <ServiceSummaryCard
+            hasAnfitrionaComision={hasAnfitrionaComision}
+            totals={totals}
+            comisionAnfitriona={selectedHabitacion?.comision_anfitriona ?? 0}
+            hostessCount={selectedHostesses.length}
+            selectedHabitacionNombre={selectedHabitacion?.nombre ?? ""}
+            metodoPago={metodoPago}
+            desgloseTarjeta={desgloseTarjeta}
+            submitting={submitting}
+            cajaAbierta={cajaAbierta}
+            accentColor={accentColor}
+            borderColor={borderColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            isDark={isDark}
+            onSubmit={handleSubmit}
           />
-        )}
-
-        <ServiceSummaryCard
-          hasAnfitrionaComision={hasAnfitrionaComision}
-          totals={totals}
-          comisionAnfitriona={selectedHabitacion?.comision_anfitriona ?? 0}
-          hostessCount={selectedHostesses.length}
-          selectedHabitacionNombre={selectedHabitacion?.nombre ?? ""}
-          metodoPago={metodoPago}
-          desgloseTarjeta={desgloseTarjeta}
-          submitting={submitting}
-          cajaAbierta={cajaAbierta}
-          accentColor={accentColor}
-          borderColor={borderColor}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          isDark={isDark}
-          onSubmit={handleSubmit}
-        />
-      </ScrollView>
+        </View>
+      </View>
 
       <RoomSelectModal
         visible={roomModalVisible}
@@ -468,7 +486,14 @@ export default function NuevoServicioScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { ...formColumn, padding: 16, paddingBottom: 100, flexGrow: 1 },
+  body: { flex: 1 },
+  scrollContent: { ...formColumn, padding: 16, paddingBottom: 20, flexGrow: 1 },
+  stickyFooter: {
+    ...formColumn,
+    padding: 16,
+    paddingBottom: 20,
+    borderTopWidth: 0,
+  },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,

@@ -33,8 +33,13 @@ vi.mock('@/components/shared/BloqueoPorCaja', () => ({
 }));
 
 vi.mock('@/components/shared/DashboardActionCard', () => ({
-  DashboardActionCard: ({ title, color, borderColor }: any) => (
-    <div data-title={title} data-color={color} data-border-color={borderColor}>
+  DashboardActionCard: ({ title, color, borderColor, badge }: any) => (
+    <div
+      data-title={title}
+      data-color={color}
+      data-border-color={borderColor}
+      data-badge={badge}
+    >
       {title}
     </div>
   ),
@@ -46,36 +51,31 @@ afterEach(() => {
 
 describe('CajeroActionGrid — tarjetas visibles según rol', () => {
   const TARJETAS_CAJERO = [
+    'RESUMEN',
     'VENTAS',
     'SERVICIOS',
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
-    'COVERS',
-    'PERSONAL',
-    'GRATIFICACIONES',
   ];
 
   const TARJETAS_ADMIN = [
     'ESTADO DE CAJA',
+    'RESUMEN',
     'ASISTENCIA LOCAL',
     'VENTAS',
     'SERVICIOS',
     'COMPRAS',
     'PAGOS',
     'ANTICIPOS',
-    'GRATIFICACIONES',
     'HORAS EXTRAS',
     'CONFIGURACIÓN',
   ];
 
   const TARJETAS_SOLO_CAJERO = [
-    'COLACIONES',
     'CAJA',
     'PEDIDOS',
     'CLIENTES',
-    'COVERS',
-    'PERSONAL',
   ];
 
   it('muestra los módulos de administración para un administrador', () => {
@@ -123,5 +123,37 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
 
     expect(ventas?.getAttribute('data-color')).toBe('#22C55E');
     expect(servicios?.getAttribute('data-color')).toBe('#F97316');
+  });
+
+  it('muestra el contador de solicitudes pendientes en PEDIDOS', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(false);
+
+    render(<CajeroActionGrid pendingCount={3} />);
+
+    const pedidos = screen.getByText('PEDIDOS').closest('[data-title="PEDIDOS"]');
+
+    expect(pedidos?.getAttribute('data-badge')).toBe('3');
+  });
+
+  it('deja el contador en cero cuando no hay solicitudes pendientes', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(false);
+
+    render(<CajeroActionGrid pendingCount={0} />);
+
+    const pedidos = screen.getByText('PEDIDOS').closest('[data-title="PEDIDOS"]');
+
+    expect(pedidos?.getAttribute('data-badge')).toBe('0');
+  });
+
+  it('muestra el contador de anticipos por entregar al administrador', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(true);
+
+    render(<CajeroActionGrid pendingAdvances={2} />);
+
+    const anticipos = screen
+      .getByText('ANTICIPOS')
+      .closest('[data-title="ANTICIPOS"]');
+
+    expect(anticipos?.getAttribute('data-badge')).toBe('2');
   });
 });

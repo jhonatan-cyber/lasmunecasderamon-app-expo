@@ -100,7 +100,7 @@ export const styles = StyleSheet.create({
   },
   saveBtn: {
     elevation: 4,
-    shadowColor: '#E11D48',
+    shadowColor: '#FF2D55',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

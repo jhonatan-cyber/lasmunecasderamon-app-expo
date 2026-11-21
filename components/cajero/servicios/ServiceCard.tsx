@@ -1,17 +1,21 @@
-import { ServiceAssignmentActions } from "./ServiceAssignmentActions";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { AnimatedView } from "@/components/ui/AnimatedView";
 import type { Timer } from "@/context/types";
-import { calculateRemainingTime, parseDateSafe } from "@/utils/timeUtils";
+import { formatTime, parseDateSafe } from "@/utils/timeUtils";
+import { tiempoServicio } from "@/utils/servicioTiempo";
 import { safeNumber } from "@/utils/format";
-import { useRenderCount } from "@/hooks/useRenderCount";
+import {
+  coloresBadgeEstado,
+  estadoServicio,
+  estadoVisualServicio,
+} from "@/utils/servicioEstado";
 import { useTimerTick } from "@/context/TimerContext";
 import { ServiceCardHeader } from "./ServiceCardHeader";
 import { ServiceCardDetails } from "./ServiceCardDetails";
 import { ServiceCardTimer } from "./ServiceCardTimer";
 import { ServiceCardFinance } from "./ServiceCardFinance";
-import { ServiceCardActions } from "./ServiceCardActions";
+import { ServiceCardActions, type ServiceCardMenuItem } from "./ServiceCardActions";
 
 interface ServiceCardProps {
   item: Timer & {
@@ -28,61 +32,88 @@ interface ServiceCardProps {
   serverOffset: number;
   onFinalizar?: (t: Timer) => void;
   onEditar?: (t: Timer) => void;
+  onAgregarVenta?: (t: Timer) => void;
+  onCambiarAnfitrionas?: (t: Timer) => void;
   onPress?: (t: any) => void;
   readOnly?: boolean;
   sinAccionesBarman?: boolean;
   theme: any;
 }
 
-export const ServiceCard = memo(
-  ({
-    item,
-    activeTab,
-    serverOffset,
-    onFinalizar,
-    onEditar,
-    onPress,
-    readOnly,
-    sinAccionesBarman,
-    theme,
-  }: ServiceCardProps) => {
-    useTimerTick();
-    useRenderCount("ServiceCard", {
-      itemId: item?.id,
-      activeTab,
-      estado: item?.estado,
+const ServiceCardContent = ({
+  item,
+  activeTab,
+  serverOffset,
+  onFinalizar,
+  onEditar,
+  onAgregarVenta,
+  onCambiarAnfitrionas,
+  onPress,
+  readOnly,
+  sinAccionesBarman,
+  theme,
+}: ServiceCardProps) => {
+    const tiempo = tiempoServicio(item, serverOffset);
+    const visual = estadoVisualServicio(item.estado, {
+      excedido: tiempo.estaExcedido,
+      critico: tiempo.estaCritico,
     });
-    const remaining = calculateRemainingTime(item, serverOffset);
-
-    const formatTime = (secs: number) => {
-      const absSecs = Math.max(0, Math.abs(secs));
-      const m = Math.floor(absSecs / 60);
-      const s = absSecs % 60;
-      return `${secs < 0 ? "-" : ""}${m}:${s.toString().padStart(2, "0")}`;
-    };
-
-    const isCritical = remaining < 60 && remaining > 0;
-    const isOverdue = remaining <= 0;
+    const badge = coloresBadgeEstado(visual, Boolean(theme.isDark));
+    const estadoInfo = estadoServicio(item.estado);
     const total = safeNumber(item.total);
 
-    let statusText =
-      activeTab === "finalizados"
-        ? "FINALIZADO"
-        : isOverdue
-          ? "TIEMPO AGOTADO"
-          : "EN PROCESO";
-    let statusColor = isOverdue ? theme.danger : theme.success;
-
-    if (item.estado === 0) {
-      statusText = "ANULADO";
-      statusColor = theme.danger;
-    } else if (item.estado === 3) {
-      statusText = "PAUSADO";
-      statusColor = theme.warning;
-    } else if (item.estado === 4) {
-      statusText = "SOLICITUD ANUL.";
-      statusColor = theme.info;
+    let statusText = activeTab === "finalizados" ? "FINALIZADO" : "EN PROCESO";
+    switch (visual) {
+      case "excedido":
+        statusText = "EXCEDIDO";
+        break;
+      case "critico":
+        statusText = "POR VENCER";
+        break;
+      case "pausado":
+        statusText = "PAUSADO";
+        break;
+      case "anulado":
+        statusText = estadoInfo.label.toUpperCase();
+        break;
+      case "finalizado":
+        statusText = "FINALIZADO";
+        break;
     }
+
+    const acentoReloj =
+      visual === "excedido" || visual === "anulado"
+        ? theme.danger
+        : visual === "critico"
+          ? theme.warning
+          : visual === "pausado"
+            ? theme.textMuted
+            : theme.accent;
+
+    const fondoReloj =
+      visual === "excedido" || visual === "anulado"
+        ? `${theme.danger}14`
+        : visual === "critico"
+          ? `${theme.warning}14`
+          : visual === "pausado"
+            ? theme.isDark
+              ? "rgba(156,163,175,0.14)"
+              : "rgba(156,163,175,0.12)"
+            : theme.bg;
+
+    const etiquetaReloj =
+      visual === "pausado" ? "PAUSADO" : tiempo.estaExcedido ? "TIEMPO EXCEDIDO" : "TIEMPO RESTANTE";
+    const valorReloj =
+      visual === "pausado" || !tiempo.estaExcedido
+        ? formatTime(tiempo.restante)
+        : `+${formatTime(tiempo.excedidoSegundos)}`;
+
+    const bordeColor =
+      visual === "excedido" || visual === "anulado"
+        ? theme.danger
+        : visual === "critico" || visual === "pausado"
+          ? theme.warning
+          : theme.border;
 
     const formatDateTime = (dateStr?: string) => {
       if (!dateStr) return "";
@@ -99,6 +130,43 @@ export const ServiceCard = memo(
         .replace(/,/g, "");
     };
 
+    const menuItems = useMemo<ServiceCardMenuItem[]>(() => {
+      const items: ServiceCardMenuItem[] = [];
+      // Mismo alcance que el panel anterior: solo servicios en curso o pausados.
+      const puedeGestionar =
+        item.tipoTransaccion === "servicio" && [2, 3].includes(Number(item.estado));
+      if (puedeGestionar && onAgregarVenta) {
+        items.push({
+          key: "venta",
+          label: "Agregar venta",
+          icon: "cart-outline",
+          onPress: () => onAgregarVenta(item),
+        });
+      }
+      if (puedeGestionar && onCambiarAnfitrionas) {
+        items.push({
+          key: "anfitrionas",
+          label: "Cambiar o liberar anfitrionas",
+          icon: "people-outline",
+          onPress: () => onCambiarAnfitrionas(item),
+        });
+      }
+      if (
+        !item.es_temporal &&
+        !item.servicio_original_id &&
+        Number(item.habitacion_comision || 0) > 0 &&
+        onEditar
+      ) {
+        items.push({
+          key: "adicional",
+          label: "Servicio adicional",
+          icon: "create-outline",
+          onPress: () => onEditar(item),
+        });
+      }
+      return items;
+    }, [item, onAgregarVenta, onCambiarAnfitrionas, onEditar]);
+
     return (
       <AnimatedView
         from={{ opacity: 0, scale: 0.9 }}
@@ -111,7 +179,7 @@ export const ServiceCard = memo(
             styles.card,
             {
               backgroundColor: theme.card,
-              borderColor: isOverdue ? theme.danger : theme.border,
+              borderColor: bordeColor,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },
@@ -121,8 +189,10 @@ export const ServiceCard = memo(
             roomName={item.roomName}
             servicioCode={item.servicioCode}
             createdAt={item.created_at}
-            statusColor={statusColor}
+            statusColor={badge.foreground}
             statusText={statusText}
+            statusBgColor={badge.background}
+            statusTextColor={badge.foreground}
             accentColor={theme.accent}
             textColor={theme.text}
             textMutedColor={theme.textMuted}
@@ -138,18 +208,17 @@ export const ServiceCard = memo(
           />
 
           <ServiceCardTimer
-            visible={activeTab === "activos" && item.estado !== 3}
-            isOverdue={isOverdue}
-            isCritical={isCritical}
-            remaining={remaining}
-            duration={item.duration}
-            dangerColor={theme.danger}
-            warningColor={theme.warning}
-            accentColor={theme.accent}
-            bgColor={theme.bg}
-            textColor={theme.text}
+            visible={activeTab === "activos" && visual !== "anulado"}
+            etiqueta={etiquetaReloj}
+            valor={valorReloj}
+            totalMinutos={safeNumber(item.duration)}
+            progreso={tiempo.progreso}
+            icono={visual === "pausado" ? "pause" : visual === "excedido" ? "alert-circle" : "time"}
+            acento={acentoReloj}
+            fondo={fondoReloj}
+            barraFondo={theme.isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.08)"}
             textMutedColor={theme.textMuted}
-            formatTime={formatTime}
+            accessibilityLabel={`${etiquetaReloj.toLowerCase()} ${valorReloj} de ${safeNumber(item.duration)} minutos`}
           />
 
           <ServiceCardFinance
@@ -163,25 +232,34 @@ export const ServiceCard = memo(
             dangerColor={theme.danger}
           />
 
-          {!readOnly && !sinAccionesBarman && activeTab === "activos" && <ServiceAssignmentActions item={item} />}
           {!readOnly && !sinAccionesBarman && activeTab === "activos" && (
             <ServiceCardActions
-              showEdit={
-                !item.es_temporal &&
-                !item.servicio_original_id &&
-                Number(item.habitacion_comision || 0) > 0
-              }
-              warningColor={theme.warning}
-              dangerColor={theme.danger}
-              onEditar={() => onEditar && onEditar(item)}
+              accentColor={theme.accent}
+              accentTextColor={theme.accentText || "#FFFFFF"}
+              cardBg={theme.card}
+              textColor={theme.text}
+              textMutedColor={theme.textMuted}
+              borderColor={theme.border}
+              menuItems={menuItems}
               onFinalizar={() => onFinalizar?.(item)}
             />
           )}
         </Pressable>
       </AnimatedView>
     );
-  },
-);
+};
+
+// Solo las tarjetas activas necesitan el tick por segundo; las finalizadas y
+// pausadas se quedan estáticas para no re-renderizar la lista completa.
+const TickingServiceCard = (props: ServiceCardProps) => {
+  useTimerTick();
+  return <ServiceCardContent {...props} />;
+};
+
+export const ServiceCard = memo((props: ServiceCardProps) => {
+  const needsTick = props.activeTab === "activos" && props.item.estado !== 3;
+  return needsTick ? <TickingServiceCard {...props} /> : <ServiceCardContent {...props} />;
+});
 
 ServiceCard.displayName = "ServiceCard";
 

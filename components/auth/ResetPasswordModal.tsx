@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import { Colors } from '@/constants/theme';
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
     resetRun: string;
     onChangeResetRun: (value: string) => void;
     isDark: boolean;
+    accentColor: string;
     onClose: () => void;
     onReset: () => void;
 }
@@ -25,6 +27,7 @@ export default function ResetPasswordModal({
     resetRun,
     onChangeResetRun,
     isDark,
+    accentColor,
     onClose,
     onReset,
 }: Props) {
@@ -57,7 +60,7 @@ export default function ResetPasswordModal({
                         ]}
                         placeholder="Ingresa tu RUT"
                         placeholderTextColor={C.textMuted}
-                        autoCapitalize="characters"
+                        autoCapitalize="none"
                         autoCorrect={false}
                         editable={!loading}
                         accessibilityLabel="RUT registrado"
@@ -67,7 +70,7 @@ export default function ResetPasswordModal({
                     <View style={styles.alertActions}>
                         <Pressable
                             onPress={onClose}
-                            style={[styles.alertBtn, { backgroundColor: isDark ? '#333' : '#E5E7EB', flex: 1 }]}
+                            style={[styles.alertBtn, { backgroundColor: isDark ? '#333' : '#F3F4F6', flex: 1 }]}
                         >
                             <Text style={[styles.alertBtnText, { color: isDark ? '#FFFFFF' : '#111827' }]}>
                                 Cancelar
@@ -75,7 +78,7 @@ export default function ResetPasswordModal({
                         </Pressable>
                         <Pressable
                             onPress={onReset}
-                            style={[styles.alertBtn, { backgroundColor: '#E11D48', flex: 1 }]}
+                            style={[styles.alertBtn, { backgroundColor: accentColor, flex: 1 }]}
                             disabled={loading}
                         >
                             {loading ? (
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
     },
     input: {
         height: 60,
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
         paddingHorizontal: 24,
         fontSize: 16,
         borderWidth: 2,

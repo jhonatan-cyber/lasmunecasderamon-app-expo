@@ -4,12 +4,12 @@ import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -29,7 +29,7 @@ const horaCorta = (hora: string) => String(hora ?? '').slice(0, 5);
 
 export default function AsistenciaLocalScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
+  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<AsistenciaHoy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ export default function AsistenciaLocalScreen() {
       return (
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={[styles.avatar, { backgroundColor: `${accentColor}22` }]}>
-            <Text style={[styles.avatarText, { color: accentColor }]}>{inicial}</Text>
+            <Text style={[styles.avatarText, { color: accentOnSurface }]}>{inicial}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.name, { color: textPrimary }]} numberOfLines={1}>
@@ -124,19 +124,14 @@ export default function AsistenciaLocalScreen() {
       />
 
       {error ? (
-        <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-          <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
-          <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
-          <Pressable
-            onPress={() => {
-              setLoading(true);
-              fetchData();
-            }}
-            style={[styles.retryBtn, { backgroundColor: accentColor }]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          title="No se pudo cargar la asistencia"
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       ) : (
         <FlatList
           data={data}
@@ -196,6 +191,4 @@ const styles = StyleSheet.create({
   backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

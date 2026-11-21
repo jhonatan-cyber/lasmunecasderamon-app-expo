@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatCurrency } from '@/utils/format';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Stats {
     totalRegistros: number;
@@ -26,6 +27,7 @@ export function OvertimeStatsCards({
     textPrimary,
     textSecondary,
 }: OvertimeStatsCardsProps) {
+    const { accentOnSurface } = useAccentColor();
     return (
         <View style={styles.statsRow}>
             <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
@@ -44,10 +46,10 @@ export function OvertimeStatsCards({
             </View>
             <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
                 <View style={[styles.statIconBox, { backgroundColor: `${accentColor}15` }]}>
-                    <Ionicons name="wallet-outline" size={18} color={accentColor} />
+                    <Ionicons name="wallet-outline" size={18} color={accentOnSurface} />
                 </View>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Por Cobrar</Text>
-                <Text style={[styles.statValue, { color: accentColor }]}>{formatCurrency(stats.totalAPagar)}</Text>
+                <Text style={[styles.statValue, { color: accentOnSurface }]}>{formatCurrency(stats.totalAPagar)}</Text>
             </View>
         </View>
     );

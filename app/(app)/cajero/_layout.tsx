@@ -41,10 +41,14 @@ export default function CajeroLayout() {
           name="personal"
           options={{ title: "Personal", headerShown: false }}
         />
-        <Stack.Screen name="perfil" options={{ title: "Mi Perfil" }} />
+        <Stack.Screen name="perfil" options={{ title: "Mi Perfil", headerShown: false }} />
         <Stack.Screen
           name="administrativo"
           options={{ title: "Resumen Personal", headerShown: false }}
+        />
+        <Stack.Screen
+          name="resumen"
+          options={{ title: "Resumen", headerShown: false }}
         />
         <Stack.Screen
           name="asistencia-resumen"
@@ -86,7 +90,7 @@ export default function CajeroLayout() {
           name="ventas"
           options={{ title: "Ventas", headerShown: false }}
         />
-        <Stack.Screen name="solicitudes" options={{ title: "Solicitudes" }} />
+        <Stack.Screen name="solicitudes" options={{ title: "Solicitudes", headerShown: false }} />
         <Stack.Screen
           name="pendientes"
           options={{ title: "Pendientes", headerShown: false }}

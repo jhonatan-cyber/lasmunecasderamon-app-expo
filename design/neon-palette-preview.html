@@ -1,0 +1,2157 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paleta neón · Las Muñecas de Ramón</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0B0B0F; color: #fff; }
+  h1 { padding: 28px 28px 4px; margin: 0; font-size: 26px; letter-spacing: -0.4px; }
+  .lead { padding: 0 28px 20px; margin: 0; color: #9CA3AF; font-size: 14px; max-width: 900px; }
+  .mode { padding: 22px 28px 40px; }
+  .mode.light { background: #FFFFFF; color: #111827; }
+  .mode.dark { background: #000000; }
+  .mode h2 { margin: 0 0 16px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.55; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+  .cell { border-radius: 18px; overflow: hidden; }
+  .header { padding: 18px 16px; }
+  .hrow { display: flex; align-items: center; justify-content: space-between; }
+  .htitle { font-size: 22px; font-weight: 800; }
+  .hsub { font-size: 13px; margin-top: 2px; }
+  .hbtn { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; }
+  .body { position: relative; padding: 16px; }
+  .card { display: flex; gap: 12px; align-items: center; border: 1px solid; border-radius: 16px; padding: 14px; }
+  .chip { width: 42px; height: 42px; border-radius: 14px; }
+  .ctitle { font-size: 14px; font-weight: 800; }
+  .cdesc { font-size: 12px; margin-top: 2px; }
+  .fab { position: absolute; right: 18px; bottom: 74px; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 700; }
+  .tabs { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around; padding: 8px 6px 14px; border-top-left-radius: 18px; border-top-right-radius: 18px; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; }
+  .ticon { width: 30px; height: 30px; border-radius: 15px; display: grid; place-items: center; font-size: 15px; }
+  .pickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; margin-top: 26px; }
+  .picker-cell { border-radius: 16px; padding: 2px; }
+  .picker { padding: 16px; border-radius: 16px; }
+  .mode.light .picker { background: #F3F4F6; color: #111827; }
+  .mode.dark .picker { background: #111111; color: #fff; }
+  .ptitle { font-size: 16px; font-weight: 800; }
+  .pdesc { font-size: 12px; opacity: 0.6; margin: 3px 0 12px; }
+  .preview { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; margin-bottom: 14px; }
+  .picon { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 20px; }
+  .pcap { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; }
+  .pname { font-size: 19px; font-weight: 800; margin-top: 2px; }
+  .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 13px; border: 2px solid; }
+  .swatch { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+  .oname { font-size: 12px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>Paleta neón · 13 acentos planos</h1>
+  <p class="lead">Colores sólidos (sin degradado) + halo de neón. El texto sobre el acento se elige por medición WCAG: blanco en los acentos profundos y casi negro en los luminosos. Toca un color para ver el header, la barra de pestañas, el FAB y el selector de perfil.</p>
+  
+      <section class="mode light">
+        <h2>Modo claro · fondo blanco</h2>
+        <div class="grid">
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#FF1B3D;box-shadow:0 0 12px 0px #FF1B3D">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 214)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#FF1B3D;box-shadow:0 0 8px 0px #FF1B3D"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF1B3D;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #FF1B3D">＋</div>
+            
+      <div class="tabs" style="background:#FF1B3D;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #FF1B3D">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 214)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 214)">◈</div><span style="color:rgba(10, 10, 20, 214)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 214)">◈</div><span style="color:rgba(10, 10, 20, 214)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#C13BFF;box-shadow:0 0 12px 0px #C13BFF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 224)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#C13BFF;box-shadow:0 0 8px 0px #C13BFF"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#C13BFF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #C13BFF">＋</div>
+            
+      <div class="tabs" style="background:#C13BFF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #C13BFF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 224)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 224)">◈</div><span style="color:rgba(10, 10, 20, 224)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 224)">◈</div><span style="color:rgba(10, 10, 20, 224)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#0095FF;box-shadow:0 0 12px 0px #0095FF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 194)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#0095FF;box-shadow:0 0 8px 0px #0095FF"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#0095FF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #0095FF">＋</div>
+            
+      <div class="tabs" style="background:#0095FF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #0095FF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 194)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 194)">◈</div><span style="color:rgba(10, 10, 20, 194)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 194)">◈</div><span style="color:rgba(10, 10, 20, 194)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#6C4DFF;box-shadow:0 0 12px 0px #6C4DFF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#FFFFFF">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(255, 255, 255, 235)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#6C4DFF;box-shadow:0 0 8px 0px #6C4DFF"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#6C4DFF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #6C4DFF">＋</div>
+            
+      <div class="tabs" style="background:#6C4DFF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #6C4DFF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.30);color:#FFFFFF">◈</div><span style="color:rgba(255, 255, 255, 235)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 235)">◈</div><span style="color:rgba(255, 255, 255, 235)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 235)">◈</div><span style="color:rgba(255, 255, 255, 235)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#00FFA6;box-shadow:0 0 12px 0px #00FFA6">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#00FFA6;box-shadow:0 0 8px 0px #00FFA6"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#00FFA6;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #00FFA6">＋</div>
+            
+      <div class="tabs" style="background:#00FFA6;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #00FFA6">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#FF8A00;box-shadow:0 0 12px 0px #FF8A00">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#FF8A00;box-shadow:0 0 8px 0px #FF8A00"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF8A00;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #FF8A00">＋</div>
+            
+      <div class="tabs" style="background:#FF8A00;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #FF8A00">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#FF2E9A;box-shadow:0 0 12px 0px #FF2E9A">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 199)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#FF2E9A;box-shadow:0 0 8px 0px #FF2E9A"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF2E9A;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #FF2E9A">＋</div>
+            
+      <div class="tabs" style="background:#FF2E9A;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #FF2E9A">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 199)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 199)">◈</div><span style="color:rgba(10, 10, 20, 199)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 199)">◈</div><span style="color:rgba(10, 10, 20, 199)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#00F5FF;box-shadow:0 0 12px 0px #00F5FF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#00F5FF;box-shadow:0 0 8px 0px #00F5FF"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#00F5FF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #00F5FF">＋</div>
+            
+      <div class="tabs" style="background:#00F5FF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #00F5FF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#FFC400;box-shadow:0 0 12px 0px #FFC400">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#FFC400;box-shadow:0 0 8px 0px #FFC400"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FFC400;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #FFC400">＋</div>
+            
+      <div class="tabs" style="background:#FFC400;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #FFC400">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#FFE600;box-shadow:0 0 12px 0px #FFE600">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#FFE600;box-shadow:0 0 8px 0px #FFE600"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FFE600;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #FFE600">＋</div>
+            
+      <div class="tabs" style="background:#FFE600;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #FFE600">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#DCE9F7;box-shadow:0 0 12px 0px #DCE9F7">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#DCE9F7;box-shadow:0 0 8px 0px #DCE9F7"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#DCE9F7;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #DCE9F7">＋</div>
+            
+      <div class="tabs" style="background:#DCE9F7;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #DCE9F7">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#6E8CB8;box-shadow:0 0 12px 0px #6E8CB8">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 209)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#6E8CB8;box-shadow:0 0 8px 0px #6E8CB8"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#6E8CB8;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #6E8CB8">＋</div>
+            
+      <div class="tabs" style="background:#6E8CB8;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #6E8CB8">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 209)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 209)">◈</div><span style="color:rgba(10, 10, 20, 209)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 209)">◈</div><span style="color:rgba(10, 10, 20, 209)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.12)">
+          
+      <div class="header" style="background:#171717;box-shadow:0 0 12px 0px #171717">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#FFFFFF">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(255, 255, 255, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(0,0,0,0.12)">
+              <div class="chip" style="background:#171717;box-shadow:0 0 8px 0px #171717"></div>
+              <div>
+                <div class="ctitle" style="color:#111827">CAJA</div>
+                <div class="cdesc" style="color:#6B7280">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#171717;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 12px 0px #171717">＋</div>
+            
+      <div class="tabs" style="background:#171717;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 12px 0px #171717">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.30);color:#FFFFFF">◈</div><span style="color:rgba(255, 255, 255, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 179)">◈</div><span style="color:rgba(255, 255, 255, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 179)">◈</div><span style="color:rgba(255, 255, 255, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div></div>
+        <div class="pickers"><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF1B3D;box-shadow:0 0 12px 0px #FF1B3D">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Rojo</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:0 0 12px 0px #FF1B3D;color:#0A0A14">✓</div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#C13BFF;box-shadow:0 0 12px 0px #C13BFF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Violeta</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#C13BFF;box-shadow:0 0 12px 0px #C13BFF;color:#0A0A14">✓</div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#0095FF;box-shadow:0 0 12px 0px #0095FF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Azul</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#0095FF;box-shadow:0 0 12px 0px #0095FF;color:#0A0A14">✓</div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#6C4DFF;box-shadow:0 0 12px 0px #6C4DFF">
+          <div class="picon" style="background:rgba(255,255,255,0.18);color:#FFFFFF">◐</div>
+          <div>
+            <div class="pcap" style="color:#FFFFFF">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#FFFFFF">Índigo</div>
+          </div>
+          <div style="color:#FFFFFF">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:#6C4DFF;background:rgba(108, 77, 255, 26)">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:0 0 12px 0px #6C4DFF;color:#FFFFFF">✓</div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#00FFA6;box-shadow:0 0 12px 0px #00FFA6">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Esmeralda</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#00FFA6;box-shadow:0 0 12px 0px #00FFA6;color:#0A0A14">✓</div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF8A00;box-shadow:0 0 12px 0px #FF8A00">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Naranja</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF8A00;box-shadow:0 0 12px 0px #FF8A00;color:#0A0A14">✓</div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF2E9A;box-shadow:0 0 12px 0px #FF2E9A">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Rosa</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:0 0 12px 0px #FF2E9A;color:#0A0A14">✓</div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#00F5FF;box-shadow:0 0 12px 0px #00F5FF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Cian</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#00F5FF;box-shadow:0 0 12px 0px #00F5FF;color:#0A0A14">✓</div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FFC400;box-shadow:0 0 12px 0px #FFC400">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Ámbar</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FFC400;box-shadow:0 0 12px 0px #FFC400;color:#0A0A14">✓</div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FFE600;box-shadow:0 0 12px 0px #FFE600">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Dorado</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FFE600;box-shadow:0 0 12px 0px #FFE600;color:#0A0A14">✓</div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#DCE9F7;box-shadow:0 0 12px 0px #DCE9F7">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Plata</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:0 0 12px 0px #DCE9F7;color:#0A0A14">✓</div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#6E8CB8;box-shadow:0 0 12px 0px #6E8CB8">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Pizarra</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:0 0 12px 0px #6E8CB8;color:#0A0A14">✓</div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#171717;box-shadow:0 0 12px 0px #171717">
+          <div class="picon" style="background:rgba(255,255,255,0.18);color:#FFFFFF">◐</div>
+          <div>
+            <div class="pcap" style="color:#FFFFFF">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#FFFFFF">Negro</div>
+          </div>
+          <div style="color:#FFFFFF">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:#171717;background:rgba(23, 23, 23, 26)">
+            <div class="swatch" style="background:#171717;box-shadow:0 0 12px 0px #171717;color:#FFFFFF">✓</div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div></div>
+      </section>
+  
+      <section class="mode dark">
+        <h2>Modo oscuro · fondo negro</h2>
+        <div class="grid">
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#FF1B3D;box-shadow:0 0 20px 3px #FF1B3D">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 214)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#FF1B3D;box-shadow:0 0 14px 2px #FF1B3D"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF1B3D;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #FF1B3D">＋</div>
+            
+      <div class="tabs" style="background:#FF1B3D;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #FF1B3D">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 214)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 214)">◈</div><span style="color:rgba(10, 10, 20, 214)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 214)">◈</div><span style="color:rgba(10, 10, 20, 214)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#C13BFF;box-shadow:0 0 20px 3px #C13BFF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 224)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#C13BFF;box-shadow:0 0 14px 2px #C13BFF"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#C13BFF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #C13BFF">＋</div>
+            
+      <div class="tabs" style="background:#C13BFF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #C13BFF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 224)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 224)">◈</div><span style="color:rgba(10, 10, 20, 224)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 224)">◈</div><span style="color:rgba(10, 10, 20, 224)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#0095FF;box-shadow:0 0 20px 3px #0095FF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 194)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#0095FF;box-shadow:0 0 14px 2px #0095FF"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#0095FF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #0095FF">＋</div>
+            
+      <div class="tabs" style="background:#0095FF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #0095FF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 194)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 194)">◈</div><span style="color:rgba(10, 10, 20, 194)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 194)">◈</div><span style="color:rgba(10, 10, 20, 194)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#6C4DFF;box-shadow:0 0 20px 3px #6C4DFF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#FFFFFF">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(255, 255, 255, 235)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#6C4DFF;box-shadow:0 0 14px 2px #6C4DFF"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#6C4DFF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #6C4DFF">＋</div>
+            
+      <div class="tabs" style="background:#6C4DFF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #6C4DFF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.30);color:#FFFFFF">◈</div><span style="color:rgba(255, 255, 255, 235)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 235)">◈</div><span style="color:rgba(255, 255, 255, 235)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 235)">◈</div><span style="color:rgba(255, 255, 255, 235)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#00FFA6;box-shadow:0 0 20px 3px #00FFA6">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#00FFA6;box-shadow:0 0 14px 2px #00FFA6"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#00FFA6;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #00FFA6">＋</div>
+            
+      <div class="tabs" style="background:#00FFA6;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #00FFA6">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#FF8A00;box-shadow:0 0 20px 3px #FF8A00">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#FF8A00;box-shadow:0 0 14px 2px #FF8A00"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF8A00;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #FF8A00">＋</div>
+            
+      <div class="tabs" style="background:#FF8A00;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #FF8A00">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#FF2E9A;box-shadow:0 0 20px 3px #FF2E9A">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 199)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#FF2E9A;box-shadow:0 0 14px 2px #FF2E9A"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FF2E9A;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #FF2E9A">＋</div>
+            
+      <div class="tabs" style="background:#FF2E9A;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #FF2E9A">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 199)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 199)">◈</div><span style="color:rgba(10, 10, 20, 199)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 199)">◈</div><span style="color:rgba(10, 10, 20, 199)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#00F5FF;box-shadow:0 0 20px 3px #00F5FF">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#00F5FF;box-shadow:0 0 14px 2px #00F5FF"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#00F5FF;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #00F5FF">＋</div>
+            
+      <div class="tabs" style="background:#00F5FF;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #00F5FF">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#FFC400;box-shadow:0 0 20px 3px #FFC400">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#FFC400;box-shadow:0 0 14px 2px #FFC400"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FFC400;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #FFC400">＋</div>
+            
+      <div class="tabs" style="background:#FFC400;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #FFC400">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#FFE600;box-shadow:0 0 20px 3px #FFE600">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#FFE600;box-shadow:0 0 14px 2px #FFE600"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#FFE600;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #FFE600">＋</div>
+            
+      <div class="tabs" style="background:#FFE600;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #FFE600">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#DCE9F7;box-shadow:0 0 20px 3px #DCE9F7">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#DCE9F7;box-shadow:0 0 14px 2px #DCE9F7"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#DCE9F7;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #DCE9F7">＋</div>
+            
+      <div class="tabs" style="background:#DCE9F7;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #DCE9F7">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 179)">◈</div><span style="color:rgba(10, 10, 20, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#6E8CB8;box-shadow:0 0 20px 3px #6E8CB8">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#0A0A14">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(10, 10, 20, 209)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.14);color:#0A0A14">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#6E8CB8;box-shadow:0 0 14px 2px #6E8CB8"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#6E8CB8;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #6E8CB8">＋</div>
+            
+      <div class="tabs" style="background:#6E8CB8;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #6E8CB8">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.16);color:#0A0A14">◈</div><span style="color:rgba(10, 10, 20, 209)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 209)">◈</div><span style="color:rgba(10, 10, 20, 209)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(10, 10, 20, 209)">◈</div><span style="color:rgba(10, 10, 20, 209)">Perfil</span></div>
+      </div>
+          </div>
+        </div>
+        <div class="cell" style="background:#111111;border:1px solid rgba(255,255,255,0.14)">
+          
+      <div class="header" style="background:#171717;box-shadow:0 0 20px 3px #171717">
+        <div class="hrow">
+          <div>
+            <div class="htitle" style="color:#FFFFFF">Mi Perfil</div>
+            <div class="hsub" style="color:rgba(255, 255, 255, 179)">Cuenta personal</div>
+          </div>
+          <div class="hbtn" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.22);color:#FFFFFF">☾</div>
+        </div>
+      </div>
+          <div class="body">
+            <div class="card" style="border-color:rgba(255,255,255,0.14)">
+              <div class="chip" style="background:#171717;box-shadow:0 0 14px 2px #171717"></div>
+              <div>
+                <div class="ctitle" style="color:#FFFFFF">CAJA</div>
+                <div class="cdesc" style="color:#9CA3AF">Movimientos de efectivo</div>
+              </div>
+            </div>
+            <div class="fab" style="background:#171717;box-shadow:0 4px 10px rgba(0,0,0,0.35), 0 0 20px 3px #171717">＋</div>
+            
+      <div class="tabs" style="background:#171717;box-shadow:0 -4px 16px rgba(0,0,0,0.18), 0 0 20px 3px #171717">
+        <div class="tab"><div class="ticon" style="background:rgba(0,0,0,0.30);color:#FFFFFF">◈</div><span style="color:rgba(255, 255, 255, 179)">Inicio</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 179)">◈</div><span style="color:rgba(255, 255, 255, 179)">Ventas</span></div>
+        <div class="tab"><div class="ticon" style="color:rgba(255, 255, 255, 179)">◈</div><span style="color:rgba(255, 255, 255, 179)">Perfil</span></div>
+      </div>
+          </div>
+        </div></div>
+        <div class="pickers"><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF1B3D;box-shadow:0 0 20px 3px #FF1B3D">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Rojo</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:0 0 20px 3px #FF1B3D;color:#0A0A14">✓</div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#C13BFF;box-shadow:0 0 20px 3px #C13BFF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Violeta</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#C13BFF;box-shadow:0 0 20px 3px #C13BFF;color:#0A0A14">✓</div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#0095FF;box-shadow:0 0 20px 3px #0095FF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Azul</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#0095FF;box-shadow:0 0 20px 3px #0095FF;color:#0A0A14">✓</div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#6C4DFF;box-shadow:0 0 20px 3px #6C4DFF">
+          <div class="picon" style="background:rgba(255,255,255,0.18);color:#FFFFFF">◐</div>
+          <div>
+            <div class="pcap" style="color:#FFFFFF">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#FFFFFF">Índigo</div>
+          </div>
+          <div style="color:#FFFFFF">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:#6C4DFF;background:rgba(108, 77, 255, 26)">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:0 0 20px 3px #6C4DFF;color:#FFFFFF">✓</div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#00FFA6;box-shadow:0 0 20px 3px #00FFA6">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Esmeralda</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#00FFA6;box-shadow:0 0 20px 3px #00FFA6;color:#0A0A14">✓</div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF8A00;box-shadow:0 0 20px 3px #FF8A00">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Naranja</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF8A00;box-shadow:0 0 20px 3px #FF8A00;color:#0A0A14">✓</div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FF2E9A;box-shadow:0 0 20px 3px #FF2E9A">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Rosa</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:0 0 20px 3px #FF2E9A;color:#0A0A14">✓</div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#00F5FF;box-shadow:0 0 20px 3px #00F5FF">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Cian</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#00F5FF;box-shadow:0 0 20px 3px #00F5FF;color:#0A0A14">✓</div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FFC400;box-shadow:0 0 20px 3px #FFC400">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Ámbar</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FFC400;box-shadow:0 0 20px 3px #FFC400;color:#0A0A14">✓</div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#FFE600;box-shadow:0 0 20px 3px #FFE600">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Dorado</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#FFE600;box-shadow:0 0 20px 3px #FFE600;color:#0A0A14">✓</div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#DCE9F7;box-shadow:0 0 20px 3px #DCE9F7">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Plata</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:0 0 20px 3px #DCE9F7;color:#0A0A14">✓</div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#6E8CB8;box-shadow:0 0 20px 3px #6E8CB8">
+          <div class="picon" style="background:rgba(0,0,0,0.10);color:#0A0A14">◐</div>
+          <div>
+            <div class="pcap" style="color:#0A0A14">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#0A0A14">Pizarra</div>
+          </div>
+          <div style="color:#0A0A14">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:#6B7280;background:rgba(107,114,128,0.12)">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:0 0 20px 3px #6E8CB8;color:#0A0A14">✓</div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#171717;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div><div class="picker-cell">
+      <div class="picker">
+        <div class="ptitle">Elige tu color</div>
+        <div class="pdesc">Personaliza los botones y detalles de tu app.</div>
+        <div class="preview" style="background:#171717;box-shadow:0 0 20px 3px #171717">
+          <div class="picon" style="background:rgba(255,255,255,0.18);color:#FFFFFF">◐</div>
+          <div>
+            <div class="pcap" style="color:#FFFFFF">TU COLOR ACTUAL</div>
+            <div class="pname" style="color:#FFFFFF">Negro</div>
+          </div>
+          <div style="color:#FFFFFF">✓</div>
+        </div>
+        <div class="pgrid"><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF1B3D;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rojo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#C13BFF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Violeta</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#0095FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Azul</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6C4DFF;box-shadow:none;color:#FFFFFF"></div>
+            <span class="oname">Índigo</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00FFA6;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Esmeralda</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF8A00;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Naranja</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FF2E9A;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Rosa</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#00F5FF;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Cian</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFC400;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Ámbar</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#FFE600;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Dorado</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#DCE9F7;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Plata</span>
+        </div><div class="opt" style="border-color:rgba(0,0,0,0.12);background:transparent">
+            <div class="swatch" style="background:#6E8CB8;box-shadow:none;color:#0A0A14"></div>
+            <span class="oname">Pizarra</span>
+        </div><div class="opt" style="border-color:#171717;background:rgba(23, 23, 23, 26)">
+            <div class="swatch" style="background:#171717;box-shadow:0 0 20px 3px #171717;color:#FFFFFF">✓</div>
+            <span class="oname">Negro</span>
+        </div></div>
+      </div></div></div>
+      </section>
+<script>
+  const palette = [{"name":"Rojo","color":"#FF1B3D"},{"name":"Violeta","color":"#C13BFF"},{"name":"Azul","color":"#0095FF"},{"name":"Índigo","color":"#6C4DFF"},{"name":"Esmeralda","color":"#00FFA6"},{"name":"Naranja","color":"#FF8A00"},{"name":"Rosa","color":"#FF2E9A"},{"name":"Cian","color":"#00F5FF"},{"name":"Ámbar","color":"#FFC400"},{"name":"Dorado","color":"#FFE600"},{"name":"Plata","color":"#DCE9F7"},{"name":"Pizarra","color":"#6E8CB8"},{"name":"Negro","color":"#171717"}];
+  document.querySelectorAll('.cell').forEach((cell, i) => {
+    const theme = palette[i];
+    cell.style.cursor = 'pointer';
+    cell.addEventListener('click', () => {
+      document.querySelectorAll('.cell').forEach((c) => c.classList.remove('sel'));
+      cell.classList.add('sel');
+      cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+</script>
+</body>
+</html>

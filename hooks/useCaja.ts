@@ -380,9 +380,9 @@ export function useCaja() {
     };
 
     const modalConfig = {
-        abrir: { title: 'Apertura de Turno', subtitle: 'Ingresa el monto base para iniciar el turno', icon: 'wallet-outline' as const, color: '#10B981', btnText: 'Abrir Caja' },
-        retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline' as const, color: '#F59E0B', btnText: 'Realizar Retiro' },
-        cerrar: { title: 'Cierre de Turno', subtitle: 'Se pide autorización al administrador; la caja sigue abierta hasta que responda', icon: 'lock-closed-outline' as const, color: '#EF4444', btnText: 'Pedir Cierre' },
+        abrir: { title: 'Apertura de Turno', subtitle: 'Ingresa el monto base para iniciar el turno', icon: 'wallet-outline' as const, color: theme.accentColor, btnText: 'Abrir Caja' },
+        retiro: { title: 'Retirar Efectivo', subtitle: 'Ingresa el monto a retirar de la caja', icon: 'cash-outline' as const, color: theme.accentColor, btnText: 'Realizar Retiro' },
+        cerrar: { title: 'Cierre de Turno', subtitle: 'Se pide autorización al administrador; la caja sigue abierta hasta que responda', icon: 'lock-closed-outline' as const, color: theme.accentColor, btnText: 'Pedir Cierre' },
     }[modalType];
 
     return {

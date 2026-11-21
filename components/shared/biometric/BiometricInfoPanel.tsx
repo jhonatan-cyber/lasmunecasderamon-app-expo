@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { styles } from '../BiometricEnrollmentModal.styles';
 import { PASOS, esFaseCaptura, type Phase, type TipoError } from './captureConfig';
 
@@ -58,13 +58,17 @@ export function BiometricInfoPanel({
                         Te pedimos frente, izquierda y derecha. Detectamos el giro y la foto
                         se toma sola.
                     </Text>
-                    <TouchableOpacity
+                    <Pressable
                         style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                         onPress={onStart}
                     >
-                        <Text style={styles.primaryBtnText}>Empezar</Text>
-                        <Ionicons name="arrow-forward" size={18} color="#FFF" />
-                    </TouchableOpacity>
+                        {({ pressed }) => (
+                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                <Text style={styles.primaryBtnText}>Empezar</Text>
+                                <Ionicons name="arrow-forward" size={18} color="#FFF" />
+                            </View>
+                        )}
+                    </Pressable>
                 </>
             ) : phase === 'processing' ? (
                 <>
@@ -97,16 +101,24 @@ export function BiometricInfoPanel({
                     </View>
                     <Text style={styles.panelTitle}>Probemos otra vez</Text>
                     <Text style={styles.panelHelp}>{error}</Text>
-                    <TouchableOpacity
+                    <Pressable
                         style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                         onPress={onRetry}
                     >
-                        <Text style={styles.primaryBtnText}>Reintentar</Text>
-                    </TouchableOpacity>
+                        {({ pressed }) => (
+                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                <Text style={styles.primaryBtnText}>Reintentar</Text>
+                            </View>
+                        )}
+                    </Pressable>
                     {errorTipo === 'deteccion' ? (
-                        <TouchableOpacity style={styles.ghostBtn} onPress={onSkip}>
-                            <Text style={styles.ghostBtnText}>Continuar sin verificar</Text>
-                        </TouchableOpacity>
+                        <Pressable style={styles.ghostBtn} onPress={onSkip}>
+                            {({ pressed }) => (
+                                <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                    <Text style={styles.ghostBtnText}>Continuar sin verificar</Text>
+                                </View>
+                            )}
+                        </Pressable>
                     ) : null}
                 </>
             ) : (
@@ -147,9 +159,13 @@ export function BiometricInfoPanel({
                             {statusText}
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.ghostBtn} onPress={onClose}>
-                        <Text style={styles.ghostBtnText}>Cancelar</Text>
-                    </TouchableOpacity>
+                    <Pressable style={styles.ghostBtn} onPress={onClose}>
+                        {({ pressed }) => (
+                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                <Text style={styles.ghostBtnText}>Cancelar</Text>
+                            </View>
+                        )}
+                    </Pressable>
                 </>
             )}
         </View>

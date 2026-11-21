@@ -1,9 +1,14 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { Alert } from "react-native";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { apiClientSafe } from "@/api/client";
+import { apiClientSafe } from "@/api/client-safe";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
+
+// El hook consulta por `@/api/client` y la capa `services/servicios` por
+// `@/api/client-safe`: ambos comparten el mismo mock.
+const mockApi = vi.hoisted(() => vi.fn());
+vi.mock("@/api/client-safe", () => ({ apiClientSafe: mockApi }));
+vi.mock("@/api/client", () => ({ apiClientSafe: mockApi }));
 
 /**
  * Baucher del servicio pagado con transferencia: la cámara se abre al elegir el
@@ -74,7 +79,6 @@ describe("useGarzonServiciosScreen · baucher de transferencia", () => {
     );
 
     showToast.mockReset();
-    vi.mocked(Alert.alert).mockClear();
   });
 
   /** Servicio completo (habitación, anfitriona y precio) listo para enviar. */
@@ -145,9 +149,12 @@ describe("useGarzonServiciosScreen · baucher de transferencia", () => {
       await result.current.handleSubmit();
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Falta el baucher",
-      expect.stringContaining("foto del baucher"),
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "error",
+        text1: "Falta el baucher",
+        text2: expect.stringContaining("foto del baucher"),
+      }),
     );
     expect(llamadasA("/service-requests")).toHaveLength(0);
   });

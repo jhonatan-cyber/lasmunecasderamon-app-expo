@@ -5,6 +5,12 @@ import { showToast } from '@/utils/toast-lazy';
 export const CAJA_REQUERIDA_MENSAJE =
     'Necesitás una caja abierta para usar esta función.';
 
+/**
+ * Antes las tarjetas bloqueadas se bajaban a esta opacidad. Sobre una card
+ * blanca sobre pantalla blanca eso dejaba un marco vacío con el texto
+ * desvanecido; ahora la tarjeta mantiene su opacidad y el estado bloqueado
+ * lo dibuja la propia tarjeta (icono atenuado + candado).
+ */
 export const OPACIDAD_BLOQUEADA = 0.5;
 
 interface BloqueoPorCajaProps {
@@ -39,7 +45,7 @@ export function BloqueoPorCaja({
         <View style={[styles.contenedor, style]}>
             <View
                 testID="bloqueo-por-caja-contenido"
-                style={[styles.atenuado, { pointerEvents: 'none' as const }]}
+                style={[styles.contenido, { pointerEvents: 'none' as const }]}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
             >
@@ -71,9 +77,8 @@ const styles = StyleSheet.create({
     contenedor: {
         position: 'relative',
     },
-    atenuado: {
+    contenido: {
         flex: 1,
-        opacity: OPACIDAD_BLOQUEADA,
     },
     capa: {
         position: 'absolute',

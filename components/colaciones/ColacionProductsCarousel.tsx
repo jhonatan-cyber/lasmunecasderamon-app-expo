@@ -40,7 +40,7 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
       {loading ? (
         <View style={styles.loadingList}>
           {Array.from({ length: 2 }).map((_, i) => (
-            <View key={i} style={[styles.skeletonCard, { backgroundColor: '#E5E7EB' }]} />
+            <View key={i} style={[styles.skeletonCard, { backgroundColor: '#F3F4F6' }]} />
           ))}
         </View>
       ) : products.length === 0 ? (

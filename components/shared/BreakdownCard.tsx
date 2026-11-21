@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type UserRole = "anfitriona" | "garzon" | "barman";
+type UserRole = "anfitriona" | "garzon" | "barman" | "cajero";
 
 interface BreakdownData {
   montoAsistencia: number;
@@ -24,6 +24,12 @@ interface BreakdownCardProps {
 
 export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
   const { textSecondary, textPrimary, accentColor, surfaceMuted, isDark, accentUi, cardBg, borderColor } = useAccentColor();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleCollapsed = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCollapsed((prev) => !prev);
+  }, []);
 
   const breakdownItems = useMemo(() => {
     if (!breakdown) return [];
@@ -31,62 +37,66 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
       label: string;
       sublabel: string;
       amount: number;
-      icon: "calendar" | "star" | "happy" | "time" | "wallet";
+      icon: "calendar" | "star" | "happy" | "time" | "wallet" | "gift";
       colorIndex: number;
     }[] = [];
 
-    if (role === "barman") {
-      items.push({
-        label: "Asistencias",
-        sublabel: `${breakdown.totalAsistencias} días`,
-        amount: breakdown.montoAsistencia,
-        icon: "calendar",
-        colorIndex: 0,
-      });
-      items.push({
-        label: "Propinas",
-        sublabel: "Total acumulado",
-        amount: breakdown.montoPropinas,
-        icon: "happy",
-        colorIndex: 1,
-      });
-      items.push({
-        label: "Horas extras",
-        sublabel: "Monto total",
-        amount: breakdown.montoHorasExtras,
-        icon: "time",
-        colorIndex: 2,
-      });
-      items.push({
-        label: "Anticipos",
-        sublabel: "Total descontado",
-        amount: breakdown.montoAnticipos,
-        icon: "wallet",
-        colorIndex: 3,
-      });
-    } else {
-      items.push({
-        label: "Asistencias",
-        sublabel: `${breakdown.totalAsistencias} días`,
-        amount: breakdown.montoAsistencia,
-        icon: "calendar",
-        colorIndex: 0,
-      });
+    // Asistencias - todos los roles
+    items.push({
+      label: "Asistencias",
+      sublabel: `${breakdown.totalAsistencias} días`,
+      amount: breakdown.montoAsistencia,
+      icon: "calendar",
+      colorIndex: 0,
+    });
+
+    // Propinas - todos los roles
+    items.push({
+      label: "Propinas",
+      sublabel: "Total acumulado",
+      amount: breakdown.montoPropinas,
+      icon: "happy",
+      colorIndex: 1,
+    });
+
+    // Horas extras - todos los roles
+    items.push({
+      label: "Horas extras",
+      sublabel: "Monto total",
+      amount: breakdown.montoHorasExtras,
+      icon: "time",
+      colorIndex: 2,
+    });
+
+    // Gratificaciones - todos los roles
+    items.push({
+      label: "Gratificaciones",
+      sublabel: "Total acumulado",
+      amount: breakdown.montoGratificaciones,
+      icon: "gift",
+      colorIndex: 3,
+    });
+
+    // Anticipos - todos los roles
+    items.push({
+      label: "Anticipos",
+      sublabel: "Total descontado",
+      amount: breakdown.montoAnticipos,
+      icon: "wallet",
+      colorIndex: 4,
+    });
+
+    // Servicios/Comisiones - solo para anfitriona
+    if (role === "anfitriona") {
       items.push({
         label: "Servicios",
         sublabel: `${breakdown.serviciosCompletados} completados`,
         amount: breakdown.montoComisiones,
         icon: "star",
-        colorIndex: 1,
-      });
-      items.push({
-        label: "Propinas",
-        sublabel: "Total acumulado",
-        amount: breakdown.montoPropinas,
-        icon: "happy",
-        colorIndex: 2,
+        colorIndex: 5,
       });
     }
+
     return items;
   }, [breakdown, role]);
 
@@ -96,13 +106,25 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
 
   return (
     <View style={[styles.container, { backgroundColor: cardBg, borderColor }]}>
-      <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.header}
+        activeOpacity={0.7}
+        onPress={toggleCollapsed}
+        accessibilityRole="button"
+        accessibilityLabel={collapsed ? "Expandir desglose" : "Contraer desglose"}
+      >
         <Ionicons name="pie-chart" size={16} color={accentColor} />
         <Text style={[styles.title, { color: textSecondary }]}>
           Desglose de ingresos
         </Text>
-      </View>
-      <View style={styles.grid}>
+        <Ionicons
+          name={collapsed ? "chevron-down" : "chevron-up"}
+          size={18}
+          color={accentColor}
+        />
+      </TouchableOpacity>
+      {!collapsed && (
+        <View style={styles.grid}>
         {breakdownItems.map((item) => {
           const color = colorVariantsFor(item.colorIndex, accentColor, accentUi, isDark);
           return (
@@ -143,26 +165,27 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
             </View>
           );
         })}
-      </View>
+        </View>
+      )}
     </View>
   );
 };
 
 function colorVariantsFor(index: number, accentColor: string, accentUi: string, isDark: boolean): string {
   if (isDark) {
-    const variants = [accentColor, `${accentColor}CC`, `${accentColor}99`, `${accentColor}66`];
+    const variants = [accentColor, `${accentColor}CC`, `${accentColor}99`, `${accentColor}66`, `${accentColor}44`, `${accentColor}33`];
     return variants[index] || accentColor;
   }
-  const variants = [accentColor, accentUi, `${accentColor}BB`, `${accentColor}88`];
+  const variants = [accentColor, accentUi, `${accentColor}BB`, `${accentColor}88`, `${accentColor}66`, `${accentColor}44`];
   return variants[index] || accentColor;
 }
 
 function bgVariantsFor(index: number, accentColor: string, surfaceMuted: string, isDark: boolean): string {
   if (isDark) {
-    const variants = [`${accentColor}15`, `${accentColor}10`, `${accentColor}0D`, `${accentColor}0A`];
+    const variants = [`${accentColor}15`, `${accentColor}10`, `${accentColor}0D`, `${accentColor}0A`, `${accentColor}08`, `${accentColor}06`];
     return variants[index] || `${accentColor}15`;
   }
-  const variants = [surfaceMuted, `${accentColor}08`, `${accentColor}05`, `${accentColor}03`];
+  const variants = [surfaceMuted, `${accentColor}08`, `${accentColor}05`, `${accentColor}03`, `${accentColor}02`, `${accentColor}01`];
   return variants[index] || surfaceMuted;
 }
 
@@ -182,6 +205,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
   title: {

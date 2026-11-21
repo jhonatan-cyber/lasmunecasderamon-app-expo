@@ -58,6 +58,28 @@ export function HomeScreenSkeleton({
           <SkeletonLoader width="48%" height={100} borderRadius={20} />
           <SkeletonLoader width="48%" height={100} borderRadius={20} />
         </View>
+        {/* Módulos: replica el cuadro del dashboard (chip + título + descripción). */}
+        {[0, 1].map((row) => (
+          <View key={row} style={{ flexDirection: "row", gap: 12 }}>
+            {[0, 1].map((col) => (
+              <View
+                key={col}
+                style={{
+                  flex: 1,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.08)",
+                  padding: 14,
+                  gap: 10,
+                }}
+              >
+                <SkeletonLoader width={46} height={46} borderRadius={14} />
+                <SkeletonLoader width="72%" height={14} borderRadius={7} />
+                <SkeletonLoader width="48%" height={12} borderRadius={6} />
+              </View>
+            ))}
+          </View>
+        ))}
       </View>
     </View>
   );

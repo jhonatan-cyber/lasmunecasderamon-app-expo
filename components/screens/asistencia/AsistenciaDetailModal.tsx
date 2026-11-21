@@ -90,6 +90,7 @@ export function AsistenciaDetailModal({
   borderColor,
   isDark,
 }: AsistenciaDetailModalProps) {
+    const { accentOnSurface } = useAccentColor();
   const { surfaceMuted } = useAccentColor();
   const totalSueldo = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
   const totalAporte = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
@@ -165,7 +166,7 @@ export function AsistenciaDetailModal({
                       <Text style={[styles.summaryItemLabel, { color: textSecondary }]}>
                         Neto
                       </Text>
-                      <Text style={[styles.summaryItemValue, { color: accentColor, fontWeight: '800' }]}>
+                      <Text style={[styles.summaryItemValue, { color: accentOnSurface, fontWeight: '800' }]}>
                         ${totalNeto.toLocaleString()}
                       </Text>
                     </View>
@@ -218,7 +219,7 @@ export function AsistenciaDetailModal({
                           <Text style={[styles.recordAmountLabel, { color: textSecondary }]}>
                             Total
                           </Text>
-                          <Text style={[styles.recordAmountValue, { color: accentColor, fontWeight: '800' }]}>
+                          <Text style={[styles.recordAmountValue, { color: accentOnSurface, fontWeight: '800' }]}>
                             ${(a.total || a.sueldo - a.aporte || 0).toLocaleString()}
                           </Text>
                         </View>
@@ -226,7 +227,7 @@ export function AsistenciaDetailModal({
 
                       {a.fecha_pago && (
                         <View style={styles.paymentRow}>
-                          <Ionicons name="checkmark-circle" size={14} color={accentColor} />
+                          <Ionicons name="checkmark-circle" size={14} color={accentOnSurface} />
                           <Text style={[styles.paymentText, { color: textSecondary }]}>
                             Cobrado: {formatDate(a.fecha_pago)}
                           </Text>

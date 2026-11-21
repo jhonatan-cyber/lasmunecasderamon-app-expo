@@ -3,8 +3,10 @@ import { Image } from 'expo-image';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { FontFamily } from '@/constants/fonts';
 import { BorderRadius } from '@/constants/spacing';
+import React from 'react';
 import {
     ActivityIndicator,
+    Animated,
     Pressable,
     StyleSheet,
     Text,
@@ -19,8 +21,10 @@ interface Props {
     error: string;
     loading: boolean;
     isDark: boolean;
+    accentColor: string;
     isBiometricEnabled: boolean;
     isBiometricSupported: boolean;
+    rememberMe: boolean;
     passwordRef: React.RefObject<React.ComponentRef<typeof TextInput> | null>;
     onUsernameChange: (v: string) => void;
     onPasswordChange: (v: string) => void;
@@ -29,6 +33,7 @@ interface Props {
     onQRPress: () => void;
     onBiometricPress: () => void;
     onForgotPassword: () => void;
+    onRememberMeChange: (v: boolean) => void;
 }
 
 export default function LoginForm({
@@ -38,8 +43,10 @@ export default function LoginForm({
     error,
     loading,
     isDark,
+    accentColor,
     isBiometricEnabled,
     isBiometricSupported,
+    rememberMe,
     passwordRef,
     onUsernameChange,
     onPasswordChange,
@@ -48,82 +55,126 @@ export default function LoginForm({
     onQRPress,
     onBiometricPress,
     onForgotPassword,
+    onRememberMeChange,
 }: Props) {
     const { isLandscape } = useResponsiveMetrics();
+
+    // Colors derived from theme
     const textColor = isDark ? '#FFFFFF' : '#111827';
     const textMuted = isDark ? '#9CA3AF' : '#6B7280';
     const cardBg = isDark ? '#1C1C1E' : '#F3F4F6';
-    const borderColor = isDark ? '#333' : '#E5E7EB';
+    const borderColor = isDark ? '#333' : '#F3F4F6';
     const errorBg = isDark ? '#1C1917' : '#FEF2F2';
+    const inputIconColor = isDark ? '#9CA3AF' : '#6B7280';
+    const biometricBg = isDark ? '#1C1917' : '#F3F4F6';
+    const separatorColor = isDark ? '#374151' : '#D1D5DB';
+
+    // Validation: disable login button when fields are empty
+    const isFormValid = username.trim().length > 0 && password.length > 0;
+
+    // Error shake animation
+    const shakeValue = React.useRef(new Animated.Value(0)).current;
+    const startShake = React.useCallback(() => {
+        shakeValue.setValue(0);
+        Animated.sequence([
+            Animated.timing(shakeValue, { toValue: 8, duration: 80, useNativeDriver: true }),
+            Animated.timing(shakeValue, { toValue: -8, duration: 80, useNativeDriver: true }),
+            Animated.timing(shakeValue, { toValue: 6, duration: 60, useNativeDriver: true }),
+            Animated.timing(shakeValue, { toValue: -4, duration: 60, useNativeDriver: true }),
+            Animated.timing(shakeValue, { toValue: 0, duration: 40, useNativeDriver: true }),
+        ]).start();
+    }, [shakeValue]);
+
+    // Trigger shake when error appears
+    const prevErrorRef = React.useRef('');
+    React.useEffect(() => {
+        if (error && error !== prevErrorRef.current) {
+            startShake();
+        }
+        prevErrorRef.current = error;
+    }, [error, startShake]);
+
+    const errorTranslateX = shakeValue;
 
     return (
         <View style={styles.formContainer}>
-            {}
+            {/* Logo with accessibility label */}
             <View style={[styles.logoContainer, isLandscape && styles.logoContainerCompact]}>
                 <Image
                     source={require('../../assets/images/logo2.png')}
                     style={[styles.logo, isLandscape && styles.logoCompact]}
                     contentFit="contain"
+                    accessibilityLabel="Logo de Las Muñecas de Ramón"
                 />
             </View>
 
-            {}
-            <View style={[styles.headerTextContainer, isLandscape && { marginBottom: 20 }]}>
-                <Text style={[styles.title, { color: textColor }, isLandscape && { fontSize: 28 }]}>
-                    Iniciar Sesión
-                </Text>
-                <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
-                    Ingresa tus credenciales para continuar
-                </Text>
-            </View>
-
-            {}
+            {/* Error message with shake animation */}
             {error ? (
-                <View
-                    style={[styles.errorContainer, { backgroundColor: errorBg }]}
+                <Animated.View
+                    style={[
+                        styles.errorContainer,
+                        { backgroundColor: errorBg, transform: [{ translateX: errorTranslateX }] }
+                    ]}
                     accessibilityRole="alert"
                     accessibilityLiveRegion="polite"
                 >
                     <Text style={styles.errorText}>{error}</Text>
-                </View>
+                </Animated.View>
             ) : null}
 
-            {}
-            <Text style={[styles.label, { color: textColor }]}>Usuario</Text>
-            <TextInput
-                style={[
-                    styles.input,
-                    {
-                        backgroundColor: cardBg,
-                        color: textColor,
-                        borderColor: borderColor,
-                    },
-                ]}
-                placeholder="Ej: pepe"
-                placeholderTextColor={textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="username"
-                textContentType="username"
-                importantForAutofill="yes"
-                accessibilityLabel="Usuario"
-                value={username}
-                onChangeText={onUsernameChange}
-                returnKeyType="next"
-                onSubmitEditing={() => passwordRef.current?.focus()}
-            />
-
-            {}
-            <Text style={[styles.label, { color: textColor, marginTop: 20 }]}>Contraseña</Text>
-            <View style={styles.passwordContainer}>
+            {/* Nick input with icon */}
+            <Text style={[styles.label, { color: isDark ? textColor : '#FFFFFF' }]}>Nick</Text>
+            <View style={[styles.inputWithIcon, { backgroundColor: cardBg, borderColor: borderColor }]}>
+                <Ionicons name="person-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
                 <TextInput
                     style={[
-                        styles.input,
+                        styles.inputWithIconField,
+                        {
+                            backgroundColor: 'transparent',
+                            color: textColor,
+                        },
+                    ]}
+                    placeholder="Ingresa tu nick"
+                    placeholderTextColor={textMuted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="username"
+                    textContentType="username"
+                    importantForAutofill="yes"
+                    accessibilityLabel="Nick"
+                    value={username}
+                    onChangeText={onUsernameChange}
+                    returnKeyType="next"
+                    onSubmitEditing={() => passwordRef.current?.focus()}
+                />
+            </View>
+
+            {/* Password label row with forgot password link */}
+            <View style={styles.passwordLabelRow}>
+                <Text style={[styles.label, { color: isDark ? textColor : '#FFFFFF' }]}>Contraseña</Text>
+                <Pressable
+                    onPress={onForgotPassword}
+                    hitSlop={{ top: 12, bottom: 12, right: 8, left: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Recuperar contraseña"
+                    style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+                >
+                    <Text style={[styles.forgotPasswordText, { color: accentColor }]}>
+                        ¿Olvidaste tu contraseña?
+                    </Text>
+                </Pressable>
+            </View>
+
+            {/* Password input with icon */}
+            <View style={[styles.inputWithIcon, styles.passwordContainer, { backgroundColor: cardBg, borderColor: borderColor }]}>
+                <Ionicons name="lock-closed-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
+                <TextInput
+                    style={[
+                        styles.inputWithIconField,
                         styles.passwordInput,
                         {
-                            backgroundColor: cardBg,
+                            backgroundColor: 'transparent',
                             color: textColor,
-                            borderColor: borderColor,
                         },
                     ]}
                     placeholder="Ingresa tu contraseña"
@@ -155,88 +206,101 @@ export default function LoginForm({
                 </Pressable>
             </View>
 
-            {}
-            <View style={[styles.actionRow, { marginTop: 20 }]}>
+            {/* Remember me checkbox */}
+            <Pressable
+                onPress={() => onRememberMeChange(!rememberMe)}
+                hitSlop={{ top: 8, bottom: 8, right: 8, left: 8 }}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Recordarme"
+                accessibilityState={{ checked: rememberMe }}
+                style={styles.rememberMeRow}
+            >
+                <View style={[styles.checkbox, { backgroundColor: rememberMe ? accentColor : 'transparent', borderColor: borderColor }]}>
+                    {rememberMe && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                </View>
+                <Text style={[styles.rememberMeText, { color: isDark ? textMuted : '#FFFFFF' }]}>Recordarme</Text>
+            </Pressable>
+
+            {/* Login button with accent color - no transparency */}
+            <View style={styles.loginButtonContainer}>
                 <Pressable
                     style={({ pressed }) => [
                         styles.loginButton,
                         {
-                            backgroundColor: textColor,
-                            borderColor: textColor,
-                            width: '100%',
+                            backgroundColor: accentColor,
+                            opacity: 1,
                         },
-                        loading && { opacity: 0.5 },
-                        pressed && !loading && { opacity: 0.8 },
+                        (!isFormValid || loading) && { opacity: 0.6 },
                     ]}
                     onPress={onLogin}
-                    disabled={loading}
+                    disabled={loading || !isFormValid}
                     accessibilityRole="button"
-                    accessibilityLabel="Iniciar sesión"
-                    accessibilityState={{ disabled: loading, busy: loading }}
+                    accessibilityLabel="Ingresar"
+                    accessibilityState={{ disabled: loading || !isFormValid, busy: loading }}
                 >
                     {loading ? (
-                        <ActivityIndicator color={isDark ? '#000000' : '#FFFFFF'} />
+                        <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.loginButtonText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
-                            Iniciar Sesión
+                        <Text maxFontSizeMultiplier={1.3} style={styles.loginButtonText}>
+                            Ingresar
                         </Text>
                     )}
                 </Pressable>
             </View>
 
-            {}
-            <View style={[styles.actionRow, { justifyContent: 'center', marginTop: 15, gap: 20 }]}>
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.biometricButton,
-                        {
-                            backgroundColor: isDark ? '#1C1917' : '#F3F4F6',
-                            borderColor: borderColor,
-                        },
-                        pressed && { opacity: 0.7 }
-                    ]}
-                    onPress={onQRPress}
-                    disabled={loading}
-                    accessibilityRole="button"
-                    accessibilityLabel="Iniciar sesión con código QR"
-                    accessibilityState={{ disabled: loading }}
-                >
-                    <Ionicons name="qr-code-outline" size={28} color={textColor} />
-                </Pressable>
+            {/* Visual separator */}
+            <View style={styles.separatorContainer}>
+                <View style={[styles.separatorLine, { backgroundColor: separatorColor }]} />
+                <Text style={[styles.separatorText, { color: textMuted }]}>o ingresa con</Text>
+                <View style={[styles.separatorLine, { backgroundColor: separatorColor }]} />
+            </View>
 
-                {(isBiometricEnabled && isBiometricSupported) && (
+            {/* Alternative login methods with labels */}
+            <View style={styles.altMethodsRow}>
+                <View style={styles.altMethodItem}>
                     <Pressable
                         style={({ pressed }) => [
                             styles.biometricButton,
                             {
-                                backgroundColor: isDark ? '#1C1917' : '#F3F4F6',
+                                backgroundColor: biometricBg,
                                 borderColor: borderColor,
                             },
                             pressed && { opacity: 0.7 }
                         ]}
-                        onPress={onBiometricPress}
+                        onPress={onQRPress}
                         disabled={loading}
                         accessibilityRole="button"
-                        accessibilityLabel="Iniciar sesión con biometría"
+                        accessibilityLabel="Iniciar sesión con código QR"
                         accessibilityState={{ disabled: loading }}
                     >
-                        <Ionicons name="finger-print-outline" size={28} color={textColor} />
+                        <Ionicons name="qr-code-outline" size={28} color={textColor} />
                     </Pressable>
+                    <Text style={[styles.altMethodLabel, { color: textMuted }]}>Código QR</Text>
+                </View>
+
+                {(isBiometricEnabled && isBiometricSupported) && (
+                    <View style={styles.altMethodItem}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.biometricButton,
+                                {
+                                    backgroundColor: biometricBg,
+                                    borderColor: borderColor,
+                                },
+                                pressed && { opacity: 0.7 }
+                            ]}
+                            onPress={onBiometricPress}
+                            disabled={loading}
+                            accessibilityRole="button"
+                            accessibilityLabel="Iniciar sesión con biometría"
+                            accessibilityState={{ disabled: loading }}
+                        >
+                            <Ionicons name="finger-print-outline" size={28} color={textColor} />
+                        </Pressable>
+                        <Text style={[styles.altMethodLabel, { color: textMuted }]}>Huella</Text>
+                    </View>
                 )}
             </View>
-
-            {}
-            <Pressable
-                onPress={onForgotPassword}
-                hitSlop={{ top: 12, bottom: 12 }}
-                accessibilityRole="button"
-                accessibilityLabel="Recuperar contraseña"
-                style={({ pressed }) => [styles.forgotPassword, pressed && { opacity: 0.6 }]}
-            >
-                <Text style={[styles.forgotPasswordText, { color: textMuted }]}>
-                    ¿Olvidaste tu contraseña?
-                </Text>
-            </Pressable>
         </View>
     );
 }
@@ -248,38 +312,22 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         flex: 1,
     },
-    headerTextContainer: {
-        marginBottom: 35,
-    },
     logoContainer: {
         alignItems: 'center',
         marginTop: 20,
         marginBottom: 20,
     },
     logo: {
-        width: 180,
-        height: 120,
+        width: 240,
+        height: 160,
     },
     logoContainerCompact: {
         marginTop: 4,
         marginBottom: 8,
     },
     logoCompact: {
-        width: 120,
-        height: 70,
-    },
-    title: {
-        fontSize: 34,
-        fontFamily: FontFamily.display,
-        textAlign: 'center',
-        marginBottom: 8,
-        letterSpacing: -0.3,
-    },
-    subtitle: {
-        fontSize: 15,
-        fontFamily: FontFamily.regular,
-        textAlign: 'center',
-        lineHeight: 22,
+        width: 160,
+        height: 100,
     },
     label: {
         fontSize: 14,
@@ -287,9 +335,38 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginLeft: 4,
     },
+    // Input with icon wrapper
+    inputWithIcon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderRadius: BorderRadius.full,
+        height: 60,
+        paddingHorizontal: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    inputIcon: {
+        marginRight: 8,
+    },
+    inputWithIconField: {
+        flex: 1,
+        height: '100%',
+        borderRadius: BorderRadius.full,
+        borderWidth: 0,
+        paddingHorizontal: 0,
+        paddingVertical: 0,
+        shadowColor: 'transparent',
+        elevation: 0,
+        fontSize: 16,
+        fontFamily: FontFamily.medium,
+    },
     input: {
         height: 60,
-        borderRadius: BorderRadius.xl,
+        borderRadius: BorderRadius.full,
         paddingHorizontal: 24,
         fontSize: 16,
         fontFamily: FontFamily.medium,
@@ -299,6 +376,13 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 2,
+    },
+    // Password label row
+    passwordLabelRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 20,
     },
     passwordContainer: {
         position: 'relative',
@@ -317,6 +401,7 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingRight: 56,
     },
+    // Error container
     errorContainer: {
         padding: 12,
         borderRadius: BorderRadius.md,
@@ -328,21 +413,77 @@ const styles = StyleSheet.create({
         fontFamily: FontFamily.medium,
         textAlign: 'center',
     },
+    // Remember me
+    rememberMeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        marginLeft: 4,
+    },
+    checkbox: {
+        width: 22,
+        height: 22,
+        borderRadius: 6,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    rememberMeText: {
+        fontSize: 14,
+        fontFamily: FontFamily.medium,
+    },
+    // Login button
+    loginButtonContainer: {
+        marginTop: 24,
+    },
     loginButton: {
         height: 60,
         borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: '#FF2D55',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
         elevation: 8,
     },
-    actionRow: {
+    loginButtonText: {
+        fontSize: 17,
+        fontFamily: FontFamily.bold,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+        color: '#FFFFFF',
+    },
+    // Separator
+    separatorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 35,
+        marginTop: 20,
+        marginBottom: 15,
+    },
+    separatorLine: {
+        flex: 1,
+        height: 1,
+    },
+    separatorText: {
+        fontSize: 13,
+        fontFamily: FontFamily.medium,
+        marginHorizontal: 12,
+    },
+    // Alternative methods
+    altMethodsRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 30,
+    },
+    altMethodItem: {
+        alignItems: 'center',
+        gap: 6,
+    },
+    altMethodLabel: {
+        fontSize: 12,
+        fontFamily: FontFamily.medium,
     },
     biometricButton: {
         height: 60,
@@ -356,18 +497,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 2,
-    },
-    loginButtonText: {
-        fontSize: 17,
-        fontFamily: FontFamily.bold,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
-    },
-    forgotPassword: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 20,
-        minHeight: 44,
     },
     forgotPasswordText: {
         fontSize: 14,

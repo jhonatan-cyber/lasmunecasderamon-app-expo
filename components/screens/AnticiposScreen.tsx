@@ -1,9 +1,10 @@
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { AdvanceCard } from '@/components/ui/AdvanceCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import type { TabItem } from '@/components/ui/Tabs';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -32,8 +33,7 @@ export default function AnticiposScreen() {
     cardBg,
     textPrimary,
     textSecondary,
-    borderColor,
-  } = useAccentColor();
+    borderColor, accentOnSurface} = useAccentColor();
 
   const {
     loading,
@@ -305,7 +305,7 @@ export default function AnticiposScreen() {
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           ANTICIPOS PENDIENTES
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalPendiente.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -337,20 +337,13 @@ export default function AnticiposScreen() {
       />
 
       {error ? (
-        <View
-          style={[
-            styles.errorCard,
-            { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' },
-          ]}
-        >
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-          <Pressable
-            onPress={() => fetchAnticipos()}
-            style={({ pressed }) => [styles.retryButton, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="No se pudieron cargar los anticipos"
+          message={error}
+          onRetry={() => fetchAnticipos()}
+        />
       ) : null}
 
       <VirtualizedList
@@ -369,7 +362,7 @@ export default function AnticiposScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" message="No hay anticipos registrados para este período. Los anticipos aparecerán cuando se creen." />
         }
         {...LIST_PERF_PROPS}
       />
@@ -377,6 +370,7 @@ export default function AnticiposScreen() {
       {}
       <PremiumFAB
         icon="add"
+        accessibilityLabel="Solicitar anticipo"
         onPress={openSolicitarModal}
         visible={true}
         withTabBar
@@ -455,26 +449,4 @@ const styles = StyleSheet.create({
   summaryDetails: { flexDirection: 'row', gap: 16 },
   summaryDetail: { fontSize: 13 },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  errorCard: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  errorText: {
-    fontSize: 13,
-    color: '#DC2626',
-  },
-  retryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  retryText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#DC2626',
-  },
 });

@@ -1,5 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuthStore } from "@/store/authStore";
 import {
   requiresShortMixer,
   bottleMixerUnits,
@@ -41,14 +39,19 @@ import { useVentaSearch } from "@/hooks/useVentaSearch";
 import { useVentaTiers } from "@/hooks/useVentaTiers";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from "@/services/mirror";
-import { getOutbox } from "@/services/outbox";
 import { blockOffline } from "@/utils/offlineGuard";
 import { buildSalePayload } from "@/hooks/utils/salePayload";
-import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
 import {
   resolverVentaProducto,
   type SaleChoice,
 } from "@/hooks/utils/saleChoice";
+import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
+import {
+  validateSaleBeforeSubmit,
+  calculatePrepagoDestinos,
+  clearCartDraft,
+  enqueueSaleToOutbox,
+} from "@/hooks/utils/saleValidation";
 import {
   ventaReducer,
   initialVentaState,
@@ -874,117 +877,51 @@ export function useNuevaVenta() {
   );
 
   const handleSubmit = useCallback(async (baucherFoto?: string | null) => {
-    if (servicioId && (!servicioListo || !blockOffline("servicio")))
-      return showToast(
-        "Servicio",
-        "Se necesita cargar el servicio activo para registrar esta venta",
-      );
-    if (cajaAbierta === false) return showToast("Error", "Caja cerrada");
-    if (cart.length === 0) return showToast("Error", "Carrito vacío");
-
-    for (const item of cart) {
-      if (item.tipo_venta === "shot" || !isChampagneProduct(item)) continue;
-      const tiers = await getSaleTiers(
-        String(item.producto_id || item.id_producto || item.id),
-      );
-      if (faltaConfiguracionChampagne(item.max_anfitrionas, tiers)) {
-        return showToast(
-          "Champaña sin configurar",
-          MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
-        );
-      }
-    }
-    if (
-      cart.some(
-        (p) =>
-          p.tipo_venta !== "shot" &&
-          bottleMixerUnits(p) > 0 &&
-          totalUnidadesAcompanamientoBotella(p.acompanamiento_botella) !==
-            bottleMixerUnits(p),
-      )
-    ) {
-      showToast("Error", "Reparte el acompa\u00f1amiento de botella");
-      return;
-    }
-    if (
-      cart.some(
-        (p) =>
-          requiresShortMixer(p) &&
-          (!p.acompanamiento_corto?.presentacion_id ||
-            !Number.isInteger(p.acompanamiento_corto.unidades ?? 1) ||
-            (p.acompanamiento_corto.unidades ?? 1) < 1),
-      )
-    )
-      return showToast(
-        "Falta acompa\u00f1amiento",
-        "Selecciona soda o gaseosa para entregar completo",
-      );
-    if (!metodoPago)
-      return showToast("Método requerido", "Selecciona un método de pago");
-
-    if (metodoPago === "mixto") {
-      const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
-      if (Math.abs(suma - totals.total) > 1) {
-        return showToast(
-          "Monto Incorrecto",
-          `La suma ($${suma.toLocaleString()}) debe ser igual al total ($${totals.total.toLocaleString()})`,
-        );
-      }
-      if (pagosMixtos.length < 2) {
-        return showToast(
-          "Métodos Insuficientes",
-          "Selecciona al menos 2 métodos de pago",
-        );
-      }
-    }
-
-    if (metodoPago === "prepago" && !selectedCliente) {
-      return showToast("Error", "Seleccione un cliente para pagar con prepago");
-    }
-    let prepagoDestinos: { cliente_id: string; monto: number }[] = [];
-    if (metodoPago === "prepago") {
-      const clientesPrepago = [selectedCliente, selectedSegundoCliente].filter(
-        (cliente): cliente is NonNullable<typeof cliente> => Boolean(cliente),
-      );
-      const clientesUnicos = clientesPrepago.filter(
-        (cliente, index, rows) =>
-          index === rows.findIndex((row) =>
-            String(row.id_cliente ?? row.id) === String(cliente.id_cliente ?? cliente.id)
-          ),
-      );
-      let restante = Math.round(totals.total);
-      const mitad = Math.round(restante / 2);
-      for (const cliente of clientesUnicos) {
-        if (restante <= 0) break;
-        const saldo = Number(
-          cliente.saldo ?? (cliente as any).saldo_prepago ?? 0,
-        );
-        const monto = clientesUnicos.length === 2
-          ? Math.min(saldo, mitad, restante)
-          : Math.min(saldo, restante);
-        if (monto > 0) {
-          prepagoDestinos.push({
-            cliente_id: String(cliente.id_cliente ?? cliente.id),
-            monto,
-          });
-          restante -= monto;
-        }
-      }
-      if (restante > 0) {
-        return showToast(
-          "Saldo insuficiente",
-          "El saldo prepago disponible no cubre el total de la venta",
-        );
-      }
+    const error = await validateSaleBeforeSubmit({
+      servicioId,
+      servicioListo,
+      cajaAbierta,
+      cart,
+      metodoPago,
+      pagosMixtos,
+      totals,
+      selectedCliente,
+      selectedSegundoCliente,
+      baucherFoto,
+      getSaleTiers,
+    });
+    if (error) {
+      const title =
+        error === "Caja cerrada"
+          ? "Error"
+          : error === "Carrito vacío"
+            ? "Error"
+            : error.includes("prepago")
+              ? "Error"
+              : error.includes("baucher")
+                ? "Falta el baucher"
+                : error.includes("acompañamiento")
+                  ? "Falta acompañamiento"
+                  : error.toLowerCase().includes("champaña")
+                  ? "Champaña sin configurar"
+                  : "Error";
+      return showToast(title, error);
     }
 
     if (metodoPago === "prepago" && !blockOffline("prepago")) return;
 
-    if (metodoPago === "transferencia" && !baucherFoto)
-      return showToast(
-        "Falta el baucher",
-        "Adjunta la foto del baucher para el pago con transferencia",
+    let prepagoDestinos: { cliente_id: string; monto: number }[] = [];
+    if (metodoPago === "prepago") {
+      const result = calculatePrepagoDestinos(
+        selectedCliente,
+        selectedSegundoCliente,
+        totals.total,
       );
+      if (result.error) {
+        return showToast("Saldo insuficiente", result.error);
+      }
+      prepagoDestinos = result.destinos;
+    }
 
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
@@ -1009,28 +946,12 @@ export function useNuevaVenta() {
         acompanamientoTope,
       });
 
-      const items = cart.reduce(
-        (acc: number, item: any) =>
-          acc + Number(item.quantity || item.cantidad || 0),
-        0,
-      );
+      const result = await enqueueSaleToOutbox(payload, cart, totals);
 
-      const intent = await getOutbox().enqueueAndSend({
-        type: "sale.create",
-        payload,
-        label: `Venta $${Number(totals.total || 0).toLocaleString("es-CL")} · ${items} ítem(s)`,
-      });
-
-      if (intent.status !== "fallida") {
-        const userId = useAuthStore.getState().user?.id;
-        if (userId)
-          await AsyncStorage.removeItem(
-            `cart-draft:${userId}:sales:${servicioId || "general"}`,
-          ).catch(() => {
-            logger.debug('No se pudo limpiar el draft del carrito tras venta exitosa.');
-          });
+      if (result.status !== "fallida") {
+        await clearCartDraft(servicioId);
       }
-      if (intent.status === "aplicada") {
+      if (result.status === "aplicada") {
         dispatch({ type: "SET_CART", payload: [] });
         showToast("Éxito", "Venta realizada", "success");
         refreshVentas();
@@ -1038,8 +959,8 @@ export function useNuevaVenta() {
         return;
       }
 
-      if (intent.status === "fallida") {
-        showToast("Error", intent.lastError || "Error al vender");
+      if (result.status === "fallida") {
+        showToast("Error", result.lastError || "Error al vender");
         return;
       }
 
@@ -1061,6 +982,7 @@ export function useNuevaVenta() {
     cajaAbierta,
     cart,
     selectedCliente,
+    selectedSegundoCliente,
     selectedHabitacion,
     metodoPago,
     pagosMixtos,

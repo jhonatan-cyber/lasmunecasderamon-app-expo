@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -77,14 +76,18 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                     accessibilityLabel="Buscar cliente"
                 />
                 {searchText.length > 0 && (
-                    <TouchableOpacity
+                    <Pressable
                         onPress={() => setSearchText('')}
                         style={styles.clearButton}
                         accessibilityLabel="Limpiar búsqueda"
                         accessibilityRole="button"
                     >
-                        <Ionicons name="close-circle" size={18} color={textSecondary} />
-                    </TouchableOpacity>
+                        {({ pressed }) => (
+                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                <Ionicons name="close-circle" size={18} color={textSecondary} />
+                            </View>
+                        )}
+                    </Pressable>
                 )}
             </View>
             {filteredClients.length === 0 && searchText.trim() !== '' ? (
@@ -133,12 +136,16 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                             {onLoadBalance && (
-                                <TouchableOpacity
+                                <Pressable
                                     onPress={() => onLoadBalance(item)}
                                     style={{ backgroundColor: `${primaryColor}20`, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 }}
                                 >
-                                    <Text style={{ color: primaryColor, fontSize: 12, fontWeight: '900' }}>CARGAR</Text>
-                                </TouchableOpacity>
+                                    {({ pressed }) => (
+                                        <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                            <Text style={{ color: primaryColor, fontSize: 12, fontWeight: '900' }}>CARGAR</Text>
+                                        </View>
+                                    )}
+                                </Pressable>
                             )}
                             {isSelected && <Ionicons name="checkmark" size={20} color={primaryColor} />}
                         </View>

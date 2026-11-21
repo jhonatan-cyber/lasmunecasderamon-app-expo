@@ -78,8 +78,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
           max !== undefined && selectedIds.length >= max;
         const isOccupied = Number(item.estado_servicio) === 1;
         const isDisabled =
-          (isMaxReached && !isSelected) ||
-          (isOccupied && !allowedOccupiedIds.includes(String(rawId)));
+          (isMaxReached && !isSelected) || isOccupied;
 
         const roomInfo =
           (item as any).habitacion_nombre ||
@@ -167,7 +166,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 >
                   {item.nick || item.nombre || item.name || "Anfitriona"}
                 </Text>
-                {isOccupied && (
+                {isOccupied ? (
                   <Text
                     style={{
                       color: "#EF4444",
@@ -177,6 +176,17 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                     }}
                   >
                     OCUPADA EN SERVICIO {roomInfo ? `(${roomInfo})` : ""}
+                  </Text>
+                ) : (
+                  <Text
+                    style={{
+                      color: "#10B981",
+                      fontSize: 10,
+                      fontWeight: "800",
+                      marginTop: 2,
+                    }}
+                  >
+                    LIBRE
                   </Text>
                 )}
               </View>

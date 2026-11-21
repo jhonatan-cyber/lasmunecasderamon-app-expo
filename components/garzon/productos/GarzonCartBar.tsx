@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { MetodoPagoPedido } from "@/types/cart";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 /** Los tres métodos que el dashboard acepta al crear el pedido. */
 const METODOS_PAGO_PEDIDO: MetodoPagoPedido[] = [
@@ -59,6 +60,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   textPrimary,
   textSecondary,
 }) => {
+    const { accentOnSurface } = useAccentColor();
   return (
     <View
       style={[
@@ -80,14 +82,14 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
             accessibilityRole="button"
             accessibilityState={{ selected: tipEnabled }}
           >
-            <Text style={{ color: accentColor, fontWeight: "600" }}>
+            <Text style={{ color: accentOnSurface, fontWeight: "600" }}>
               {tipEnabled ? "Activa" : "Inactiva"} · $
               {tipAmount.toLocaleString()}
             </Text>
           </Pressable>
         </View>
         {tipEnabled && (
-          <Text style={[styles.tipAmount, { color: accentColor }]}>
+          <Text style={[styles.tipAmount, { color: accentOnSurface }]}>
             +${tipAmount.toLocaleString()}
           </Text>
         )}

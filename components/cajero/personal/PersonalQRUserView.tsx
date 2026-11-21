@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, Vi
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
 import { BASE_URL } from '@/api/client';
 import { User } from '@/hooks/usePersonalScreen';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface PersonalQRUserViewProps {
   user: User;
@@ -29,6 +30,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
   isGenerating,
   onGenerateQR,
 }) => {
+    const { accentOnSurface } = useAccentColor();
   const { width } = useWindowDimensions();
   // El QR crece con la pantalla pero se limita para no desbordar en tablet o
   // en horizontal.
@@ -43,7 +45,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
             <Image source={{ uri: userPhoto }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: accentBg }]}>
-              <Text style={[styles.avatarText, { color: accentColor }]}>
+              <Text style={[styles.avatarText, { color: accentOnSurface }]}>
                 {user.name?.[0]}{user.lastName?.[0]}
               </Text>
             </View>
@@ -52,11 +54,11 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
         <Text style={[styles.userName, { color: textPrimary }]}>
           {user.name} {user.lastName}
         </Text>
-        <Text style={[styles.userNick, { color: accentColor }]}>
+        <Text style={[styles.userNick, { color: accentOnSurface }]}>
           @{user.nick}
         </Text>
         <View style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}>
-          <Text style={[styles.roleText, { color: accentColor }]}>
+          <Text style={[styles.roleText, { color: accentOnSurface }]}>
             {user.role}
           </Text>
         </View>
@@ -68,7 +70,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
           value={user.qr_token || ''}
           size={qrSize}
           backgroundColor="white"
-          color={accentColor}
+          color={accentOnSurface}
           ecl="H"
           logo={userPhoto ? { uri: userPhoto } : undefined}
           logoSize={50}
@@ -78,7 +80,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
         />
 
         <View style={styles.qrFooter}>
-          <Ionicons name="shield-checkmark" size={14} color={accentColor} />
+          <Ionicons name="shield-checkmark" size={14} color={accentOnSurface} />
           <Text style={[styles.qrHint, { color: textSecondary, marginTop: 0 }]}>
             Código de un solo uso · vence en 2 minutos
           </Text>
@@ -87,7 +89,7 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
         {codigoAsistencia ? (
           <View style={[styles.codigoBadge, { borderColor: accentColor }]}>
             <Text style={[styles.codigoLabel, { color: textSecondary }]}>Código: </Text>
-            <Text style={[styles.codigoValue, { color: accentColor }]}>
+            <Text style={[styles.codigoValue, { color: accentOnSurface }]}>
               {codigoAsistencia}
             </Text>
           </View>
@@ -101,11 +103,11 @@ export const PersonalQRUserView: React.FC<PersonalQRUserViewProps> = ({
           disabled={isGenerating}
         >
           {isGenerating ? (
-            <ActivityIndicator color={accentColor} size="small" />
+            <ActivityIndicator color={accentOnSurface} size="small" />
           ) : (
             <>
-              <Ionicons name="refresh" size={20} color={accentColor} />
-              <Text style={[styles.actionBtnText, { color: accentColor }]}>Regenerar</Text>
+              <Ionicons name="refresh" size={20} color={accentOnSurface} />
+              <Text style={[styles.actionBtnText, { color: accentOnSurface }]}>Regenerar</Text>
             </>
           )}
         </Pressable>

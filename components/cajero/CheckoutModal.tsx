@@ -12,6 +12,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { MetodoPago } from '../../types/api';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface CheckoutModalProps {
   visible: boolean;
@@ -48,6 +49,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   submittingCheckout, onCheckoutSubmit, onAddToCuenta,
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
+    const { accentOnSurface } = useAccentColor();
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const accentText = accentTextColor(accentColor);
   const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
@@ -78,7 +80,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       <View style={styles.overlay}>
         <View style={[styles.modal, { backgroundColor: cardBg, borderColor }]}>
           <View style={[styles.header, { backgroundColor: accentBg }]}>
-            <Ionicons name="card-outline" size={24} color={accentColor} />
+            <Ionicons name="card-outline" size={24} color={accentOnSurface} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: textPrimary }]}>Cerrar Pedido</Text>
               <Text style={[styles.subtitle, { color: textSecondary }]}>Codigo: {selectedPedido.codigo}</Text>
@@ -113,7 +115,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </View>
             )}
 
-            {pedidoDetails[0]?.room_id && <View style={{ marginBottom: 16 }}><TimeSelector value={selectedMinutesPedido} onChange={setSelectedMinutesPedido} label="TIEMPO HABITACIÓN" /></View>}
+            {pedidoDetails[0]?.room_id != null ? <View style={{ marginBottom: 16 }}><TimeSelector value={selectedMinutesPedido} onChange={setSelectedMinutesPedido} label="TIEMPO HABITACIÓN" /></View> : null}
 
             <View style={[styles.receipt, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor }]}>
               {loadingDetails ? [1,2,3].map(i => <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}><Skeleton width={40} height={40} /><View style={{ flex: 1 }}><Skeleton width="100%" height={16} /><Skeleton width="40%" height={12} /></View><Skeleton width={60} height={20} /></View>) : pedidoDetails.map((item: any, idx: number) => (
@@ -156,8 +158,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
              )}
             <View style={[styles.totals, { backgroundColor: accentBg }]}>
               <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
-              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentColor, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
-              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentColor }]}>${totalFinal.toLocaleString()}</Text></View>
+              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentOnSurface, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
+              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentOnSurface }]}>${totalFinal.toLocaleString()}</Text></View>
             </View>
           </ScrollView>
 

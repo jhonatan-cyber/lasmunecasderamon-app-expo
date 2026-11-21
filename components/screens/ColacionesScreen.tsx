@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { ModalBottomSheet } from '@/components/ui/ModalBottomSheet';
 import { ColacionProductsCarousel } from '@/components/colaciones/ColacionProductsCarousel';
 import { ColacionAcompanamientoSelector } from '@/components/colaciones/ColacionAcompanamientoSelector';
+import { ColacionHistoryCard } from '@/components/colaciones/ColacionHistoryCard';
+import { ColacionWorkerModal } from '@/components/colaciones/ColacionWorkerModal';
 import { useColacionesScreen } from '@/hooks/useColacionesScreen';
 import { nombreRolLegible } from '@/utils/userRole';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 /** Filtro que muestra el turno completo. */
 const ROL_TODOS = 'Todos';
@@ -47,6 +49,7 @@ function colorConOpacidad(hex: string, alpha: number): string {
 }
 
 export default function ColacionesScreen() {
+    const { accentOnSurface } = useAccentColor();
   const router = useRouter();
   const {
     accentColor,
@@ -176,7 +179,7 @@ export default function ColacionesScreen() {
         rightComponent={
           <View style={[styles.registraBadge, { borderColor, backgroundColor: surfaceMuted }]}>
             <Text style={[styles.registraBadgeLabel, { color: textSecondary }]}>Registra</Text>
-            <Text style={[styles.registraBadgeValor, { color: accentColor }]}>{ROL_QUE_REGISTRA}</Text>
+            <Text style={[styles.registraBadgeValor, { color: accentOnSurface }]}>{ROL_QUE_REGISTRA}</Text>
           </View>
         }
       />
@@ -190,14 +193,14 @@ export default function ColacionesScreen() {
       >
         <View style={[styles.registerCard, { backgroundColor: cardBg, borderColor }]}>
           <Pressable onPress={() => setRegisterCardCollapsed(!registerCardCollapsed)} style={styles.registerCardHeader}>
-            <Ionicons name="beer-outline" size={20} color={accentColor} />
+            <Ionicons name="beer-outline" size={20} color={accentOnSurface} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: textPrimary }]}>Registrar colación</Text>
               <Text style={[styles.cardSubtitle, { color: textSecondary }]}>
                 Un trabajador, un corto por turno.
               </Text>
             </View>
-            <Ionicons name={registerCardCollapsed ? "chevron-down" : "chevron-up"} size={20} color={accentColor} />
+            <Ionicons name={registerCardCollapsed ? "chevron-down" : "chevron-up"} size={20} color={accentOnSurface} />
           </Pressable>
 
           {!registerCardCollapsed && (
@@ -359,45 +362,25 @@ export default function ColacionesScreen() {
             <View style={styles.historyCards}>
               {filteredHistory.map((row) => {
                 const fecha = row.fecha_crea || row.fecha || '';
-                const fechaStr = fecha ? new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : '';
-                const hora = fecha ? new Date(fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
                 const nickRecibio = row.nick || row.usuario_nombre || '';
                 const nickAtendio = row.registrado_por_nick || row.registrado_por_nombre || '';
                 const nombreBebida = row.nombre_bebida || row.producto_nombre || 'Corto';
                 const acomp = row.acompanamiento_nombre || row.acompanamiento || null;
                 const ml = row.ml_bebida ?? 0;
                 return (
-                  <View key={String(row.id)} style={[styles.historyCard, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.historyCardLeft}>
-                      <Text style={[styles.historyCardNick, { color: textPrimary }]}>
-                        {nickRecibio}
-                      </Text>
-                      <Text style={[styles.historyCardProduct, { color: textSecondary }]}>
-                        {nombreBebida}
-                      </Text>
-                      <View style={styles.historyCardMeta}>
-                        <Text style={[styles.historyCardMetaText, { color: textSecondary }]}>
-                          {ml} ml
-                        </Text>
-                        {acomp ? (
-                          <Text style={[styles.historyCardMetaText, { color: textSecondary }]}>
-                            · {acomp}
-                          </Text>
-                        ) : null}
-                      </View>
-                    </View>
-                    <View style={styles.historyCardRight}>
-                      <Text style={[styles.historyCardBy, { color: textSecondary }]}>↘ {nickAtendio}</Text>
-                      <View style={styles.historyCardDateTime}>
-                        {fechaStr ? (
-                          <Text style={[styles.historyCardDate, { color: textSecondary }]}>{fechaStr}</Text>
-                        ) : null}
-                        {hora ? (
-                          <Text style={[styles.historyCardTime, { color: textSecondary }]}>{hora}</Text>
-                        ) : null}
-                      </View>
-                    </View>
-                  </View>
+                  <ColacionHistoryCard
+                    key={String(row.id)}
+                    fecha={fecha}
+                    nickRecibio={nickRecibio}
+                    nickAtendio={nickAtendio}
+                    nombreBebida={nombreBebida}
+                    acompanamiento={acomp}
+                    ml={ml}
+                    cardBg={cardBg}
+                    borderColor={borderColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                  />
                 );
               })}
             </View>
@@ -405,49 +388,16 @@ export default function ColacionesScreen() {
         </View>
       </ScrollView>
 
-      <ModalBottomSheet
+      <ColacionWorkerModal
         visible={workerModalVisible}
         onClose={() => setWorkerModalVisible(false)}
-        title="Seleccionar trabajador"
-        subtitle={`${trabajadores.length} trabajadores disponibles`}
-        actionLabel="Listo"
-        onAction={() => setWorkerModalVisible(false)}
-      >
-        <FlatList
-          data={trabajadores}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            const isSelected = workerId === item.id;
-            return (
-              <Pressable
-                onPress={() => {
-                  setSelectedWorker(item.id);
-                  setWorkerModalVisible(false);
-                }}
-                style={[
-                  styles.workerItem,
-                  {
-                    borderColor: isSelected ? accentColor : borderColor,
-                    backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
-                  },
-                ]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.workerName, { color: textPrimary }]}>
-                    {item.name} {item.lastName}
-                  </Text>
-                  {item.nick ? (
-                    <Text style={[styles.workerNick, { color: textSecondary }]}>{item.nick}</Text>
-                  ) : null}
-                </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={24} color={accentColor} />
-                )}
-              </Pressable>
-            );
-          }}
-        />
-      </ModalBottomSheet>
+        workers={trabajadores}
+        selectedId={workerId}
+        onSelect={(id) => {
+          setSelectedWorker(id);
+          setWorkerModalVisible(false);
+        }}
+      />
 
     </View>
   );
@@ -514,24 +464,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
-  },
-  workerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    marginBottom: 10,
-  },
-  workerName: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  workerNick: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
   },
   productsCarousel: {
     marginTop: 4,
@@ -635,55 +567,6 @@ const styles = StyleSheet.create({
   },
   historyCards: {
     gap: 8,
-  },
-  historyCard: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  historyCardLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  historyCardNick: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  historyCardProduct: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  historyCardRight: {
-    alignItems: 'flex-end',
-  },
-  historyCardBy: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  historyCardMeta: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 2,
-  },
-  historyCardMetaText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  historyCardDateTime: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 2,
-  },
-  historyCardDate: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  historyCardTime: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   listTitle: {
     fontSize: 15,

@@ -27,7 +27,7 @@ export const CartList = React.memo(
     hideQuantityControls = false,
   }: CartListProps) => {
     useRenderCount("CartList", { itemsCount: items.length });
-    const { accentColor, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor, textPrimary, textSecondary, accentOnSurface} = useAccentColor();
 
     const groupedItems = React.useMemo(() => {
       const ObjectGroups: Record<
@@ -110,7 +110,7 @@ export const CartList = React.memo(
                       style={[styles.saleBadge, { borderColor: accentColor }]}
                     >
                       <Text
-                        style={[styles.saleBadgeText, { color: accentColor }]}
+                        style={[styles.saleBadgeText, { color: accentOnSurface }]}
                       >
                         {group.badge}
                       </Text>

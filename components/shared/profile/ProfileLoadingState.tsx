@@ -8,7 +8,6 @@ interface ProfileLoadingStateProps {
   isDark: boolean;
   roleLabel?: string;
   isTablet: boolean;
-  gradientColors: string[];
   accentColor: string;
   textPrimary: string;
   topInset: number;
@@ -20,7 +19,6 @@ export function ProfileLoadingState({
   isDark,
   roleLabel,
   isTablet,
-  gradientColors,
   accentColor,
   textPrimary,
   topInset,
@@ -33,7 +31,6 @@ export function ProfileLoadingState({
         roleLabel={roleLabel}
         isTablet={isTablet}
         isDark={isDark}
-        gradientColors={gradientColors}
         accentColor={accentColor}
         textPrimary={textPrimary}
         topInset={topInset}

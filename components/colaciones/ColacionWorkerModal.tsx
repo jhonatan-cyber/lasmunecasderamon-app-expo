@@ -45,7 +45,7 @@ export const ColacionWorkerModal: React.FC<Props> = ({
   receivedCounts,
   error,
 }) => {
-  const { accentColor, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -109,7 +109,7 @@ export const ColacionWorkerModal: React.FC<Props> = ({
                       ) : null}
                     </View>
                     {isSelected && (
-                      <Text style={{ color: accentColor, fontWeight: '800' }}>✓</Text>
+                      <Text style={{ color: accentOnSurface, fontWeight: '800' }}>✓</Text>
                     )}
                   </Pressable>
                 );

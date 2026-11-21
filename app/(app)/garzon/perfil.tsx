@@ -4,7 +4,7 @@ export default function GarzonPerfilScreen() {
     return (
         <PremiumProfileView
             roleLabel="Garzon"
-            avatarEmoji="🧑"
+            avatarIcon="restaurant"
         />
     );
 }

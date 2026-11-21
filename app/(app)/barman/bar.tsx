@@ -115,10 +115,10 @@ export default function BarScreen() {
       />
       <Tabs
         tabs={[
-          { key: 'stock', label: 'Stock', icon: 'cube-outline' },
-          { key: 'pendientes', label: 'Pendientes', icon: 'time-outline', count: transfers.length },
-          { key: 'historial', label: 'Historial', icon: 'time-outline' },
-          { key: 'envases', label: 'Envases', icon: 'wine-outline' },
+          { key: 'stock', label: 'Stock' },
+          { key: 'pendientes', label: 'Pendientes', count: transfers.length },
+          { key: 'historial', label: 'Historial' },
+          { key: 'envases', label: 'Envases' },
         ]}
         activeKey={activeTab}
         onChange={onTabChange}
@@ -126,6 +126,7 @@ export default function BarScreen() {
         cardBg={cardBg}
         textSecondary={textSecondary}
         borderColor={borderColor}
+        variant="pills"
       />
 
       <BarmanOfflineBanner />
@@ -153,7 +154,10 @@ export default function BarScreen() {
 
       {error ? (
         <View style={styles.errorCard}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="warning" size={20} color="#B91C1C" style={{ marginRight: 8 }} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
         </View>
       ) : null}
 

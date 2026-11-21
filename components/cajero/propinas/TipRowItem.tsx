@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Propina } from "@/hooks/usePropinasScreen";
 import { rotateColor } from "@/utils/colors";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface TipRowItemProps {
   item: Propina;
@@ -33,6 +34,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
   textSecondary,
   borderColor,
 }) => {
+    const { accentOnSurface } = useAccentColor();
   const isPendiente = item.estado === 1;
   const idNum =
     typeof item.id_detalle_propina === "string"
@@ -155,7 +157,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
                 <Ionicons
                   name="checkmark-circle"
                   size={14}
-                  color={accentColor}
+                  color={accentOnSurface}
                 />
                 <Text style={[styles.paymentText, { color: textSecondary }]}>
                   Pagada: {formatDate(item.propina_fecha_crea)}
@@ -171,11 +173,11 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
               }}
             >
               <Text
-                style={{ color: accentColor, fontSize: 11, fontWeight: "700" }}
+                style={{ color: accentOnSurface, fontSize: 11, fontWeight: "700" }}
               >
                 Ver detalles de venta
               </Text>
-              <Ionicons name="chevron-forward" size={12} color={accentColor} />
+              <Ionicons name="chevron-forward" size={12} color={accentOnSurface} />
             </View>
           </View>
         </View>

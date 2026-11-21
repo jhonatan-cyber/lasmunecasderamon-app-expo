@@ -51,3 +51,9 @@ build/
 
 # logs locales de desarrollo
 _tmp/
+
+# ruido local: listas de archivos que deja el IDE/agent y config del agente
+.junie/
+blockfiles.txt
+implicitfiles.txt
+propfiles.txt

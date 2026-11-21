@@ -9,6 +9,8 @@ import {
 import { TimeSelector } from "@/components/ui/TimeSelector";
 import type { Timer } from "@/context/types";
 import { getIvaDecimal } from "@/hooks/utils/cuentaUtils";
+import { calcularTotalesServicio } from "@/utils/servicioTotales";
+import { serviciosService } from "@/services/servicios";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
 import { blockOffline } from "@/utils/offlineGuard";
@@ -287,25 +289,21 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     setLoading(true);
     try {
       const numericPrecio = parseInt(precioServicio.replace(/\./g, "")) || 0;
-      const numAnfitrionas = anfitrionasSeleccionadas.length;
-      const factor = timeVal === 60 ? 2 : 1;
-      const precioServicioTotal = numericPrecio * numAnfitrionas * factor;
-      const precioHabitacionTotal =
-        precioHabitacionSinComision * numAnfitrionas * factor;
-      let calculatedIva = 0;
-      if (metodoPago === "tarjeta") {
-        calculatedIva = Math.floor(precioServicioTotal * getIvaDecimal());
-      }
-
-      let totalGeneral =
-        precioServicioTotal + precioHabitacionTotal + calculatedIva;
-
-      if (metodoPago === "tarjeta") {
-        const totalRedondeado = Math.ceil(totalGeneral / 5000) * 5000;
-        const excedente = totalRedondeado - totalGeneral;
-        totalGeneral = totalRedondeado;
-        calculatedIva += excedente;
-      }
+      const resultado = calcularTotalesServicio({
+        precioServicioUnidad: numericPrecio,
+        precioHabitacion: precioHabitacionSinComision,
+        tiempoHabitacion: timeVal,
+        cantidadAnfitrionas: anfitrionasSeleccionadas.length,
+        cantidadClientes: timer.cliente_id ? 1 : 0,
+        comisionHabitacion: 0,
+        metodoPago,
+        ivaDecimal: getIvaDecimal(),
+        politica: "directo",
+      });
+      const precioServicioTotal = resultado.precioServicio;
+      const precioHabitacionTotal = resultado.precioHabitacion;
+      const calculatedIva = resultado.iva;
+      const totalGeneral = resultado.total;
 
       const payload = {
         es_temporal: true,
@@ -325,11 +323,10 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       const signature = JSON.stringify(payload);
       if (operationRef.current.signature !== signature)
         operationRef.current = { signature, key: createQueueId() };
-      const res = await apiClientSafe("/services/temporary", {
-        method: "POST",
-        headers: { "x-idempotency-key": operationRef.current.key },
-        body: JSON.stringify(payload),
-      });
+      const res = await serviciosService.createTemporal(
+        payload,
+        operationRef.current.key,
+      );
 
       if (res.success) {
         showToast({
@@ -379,6 +376,8 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
               onPress={onClose}
               disabled={loading || loadingAnfitrionas}
               style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar edición del servicio"
             >
               <Ionicons name="close" size={24} color={textSecondary} />
             </Pressable>

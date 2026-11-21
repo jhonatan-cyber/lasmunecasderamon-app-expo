@@ -31,18 +31,18 @@ import { ProfileLoadingState } from "@/components/shared/profile/ProfileLoadingS
 
 interface PremiumProfileViewProps {
   roleLabel?: string;
-  avatarEmoji?: string;
+  avatarIcon?: string;
   onLogout?: () => void;
   onClose?: () => void;
 }
 
 export function PremiumProfileView({
   roleLabel,
-  avatarEmoji = "👤",
+  avatarIcon = "person",
   onLogout,
   onClose,
 }: PremiumProfileViewProps) {
-  const { accentColor, accentText, accentUi, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, accentUi, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsiveMetrics();
@@ -168,7 +168,6 @@ export function PremiumProfileView({
           isDark={isDark}
           roleLabel={roleLabelEfectivo}
           isTablet={isTablet}
-          gradientColors={gradientColors as unknown as string[]}
           accentColor={accentColor}
           textPrimary={textPrimary}
           topInset={insets.top}
@@ -186,7 +185,6 @@ export function PremiumProfileView({
         roleLabel={roleLabelEfectivo}
         isTablet={isTablet}
         isDark={isDark}
-        gradientColors={gradientColors as unknown as string[]}
         accentColor={accentColor}
         textPrimary={textPrimary}
         topInset={insets.top}
@@ -210,7 +208,7 @@ export function PremiumProfileView({
             setFailedPhotoUri(uri);
             logger.warn("No se pudo cargar la foto de perfil", { uri });
           }}
-          avatarEmoji={avatarEmoji}
+          avatarIcon={avatarIcon}
           userName={`${user?.name ?? ""} ${user?.lastName ?? ""}`}
           roleLabel={roleLabelEfectivo || user?.role?.toUpperCase()}
           accentColor={accentColor}

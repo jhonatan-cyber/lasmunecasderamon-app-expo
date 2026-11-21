@@ -7,6 +7,8 @@ interface ServiceCardHeaderProps {
   createdAt?: string;
   statusColor: string;
   statusText: string;
+  statusBgColor?: string;
+  statusTextColor?: string;
   accentColor: string;
   textColor: string;
   textMutedColor: string;
@@ -19,6 +21,8 @@ export const ServiceCardHeader: React.FC<ServiceCardHeaderProps> = ({
   createdAt,
   statusColor,
   statusText,
+  statusBgColor,
+  statusTextColor,
   accentColor,
   textColor,
   textMutedColor,
@@ -27,10 +31,12 @@ export const ServiceCardHeader: React.FC<ServiceCardHeaderProps> = ({
   <CardHeader
     icon="bed"
     title={roomName || "Servicio de barra"}
-    subtitle={`Codigo : #${servicioCode || "S/N"}`}
+    subtitle={`Código #${servicioCode || "S/N"}`}
     date={createdAt}
     statusColor={statusColor}
     statusText={statusText}
+    statusBgColor={statusBgColor}
+    statusTextColor={statusTextColor}
     accentColor={accentColor}
     textColor={textColor}
     textMutedColor={textMutedColor}

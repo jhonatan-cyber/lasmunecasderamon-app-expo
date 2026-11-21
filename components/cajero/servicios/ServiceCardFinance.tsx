@@ -33,7 +33,7 @@ export const ServiceCardFinance: React.FC<ServiceCardFinanceProps> = ({
     <CardFinance
       total={total}
       pillText={metodoPago?.toUpperCase() || "EFECTIVO"}
-      label="TOTAL COBRADO"
+      label={isFinalizadosTab ? "TOTAL COBRADO" : "TOTAL SERVICIO"}
       statusBadge={statusBadge}
       textColor={textColor}
       textMutedColor={textMutedColor}

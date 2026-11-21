@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface SolicitudBannersProps {
     isOffline: boolean;
@@ -19,7 +20,9 @@ export const SolicitudBanners: React.FC<SolicitudBannersProps> = ({
     cardBg,
     borderColor,
     textSecondary,
-}) => (
+} ) => {
+    const { accentOnSurface } = useAccentColor();
+    return (
     <>
         {isOffline && (
             <AnimatedView
@@ -39,16 +42,17 @@ export const SolicitudBanners: React.FC<SolicitudBannersProps> = ({
                 style={[styles.totalBanner, { backgroundColor: cardBg, borderColor, borderLeftColor: accentColor }]}
             >
                 <View style={[styles.totalBannerIcon, { backgroundColor: `${accentColor}20` }]}>
-                    <Ionicons name="cash-outline" size={22} color={accentColor} />
+                    <Ionicons name="cash-outline" size={22} color={accentOnSurface} />
                 </View>
                 <View style={styles.totalBannerText}>
                     <Text style={[styles.totalBannerLabel, { color: textSecondary }]}>TOTAL A PAGAR EN ANTICIPOS</Text>
-                    <Text style={[styles.totalBannerValue, { color: accentColor }]}>${totalAPagar.toLocaleString()}</Text>
+                    <Text style={[styles.totalBannerValue, { color: accentOnSurface }]}>${totalAPagar.toLocaleString()}</Text>
                 </View>
             </AnimatedView>
         )}
     </>
 );
+};
 
 const styles = StyleSheet.create({
     offlineBanner: {

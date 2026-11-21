@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { useRenderCount } from '@/hooks/useRenderCount';
@@ -99,42 +99,54 @@ export const ClientCard = memo(function ClientCard({
                 </View>
 
                 <View style={styles.cardActionsSidebar}>
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)' }]}
+                    <Pressable
                         onPress={() => {
                             haptic.tap();
                             handleOpenHistory(item);
                         }}
                     >
-                        <Ionicons name="eye-outline" size={22} color="#A855F7" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
+                        {({ pressed }) => (
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)', opacity: pressed ? 0.6 : 1 }]}>
+                                <Ionicons name="eye-outline" size={22} color="#A855F7" />
+                            </View>
+                        )}
+                    </Pressable>
+                    <Pressable
                         onPress={() => {
                             haptic.tap();
                             handleOpenLoad(item);
                         }}
                     >
-                        <Ionicons name="wallet" size={22} color="#FFFFFF" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}
+                        {({ pressed }) => (
+                            <View style={[styles.actionBtn, { backgroundColor: '#10B981', opacity: pressed ? 0.6 : 1 }]}>
+                                <Ionicons name="wallet" size={22} color="#FFFFFF" />
+                            </View>
+                        )}
+                    </Pressable>
+                    <Pressable
                         onPress={() => {
                             haptic.tap();
                             handleOpenEdit(item);
                         }}
                     >
-                        <Ionicons name="create-outline" size={22} color="#3B82F6" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)' }]}
+                        {({ pressed }) => (
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)', opacity: pressed ? 0.6 : 1 }]}>
+                                <Ionicons name="create-outline" size={22} color="#3B82F6" />
+                            </View>
+                        )}
+                    </Pressable>
+                    <Pressable
                         onPress={() => {
                             haptic.tap();
                             confirmDelete(item);
                         }}
                     >
-                        <Ionicons name="trash-outline" size={22} color="#EF4444" />
-                    </TouchableOpacity>
+                        {({ pressed }) => (
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', opacity: pressed ? 0.6 : 1 }]}>
+                                <Ionicons name="trash-outline" size={22} color="#EF4444" />
+                            </View>
+                        )}
+                    </Pressable>
                 </View>
             </View>
         </View>

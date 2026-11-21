@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface TipMetricCardsProps {
   totalPendiente: number;
@@ -21,6 +22,7 @@ export const TipMetricCards: React.FC<TipMetricCardsProps> = ({
   cardBg,
   textSecondary,
 }) => {
+    const { accentOnSurface } = useAccentColor();
   return (
     <View
       style={[
@@ -31,7 +33,7 @@ export const TipMetricCards: React.FC<TipMetricCardsProps> = ({
       <Text style={[styles.summaryLabel, { color: textSecondary }]}>
         PROPINAS PENDIENTES
       </Text>
-      <Text style={[styles.summaryAmount, { color: accentColor }]}>
+      <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
         ${totalPendiente.toLocaleString()}
       </Text>
       <View style={styles.summaryDetails}>

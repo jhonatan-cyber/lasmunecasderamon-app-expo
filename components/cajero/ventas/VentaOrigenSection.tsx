@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { VentaDetail } from "./types";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface VentaOrigenSectionProps {
     selectedVenta: VentaDetail;
@@ -19,7 +20,9 @@ export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
     textPrimary,
     textSecondary,
     isDark,
-}) => (
+} ) => {
+    const { accentOnSurface } = useAccentColor();
+    return (
     <View style={[styles.container, { backgroundColor: isDark ? "#1a1a2e" : "#F8FAFC", borderColor }]}>
         <View style={styles.row}>
             <View style={[styles.iconBox, { backgroundColor: selectedVenta.pedido_id ? `${accentColor}20` : "#10B98120" }]}>
@@ -62,7 +65,7 @@ export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
 
         {selectedVenta.habitacion_id && (
             <View style={[styles.habitacionRow, { borderTopColor: borderColor }]}>
-                <Ionicons name="bed-outline" size={16} color={accentColor} />
+                <Ionicons name="bed-outline" size={16} color={accentOnSurface} />
                 <Text style={[styles.personaLabel, { color: textSecondary, flex: 1 }]}>
                     Habitación:{" "}
                     <Text style={[styles.personaValue, { color: textPrimary }]}>
@@ -71,14 +74,15 @@ export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
                 </Text>
                 {selectedVenta.tiempo ? (
                     <View style={[styles.tiempoBadge, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}>
-                        <Ionicons name="time-outline" size={12} color={accentColor} />
-                        <Text style={[styles.tiempoText, { color: accentColor }]}>{selectedVenta.tiempo} min</Text>
+                        <Ionicons name="time-outline" size={12} color={accentOnSurface} />
+                        <Text style={[styles.tiempoText, { color: accentOnSurface }]}>{selectedVenta.tiempo} min</Text>
                     </View>
                 ) : null}
             </View>
         )}
     </View>
 );
+};
 
 const styles = StyleSheet.create({
     container: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 20 },

@@ -37,7 +37,7 @@ export default function ProductosScreen() {
   const clearDraft = useCartDraft("orders", draftCart, (saved) =>
     useCartStore.setState({ cart: saved }),
   );
-  const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } =
+  const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface} =
     useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -146,7 +146,7 @@ export default function ProductosScreen() {
 
       {loading && products.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={accentColor} />
+          <ActivityIndicator size="large" color={accentOnSurface} />
         </View>
       ) : (
         <VirtualizedList
@@ -332,7 +332,7 @@ export default function ProductosScreen() {
                       }}
                       style={{ paddingVertical: 8 }}
                     >
-                      <Text style={{ color: accentColor }}>
+                      <Text style={{ color: accentOnSurface }}>
                         Seleccionar anfitriona
                       </Text>
                     </Pressable>

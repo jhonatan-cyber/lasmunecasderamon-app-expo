@@ -20,6 +20,7 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { usePersonalScreen } from '@/hooks/usePersonalScreen';
 import { useAuthStore } from '@/store/authStore';
 import { useModoPantallaStore } from '@/store/modoPantallaStore';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 const GRID_PADDING = 16;
 const GRID_GAP = 12;
@@ -32,6 +33,7 @@ function columnasParaAncho(ancho: number): number {
 }
 
 export default function PantallaAsistenciaScreen() {
+    const { accentOnSurface } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -93,7 +95,7 @@ export default function PantallaAsistenciaScreen() {
       >
         <View style={styles.cabeceraInfo}>
           <View style={[styles.cabeceraIcono, { backgroundColor: accentBg }]}>
-            <Ionicons name="tv-outline" size={22} color={accentColor} />
+            <Ionicons name="tv-outline" size={22} color={accentOnSurface} />
           </View>
           <View style={styles.cabeceraTextos}>
             <Text style={[styles.cabeceraTitulo, { color: textPrimary }]}>
@@ -124,8 +126,8 @@ export default function PantallaAsistenciaScreen() {
           Toca a una persona para mostrar su QR de asistencia
         </Text>
         <View style={[styles.contador, { backgroundColor: accentBg }]}>
-          <Ionicons name="people" size={14} color={accentColor} />
-          <Text style={[styles.contadorTexto, { color: accentColor }]}>
+          <Ionicons name="people" size={14} color={accentOnSurface} />
+          <Text style={[styles.contadorTexto, { color: accentOnSurface }]}>
             {filteredUsers.length}
           </Text>
         </View>

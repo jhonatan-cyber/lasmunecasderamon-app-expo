@@ -13,6 +13,7 @@ import { Client } from '@/hooks/useClientes';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import { adjuntarBaucher } from '@/utils/baucherPicker';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface LoadBalanceModalProps {
     visible: boolean;
@@ -69,6 +70,7 @@ export function LoadBalanceModal({
     onBaucherFotoChange,
     onClose
 }: LoadBalanceModalProps) {
+    const { accentOnSurface } = useAccentColor();
     const hasTransferencia =
         loadMetodoPago === 'transferencia' ||
         (loadMetodoPago === 'mixto' &&
@@ -129,8 +131,8 @@ export function LoadBalanceModal({
                         {loadMetodoPago === 'mixto' && (
                             <View style={styles.mixedInputs}>
                                 <View style={styles.mixedHeader}>
-                                    <Ionicons name="shuffle-outline" size={18} color={accentColor} />
-                                    <Text style={[styles.mixedTitle, { color: accentColor }]}>Distribución de Pago</Text>
+                                    <Ionicons name="shuffle-outline" size={18} color={accentOnSurface} />
+                                    <Text style={[styles.mixedTitle, { color: accentOnSurface }]}>Distribución de Pago</Text>
                                 </View>
                                 
                                 <View style={styles.mixedRow}>

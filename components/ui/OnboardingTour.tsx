@@ -9,6 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { accentTextColor } from '@/utils/color';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 
@@ -97,6 +99,8 @@ const onboardingData: Record<string, OnboardingStep[]> = {
 
 export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, onClose }) => {
     const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary } = useAccentColor();
+    const reducedMotion = useReducedMotion();
+    const onAccent = accentTextColor(accentColor);
     const steps = onboardingData[role] || onboardingData.anfitriona;
     const [currentStep, setCurrentStep] = useState(0);
     const fadeOpacity = useSharedValue(0);
@@ -116,15 +120,20 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, o
 
     const handleNext = useCallback(() => {
         if (currentStep < steps.length - 1) {
-            fadeOpacity.set(withTiming(0, { duration: 150 }));
-            setTimeout(() => {
+            if (reducedMotion) {
                 setCurrentStep((s) => s + 1);
-                fadeOpacity.set(withTiming(1, { duration: 250 }));
-            }, 150);
+                fadeOpacity.set(1);
+            } else {
+                fadeOpacity.set(withTiming(0, { duration: 150 }));
+                setTimeout(() => {
+                    setCurrentStep((s) => s + 1);
+                    fadeOpacity.set(withTiming(1, { duration: 250 }));
+                }, 150);
+            }
         } else {
             finishOnboarding();
         }
-    }, [currentStep, steps.length, fadeOpacity, finishOnboarding]);
+    }, [currentStep, steps.length, fadeOpacity, finishOnboarding, reducedMotion]);
 
     const contentStyle = useAnimatedStyle(() => ({
         opacity: fadeOpacity.value,
@@ -132,9 +141,13 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, o
 
     React.useEffect(() => {
         if (visible) {
-            fadeOpacity.set(withTiming(1, { duration: 300 }));
+            if (reducedMotion) {
+                fadeOpacity.set(1);
+            } else {
+                fadeOpacity.set(withTiming(1, { duration: 300 }));
+            }
         }
-    }, [visible, fadeOpacity]);
+    }, [visible, fadeOpacity, reducedMotion]);
 
     if (!visible) return null;
 
@@ -181,13 +194,13 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ role, visible, o
                             accessibilityRole="button"
                             accessibilityLabel={currentStep < steps.length - 1 ? 'Siguiente paso' : 'Comenzar'}
                         >
-                            <Text style={styles.nextText}>
+                            <Text style={[styles.nextText, { color: onAccent }]}>
                                 {currentStep < steps.length - 1 ? 'Siguiente' : 'Comenzar'}
                             </Text>
                             <Ionicons
                                 name={currentStep < steps.length - 1 ? 'arrow-forward' : 'checkmark'}
                                 size={FontSize.md}
-                                color="#FFFFFF"
+                                color={onAccent}
                             />
                         </Pressable>
                     </View>
@@ -273,7 +286,6 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     nextText: {
-        color: '#FFFFFF',
         fontSize: FontSize.sm,
         fontWeight: '700',
     },

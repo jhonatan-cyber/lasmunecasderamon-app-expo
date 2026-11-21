@@ -4,7 +4,7 @@ export default function CajeroPerfilScreen() {
     return (
         <PremiumProfileView
             roleLabel="Cajero"
-            avatarEmoji="💳"
+            avatarIcon="card"
         />
     );
 }

@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 import { getIvaDecimal, getIvaPercent } from "@/hooks/utils/cuentaUtils";
 import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
 import { styles } from "../EditServiceModal.styles";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface EditServiceSummaryProps {
   anfitrionasCount: number;
@@ -26,6 +27,7 @@ export function EditServiceSummary({
   textPrimary,
   textSecondary,
 }: EditServiceSummaryProps) {
+    const { accentOnSurface } = useAccentColor();
   const precioPorAnfitriona = parseInt(precioServicio.replace(/\./g, "")) || 0;
   const totalServicio = precioPorAnfitriona * anfitrionasCount;
   const totalHabitacion = precioHabitacionSinComision * anfitrionasCount;
@@ -66,7 +68,7 @@ export function EditServiceSummary({
           <Text style={[styles.summaryLabel, { color: textSecondary }]}>
             {`IVA (${getIvaPercent()}%)`}
           </Text>
-          <Text style={[styles.summaryValue, { color: accentColor }]}>
+          <Text style={[styles.summaryValue, { color: accentOnSurface }]}>
             ${iva.toLocaleString("es-CL")}
           </Text>
         </View>
@@ -80,7 +82,7 @@ export function EditServiceSummary({
         <Text style={[styles.summaryTotalLabel, { color: textPrimary }]}>
           TOTAL
         </Text>
-        <Text style={[styles.summaryTotalValue, { color: accentColor }]}>
+        <Text style={[styles.summaryTotalValue, { color: accentOnSurface }]}>
           ${total.toLocaleString("es-CL")}
         </Text>
       </View>

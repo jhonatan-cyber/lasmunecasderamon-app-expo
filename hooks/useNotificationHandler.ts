@@ -78,7 +78,7 @@ export function useNotificationHandler() {
                 break;
 
             default:
-                logger.info("⚠️ Tipo de notificación no manejado para navegación", { type });
+                logger.info("Tipo de notificación no manejado para navegación", { type });
         }
     }, [router, user]);
 

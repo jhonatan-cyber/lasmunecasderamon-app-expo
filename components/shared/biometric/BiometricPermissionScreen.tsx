@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from '../BiometricEnrollmentModal.styles';
 
@@ -31,20 +31,28 @@ export function BiometricPermissionScreen({
                         enrolamiento facial.
                     </Text>
                     {canAskAgain ? (
-                        <TouchableOpacity
+                        <Pressable
                             style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                             onPress={onRequestPermission}
                         >
-                            <Text style={styles.primaryBtnText}>Conceder permiso</Text>
-                        </TouchableOpacity>
+                            {({ pressed }) => (
+                                <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                    <Text style={styles.primaryBtnText}>Conceder permiso</Text>
+                                </View>
+                            )}
+                        </Pressable>
                     ) : (
                         <Text style={styles.permissionHint}>
                             El permiso está bloqueado. Activalo desde Ajustes del teléfono.
                         </Text>
                     )}
-                    <TouchableOpacity style={styles.ghostBtn} onPress={onClose}>
-                        <Text style={styles.ghostBtnText}>Cerrar</Text>
-                    </TouchableOpacity>
+                    <Pressable style={styles.ghostBtn} onPress={onClose}>
+                        {({ pressed }) => (
+                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
+                                <Text style={styles.ghostBtnText}>Cerrar</Text>
+                            </View>
+                        )}
+                    </Pressable>
                 </View>
             </View>
         </Modal>

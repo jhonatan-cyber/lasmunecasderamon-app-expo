@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
     Pressable,
@@ -11,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { FontFamily } from "@/constants/fonts";
+import { IconButton } from '@/components/ui/IconButton';
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
 import { useAppearanceStore } from '@/store/appearanceStore';
@@ -55,13 +55,13 @@ export function PremiumHeader({
     connectionStatus,
     breadcrumbs,
     progressSteps,
-    showThemeToggle = false,
+    showThemeToggle = true,
 }: PremiumHeaderProps) {
     const {
-        gradientColors,
+        accentColor,
+        accentGlow,
         gradientText,
         gradientTextMuted,
-        gradientOverlay,
         gradientControlBg,
         gradientControlBorder,
         gradientActiveBg,
@@ -71,14 +71,16 @@ export function PremiumHeader({
     const { toggleScheme, scheme } = useAppearanceStore();
     // En un móvil horizontal la altura es escasa: el header se compacta.
     const compact = isLandscape && !isTablet;
-    const backBtnSize = isTablet ? 44 : 38;
+    // 40 visuales + hitSlop = 44 efectivos en móvil; en tablet entra 44 real.
+    const headerIconSize = isTablet ? 44 : 40;
 
     return (
-        <LinearGradient
-            colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+        <View
             style={[
                 styles.header,
                 {
+                    backgroundColor: accentColor,
+                    boxShadow: accentGlow,
                     paddingTop: insets.top + (compact ? 4 : isTablet ? 20 : 10),
                     paddingBottom: compact ? 16 : 25,
                     borderBottomLeftRadius: compact ? 24 : 32,
@@ -86,17 +88,6 @@ export function PremiumHeader({
                 }
             ]}
         >
-            <View
-                pointerEvents="none"
-                style={[
-                    styles.scrim,
-                    {
-                        backgroundColor: gradientOverlay,
-                        borderBottomLeftRadius: compact ? 24 : 32,
-                        borderBottomRightRadius: compact ? 24 : 32,
-                    },
-                ]}
-            />
             <View style={styles.headerTop}>
                 <View style={styles.titleBlock}>
                     <Text
@@ -189,42 +180,28 @@ export function PremiumHeader({
                     </Pressable>
                 )}
                 {showThemeToggle && (
-                    <Pressable
-                        onPress={toggleScheme}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={[
-                            styles.backBtn,
-                            {
-                                width: backBtnSize,
-                                height: backBtnSize,
-                                borderRadius: backBtnSize / 2,
-                                backgroundColor: gradientControlBg,
-                            },
-                        ]}
-                        accessibilityRole="button"
+                    <IconButton
+                        icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
                         accessibilityLabel="Cambiar tema"
-                    >
-                        <Ionicons name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={isTablet ? 24 : 20} color={gradientText} />
-                    </Pressable>
+                        onPress={toggleScheme}
+                        color={gradientText}
+                        size={headerIconSize}
+                        iconSize={isTablet ? 24 : 20}
+                        backgroundColor={gradientControlBg}
+                        style={styles.headerIconSpacing}
+                    />
                 )}
                 {onBack && (
-                    <Pressable
-                        onPress={onBack}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={[
-                            styles.backBtn,
-                            {
-                                width: backBtnSize,
-                                height: backBtnSize,
-                                borderRadius: backBtnSize / 2,
-                                backgroundColor: gradientControlBg,
-                            },
-                        ]}
-                        accessibilityRole="button"
+                    <IconButton
+                        icon="arrow-back"
                         accessibilityLabel="Volver atrás"
-                    >
-                        <Ionicons name="arrow-back" size={isTablet ? 24 : 20} color={gradientText} />
-                    </Pressable>
+                        onPress={onBack}
+                        color={gradientText}
+                        size={headerIconSize}
+                        iconSize={isTablet ? 24 : 20}
+                        backgroundColor={gradientControlBg}
+                        style={styles.headerIconSpacing}
+                    />
                 )}
             </View>
 
@@ -265,28 +242,15 @@ export function PremiumHeader({
                     })}
                 </View>
             )}
-        </LinearGradient>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     header: { paddingHorizontal: 16, paddingBottom: 25 },
-    scrim: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.20)',
-    },
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     titleBlock: { flex: 1, alignItems: 'flex-start' },
-    backBtn: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 10,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-    },
+    headerIconSpacing: { marginLeft: 10 },
     headerTitle: { fontSize: 27, lineHeight: 34, fontFamily: FontFamily.display, letterSpacing: -0.2, textAlign: 'left' },
     headerSubtitle: { fontSize: 14, fontFamily: FontFamily.medium, opacity: 0.85, textAlign: 'left' },
     plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.xl, gap: 4 },

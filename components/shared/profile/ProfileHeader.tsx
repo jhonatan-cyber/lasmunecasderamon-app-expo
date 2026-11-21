@@ -1,9 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
 import { SkeletonBox } from "./SkeletonBox";
-import { accentTextColor } from "@/utils/color";
+import { neonGlow, resolveAccentSurface } from "@/utils/color";
 import { useAppearanceStore } from "@/store/appearanceStore";
 
 interface ProfileHeaderProps {
@@ -11,7 +10,6 @@ interface ProfileHeaderProps {
   roleLabel?: string;
   isTablet: boolean;
   isDark: boolean;
-  gradientColors: string[];
   accentColor: string;
   textPrimary: string;
   topInset: number;
@@ -22,27 +20,29 @@ export function ProfileHeader({
   skeletonMode = false,
   roleLabel,
   isTablet,
-  gradientColors,
+  isDark,
+  accentColor,
   topInset,
   onBack,
 }: ProfileHeaderProps) {
-  // El header se dibuja sobre el degradado del acento: blanco en toda la paleta
-  // salvo Negro y Pizarra, que calculan su color por contraste.
-  const finalHeaderText = accentTextColor(gradientColors[0] ?? '#FFFFFF');
+  // El header se dibuja sobre el color plano del acento: el texto se mide
+  // contra ese color (blanco en los acentos profundos, casi negro en los neón).
+  const plan = resolveAccentSurface(accentColor);
+  const finalHeaderText = plan.text;
   const { scheme, toggleScheme } = useAppearanceStore();
-  const isHeaderLight = finalHeaderText !== "#FFFFFF";
-  const subtitleColor = isHeaderLight ? "rgba(17,24,39,0.75)" : "rgba(255,255,255,0.92)";
-  const scrimColor = isHeaderLight ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.20)";
+  const isHeaderLight = plan.isLightAccent;
+  const subtitleColor = plan.muted;
   const controlBg = isHeaderLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.20)";
   const skeletonColor = isHeaderLight ? "rgba(17,24,39,0.12)" : "rgba(255,255,255,0.25)";
   const skeletonColorSoft = isHeaderLight ? "rgba(17,24,39,0.08)" : "rgba(255,255,255,0.18)";
 
   return (
-    <LinearGradient
-      colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+    <View
       style={[
         styles.header,
         {
+          backgroundColor: accentColor,
+          boxShadow: neonGlow(accentColor, isDark ? "strong" : "soft"),
           paddingTop: topInset + (isTablet ? 20 : 10),
           paddingBottom: 25,
           borderBottomLeftRadius: 32,
@@ -50,7 +50,6 @@ export function ProfileHeader({
         },
       ]}
     >
-      <View pointerEvents="none" style={[styles.scrim, { borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: scrimColor }]} />
       <View style={styles.headerTop}>
         <View style={{ flex: 1, alignItems: 'flex-start', gap: skeletonMode ? 8 : 2 }}>
           {skeletonMode ? (
@@ -124,6 +123,6 @@ export function ProfileHeader({
           </View>
         )}
       </View>
-    </LinearGradient>
+    </View>
   );
 }

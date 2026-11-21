@@ -24,7 +24,7 @@ interface Venta {
 
 export default function ParesDivisionScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const caja = useCajaAbierta();
 
   const [empleados, setEmpleados] = React.useState<Empleado[]>([]);
@@ -223,7 +223,7 @@ export default function ParesDivisionScreen() {
                   <Text style={[styles.totalRole, { color: textSecondary }]}>
                     {roleLabels[role] || role}
                   </Text>
-                  <Text style={[styles.totalAmount, { color: accentColor, fontWeight: '700' }]}>
+                  <Text style={[styles.totalAmount, { color: accentOnSurface, fontWeight: '700' }]}>
                     ${total.toLocaleString()}
                   </Text>
                 </View>

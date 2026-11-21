@@ -5,6 +5,7 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 import { formatCurrency } from '@/utils/format';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
     0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -36,6 +37,7 @@ export const OvertimeCard = React.memo(function OvertimeCard({
     textSecondary,
     onPress
 }: OvertimeCardProps) {
+    const { accentOnSurface } = useAccentColor();
     useRenderCount('OvertimeCard', { itemId: item.id_hora_extra, estado: item.estado });
     const status = statusConfig[item.estado] || statusConfig[1];
     const fecha = new Date(item.fecha_crea);
@@ -52,7 +54,7 @@ export const OvertimeCard = React.memo(function OvertimeCard({
             >
                 <View style={styles.empHeader}>
                     <View style={[styles.avatar, { backgroundColor: accentColor + '20' }]}>
-                        <Text style={[styles.avatarText, { color: accentColor }]}>
+                        <Text style={[styles.avatarText, { color: accentOnSurface }]}>
                             {getInitials(item.usuario)}
                         </Text>
                     </View>
@@ -91,10 +93,10 @@ export const OvertimeCard = React.memo(function OvertimeCard({
                         </View>
                     </View>
                     <View style={styles.amountItem}>
-                        <Ionicons name="wallet-outline" size={13} color={accentColor} />
+                        <Ionicons name="wallet-outline" size={13} color={accentOnSurface} />
                         <View>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValueTotal, { color: accentColor }]}>{formatCurrency(item.total || item.monto)}</Text>
+                            <Text style={[styles.amountValueTotal, { color: accentOnSurface }]}>{formatCurrency(item.total || item.monto)}</Text>
                         </View>
                     </View>
                 </View>

@@ -5,6 +5,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
+import {
+    estadoServicio,
+    type EstadoServicioKey,
+} from '@/utils/servicioEstado';
 import { BorderRadius, FontSize, HitSlop } from '@/constants/spacing';
 
 interface ServiceCardProps {
@@ -15,20 +19,24 @@ interface ServiceCardProps {
 }
 
 export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardProps) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
-    const estadoNum = Number(item.estado);
-    const isProceso = estadoNum === 2;
+    const estadoInfo = estadoServicio(item.estado);
+    const isProceso = estadoInfo.key === "en_proceso";
 
-    const statusMap: Record<number, { bg: string, text: string, label: string }> = {
-        0: { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#fca5a5' : '#991b1b', label: 'Anulado' },
-        1: { bg: isDark ? '#064e3b' : '#d1fae5', text: isDark ? '#6ee7b7' : '#065f46', label: 'Finalizado' },
-        2: { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E', label: 'En Proceso' },
-        3: { bg: isDark ? '#374151' : '#E5E7EB', text: isDark ? '#D1D5DB' : '#4B5563', label: 'Pausado' },
-        4: { bg: isDark ? '#581c87' : '#f3e8ff', text: isDark ? '#c084fc' : '#6b21a8', label: 'Solicitud Anul.' }
+    const statusColors: Record<EstadoServicioKey, { bg: string; text: string }> = {
+        anulado: { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#fca5a5' : '#991b1b' },
+        finalizado: { bg: isDark ? '#064e3b' : '#d1fae5', text: isDark ? '#6ee7b7' : '#065f46' },
+        en_proceso: { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E' },
+        pausado: { bg: isDark ? '#374151' : '#E5E7EB', text: isDark ? '#D1D5DB' : '#4B5563' },
+        solicitud_anulada: { bg: isDark ? '#581c87' : '#f3e8ff', text: isDark ? '#c084fc' : '#6b21a8' },
+        desconocido: { bg: '#999', text: '#FFF' },
     };
 
-    const status = statusMap[estadoNum] || { bg: '#999', text: '#FFF', label: 'Desconocido' };
+    const status = {
+        ...statusColors[estadoInfo.key],
+        label: estadoInfo.label,
+    };
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
@@ -88,7 +96,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={[styles.detailLabel, { color: textSecondary, fontSize: FontSize.xs }]}>Mi Comisión:</Text>
-                            <Text style={[styles.priceValue, { color: accentColor }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
+                            <Text style={[styles.priceValue, { color: accentOnSurface }]}>${(item.comision_usuario || 0).toLocaleString()}</Text>
                         </View>
                     </View>
 
@@ -103,8 +111,8 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                     accessibilityLabel={`Solicitar tragos en ${item.habitacion}`}
                                     hitSlop={HitSlop.md}
                                 >
-                                    <Ionicons name="beer-outline" size={FontSize.xs} color={accentColor} />
-                                    <Text style={[styles.assistanceBtnText, { color: accentColor, fontSize: FontSize.xs }]}>Tragos</Text>
+                                    <Ionicons name="beer-outline" size={FontSize.xs} color={accentOnSurface} />
+                                    <Text style={[styles.assistanceBtnText, { color: accentOnSurface, fontSize: FontSize.xs }]}>Tragos</Text>
                                 </Pressable>
                                 <Pressable 
                                     style={[styles.assistanceBtn, { backgroundColor: isDark ? '#065F4630' : '#d1fae5' }]} 

@@ -33,7 +33,7 @@ export const ProductCard = React.memo(
     anfitrionas,
     rooms,
   }: ProductCardProps) => {
-    const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
+    const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
       useAccentColor();
     const [open, setOpen] = useState(false);
     const selectedProduct = cartItem?.product || product;
@@ -108,7 +108,7 @@ export const ProductCard = React.memo(
               {quantity > 0 ? ` · ${quantity} en pedido` : ""}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={accentColor} />
+          <Ionicons name="chevron-forward" size={20} color={accentOnSurface} />
         </Pressable>
         <Modal
           visible={open}
@@ -211,7 +211,7 @@ export const ProductCard = React.memo(
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       style={{ padding: 6, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
                     >
-                      <Ionicons name="add-circle" size={32} color={accentColor} />
+                      <Ionicons name="add-circle" size={32} color={accentOnSurface} />
                     </Pressable>
                   </View>
 
@@ -239,7 +239,7 @@ export const ProductCard = React.memo(
                           alignItems: 'center',
                         }}
                       >
-                        <Text style={{ color: accentColor, fontFamily: FontFamily.bold, fontSize: 13 }}>
+                        <Text style={{ color: accentOnSurface, fontFamily: FontFamily.bold, fontSize: 13 }}>
                           +{addNum}
                         </Text>
                       </Pressable>

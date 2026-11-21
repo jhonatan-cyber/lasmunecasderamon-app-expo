@@ -23,7 +23,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
   formatTime,
   normalizeEstado,
 }) => {
-  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
 
   if (!anticipo) return null;
@@ -104,11 +104,11 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
               ]}
             >
               <View style={styles.infoRow}>
-                <Ionicons name="pricetag" size={18} color={accentColor} />
+                <Ionicons name="pricetag" size={18} color={accentOnSurface} />
                 <Text style={[styles.infoLabel, { color: textSecondary }]}>
                   Monto
                 </Text>
-                <Text style={[styles.infoValue, { color: accentColor }]}>
+                <Text style={[styles.infoValue, { color: accentOnSurface }]}>
                   ${(anticipo.monto || 0).toLocaleString()}
                 </Text>
               </View>

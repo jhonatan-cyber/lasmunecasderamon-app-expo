@@ -1,7 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "@/utils/toast-lazy";
-import { adjuntarBaucher } from "@/utils/baucherPicker";
 import { apiClientSafe } from "@/api/client";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { useAuthStore } from "@/store/authStore";
@@ -22,6 +21,8 @@ import { getOutbox } from "@/services/outbox";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
+import { useBaucherPhoto } from "@/hooks/useBaucherPhoto";
+import { generateCode } from "@/components/cajero/nuevo-servicio/helpers";
 
 export interface Client {
   id: string;
@@ -46,7 +47,6 @@ export function useGarzonProductos() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [metodoPago, setMetodoPagoRaw] = useState<MetodoPagoPedido>("efectivo");
-  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [baucherPromptVisible, setBaucherPromptVisible] = useState(false);
   // El aviso se muestra una sola vez por pedido: si el garzón lo descarta,
   // no se repite al volver a elegir "transferencia".
@@ -59,10 +59,7 @@ export function useGarzonProductos() {
   const dataRef = useRef<string>("");
   const submitInFlight = useRef(false);
 
-  const takeBaucherPhoto = useCallback(async () => {
-    const dataUrl = await adjuntarBaucher("Productos:takeBaucherPhoto");
-    if (dataUrl) setBaucherFoto(dataUrl);
-  }, []);
+  const { baucherFoto, setBaucherFoto, takeBaucherPhoto } = useBaucherPhoto("Productos");
 
   const setMetodoPago = useCallback(
     (metodo: MetodoPagoPedido) => {
@@ -309,15 +306,6 @@ export function useGarzonProductos() {
       setBaucherPromptVisible(true);
       return;
     }
-
-    const generateCode = () => {
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let result = "";
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
 
     submitInFlight.current = true;
     setSubmitting(true);

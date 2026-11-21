@@ -83,7 +83,7 @@ const normalizeEstado = (estado: number | string) => {
 
 export default function AnticiposAdminScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<AnticipoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -360,7 +360,7 @@ export default function AnticiposAdminScreen() {
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           ANTICIPOS PENDIENTES
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalPendiente.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -404,7 +404,7 @@ export default function AnticiposAdminScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
         }
         ListEmptyComponent={
-          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" message="No hay anticipos con el filtro seleccionado. Intenta cambiar el estado o crear uno nuevo." />
         }
         {...LIST_PERF_PROPS}
       />

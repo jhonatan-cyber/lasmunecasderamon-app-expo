@@ -178,7 +178,7 @@ export function usePersonalScreen() {
                 setSelectedUser(null);
                 showToast({
                     type: 'info',
-                    text1: '📱 Código QR usado',
+                    text1: 'Código QR usado',
                     text2: 'El usuario ya registró su asistencia'
                 });
             }

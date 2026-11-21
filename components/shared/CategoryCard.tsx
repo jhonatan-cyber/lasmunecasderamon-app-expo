@@ -90,7 +90,7 @@ function getCategoryIcon(name: string): string {
 
 const CategoryCardComponent = ({ item, index, onPress, compact = false }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
     // Alterna el color del icono para que la rejilla no se vea plana.
     const tone = index % 2 === 0 ? accentColor : '#10B981';
 
@@ -120,7 +120,7 @@ const CategoryCardComponent = ({ item, index, onPress, compact = false }: Catego
             )}
 
             <View style={[styles.productsBadge, compact && styles.productsBadgeCompact, { backgroundColor: isDark ? `${accentColor}25` : `${accentColor}10` }]}>
-                <Text style={[styles.productsCount, compact && styles.productsCountCompact, { color: accentColor }]}>
+                <Text style={[styles.productsCount, compact && styles.productsCountCompact, { color: accentOnSurface }]}>
                     {item.total_products}
                 </Text>
             </View>

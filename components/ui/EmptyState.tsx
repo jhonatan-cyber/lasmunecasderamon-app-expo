@@ -25,7 +25,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     onAction,
     style,
 }) => {
-    const { cardBg, surfaceMuted, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { cardBg, surfaceMuted, textPrimary, textSecondary, accentColor, borderColor } = useAccentColor();
 
     return (
         <AnimatedView
@@ -33,7 +33,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', delay: 100 }}
         >
-            <View style={[styles.container, { backgroundColor: cardBg }, style]}>
+            <View style={[styles.container, { backgroundColor: cardBg, borderColor }, style]}>
                 <View style={[styles.iconContainer, { backgroundColor: surfaceMuted }]}>
                     <Ionicons name={icon} size={48} color={textSecondary} />
                 </View>
@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     container: {
         padding: 40,
         borderRadius: BorderRadius.xxl,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 40,

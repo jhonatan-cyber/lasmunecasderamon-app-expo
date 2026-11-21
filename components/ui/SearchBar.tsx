@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { StyleSheet, TextInput, View, Pressable } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
+import { IconButton } from '@/components/ui/IconButton';
 
 export interface SearchBarProps {
     placeholder?: string;
@@ -26,7 +27,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     style,
     debounceMs = 300,
 }) => {
-    const { cardBg, surfaceMuted, textPrimary, textSecondary } = useAccentColor();
+    const { cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
     const [internalText, setInternalText] = useState(value);
     const [prevValue, setPrevValue] = useState(value);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +72,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 styles.container,
                 {
                     backgroundColor: cardBg,
+                    borderColor,
                 },
             ]}>
                 <Ionicons
@@ -93,14 +95,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     returnKeyType="search"
                 />
                 {internalText.length > 0 && (
-                    <Pressable
-                        onPress={handleClear}
-                        style={[styles.clearBtn, { backgroundColor: surfaceMuted }]}
-                        accessibilityRole="button"
+                    <IconButton
+                        icon="close-circle"
                         accessibilityLabel="Limpiar búsqueda"
-                    >
-                        <Ionicons name="close-circle" size={FontSize.md} color={textSecondary} />
-                    </Pressable>
+                        onPress={handleClear}
+                        color={textSecondary}
+                        size={28}
+                        iconSize={FontSize.md}
+                        backgroundColor={surfaceMuted}
+                    />
                 )}
             </View>
         </View>
@@ -114,6 +117,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderRadius: BorderRadius.button,
+        borderWidth: 1,
         gap: 10,
     },
     icon: {
@@ -123,12 +127,5 @@ const styles = StyleSheet.create({
         fontSize: FontSize.sm,
         fontFamily: FontFamily.medium,
         minHeight: 22,
-    },
-    clearBtn: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });

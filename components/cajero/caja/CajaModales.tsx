@@ -49,7 +49,7 @@ export function CajaModales({
     handleMontoChange,
     handleSubmit
 }: CajaModalesProps) {
-    const { cardBg, surfaceMuted, borderColor } = useAccentColor();
+    const { cardBg, surfaceMuted, borderColor, accentColor, accentOnSurface } = useAccentColor();
 
     return (
         <Modal
@@ -89,31 +89,31 @@ export function CajaModales({
                                 </View>
                                 <View style={styles.breakdownItem}>
                                     <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Ventas Efectivo (Turno)</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: isDark ? '#10B981' : '#059669' }]}>${((stats.total_efectivo || 0) - (stats.monto_apertura || 0)).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: accentOnSurface }]}>${((stats.total_efectivo || 0) - (stats.monto_apertura || 0)).toLocaleString()}</Text>
                                 </View>
                                 <View style={styles.breakdownItem}>
                                     <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Ventas con Tarjeta</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: isDark ? '#3B82F6' : '#2563EB' }]}>${(stats.total_tarjeta || 0).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: accentOnSurface }]}>${(stats.total_tarjeta || 0).toLocaleString()}</Text>
                                 </View>
                                 <View style={styles.breakdownItem}>
                                     <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Transferencias</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: isDark ? '#8B5CF6' : '#7C3AED' }]}>${(stats.total_transferencia || 0).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: accentOnSurface }]}>${(stats.total_transferencia || 0).toLocaleString()}</Text>
                                 </View>
                                 {stats.total_devoluciones > 0 && (
                                     <View style={styles.breakdownItem}>
                                         <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Devoluciones</Text>
-                                        <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.total_devoluciones || 0).toLocaleString()}</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: accentColor }]}>-${(stats.total_devoluciones || 0).toLocaleString()}</Text>
                                     </View>
                                 )}
                                 {(stats.prepago_pendiente_clientes || 0) > 0 && (
                                     <View style={styles.breakdownItem}>
                                         <Text style={[styles.breakdownItemLabel, { color: textSecondary }]}>Saldos clientes (no están en caja)</Text>
-                                        <Text style={[styles.breakdownItemValue, { color: '#EF4444' }]}>-${(stats.prepago_pendiente_clientes || 0).toLocaleString()}</Text>
+                                        <Text style={[styles.breakdownItemValue, { color: accentColor }]}>-${(stats.prepago_pendiente_clientes || 0).toLocaleString()}</Text>
                                     </View>
                                 )}
                                 <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: borderColor, marginTop: 8, paddingTop: 8 }]}>
                                     <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>MONTO DE CIERRE</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: '#E11D48', fontWeight: '900', fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: accentColor, fontWeight: '900', fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
                                 </View>
                             </View>
                         )}

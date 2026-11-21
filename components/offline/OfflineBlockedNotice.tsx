@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 /**
  * Aviso de que la acción de esta pantalla **no** se puede hacer sin conexión.
@@ -17,12 +18,15 @@ export interface OfflineBlockedNoticeProps {
 export const OfflineBlockedNotice: React.FC<OfflineBlockedNoticeProps> = ({
     message,
     accentColor = '#EF4444',
-}) => (
+} ) => {
+    const { accentOnSurface } = useAccentColor();
+    return (
     <View style={[styles.container, { backgroundColor: `${accentColor}14`, borderColor: `${accentColor}40` }]}>
-        <Ionicons name='cloud-offline-outline' size={18} color={accentColor} />
-        <Text style={[styles.text, { color: accentColor }]}>{message}</Text>
+        <Ionicons name='cloud-offline-outline' size={18} color={accentOnSurface} />
+        <Text style={[styles.text, { color: accentOnSurface }]}>{message}</Text>
     </View>
 );
+};
 
 const styles = StyleSheet.create({
     container: {

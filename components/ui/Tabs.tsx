@@ -12,7 +12,12 @@ import {
 import { readableTextColor } from '@/utils/color';
 import { haptic } from '@/utils/haptics';
 import { FontFamily } from '@/constants/fonts';
-import { BorderRadius } from '@/constants/spacing';
+import { BorderRadius, MIN_TOUCH_TARGET } from '@/constants/spacing';
+
+/** Alto visual del pill; el área táctil se completa con hitSlop hasta 44. */
+export const PILL_HEIGHT = 32;
+export const PILL_TEXT_SIZE = 12;
+const PILL_HIT_SLOP = Math.ceil((MIN_TOUCH_TARGET - PILL_HEIGHT) / 2);
 
 export type TabItem<T extends string> = {
   key: T;
@@ -140,6 +145,11 @@ export function Tabs<T extends string>({
             : `${tab.label}${tab.count !== undefined ? ` (${tab.count})` : ''}`
         }
         accessibilityState={{ selected: isActive }}
+        hitSlop={
+          isPills
+            ? { top: PILL_HIT_SLOP, bottom: PILL_HIT_SLOP }
+            : undefined
+        }
         style={[
           isPills ? styles.pill : styles.segment,
           stretches ? styles.tabStretch : styles.tabNatural,
@@ -318,8 +328,8 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     minWidth: 72,
-    minHeight: 24,
-    paddingVertical: 2,
+    minHeight: PILL_HEIGHT,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
@@ -328,11 +338,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pillTablet: {
-    paddingVertical: 8,
+    minHeight: 40,
+    paddingVertical: 10,
     paddingHorizontal: 16,
   },
   pillText: {
-    fontSize: 10,
+    fontSize: PILL_TEXT_SIZE,
     fontFamily: FontFamily.semibold,
   },
   segmentTextTablet: {

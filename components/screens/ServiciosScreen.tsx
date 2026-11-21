@@ -1,17 +1,25 @@
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { contentColumn } from "@/constants/layout";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { useStableCallback } from "@/hooks/useStableCallback";import { eventBus } from "@/utils/eventBus";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useStableCallback } from "@/hooks/useStableCallback";
+import { eventBus } from "@/utils/eventBus";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
+  ActivityIndicator,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View
 } from "react-native";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
-import { apiClientSafe } from '@/api/client-safe';
+import { servicioATimer, serviciosService } from '@/services/servicios';
+import {
+  calcularComisionServicio,
+  contarUsuariosServicio,
+} from '@/utils/servicioTotales';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -33,36 +41,41 @@ import {
   ServiceCard,
   ServiciosModales
 } from '@/components/cajero/servicios';
+import type { DetailAction } from '@/components/cajero/servicios/ServiceDetailModal';
+
+const listaDeTexto = (valor: unknown): string[] =>
+  Array.isArray(valor)
+    ? valor.map((item) => String(item).trim()).filter(Boolean)
+    : typeof valor === "string"
+      ? valor.split(",").map((item) => item.trim()).filter(Boolean)
+      : [];
 
 const formatServiceDetail = (raw: any, useServerTotals: boolean) => {
   const precioServicio = safeNumber(raw?.precio_servicio ?? raw?.precioServicio ?? 0);
   const precioHabitacion = safeNumber(raw?.precio_habitacion ?? raw?.precioHabitacion ?? 0);
   const iva = safeNumber(raw?.iva ?? 0);
-  const anfitrionasIdsRaw = Array.isArray(raw?.anfitrionas_ids)
-    ? raw.anfitrionas_ids
-    : typeof raw?.anfitrionas_ids === "string"
-      ? raw.anfitrionas_ids.split(",").map((id: string) => id.trim()).filter(Boolean)
-      : [];
-  const anfitrionasNombres = typeof raw?.anfitrionas === "string"
-    ? raw.anfitrionas.split(",").map((name: string) => name.trim()).filter(Boolean)
-    : [];
-  const totalUsuarios = Math.max(
-    1,
-    safeNumber(raw?.total_usuarios ?? raw?.totalUsuarios ?? 0),
-    anfitrionasIdsRaw.length,
-    anfitrionasNombres.length
-  );
+  const anfitrionasIds = listaDeTexto(raw?.anfitrionas_ids);
+  const anfitrionasNombres = listaDeTexto(raw?.anfitrionas);
+  const totalUsuarios = contarUsuariosServicio({
+    totalUsuarios: raw?.total_usuarios ?? raw?.totalUsuarios,
+    anfitrionasIds,
+    anfitrionasNombres,
+  });
 
   const habitacionComision = safeNumber(raw?.habitacion_comision ?? 0);
-  const tieneComisionHabitacion = habitacionComision > 0;
+  const comision = calcularComisionServicio({
+    habitacionComision,
+    precioServicioUnidad: precioServicio,
+    totalUsuarios,
+  });
 
-  const comisionIndividual = tieneComisionHabitacion
-    ? Math.floor(habitacionComision / totalUsuarios)
-    : precioServicio;
-  const totalComision = tieneComisionHabitacion
-    ? habitacionComision
-    : precioServicio * totalUsuarios;
-  
+  const comisionIndividual = useServerTotals && raw?.comision_individual != null
+    ? safeNumber(raw.comision_individual)
+    : comision.comisionIndividual;
+  const totalComision = useServerTotals && raw?.total_comision != null
+    ? safeNumber(raw.total_comision)
+    : comision.totalComision;
+
   const roomName = raw?.roomName || raw?.habitacion_nombre || raw?.habitacion_numero || raw?.habitacion || "Servicio de barra";
   const fechaServicio = parseDateSafe(raw?.fecha_crea || raw?.created_at || raw?.startTime);
 
@@ -76,7 +89,7 @@ const formatServiceDetail = (raw: any, useServerTotals: boolean) => {
     total_usuarios: useServerTotals && raw?.total_usuarios != null ? safeNumber(raw.total_usuarios) : totalUsuarios,
     habitacion_comision: habitacionComision,
     comision_individual: comisionIndividual,
-    total_comision: useServerTotals && raw?.total_comision != null ? safeNumber(raw.total_comision) : totalComision,
+    total_comision: totalComision,
     created_at: fechaServicio.toISOString(),
     fecha_crea: fechaServicio.toISOString(),
     waiter_name: raw?.waiter_name || raw?.usuario_nick || `${raw?.creator_nombre || ""} ${raw?.creator_apellido || ""}`.trim() || "Admin",
@@ -86,15 +99,30 @@ const formatServiceDetail = (raw: any, useServerTotals: boolean) => {
   };
 };
 
+const SERVICIOS_POR_PAGINA = 100;
+
+/** Minúsculas y sin acentos para que "habitacion" encuentre "Habitación". */
+const normalizarBusqueda = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
 type ScreenState = {
   refreshing: boolean;
   activeTab: 'activos' | 'finalizados';
   finalizados: Timer[];
+  finalizadosPage: number;
+  hasMoreFinalizados: boolean;
+  busquedaFinalizados: string;
   loadingActivos: boolean;
   loadingFinalizados: boolean;
+  loadingMoreFinalizados: boolean;
   editModalVisible: boolean;
   detailModalVisible: boolean;
   selectedTimer: Timer | null;
+  detailTimer: Timer | null;
   selectedServiceDetail: any | null;
   alertConfig: {
     visible: boolean;
@@ -111,11 +139,13 @@ type ScreenState = {
 type Action =
   | { type: 'SET_REFRESHING'; payload: boolean }
   | { type: 'SET_ACTIVE_TAB'; payload: 'activos' | 'finalizados' }
-  | { type: 'SET_FINALIZADOS'; payload: Timer[] }
+  | { type: 'SET_FINALIZADOS_PAGE'; payload: { items: Timer[]; page: number; hasMore: boolean } }
+  | { type: 'SET_BUSQUEDA_FINALIZADOS'; payload: string }
   | { type: 'SET_LOADING_ACTIVOS'; payload: boolean }
   | { type: 'SET_LOADING_FINALIZADOS'; payload: boolean }
+  | { type: 'SET_LOADING_MORE_FINALIZADOS'; payload: boolean }
   | { type: 'SET_EDIT_MODAL'; visible: boolean; timer?: Timer }
-  | { type: 'SET_DETAIL_MODAL'; visible: boolean; service?: any }
+  | { type: 'SET_DETAIL_MODAL'; visible: boolean; service?: any; timer?: Timer }
   | { type: 'SET_ALERT'; payload: Partial<ScreenState['alertConfig']> }
   | { type: 'CLOSE_ALERT' };
 
@@ -123,11 +153,16 @@ const initialState: ScreenState = {
   refreshing: false,
   activeTab: 'activos',
   finalizados: [],
+  finalizadosPage: 0,
+  hasMoreFinalizados: true,
+  busquedaFinalizados: "",
   loadingActivos: false,
   loadingFinalizados: false,
+  loadingMoreFinalizados: false,
   editModalVisible: false,
   detailModalVisible: false,
   selectedTimer: null,
+  detailTimer: null,
   selectedServiceDetail: null,
   alertConfig: { visible: false, title: "", message: "", type: "info", showCancel: true },
 };
@@ -136,11 +171,29 @@ function reducer(state: ScreenState, action: Action): ScreenState {
   switch (action.type) {
     case 'SET_REFRESHING': return { ...state, refreshing: action.payload };
     case 'SET_ACTIVE_TAB': return { ...state, activeTab: action.payload };
-    case 'SET_FINALIZADOS': return { ...state, finalizados: action.payload };
+    case 'SET_FINALIZADOS_PAGE': {
+      const { items, page, hasMore } = action.payload;
+      const base = page > 1 ? state.finalizados : [];
+      const vistos = new Set(base.map((timer) => timer.id));
+      const nuevos = items.filter((timer) => !vistos.has(timer.id));
+      return {
+        ...state,
+        finalizados: [...base, ...nuevos],
+        finalizadosPage: page,
+        hasMoreFinalizados: hasMore,
+      };
+    }
+    case 'SET_BUSQUEDA_FINALIZADOS': return { ...state, busquedaFinalizados: action.payload };
     case 'SET_LOADING_ACTIVOS': return { ...state, loadingActivos: action.payload };
     case 'SET_LOADING_FINALIZADOS': return { ...state, loadingFinalizados: action.payload };
+    case 'SET_LOADING_MORE_FINALIZADOS': return { ...state, loadingMoreFinalizados: action.payload };
     case 'SET_EDIT_MODAL': return { ...state, editModalVisible: action.visible, selectedTimer: action.timer || null };
-    case 'SET_DETAIL_MODAL': return { ...state, detailModalVisible: action.visible, selectedServiceDetail: action.service || null };
+    case 'SET_DETAIL_MODAL': return {
+      ...state,
+      detailModalVisible: action.visible,
+      selectedServiceDetail: action.visible ? action.service || null : null,
+      detailTimer: action.visible ? action.timer || null : null,
+    };
     case 'SET_ALERT': return { ...state, alertConfig: { ...state.alertConfig, ...action.payload } };
     case 'CLOSE_ALERT': return { ...state, alertConfig: { ...state.alertConfig, visible: false } };
     default: return state;
@@ -149,6 +202,40 @@ function reducer(state: ScreenState, action: Action): ScreenState {
 
 type ServiciosVariant = 'cajero' | 'barman' | 'admin';
 
+interface CapacidadesServicios {
+  /** Sin editar/finalizar: solo consulta (admin). */
+  soloLectura: boolean;
+  /** Oculta el panel de asistencia y acciones del barman. */
+  sinAccionesBarman: boolean;
+  muestraFinalizados: boolean;
+  muestraFAB: boolean;
+  rutaAtras: '/cajero' | '/(app)/barman/(tabs)';
+}
+
+const CAPACIDADES: Record<ServiciosVariant, CapacidadesServicios> = {
+  cajero: {
+    soloLectura: false,
+    sinAccionesBarman: false,
+    muestraFinalizados: true,
+    muestraFAB: true,
+    rutaAtras: '/cajero',
+  },
+  barman: {
+    soloLectura: false,
+    sinAccionesBarman: true,
+    muestraFinalizados: false,
+    muestraFAB: true,
+    rutaAtras: '/(app)/barman/(tabs)',
+  },
+  admin: {
+    soloLectura: true,
+    sinAccionesBarman: false,
+    muestraFinalizados: true,
+    muestraFAB: false,
+    rutaAtras: '/cajero',
+  },
+};
+
 interface ServiciosScreenProps {
   variant: ServiciosVariant;
 }
@@ -156,10 +243,9 @@ interface ServiciosScreenProps {
 export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const esCajero = variant === 'cajero';
   const esAdmin = variant === 'admin';
-  const esBarman = variant === 'barman';
-  const soloLectura = esAdmin;
-  const sinAccionesBarman = esBarman;
-  const { accentColor, isDark } = useAccentColor();
+  const capacidades = CAPACIDADES[variant];
+  const { soloLectura, sinAccionesBarman } = capacidades;
+  const { accentColor, accentText, isDark } = useAccentColor();
   const router = useRouter();
   const { isTablet } = useResponsiveMetrics();
   const numColumns = isTablet ? 2 : 1;
@@ -167,7 +253,24 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const isFocused = useRef(true);
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { refreshing, activeTab, finalizados, loadingActivos, loadingFinalizados, editModalVisible, selectedTimer, alertConfig, selectedServiceDetail, detailModalVisible } = state;
+  const [assignmentTimer, setAssignmentTimer] = useState<Timer | null>(null);
+  const {
+    refreshing,
+    activeTab,
+    finalizados,
+    finalizadosPage,
+    hasMoreFinalizados,
+    busquedaFinalizados,
+    loadingActivos,
+    loadingFinalizados,
+    loadingMoreFinalizados,
+    editModalVisible,
+    selectedTimer,
+    alertConfig,
+    selectedServiceDetail,
+    detailTimer,
+    detailModalVisible,
+  } = state;
 
   const colors = Colors[isDark ? 'dark' : 'light'];
   const cardBg = colors.card;
@@ -181,21 +284,23 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     textMuted: textSecondary,
     border: borderColor,
     accent: accentColor,
+    accentText,
     success: colors.success,
     danger: colors.danger,
     warning: colors.warning,
     info: colors.info,
-  }), [isDark, accentColor, cardBg, textPrimary, textSecondary, borderColor]);
+    isDark,
+  }), [isDark, accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor]);
 
   const tabsList = useMemo(() => {
     const base: Array<{ key: 'activos' | 'finalizados'; label: string; icon: any }> = [
       { key: 'activos', label: 'Activos', icon: 'timer-outline' },
     ];
-    if (!esBarman) {
+    if (capacidades.muestraFinalizados) {
       base.push({ key: 'finalizados', label: 'Finalizados', icon: 'checkmark-circle-outline' });
     }
     return base;
-  }, [esBarman]);
+  }, [capacidades.muestraFinalizados]);
 
   const activeServicios = useMemo(() => {
     const servicios = timers.filter(t => t.tipoTransaccion === 'servicio');
@@ -212,95 +317,69 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     });
   }, [timers]);
 
-  const fetchFinalizados = useCallback(async (isManual = false) => {
-    dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: true });
-    try {
-      let allData: any[] = [];
-      let page = 1;
-      const limit = 200;
-      let hasMore = true;
+  const finalizadosVisibles = useMemo(() => {
+    const q = normalizarBusqueda(busquedaFinalizados);
+    if (!q) return finalizados;
+    return finalizados.filter((timer) =>
+      [timer.roomName, timer.servicioCode, timer.anfitrionas, timer.clienteNombre]
+        .some((valor) => normalizarBusqueda(String(valor ?? "")).includes(q)),
+    );
+  }, [finalizados, busquedaFinalizados]);
 
-      while (hasMore) {
-        const res = await apiClientSafe<{ data: any[]; total: number }>(`/services?all=true&limit=${limit}&page=${page}`);
-        const pageData = res.data;
-        const raw = Array.isArray(pageData?.data)
-          ? pageData.data
-          : Array.isArray(pageData)
-            ? pageData
-            : [];
-
-        if (!res.success || raw.length === 0) { hasMore = false; break; }
-
-        allData = [...allData, ...raw];
-        const total = pageData?.total || 0;
-        hasMore = allData.length < total && raw.length === limit;
-        page++;
-      }
-
-      const rawFinalizados = allData;
-
-      if (Array.isArray(rawFinalizados) && rawFinalizados.length >= 0) {
-        const mapped = rawFinalizados.map((sAny: any) => {
-          const habitacionComision = safeNumber(sAny.habitacion_comision || 0);
-          const comisionIndividual = safeNumber(sAny.comision_individual || 0);
-          const totalUsuarios = Math.max(1, safeNumber(sAny.total_usuarios || 1));
-          
-          const totalComision = habitacionComision > 0 
-            ? habitacionComision 
-            : comisionIndividual * totalUsuarios;
-          
-          return {
-            id: String(sAny.id || sAny.id_servicio),
-            servicioId: String(sAny.id || sAny.id_servicio),
-            roomId: String(sAny.id_habitacion || sAny.roomId || sAny.habitacion_id || 'barra'),
-            roomName: sAny.habitacion_nombre || sAny.habitacion_numero || "Servicio de barra",
-            duration: safeNumber(sAny.tiempo || 0),
-            remainingTime: 0,
-            isActive: false,
-            isPaused: false,
-            startTime: parseDateSafe(sAny.fecha_crea),
-            servicioCode: sAny.codigo,
-            clienteNombre: sAny.cliente_nombre,
-            tipoTransaccion: "servicio" as const,
-            anfitrionas: sAny.anfitrionas_nombres,
-            anfitrionas_fotos: sAny.anfitrionas_fotos ? sAny.anfitrionas_fotos.split(',') : [],
-            total: safeNumber(sAny.total || 0),
-            monto: safeNumber(sAny.monto || 0),
-            metodo_pago: sAny.metodo_pago,
-            waiter_name: sAny.waiter_name || `${sAny.creator_nombre || ""} ${sAny.creator_apellido || ""}`.trim() || sAny.creator_nick,
-            waiter_foto: sAny.waiter_foto || sAny.creator_foto,
-            solicitante_name: sAny.solicitante_name,
-            solicitante_foto: sAny.solicitante_foto,
-            created_at: parseDateSafe(sAny.fecha_crea).toISOString(),
-            fecha_crea: parseDateSafe(sAny.fecha_crea).toISOString(),
-            estado: sAny.estado,
-            pago_estado: sAny.pago_estado,
-            anfitrionas_ids: sAny.anfitrionas_ids,
-            comision_individual: habitacionComision > 0
-              ? Math.floor(totalComision / totalUsuarios)
-              : comisionIndividual,
-            total_usuarios: totalUsuarios,
-            total_comision: totalComision,
-            habitacion_comision: habitacionComision,
-            precio_habitacion: safeNumber(sAny.precio_habitacion || 0),
-            precio_servicio: safeNumber(sAny.precio_servicio || 0),
-            iva: safeNumber(sAny.iva || 0),
-            sub_total: safeNumber(sAny.sub_total || 0),
-          };
+  const cargarPaginaFinalizados = useCallback(
+    async (page: number, isManual = false) => {
+      const primera = page <= 1;
+      dispatch({
+        type: primera ? 'SET_LOADING_FINALIZADOS' : 'SET_LOADING_MORE_FINALIZADOS',
+        payload: true,
+      });
+      try {
+        const res = await serviciosService.listar({
+          all: true,
+          limit: SERVICIOS_POR_PAGINA,
+          page,
         });
-        dispatch({ type: 'SET_FINALIZADOS', payload: mapped });
-        if (isManual) showToastLazy({ type: "success", text1: "Actualizado" });
-      }
-    } catch (error) {
-      logger.captureException(error, { context: 'Servicios:fetchData' });
-    } finally {
-      dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: false });
-    }
-  }, []);
+        if (!res.success) {
+          if (isManual) {
+            showToastLazy({ type: "error", text1: "Error", text2: res.message });
+          }
+          return;
+        }
 
-  useEffect(() => {
-    if (activeTab === "finalizados") fetchFinalizados();
-  }, [activeTab, fetchFinalizados]);
+        dispatch({
+          type: 'SET_FINALIZADOS_PAGE',
+          payload: {
+            items: res.items.map(servicioATimer),
+            page,
+            hasMore: page * SERVICIOS_POR_PAGINA < res.total,
+          },
+        });
+        if (isManual) showToastLazy({ type: "success", text1: "Actualizado" });
+      } catch (error) {
+        logger.captureException(error, { context: 'Servicios:fetchData' });
+      } finally {
+        dispatch({ type: 'SET_LOADING_FINALIZADOS', payload: false });
+        dispatch({ type: 'SET_LOADING_MORE_FINALIZADOS', payload: false });
+      }
+    },
+    [],
+  );
+
+  const fetchFinalizados = useCallback(
+    (isManual = false) => cargarPaginaFinalizados(1, isManual),
+    [cargarPaginaFinalizados],
+  );
+
+  const cargarMasFinalizados = useCallback(() => {
+    if (!hasMoreFinalizados || loadingFinalizados || loadingMoreFinalizados) return;
+    void cargarPaginaFinalizados(finalizadosPage + 1);
+  }, [
+    hasMoreFinalizados,
+    loadingFinalizados,
+    loadingMoreFinalizados,
+    finalizadosPage,
+    cargarPaginaFinalizados,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -319,6 +398,8 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
   useEffect(() => {
     const sub = eventBus.addListener("refresh_sales", () => {
+      // Fuera de foco la pantalla no se ve: refrescar acá solo gasta red.
+      if (!isFocused.current) return;
       refreshTimers();
       if (activeTab === "finalizados") fetchFinalizados();
     });
@@ -357,7 +438,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
               dispatch({ type: 'CLOSE_ALERT' });
               return;
             }
-            const res = await apiClientSafe(`/services/${timer.servicioId}`, { method: "PATCH", body: JSON.stringify({ estado: 1 }) });
+            const res = await serviciosService.actualizarEstado(timer.servicioId, 1);
             dispatch({ type: 'CLOSE_ALERT' });
             if (res.success) {
               showToastLazy({ type: "success", text1: "Servicio Finalizado" });
@@ -380,16 +461,102 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     dispatch({ type: 'SET_EDIT_MODAL', visible: true, timer });
   }, []);
 
+  const closeDetail = useCallback(() => {
+    dispatch({ type: 'SET_DETAIL_MODAL', visible: false });
+  }, []);
+
+  const onAgregarVenta = useCallback((timer: Timer) => {
+    router.push({
+      pathname: '/cajero/nueva-venta',
+      params: { servicio_id: timer.servicioId },
+    } as never);
+  }, [router]);
+
+  const onCambiarAnfitrionas = useCallback((timer: Timer) => {
+    if (!blockOffline('servicio')) return;
+    setAssignmentTimer(timer);
+  }, []);
+
+  const detalleGestionable =
+    !soloLectura &&
+    !sinAccionesBarman &&
+    detailTimer != null &&
+    [2, 3].includes(Number(detailTimer.estado));
+
+  const detailAcciones = useMemo<DetailAction[]>(() => {
+    if (!detailTimer || !detalleGestionable) return [];
+    const acciones: DetailAction[] = [];
+    if (esCajero) {
+      acciones.push({
+        key: 'venta',
+        label: 'Agregar venta',
+        icon: 'cart-outline',
+        onPress: () => {
+          closeDetail();
+          onAgregarVenta(detailTimer);
+        },
+      });
+    }
+    acciones.push({
+      key: 'anfitrionas',
+      label: 'Cambiar o liberar anfitrionas',
+      icon: 'people-outline',
+      onPress: () => {
+        closeDetail();
+        onCambiarAnfitrionas(detailTimer);
+      },
+    });
+    if (
+      !detailTimer.es_temporal &&
+      !detailTimer.servicio_original_id &&
+      Number(detailTimer.habitacion_comision || 0) > 0
+    ) {
+      acciones.push({
+        key: 'adicional',
+        label: 'Servicio adicional',
+        icon: 'create-outline',
+        onPress: () => {
+          closeDetail();
+          onEditar(detailTimer);
+        },
+      });
+    }
+    return acciones;
+  }, [
+    detailTimer,
+    detalleGestionable,
+    esCajero,
+    closeDetail,
+    onAgregarVenta,
+    onCambiarAnfitrionas,
+    onEditar,
+  ]);
+
+  const onFinalizarDetail =
+    detalleGestionable && detailTimer
+      ? () => {
+        closeDetail();
+        onFinalizar(detailTimer);
+      }
+      : undefined;
+
   const renderItem = useStableCallback(({ item }: { item: any }) => (
     <ServiceCard
       item={item}
       activeTab={activeTab}
       serverOffset={serverOffset}
-      onFinalizar={esBarman ? undefined : onFinalizar}
-      onEditar={esBarman ? undefined : onEditar}
+      onFinalizar={sinAccionesBarman ? undefined : onFinalizar}
+      onEditar={sinAccionesBarman ? undefined : onEditar}
+      onAgregarVenta={sinAccionesBarman ? undefined : onAgregarVenta}
+      onCambiarAnfitrionas={sinAccionesBarman ? undefined : onCambiarAnfitrionas}
       readOnly={soloLectura}
       sinAccionesBarman={sinAccionesBarman}
-      onPress={(t) => dispatch({ type: 'SET_DETAIL_MODAL', visible: true, service: formatServiceDetail(t, esCajero || esAdmin) })}
+      onPress={(t) => dispatch({
+        type: 'SET_DETAIL_MODAL',
+        visible: true,
+        timer: t,
+        service: formatServiceDetail(t, esCajero || esAdmin),
+      })}
       theme={theme}
     />
   ));
@@ -399,7 +566,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
       <Stack.Screen options={{ headerShown: false }} />
       <PremiumHeader
         title="Servicios"
-        onBack={() => router.replace(esCajero || esAdmin ? "/cajero" : "/(app)/barman/(tabs)")}
+        onBack={() => router.replace(capacidades.rutaAtras)}
       />
       <Tabs
         tabs={tabsList}
@@ -413,15 +580,43 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
       {esCajero ? (
         <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
-      ) : esAdmin ? null : (
+      ) : sinAccionesBarman ? (
         <BarmanOfflineBanner />
-      )}
+      ) : null}
 
       <View style={{ flex: 1 }}>
+        {activeTab === "finalizados" && (
+          <View style={[styles.searchBox, { backgroundColor: cardBg, borderColor }]}>
+            <Ionicons name="search" size={18} color={textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: textPrimary }]}
+              value={busquedaFinalizados}
+              onChangeText={(text) =>
+                dispatch({ type: 'SET_BUSQUEDA_FINALIZADOS', payload: text })
+              }
+              placeholder="Habitación, código, anfitriona"
+              placeholderTextColor={textSecondary}
+              accessibilityLabel="Buscar servicios finalizados"
+              returnKeyType="search"
+            />
+            {busquedaFinalizados.length > 0 && (
+              <Pressable
+                onPress={() =>
+                  dispatch({ type: 'SET_BUSQUEDA_FINALIZADOS', payload: "" })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Limpiar búsqueda"
+                hitSlop={8}
+              >
+                <Ionicons name="close-circle" size={18} color={textSecondary} />
+              </Pressable>
+            )}
+          </View>
+        )}
         <VirtualizedList
-          data={activeTab === "activos" ? activeServicios : finalizados}
+          data={activeTab === "activos" ? activeServicios : finalizadosVisibles}
           renderItem={renderItem}
-          keyExtractor={(item: any) => item.id}
+          keyExtractor={(item: any) => String(item.id ?? item.servicioId)}
           numColumns={numColumns}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -431,6 +626,13 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
           maxToRenderPerBatch={7}
           initialNumToRender={5}
           removeClippedSubviews={true}
+          onEndReached={activeTab === "finalizados" ? cargarMasFinalizados : undefined}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            activeTab === "finalizados" && loadingMoreFinalizados ? (
+              <ActivityIndicator color={accentColor} style={{ paddingVertical: 20 }} />
+            ) : null
+          }
           ListEmptyComponent={
             loadingActivos || loadingFinalizados ? (
               <View style={{ padding: 16, gap: 12 }}>
@@ -439,15 +641,24 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
                 ))}
               </View>
             ) : (
-              <EmptyState icon="documents-outline" title="No hay servicios que mostrar" />
+              <EmptyState
+                icon="documents-outline"
+                title="No hay servicios que mostrar"
+                message={
+                  activeTab === "finalizados" && busquedaFinalizados.trim()
+                    ? "Ningún servicio coincide con la búsqueda."
+                    : "No se encontraron servicios con el filtro actual. Intenta cambiar el tipo de servicio."
+                }
+              />
             )
           }
         />
       </View>
 
-      {!esAdmin && (
+      {capacidades.muestraFAB && (
         <PremiumFAB
           icon="add"
+          accessibilityLabel={esCajero ? 'Nuevo servicio' : 'Solicitar servicio'}
           onPress={() =>
             router.push(
               (esCajero ? '/cajero/nuevo-servicio' : '/barman/solicitar-servicio') as never,
@@ -469,7 +680,12 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         onCloseAlert={() => dispatch({ type: 'CLOSE_ALERT' })}
         detailModalVisible={detailModalVisible}
         selectedServiceDetail={selectedServiceDetail}
-        onCloseDetail={() => dispatch({ type: 'SET_DETAIL_MODAL', visible: false })}
+        detailAcciones={detailAcciones}
+        onFinalizarDetail={onFinalizarDetail}
+        serverOffset={serverOffset}
+        onCloseDetail={closeDetail}
+        assignmentTimer={assignmentTimer}
+        onCloseAssignment={() => setAssignmentTimer(null)}
         theme={theme}
       />
     </View>
@@ -479,14 +695,16 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { ...contentColumn, padding: 12, paddingBottom: 100 },
-  backBtnRight: {
-      flexDirection: 'row', 
-      alignItems: 'center', 
-      height: 38, 
-      borderRadius: 9999,
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      paddingHorizontal: 12,
-      gap: 6
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  searchInput: { flex: 1, fontSize: 15 },
 });

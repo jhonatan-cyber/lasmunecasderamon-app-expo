@@ -33,7 +33,7 @@ const TYPE_META: Record<
   error: { icon: 'alert-circle', color: '#EF4444' },
   info: { icon: 'information-circle', color: '#3B82F6' },
   warning: { icon: 'warning', color: '#F59E0B' },
-  order: { icon: 'receipt-outline', color: '#E11D48' },
+  order: { icon: 'receipt-outline', color: '#FF2D55' },
 };
 
 export function NotificationBanner({ layer = 'root' }: Props) {

@@ -170,17 +170,17 @@ export const useSolicitudes = () => {
 
     useEffect(() => {
         const subscription = eventBus.addListener('refresh_requests', (payload: SSEPayload) => {
-            logger.debug('[useSolicitudes] 📡 SSE event received:', payload as any);
+            logger.debug('[useSolicitudes] SSE event received:', payload as any);
             fetchSolicitudes();
             
             if (payload.data && payload.data.id && (payload.type === 'new_order' || payload.type === 'new_service_request')) {
-                logger.debug('[useSolicitudes] 🤖 Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
+                logger.debug('[useSolicitudes] Auto-opening signal received:', { arg0: payload.type, arg1: payload.data.id });
                 setPendingAutoOpen({
                     id: payload.data.id as string,
                     type: payload.type === 'new_order' ? 'pedido' : 'solicitud'
                 });
             } else {
-                logger.debug('[useSolicitudes] ⚠️ Auto-open skipped - no valid id:', payload?.data?.id as any);
+                logger.debug('[useSolicitudes] Auto-open skipped - no valid id:', payload?.data?.id as any);
             }
         });
         return () => subscription.remove();

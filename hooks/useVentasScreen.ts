@@ -24,6 +24,7 @@ import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { useCajaAbiertaStore } from "@/store/cajaAbiertaStore";
+import { formatAmountInput, parseNumericAmount } from "@/components/cajero/nuevo-servicio/helpers";
 
 const initialVentasLoadedRef = { current: false };
 
@@ -166,16 +167,9 @@ export const useVentasScreen = () => {
     [],
   );
 
-  const formatMontoInput = useCallback((value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) return "";
-    return Number(digits).toLocaleString("es-CL");
-  }, []);
-
-  const parseMontoInput = useCallback(
-    (value: string) => Number(value.replace(/\D/g, "") || 0),
-    [],
-  );
+  // Re-export helpers for backward compatibility
+  const formatMontoInput = formatAmountInput;
+  const parseMontoInput = parseNumericAmount;
 
   const handleOpenActionSheet = useCallback((venta: any) => {
     dispatch({ type: "SET_ACTIVE_VENTA", payload: venta });
@@ -193,7 +187,7 @@ export const useVentasScreen = () => {
       ),
     });
     dispatch({ type: "SET_ANULACION_MODAL_VISIBLE", payload: true });
-  }, [state.activeVenta, formatMontoInput]);
+  }, [state.activeVenta]);
 
   const closeAnulacionModal = useCallback(() => {
     if (state.anulandoVenta) return;
@@ -345,7 +339,6 @@ export const useVentasScreen = () => {
     state.motivoAnulacion,
     fetchVentas,
     getVentaId,
-    parseMontoInput,
     showToast,
     isOffline,
   ]);

@@ -15,6 +15,7 @@ import {
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAppearanceStore } from "@/store/appearanceStore";
+import { DEFAULT_ACCENT_COLOR, normalizeAccentColor, useThemeStore } from "@/store/themeStore";
 import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
 import { QRScannerModal } from "@/components/shared/QRScannerModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
@@ -44,6 +45,8 @@ export default function LoginScreen() {
     passwordRef,
     isBiometricSupported,
     isBiometricEnabled,
+    rememberMe,
+    setRememberMe,
     alertConfig,
     closeAlert,
     onAlertConfirm,
@@ -62,6 +65,11 @@ export default function LoginScreen() {
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const C = theme;
   const { toggleScheme } = useAppearanceStore();
+  const userColors = useThemeStore(state => state.userColors);
+
+  // Obtener el último color de acento guardado, o el default si no hay ninguno.
+  // Se normaliza para que un color de una paleta anterior caiga en la neón.
+  const lastAccentColor = normalizeAccentColor(Object.values(userColors).pop() || DEFAULT_ACCENT_COLOR);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,14 +98,12 @@ export default function LoginScreen() {
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
       >
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(0,0,0,0.6)", "rgba(0,0,0,0.85)", "#000000"]
-              : ["rgba(255,255,255,0.4)", "rgba(255,255,255,0.8)", "#FFFFFF"]
-          }
-          style={StyleSheet.absoluteFill}
-        />
+        {isDark && (
+          <LinearGradient
+            colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.75)", "#000000"]}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
@@ -127,8 +133,10 @@ export default function LoginScreen() {
                   error={error}
                   loading={loading}
                   isDark={isDark}
+                  accentColor={lastAccentColor}
                   isBiometricEnabled={isBiometricEnabled}
                   isBiometricSupported={isBiometricSupported}
+                  rememberMe={rememberMe}
                   passwordRef={passwordRef}
                   onUsernameChange={setUsername}
                   onPasswordChange={setPassword}
@@ -139,6 +147,7 @@ export default function LoginScreen() {
                   onQRPress={() => setShowQRScanner(true)}
                   onBiometricPress={handleBiometricLogin}
                   onForgotPassword={() => setShowResetPasswordModal(true)}
+                  onRememberMeChange={setRememberMe}
                 />
               </AnimatedScreen>
             </View>
@@ -188,6 +197,7 @@ export default function LoginScreen() {
         resetRun={resetRun}
         onChangeResetRun={setResetRun}
         isDark={isDark}
+        accentColor={lastAccentColor}
         onClose={closeResetPasswordModal}
         onReset={handleResetPassword}
       />

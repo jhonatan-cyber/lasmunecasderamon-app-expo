@@ -47,6 +47,11 @@ export function GlobalTimerAlert() {
         await refreshTimers();
     };
 
+    // La "X" y el botón "atrás" descartan el aviso sin ejecutar `handleConfirm`.
+    const handleDismiss = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
+
     return (
         <PremiumAlert
             visible={alertConfig.visible}
@@ -54,6 +59,7 @@ export function GlobalTimerAlert() {
             message={alertConfig.message}
             type={alertConfig.type}
             onConfirm={handleConfirm}
+            onCancel={handleDismiss}
             showCancel={false}
             confirmText="Aceptar"
         />

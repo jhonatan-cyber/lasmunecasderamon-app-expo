@@ -108,7 +108,7 @@ export default function ClientesScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F3F4F6" },
+        { backgroundColor: isDark ? "#000000" : "#FFFFFF" },
       ]}
     >
       <Stack.Screen options={{ headerShown: false }} />
@@ -214,6 +214,7 @@ export default function ClientesScreen() {
 
       <PremiumFAB
         icon="person-add"
+        accessibilityLabel="Nuevo cliente"
         onPress={handleOpenNew}
         visible={
           !clientModalVisible && !loadModalVisible && !historyModalVisible

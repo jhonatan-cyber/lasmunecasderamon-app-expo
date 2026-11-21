@@ -5,7 +5,6 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
-import { haptic } from '@/utils/haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AttendanceRegisterSchema } from '@lasmunecasderamon/validations';
 import React,{ useState } from 'react';
@@ -39,7 +38,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
     onClose,
     onRegistered
 }) => {
-    const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
+    const {accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
     const user = useAuthStore((state) => state.user);
 
     const [codigo, setCodigo] = useState('');
@@ -192,7 +191,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                         >
                         <View style={styles.header}>
                             <View style={[styles.iconCircle, { backgroundColor: `${accentColor}20` }]}>
-                                <Ionicons name="calendar" size={24} color={accentColor} />
+                                <Ionicons name="calendar" size={24} color={accentOnSurface} />
                             </View>
                             <Text style={[styles.title, { color: textPrimary }]}>Registrar Asistencia</Text>
                             <Text style={[styles.subtitle, { color: textSecondary }]}>
@@ -211,7 +210,7 @@ export const RegistroAsistenciaModal: React.FC<RegistroAsistenciaModalProps> = (
                                     {user?.name} {user?.lastName}
                                 </Text>
                                 <View style={[styles.roleBadge, { backgroundColor: `${accentColor}20` }]}>
-                                    <Text style={[styles.roleText, { color: accentColor }]}>{user?.role}</Text>
+                                    <Text style={[styles.roleText, { color: accentOnSurface }]}>{user?.role}</Text>
                                 </View>
                             </View>
                         </View>

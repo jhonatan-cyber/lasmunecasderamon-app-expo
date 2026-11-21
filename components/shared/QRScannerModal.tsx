@@ -37,7 +37,7 @@ export const QRScannerModal = ({
     const [zoom, setZoom] = useState(ZOOM_NORMAL);
     const [cameraActive, setCameraActive] = useState(false);
     const [codigo, setCodigo] = useState<string>('');
-    const { accentColor } = useAccentColor();
+    const { accentColor, accentOnSurface} = useAccentColor();
     const timerRef = useRef<any>(null);
 
     const fetchCodigo = useCallback(async () => {
@@ -206,7 +206,7 @@ export const QRScannerModal = ({
                         {codigo ? (
                             <View style={[styles.codigoBadge, { borderColor: accentColor }]}>
                                 <Text style={styles.codigoLabel}>Código: </Text>
-                                <Text style={[styles.codigoValue, { color: accentColor }]}>{codigo}</Text>
+                                <Text style={[styles.codigoValue, { color: accentOnSurface }]}>{codigo}</Text>
                             </View>
                         ) : null}
                         <Text style={styles.footerText}>

@@ -1,30 +1,51 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "code-refactoring": {
       "source": "supercent-io/skills-template",
       "sourceType": "github",
-      "computedHash": "65079112f3cd1e2cc897390d78dd7185333d61b15b68b754bedddfddcdf6d857"
+      "computedHash": "38df0952eb03cb371b3105a23d5e246be6023cb9b8bdee6ca5ed0d80e79f6468"
+    },
+    "design-mobile-apps": {
+      "source": "designed-by-ai/skills",
+      "commit": "03c20aec6dcedb5fabfb03dc37982eb52ef19ed6",
+      "sourceType": "github",
+      "skillPath": "skills/design-mobile-apps/SKILL.md",
+      "computedHash": "eec6dae3f26f8f154fe190a53387f0b2eab39aa120932d5c33af7f3284f04b10"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",
-      "computedHash": "25872a21881a950edc3db1f3329664d60405d539660ce05b3265db2de06a7dfd"
+      "computedHash": "bad9884f0a4a7e827bf677c4b63e04053b2290c6671954fcb5a6cae692c5a13f"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "commit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "f0820b18426a7d9a6c823a890988ba0ac70bf0fd596d30d7ef07c88558728c23"
+    },
+    "karpathy-guidelines": {
+      "source": "multica-ai/andrej-karpathy-skills",
+      "commit": "2c606141936f1eeef17fa3043a72095b4765b9c2",
+      "sourceType": "github",
+      "skillPath": "skills/karpathy-guidelines/SKILL.md",
+      "computedHash": "e64131803b0a34b8c39afc11338a74f8305cf8f69f750620bdf6cb38f6865c52"
     },
     "tailwind-design-system": {
       "source": "wshobson/agents",
       "sourceType": "github",
-      "computedHash": "c88178d861802fa836be54e377e82bb67899b6c378807679a1feecd21bf63cb8"
+      "computedHash": "94f2264164fecc38577890c699e022f0285f36d37b574311ac3d36b0ee347c0b"
     },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
       "sourceType": "github",
-      "computedHash": "4cfe5e95a230616c17d92b44e3cd37bae543ce087a7756a446a62f77d7c58a37"
+      "computedHash": "8db9877e3e3bc4ef5a097154b80d7f1a11fbf82107f1d84a542d2d5eea1b1783"
     },
     "vercel-react-native-skills": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
-      "computedHash": "a804b4e848059822638c390359976f7021380bcefb1469d473aa4e9202c15ecb"
+      "computedHash": ""
     }
   }
 }

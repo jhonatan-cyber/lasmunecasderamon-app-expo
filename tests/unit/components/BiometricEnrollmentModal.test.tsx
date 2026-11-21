@@ -46,7 +46,13 @@ vi.mock('react-native', () => ({
     StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {}, absoluteFillObject: {} },
     View: ({ children }: any) => <div>{children}</div>,
     Text: ({ children }: any) => <span>{children}</span>,
-    Pressable: ({ children, onPress }: any) => <button onClick={onPress}>{children}</button>,
+    // El panel usa Pressable con render prop (`{({ pressed }) => ...}`): el
+    // mock tiene que invocarla, si no React rechaza una función como hijo.
+    Pressable: ({ children, onPress, disabled }: any) => (
+        <button onClick={onPress} disabled={disabled}>
+            {typeof children === 'function' ? children({ pressed: false }) : children}
+        </button>
+    ),
     TouchableOpacity: ({ children, onPress, disabled }: any) => (
         <button onClick={onPress} disabled={disabled}>
             {children}
@@ -55,6 +61,11 @@ vi.mock('react-native', () => ({
     ActivityIndicator: () => <span>cargando</span>,
     Modal: ({ children, visible }: any) => (visible ? <div>{children}</div> : null),
     Platform: { OS: 'web' },
+    Appearance: {
+        getColorScheme: () => 'dark',
+        addChangeListener: () => ({ remove: () => {} }),
+    },
+    useColorScheme: () => 'dark',
     KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
 }));
 

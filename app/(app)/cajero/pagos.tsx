@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -35,7 +36,7 @@ const numero = (value: unknown) => Number(value) || 0;
 
 export default function PagosTrabajadoresScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<PayrollRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +123,7 @@ export default function PagosTrabajadoresScreen() {
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.cardHeader}>
             <View style={[styles.avatar, { backgroundColor: `${accentColor}22` }]}>
-              <Text style={[styles.avatarText, { color: accentColor }]}>{inicial}</Text>
+              <Text style={[styles.avatarText, { color: accentOnSurface }]}>{inicial}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.nombre, { color: textPrimary }]} numberOfLines={1}>
@@ -132,7 +133,7 @@ export default function PagosTrabajadoresScreen() {
                 {item.rol || 'Sin rol'}
               </Text>
             </View>
-            <Text style={[styles.total, { color: accentColor }]}>
+            <Text style={[styles.total, { color: accentOnSurface }]}>
               {formatCurrency(item.total)}
             </Text>
           </View>
@@ -176,11 +177,11 @@ export default function PagosTrabajadoresScreen() {
             ]}
           >
             {pagando ? (
-              <ActivityIndicator size="small" color={accentColor} />
+              <ActivityIndicator size="small" color={accentOnSurface} />
             ) : (
-              <Ionicons name="wallet-outline" size={16} color={accentColor} />
+              <Ionicons name="wallet-outline" size={16} color={accentOnSurface} />
             )}
-            <Text style={[styles.payText, { color: accentColor }]}>
+            <Text style={[styles.payText, { color: accentOnSurface }]}>
               {pagando ? 'Pagando…' : `Pagar ${formatCurrency(item.total)}`}
             </Text>
           </Pressable>
@@ -213,19 +214,14 @@ export default function PagosTrabajadoresScreen() {
       />
 
       {error ? (
-        <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-          <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
-          <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
-          <Pressable
-            onPress={() => {
-              setLoading(true);
-              fetchData();
-            }}
-            style={[styles.retryBtn, { backgroundColor: accentColor }]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          title="No se pudieron cargar los pagos"
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       ) : (
         <FlatList
           data={data}
@@ -303,6 +299,4 @@ const styles = StyleSheet.create({
   backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

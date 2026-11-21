@@ -1,10 +1,8 @@
-import { individualShorts } from "@/hooks/utils/individualShorts";
 import { useCartDraft } from "@/hooks/useCartDraft";
+import { useCartExitGuard } from "@/hooks/useCartExitGuard";
 import { formColumn } from "@/constants/layout";
 import { useCallback, useRef, useState } from "react";
-import { Image } from "expo-image";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +17,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
+import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
 import { CartList } from "@/components/cajero/forms/CartList";
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
@@ -30,15 +29,17 @@ import { CajaClosedBanner } from "@/components/cajero/CajaClosedBanner";
 import { OfflineStatusBanner } from "@/components/offline/OfflineStatusBanner";
 import { TimeSelector } from "@/components/ui/TimeSelector";
 import { RoomSelectModal } from "@/components/cajero/forms/RoomSelectModal";
-import { TipCheckbox } from "@/components/cajero/forms/TipCheckbox";
+import { CollapsibleSection } from "@/components/cajero/nueva-venta/CollapsibleSection";
+import { CategoryGrid } from "@/components/cajero/nueva-venta/CategoryGrid";
+import { PaymentSummaryCard } from "@/components/cajero/nueva-venta/PaymentSummaryCard";
+import { StickyCheckoutBar } from "@/components/cajero/nueva-venta/StickyCheckoutBar";
+import { BaucherCard } from "@/components/cajero/nueva-venta/BaucherCard";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useNuevaVenta } from "@/hooks/useNuevaVenta";
 import { useConfigValue } from "@/hooks/useConfigValue";
-import { getCardSplit } from "@/hooks/utils/cuentaUtils";
 import { NuevaVentaSkeleton } from "@/components/cajero/nueva-venta/NuevaVentaSkeleton";
 import { adjuntarBaucher } from "@/utils/baucherPicker";
-import { haptic } from "@/utils/haptics";
 
 export default function NuevaVentaScreen() {
   const {
@@ -48,8 +49,7 @@ export default function NuevaVentaScreen() {
     cardBg,
     textPrimary,
     textSecondary,
-    borderColor,
-  } = useAccentColor();
+    borderColor, accentOnSurface} = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<any>(null);
@@ -125,6 +125,17 @@ export default function NuevaVentaScreen() {
     loadMetodoPago,
   } = state;
 
+  // La guardia cubre header, gesto y back físico. Mientras se envía la venta
+  // no se bloquea la navegación: el propio submit limpia el carrito y navega.
+  const { discardPromptVisible, confirmDiscard, cancelDiscard } = useCartExitGuard({
+    enabled: cart.length > 0 && !submitting,
+    onDiscard: () => {
+      clearDraft();
+      dispatch({ type: "SET_CART", payload: [] });
+    },
+  });
+  const cartItemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
   /** Foto del baucher en data URL; se exige con transferencia al finalizar. */
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [clientSelectionTarget, setClientSelectionTarget] = useState<"primary" | "secondary">("primary");
@@ -138,7 +149,6 @@ export default function NuevaVentaScreen() {
     soda: true,
   });
   const toggleSection = (key: keyof typeof sections) => {
-    haptic.tap();
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
   const handleAdjuntarBaucher = useCallback(async () => {
@@ -204,11 +214,7 @@ export default function NuevaVentaScreen() {
         connectionStatus={
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
-        onBack={() => {
-          clearDraft();
-          dispatch({ type: "SET_CART", payload: [] });
-          router.back();
-        }}
+        onBack={() => router.back()}
       />
       <OfflineStatusBanner
         pendientesHref={"/(app)/cajero/pendientes" as never}
@@ -269,63 +275,40 @@ export default function NuevaVentaScreen() {
         />
 
         {/* 1. Selección de Categoría - Collapsible */}
-        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
-          <Pressable onPress={() => toggleSection("categories")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
-            <Text style={{ color: textPrimary, fontWeight: "900", fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
-              1. Selección de Categoría
-            </Text>
-            <Ionicons name={sections.categories ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
-          </Pressable>
-          {sections.categories && (
-            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                {categories.map((cat, idx) => {
-                  const n = (cat.name || cat.nombre || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                  let icon: string = "pricetags";
-                  if (/cerve/.test(n)) icon = "beer";
-                  else if (/vino/.test(n)) icon = "wine";
-                  else if (/cocktail|coctail/.test(n)) icon = "wine";
-                  else if (/cafe|café|coffee/.test(n)) icon = "cafe";
-                  else if (/pizza/.test(n)) icon = "pizza";
-                  else if (/hamburguesa|burger/.test(n)) icon = "fast-food";
-                  else if (/helado|ice cream/.test(n)) icon = "ice-cream";
-                  else if (/pasta/.test(n)) icon = "restaurant";
-                  else if (/pescado|fish/.test(n)) icon = "fish";
-                  else if (/bebida|drink/.test(n)) icon = "cafe";
-                  return (
-                    <Pressable
-                      key={cat.id || idx}
-                      onPress={() => {
-                        haptic.select();
-                        handleOpenCategory(cat);
-                      }}
-                      style={{ minWidth: 120, padding: 12, borderRadius: 20, borderWidth: 1, borderColor, backgroundColor: "rgba(155,155,155,0.03)", alignItems: "center" }}
-                      accessibilityRole="button"
-                    >
-                      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${accentColor}15`, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
-                        <Ionicons name={icon as any} size={20} color={accentColor} />
-                      </View>
-                      <Text style={{ color: textPrimary, fontSize: 12, fontWeight: "800", textAlign: "center" }}>
-                        {cat.name || cat.nombre}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+        <CollapsibleSection
+          title="1. Selección de Categoría"
+          collapsed={!sections.categories}
+          onToggle={() => toggleSection("categories")}
+          fontSize={13}
+          fontWeight="900"
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+          contentStyle={{ paddingBottom: 14 }}
+        >
+          <CategoryGrid
+            categories={categories}
+            onSelect={handleOpenCategory}
+            accentColor={accentColor}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+          />
+        </CollapsibleSection>
 
         {/* 2. Detalles de la Venta - Collapsible */}
-        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: borderRadius, overflow: "hidden", marginBottom: 12 }}>
-          <Pressable onPress={() => toggleSection("detalles")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing }}>
-            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: isTablet ? 16 : 13 }}>
-              2. Detalles de la Venta
-            </Text>
-            <Ionicons name={sections.detalles ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
-          </Pressable>
-          {sections.detalles && (
-            <View style={{ paddingHorizontal: spacing, paddingBottom: spacing }}>
+        <CollapsibleSection
+          title="2. Detalles de la Venta"
+          collapsed={!sections.detalles}
+          onToggle={() => toggleSection("detalles")}
+          fontSize={isTablet ? 16 : 13}
+          borderRadius={borderRadius}
+          padding={spacing}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+        >
           {servicioId && (
             <Text style={{ color: textPrimary, padding: 12 }}>
               Venta adicional · {servicioNombre || "Cargando habitación…"}
@@ -351,7 +334,7 @@ export default function NuevaVentaScreen() {
               accessibilityLabel="Seleccionar habitación"
               accessibilityRole="button"
             >
-              <Ionicons name="business" size={20} color={accentColor} />
+              <Ionicons name="business" size={20} color={accentOnSurface} />
               <Text
                 style={[
                   styles.selectorText,
@@ -395,7 +378,7 @@ export default function NuevaVentaScreen() {
             accessibilityLabel="Seleccionar cliente"
             accessibilityRole="button"
           >
-            <Ionicons name="person" size={20} color={accentColor} />
+            <Ionicons name="person" size={20} color={accentOnSurface} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={[styles.selectorText, { color: textPrimary }]}>
                 {selectedCliente
@@ -414,7 +397,7 @@ export default function NuevaVentaScreen() {
                   <Text
                     style={{
                       fontSize: 13,
-                      color: accentColor,
+                      color: accentOnSurface,
                       fontWeight: "700",
                       marginTop: 2,
                     }}
@@ -445,90 +428,82 @@ export default function NuevaVentaScreen() {
               )}
             </View>
           </Pressable>
-          </View>
-          )}
-        </View>
+        </CollapsibleSection>
 
         {/* 3. Carrito - Collapsible */}
-        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
-          <Pressable onPress={() => toggleSection("carrito")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
-            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
-              3. Carrito
-            </Text>
-            <Ionicons name={sections.carrito ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
-          </Pressable>
-          {sections.carrito && (
-            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-              <CartList
-                items={cart as any}
-                onUpdateQuantity={updateQuantity}
-                onRemove={removeFromCart}
-                title={""}
-              />
-            </View>
-          )}
-        </View>
+        <CollapsibleSection
+          title="3. Carrito"
+          collapsed={!sections.carrito}
+          onToggle={() => toggleSection("carrito")}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+        >
+          <CartList
+            items={cart as any}
+            onUpdateQuantity={updateQuantity}
+            onRemove={removeFromCart}
+            title={""}
+          />
+        </CollapsibleSection>
 
         {/* Bebidas - Collapsible */}
-        <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
-          <Pressable onPress={() => toggleSection("bebidas")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
-            <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
-              Bebidas
-            </Text>
-            <Ionicons name={sections.bebidas ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
-          </Pressable>
-          {sections.bebidas && (
-            <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-              <ShotMixerSelector
-                bottle
-                compact
-                items={cart.map((p) => ({
-                  ...p,
-                  nombre: p.nombre || p.name || "",
-                  cantidad: p.quantity,
-                }))}
-                onChangeBottle={(index, sabores) =>
-                  dispatch({
-                    type: "SET_CART",
-                    payload: cart.map((p, i) =>
-                      i === index ? { ...p, acompanamiento_botella: sabores } : p,
-                    ),
-                  })
-                }
-              />
-            </View>
-          )}
-        </View>
+        <CollapsibleSection
+          title="Bebidas"
+          collapsed={!sections.bebidas}
+          onToggle={() => toggleSection("bebidas")}
+          accentColor={accentColor}
+          textPrimary={textPrimary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+        >
+          <ShotMixerSelector
+            bottle
+            compact
+            items={cart.map((p) => ({
+              ...p,
+              nombre: p.nombre || p.name || "",
+              cantidad: p.quantity,
+            }))}
+            onChangeBottle={(index, sabores) =>
+              dispatch({
+                type: "SET_CART",
+                payload: cart.map((p, i) =>
+                  i === index ? { ...p, acompanamiento_botella: sabores } : p,
+                ),
+              })
+            }
+          />
+        </CollapsibleSection>
 
         {cart.some((p) => p.tipo_venta === "shot") && (
-          <View style={{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>
-            <Pressable onPress={() => toggleSection("soda")} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 }}>
-              <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 15 }}>
-                Soda o gaseosa para los cortos
-              </Text>
-              <Ionicons name={sections.soda ? "chevron-up" : "chevron-down"} size={20} color={accentColor} />
-            </Pressable>
-            {sections.soda && (
-              <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-                <ShotMixerSelector
-                  compact
-                  items={cart.map((p) => ({
-                    ...p,
-                    nombre: p.nombre || p.name || "",
-                    cantidad: p.quantity,
-                  }))}
-                  onChange={(index, mixer) =>
-                    dispatch({
-                      type: "SET_CART",
-                      payload: cart.map((p, i) =>
-                        i === index ? { ...p, acompanamiento_corto: mixer } : p,
-                      ),
-                    })
-                  }
-                />
-              </View>
-            )}
-          </View>
+          <CollapsibleSection
+            title="Soda o gaseosa para los cortos"
+            collapsed={!sections.soda}
+            onToggle={() => toggleSection("soda")}
+            accentColor={accentColor}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+            cardBg={cardBg}
+          >
+            <ShotMixerSelector
+              compact
+              items={cart.map((p) => ({
+                ...p,
+                nombre: p.nombre || p.name || "",
+                cantidad: p.quantity,
+              }))}
+              onChange={(index, mixer) =>
+                dispatch({
+                  type: "SET_CART",
+                  payload: cart.map((p, i) =>
+                    i === index ? { ...p, acompanamiento_corto: mixer } : p,
+                  ),
+                })
+              }
+            />
+          </CollapsibleSection>
         )}
 
         <PaymentMethodSelect
@@ -583,7 +558,7 @@ export default function NuevaVentaScreen() {
                 <Ionicons
                   name={selectedSegundoCliente ? "people" : "person-add"}
                   size={20}
-                  color={accentColor}
+                  color={accentOnSurface}
                 />
                 <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
                   {selectedSegundoCliente
@@ -595,311 +570,83 @@ export default function NuevaVentaScreen() {
           )}
 
         {metodoPago === "transferencia" && (
-          <View
-            style={[
-              styles.baucherCard,
-              {
-                borderColor: baucherFoto ? "#10B981" : "#EF4444",
-                backgroundColor: baucherFoto
-                  ? "rgba(16,185,129,0.08)"
-                  : "rgba(239,68,68,0.08)",
-              },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.baucherTitulo, { color: textPrimary }]}>
-                Baucher de la transferencia
-              </Text>
-              <Text style={[styles.baucherHint, { color: textSecondary }]}>
-                {baucherFoto
-                  ? "Foto adjunta lista para enviar."
-                  : "Obligatorio: adjunta la foto o captura del comprobante."}
-              </Text>
-            </View>
-            {baucherFoto && (
-              <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
-            )}
-            <Pressable
-              onPress={handleAdjuntarBaucher}
-              style={[styles.baucherBtn, { borderColor: accentColor }]}
-              accessibilityRole="button"
-              accessibilityLabel="Adjuntar baucher de la transferencia"
-            >
-              <Ionicons
-                name={baucherFoto ? "refresh" : "camera"}
-                size={18}
-                color={accentColor}
-              />
-              <Text style={[styles.baucherBtnText, { color: accentColor }]}>
-                {baucherFoto ? "Repetir" : "Adjuntar"}
-              </Text>
-            </Pressable>
-            {baucherFoto && (
-              <Pressable
-                onPress={() => setBaucherFoto(null)}
-                style={styles.baucherQuitar}
-                accessibilityRole="button"
-                accessibilityLabel="Quitar baucher"
-              >
-                <Ionicons name="close" size={16} color={textSecondary} />
-              </Pressable>
-            )}
-          </View>
+          <BaucherCard
+            baucherFoto={baucherFoto}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            accentColor={accentColor}
+            onAttach={handleAdjuntarBaucher}
+            onRemove={() => setBaucherFoto(null)}
+          />
         )}
 
-        <View
-          style={[
-            styles.summaryCard,
-            dynamicStyles.summaryCard,
-            { backgroundColor: cardBg, borderColor },
-          ]}
-        >
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-              Subtotal
-            </Text>
-            <Text style={[styles.summaryVal, { color: textPrimary }]}>
-              ${totals.subtotal.toLocaleString()}
-            </Text>
-          </View>
-          {totals.recargoAcompanamiento && totals.recargoAcompanamiento > 0 && (
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: "#F59E0B" }]}>
-                Acompañamiento extra
-              </Text>
-              <Text style={[styles.summaryVal, { color: "#F59E0B" }]}>
-                +${totals.recargoAcompanamiento.toLocaleString()}
-              </Text>
-            </View>
-          )}
-          {state.cart.some(
-            (item) => item.tipo_venta === "shot" && item.quantity > 1,
-          ) && (
-              <Pressable
-                onPress={() =>
-                  dispatch({
-                    type: "SET_CART",
-                    payload: individualShorts(state.cart),
-                  })
-                }
-                style={{ paddingVertical: 12 }}
-              >
-                <Text style={{ color: accentColor, fontWeight: "600" }}>
-                  Elegir bebida y anfitriona por cada corto
-                </Text>
-              </Pressable>
-            )}
-          <TipCheckbox
-            enabled={enableTip}
-            onToggle={(val: boolean) =>
-              dispatch({ type: "SET_ENABLE_TIP", payload: val })
-            }
-            tipAmount={totals.tip}
-          />
-          <View
-            style={[
-              styles.summaryRow,
-              {
-                marginTop: 10,
-                borderTopWidth: 1,
-                borderTopColor: borderColor,
-                paddingTop: 10,
-              },
-            ]}
-          >
-            <Text style={[styles.totalLabel, { color: textPrimary }]}>
-              TOTAL
-            </Text>
-            <Text style={[styles.totalValue, { color: accentColor }]}>
-              ${totals.total.toLocaleString()}
-            </Text>
-          </View>
-          {metodoPago === "tarjeta" &&
-            totals.total > 0 &&
-            (() => {
-              const splitTarjeta = getCardSplit(totals.total);
-              return (
-                <View
-                  style={{
-                    marginTop: 12,
-                    padding: 12,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    backgroundColor: isDark
-                      ? "rgba(245,158,11,0.12)"
-                      : "#FFFBEB",
-                    borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "800",
-                      textTransform: "uppercase",
-                      color: isDark ? "#FCD34D" : "#92400E",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Tarjetero
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "600",
-                      lineHeight: 18,
-                      color: isDark ? "#FDE68A" : "#78350F",
-                    }}
-                  >
-                    Genera venta por ${splitTarjeta.venta.toLocaleString()} (
-                    {splitVentaPct}%) y propina por $
-                    {splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}
-                    %). Solo informativo, no afecta la caja.
-                  </Text>
-                </View>
-              );
-            })()}
-          {cart.length > 0 && (
-            (() => {
-              if (cajaAbierta === false) {
-                return (
-                  <Text style={{ textAlign: "center", color: "#EF4444", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
-                    Caja cerrada: debe abrirse para registrar ventas
-                  </Text>
-                );
-              }
-              if (!metodoPago) {
-                return (
-                  <Text style={{ textAlign: "center", color: "#F59E0B", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
-                    Seleccioná un método de pago para finalizar
-                  </Text>
-                );
-              }
-              if (metodoPago === "transferencia" && !baucherFoto) {
-                return (
-                  <Text style={{ textAlign: "center", color: "#F59E0B", fontSize: 13, fontWeight: "600", marginBottom: 8 }}>
-                    Adjuntá el baucher de la transferencia
-                  </Text>
-                );
-              }
-              return null;
-            })()
-          )}
-          <Pressable
-            style={[
-              styles.submitBtn,
-              dynamicStyles.submitBtn,
-              { backgroundColor: accentColor },
-              (submitting ||
-                cajaAbierta === false ||
-                cart.length === 0 ||
-                !metodoPago ||
-                (metodoPago === "transferencia" && !baucherFoto)) && { opacity: 0.7 },
-            ]}
-            onPress={() => {
-              haptic.success();
-              handleSubmit(baucherFoto);
-            }}
-            disabled={
-              submitting ||
-              cajaAbierta === false ||
-              cart.length === 0 ||
-              !metodoPago ||
-              (metodoPago === "transferencia" && !baucherFoto)
-            }
-            accessibilityLabel="Finalizar venta"
-            accessibilityRole="button"
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.submitBtnText}>Finalizar Venta</Text>
-            )}
-          </Pressable>
-        </View>
+        <PaymentSummaryCard
+          cart={cart}
+          totals={totals}
+          enableTip={enableTip}
+          metodoPago={metodoPago}
+          cajaAbierta={cajaAbierta}
+          baucherFoto={baucherFoto}
+          isDark={isDark}
+          splitVentaPct={splitVentaPct}
+          splitPropinaPct={splitPropinaPct}
+          cardBg={cardBg}
+          borderColor={borderColor}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          accentColor={accentColor}
+          spacing={spacing}
+          borderRadius={borderRadius}
+          onToggleTip={(val: boolean) =>
+            dispatch({ type: "SET_ENABLE_TIP", payload: val })
+          }
+          onDispatchCart={dispatch}
+        />
       </ScrollView>
 
       {cart.length > 0 && (
-        <View
-          style={[
-            styles.stickyCheckoutBar,
-            {
-              backgroundColor: cardBg,
-              borderColor,
-              paddingBottom: Math.max(insets.bottom, 12),
-            },
-          ]}
-        >
-          <Pressable
-            style={styles.stickyLeft}
-            onPress={() => {
-              haptic.tap();
-              scrollRef.current?.scrollToEnd({ animated: true });
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Ver detalle del total"
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <View
-                style={[
-                  styles.stickyBadge,
-                  { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}40` },
-                ]}
-              >
-                <Text style={[styles.stickyBadgeText, { color: accentColor }]}>
-                  {cart.reduce((s, i) => s + (i.quantity || 1), 0)} {cart.reduce((s, i) => s + (i.quantity || 1), 0) === 1 ? "ítem" : "ítems"}
-                </Text>
-              </View>
-              <Ionicons name="chevron-up" size={16} color={textSecondary} />
-            </View>
-            <Text style={[styles.stickyTotal, { color: textPrimary }]}>
-              ${totals.total.toLocaleString()}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.stickySubmitBtn,
-              {
-                backgroundColor: isReadyToSubmit ? accentColor : (isDark ? "#262626" : "#E5E7EB"),
-              },
-            ]}
-            disabled={submitting || cajaAbierta === false}
-            onPress={() => {
-              if (isReadyToSubmit) {
-                haptic.success();
-                handleSubmit(baucherFoto);
-              } else {
-                haptic.tap();
-                scrollRef.current?.scrollToEnd({ animated: true });
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={isReadyToSubmit ? "Finalizar venta" : "Completar datos de pago"}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFF" size="small" />
-            ) : (
-              <>
-                <Text
-                  style={[
-                    styles.stickySubmitText,
-                    { color: isReadyToSubmit ? "#FFF" : (isDark ? "#A3A3A3" : "#4B5563") },
-                  ]}
-                >
-                  {isReadyToSubmit
-                    ? "Cobrar"
-                    : (!metodoPago ? "Elegir pago" : "Falta baucher")}
-                </Text>
-                <Ionicons
-                  name={isReadyToSubmit ? "checkmark-circle" : "arrow-down"}
-                  size={18}
-                  color={isReadyToSubmit ? "#FFF" : (isDark ? "#A3A3A3" : "#4B5563")}
-                />
-              </>
-            )}
-          </Pressable>
-        </View>
+        <StickyCheckoutBar
+          cart={cart}
+          totals={totals}
+          submitting={submitting}
+          cajaAbierta={cajaAbierta}
+          isReadyToSubmit={isReadyToSubmit}
+          missingReason={
+            cajaAbierta === false
+              ? "cash"
+              : !metodoPago
+                ? "payment"
+                : metodoPago === "transferencia" && !baucherFoto
+                  ? "receipt"
+                  : null
+          }
+          isDark={isDark}
+          cardBg={cardBg}
+          borderColor={borderColor}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          accentColor={accentColor}
+          bottomInset={insets.bottom}
+          scrollRef={scrollRef}
+          onSubmit={() => handleSubmit(baucherFoto)}
+        />
       )}
+
+      <PremiumAlert
+        visible={discardPromptVisible}
+        title="Descartar venta"
+        message={
+          cartItemCount === 1
+            ? "Vas a salir y se perderá 1 ítem cargado."
+            : `Vas a salir y se perderán ${cartItemCount} ítems cargados.`
+        }
+        type="warning"
+        showCancel
+        confirmText="Descartar"
+        cancelText="Seguir editando"
+        onConfirm={confirmDiscard}
+        onCancel={cancelDiscard}
+      />
 
       <NuevaVentaModals
         styles={styles}
@@ -1076,47 +823,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(155,155,155,0.03)",
   },
   selectorText: { fontSize: 14, fontWeight: "700" },
-  summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1, marginTop: 12 },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  summaryLabel: { fontSize: 14, fontWeight: "600" },
-  summaryVal: { fontSize: 15, fontWeight: "800" },
-  totalLabel: { fontSize: 18, fontWeight: "900" },
-  totalValue: { fontSize: 26, fontWeight: "900" },
-  baucherCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  baucherTitulo: { fontSize: 13, fontWeight: "800" },
-  baucherHint: { fontSize: 12, fontWeight: "600", marginTop: 2, lineHeight: 16 },
-  baucherThumb: { width: 42, height: 42, borderRadius: 10 },
-  baucherBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  baucherBtnText: { fontSize: 12, fontWeight: "800" },
-  baucherQuitar: { padding: 2 },
-  submitBtn: {
-    height: 60,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  submitBtnText: { color: "#FFF", fontSize: 16, fontWeight: "900" },
   backBtnRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -1131,55 +837,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 13,
     letterSpacing: 0.5,
-  },
-  stickyCheckoutBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 8,
-    zIndex: 99,
-  },
-  stickyLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  stickyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  stickyBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  stickyTotal: {
-    fontSize: 22,
-    fontWeight: "900",
-  },
-  stickySubmitBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 20,
-    height: 48,
-    borderRadius: 16,
-    minWidth: 130,
-  },
-  stickySubmitText: {
-    fontSize: 15,
-    fontWeight: "800",
   },
 });

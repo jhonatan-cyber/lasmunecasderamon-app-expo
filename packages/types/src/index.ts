@@ -81,6 +81,53 @@ export interface Producto {
   foto?: string;
 }
 
+/** Service states as stored in `servicios.estado` */
+export type ServicioEstado = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Normalized Service entity used by the app.
+ *
+ * `/services` already ships totals and commissions from the server; `/services/user`
+ * ships per-user commission. `mapServicio` unifies both shapes into this one.
+ */
+export interface Servicio {
+  id_servicio: number;
+  codigo: string;
+  estado: ServicioEstado | number;
+  pago_estado?: number;
+  tiempo: number;
+  fecha_crea: string;
+  fecha_mod?: string | null;
+  precio_servicio: number;
+  precio_habitacion: number;
+  iva: number;
+  sub_total: number;
+  total: number;
+  metodo_pago: MetodoPago;
+  /** Comisión que le corresponde al usuario que consulta (`/services/user`). */
+  comision_usuario: number;
+  comision_individual: number;
+  total_comision: number;
+  total_usuarios: number;
+  habitacion: string;
+  habitacion_id?: number | string | null;
+  habitacion_comision: number;
+  /** Nombres de las anfitrionas separados por coma (formato de la API). */
+  anfitriona: string;
+  anfitrionas_ids: string[];
+  anfitrionas_fotos: string[];
+  cliente: string;
+  cliente_id?: number | string | null;
+  creado_por?: string | null;
+  waiter_name?: string | null;
+  waiter_foto?: string | null;
+  solicitante_name?: string | null;
+  solicitante_foto?: string | null;
+  es_temporal?: boolean;
+  servicio_original_id?: string | null;
+  pagos_mixtos?: unknown[];
+}
+
 /** Product Category */
 export interface Categoria {
   id: number;

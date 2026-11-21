@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 import { BASE_URL } from "@/api/client";
 import type { ComisionDetalle, PropinaDetalle, VentaDetail } from "./types";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface VentaDistribucionSectionProps {
     selectedVenta: VentaDetail;
@@ -50,6 +51,7 @@ export const VentaDistribucionSection: React.FC<VentaDistribucionSectionProps> =
     textSecondary,
     isDark,
 }) => {
+    const { accentOnSurface } = useAccentColor();
     const hasComisiones = (selectedVenta.comisiones_detalle?.length ?? 0) > 0;
     const hasPropinas = (selectedVenta.propinas_detalle?.length ?? 0) > 0;
 
@@ -62,7 +64,7 @@ export const VentaDistribucionSection: React.FC<VentaDistribucionSectionProps> =
                     <View style={styles.header}>
                         <Text style={[styles.label, { color: textSecondary }]}>Distribución de Comisiones</Text>
                         {selectedVenta.total_comision > 0 && (
-                            <Text style={[styles.totalComision, { color: accentColor }]}>
+                            <Text style={[styles.totalComision, { color: accentOnSurface }]}>
                                 ${Number(selectedVenta.total_comision).toLocaleString("es-CL")} total
                             </Text>
                         )}

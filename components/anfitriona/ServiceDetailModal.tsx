@@ -1,5 +1,6 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
+import { estadoServicio } from '@/utils/servicioEstado';
 import { FontSize } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -12,24 +13,17 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetailModalProps) => {
-    const {accentColor, accentText, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
+    const {accentColor, accentText, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
     if (!servicio) return null;
 
     const habitacionComision = Number(servicio.habitacion_comision || 0);
 
-    const getEstadoBadge = () => {
-        switch (servicio.estado) {
-            case 0: return { label: 'ANULADO', color: '#EF4444' };
-            case 1: return { label: 'FINALIZADO', color: '#10B981' };
-            case 2: return { label: 'EN PROCESO', color: '#3B82F6' };
-            case 3: return { label: 'PAUSADO', color: '#F59E0B' };
-            case 4: return { label: 'SOL. ANULACIÓN', color: '#F97316' };
-            default: return { label: 'DESCONOCIDO', color: '#6B7280' };
-        }
+    const estadoInfo = estadoServicio(servicio.estado);
+    const estadoBadge = {
+        label: estadoInfo.label.toUpperCase(),
+        color: estadoInfo.color,
     };
-
-    const estadoBadge = getEstadoBadge();
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -61,7 +55,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             <View style={[styles.estadoDot, { backgroundColor: estadoBadge.color }]} />
                             <Text style={[styles.estadoText, { color: estadoBadge.color }]}>{estadoBadge.label}</Text>
                         </View>
-                        <Pressable onPress={onClose} style={styles.closeBtn}>
+                        <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle del servicio">
                             <Ionicons name="close" size={24} color={textPrimary} />
                         </Pressable>
                     </View>
@@ -69,7 +63,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.detailsGrid}>
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
-                                <Ionicons name="business" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="business" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>HABITACIÓN</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]} numberOfLines={1}>
                                     {servicio.habitacion}
@@ -77,7 +71,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             </View>
 
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
-                                <Ionicons name="time" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="time" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>TIEMPO</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]}>
                                     {servicio.tiempo} min
@@ -85,7 +79,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             </View>
 
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor, width: '100%' }]}>
-                                <Ionicons name="person" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="person" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>CLIENTE</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]}>
                                     {servicio.cliente || "Sin registrar"}
@@ -93,7 +87,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             </View>
 
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor, width: '100%' }]}>
-                                <Ionicons name="people" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="people" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>ANFITRIONAS</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]}>
                                     {servicio.anfitriona || "No asignada"}
@@ -101,7 +95,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             </View>
 
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
-                                <Ionicons name="card" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="card" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>MÉTODO PAGO</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]}>
                                     {(servicio.metodo_pago || 'efectivo').toUpperCase()}
@@ -109,7 +103,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             </View>
 
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
-                                <Ionicons name="calendar" size={16} color={accentColor} style={{ marginBottom: 4 }} />
+                                <Ionicons name="calendar" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
                                 <Text style={[styles.gridLabel, { color: textSecondary }]}>FECHA</Text>
                                 <Text style={[styles.gridValue, { color: textPrimary }]} numberOfLines={2}>
                                     {formatDate(servicio.fecha_crea)}
@@ -136,7 +130,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
 
                             <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }]}>
                                 <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL SERVICIO</Text>
-                                <Text style={[styles.totalVal, { color: accentColor }]}>
+                                <Text style={[styles.totalVal, { color: accentOnSurface }]}>
                                     ${Number(servicio.total || 0).toLocaleString()}
                                 </Text>
                             </View>
@@ -153,10 +147,10 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             )}
 
                             <View style={[styles.miComisionBox, { backgroundColor: accentColor + '15', borderColor: accentColor }]}>
-                                <Ionicons name="diamond" size={24} color={accentColor} />
+                                <Ionicons name="diamond" size={24} color={accentOnSurface} />
                                 <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={[styles.miComisionLabel, { color: accentColor }]}>MI COMISIÓN</Text>
-                                    <Text style={[styles.miComisionVal, { color: accentColor }]}>
+                                    <Text style={[styles.miComisionLabel, { color: accentOnSurface }]}>MI COMISIÓN</Text>
+                                    <Text style={[styles.miComisionVal, { color: accentOnSurface }]}>
                                         ${Number(servicio.comision_usuario || 0).toLocaleString()}
                                     </Text>
                                 </View>

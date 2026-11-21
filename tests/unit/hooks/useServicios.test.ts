@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useServicios } from '@/hooks/useServicios';
-import { apiClientSafe } from '@/api/client';
+import { apiClientSafe } from '@/api/client-safe';
+
+// El hook usa la capa `services/servicios` (client-safe) para listar y el
+// barrel `api/client` para la asistencia: ambos comparten el mismo mock.
+const mockApi = vi.hoisted(() => vi.fn());
+vi.mock('@/api/client-safe', () => ({ apiClientSafe: mockApi }));
+vi.mock('@/api/client', () => ({ apiClientSafe: mockApi }));
 
 const mockServicios = [
     {

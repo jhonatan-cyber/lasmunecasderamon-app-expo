@@ -146,7 +146,7 @@ export default function EnvasesPendientesScreen() {
             </View>
             <Text style={[styles.code, { color: textPrimary }]}>SKU {item.codigo}{item.codigo_barras ? ` · EAN ${item.codigo_barras}` : ''}</Text>
             <Text style={[styles.description, { color: textSecondary }]}>Entregado por {item.usuario_nombre || item.usuario_nick || '—'} · {item.fecha_devolucion ? new Date(item.fecha_devolucion).toLocaleString('es-BO') : '—'}</Text>
-            {item.compra_folio && <Text style={[styles.description, { color: textSecondary }]}>Compra {item.compra_folio}</Text>}
+            {item.compra_folio ? <Text style={[styles.description, { color: textSecondary }]}>Compra {item.compra_folio}</Text> : null}
             <Pressable onPress={() => void aceptar(item)} disabled={confirmando === item.id} style={({ pressed }) => [styles.accept, { backgroundColor: accentColor, opacity: pressed || confirmando === item.id ? 0.65 : 1 }]}>
               {confirmando === item.id ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="checkmark-circle-outline" size={18} color="#FFF" /><Text style={styles.acceptText}>Aceptar devolución</Text></>}
             </Pressable>

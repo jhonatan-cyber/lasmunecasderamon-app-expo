@@ -34,7 +34,7 @@ interface BaucherFotoProps {
  * ruta exige sesión, así que se carga con el token de la app.
  */
 export function BaucherFoto({ endpoint, descripcion, compacto = false }: BaucherFotoProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const [visible, setVisible] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,9 +82,9 @@ export function BaucherFoto({ endpoint, descripcion, compacto = false }: Baucher
         accessibilityRole="button"
         accessibilityLabel="Ver foto del baucher"
       >
-        <Ionicons name="document-attach-outline" size={compacto ? 12 : 14} color={accentColor} />
+        <Ionicons name="document-attach-outline" size={compacto ? 12 : 14} color={accentOnSurface} />
         <Text
-          style={[compacto ? styles.chipTextoCompacto : styles.chipTexto, { color: accentColor }]}
+          style={[compacto ? styles.chipTextoCompacto : styles.chipTexto, { color: accentOnSurface }]}
         >
           Baucher
         </Text>
@@ -117,7 +117,7 @@ export function BaucherFoto({ endpoint, descripcion, compacto = false }: Baucher
 
             <View style={[styles.imagenMarco, { borderColor }]}>
               {loading || (!uri && !error) ? (
-                <ActivityIndicator size="large" color={accentColor} />
+                <ActivityIndicator size="large" color={accentOnSurface} />
               ) : uri ? (
                 <Image source={{ uri }} style={styles.imagen} contentFit="contain" />
               ) : (

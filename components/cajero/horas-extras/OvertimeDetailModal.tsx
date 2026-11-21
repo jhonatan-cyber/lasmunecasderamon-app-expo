@@ -36,6 +36,7 @@ export function OvertimeDetailModal({
     textPrimary,
     textSecondary,
 }: OvertimeDetailModalProps) {
+    const { accentOnSurface } = useAccentColor();
     const { surfaceMuted } = useAccentColor();
 
     if (!record) return null;
@@ -58,7 +59,7 @@ export function OvertimeDetailModal({
                     <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
                         <View style={styles.headerContent}>
                             <View style={[styles.modalAvatar, { backgroundColor: accentColor + '20' }]}>
-                                <Text style={[styles.modalAvatarText, { color: accentColor }]}>
+                                <Text style={[styles.modalAvatarText, { color: accentOnSurface }]}>
                                     {getInitials(record.usuario)}
                                 </Text>
                             </View>
@@ -92,7 +93,7 @@ export function OvertimeDetailModal({
                             <View style={styles.detailsList}>
                                 <View style={styles.modalDetailRow}>
                                     <View style={[styles.modalDetailIconBox, { backgroundColor: `${accentColor}15` }]}>
-                                        <Ionicons name="person-outline" size={16} color={accentColor} />
+                                        <Ionicons name="person-outline" size={16} color={accentOnSurface} />
                                     </View>
                                     <View style={styles.rowText}>
                                         <Text style={[styles.modalDetailLabel, { color: textSecondary }]}>Empleado</Text>
@@ -124,11 +125,11 @@ export function OvertimeDetailModal({
                         <View style={[styles.modalTotalCard, { backgroundColor: accentColor + '10', borderColor: accentColor + '30' }]}>
                             <View style={styles.totalTextContainer}>
                                 <Text style={[styles.modalTotalLabel, { color: textSecondary }]}>Total a pagar</Text>
-                                <Text style={[styles.modalTotalValue, { color: accentColor }]}>
+                                <Text style={[styles.modalTotalValue, { color: accentOnSurface }]}>
                                     {formatCurrency(record.total || record.monto)}
                                 </Text>
                             </View>
-                            <Ionicons name="checkmark-circle" size={32} color={accentColor} />
+                            <Ionicons name="checkmark-circle" size={32} color={accentOnSurface} />
                         </View>
 
                         {}

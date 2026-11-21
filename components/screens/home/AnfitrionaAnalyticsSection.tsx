@@ -4,6 +4,7 @@ import { ActionGrid, type ActionGridItem } from "@/components/ui/ActionGrid";
 import { LazyDonutChart } from "@/components/ui/LazyDonutChart";
 import { formatCurrency } from "@/utils/format";
 import { styles } from "../HomeScreen.styles";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface AnfitrionaAnalyticsSectionProps {
   totalEarnings: number;
@@ -28,6 +29,7 @@ export function AnfitrionaAnalyticsSection({
   onOpenAnalytics,
   onOpenResumen,
 }: AnfitrionaAnalyticsSectionProps) {
+    const { accentOnSurface } = useAccentColor();
   const actions: ActionGridItem[] = [
     {
       title: "RESUMEN",
@@ -51,7 +53,7 @@ export function AnfitrionaAnalyticsSection({
               100,
               Math.round((totalEarnings / 50000) * 100),
             )}
-            color={accentColor}
+            color={accentOnSurface}
             isDark={isDark}
           />
           <Text style={{ color: textSecondary, fontSize: 11 }}>
@@ -66,7 +68,7 @@ export function AnfitrionaAnalyticsSection({
             style={{
               fontSize: 24,
               fontWeight: "900",
-              color: accentColor,
+              color: accentOnSurface,
             }}
           >
             +12%
@@ -91,7 +93,7 @@ export function AnfitrionaAnalyticsSection({
             { backgroundColor: `${accentColor}1F` },
           ]}
         >
-          <Ionicons name="stats-chart" size={18} color={accentColor} />
+          <Ionicons name="stats-chart" size={18} color={accentOnSurface} />
         </View>
         <View style={{ flex: 1 }}>
           <Text
@@ -110,7 +112,7 @@ export function AnfitrionaAnalyticsSection({
         <Ionicons name="chevron-forward" size={18} color={textSecondary} />
       </Pressable>
 
-      <ActionGrid actions={actions} />
+      <ActionGrid actions={actions} variant="row" />
     </>
   );
 }

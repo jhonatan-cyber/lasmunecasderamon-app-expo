@@ -1,5 +1,4 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { useAuthStore } from '@/store/authStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { EventDetailSection } from '@/components/shared/EventDetailSection';
 
 interface EventDetailModalProps {
     visible: boolean;
@@ -31,22 +31,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     getStatusLabel
 }) => {
     const {accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted} = useAccentColor();
-    const user = useAuthStore((state) => state.user);
     const formatAmount = (value: any) =>
         Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-    const getAccionLabel = (accion: string) => {
-        const labels: Record<string, string> = {
-            solicitud: 'Solicitado',
-            aprobado: 'Aprobado por admin',
-            rechazado: 'Rechazado',
-            entregado: 'Entregado',
-            anulado: 'Anulado',
-            pendiente: 'Pendiente',
-            actualizado: 'Actualizado',
-        };
-        return labels[accion] || accion;
-    };
 
     const getIconName = (type: string) => {
         switch (type) {
@@ -151,174 +137,14 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                             </View>
                         )}
 
-                        {eventDetail && (
-                            <>
-                                <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-                                {eventDetail.tipo === 'asistencia' && (
-                                    <>
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Sueldo</Text>
-                                            <Text style={[styles.detailValue, { color: textPrimary }]}>${formatAmount(eventDetail.sueldo)}</Text>
-                                        </View>
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Aporte</Text>
-                                            <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${formatAmount(eventDetail.aporte)}</Text>
-                                        </View>
-                                        {Number(eventDetail.descuento_total) > 0 && (
-                                            <View style={styles.detailRow}>
-                                                <Text style={[styles.detailLabel, { color: textSecondary }]}>Desc. habitación ({eventDetail.semanas_con_descuento} sem.)</Text>
-                                                <Text style={[styles.detailValue, { color: '#EF4444' }]}>-${formatAmount(eventDetail.descuento_total)}</Text>
-                                            </View>
-                                        )}
-                                        <View style={[styles.divider, { backgroundColor: borderColor }]} />
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Neto por asistencia</Text>
-                                            <Text style={[styles.detailValue, { color: '#10B981' }]}>${formatAmount(eventDetail.neto)}</Text>
-                                        </View>
-                                    </>
-                                )}
-
-                            {eventDetail.tipo === 'anticipo' && (
-                                <>
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Solicitado por</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.solicitante_nick || eventDetail.solicitante_nombre}</Text>
-                                    </View>
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Monto</Text>
-                                        <Text style={[styles.detailValue, { color: '#EF4444' }]}>${formatAmount(eventDetail.monto)}</Text>
-                                    </View>
-                                    {eventDetail.observacion && (
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Motivo</Text>
-                                            <Text style={[styles.detailValue, { color: textPrimary, flex: 1, textAlign: 'right', fontSize: 13 }]}>{eventDetail.observacion}</Text>
-                                        </View>
-                                    )}
-                                    {eventDetail.historial?.length > 0 && (
-                                        <>
-                                            <View style={[styles.divider, { backgroundColor: borderColor }]} />
-                                            <View style={{ width: '100%' }}>
-                                                <Text style={[styles.detailLabel, { color: textSecondary, marginBottom: 16 }]}>Historial</Text>
-                                                {eventDetail.historial.map((h: any, i: number) => (
-                                                    <View key={i} style={styles.timelineRow}>
-                                                        <View style={styles.timelineLine}>
-                                                            <View style={[styles.timelineDot, { backgroundColor: accentColor }]} />
-                                                            {i < eventDetail.historial.length - 1 && (
-                                                                <View style={[styles.timelineConnector, { backgroundColor: borderColor }]} />
-                                                            )}
-                                                        </View>
-                                                        <View style={styles.timelineContent}>
-                                                            <Text style={[styles.timelineAction, { color: textPrimary }]}>
-                                                                {getAccionLabel(h.accion)}
-                                                            </Text>
-                                                            <Text style={[styles.timelineMeta, { color: textSecondary }]}>
-                                                                {h.usuario_accion_nick
-                                                                    ? `por ${h.usuario_accion_nick} — `
-                                                                    : ''}
-                                                                {new Date(h.fecha_crea).toLocaleString('es-ES', {
-                                                                    day: '2-digit',
-                                                                    month: 'short',
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </Text>
-                                                        </View>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                                {eventDetail.garzon_nombre && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Realizó el pedido</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.garzon_nick || eventDetail.garzon_nombre}</Text>
-                                    </View>
-                                )}
-
-                                {eventDetail.cajero_nombre && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Procesó la venta</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.cajero_nick || eventDetail.cajero_nombre}</Text>
-                                    </View>
-                                )}
-
-                                {eventDetail.habitacion_nombre && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Habitación</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.habitacion_nombre}</Text>
-                                    </View>
-                                )}
-
-                                {eventDetail.tiempo && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Tiempo</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.tiempo} min</Text>
-                                    </View>
-                                )}
-
-                                {eventDetail.cliente_nombre && eventDetail.cliente_nombre !== 'Sin cliente' && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Cliente</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary }]}>{eventDetail.cliente_nombre}</Text>
-                                    </View>
-                                )}
-
-                                {eventDetail.anfitrionas?.length > 0 && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary }]}>Anfitrionas</Text>
-                                        <Text style={[styles.detailValue, { color: textPrimary, flex: 1, textAlign: 'right' }]}>
-                                            {eventDetail.anfitrionas.map((a: any) => a.nick || a.nombre).join(', ')}
-                                        </Text>
-                                    </View>
-                                )}
-
-                                {user?.role?.toLowerCase() !== 'anfitriona' && eventDetail.propinas_detalle?.length > 0 && (
-                                    <>
-                                        <View style={[styles.divider, { backgroundColor: borderColor }]} />
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Propina total</Text>
-                                            <Text style={[styles.detailValue, { color: '#10B981' }]}>
-                                                ${formatAmount(eventDetail.propinas_detalle.reduce((s: number, p: any) => s + Number(p.monto), 0))}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.detailRow}>
-                                            <Text style={[styles.detailLabel, { color: textSecondary }]}>Dividida entre</Text>
-                                            <Text style={[styles.detailValue, { color: textPrimary }]}>
-                                                {eventDetail.propinas_detalle.length} ({eventDetail.propinas_detalle.map((p: any) => p.nick || p.nombre).join(', ')})
-                                            </Text>
-                                        </View>
-                                    </>
-                                )}
-
-                                {user?.role?.toLowerCase() === 'anfitriona' && eventDetail.anfitrionas?.length > 0 && (
-                                    <View style={{ width: '100%', marginTop: 4 }}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary, marginBottom: 8 }]}>Comisión por anfitriona</Text>
-                                        {eventDetail.anfitrionas.map((a: any, i: number) => (
-                                            <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
-                                                <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{a.nick || a.nombre}</Text>
-                                                <Text style={[styles.detailValue, { color: '#10B981' }]}>${formatAmount(a.comision || 0)}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                )}
-
-                                {eventDetail.detalles?.length > 0 && (
-                                    <View style={{ width: '100%', marginTop: 4 }}>
-                                        <Text style={[styles.detailLabel, { color: textSecondary, marginBottom: 8 }]}>Productos</Text>
-                                        {eventDetail.detalles.map((d: any, i: number) => (
-                                            <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
-                                                <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{d.cantidad}x {d.producto_nombre}</Text>
-                                                <Text style={[styles.detailValue, { color: textSecondary }]}>${formatAmount(d.subtotal)}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                )}
-                            </>
-                        )}
+                        <EventDetailSection
+                            eventDetail={eventDetail}
+                            accentColor={accentColor}
+                            borderColor={borderColor}
+                            textPrimary={textPrimary}
+                            textSecondary={textSecondary}
+                            formatAmount={formatAmount}
+                        />
                     </ScrollView>
 
                     <Pressable
@@ -430,40 +256,6 @@ const styles = StyleSheet.create({
     confirmBtnText: {
         fontSize: 16,
         fontWeight: '800'
-    },
-    timelineRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 4
-    },
-    timelineLine: {
-        width: 24,
-        alignItems: 'center',
-        marginRight: 12
-    },
-    timelineDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        marginTop: 4
-    },
-    timelineConnector: {
-        width: 1,
-        flex: 1,
-        minHeight: 28
-    },
-    timelineContent: {
-        flex: 1,
-        paddingBottom: 16
-    },
-    timelineAction: {
-        fontSize: 14,
-        fontWeight: '700',
-        marginBottom: 2
-    },
-    timelineMeta: {
-        fontSize: 12,
-        fontWeight: '500'
     }
 });
 

@@ -12,6 +12,7 @@ import {
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { styles } from "../AnticiposScreen.styles";
 import { formatCurrency } from "./anticiposUtils";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface SolicitarAnticipoModalProps {
   visible: boolean;
@@ -62,6 +63,7 @@ export function SolicitarAnticipoModal({
   onClose,
   onSubmit,
 }: SolicitarAnticipoModalProps) {
+    const { accentOnSurface } = useAccentColor();
   return (
     <Modal
       avoidKeyboard={false}
@@ -165,7 +167,7 @@ export function SolicitarAnticipoModal({
                 EFECTIVO EN CAJA
               </Text>
             </View>
-            <Text style={[styles.cajaMonto, { color: accentColor }]}>
+            <Text style={[styles.cajaMonto, { color: accentOnSurface }]}>
               ${formatCurrency(efectivoEnCaja)}
             </Text>
           </View>

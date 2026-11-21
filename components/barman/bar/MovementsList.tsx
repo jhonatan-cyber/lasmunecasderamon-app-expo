@@ -32,7 +32,7 @@ const estadoColor = (m: BarMovement) => {
 };
 
 export function MovementsList({ items, loading, refreshing, onRefresh, onPressItem }: MovementsListProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
   if (loading) {
     return (
@@ -104,7 +104,7 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
               </Text>
               {precios.length === 0 && (
                 <View style={styles.amountRight}>
-                  <Text style={[styles.amount, { color: accentColor }]}>
+                  <Text style={[styles.amount, { color: accentOnSurface }]}>
                     {precioRegistrado ?? '—'}
                   </Text>
                   {comisionRegistrada && (
@@ -150,8 +150,8 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
               )}
             </View>
             <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
-              <Text style={[styles.detailHintText, { color: accentColor }]}>Ver detalle completo</Text>
-              <Ionicons name="chevron-forward" size={16} color={accentColor} />
+              <Text style={[styles.detailHintText, { color: accentOnSurface }]}>Ver detalle completo</Text>
+              <Ionicons name="chevron-forward" size={16} color={accentOnSurface} />
             </View>
           </Pressable>
         );

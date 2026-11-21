@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vista previa · Cards del inicio (con estado bloqueado)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 64px;
+    background: #1A1A1A;
+    color: #fff;
+    font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+  h2 { margin: 0 0 4px; font-size: 15px; font-weight: 800; letter-spacing: .3px; }
+  .sub { margin: 0 0 16px; font-size: 12px; font-weight: 500; }
+  .row { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+
+  /* ---------- Tokens de la app ---------- */
+  .light {
+    --bg: #FFFFFF;          /* fondo de la app */
+    --card: #FFFFFF;        /* tarjeta blanca */
+    --muted: #F3F4F6;       /* chips / inputs */
+    --text: #111827;
+    --text2: #6B7280;
+    --border: rgba(0,0,0,0.12);
+    --shadow: 0 2px 8px rgba(0,0,0,.10);
+  }
+  .dark {
+    --bg: #000000;
+    --card: #111111;
+    --muted: #1F2937;
+    --text: #FFFFFF;
+    --text2: #9CA3AF;
+    --border: rgba(255,255,255,0.18);
+    --shadow: 0 2px 8px rgba(0,0,0,.35);
+  }
+
+  .frame {
+    background: var(--bg);
+    border: 1px solid #2A2A2A;
+    border-radius: 24px;
+    padding: 20px 16px 24px;
+    width: 375px;
+  }
+  .light h2, .light .sub, .dark h2, .dark .sub { color: var(--text); }
+  .light .sub, .dark .sub { color: var(--text2); }
+
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+
+  .tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    min-height: 136px;
+    box-shadow: var(--shadow);
+  }
+  .tile-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .chip {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .badge {
+    min-width: 22px; padding: 2px 7px; border-radius: 9999px;
+    font-size: 11px; font-weight: 800; line-height: 15px; text-align: center;
+  }
+  .lock {
+    width: 24px; height: 24px; border-radius: 9999px;
+    background: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .title { font-size: 14px; font-weight: 800; letter-spacing: .2px; line-height: 19px; margin-bottom: 3px; color: var(--text); }
+  .desc { font-size: 12px; font-weight: 500; line-height: 16px; color: var(--text2); }
+  svg { width: 24px; height: 24px; }
+  .lock svg { width: 13px; height: 13px; }
+  .lock-count { font-size: 11px; font-weight: 800; color: var(--text2); }
+
+  .note { width: 100%; max-width: 820px; font-size: 12px; line-height: 19px; color: #B9B9B9; }
+  .note code { background: #262626; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+  <div class="row">
+    <section class="frame light">
+      <h2>Modo claro · caja cerrada</h2>
+      <p class="sub">Los módulos bloqueados ya no se desvanecen</p>
+      <div class="grid" id="light"></div>
+    </section>
+
+    <section class="frame dark">
+      <h2>Modo oscuro · caja cerrada</h2>
+      <p class="sub">Mismo comportamiento en oscuro</p>
+      <div class="grid" id="dark"></div>
+    </section>
+  </div>
+
+  <p class="note">
+    Estado bloqueado: el módulo sigue legible (ícono atenuado + candado arriba a la derecha).
+    Antes la tarjeta entera bajaba a 50 % de opacidad y sobre fondo blanco quedaba un marco
+    vacío con el texto desvanecido. Al tocar avisa "Caja cerrada".
+    Mientras está bloqueado el contador no se muestra: solo el candado.
+    Íconos aproximados: en la app son los glifos de Ionicons.
+  </p>
+
+<script>
+  const ICONS = {
+    bed: '<path d="M3 19v-9h18v9M3 15h18M7 10V7h4a3 3 0 0 1 3 3"/><circle cx="7.5" cy="11.5" r="1.4"/>',
+    cart: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12h11L21 7H6"/>',
+    cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>',
+    notifications: '<path d="M18 15V10a6 6 0 1 0-12 0v5l-2 3h16l-2-3z"/><path d="M10 21h4"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
+    chart: '<path d="M3 20h18"/><rect x="5" y="11" width="4" height="7" rx="1"/><rect x="11" y="6" width="4" height="12" rx="1"/><rect x="17" y="9" width="4" height="9" rx="1"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  };
+
+  function readableText(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    });
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return lum > 0.4 ? '#111827' : '#FFFFFF';
+  }
+
+  function withAlpha(hex, alpha) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+  }
+
+  function tile({ title, desc, icon, color, badge, locked }, mode) {
+    const el = document.createElement('div');
+    el.className = 'tile';
+    const head = document.createElement('div');
+    head.className = 'tile-head';
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    // Chip: color de la acción con alfa. Bloqueado, más apagado.
+    chip.style.background = withAlpha(color, locked ? (mode === 'light' ? 0.08 : 0.12) : (mode === 'light' ? 0.14 : 0.22));
+    const stroke = locked ? withAlpha(color, 0.45) : color;
+    chip.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[icon]}</svg>`;
+    head.appendChild(chip);
+
+    if (locked) {
+      const lock = document.createElement('div');
+      lock.className = 'lock';
+      // Bloqueado el módulo no se puede abrir: el contador se oculta y solo
+      // queda el candado.
+      lock.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS.lock}</svg>`;
+      head.appendChild(lock);
+    } else if (badge) {
+      const b = document.createElement('div');
+      b.className = 'badge';
+      b.style.background = color;
+      b.style.color = readableText(color);
+      b.textContent = String(badge);
+      head.appendChild(b);
+    }
+    el.appendChild(head);
+
+    const t = document.createElement('div');
+    t.className = 'title';
+    t.textContent = title;
+    const d = document.createElement('div');
+    d.className = 'desc';
+    d.textContent = desc;
+    el.append(t, d);
+    return el;
+  }
+
+  const actions = [
+    { title: 'SERVICIOS', desc: 'Gestión de privados', icon: 'bed', color: '#F97316', locked: true },
+    { title: 'VENTAS', desc: 'Realizar nueva venta', icon: 'cart', color: '#22C55E', locked: true },
+    { title: 'CAJA', desc: 'Control de cajas', icon: 'cash', color: '#14B8A6' },
+    { title: 'PEDIDOS', desc: 'Solicitudes pendientes', icon: 'notifications', color: '#EF4444', locked: true, badge: 4 },
+    { title: 'CLIENTES', desc: 'Gestión de prepago', icon: 'person', color: '#8B5CF6', locked: true },
+    { title: 'RESUMEN', desc: 'Calendario de actividad', icon: 'chart', color: '#3B82F6' },
+  ];
+
+  ['light', 'dark'].forEach((mode) => {
+    const grid = document.getElementById(mode);
+    actions.forEach((a) => grid.appendChild(tile(a, mode)));
+  });
+</script>
+</body>
+</html>

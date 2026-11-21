@@ -47,7 +47,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
     createsWorkOffline = true,
     onBack,
 }) => {
-    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted } =
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted, accentOnSurface} =
         useAccentColor();
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -131,7 +131,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                     <Ionicons
                         name={ICONO_POR_TIPO[intent.type] ?? 'document-outline'}
                         size={20}
-                        color={accentColor}
+                        color={accentOnSurface}
                     />
                     <Text style={[styles.cardTitle, { color: textPrimary }]} numberOfLines={1}>
                         {intent.label || intent.type}
@@ -162,8 +162,8 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                             { borderColor: accentColor, opacity: isFlushing ? 0.5 : 1 },
                         ]}
                     >
-                        <Ionicons name='refresh' size={16} color={accentColor} />
-                        <Text style={[styles.actionText, { color: accentColor }]}>REINTENTAR</Text>
+                        <Ionicons name='refresh' size={16} color={accentOnSurface} />
+                        <Text style={[styles.actionText, { color: accentOnSurface }]}>REINTENTAR</Text>
                     </Pressable>
 
                     <Pressable

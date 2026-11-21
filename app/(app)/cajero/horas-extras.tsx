@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
@@ -39,7 +40,7 @@ import {
 export default function HorasExtrasScreen() {
     const router = useRouter();
     const esAdmin = useIsAdmin();
-    const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -320,10 +321,11 @@ export default function HorasExtrasScreen() {
             />
 
             {error ? (
-                <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-                    <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
-                    <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
-                </View>
+                <ErrorState
+                    title="No se pudieron cargar las horas extras"
+                    message={error}
+                    onRetry={() => fetchData()}
+                />
             ) : (
                 <FlatList
                     data={filteredData}
@@ -384,7 +386,7 @@ export default function HorasExtrasScreen() {
                                 style={[styles.selectedEmployee, { borderColor: accentColor, backgroundColor: `${accentColor}14` }]}
                                 onPress={() => setSelectedEmployee(null)}
                             >
-                                <Ionicons name="person-circle-outline" size={20} color={accentColor} />
+                                <Ionicons name="person-circle-outline" size={20} color={accentOnSurface} />
                                 <Text style={[styles.selectedEmployeeText, { color: textPrimary }]} numberOfLines={1}>
                                     {selectedEmployee.name} {selectedEmployee.lastName}
                                 </Text>
@@ -401,7 +403,7 @@ export default function HorasExtrasScreen() {
                                 />
                                 <View style={[styles.employeeList, { borderColor }]}>
                                     {employeesLoading ? (
-                                        <ActivityIndicator style={{ paddingVertical: 20 }} color={accentColor} />
+                                        <ActivityIndicator style={{ paddingVertical: 20 }} color={accentOnSurface} />
                                     ) : filteredEmployeesList.length === 0 ? (
                                         <Text style={[styles.emptyEmployees, { color: textSecondary }]}>Sin trabajadores</Text>
                                     ) : (
@@ -464,7 +466,7 @@ export default function HorasExtrasScreen() {
 
                         <View style={[styles.totalPreview, { borderTopColor: borderColor }]}>
                             <Text style={[styles.totalPreviewLabel, { color: textSecondary }]}>TOTAL</Text>
-                            <Text style={[styles.totalPreviewValue, { color: accentColor }]}>
+                            <Text style={[styles.totalPreviewValue, { color: accentOnSurface }]}>
                                 {formatCurrency((Number(horasInput) || 0) * (Number(montoInput.replace(/\D/g, '')) || 0))}
                             </Text>
                         </View>

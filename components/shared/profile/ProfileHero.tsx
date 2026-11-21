@@ -7,7 +7,7 @@ interface ProfileHeroProps {
   photoUri: string | null;
   failedPhotoUri: string | null;
   onPhotoError: (uri: string) => void;
-  avatarEmoji: string;
+  avatarIcon: string;
   userName: string;
   roleLabel?: string;
   accentColor: string;
@@ -22,7 +22,7 @@ export function ProfileHero({
   photoUri,
   failedPhotoUri,
   onPhotoError,
-  avatarEmoji,
+  avatarIcon,
   userName,
   roleLabel,
   accentColor,
@@ -46,7 +46,7 @@ export function ProfileHero({
           <View
             style={[styles.avatarPlaceholder, { backgroundColor: cardBg }]}
           >
-            <Text style={styles.avatarEmoji}>{avatarEmoji}</Text>
+            <Ionicons name={avatarIcon as any} size={32} color={accentText} />
           </View>
         )}
         <Pressable

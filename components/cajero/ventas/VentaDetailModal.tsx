@@ -16,6 +16,7 @@ import { VentaOrigenSection } from "./VentaOrigenSection";
 import { VentaDistribucionSection } from "./VentaDistribucionSection";
 import { VentaProductosList } from "./VentaProductosList";
 import { BaucherFoto } from "@/components/shared/BaucherFoto";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type VentaDetailModalProps = {
   visible: boolean;
@@ -42,6 +43,7 @@ export function VentaDetailModal({
   textSecondary,
   isDark,
 }: VentaDetailModalProps) {
+    const { accentOnSurface } = useAccentColor();
   return (
     <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -105,7 +107,7 @@ export function VentaDetailModal({
                           <Ionicons
                             name={(payMethodIcons[selectedVenta.metodo_pago] || "wallet") as keyof typeof Ionicons.glyphMap}
                             size={16}
-                            color={accentColor}
+                            color={accentOnSurface}
                           />
                           <Text style={[styles.infoValue, { color: textPrimary }]}>
                             {String(selectedVenta.metodo_pago || "EFECTIVO").toUpperCase()}
@@ -183,7 +185,7 @@ export function VentaDetailModal({
                     <View style={[styles.summaryDivider, { backgroundColor: borderColor }]} />
                     <View style={styles.summaryTotalRow}>
                       <Text style={[styles.totalLabel, { color: textPrimary }]}>TOTAL</Text>
-                      <Text style={[styles.totalValue, { color: accentColor }]}>
+                      <Text style={[styles.totalValue, { color: accentOnSurface }]}>
                         ${Number(selectedVenta.total).toLocaleString("es-CL")}
                       </Text>
                     </View>

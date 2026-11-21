@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { styles } from "../ServiceModal.styles";
 import { formatCurrency } from "@/utils/format";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface ServiceReceiptSummaryProps {
   service: any;
@@ -27,6 +28,7 @@ export function ServiceReceiptSummary({
   ivaActual,
   totalFinal,
 }: ServiceReceiptSummaryProps) {
+    const { accentOnSurface } = useAccentColor();
   const labelStyle = [
     styles.productName,
     { color: textPrimary, fontSize: isTablet ? 18 : 15 },
@@ -107,7 +109,7 @@ export function ServiceReceiptSummary({
           style={[
             styles.productSubtotal,
             {
-              color: accentColor,
+              color: accentOnSurface,
               fontSize: isTablet ? 26 : 18,
               fontWeight: "900",
             },

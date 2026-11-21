@@ -51,7 +51,7 @@ export function EntregaCoversModal({
   onEntregado,
   modo = 'entrega',
 }: EntregaCoversModalProps) {
-  const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   // Las categorías arrancan abiertas: se guarda cuáles están plegadas y no
   // cuáles están abiertas, así no hace falta sincronizar el estado con un
   // efecto cada vez que el modal se abre o cambia la lista.
@@ -162,9 +162,9 @@ export function EntregaCoversModal({
                             'send-outline'
                           }
                           size={12}
-                          color={accentColor}
+                          color={accentOnSurface}
                         />
-                        <Text style={{ color: accentColor, fontSize: 11, fontWeight: '700' }}>
+                        <Text style={{ color: accentOnSurface, fontSize: 11, fontWeight: '700' }}>
                           {grupo.metodo_pago === 'efectivo' ? 'Efectivo' :
                            grupo.metodo_pago === 'tarjeta' ? 'Tarjeta' :
                            grupo.metodo_pago === 'transferencia' ? 'Transferencia' : grupo.metodo_pago}
@@ -263,7 +263,7 @@ export function EntregaCoversModal({
 
               {cargando ? (
                 <View style={{ paddingVertical: 24 }}>
-                  <ActivityIndicator color={accentColor} />
+                  <ActivityIndicator color={accentOnSurface} />
                 </View>
               ) : error ? (
                 <Text
@@ -348,7 +348,7 @@ export function EntregaCoversModal({
                             >
                               <Text
                                 style={{
-                                  color: accentColor,
+                                  color: accentOnSurface,
                                   fontWeight: '800',
                                   fontSize: 12,
                                 }}

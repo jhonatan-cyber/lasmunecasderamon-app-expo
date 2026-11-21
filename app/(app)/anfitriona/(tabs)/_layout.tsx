@@ -32,7 +32,7 @@ export default function AnfitrionaTabsLayout() {
         <Tabs.Screen
           name="comisiones"
           options={{
-            title: "Ventas",
+            title: "Comisiones",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="wallet" size={size} color={String(color)} />
             ),

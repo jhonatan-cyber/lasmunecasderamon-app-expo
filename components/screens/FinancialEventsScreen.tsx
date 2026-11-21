@@ -1,6 +1,5 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useState, useCallback } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import {
@@ -23,6 +22,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useFinancialEvents } from '@/hooks/useFinancialEvents';
 import { apiClientSafe } from '@/api/client';
 import { parseDateSafe } from '@/utils/timeUtils';
+import { FinancialEventCard } from '@/components/financial-events/FinancialEventCard';
 
 import logger from '@/utils/logger';
 interface FinancialEventsScreenProps {
@@ -51,8 +51,7 @@ export function FinancialEventsScreen({
     surfaceMuted,
     textPrimary,
     textSecondary,
-    borderColor,
-  } = useAccentColor();
+    borderColor, accentOnSurface} = useAccentColor();
   const { data, loading, refreshing, error, onRefresh } = useFinancialEvents(
     type as any,
   );
@@ -144,153 +143,23 @@ export function FinancialEventsScreen({
     .reduce((sum, a) => sum + (a.comision || a.monto || 0), 0);
 
   const renderItem = useStableCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      const isPendiente = item.estado === 1;
-      const amount = item.comision || item.monto || 0;
-      const code = item.codigo || item.codigo_venta;
-
-      return (
-        <AnimatedView
-          from={{ opacity: 0, translateY: 30 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
-        >
-          <Pressable
-            onPress={() => handleItemPress(item)}
-            style={({ pressed }) => [
-              styles.card,
-              {
-                backgroundColor: cardBg,
-                borderColor,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={styles.cardHeader}>
-              <View
-                style={[
-                  styles.indexBadge,
-                  { backgroundColor: surfaceMuted },
-                ]}
-              >
-                <Text style={[styles.indexText, { color: textPrimary }]}>
-                  {index + 1}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {code && (
-                  <View
-                    style={[
-                      styles.badge,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.05)'
-                          : '#F1F5F9',
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name="receipt-outline"
-                      size={12}
-                      color={accentColor}
-                    />
-                    <Text style={[styles.badgeText, { color: accentColor }]}>
-                      {code}
-                    </Text>
-                  </View>
-                )}
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor: isPendiente
-                        ? isDark
-                          ? '#065F46'
-                          : '#D1FAE5'
-                        : isDark
-                          ? '#1e3b8a'
-                          : '#DBEAFE',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusText,
-                      {
-                        color: isPendiente
-                          ? isDark
-                            ? '#6EE7B7'
-                            : '#065F46'
-                          : isDark
-                            ? '#93C5FD'
-                            : '#1E40AF',
-                      },
-                    ]}
-                  >
-                    {isPendiente
-                      ? 'Pendiente'
-                      : type === 'comisiones' && Number(item.estado) === 0
-                        ? 'Anulado'
-                        : 'Cobrado'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.cardBody}>
-              <View style={styles.dateRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={14}
-                  color={textSecondary}
-                />
-                <Text style={[styles.dateText, { color: textPrimary }]}>
-                  {formatDate(item.fecha_crea)}
-                </Text>
-                <Text style={[styles.timeText, { color: textSecondary }]}>
-                  {formatTime(item.fecha_crea)}
-                </Text>
-              </View>
-              <View style={styles.amountRow}>
-                <Text style={[styles.amountLabel, { color: textSecondary }]}>
-                  {type === 'comisiones' ? 'Comisión de Venta' : 'Propina'}
-                </Text>
-                <Text
-                  style={[
-                    styles.amountValue,
-                    { color: isPendiente ? accentColor : '#10B981' },
-                  ]}
-                >
-                  ${amount.toLocaleString()}
-                </Text>
-              </View>
-              <View
-                style={{
-                  marginTop: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Text
-                  style={{
-                    color: accentColor,
-                    fontSize: 11,
-                    fontWeight: '700',
-                  }}
-                >
-                  Ver detalles
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={12}
-                  color={accentColor}
-                />
-              </View>
-            </View>
-          </Pressable>
-        </AnimatedView>
-      );
-    },
+    ({ item, index }: { item: any; index: number }) => (
+      <FinancialEventCard
+        item={item}
+        index={index}
+        type={type}
+        isDark={isDark}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        surfaceMuted={surfaceMuted}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+        formatDate={formatDate}
+        formatTime={formatTime}
+        onPress={handleItemPress}
+      />
+    ),
   );
 
   if (loading)
@@ -331,7 +200,7 @@ export function FinancialEventsScreen({
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           TOTAL PENDIENTE
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalPendiente.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -386,7 +255,7 @@ export function FinancialEventsScreen({
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="file-tray-outline" title="No se encontraron registros" />
+          <EmptyState icon="file-tray-outline" title="No se encontraron registros" message="No hay eventos financieros para el tipo seleccionado. Intenta cambiar el filtro." />
         }
         getItemLayout={(_: any, index: number) => ({
           length: 180,
@@ -444,7 +313,7 @@ export function FinancialEventsScreen({
               >
                 {loadingDetail ? (
                   <View style={styles.detailLoadingBox}>
-                    <ActivityIndicator size="large" color={accentColor} />
+                    <ActivityIndicator size="large" color={accentOnSurface} />
                     <Text style={{ color: textSecondary, marginTop: 15 }}>
                       Cargando detalles...
                     </Text>
@@ -543,52 +412,6 @@ const styles = StyleSheet.create({
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  indexBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  indexText: { fontSize: 14, fontWeight: '700' },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  cardBody: {},
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  dateText: { fontSize: 14 },
-  timeText: { fontSize: 13, marginLeft: 6 },
-  amountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  amountLabel: { fontSize: 14, fontWeight: '600' },
-  amountValue: { fontSize: 24, fontWeight: '900' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

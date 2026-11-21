@@ -9,6 +9,16 @@ vi.mock("react-native", () => ({
   Image: ({ source }: any) => <img src={source?.uri} alt="baucher" />,
   ActivityIndicator: () => null,
   StyleSheet: { create: (styles: any) => styles },
+  // El mock local reemplaza al global: lo que falte rompe los hooks que
+  // leen la plataforma o el esquema de color.
+  // OS "web" evita que `useColorScheme` haga el import dinámico de
+  // react-native (el paquete real trae sintaxis Flow que Vite no parsea).
+  Platform: { OS: "web", select: (obj: any) => obj?.web ?? obj?.default },
+  Appearance: {
+    getColorScheme: () => "dark",
+    addChangeListener: () => ({ remove: () => {} }),
+  },
+  useColorScheme: () => "dark",
   Pressable: ({
     children,
     onPress,

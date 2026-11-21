@@ -19,6 +19,7 @@ interface PaymentMethodSelectProps {
     showMixto?: boolean;
     disabled?: boolean;
     disabledMethods?: PaymentMethod[];
+    showLabel?: boolean;
 }
 
 export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
@@ -28,8 +29,9 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     showMixto = false,
     disabled = false,
     disabledMethods = [],
+    showLabel = true,
 }) => {
-    const { accentColor, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, textSecondary, borderColor, cardBg, isDark } = useAccentColor();
 
     const methods: { id: PaymentMethod; icon: any; label: string }[] = [
         { id: 'efectivo', icon: 'cash', label: 'Efectivo' },
@@ -46,53 +48,55 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     }
 
     return (
-        <View style={[styles.container, disabled && { opacity: 0.6, pointerEvents: 'none' as const }, !disabled && { pointerEvents: 'auto' as const }]}>
-            <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO</Text>
-            <View style={styles.row}>
-                {methods.map((method) => {
-                    const isSelected = selectedMethod === method.id;
-                    const isMethodDisabled = disabled || disabledMethods.includes(method.id);
-                    return (
-                        <Pressable
-                            key={method.id}
-                            style={[
-                                styles.card,
-                                {
-                                    borderColor,
-                                    backgroundColor: isSelected ? `${accentColor}20` : 'transparent',
-                                },
-                                isSelected && { borderColor: accentColor },
-                                isMethodDisabled && { opacity: 0.35 },
-                            ]}
-                            onPress={() => {
-                                if (!isMethodDisabled) {
-                                    haptic.select();
-                                    onSelect(method.id);
-                                }
-                            }}
-                            disabled={isMethodDisabled}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: isSelected, disabled: isMethodDisabled }}
-                        >
-                            <Ionicons
-                                name={method.icon}
-                                size={22}
-                                color={isSelected ? accentColor : textSecondary}
-                            />
-                            <Text
+        <View style={[styles.container, disabled && { opacity: 0.5, pointerEvents: 'none' as const }, !disabled && { pointerEvents: 'auto' as const }]}>
+            {showLabel && <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO (Requerido)</Text>}
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+                <View style={styles.row}>
+                    {methods.map((method) => {
+                        const isSelected = selectedMethod === method.id;
+                        const isMethodDisabled = disabled || disabledMethods.includes(method.id);
+                        return (
+                            <Pressable
+                                key={method.id}
                                 style={[
-                                    styles.methodText,
-                                    { color: isSelected ? accentColor : textSecondary },
+                                    styles.methodBtn,
+                                    {
+                                        backgroundColor: isSelected ? accentColor : 'transparent',
+                                        borderColor: isSelected ? accentColor : 'transparent',
+                                    },
+                                    isMethodDisabled && { opacity: 0.3 },
                                 ]}
-                                numberOfLines={1}
-                                adjustsFontSizeToFit
-                                minimumFontScale={0.7}
+                                onPress={() => {
+                                    if (!isMethodDisabled) {
+                                        haptic.select();
+                                        onSelect(method.id);
+                                    }
+                                }}
+                                disabled={isMethodDisabled}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: isSelected, disabled: isMethodDisabled }}
                             >
-                                {method.label}
-                            </Text>
-                        </Pressable>
-                    );
-                })}
+                                <Ionicons
+                                    name={method.icon}
+                                    size={18}
+                                    color={isSelected ? '#FFF' : textSecondary}
+                                />
+                                <Text
+                                    style={[
+                                        styles.methodText,
+                                        { color: isSelected ? '#FFF' : textSecondary },
+                                        isSelected && styles.methodTextSelected,
+                                    ]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.65}
+                                >
+                                    {method.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
             </View>
         </View>
     );
@@ -108,27 +112,37 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         letterSpacing: 1,
     },
+    card: {
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 6,
+        gap: 0,
+    },
     row: {
         flexDirection: 'row',
-        gap: 8,
+        flexWrap: 'wrap',
+        gap: 6,
     },
-    card: {
+    methodBtn: {
         flex: 1,
-        minHeight: 52,
-        paddingVertical: 10,
-        paddingHorizontal: 4,
-        borderRadius: 14,
-        borderWidth: 1.5,
+        minWidth: 0,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        minWidth: 0,
+        gap: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 6,
+        borderRadius: 12,
+        borderWidth: 1.5,
     },
     methodText: {
         fontSize: 11,
         fontFamily: FontFamily.bold,
         textTransform: 'uppercase',
         textAlign: 'center',
+    },
+    methodTextSelected: {
+        fontWeight: '900',
     },
 });
 

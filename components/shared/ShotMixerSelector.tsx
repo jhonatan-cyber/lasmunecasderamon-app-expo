@@ -13,20 +13,18 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { apiClientSafe } from "@/api/client";
 import { getMirror, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { availableOrderMixers } from "@/hooks/utils/orderMixers";
 import { parseOpcionesVenta } from "@/hooks/utils/saleChoice";
-import { OrderProductPhoto } from "./OrderProductPhoto";
+import { BottleMixerRow } from "./BottleMixerRow";
+import { ShortMixerRow } from "./ShortMixerRow";
+import { MixerSelectorModal } from "./MixerSelectorModal";
 
 export type ShortMixer = {
   presentacion_id: string;
@@ -289,307 +287,98 @@ export function ShotMixerSelector({
                 </Pressable>
                 {sabores.map((sabor) => {
                   const max = maxFor(sabor);
-                  const nombre = sabor.nombre || sabor.presentacion_id;
                   return (
-                    <View
+                    <BottleMixerRow
                       key={sabor.presentacion_id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                      }}
-                    >
-                      <OrderProductPhoto foto={sabor.foto} name={nombre} />
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Text style={{ color: textPrimary }}>{nombre}</Text>
-                        <Text style={{ color: textSecondary, fontSize: 12 }}>
-                          Stock: {stockOf(sabor.presentacion_id)} · máx {max}
-                        </Text>
-                      </View>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Quitar una unidad de ${nombre}`}
-                        disabled={sabor.unidades <= 1}
-                        onPress={() =>
-                          distribute(
-                            index,
-                            sabores.map((s) =>
-                              s.presentacion_id === sabor.presentacion_id
-                                ? { ...s, unidades: s.unidades - 1 }
-                                : s,
-                            ),
-                          )
-                        }
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: "rgba(155,155,155,0.1)",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          opacity: sabor.unidades <= 1 ? 0.4 : 1,
-                        }}
-                      >
-                        <Ionicons
-                          name="remove"
-                          size={16}
-                          color={textPrimary}
-                        />
-                      </Pressable>
-                      <Text
-                        style={{
-                          color: textPrimary,
-                          marginHorizontal: 12,
-                          fontSize: 14,
-                          fontWeight: "900",
-                        }}
-                      >
-                        {sabor.unidades}
-                      </Text>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Agregar una unidad de ${nombre}`}
-                        disabled={sabor.unidades >= max}
-                        onPress={() =>
-                          distribute(
-                            index,
-                            sabores.map((s) =>
-                              s.presentacion_id === sabor.presentacion_id
-                                ? { ...s, unidades: s.unidades + 1 }
-                                : s,
-                            ),
-                          )
-                        }
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: "rgba(155,155,155,0.1)",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          opacity: sabor.unidades >= max ? 0.4 : 1,
-                        }}
-                      >
-                        <Ionicons
-                          name="add"
-                          size={16}
-                          color={textPrimary}
-                        />
-                      </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Quitar ${nombre}`}
-                        onPress={() =>
-                          distribute(
-                            index,
-                            sabores.filter(
-                              (s) =>
-                                s.presentacion_id !== sabor.presentacion_id,
-                            ),
-                          )
-                        }
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: "rgba(239,68,68,0.1)",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          marginLeft: 12,
-                        }}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={16}
-                          color="#EF4444"
-                        />
-                      </Pressable>
-                    </View>
+                      sabor={sabor}
+                      max={max}
+                      stock={stockOf(sabor.presentacion_id)}
+                      textPrimary={textPrimary}
+                      textSecondary={textSecondary}
+                      onDecrement={() =>
+                        distribute(
+                          index,
+                          sabores.map((s) =>
+                            s.presentacion_id === sabor.presentacion_id
+                              ? { ...s, unidades: s.unidades - 1 }
+                              : s,
+                          ),
+                        )
+                      }
+                      onIncrement={() =>
+                        distribute(
+                          index,
+                          sabores.map((s) =>
+                            s.presentacion_id === sabor.presentacion_id
+                              ? { ...s, unidades: s.unidades + 1 }
+                              : s,
+                          ),
+                        )
+                      }
+                      onDelete={() =>
+                        distribute(
+                          index,
+                          sabores.filter(
+                            (s) =>
+                              s.presentacion_id !== sabor.presentacion_id,
+                          ),
+                        )
+                      }
+                    />
                   );
                 })}
               </>
             ) : (
-              <>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Soda o gaseosa para ${item.nombre}`}
-                  disabled={loading}
-                  onPress={() => {
-                    setSearch("");
-                    setSelected(index);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderColor,
-                    borderWidth: 1,
-                    borderRadius: 10,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    {item.acompanamiento_corto && (
-                      <OrderProductPhoto
-                        foto={item.acompanamiento_corto.foto}
-                        name={item.acompanamiento_corto.nombre || "Bebida"}
-                      />
-                    )}
-                    <Text style={{ color: textPrimary, flex: 1 }}>
-                      {item.acompanamiento_corto?.nombre ||
-                        "Seleccionar producto o sabor del bar"}
-                    </Text>
-                  </View>
-                </Pressable>
-                <Text style={{ color: textSecondary }}>
-                  {item.cantidad *
-                    (item.shot_anfitriona ? hostessMixerMl(item) : 1)}{" "}
-                  {item.shot_anfitriona
-                    ? "ml incluidos"
-                    : "unidades completas incluidas"}
-                </Text>
-              </>
+              <ShortMixerRow
+                item={item}
+                loading={loading}
+                borderColor={borderColor}
+                textPrimary={textPrimary}
+                textSecondary={textSecondary}
+                includedText={`${item.cantidad * (item.shot_anfitriona ? hostessMixerMl(item) : 1)} ${item.shot_anfitriona ? 'ml incluidos' : 'unidades completas incluidas'}`}
+                onPress={() => {
+                  setSearch("");
+                  setSelected(index);
+                }}
+              />
             )}
           </View>
         );
       })}
-      <Modal
+      <MixerSelectorModal
         visible={selected !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelected(null)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "#0008",
-            justifyContent: "center",
-            padding: 20,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: cardBg,
-              borderRadius: 20,
-              padding: 20,
-              maxHeight: "80%",
-              gap: 12,
-            }}
-          >
-            <Text style={{ color: textPrimary, fontWeight: "700" }}>
-              {bottle
-                ? "Agregar sabor del bar"
-                : "Elegir producto o sabor del bar"}
-            </Text>
-            <TextInput
-              accessibilityLabel="Buscar bebida en bar"
-              placeholder="Buscar producto o sabor"
-              placeholderTextColor={textSecondary}
-              value={search}
-              onChangeText={setSearch}
-              style={{
-                color: textPrimary,
-                borderColor,
-                borderWidth: 1,
-                padding: 12,
-                borderRadius: 10,
-              }}
-            />
-            <ScrollView
-              style={{ maxHeight: 360 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {modalChoices.map((p) => {
-                const stock = stockLabel(p);
-                const precio = priceOf(p.id);
-                const exceso = Math.max(0, precio - topeAcompanamiento);
-                return (
-                  <Pressable
-                    key={p.id}
-                    accessibilityRole="button"
-                    onPress={() => {
-                      if (selected !== null) {
-                        if (bottle) addFlavor(selected, p);
-                        else
-                          onChange?.(selected, {
-                            presentacion_id: p.id,
-                            nombre: `${p.producto_nombre} ${p.nombre}`,
-                            foto:
-                              p.foto && p.foto !== "default.png"
-                                ? p.foto
-                                : p.producto_foto,
-                            precio: priceOf(p.id),
-                            ...shortMixerConsumption(items[selected]),
-                          });
-                      }
-                      setSelected(null);
-                    }}
-                    style={{
-                      paddingVertical: 14,
-                      borderBottomWidth: 1,
-                      borderColor,
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 10,
-                      }}
-                    >
-                      <OrderProductPhoto
-                        foto={
-                          p.foto && p.foto !== "default.png"
-                            ? p.foto
-                            : p.producto_foto
-                        }
-                        name={`${p.producto_nombre} ${p.nombre}`}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: textPrimary }}>
-                          {p.producto_nombre} {p.nombre}
-                        </Text>
-                        {!sinRecargo && topeAcompanamiento > 0 && precio <= 0 && (
-                          <Text style={{ color: "#F59E0B", fontSize: 12, marginTop: 2 }}>
-                            Sin precio configurado: no suma excedente
-                          </Text>
-                        )}
-                        {!sinRecargo && topeAcompanamiento > 0 && precio > 0 && (
-                          <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>
-                            {exceso > 0
-                              ? `Suma $${exceso.toLocaleString("es-CL")} sobre el tope de $${topeAcompanamiento.toLocaleString("es-CL")}`
-                              : "Incluido en el tope"}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    {!!stock && (
-                      <Text style={{ color: textSecondary }}>{stock}</Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-              {!modalChoices.length && (
-                <Text style={{ color: textSecondary }}>
-                  Sin productos disponibles en el bar
-                </Text>
-              )}
-            </ScrollView>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setSelected(null)}
-              style={{ padding: 12 }}
-            >
-              <Text style={{ color: accentColor, textAlign: "center" }}>
-                Cerrar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        title={bottle ? 'Agregar sabor del bar' : 'Elegir producto o sabor del bar'}
+        search={search}
+        setSearch={setSearch}
+        choices={modalChoices}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        accentColor={accentColor}
+        sinRecargo={sinRecargo}
+        topeAcompanamiento={topeAcompanamiento}
+        stockLabel={stockLabel}
+        precioOf={(choice) => priceOf(choice.id)}
+        onSelect={(p) => {
+          if (selected !== null) {
+            if (bottle) addFlavor(selected, p);
+            else
+              onChange?.(selected, {
+                presentacion_id: p.id,
+                nombre: `${p.producto_nombre} ${p.nombre}`,
+                foto:
+                  p.foto && p.foto !== 'default.png'
+                    ? p.foto
+                    : p.producto_foto,
+                precio: priceOf(p.id),
+                ...shortMixerConsumption(items[selected]),
+              });
+          }
+          setSelected(null);
+        }}
+        onClose={() => setSelected(null)}
+      />
     </View>
   );
 }

@@ -125,8 +125,7 @@ export default function SolicitudesScreen() {
     cardBg,
     textPrimary,
     textSecondary,
-    borderColor,
-  } = useAccentColor();
+    borderColor, accentOnSurface} = useAccentColor();
 
   const renderSolicitud = useCallback(
     ({ item }: { item: SolicitudItem }) => (
@@ -222,13 +221,13 @@ export default function SolicitudesScreen() {
               { backgroundColor: `${accentColor}20` },
             ]}
           >
-            <Ionicons name="cash-outline" size={22} color={accentColor} />
+            <Ionicons name="cash-outline" size={22} color={accentOnSurface} />
           </View>
           <View style={styles.totalBannerText}>
             <Text style={[styles.totalBannerLabel, { color: textSecondary }]}>
               TOTAL A PAGAR EN ANTICIPOS
             </Text>
-            <Text style={[styles.totalBannerValue, { color: accentColor }]}>
+            <Text style={[styles.totalBannerValue, { color: accentOnSurface }]}>
               ${totalAPagar.toLocaleString()}
             </Text>
           </View>

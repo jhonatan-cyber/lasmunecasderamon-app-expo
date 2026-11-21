@@ -2,6 +2,7 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback,useMemo,useState } from "react";
 import { Pressable,StyleSheet,Text,View } from "react-native";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface CalendarEvent {
   date: string;
@@ -33,8 +34,7 @@ export const PremiumCalendar = ({
     borderColor,
     surfaceMuted,
     textPrimary,
-    textSecondary,
-  } = useAccentColor();
+    textSecondary, accentOnSurface} = useAccentColor();
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
 
   const currentMonth = propCurrentMonth || internalCurrentMonth;
@@ -172,7 +172,7 @@ export const PremiumCalendar = ({
     >
       <View style={styles.calTop}>
         <View style={styles.calMonthBlock}>
-          <Ionicons name="calendar-outline" size={18} color={accentColor} />
+          <Ionicons name="calendar-outline" size={18} color={accentOnSurface} />
           <Text
             style={[styles.calMonth, { color: textPrimary }]}
             numberOfLines={1}
@@ -184,7 +184,9 @@ export const PremiumCalendar = ({
           </Text>
         </View>
         <View style={styles.calNav}>
-          <Pressable
+          <IconButton
+            icon="chevron-back"
+            accessibilityLabel="Mes anterior"
             onPress={() =>
               setCurrentMonth(
                 new Date(
@@ -194,16 +196,14 @@ export const PremiumCalendar = ({
                 ),
               )
             }
-            style={({ pressed }) => [
-              styles.navBtn,
-              { backgroundColor: surfaceMuted, opacity: pressed ? 0.65 : 1 },
-            ]}
-            accessibilityLabel="Mes anterior"
-            accessibilityRole="button"
-          >
-            <Ionicons name="chevron-back" size={18} color={textPrimary} />
-          </Pressable>
-          <Pressable
+            color={textPrimary}
+            size={36}
+            iconSize={18}
+            backgroundColor={surfaceMuted}
+          />
+          <IconButton
+            icon="chevron-forward"
+            accessibilityLabel="Mes siguiente"
             onPress={() =>
               setCurrentMonth(
                 new Date(
@@ -213,15 +213,11 @@ export const PremiumCalendar = ({
                 ),
               )
             }
-            style={({ pressed }) => [
-              styles.navBtn,
-              { backgroundColor: surfaceMuted, opacity: pressed ? 0.65 : 1 },
-            ]}
-            accessibilityLabel="Mes siguiente"
-            accessibilityRole="button"
-          >
-            <Ionicons name="chevron-forward" size={18} color={textPrimary} />
-          </Pressable>
+            color={textPrimary}
+            size={36}
+            iconSize={18}
+            backgroundColor={surfaceMuted}
+          />
         </View>
       </View>
 
@@ -274,7 +270,7 @@ export const PremiumCalendar = ({
                     !d.current && styles.dayTextMuted,
                     isSelected && { color: accentText },
                     isToday &&
-                      !isSelected && { color: accentColor, fontWeight: "800" },
+                      !isSelected && { color: accentOnSurface, fontWeight: "800" },
                   ]}
                 >
                   {d.day}
@@ -367,13 +363,6 @@ const styles = StyleSheet.create({
   },
   calMonth: { fontSize: 17, fontWeight: "800", textTransform: "capitalize" },
   calNav: { flexDirection: "row", alignItems: "center", gap: 6 },
-  navBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   weekDays: {
     flexDirection: "row",
     marginBottom: 6,

@@ -27,8 +27,9 @@ export default function useLogin() {
     const [isPrompting, setIsPrompting] = useState(false);
     const [showQRScanner, setShowQRScanner] = useState(false);
     const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
 
-    const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+    const passwordRef = useRef<React.ComponentRef<typeof TextInput> | null>(null);
 
     const login = useAuthStore((state) => state.login);
     const setTempAuthData = useAuthStore((state) => state.setTempAuthData);
@@ -241,15 +242,11 @@ export default function useLogin() {
 
     const handleLogin = useCallback(async () => {
         if (!username || !password) {
-            if (isBiometricEnabled && isBiometricSupported) {
-                await handleBiometricLogin();
-                return;
-            }
-            setError('Por favor ingresa tu usuario y contraseña');
+            setError('Por favor ingresa tu nick y contraseña');
             return;
         }
         await performLogin(username.trim(), password);
-    }, [username, password, isBiometricEnabled, isBiometricSupported, performLogin, handleBiometricLogin]);
+    }, [username, password, performLogin]);
 
     const onAlertConfirm = useCallback(() => {
         closeAlert();
@@ -274,6 +271,7 @@ export default function useLogin() {
         passwordRef,
         isBiometricSupported,
         isBiometricEnabled,
+        rememberMe, setRememberMe,
         alertConfig,
         closeAlert,
         onAlertConfirm,

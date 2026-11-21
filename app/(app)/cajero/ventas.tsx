@@ -189,7 +189,7 @@ export default function VentasScreen() {
         accentColor={accentColor}
         accentText={accentText}
         cardBg={cardBg}
-        textSecondary={textPrimary}
+        textSecondary={textSecondary}
         borderColor={borderColor}
         isTablet={isTablet}
         style={{ marginTop: 15, gap: 12 }}
@@ -283,6 +283,7 @@ export default function VentasScreen() {
 
           <PremiumFAB
             icon={activeTab === "historial" ? "cart-outline" : "home-outline"}
+            accessibilityLabel="Nueva venta"
             onPress={() => router.push("/cajero/nueva-venta")}
             visible={true}
           />

@@ -16,7 +16,7 @@ interface TransferCardProps {
 }
 
 export function TransferCard({ item, onPress }: TransferCardProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
   const opciones = resolverVentaProducto(item).opciones;
   // Traspasos antiguos sin opciones guardadas: queda el precio del movimiento.
@@ -43,7 +43,7 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
     >
       <View style={styles.cardHeader}>
         <View style={[styles.iconWrapper, { backgroundColor: `${accentColor}20` }]}>
-          <Ionicons name="swap-horizontal" size={18} color={accentColor} />
+          <Ionicons name="swap-horizontal" size={18} color={accentOnSurface} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
@@ -90,8 +90,8 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
       )}
 
       <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
-        <Text style={[styles.detailHintText, { color: accentColor }]}>Ver detalle</Text>
-        <Ionicons name="chevron-forward" size={16} color={accentColor} />
+        <Text style={[styles.detailHintText, { color: accentOnSurface }]}>Ver detalle</Text>
+        <Ionicons name="chevron-forward" size={16} color={accentOnSurface} />
       </View>
     </Pressable>
   );
@@ -106,7 +106,7 @@ export function TransferActions({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { accentColor } = useAccentColor();
+  const { accentColor, accentOnSurface} = useAccentColor();
   const btnTextColor = readableTextColor(accentColor);
 
   return (

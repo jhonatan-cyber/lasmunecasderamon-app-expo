@@ -16,6 +16,8 @@ import {
   showToast,
 } from "@/hooks/utils/cartUtils";
 import logger from "@/utils/logger";
+import { serviciosService } from "@/services/servicios";
+import { calcularTotalesServicio } from "@/utils/servicioTotales";
 import { blockOffline } from "@/utils/offlineGuard";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
@@ -79,50 +81,25 @@ export function useNuevoServicio() {
     parseInt(precioServicio.replace(/\./g, "")) || 0;
 
   const totals = useMemo(() => {
-    const numAnfitrionas = selectedHostesses.length || 1;
-    const numClientes = selectedClients.length || 1;
-
-    const multiplicadorTiempo = selectedHabitacion?.tiempo === 60 ? 2 : 1;
-    const multiplicadorServicio = numAnfitrionas;
-    const tieneComision = (selectedHabitacion?.comision_anfitriona ?? 0) > 0;
-    const multiplicadorHabitacion = tieneComision
-      ? 1
-      : Math.max(numAnfitrionas, numClientes);
-
-    const precioServicioActual =
-      numericPrecioServicio * multiplicadorTiempo * multiplicadorServicio;
-    const precioHabitacionActual =
-      (selectedHabitacion?.precio || 0) *
-      multiplicadorTiempo *
-      multiplicadorHabitacion;
-
-    let calculatedIva = 0;
-    if (metodoPago === "tarjeta") {
-      calculatedIva = Math.floor(precioServicioActual * getIvaDecimal());
-    }
-
-    let currentTotal =
-      precioServicioActual + precioHabitacionActual + calculatedIva;
-
-    if (metodoPago === "tarjeta") {
-      const totalRedondeado = Math.ceil(currentTotal / 5000) * 5000;
-      const excedente = totalRedondeado - currentTotal;
-      currentTotal = totalRedondeado;
-      calculatedIva += excedente;
-    }
+    const resultado = calcularTotalesServicio({
+      precioServicioUnidad: numericPrecioServicio,
+      precioHabitacion: selectedHabitacion?.precio || 0,
+      tiempoHabitacion: selectedHabitacion?.tiempo || 0,
+      cantidadAnfitrionas: selectedHostesses.length,
+      cantidadClientes: selectedClients.length,
+      comisionHabitacion: selectedHabitacion?.comision_anfitriona ?? 0,
+      metodoPago,
+      ivaDecimal: getIvaDecimal(),
+      politica: "directo",
+    });
 
     return {
-      subTotal: precioServicioActual,
-      iva: calculatedIva,
-      total: currentTotal,
-      precioHabitacionActual,
-      precioServicioActual,
-      comisionPorAnfitriona:
-        tieneComision && selectedHostesses.length > 0
-          ? Math.floor(
-              selectedHabitacion.comision_anfitriona / selectedHostesses.length,
-            )
-          : selectedHabitacion?.comision_anfitriona || 0,
+      subTotal: resultado.precioServicio,
+      iva: resultado.iva,
+      total: resultado.total,
+      precioHabitacionActual: resultado.precioHabitacion,
+      precioServicioActual: resultado.precioServicio,
+      comisionPorAnfitriona: resultado.comisionPorAnfitriona,
     };
   }, [
     numericPrecioServicio,
@@ -476,13 +453,12 @@ export function useNuevoServicio() {
         return;
       }
 
-      const res = await apiClientSafe("/services", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "x-idempotency-key": serviceKey.current },
-      });
+      const res = await serviciosService.create(
+        validation.data,
+        serviceKey.current,
+      );
 
-      if ((res as any).success) {
+      if (res.success) {
         showToast("Éxito", "Servicio creado correctamente", "success");
         setTimeout(() => router.replace("/cajero/servicios"), 1500);
       } else {

@@ -1,15 +1,22 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Alert } from "react-native";
 import { showToast } from "@/utils/toast-lazy";
-import { adjuntarBaucher } from "@/utils/baucherPicker";
+import {
+  maxAnfitrionasConComision,
+  maxClientesConComision,
+} from "@/utils/servicioReglas";
 import { apiClientSafe } from "@/api/client";
+import { serviciosService } from "@/services/servicios";
+import { SolicitudServicioCreateSchema } from "@lasmunecasderamon/validations";
 import { blockOffline } from "@/utils/offlineGuard";
 import { getIvaDecimal } from "@/hooks/utils/cuentaUtils";
+import { calcularTotalesServicio } from "@/utils/servicioTotales";
 import { normalizeRoom } from "@/hooks/utils/cartUtils";
 import { useDebouncedEventListeners } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import logger from "@/utils/logger";
+import { useBaucherPhoto } from "@/hooks/useBaucherPhoto";
+import { generateCode, formatAmountInput } from "@/components/cajero/nuevo-servicio/helpers";
 
 export interface Room {
   id: string | number;
@@ -72,15 +79,10 @@ export function useGarzonServiciosScreen() {
     "efectivo" | "tarjeta" | "transferencia" | "prepago" | ""
   >("");
 
-  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
+  const { baucherFoto, takeBaucherPhoto } = useBaucherPhoto("Servicios");
   const [roomModalVisible, setRoomModalVisible] = useState(false);
   const [hostessModalVisible, setHostessModalVisible] = useState(false);
   const [clientModalVisible, setClientModalVisible] = useState(false);
-
-  const takeBaucherPhoto = useCallback(async () => {
-    const dataUrl = await adjuntarBaucher("Servicios:takeBaucherPhoto");
-    if (dataUrl) setBaucherFoto(dataUrl);
-  }, []);
 
   const setPaymentMethod = useCallback(
     (metodo: "efectivo" | "tarjeta" | "transferencia" | "prepago" | "") => {
@@ -198,12 +200,12 @@ export function useGarzonServiciosScreen() {
 
   const maxHostesses = useMemo(() => {
     if (!hasComision) return 10;
-    return Math.min(3, 4 - Math.max(1, selectedClients.length));
+    return maxAnfitrionasConComision(selectedClients.length);
   }, [hasComision, selectedClients.length]);
 
   const maxClients = useMemo(() => {
     if (!hasComision) return 10;
-    return 4 - Math.max(1, selectedHostesses.length);
+    return maxClientesConComision(selectedHostesses.length);
   }, [hasComision, selectedHostesses.length]);
 
   const toggleHostess = (hostessId: string | number) => {
@@ -286,58 +288,24 @@ export function useGarzonServiciosScreen() {
 
   const totals = useMemo(() => {
     const price = parseInt(servicePrice.replace(/\./g, "")) || 0;
-    const roomPrice = selectedRoom ? selectedRoom.precio || 0 : 0;
-
-    const cantAnfitrionas = selectedHostesses.length || 1;
-    const cantClientes = selectedClients.length || 1;
-
-    let multServicio = cantAnfitrionas;
-    let multHabitacion = cantAnfitrionas;
-
-    if (
-      cantClientes > cantAnfitrionas &&
-      selectedRoom &&
-      (selectedRoom.comision_anfitriona ?? 0) === 0
-    ) {
-      multServicio = cantClientes;
-      multHabitacion = cantClientes;
-    }
-
-    if (selectedRoom && (selectedRoom.comision_anfitriona ?? 0) > 0) {
-      multHabitacion = 1;
-    }
-
-    const subtotal = price * multServicio;
-    const totalHabitacion = roomPrice * multHabitacion;
-
-    let currentIva = 0;
-    if (paymentMethod === "tarjeta") {
-      currentIva = Math.floor(subtotal * getIvaDecimal());
-    }
-
-    let total = subtotal + totalHabitacion + currentIva;
-
-    if (paymentMethod === "tarjeta" && !hasComision) {
-      const totalRedondeado = Math.ceil(total / 5000) * 5000;
-      const excedente = totalRedondeado - total;
-      total = totalRedondeado;
-      currentIva += excedente;
-    }
-
-    const comisionTotal = selectedRoom
-      ? selectedRoom.comision_anfitriona || 0
-      : 0;
-    const comisionPorAnfitriona =
-      comisionTotal > 0 && selectedHostesses.length > 0
-        ? Math.floor(comisionTotal / selectedHostesses.length)
-        : comisionTotal;
+    const resultado = calcularTotalesServicio({
+      precioServicioUnidad: price,
+      precioHabitacion: selectedRoom ? selectedRoom.precio || 0 : 0,
+      tiempoHabitacion: selectedRoom?.tiempo || 0,
+      cantidadAnfitrionas: selectedHostesses.length,
+      cantidadClientes: selectedClients.length,
+      comisionHabitacion: selectedRoom?.comision_anfitriona ?? 0,
+      metodoPago: paymentMethod,
+      ivaDecimal: getIvaDecimal(),
+      politica: "solicitud",
+    });
 
     return {
-      subtotal,
-      totalHabitacion,
-      total,
-      iva: currentIva,
-      comisionPorAnfitriona,
+      subtotal: resultado.precioServicio,
+      totalHabitacion: resultado.precioHabitacion,
+      total: resultado.total,
+      iva: resultado.iva,
+      comisionPorAnfitriona: resultado.comisionPorAnfitriona,
     };
   }, [
     servicePrice,
@@ -345,32 +313,32 @@ export function useGarzonServiciosScreen() {
     selectedHostesses.length,
     selectedClients.length,
     paymentMethod,
-    hasComision,
   ]);
 
-  const formatNumber = (val: string) => {
-    const num = val.replace(/\D/g, "");
-    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
+  // Re-export formatAmountInput as formatNumber for backward compatibility
+  const formatNumber = formatAmountInput;
 
   const handlePriceChange = (val: string) => {
     setServicePrice(formatNumber(val));
   };
 
+  const alerta = (title: string, message: string) =>
+    showToast({ type: "error", text1: title, text2: message });
+
   const handleSubmit = async () => {
     if (hasComision && !productoIncluido)
-      return Alert.alert(
+      return alerta(
         "Producto incluido",
         "Selecciona una unidad del bar para la habitación",
       );
-    if (!selectedRoom) return Alert.alert("Error", "Selecciona una habitación");
+    if (!selectedRoom) return alerta("Error", "Selecciona una habitación");
     if (selectedHostesses.length === 0)
-      return Alert.alert("Error", "Selecciona al menos una anfitriona");
+      return alerta("Error", "Selecciona al menos una anfitriona");
     if (!paymentMethod)
-      return Alert.alert("Error", "Selecciona un método de pago");
+      return alerta("Error", "Selecciona un método de pago");
 
     if (paymentMethod === "transferencia" && !baucherFoto) {
-      Alert.alert(
+      alerta(
         "Falta el baucher",
         "El pago con transferencia requiere la foto del baucher para enviar la solicitud.",
       );
@@ -379,19 +347,10 @@ export function useGarzonServiciosScreen() {
     }
 
     if (!hasComision && (!servicePrice || servicePrice === "0")) {
-      return Alert.alert("Error", "Ingresa el precio del servicio");
+      return alerta("Error", "Ingresa el precio del servicio");
     }
 
     if (!blockOffline("solicitud")) return;
-
-    const generateCode = () => {
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let result = "";
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
 
     setSubmitting(true);
     try {
@@ -420,12 +379,19 @@ export function useGarzonServiciosScreen() {
         num_clientes: selectedClients.length || 1,
       };
 
-      const res = await apiClientSafe("/service-requests", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const validation = SolicitudServicioCreateSchema.safeParse(payload);
+      if (!validation.success) {
+        showToast({
+          type: "error",
+          text1: "Datos incompletos",
+          text2: validation.error.issues[0]?.message || "Revisa la solicitud",
+        });
+        return;
+      }
 
-      if ((res as any).success) {
+      const res = await serviciosService.crearSolicitud(validation.data);
+
+      if (res.success) {
         showToast({
           type: "success",
           text1: "Solicitud Enviada",
@@ -433,13 +399,10 @@ export function useGarzonServiciosScreen() {
         });
         router.back();
       } else {
-        Alert.alert(
-          "Error",
-          (res as any).message || "No se pudo crear el servicio",
-        );
+        alerta("Error", res.message || "No se pudo crear el servicio");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Error de conexión");
+      alerta("Error", err.message || "Error de conexión");
     } finally {
       setSubmitting(false);
     }
@@ -488,5 +451,6 @@ export function useGarzonServiciosScreen() {
     handlePriceChange,
     handleSubmit,
     formatNumber,
+    formatAmountInput: formatNumber,
   };
 }

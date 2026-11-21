@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatCurrency } from '@/utils/format';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface EmployeeStat {
     usuario_id: number;
@@ -35,6 +36,7 @@ export function EmployeeSummaryCard({
     textPrimary,
     textSecondary,
 }: EmployeeSummaryCardProps) {
+    const { accentOnSurface } = useAccentColor();
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollContainer}>
             <View style={styles.listContainer}>
@@ -53,7 +55,7 @@ export function EmployeeSummaryCard({
                             ]}
                         >
                             <View style={[styles.empSummaryAvatar, { backgroundColor: accentColor + '20' }]}>
-                                <Text style={[styles.empSummaryInitials, { color: accentColor }]}>
+                                <Text style={[styles.empSummaryInitials, { color: accentOnSurface }]}>
                                     {getInitials(emp.usuario)}
                                 </Text>
                             </View>

@@ -101,6 +101,7 @@ export default function RootLayout() {
     };
   }, []);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const user = useAuthStore((state) => state.user);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const cargarModoPantalla = useModoPantallaStore((state) => state.cargar);
   const modoPantallaCargado = useModoPantallaStore((state) => state.cargado);
@@ -123,30 +124,33 @@ export default function RootLayout() {
       void connectivity.start();
       initOutbox();
 
-      apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
-        if (!res?.success) return;
-        const parsed = configurationsSchema.safeParse(res.data);
-        if (!parsed.success) return;
-        const data = parsed.data;
-        if (data?.comisiones) {
-          const c = data.comisiones;
-          if (c.threshold_producto_caro) setExpensiveDrinkThreshold(Number(c.threshold_producto_caro));
-          if (c.split_tarjeta_venta && c.split_tarjeta_propina) {
-            setCardSplit(Number(c.split_tarjeta_venta) / 100, Number(c.split_tarjeta_propina) / 100);
+      // Solo cargar configuraciones después de iniciar sesión
+      if (user !== null) {
+        apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
+          if (!res?.success) return;
+          const parsed = configurationsSchema.safeParse(res.data);
+          if (!parsed.success) return;
+          const data = parsed.data;
+          if (data?.comisiones) {
+            const c = data.comisiones;
+            if (c.threshold_producto_caro) setExpensiveDrinkThreshold(Number(c.threshold_producto_caro));
+            if (c.split_tarjeta_venta && c.split_tarjeta_propina) {
+              setCardSplit(Number(c.split_tarjeta_venta) / 100, Number(c.split_tarjeta_propina) / 100);
+            }
           }
-        }
-        if (data?.facturacion?.impuesto_iva) {
-          setIvaRate(Number(data.facturacion.impuesto_iva) / 100);
-        }
-      }).catch(() => {
-        logger.debug('No se pudieron cargar las configuraciones del servidor.');
-      });
+          if (data?.facturacion?.impuesto_iva) {
+            setIvaRate(Number(data.facturacion.impuesto_iva) / 100);
+          }
+        }).catch(() => {
+          logger.debug('No se pudieron cargar las configuraciones del servidor.');
+        });
+      }
     };
 
     // La petición ya es asíncrona: diferirla al hilo libre solo retrasaba hasta
     // un segundo los umbrales de propina/IVA sin liberar nada.
     startServices();
-  }, [isLoading, storageReady]);
+  }, [isLoading, storageReady, user]);
 
   if (isLoading || !storageReady || !modoPantallaCargado || !fontsReady) {
     return (

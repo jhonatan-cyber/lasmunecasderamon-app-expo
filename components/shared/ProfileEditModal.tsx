@@ -22,7 +22,7 @@ export default function ProfileEditModal({
         <PremiumProfileView
           onClose={onClose}
           roleLabel="Configuración de Perfil"
-          avatarEmoji="⚙️"
+          avatarIcon="settings"
         />
       </View>
     </Modal>

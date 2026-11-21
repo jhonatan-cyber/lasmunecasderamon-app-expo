@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MODAL_MAX_WIDTH } from '@/constants/layout';
 import { AppModal as Modal } from '@/components/ui/AppModal';
@@ -8,6 +8,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { readableTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
+import { IconButton } from '@/components/ui/IconButton';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -16,6 +17,13 @@ interface PremiumAlertProps {
     type?: 'info' | 'success' | 'warning' | 'danger';
     onConfirm?: () => void;
     onCancel?: () => void;
+    /**
+     * Cierre sin ejecutar la acción confirmada. Si no se pasa, se usa
+     * `onCancel`. Neither botón de cierre debe llamar a `onConfirm`: con
+     * `onRequestClose={onConfirm}` el botón "atrás" de Android ejecutaba la
+     * acción (p. ej. anular una venta) en lugar de descartarla.
+     */
+    onDismiss?: () => void;
     showCancel?: boolean;
     confirmText?: string;
     cancelText?: string;
@@ -28,12 +36,55 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     type = 'info',
     onConfirm,
     onCancel,
+    onDismiss,
     showCancel = false,
     confirmText = 'Aceptar',
     cancelText = 'Cancelar'
 }) => {
     const { isDark, cardBg, surfaceMuted, textPrimary, textSecondary, accentColor } = useAccentColor();
     const { isTablet } = useResponsiveMetrics();
+
+    // Descartar nunca ejecuta la acción confirmada: llama a `onDismiss` y, si
+    // no existe, a `onCancel`. Sin ninguno de los dos no hay forma de cerrar,
+    // así que la "X" se oculta en vez de quedar como un botón inerte.
+    const handleDismiss = useCallback(() => {
+        (onDismiss ?? onCancel)?.();
+    }, [onDismiss, onCancel]);
+
+    const puedeDescartar = Boolean(onDismiss ?? onCancel);
+
+    // Evita el doble toque: una confirmación (p. ej. pagar nómina) no puede
+    // ejecutarse dos veces seguidas. El bloqueo es temporal, no permanente:
+    // si la acción falla y el modal sigue abierto (caso real en `pagos` y
+    // `anticipos-admin`), el usuario tiene que poder reintentar.
+    const confirmando = useRef(false);
+    const liberando = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        confirmando.current = false;
+        if (liberando.current) {
+            clearTimeout(liberando.current);
+            liberando.current = null;
+        }
+    }, [visible]);
+
+    useEffect(
+        () => () => {
+            if (liberando.current) clearTimeout(liberando.current);
+        },
+        [],
+    );
+
+    const handleConfirm = useCallback(() => {
+        if (confirmando.current) return;
+        confirmando.current = true;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onConfirm?.();
+        liberando.current = setTimeout(() => {
+            confirmando.current = false;
+            liberando.current = null;
+        }, 1500);
+    }, [onConfirm]);
 
     const getIcon = () => {
         switch (type) {
@@ -64,7 +115,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             transparent
             visible={visible}
             animationType="fade"
-            onRequestClose={onCancel ?? onConfirm}
+            onRequestClose={handleDismiss}
         >
             <View style={styles.modalOverlay} accessibilityLabel="Alerta" accessibilityRole="alert" accessibilityLiveRegion="assertive">
                 <View
@@ -73,15 +124,18 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                 >
 
                     {}
-                    <Pressable
-                        onPress={onCancel ?? onConfirm}
-                        hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                        style={[styles.closeBtn, { backgroundColor: surfaceMuted }]}
-                        accessibilityLabel="Cerrar alerta"
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="close" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
-                    </Pressable>
+                    {puedeDescartar && (
+                        <IconButton
+                            icon="close"
+                            accessibilityLabel="Cerrar alerta"
+                            onPress={handleDismiss}
+                            color={isDark ? '#9CA3AF' : '#6B7280'}
+                            size={32}
+                            iconSize={18}
+                            backgroundColor={surfaceMuted}
+                            style={styles.closeBtn}
+                        />
+                    )}
 
                     <View style={[styles.alertIconHeader, { backgroundColor: `${getColor()}20`, width: iconSize + 16, height: iconSize + 16, borderRadius: (iconSize + 16) / 2 }]}>
                         <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
@@ -102,7 +156,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                             </Pressable>
                         )}
                         <Pressable
-                            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onConfirm?.(); }}
+                            onPress={handleConfirm}
                             style={[
                                 styles.alertBtn,
                                 {
@@ -148,11 +202,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 16,
         right: 16,
-        width: 32,
-        height: 32,
-        borderRadius: 9999,
-        justifyContent: 'center',
-        alignItems: 'center',
         zIndex: 10,
     },
     alertIconHeader: {

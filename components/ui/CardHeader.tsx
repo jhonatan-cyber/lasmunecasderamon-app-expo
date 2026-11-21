@@ -10,6 +10,9 @@ export interface CardHeaderProps {
   date?: string;
   statusColor: string;
   statusText: string;
+  /** Fondo/Texto de la píldora; por defecto deriva de `statusColor`. */
+  statusBgColor?: string;
+  statusTextColor?: string;
   accentColor: string;
   textColor: string;
   textMutedColor: string;
@@ -27,6 +30,8 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   date,
   statusColor,
   statusText,
+  statusBgColor,
+  statusTextColor,
   accentColor,
   textColor,
   textMutedColor,
@@ -51,9 +56,9 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
         )}
       </View>
     </View>
-    <View style={[styles.statusBadge, { backgroundColor: `${statusColor}10` }]}>
+    <View style={[styles.statusBadge, { backgroundColor: statusBgColor ?? `${statusColor}10` }]}>
       <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-      <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+      <Text style={[styles.statusText, { color: statusTextColor ?? statusColor }]}>{statusText}</Text>
     </View>
   </View>
 );

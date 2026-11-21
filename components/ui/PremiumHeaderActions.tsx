@@ -1,13 +1,13 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useAppearanceStore } from '@/store/appearanceStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { isAdminRole, isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 import { BiometricEnrollmentModal } from '@/components/shared/BiometricEnrollmentModal';
+import { IconButton } from '@/components/ui/IconButton';
 
 interface PremiumHeaderActionsProps {
     hasNewAlert?: boolean;
@@ -24,8 +24,6 @@ interface PremiumHeaderActionsProps {
      */
     onlyTheme?: boolean;
 }
-
-const HIT_SLOP = { top: 8, right: 8, bottom: 8, left: 8 };
 
 export const PremiumHeaderActions = ({
     hasNewAlert,
@@ -71,43 +69,55 @@ export const PremiumHeaderActions = ({
     };
 
     const showDot = hasNewAlert || notificationCount > 0;
-    const iconButtonStyle = [styles.iconButton, { backgroundColor: btnBg, borderColor: btnBorder, borderWidth: 1 }];
+    // 40 visuales + hitSlop = 44 efectivos: seis botones de 44 no entran en un
+    // móvil de 320 px sin desbordar el header.
+    const buttonSize = isTablet ? 46 : 40;
 
     const themeButton = (
-        <Pressable
-            onPress={toggleScheme}
-            hitSlop={HIT_SLOP}
-            accessibilityRole="button"
+        <IconButton
+            icon={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
             accessibilityLabel="Cambiar tema"
-            style={iconButtonStyle}
-        >
-            <Ionicons name={scheme === 'dark' ? 'sunny-outline' : scheme === 'light' ? 'moon-outline' : 'moon-outline'} size={20} color={iconColor} />
-        </Pressable>
+            onPress={toggleScheme}
+            color={iconColor}
+            size={buttonSize}
+            iconSize={20}
+            backgroundColor={btnBg}
+            borderColor={btnBorder}
+            borderWidth={1}
+        />
     );
 
     if (onlyTheme) {
         return (
-            <View style={[styles.headerTop, compact && { marginBottom: 10 }]}>
+            <View style={[styles.headerTop, compact && { marginBottom: 10 }, { gap: isTablet ? 12 : 8 }]}>
                 {themeButton}
             </View>
         );
     }
 
     return (
-        <View style={[styles.headerTop, compact && { marginBottom: 10 }]}>
+        <View style={[styles.headerTop, compact && { marginBottom: 10 }, { gap: isTablet ? 12 : 8 }]}>
             {onQRScannerPress && !canUseCajeroActions && !isAdmin && (
-                <Pressable
-                    onPress={onQRScannerPress}
-                    hitSlop={HIT_SLOP}
-                    accessibilityRole="button"
+                <IconButton
+                    icon="qr-code"
                     accessibilityLabel="Registrar asistencia con código QR"
-                    style={iconButtonStyle}
-                >
-                    <Ionicons name="qr-code" size={20} color={iconColor} />
-                </Pressable>
+                    onPress={onQRScannerPress}
+                    color={iconColor}
+                    size={buttonSize}
+                    iconSize={20}
+                    backgroundColor={btnBg}
+                    borderColor={btnBorder}
+                    borderWidth={1}
+                />
             )}
             {showNotifications && !isAdmin && (
-                <Pressable
+                <IconButton
+                    icon="notifications-outline"
+                    accessibilityLabel={
+                        notificationCount > 0
+                            ? `Notificaciones, ${notificationCount} sin leer`
+                            : 'Notificaciones'
+                    }
                     onPress={() => {
                         if (onNotificationPress) {
                             onNotificationPress();
@@ -116,53 +126,57 @@ export const PremiumHeaderActions = ({
                         if (setHasNewAlert) setHasNewAlert(false);
                         showAlert('Sin Notificaciones', 'Tu bandeja de entrada está limpia por el momento.', 'info');
                     }}
-                    hitSlop={HIT_SLOP}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                        notificationCount > 0
-                            ? `Notificaciones, ${notificationCount} sin leer`
-                            : 'Notificaciones'
+                    color={iconColor}
+                    size={buttonSize}
+                    iconSize={20}
+                    backgroundColor={btnBg}
+                    borderColor={btnBorder}
+                    borderWidth={1}
+                    badge={
+                        showDot ? (
+                            <View style={styles.notificationBadge}>
+                                {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
+                            </View>
+                        ) : null
                     }
-                    style={iconButtonStyle}
-                >
-                    <Ionicons name="notifications-outline" size={20} color={iconColor} />
-                    {showDot && (
-                        <View style={styles.notificationBadge}>
-                            {notificationCount > 0 && <Text style={styles.notificationText}>{notificationCount > 99 ? '+99' : notificationCount}</Text>}
-                        </View>
-                    )}
-                </Pressable>
+                />
             )}
             {!isBiometricEnrolled && !isAdmin && (
-                <Pressable
-                    onPress={() => setShowEnrollment(true)}
-                    hitSlop={HIT_SLOP}
-                    accessibilityRole="button"
+                <IconButton
+                    icon="finger-print"
                     accessibilityLabel="Activar acceso biométrico"
-                    style={iconButtonStyle}
-                >
-                    <Ionicons name="finger-print" size={20} color={iconColor} />
-                </Pressable>
+                    onPress={() => setShowEnrollment(true)}
+                    color={iconColor}
+                    size={buttonSize}
+                    iconSize={20}
+                    backgroundColor={btnBg}
+                    borderColor={btnBorder}
+                    borderWidth={1}
+                />
             )}
-            <Pressable
-                onPress={() => router.push(profilePath as Href)}
-                hitSlop={HIT_SLOP}
-                accessibilityRole="button"
+            <IconButton
+                icon="person-outline"
                 accessibilityLabel="Mi perfil y ajustes"
-                style={iconButtonStyle}
-            >
-                <Ionicons name="person-outline" size={20} color={iconColor} />
-            </Pressable>
+                onPress={() => router.push(profilePath as Href)}
+                color={iconColor}
+                size={buttonSize}
+                iconSize={20}
+                backgroundColor={btnBg}
+                borderColor={btnBorder}
+                borderWidth={1}
+            />
             {themeButton}
-            <Pressable
-                onPress={handleLogout}
-                hitSlop={HIT_SLOP}
-                accessibilityRole="button"
+            <IconButton
+                icon="log-out-outline"
                 accessibilityLabel="Cerrar sesión"
-                style={iconButtonStyle}
-            >
-                <Ionicons name="log-out-outline" size={20} color={iconColor} />
-            </Pressable>
+                onPress={handleLogout}
+                color={iconColor}
+                size={buttonSize}
+                iconSize={20}
+                backgroundColor={btnBg}
+                borderColor={btnBorder}
+                borderWidth={1}
+            />
             <BiometricEnrollmentModal
                 visible={showEnrollment}
                 onClose={() => setShowEnrollment(false)}
@@ -179,13 +193,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
         marginBottom: 20,
-    },
-    iconButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 9999,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     notificationBadge: {
         position: 'absolute',

@@ -22,6 +22,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
 import { habitacionesParaServicio } from "@/utils/habitaciones";
 import {
+  MAX_ANFITRIONAS_CON_COMISION,
+  MAX_PERSONAS_SERVICIO,
+} from "@/utils/servicioReglas";
+import {
   GarzonServicioSummary,
   GarzonServiciosModales,
 } from "@/components/garzon/servicios";
@@ -232,7 +236,8 @@ export default function ServiciosScreen() {
                   textAlign: "center",
                 }}
               >
-                ✨ Límite: Máx 3 Anfitrionas y 4 personas en total
+                ✨ Límite: Máx {MAX_ANFITRIONAS_CON_COMISION} Anfitrionas y{" "}
+                {MAX_PERSONAS_SERVICIO} personas en total
               </Text>
             </View>
           )}

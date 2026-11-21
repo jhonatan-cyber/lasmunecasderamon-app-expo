@@ -18,8 +18,10 @@ import { OFFLINE_BLOCKED_ACTIONS } from '@/utils/offlineGuard';
 import { useCaja } from '@/hooks/useCaja';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { CajaSkeleton, MetricCard, StatRow, CajaModales } from '@/components/cajero/caja';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export default function CajaScreen() {
+    const { accentOnSurface } = useAccentColor();
     const esAdmin = useIsAdmin();
     const {
         accentColor,
@@ -97,14 +99,14 @@ export default function CajaScreen() {
                             style={[
                                 styles.pendingNotice,
                                 {
-                                    backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB',
-                                    borderColor: isDark ? 'rgba(245,158,11,0.40)' : '#FDE68A',
+                                    backgroundColor: `${accentColor}18`,
+                                    borderColor: `${accentColor}40`,
                                 },
                             ]}
                             accessibilityRole="alert"
                         >
-                            <Ionicons name="time-outline" size={16} color="#D97706" />
-                            <Text style={[styles.pendingNoticeText, { color: isDark ? '#FCD34D' : '#B45309' }]}>
+                            <Ionicons name="time-outline" size={16} color={accentColor} />
+                            <Text style={[styles.pendingNoticeText, { color: accentColor }]}>
                                 Cierre pendiente de autorización: el administrador tiene el link por
                                 WhatsApp y la caja sigue abierta hasta que responda.
                             </Text>
@@ -118,8 +120,8 @@ export default function CajaScreen() {
                             style={[
                                 styles.resendBtn,
                                 {
-                                    backgroundColor: isDark ? 'rgba(245,158,11,0.18)' : '#FEF3C7',
-                                    borderColor: isDark ? 'rgba(245,158,11,0.45)' : '#FCD34D',
+                                    backgroundColor: `${accentColor}18`,
+                                    borderColor: `${accentColor}40`,
                                 },
                                 (isOffline || reenviandoAviso) && styles.actionBtnDisabled,
                             ]}
@@ -129,8 +131,8 @@ export default function CajaScreen() {
                             accessibilityLabel="Reenviar aviso de cierre al administrador"
                             accessibilityState={{ disabled: isOffline || reenviandoAviso }}
                         >
-                            <Ionicons name="send-outline" size={15} color="#B45309" />
-                            <Text style={styles.resendBtnText}>
+                            <Ionicons name="send-outline" size={15} color={accentColor} />
+                            <Text style={[styles.resendBtnText, { color: accentColor }]}>
                                 {reenviandoAviso ? 'Reenviando…' : 'Reenviar aviso al administrador'}
                             </Text>
                         </Pressable>
@@ -143,8 +145,8 @@ export default function CajaScreen() {
                             style={[
                                 styles.resendBtn,
                                 {
-                                    backgroundColor: isDark ? 'rgba(245,158,11,0.18)' : '#FEF3C7',
-                                    borderColor: isDark ? 'rgba(245,158,11,0.45)' : '#FCD34D',
+                                    backgroundColor: `${accentColor}18`,
+                                    borderColor: `${accentColor}40`,
                                 },
                                 (isOffline || reabriendoCierre) && styles.actionBtnDisabled,
                             ]}
@@ -154,8 +156,8 @@ export default function CajaScreen() {
                             accessibilityLabel="Pedir el cierre de nuevo al administrador"
                             accessibilityState={{ disabled: isOffline || reabriendoCierre }}
                         >
-                            <Ionicons name="refresh-outline" size={15} color="#B45309" />
-                            <Text style={styles.resendBtnText}>
+                            <Ionicons name="refresh-outline" size={15} color={accentColor} />
+                            <Text style={[styles.resendBtnText, { color: accentColor }]}>
                                 {reabriendoCierre ? 'Pidiendo…' : 'Pedir cierre de nuevo'}
                             </Text>
                         </Pressable>
@@ -163,9 +165,9 @@ export default function CajaScreen() {
 
                     <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                         <View style={styles.statusRow}>
-                            <View style={[styles.statusPill, { backgroundColor: cajaAbierta ? '#10B98118' : '#EF444418' }]}>
-                                <View style={[styles.statusDot, { backgroundColor: cajaAbierta ? '#10B981' : '#EF4444' }]} />
-                                <Text style={[styles.statusLabel, { color: cajaAbierta ? '#10B981' : '#EF4444' }]}>
+                            <View style={[styles.statusPill, { backgroundColor: `${accentColor}18` }]}>
+                                <View style={[styles.statusDot, { backgroundColor: accentColor }]} />
+                                <Text style={[styles.statusLabel, { color: accentColor }]}>
                                     {cajaAbierta ? 'Caja Abierta' : 'Caja Cerrada'}
                                 </Text>
                             </View>
@@ -173,36 +175,36 @@ export default function CajaScreen() {
                                 {!esAdmin && (cajaAbierta ? (
                                     <>
                                         <Pressable
-                                            style={[styles.actionBtn, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B40' }, isOffline && styles.actionBtnDisabled]}
+                                            style={[styles.actionBtn, { backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40` }, isOffline && styles.actionBtnDisabled]}
                                             onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'retiro' })}
                                             disabled={isOffline}
                                             accessibilityLabel="Retirar efectivo"
                                             accessibilityState={{ disabled: isOffline }}
                                         >
-                                            <Ionicons name="arrow-down-circle-outline" size={15} color="#F59E0B" />
-                                            <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Retiro</Text>
+                                            <Ionicons name="arrow-down-circle-outline" size={15} color={accentColor} />
+                                            <Text style={[styles.actionBtnText, { color: accentColor }]}>Retiro</Text>
                                         </Pressable>
                                         <Pressable
-                                            style={[styles.actionBtn, { backgroundColor: '#EF444420', borderColor: '#EF444440' }, isOffline && styles.actionBtnDisabled]}
+                                            style={[styles.actionBtn, { backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40` }, isOffline && styles.actionBtnDisabled]}
                                             onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'cerrar' })}
                                             disabled={isOffline}
                                             accessibilityLabel="Pedir cierre de caja"
                                             accessibilityState={{ disabled: isOffline }}
                                         >
-                                            <Ionicons name="lock-closed-outline" size={15} color="#EF4444" />
-                                            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Cierre</Text>
+                                            <Ionicons name="lock-closed-outline" size={15} color={accentColor} />
+                                            <Text style={[styles.actionBtnText, { color: accentColor }]}>Cierre</Text>
                                         </Pressable>
                                     </>
                                 ) : (
                                     <Pressable
-                                        style={[styles.actionBtn, { backgroundColor: '#10B98120', borderColor: '#10B98140' }, isOffline && styles.actionBtnDisabled]}
+                                        style={[styles.actionBtn, { backgroundColor: `${accentColor}20`, borderColor: `${accentColor}40` }, isOffline && styles.actionBtnDisabled]}
                                         onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
                                         disabled={isOffline}
                                         accessibilityLabel="Abrir caja"
                                         accessibilityState={{ disabled: isOffline }}
                                     >
-                                        <Ionicons name="power-outline" size={15} color="#10B981" />
-                                        <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Abrir Caja</Text>
+                                        <Ionicons name="power-outline" size={15} color={accentColor} />
+                                        <Text style={[styles.actionBtnText, { color: accentColor }]}>Abrir Caja</Text>
                                     </Pressable>
                                 ))}
                             </View>
@@ -223,13 +225,13 @@ export default function CajaScreen() {
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Balance Total" value={stats.balance_total || 0}
-                                    icon="wallet-outline" color={accentColor} bgColor={`${accentColor}18`}
+                                    icon="wallet-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
                                     label="Total Ventas" value={stats.total_ventas || 0}
                                     subtitle={`${stats.cantidad_ventas || 0} ventas`}
-                                    icon="cart-outline" color="#10B981" bgColor="#10B98118"
+                                    icon="cart-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
@@ -237,66 +239,66 @@ export default function CajaScreen() {
                                 <MetricCard
                                     label="Total Servicios" value={stats.total_servicios || 0}
                                     subtitle={`${stats.cantidad_servicios || 0} servicios`}
-                                    icon="construct-outline" color="#3B82F6" bgColor="#3B82F618"
+                                    icon="construct-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
                                     label="Efectivo" value={stats.total_efectivo || 0}
-                                    icon="cash-outline" color="#F59E0B" bgColor="#F59E0B18"
+                                    icon="cash-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Tarjetas" value={stats.total_tarjeta || 0}
-                                    icon="card-outline" color="#8B5CF6" bgColor="#8B5CF618"
+                                    icon="card-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
                                     label="Transferencias" value={stats.total_transferencia || 0}
-                                    icon="swap-horizontal-outline" color="#EC4899" bgColor="#EC489918"
+                                    icon="swap-horizontal-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="IVA" value={stats.total_iva || 0}
-                                    icon="document-text-outline" color="#10B981" bgColor="#10B98118"
+                                    icon="document-text-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
                                     label="Comisiones" value={stats.total_comisiones || 0}
-                                    icon="people-outline" color="#8B5CF6" bgColor="#8B5CF618"
+                                    icon="people-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
                             <View style={styles.metricsGrid}>
                                 <MetricCard
                                     label="Propinas" value={stats.total_propina || 0}
-                                    icon="heart-outline" color="#F59E0B" bgColor="#F59E0B18"
+                                    icon="heart-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                                 <MetricCard
                                     label="Anticipos" value={stats.total_anticipo || 0}
-                                    icon="trending-down-outline" color="#EF4444" bgColor="#EF444418"
+                                    icon="trending-down-outline" color={accentOnSurface} bgColor={`${accentColor}18`}
                                     isDark={isDark} cardBg={cardBg} borderColor={borderColor}
                                 />
                             </View>
 
                             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
                                 <View style={styles.breakdownHeader}>
-                                    <Ionicons name="bar-chart-outline" size={16} color={accentColor} />
+                                    <Ionicons name="bar-chart-outline" size={16} color={accentOnSurface} />
                                     <Text style={[styles.breakdownTitle, { color: textPrimary }]}>Desglose del Turno</Text>
                                 </View>
 
-                                <StatRow label="Efectivo en Caja" value={stats.efectivo_en_caja || 0} accent="#10B981" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
-                                <StatRow label="Tarjetas" value={stats.total_tarjeta || 0} accent="#3B82F6" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
-                                <StatRow label="Transferencias" value={stats.total_transferencia || 0} accent="#6366F1" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Efectivo en Caja" value={stats.efectivo_en_caja || 0} accent={accentOnSurface} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Tarjetas" value={stats.total_tarjeta || 0} accent={accentOnSurface} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Transferencias" value={stats.total_transferencia || 0} accent={accentOnSurface} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Monto Apertura" value={stats.monto_apertura || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Servicios" value={stats.total_servicios || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Ventas" value={stats.total_ventas || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Anticipos" value={stats.total_anticipo || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
-                                <StatRow label="Devoluciones" value={stats.total_devoluciones || 0} accent="#EF4444" textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
+                                <StatRow label="Devoluciones" value={stats.total_devoluciones || 0} accent={accentOnSurface} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="IVA" value={stats.total_iva || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Propinas" value={stats.total_propina || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
                                 <StatRow label="Comisiones" value={stats.total_comisiones || 0} textPrimary={textPrimary} textSecondary={textSecondary} borderColor={borderColor} />
@@ -423,13 +425,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 10,
         marginBottom: 12
     },
-    resendBtnText: { fontSize: 12, fontWeight: '800', color: '#B45309' },
+    resendBtnText: { fontSize: 12, fontWeight: '800' },
     metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
     breakdownTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
     totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, marginTop: 4 },
     totalLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
-    totalValue: { fontSize: 22, fontWeight: '900', color: '#E11D48' },
+    totalValue: { fontSize: 22, fontWeight: '900' },
     emptyIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
     emptyTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
     emptySubtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center', marginBottom: 24, maxWidth: 260, lineHeight: 20 },

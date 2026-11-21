@@ -18,6 +18,7 @@ import {
   estadoDelGrupo,
   type GrupoEntrada,
 } from '@/components/entradas/EntradasListadoCard';
+import { SolicitudCard } from '@/components/entradas/SolicitudCard';
 import { EntregaCoversModal } from '@/components/entradas/EntregaCoversModal';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -365,55 +366,20 @@ export function CoversScreen() {
               )}
               {solicitudesCovers.length > 0 && (
                 <View>
-                  {solicitudesCovers.map((solicitud) => {
-                    const unidades = Array.isArray(solicitud.unidades)
-                      ? solicitud.unidades
-                      : (() => {
-                          try {
-                            return JSON.parse(solicitud.unidades || '[]');
-                          } catch {
-                            return [];
-                          }
-                        })();
-                    return (
-                      <View key={solicitud.id} style={{ borderBottomWidth: 1, borderColor, paddingVertical: 12 }}>
-                        <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 14 }}>
-                          {solicitud.cliente_nombre || 'Cliente sin nombre'}
-                        </Text>
-                        <Text style={{ color: textSecondary, fontSize: 11, marginTop: 2 }}>
-                          Solicitó: {solicitud.solicitado_por_nick || 'Barman'} ·{unidades.length} {unidades.length === 1 ? 'bebida' : 'bebidas'}
-                        </Text>
-                        {unidades.map((unidad: any, index: number) => (
-                          <Text
-                            key={`${unidad.presentacion_id}-${index}`}
-                            style={{ color: textPrimary, fontSize: 12, marginTop: 8 }}
-                          >
-                            •{' '}
-                            {unidad.producto_nombre
-                              ? `${unidad.producto_nombre}${unidad.presentacion_nombre ? ` · ${unidad.presentacion_nombre}` : ''}`
-                              : nombresBebida[unidad.presentacion_id] || 'Producto'}
-                            {unidad.tipo_entrega === 'botella' ? ' · Botella' : ' · Corte'}
-                          </Text>
-                        ))}
-                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                          <Pressable
-                            onPress={() => void aprobarSolicitud(solicitud.id)}
-                            style={[styles.actionBtn, { backgroundColor: successColor }]}
-                          >
-                            <Ionicons name="checkmark-circle" size={16} color="#FFF" />
-                            <Text style={styles.actionBtnText}>APROBAR</Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={() => void rechazarSolicitud(solicitud.id)}
-                            style={[styles.actionBtn, { backgroundColor: dangerColor }]}
-                          >
-                            <Ionicons name="close-circle" size={16} color="#FFF" />
-                            <Text style={styles.actionBtnText}>RECHAZAR</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    );
-                  })}
+                  {solicitudesCovers.map((solicitud) => (
+                    <SolicitudCard
+                      key={solicitud.id}
+                      solicitud={solicitud}
+                      nombresBebida={nombresBebida}
+                      textPrimary={textPrimary}
+                      textSecondary={textSecondary}
+                      successColor={successColor}
+                      dangerColor={dangerColor}
+                      borderColor={borderColor}
+                      onAprobar={aprobarSolicitud}
+                      onRechazar={rechazarSolicitud}
+                    />
+                  ))}
                 </View>
               )}
             </View>

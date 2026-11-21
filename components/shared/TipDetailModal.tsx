@@ -30,7 +30,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
     parentPropina,
     saleDetail
 }) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
     return (
         <Modal
@@ -55,7 +55,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
 
                     {loading ? (
                         <View style={styles.detailLoading}>
-                            <ActivityIndicator size="large" color={accentColor} />
+                            <ActivityIndicator size="large" color={accentOnSurface} />
                             <Text style={{ color: textSecondary, marginTop: 15 }}>Cargando detalles...</Text>
                         </View>
                     ) : (
@@ -71,14 +71,14 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                 <View style={styles.divisionDivider} />
                                 <View style={styles.divisionItem}>
                                     <Text style={[styles.divisionLabel, { color: textSecondary }]}>Participantes</Text>
-                                    <Text style={[styles.divisionValue, { color: accentColor }]}>
+                                    <Text style={[styles.divisionValue, { color: accentOnSurface }]}>
                                         {parentPropina?.conteo_usuarios ?? '---'}
                                     </Text>
                                 </View>
                                 <View style={styles.divisionDivider} />
                                 <View style={styles.divisionItem}>
                                     <Text style={[styles.divisionLabel, { color: textSecondary }]}>Mi Parte</Text>
-                                    <Text style={[styles.divisionValue, { color: accentColor }]}>
+                                    <Text style={[styles.divisionValue, { color: accentOnSurface }]}>
                                         ${(selectedPropina?.monto || 0).toLocaleString()}
                                     </Text>
                                 </View>
@@ -96,7 +96,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                     {p.nick ? <Text style={{ color: textSecondary, fontSize: 12 }}>@{p.nick}</Text> : null}
                                                 </View>
                                                 <View style={{ alignItems: 'flex-end' }}>
-                                                    <Text style={[styles.productSubtotal, { color: accentColor }]}>${(p.monto || 0).toLocaleString()}</Text>
+                                                    <Text style={[styles.productSubtotal, { color: accentOnSurface }]}>${(p.monto || 0).toLocaleString()}</Text>
                                                     <View style={[styles.statusBadge, { backgroundColor: p.estado === 1 ? (isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5') : (isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'), marginTop: 4 }]}>
                                                         <Text style={{ fontSize: FontSize.xxs, fontWeight: '700', color: p.estado === 1 ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }}>
                                                             {p.estado === 1 ? 'Por cobrar' : 'Cobrada'}

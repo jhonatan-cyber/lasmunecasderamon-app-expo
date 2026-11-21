@@ -22,7 +22,7 @@ import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
 interface ResumenScreenProps {
-  role: "anfitriona" | "garzon" | "barman";
+  role: "anfitriona" | "garzon" | "barman" | "cajero";
 }
 
 export function ResumenScreen({ role }: ResumenScreenProps) {
@@ -129,12 +129,10 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
               totalAmount={payoutTotal}
             />
           </View>
-
-          {/* Desglose de ingresos - solo para usuarios */}
-          {showCalendar && (
-            <BreakdownCard breakdown={payoutBreakdown} role={role} />
-          )}
         </View>
+
+        {/* Desglose de ingresos - siempre visible */}
+        <BreakdownCard breakdown={payoutBreakdown} role={role} />
 
         {/* Calendario con márgenes propios para que use todo el ancho útil */}
         {showCalendar && (

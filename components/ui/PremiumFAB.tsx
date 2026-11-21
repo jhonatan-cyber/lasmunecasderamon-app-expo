@@ -1,14 +1,15 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
-import { readableTextColor } from '@/utils/color';
 
 interface PremiumFABProps {
     icon: keyof typeof Ionicons.glyphMap;
+    /** Acción que ejecuta el botón; un icono solo no alcanza para lectores de pantalla. */
+    accessibilityLabel: string;
     onPress: () => void;
     visible?: boolean;
     /** Cuando la pantalla tiene una barra de tabs inferior, el FAB se eleva para no quedar oculto. */
@@ -18,10 +19,16 @@ interface PremiumFABProps {
 // Altura aproximada del PremiumTabBar (minHeight 60 + padding + safe area).
 const TAB_BAR_HEIGHT = 80;
 
-export const PremiumFAB = ({ icon, onPress, visible = true, withTabBar = false }: PremiumFABProps) => {
-    const { accentColor } = useAccentColor();
+export const PremiumFAB = ({
+    icon,
+    accessibilityLabel,
+    onPress,
+    visible = true,
+    withTabBar = false,
+}: PremiumFABProps) => {
+    const { accentColor, accentText, accentGlow } = useAccentColor();
     const insets = useSafeAreaInsets();
-    const iconColor = readableTextColor(accentColor);
+    const iconColor = accentText;
     const bottomOffset = withTabBar
         ? Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 16
         : Math.max(insets.bottom, 16) + 16;
@@ -29,16 +36,27 @@ export const PremiumFAB = ({ icon, onPress, visible = true, withTabBar = false }
     if (!visible) return null;
 
     return (
-        <TouchableOpacity 
-            style={[styles.fab, { backgroundColor: accentColor, bottom: bottomOffset }]} 
+        <Pressable
+            style={[styles.fab, {
+                backgroundColor: accentColor,
+                bottom: bottomOffset,
+                // Sombra de apoyo + halo neón: el botón emite la luz del color.
+                boxShadow: `0 4px 10px rgba(0,0,0,0.35), ${accentGlow}`,
+            }]}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint="Toque para abrir"
             onPress={() => {
                 haptic.confirm();
                 onPress();
             }}
-            activeOpacity={0.8}
         >
-            <Ionicons name={icon} size={28} color={iconColor} />
-        </TouchableOpacity>
+            {({ pressed }) => (
+                <View style={{ opacity: pressed ? 0.8 : 1 }}>
+                    <Ionicons name={icon} size={28} color={iconColor} />
+                </View>
+            )}
+        </Pressable>
     );
 };
 

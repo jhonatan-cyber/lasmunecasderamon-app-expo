@@ -196,6 +196,34 @@ export const ServiceCreateSchema = object({
   monto_prepago: number().min(0).optional(),
 }).passthrough();
 
+/** Solicitud de servicio que envía el garzón/barman a caja (`/service-requests`). */
+export const SolicitudServicioCreateSchema = object({
+  codigo: string().min(1, "Codigo es requerido"),
+  cliente_id: union([string(), number()]).nullable().optional(),
+  clientes: array(union([string(), number()])).optional().default([]),
+  habitacion_id: union([string(), number()]),
+  producto_incluido_presentacion_id: string().nullable().optional(),
+  precio_servicio: number().min(0),
+  precio_habitacion: number().min(0),
+  comision_anfitriona: number().min(0).optional(),
+  usuarios: array(union([string(), number()])).min(1, "Al menos una anfitriona es requerida"),
+  anfitrionas_ids: array(union([string(), number()])).optional(),
+  metodo_pago: paymentMethodSchema,
+  baucher_foto: string().optional(),
+  tiempo: number().min(0),
+  total: number().min(0),
+  iva: number().min(0),
+  num_clientes: number().min(0).optional(),
+})
+  .passthrough()
+  .refine(
+    (data) => data.metodo_pago !== "transferencia" || Boolean(data.baucher_foto),
+    {
+      message: "El pago con transferencia necesita la foto del baucher",
+      path: ["baucher_foto"],
+    },
+  );
+
 export const AnticipoRequestSchema = object({
   monto: number().positive("Monto invalido"),
   motivo: string().trim().min(1, "Motivo requerido"),
@@ -224,3 +252,4 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type OrderCreateType = z.infer<typeof OrderCreateSchema>;
 export type ServiceCreateType = z.infer<typeof ServiceCreateSchema>;
+export type SolicitudServicioCreateType = z.infer<typeof SolicitudServicioCreateSchema>;

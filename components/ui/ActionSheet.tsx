@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
@@ -35,7 +36,8 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   items,
   cancelLabel = 'Cancelar',
 }) => {
-  const { accentColor, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const { accentColor, accentOnSurface, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal
@@ -44,8 +46,17 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor: `${accentColor}40`, borderWidth: 1, borderBottomWidth: 0 }]}>
+      <View style={styles.overlay}>
+        {/* El fondo es un hermano del sheet: así tocar dentro no lo cierra.
+            Antes era su padre, y un toque en el título o en el padding
+            alcanzaba al overlay y cerraba el sheet. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar"
+        />
+        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor: `${accentColor}40`, borderWidth: 1, borderBottomWidth: 0, paddingBottom: 40 + insets.bottom }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={[styles.handle, { backgroundColor: `${accentColor}60` }]} />
@@ -60,6 +71,9 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
             <Pressable
               key={`${item.label}-${index}`}
               disabled={item.disabled}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+              accessibilityState={{ disabled: !!item.disabled }}
               style={({ pressed }) => [
                 styles.actionItem,
                 pressed && styles.actionItemPressed,
@@ -80,11 +94,13 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
           <Pressable
             style={[styles.cancelBtn, { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}40` }]}
             onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel={cancelLabel}
           >
-            <Text style={[styles.cancelText, { color: accentColor }]}>{cancelLabel}</Text>
+            <Text style={[styles.cancelText, { color: accentOnSurface }]}>{cancelLabel}</Text>
           </Pressable>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 };
@@ -100,7 +116,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: BorderRadius.xxl,
     borderTopRightRadius: BorderRadius.xxl,
     padding: 24,
-    paddingBottom: 40,
+    // `paddingBottom` se aplica en runtime (40 + safe area inferior) para que
+    // el botón de cancelar no quede bajo el indicador de inicio del iPhone.
   },
   header: {
     alignItems: 'center',

@@ -25,7 +25,7 @@ interface AnalyticsScreenProps {
  * barras se dibujan con alturas proporcionales, como el resto de la app.
  */
 export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
-    const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
     const { stats, bars, distribution, totals, loading, refreshing, error, onRefresh } =
         useAnalyticsScreen();
 
@@ -45,7 +45,7 @@ export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
                             <Ionicons
                                 name={stat.icon as keyof typeof Ionicons.glyphMap}
                                 size={18}
-                                color={accentColor}
+                                color={accentOnSurface}
                             />
                         </View>
                         <Text style={[styles.statValue, { color: textPrimary }]} numberOfLines={1}>
@@ -109,12 +109,12 @@ export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
                             </Text>
                             <View style={styles.totalsRow}>
                                 <View style={[styles.totalChip, { backgroundColor: `${accentColor}1F` }]}>
-                                    <Text style={[styles.totalChipText, { color: accentColor }]}>
+                                    <Text style={[styles.totalChipText, { color: accentOnSurface }]}>
                                         {formatCurrency(totals.totalVentas)}
                                     </Text>
                                 </View>
                                 <View style={[styles.totalChip, { backgroundColor: `${accentColor}1F` }]}>
-                                    <Text style={[styles.totalChipText, { color: accentColor }]}>
+                                    <Text style={[styles.totalChipText, { color: accentOnSurface }]}>
                                         Prom. {formatCurrency(totals.promedioDiario)}
                                     </Text>
                                 </View>

@@ -33,7 +33,7 @@ export function TransferDetailModal({
   onAccept,
   onReject,
 }: TransferDetailModalProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } =
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const fecha = item?.fecha_crea ? new Date(item.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
@@ -96,7 +96,7 @@ export function TransferDetailModal({
                 <Text style={[styles.quantityLabel, { color: textSecondary }]}>
                   CANTIDAD ENVIADA
                 </Text>
-                <Text style={[styles.quantityValue, { color: accentColor }]}>
+                <Text style={[styles.quantityValue, { color: accentOnSurface }]}>
                   {item.cantidad} unidades
                 </Text>
                 <Text style={[styles.presentation, { color: textPrimary }]}>
@@ -293,6 +293,7 @@ function DetailRow({
   textPrimary: string;
   textSecondary: string;
 }) {
+  const { accentOnSurface } = useAccentColor();
   return (
     <View style={styles.detailRow}>
       <Ionicons name={icon} size={18} color={textSecondary} />
@@ -323,6 +324,7 @@ function InfoTile({
   textPrimary: string;
   textSecondary: string;
 }) {
+  const { accentOnSurface } = useAccentColor();
   return (
     <View
       style={[
@@ -334,7 +336,7 @@ function InfoTile({
       ]}
     >
       <View style={styles.infoTileLabel}>
-        <Ionicons name={icon} size={15} color={accentColor} />
+        <Ionicons name={icon} size={15} color={accentOnSurface} />
         <Text
           style={[styles.infoTileTitle, { color: textSecondary }]}
         >

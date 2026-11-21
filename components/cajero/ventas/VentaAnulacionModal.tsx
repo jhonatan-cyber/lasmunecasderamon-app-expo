@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import type { Venta } from "./types";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type VentaAnulacionModalProps = {
   visible: boolean;
@@ -50,6 +51,7 @@ export function VentaAnulacionModal({
   isDark,
   dangerColor,
 }: VentaAnulacionModalProps) {
+    const { accentOnSurface } = useAccentColor();
   return (
     <Modal
       animationType="slide"
@@ -113,7 +115,7 @@ export function VentaAnulacionModal({
             </Text>
             <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
               Total referencia:{" "}
-              <Text style={{ color: accentColor, fontWeight: "900" }}>
+              <Text style={{ color: accentOnSurface, fontWeight: "900" }}>
                 ${Number(activeVenta?.total || 0).toLocaleString("es-CL")}
               </Text>
             </Text>
@@ -179,7 +181,7 @@ export function VentaAnulacionModal({
               <Text
                 style={[
                   styles.anulacionSecondaryText,
-                  { color: accentColor },
+                  { color: accentOnSurface },
                 ]}
               >
                 Cancelar

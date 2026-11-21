@@ -65,7 +65,7 @@ function AccesoRestringido() {
 function PanelConfiguracionAsistencia() {
   const router = useRouter();
   const activarModoPantalla = useModoPantallaStore((state) => state.activar);
-  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
 
   const {
@@ -383,7 +383,7 @@ function PanelConfiguracionAsistencia() {
                 {errorPantallas}
               </Text>
               <Pressable onPress={() => void cargarPantallas()} style={styles.retryButton}>
-                <Text style={[styles.retryText, { color: accentColor }]}>
+                <Text style={[styles.retryText, { color: accentOnSurface }]}>
                   Reintentar
                 </Text>
               </Pressable>
@@ -422,9 +422,9 @@ function PanelConfiguracionAsistencia() {
                     accessibilityRole="button"
                   >
                     {revocando === pantalla.id ? (
-                      <ActivityIndicator color={accentColor} size="small" />
+                      <ActivityIndicator color={accentOnSurface} size="small" />
                     ) : (
-                      <Text style={[styles.revokeText, { color: accentColor }]}>
+                      <Text style={[styles.revokeText, { color: accentOnSurface }]}>
                         Desvincular
                       </Text>
                     )}

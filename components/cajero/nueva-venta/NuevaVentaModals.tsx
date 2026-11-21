@@ -1,33 +1,18 @@
-import { matchesProductSearch } from "../../../hooks/utils/productSearch";
-import { BASE_URL } from "@/api/base-url";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
   Pressable,
+  StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import VirtualizedList from "@/components/shared/VirtualizedList";
-
-import {
-  PaymentMethod,
-  PaymentMethodSelect,
-} from "@/components/cajero/forms/PaymentMethodSelect";
-import {
-  resolverVentaProducto,
-  type SaleChoice,
-} from "@/hooks/utils/saleChoice";
-import { SaleFormatSelector } from "@/components/cajero/nueva-venta/SaleFormatSelector";
-import { useConfigValue } from "@/hooks/useConfigValue";
+import type { PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import { CategoryProductModal } from "@/components/cajero/nueva-venta/CategoryProductModal";
+import { LoadBalanceModal } from "@/components/cajero/nueva-venta/LoadBalanceModal";
+import type { SaleChoice } from "@/hooks/utils/saleChoice";
 
 type Props = {
   styles: Record<string, any>;
@@ -61,126 +46,7 @@ type Props = {
   onConfirmLoad: () => void;
 };
 
-function ProductThumbnail({
-  photo,
-  name,
-  accentColor,
-}: {
-  photo?: string;
-  name: string;
-  accentColor: string;
-}) {
-  const uri = photo
-    ? photo.startsWith("http")
-      ? photo
-      : `${BASE_URL}/api/images/products/${encodeURIComponent(photo)}`
-    : null;
-  const [failedUri, setFailedUri] = useState<string | null>(null);
-  return (
-    <View
-      style={[productStyles.thumbnail, { backgroundColor: `${accentColor}12` }]}
-    >
-      {uri && uri !== failedUri ? (
-        <Image
-          source={{ uri }}
-          style={{ width: "100%", height: "100%" }}
-          contentFit="contain"
-          accessibilityLabel={`Foto de ${name}`}
-          onError={() => setFailedUri(uri)}
-        />
-      ) : (
-        <Ionicons name="cube-outline" size={28} color={accentColor} />
-      )}
-    </View>
-  );
-}
-
 const timeOptions = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
-
-type ProductRowProps = {
-  item: any;
-  accentColor: string;
-  cardBg: string;
-  borderColor: string;
-  textPrimary: string;
-  textSecondary: string;
-  isDark: boolean;
-  shotMl: number;
-  cart: any[];
-  onAdd: (item: any, choice: SaleChoice, quantity: number) => void;
-  onRemove: (item: any, choice: SaleChoice) => void;
-};
-
-// Fila memoizada: escribir en el buscador re-renderiza el modal completo,
-// pero las filas que siguen visibles conservan sus props y no se repintan.
-const ProductRow = memo(function ProductRow({
-  item,
-  accentColor,
-  cardBg,
-  borderColor,
-  textPrimary,
-  textSecondary,
-  isDark,
-  shotMl,
-  cart,
-  onAdd,
-  onRemove,
-}: ProductRowProps) {
-  const venta = resolverVentaProducto(item);
-  const stockBar = Number(item.stock_bar ?? 0);
-  return (
-    <View
-      style={[
-        productStyles.product,
-        {
-          borderColor,
-          backgroundColor: isDark ? "#ffffff05" : "#00000002",
-        },
-      ]}
-    >
-      <View style={{ flex: 1 }}>
-        <View style={productStyles.productHeader}>
-          <ProductThumbnail
-            photo={item.foto || item.producto_foto}
-            name={item.name || item.nombre || "Producto"}
-            accentColor={accentColor}
-          />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              style={[
-                productStyles.productName,
-                { color: textPrimary, marginBottom: 0 },
-              ]}
-              numberOfLines={2}
-            >
-              {item.name || item.nombre}
-            </Text>
-            {item.stock_bar != null && (
-              <Text style={[productStyles.stock, { color: textSecondary }]}>
-                {`Stock en bar: ${stockBar} ${stockBar === 1 ? "unidad" : "unidades"}`}
-              </Text>
-            )}
-          </View>
-        </View>
-        <SaleFormatSelector
-          product={item}
-          options={venta.opciones}
-          shotMl={shotMl}
-          accentColor={accentColor}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-          cart={cart}
-          onAdd={(choice, quantity) => onAdd(item, choice, quantity)}
-          onRemove={(choice) => onRemove(item, choice)}
-        />
-      </View>
-    </View>
-  );
-});
-
-const productKey = (item: any) => (item.id || item.id_producto).toString();
 
 export function NuevaVentaModals({
   styles,
@@ -213,211 +79,37 @@ export function NuevaVentaModals({
   onLoadMetodoPagoChange,
   onConfirmLoad,
 }: Props) {
-  const [productSearch, setProductSearch] = useState("");
-  const insets = useSafeAreaInsets();
-
-  // Los callbacks del padre llegan inline (cambian de identidad en cada
-  // render); el ref guarda la versión vigente y los wrappers quedan estables
-  // para que `ProductRow` no se re-renderice de más.
-  const callbacksRef = useRef({ onPressAddProduct, onRemoveFromCart });
-  useEffect(() => {
-    callbacksRef.current = { onPressAddProduct, onRemoveFromCart };
-  });
   const handleAdd = useCallback(
     (item: any, choice: SaleChoice, quantity: number) =>
-      callbacksRef.current.onPressAddProduct(item, choice, quantity),
-    [],
+      onPressAddProduct(item, choice, quantity),
+    [onPressAddProduct],
   );
   const handleRemove = useCallback(
     (item: any, choice: SaleChoice) =>
-      callbacksRef.current.onRemoveFromCart(item, choice),
-    [],
+      onRemoveFromCart(item, choice),
+    [onRemoveFromCart],
   );
 
-  const filteredProducts = useMemo(() => {
-    const normalize = (value: string) =>
-      value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-    const query = normalize(productSearch.trim());
-    return modalProducts.filter((item) => matchesProductSearch(item, query));
-  }, [modalProducts, productSearch]);
-  const shotMl = useConfigValue<number>("bar", "shot_ml", 50);
-
-  const renderProductItem = useCallback(
-    ({ item }: { item: any }) => (
-      <ProductRow
-        item={item}
+  return (
+    <>
+      <CategoryProductModal
+        visible={categoryModalVisible}
+        categoria={modalCategoria}
+        products={modalProducts}
+        loading={modalLoading}
+        cart={cart}
+        cartItemCount={cartItemCount}
         accentColor={accentColor}
         cardBg={cardBg}
         borderColor={borderColor}
         textPrimary={textPrimary}
         textSecondary={textSecondary}
         isDark={isDark}
-        shotMl={shotMl}
-        cart={cart}
+        styles={styles}
+        onClose={onCloseCategoryModal}
         onAdd={handleAdd}
         onRemove={handleRemove}
       />
-    ),
-    [
-      accentColor,
-      cardBg,
-      borderColor,
-      textPrimary,
-      textSecondary,
-      isDark,
-      shotMl,
-      cart,
-      handleAdd,
-      handleRemove,
-    ],
-  );
-  return (
-    <>
-      <Modal
-        avoidKeyboard={false}
-        visible={categoryModalVisible}
-        onShow={() => setProductSearch("")}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={onCloseCategoryModal}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={productStyles.overlay}
-        >
-          <View
-            style={[
-              productStyles.sheet,
-              {
-                backgroundColor: cardBg,
-                paddingBottom: Math.max(insets.bottom, 16),
-                marginTop: insets.top + 12,
-              },
-            ]}
-          >
-            <View
-              style={[productStyles.handle, { backgroundColor: borderColor }]}
-            />
-            <View
-              style={[
-                productStyles.search,
-                {
-                  borderColor,
-                  backgroundColor: isDark ? "#ffffff08" : "#00000004",
-                },
-              ]}
-            >
-              <Ionicons name="search-outline" size={21} color={textSecondary} />
-              <TextInput
-                style={[productStyles.searchInput, { color: textPrimary }]}
-                placeholder="Buscar producto en esta categoría"
-                placeholderTextColor={textSecondary}
-                value={productSearch}
-                onChangeText={setProductSearch}
-                autoCorrect={false}
-                accessibilityLabel="Buscar producto"
-              />
-              {!!productSearch && (
-                <Pressable
-                  onPress={() => setProductSearch("")}
-                  accessibilityLabel="Limpiar búsqueda"
-                  hitSlop={10}
-                >
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={textSecondary}
-                  />
-                </Pressable>
-              )}
-            </View>
-            <View style={styles.modalHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[productStyles.eyebrow, { color: accentColor }]}>
-                  NUEVA VENTA
-                </Text>
-                <Text style={[productStyles.title, { color: textPrimary }]}>
-                  {modalCategoria?.name || "Productos"}
-                </Text>
-                <Text
-                  style={[productStyles.subtitle, { color: textSecondary }]}
-                >
-                  Elige la presentación y agrega la cantidad que necesitas.
-                </Text>
-              </View>
-            </View>
-            <Text style={[productStyles.count, { color: textSecondary }]}>
-              {filteredProducts.length} productos disponibles
-            </Text>
-            {modalLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={accentColor}
-                style={{ margin: 40 }}
-              />
-            ) : (
-              <VirtualizedList
-                data={filteredProducts}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingBottom: 12 }}
-                ListEmptyComponent={
-                  <View style={productStyles.empty}>
-                    <Ionicons
-                      name="search-outline"
-                      size={38}
-                      color={textSecondary}
-                    />
-                    <Text
-                      style={[productStyles.emptyTitle, { color: textPrimary }]}
-                    >
-                      {productSearch ? "Sin coincidencias" : "No hay productos"}
-                    </Text>
-                    <Text style={{ color: textSecondary, textAlign: "center" }}>
-                      {productSearch
-                        ? "Prueba con otro nombre."
-                        : "Esta categoría todavía no tiene productos disponibles."}
-                    </Text>
-                  </View>
-                }
-                keyExtractor={productKey}
-                estimatedItemSize={80}
-                renderItem={renderProductItem}
-              />
-            )}
-            <Pressable
-              style={[
-                productStyles.done,
-                { backgroundColor: accentColor },
-                cartItemCount === 0 && { opacity: 0.5 },
-              ]}
-              onPress={() => {
-                if (cartItemCount > 0) {
-                  onCloseCategoryModal();
-                }
-              }}
-              accessibilityLabel="Volver a la venta"
-              accessibilityRole="button"
-            >
-              <Text style={productStyles.doneText}>
-                Listo, volver a la venta
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[productStyles.closeBtn, { backgroundColor: "#EF4444" }]}
-              onPress={onCloseCategoryModal}
-              accessibilityLabel="Cerrar modal"
-              accessibilityRole="button"
-            >
-              <Text style={productStyles.closeBtnText}>
-                Cerrar
-              </Text>
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       <Modal
         visible={timeModalVisible}
@@ -425,20 +117,20 @@ export function NuevaVentaModals({
         transparent={true}
         onRequestClose={onCloseTimeModal}
       >
-        <View style={styles.modalOverlay}>
+        <View style={modalStyles.overlay}>
           <View
             style={[
-              styles.modalContent,
+              modalStyles.content,
               { backgroundColor: cardBg, padding: 0 },
             ]}
           >
             <View
               style={[
-                styles.modalHeader,
+                modalStyles.header,
                 { padding: 24, paddingBottom: 10, marginBottom: 0 },
               ]}
             >
-              <Text style={[styles.modalTitle, { color: textPrimary }]}>
+              <Text style={[modalStyles.title, { color: textPrimary }]}>
                 Tiempo de Estancia
               </Text>
               <Pressable onPress={onCloseTimeModal}>
@@ -451,10 +143,10 @@ export function NuevaVentaModals({
               estimatedItemSize={60}
               contentContainerStyle={{ paddingHorizontal: 24 }}
               renderItem={({ item }: { item: number }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.productItem,
-                    { borderBottomColor: borderColor },
+                <Pressable
+                  style={({ pressed }) => [
+                    modalStyles.timeItem,
+                    { borderBottomColor: borderColor, opacity: pressed ? 0.7 : 1 },
                   ]}
                   onPress={() => {
                     onSelectTime(item);
@@ -464,7 +156,7 @@ export function NuevaVentaModals({
                   <Ionicons name="time" size={22} color="#10B981" />
                   <Text
                     style={[
-                      styles.productName,
+                      modalStyles.timeText,
                       { color: textPrimary, marginLeft: 16 },
                     ]}
                   >
@@ -478,191 +170,63 @@ export function NuevaVentaModals({
                       style={{ marginLeft: "auto" }}
                     />
                   )}
-                </TouchableOpacity>
+                </Pressable>
               )}
             />
           </View>
         </View>
       </Modal>
 
-      <Modal visible={loadModalVisible} animationType="fade" transparent onRequestClose={onCloseLoadModal}>
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: cardBg, height: "auto", paddingBottom: 40 },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={[styles.modalTitle, { color: textPrimary }]}>
-                  Cargar Saldo
-                </Text>
-                <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                  {loadingTargetClient?.nombre || loadingTargetClient?.name}
-                </Text>
-              </View>
-              <Pressable onPress={onCloseLoadModal}>
-                <Ionicons name="close" size={24} color={textPrimary} />
-              </Pressable>
-            </View>
-
-            <View style={{ gap: 15 }}>
-              <View>
-                <Text
-                  style={{
-                    color: textSecondary,
-                    fontSize: 12,
-                    fontWeight: "800",
-                    marginBottom: 8,
-                  }}
-                >
-                  MONTO A CARGAR
-                </Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    borderColor,
-                    borderRadius: 12,
-                    padding: 16,
-                    color: textPrimary,
-                    fontSize: 18,
-                    fontWeight: "700",
-                    backgroundColor: isDark
-                      ? "rgba(255,255,255,0.05)"
-                      : "rgba(0,0,0,0.02)",
-                  }}
-                  placeholder="0"
-                  placeholderTextColor={textSecondary}
-                  keyboardType="numeric"
-                  value={loadingAmount}
-                  onChangeText={onLoadAmountChange}
-                  autoFocus
-                />
-              </View>
-
-              <PaymentMethodSelect
-                selectedMethod={loadMetodoPago}
-                onSelect={onLoadMetodoPagoChange}
-                showPrepago={false}
-              />
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: accentColor,
-                  height: 56,
-                  borderRadius: 16,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginTop: 10,
-                  opacity: loadSubmitting ? 0.7 : 1,
-                }}
-                onPress={onConfirmLoad}
-                disabled={loadSubmitting}
-              >
-                {loadSubmitting ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text
-                    style={{ color: "#FFF", fontSize: 16, fontWeight: "900" }}
-                  >
-                    CONFIRMAR CARGA
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <LoadBalanceModal
+        visible={loadModalVisible}
+        clientName={loadingTargetClient?.nombre || loadingTargetClient?.name || ''}
+        amount={loadingAmount}
+        metodoPago={loadMetodoPago}
+        submitting={loadSubmitting}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        borderColor={borderColor}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        isDark={isDark}
+        styles={styles}
+        onClose={onCloseLoadModal}
+        onAmountChange={onLoadAmountChange}
+        onMetodoPagoChange={onLoadMetodoPagoChange}
+        onConfirm={onConfirmLoad}
+      />
     </>
   );
 }
 
-const productStyles = StyleSheet.create({
+const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 20,
   },
-  sheet: {
-    maxHeight: "92%",
-    height: "88%",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+  content: {
+    borderRadius: 20,
+    maxHeight: "80%",
   },
-  handle: {
-    width: 42,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 20,
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  eyebrow: {
-    fontSize: 10,
-    letterSpacing: 1.5,
+  title: {
+    fontSize: 20,
     fontWeight: "800",
-    marginBottom: 5,
   },
-  title: { fontSize: 24, fontWeight: "800" },
-  subtitle: { fontSize: 13, lineHeight: 19, marginTop: 6, paddingRight: 8 },
-  close: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  search: {
+  timeItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 12,
-    minHeight: 50,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
   },
-  searchInput: { flex: 1, minWidth: 0, paddingVertical: 14, fontSize: 14 },
-  count: { fontSize: 12, marginVertical: 12 },
-  product: { borderRadius: 18, borderWidth: 1, padding: 16, marginBottom: 12 },
-  productHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginBottom: 12,
+  timeText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
-  thumbnail: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  productName: { fontSize: 17, fontWeight: "800", marginBottom: 10 },
-  stock: { fontSize: 11, fontWeight: "700", marginTop: 3 },
-  empty: { alignItems: "center", paddingVertical: 40, gap: 12 },
-  emptyTitle: { fontSize: 17, fontWeight: "700" },
-  done: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 54,
-    borderRadius: 18,
-    marginTop: 12,
-  },
-  doneText: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
-  closeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 54,
-    borderRadius: 18,
-    marginTop: 10,
-  },
-  closeBtnText: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
 });

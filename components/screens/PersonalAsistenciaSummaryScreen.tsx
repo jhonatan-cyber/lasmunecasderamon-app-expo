@@ -23,7 +23,7 @@ interface Empleado {
 
 export default function PersonalAsistenciaSummaryScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const caja = useCajaAbierta();
 
   const [empleados, setEmpleados] = React.useState<Empleado[]>([]);
@@ -112,7 +112,7 @@ export default function PersonalAsistenciaSummaryScreen() {
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>Promedio</Text>
-              <Text style={[styles.summaryValue, { color: accentColor }]}>{calcularPromedio.toFixed(1)}h</Text>
+              <Text style={[styles.summaryValue, { color: accentOnSurface }]}>{calcularPromedio.toFixed(1)}h</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>Total</Text>
@@ -173,7 +173,7 @@ export default function PersonalAsistenciaSummaryScreen() {
                   <Text style={[styles.empleadoHora, { color: textSecondary }]}>
                     {empleado.horaInicio} - {empleado.horaFin}
                   </Text>
-                  <Text style={[styles.empleadoTotal, { color: accentColor, fontWeight: '700' }]}>
+                  <Text style={[styles.empleadoTotal, { color: accentOnSurface, fontWeight: '700' }]}>
                     ${empleado.total.toLocaleString()}
                   </Text>
                 </View>

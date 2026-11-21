@@ -2,6 +2,7 @@ import { ServiceCard } from "@/components/anfitriona/ServiceCard";
 import { ServiceDetailModal } from "@/components/anfitriona/ServiceDetailModal";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { FilterTabs } from "@/components/ui/FilterTabs";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
@@ -11,7 +12,6 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
 import { useCallback,useState } from "react";
 import {
-Pressable,
 RefreshControl,
 StyleSheet,
 Text,
@@ -19,7 +19,7 @@ View,
 } from "react-native";
 
 export default function ServiciosScreen() {
-  const {accentColor, bg, cardBg, textSecondary, borderColor} = useAccentColor();
+  const {accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const {
     servicios,
     loading,
@@ -150,7 +150,7 @@ export default function ServiciosScreen() {
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           COMISIONES DE SERVICIOS FINALIZADOS
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalACobrar.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -184,19 +184,18 @@ export default function ServiciosScreen() {
       />
 
       {error ? (
-        <View style={styles.errorCard}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-          <Pressable onPress={() => fetchData(true)} style={styles.retryButton}>
-            <Text style={{ color: "#FFF" }}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="No se pudieron cargar los servicios"
+          message={error}
+          onRetry={() => fetchData(true)}
+        />
       ) : null}
 
       <VirtualizedList
         data={filteredData}
-        keyExtractor={(item: Servicio) =>
-          item?.id_servicio?.toString() || `fallback-${Math.random()}`
-        }
+        keyExtractor={(item: Servicio) => String(item.id_servicio)}
         renderItem={renderServicio}
         estimatedItemSize={150}
         contentContainerStyle={styles.listContent}
@@ -268,28 +267,4 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  errorCard: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 20,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-  },
-  errorText: { color: "#B91C1C", fontWeight: "bold", marginBottom: 12 },
-  retryButton: {
-    backgroundColor: "#B91C1C",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  emptyCard: {
-    padding: 40,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-  },
-  emptyText: { marginTop: 16, fontSize: 16, fontWeight: "600" },
 });

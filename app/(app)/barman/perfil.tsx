@@ -4,7 +4,7 @@ export default function BarmanPerfilScreen() {
     return (
         <PremiumProfileView
             roleLabel="Barman"
-            avatarEmoji="🍸"
+            avatarIcon="wine"
         />
     );
 }

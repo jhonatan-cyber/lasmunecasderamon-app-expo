@@ -69,10 +69,7 @@ export const AttendanceCodeDisplay = () => {
         cardBg,
         textPrimary,
         textSecondary,
-        gradientText,
-        gradientTextMuted,
-        gradientControlBg,
-    } = useAccentColor();
+        accentOnSurface } = useAccentColor();
 
     const handleOpenQR = async () => {
         setLoading(true);
@@ -93,13 +90,15 @@ export const AttendanceCodeDisplay = () => {
             <Pressable 
                 onPress={handleOpenQR}
                 style={({ pressed }) => [
-                    styles.badge, 
-                    { borderColor: accentColor, backgroundColor: gradientControlBg },
+                    styles.badge,
+                    // El badge va sobre la página, no sobre el acento: usa el
+                    // tinte del acento y el acento como texto legible.
+                    { borderColor: accentColor, backgroundColor: `${accentColor}18` },
                     pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }
                 ]}
             >
-                <Text style={[styles.label, { color: gradientTextMuted }]}>Código: </Text>
-                <Text style={[styles.code, { color: gradientText }]}>{codigo || '****'}</Text>
+                <Text style={[styles.label, { color: textSecondary }]}>Código: </Text>
+                <Text style={[styles.code, { color: accentOnSurface }]}>{codigo || '****'}</Text>
             </Pressable>
 
             <Modal
@@ -126,7 +125,7 @@ export const AttendanceCodeDisplay = () => {
 
                                 <View style={styles.qrHeader}>
                                     <View style={[styles.iconCircle, { backgroundColor: `${accentColor}20` }]}>
-                                        <Ionicons name="qr-code" size={32} color={accentColor} />
+                                        <Ionicons name="qr-code" size={32} color={accentOnSurface} />
                                     </View>
                                     <Text style={[styles.qrTitle, { color: textPrimary }]}>Código de Asistencia</Text>
                                     <Text style={[styles.qrSubtitle, { color: textSecondary }]}>
@@ -137,12 +136,12 @@ export const AttendanceCodeDisplay = () => {
                                 <View style={styles.qrMain}>
                                     <View style={styles.qrWrapper}>
                                         {loading ? (
-                                            <ActivityIndicator size="large" color={accentColor} />
+                                            <ActivityIndicator size="large" color={accentOnSurface} />
                                         ) : codigo ? (
                                             <LazyQRCode
                                                 value={codigo}
                                                 size={width * 0.7}
-                                                color={accentColor}
+                                                color={accentOnSurface}
                                                 backgroundColor="white"
                                                 quietZone={10}
                                             />
@@ -153,12 +152,12 @@ export const AttendanceCodeDisplay = () => {
 
                                     <View style={[styles.codeBadge, { borderColor: accentColor }]}>
                                         <Text style={[styles.codeLabel, { color: textSecondary }]}>CÓDIGO: </Text>
-                                        <Text style={[styles.codeValue, { color: accentColor }]}>{codigo || '----'}</Text>
+                                        <Text style={[styles.codeValue, { color: accentOnSurface }]}>{codigo || '----'}</Text>
                                     </View>
                                 </View>
 
                                 <View style={styles.qrFooter}>
-                                    <Ionicons name="refresh-circle" size={16} color={accentColor} />
+                                    <Ionicons name="refresh-circle" size={16} color={accentOnSurface} />
                                     <Text style={[styles.footerText, { color: textSecondary }]}>
                                         Se actualiza automáticamente cada mañana
                                     </Text>

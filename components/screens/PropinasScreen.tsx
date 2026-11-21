@@ -2,6 +2,7 @@ import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import {
@@ -31,8 +32,7 @@ export default function PropinasScreen() {
     surfaceMuted,
     textPrimary,
     textSecondary,
-    borderColor,
-  } = useAccentColor();
+    borderColor, accentOnSurface} = useAccentColor();
   const {
     propinas,
     loading,
@@ -240,7 +240,7 @@ export default function PropinasScreen() {
                     <Ionicons
                       name="checkmark-circle"
                       size={14}
-                      color={accentColor}
+                      color={accentOnSurface}
                     />
                     <Text
                       style={[styles.paymentText, { color: textSecondary }]}
@@ -259,7 +259,7 @@ export default function PropinasScreen() {
                 >
                   <Text
                     style={{
-                      color: accentColor,
+                      color: accentOnSurface,
                       fontSize: 11,
                       fontWeight: '700',
                     }}
@@ -269,7 +269,7 @@ export default function PropinasScreen() {
                   <Ionicons
                     name="chevron-forward"
                     size={12}
-                    color={accentColor}
+                    color={accentOnSurface}
                   />
                 </View>
               </View>
@@ -379,7 +379,7 @@ export default function PropinasScreen() {
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           PROPINAS PENDIENTES
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalPendiente.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -416,23 +416,13 @@ export default function PropinasScreen() {
       />
 
       {error ? (
-        <View
-          style={[
-            styles.errorCard,
-            { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' },
-          ]}
-        >
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-          <Pressable
-            onPress={() => fetchData()}
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="No se pudieron cargar las propinas"
+          message={error}
+          onRetry={() => fetchData()}
+        />
       ) : null}
 
       <VirtualizedList
@@ -451,7 +441,7 @@ export default function PropinasScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="cash-outline" title="No se encontraron propinas" />
+          <EmptyState icon="cash-outline" title="No se encontraron propinas" message="No hay propinas registradas para este período. Las propinas aparecerán cuando se asignen." />
         }
         getItemLayout={(_: any, index: number) => ({
           length: 200,
@@ -566,24 +556,4 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   paymentText: { fontSize: 12 },
-  errorCard: {
-    marginHorizontal: 16,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
-  retryButton: {
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 9999,
-  },
-  retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 });

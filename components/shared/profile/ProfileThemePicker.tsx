@@ -1,43 +1,38 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { THEME_OPTIONS, useThemeStore } from "@/store/themeStore";
+import { DEFAULT_ACCENT_COLOR, THEME_OPTIONS, normalizeAccentColor, useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
-import { accentTextColor, relativeLuminance } from "@/utils/color";
+import { neonGlow, resolveAccentSurface } from "@/utils/color";
 
-interface Props {
-  accentColor: string;
+export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark }: {
+  /** Se mantiene en la firma porque la vista de perfil lo pasa, pero el
+   *  selector usa el acento guardado en el store. */
+  accentColor?: string;
   textPrimary: string;
   textSecondary: string;
   borderColor: string;
   isDark: boolean;
-}
-
-export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark }: Props) {
+}) {
   const setAccentColor = useThemeStore((state) => state.setAccentColor);
   const userId = useAuthStore((state) => state.user?.id);
   // Se compara contra el color guardado: en modo oscuro el acento negro se
   // muestra como blanco en la interfaz, pero la selección sigue siendo "Negro".
   const storedColor = useThemeStore((state) =>
-    userId === undefined || userId === null
-      ? '#E11D48'
-      : state.userColors[String(userId)] || '#E11D48'
+    normalizeAccentColor(
+      userId === undefined || userId === null
+        ? DEFAULT_ACCENT_COLOR
+        : state.userColors[String(userId)] || DEFAULT_ACCENT_COLOR
+    )
   );
   const selectedTheme = THEME_OPTIONS.find((theme) => theme.color.toLowerCase() === storedColor.toLowerCase()) ?? THEME_OPTIONS[0];
   const themeName = (name: string) => name === "Rojo (Default)" ? "Rojo" : name;
 
-  // Detectar si el tema seleccionado es negro
-  const isBlackSelected = selectedTheme.color.toLowerCase() === '#171717';
-
-  // Gradiente adaptativo para el preview: negro en modo claro usa gradiente blanco
-  const previewGradient = isBlackSelected && !isDark
-    ? ['#FFFFFF', '#F9FAFB', '#F3F4F6']
-    : selectedTheme.gradient;
-
-  // Texto e íconos del preview: blanco en toda la paleta salvo Negro y Pizarra
-  // (con el tema negro en modo claro el degradado es blanco y el texto oscuro).
-  const previewTextColor = accentTextColor(previewGradient[0]);
-  const isPreviewLight = previewTextColor === "#FFFFFF";
+  // El acento es un color plano: el texto del preview se mide contra ese color
+  // (blanco en los acentos profundos, casi negro en los neón luminosos).
+  const previewTextColor = resolveAccentSurface(selectedTheme.color).text;
+  // El halo se calcula con el color elegido, no con el acento de la interfaz:
+  // con el tema Negro en oscuro el acento es blanco, pero el swatch es negro.
+  const glowOf = (color: string) => neonGlow(color, isDark ? "strong" : "soft");
 
   return (
     <View style={styles.container}>
@@ -45,14 +40,13 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
       <Text style={[styles.description, { color: textSecondary }]}>
         Personaliza los botones y detalles de tu app.
       </Text>
-      <LinearGradient
-        colors={previewGradient as [string, string, ...string[]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.preview}
+      <View
+        style={[
+          styles.preview,
+          { backgroundColor: selectedTheme.color, boxShadow: glowOf(selectedTheme.color) },
+        ]}
       >
-        <View pointerEvents="none" style={[styles.previewScrim, { backgroundColor: isPreviewLight ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.20)" }]} />
-        <View style={[styles.previewIcon, { backgroundColor: isPreviewLight ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.18)" }]}>
+        <View style={[styles.previewIcon, { backgroundColor: previewTextColor === "#FFFFFF" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)" }]}>
           <Ionicons name="color-palette-outline" size={26} color={previewTextColor} />
         </View>
         <View style={styles.previewText}>
@@ -60,24 +54,20 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
           <Text style={[styles.previewName, { color: previewTextColor }]}>{themeName(selectedTheme.name)}</Text>
         </View>
         <Ionicons name="checkmark-circle" size={24} color={previewTextColor} />
-      </LinearGradient>
+      </View>
       <View style={styles.grid}>
         {THEME_OPTIONS.map((theme) => {
           const isSelected = storedColor.toLowerCase() === theme.color.toLowerCase();
           const isThemeBlack = theme.color.toLowerCase() === '#171717';
-          // Gradiente adaptativo para el swatch del negro
-          const swatchGradient = isThemeBlack && !isDark
-            ? ['#FFFFFF', '#F9FAFB', '#F3F4F6']
-            : theme.gradient;
-          const swatchTextColor = accentTextColor(swatchGradient[0]);
-          const isThemeLight = relativeLuminance(theme.color) > 0.7;
+          // Texto legible sobre el color plano del swatch.
+          const swatchTextColor = resolveAccentSurface(theme.color).text;
           // Para colores claros, usar un fondo gris en lugar de `${theme.color}18` (invisible en blanco)
-          const optionBg = isSelected ? (isThemeLight ? "rgba(107,114,128,0.12)" : `${theme.color}18`) : "transparent";
+          const optionBg = isSelected ? (isThemeLight(theme.color) ? "rgba(107,114,128,0.12)" : `${theme.color}18`) : "transparent";
           // Para colores claros, el borde usa un tono más oscuro
           // En modo oscuro el swatch negro se funde con el fondo: el borde
           // seleccionado pasa a blanco para seguir siendo visible.
           const optionBorder = isSelected
-            ? isThemeLight
+            ? isThemeLight(theme.color)
               ? "#6B7280"
               : isThemeBlack && isDark
                 ? "#FFFFFF"
@@ -97,12 +87,19 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
                 pressed && { opacity: 0.7 },
               ]}
             >
-              <LinearGradient
-                colors={swatchGradient as [string, string, ...string[]]}
-                style={styles.swatch}
+              <View
+                style={[
+                  styles.swatch,
+                  {
+                    backgroundColor: theme.color,
+                    // El swatch seleccionado enciende: es el mismo halo que
+                    // usan el header y la barra de pestañas.
+                    boxShadow: isSelected ? glowOf(theme.color) : undefined,
+                  },
+                ]}
               >
                 {isSelected && <Ionicons name="checkmark" size={20} color={swatchTextColor} />}
-              </LinearGradient>
+              </View>
               <Text style={[styles.optionName, { color: textPrimary }]}>{themeName(theme.name)}</Text>
             </Pressable>
           );
@@ -115,12 +112,17 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
   );
 }
 
+/** Un acento con luminancia alta se pierde sobre el blanco: lleva borde gris. */
+function isThemeLight(color: string): boolean {
+  return resolveAccentSurface(color).isLightAccent;
+}
+
 const styles = StyleSheet.create({
   container: { marginBottom: 20 },
   title: { fontSize: 18, fontWeight: "800", marginBottom: 6 },
   description: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
-  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: 20, marginBottom: 16, overflow: "hidden" },
-  previewScrim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
+  // Sin `overflow: hidden`: el halo neón de la tarjeta se dibuja fuera del borde.
+  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: 20, marginBottom: 16 },
   previewIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   previewText: { flex: 1 },
   previewCaption: { fontSize: 11, fontWeight: "700", letterSpacing: 1 },

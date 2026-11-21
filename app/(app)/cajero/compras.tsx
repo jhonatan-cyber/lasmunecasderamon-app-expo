@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -30,7 +31,7 @@ const fechaCorta = (fecha: string) =>
 
 export default function ComprasScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
+  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<Compra[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ export default function ComprasScreen() {
               {item.usuario_nombre ? ` · ${item.usuario_nombre}` : ''}
             </Text>
           </View>
-          <Text style={[styles.total, { color: accentColor }]}>
+          <Text style={[styles.total, { color: accentOnSurface }]}>
             {formatCurrency(item.total)}
           </Text>
         </View>
@@ -96,8 +97,8 @@ export default function ComprasScreen() {
         <View style={styles.cardFooter}>
           <View style={styles.chipRow}>
             <View style={[styles.chip, { backgroundColor: `${accentColor}18` }]}>
-              <Ionicons name="cube-outline" size={12} color={accentColor} />
-              <Text style={[styles.chipText, { color: accentColor }]}>
+              <Ionicons name="cube-outline" size={12} color={accentOnSurface} />
+              <Text style={[styles.chipText, { color: accentOnSurface }]}>
                 {item.detalles?.length || 0} ítems
               </Text>
             </View>
@@ -142,19 +143,14 @@ export default function ComprasScreen() {
       />
 
       {error ? (
-        <View style={[styles.emptyCard, { backgroundColor: cardBg }]}>
-          <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
-          <Text style={[styles.emptyText, { color: textSecondary }]}>{error}</Text>
-          <Pressable
-            onPress={() => {
-              setLoading(true);
-              fetchData();
-            }}
-            style={[styles.retryBtn, { backgroundColor: accentColor }]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          title="No se pudieron cargar las compras"
+          message={error}
+          onRetry={() => {
+            setLoading(true);
+            fetchData();
+          }}
+        />
       ) : (
         <FlatList
           data={data}
@@ -240,7 +236,7 @@ export default function ComprasScreen() {
 
             <View style={[styles.modalTotal, { borderTopColor: borderColor }]}>
               <Text style={[styles.modalTotalLabel, { color: textSecondary }]}>TOTAL</Text>
-              <Text style={[styles.modalTotalValue, { color: accentColor }]}>
+              <Text style={[styles.modalTotalValue, { color: accentOnSurface }]}>
                 {formatCurrency(selected?.total || 0)}
               </Text>
             </View>
@@ -283,8 +279,6 @@ const styles = StyleSheet.create({
   backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',

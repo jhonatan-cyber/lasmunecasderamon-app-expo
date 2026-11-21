@@ -39,8 +39,10 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
                 alignSelf: 'center',
                 padding: isFullWidth ? (isTablet ? 30 : 20) : (isTablet ? 24 : 16),
                 borderRadius: isFullWidth ? (isTablet ? 32 : 24) : (isTablet ? 24 : 18),
-                borderWidth: isDark ? 1 : 0,
-                borderColor: isDark ? `${color}40` : 'transparent',
+                // En claro la tarjeta es blanca sobre pantalla blanca: el borde
+                // es lo que la delimita (en oscuro se tiñe con el color).
+                borderWidth: 1,
+                borderColor: isDark ? `${color}40` : 'rgba(0,0,0,0.10)',
             }
         ]}
     >
@@ -79,7 +81,7 @@ interface StatItem {
 }
 
 export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }: CajeroStatsProps) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, accentOnSurface} = useAccentColor();
     const { isTablet } = useResponsiveMetrics();
 
     const statItems: StatItem[] = [
@@ -95,13 +97,13 @@ export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }:
             label: 'Servicios',
             value: formatCurrency(stats?.total_servicios || 0),
             icon: 'bed' as const,
-            color: accentColor
+            color: accentOnSurface
         },
         {
             label: 'Ventas',
             value: formatCurrency(stats?.total_ventas || 0),
             icon: 'cart' as const,
-            color: accentColor
+            color: accentOnSurface
         }
     ];
 

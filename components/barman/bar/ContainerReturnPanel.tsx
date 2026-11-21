@@ -70,7 +70,7 @@ export function ContainerReturnPanel({
   onRefresh,
   onAbrirScanner,
 }: ContainerReturnPanelProps) {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
   const enviar = () => {
     if (!verificando && codigo.trim()) onEnviar();
@@ -92,7 +92,7 @@ export function ContainerReturnPanel({
             returnKeyType="send"
           />
           <Pressable onPress={onAbrirScanner} style={[styles.iconBtn, { backgroundColor: `${accentColor}20` }]} accessibilityLabel="Abrir cámara">
-            <Ionicons name="qr-code-outline" size={18} color={accentColor} />
+            <Ionicons name="qr-code-outline" size={18} color={accentOnSurface} />
           </Pressable>
         </View>
         <Pressable
@@ -152,14 +152,17 @@ export function ContainerReturnPanel({
             <Text style={{ color: '#EF4444' }}>{rechazados} rechazados</Text>
           </Text>
           <Pressable onPress={onLimpiarSesion} accessibilityLabel="Limpiar sesión de escaneos">
-            <Text style={[styles.sessionClear, { color: accentColor }]}>Limpiar</Text>
+            <Text style={[styles.sessionClear, { color: accentOnSurface }]}>Limpiar</Text>
           </Pressable>
         </View>
       )}
 
       {error ? (
         <View style={styles.errorCard}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="warning" size={20} color="#B91C1C" style={{ marginRight: 8 }} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
         </View>
       ) : null}
 

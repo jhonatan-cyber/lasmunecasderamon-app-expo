@@ -41,7 +41,7 @@ class Boundary extends Component<
     const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
 
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F3F4F6' }]}>
+      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
         <Text style={[styles.title, { color: textPrimary }]}>Algo salió mal</Text>
         <Text style={[styles.message, { color: textSecondary }]}>
           La pantalla encontró un error inesperado. Podés reintentar o volver al inicio.
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   message: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   actions: { gap: 12, width: '100%', maxWidth: 320 },
   primaryBtn: {
-    backgroundColor: '#E11D48',
+    backgroundColor: '#FF2D55',
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',

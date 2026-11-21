@@ -9,6 +9,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 
 export interface ProgressBarProps {
@@ -28,18 +29,19 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     style,
 }) => {
     const { accentColor, surfaceMuted, textSecondary } = useAccentColor();
+    const reducedMotion = useReducedMotion();
     const barColor = color || accentColor;
     const indeterminateTranslateX = useSharedValue(-100);
 
     useEffect(() => {
-        if (progress === undefined) {
+        if (progress === undefined && !reducedMotion) {
             indeterminateTranslateX.value = withRepeat(
                 withTiming(200, { duration: 1200 }),
                 -1,
                 false,
             );
         }
-    }, [progress, indeterminateTranslateX]);
+    }, [progress, indeterminateTranslateX, reducedMotion]);
 
     const indeterminateStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: indeterminateTranslateX.value }],

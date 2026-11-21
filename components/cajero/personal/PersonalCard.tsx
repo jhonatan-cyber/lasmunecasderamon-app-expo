@@ -8,6 +8,7 @@ import { User } from '@/hooks/usePersonalScreen';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface PersonalCardProps {
     item: User;
@@ -36,6 +37,7 @@ export const PersonalCard = memo(function PersonalCard({
     textPrimary,
     textSecondary,
 }: PersonalCardProps) {
+    const { accentOnSurface } = useAccentColor();
     useRenderCount('PersonalCard', { userId: item.id });
     const photoUrl = item.foto ? `${BASE_URL}/img/users/${item.foto}` : null;
     const hasQR = !!item.qr_token;
@@ -75,7 +77,7 @@ export const PersonalCard = memo(function PersonalCard({
                             />
                         ) : (
                             <View style={[styles.avatarPlaceholderLarge, { backgroundColor: accentBg }]}>
-                                <Text style={[styles.placeholderTextLarge, { color: accentColor }]}>
+                                <Text style={[styles.placeholderTextLarge, { color: accentOnSurface }]}>
                                     {item.name?.[0]}{item.lastName?.[0]}
                                 </Text>
                             </View>

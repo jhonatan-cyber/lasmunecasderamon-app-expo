@@ -25,7 +25,7 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { useRouter } from 'expo-router';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { OnboardingTour } from '@/components/ui/OnboardingTour';
@@ -41,7 +41,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const {
     accentColor,
     accentText,
-    gradientColors,
+    accentGlow,
     gradientText,
     gradientTextMuted,
     gradientControlBg,
@@ -68,6 +68,9 @@ export function HomeScreen({ role }: HomeScreenProps) {
     hasNewAlert,
     activeService,
     pendingCount,
+    pendingOrders,
+    pendingTransfers,
+    pendingAdvances,
     onRefresh,
     setHasNewAlert,
   } = useDashboardData(role);
@@ -116,20 +119,19 @@ export function HomeScreen({ role }: HomeScreenProps) {
     return (
       <HomeScreenSkeleton
         bg={bg}
-        gradientColors={gradientColors as unknown as string[]}
+        gradientColors={[accentColor, accentColor, accentColor]}
         topInset={insets.top}
       />
     );
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <LinearGradient
-        colors={
-          gradientColors as unknown as readonly [string, string, ...string[]]
-        }
+      <View
         style={[
           styles.header,
           {
+            backgroundColor: accentColor,
+            boxShadow: accentGlow,
             paddingTop: insets.top + (headerCompact ? 4 : 10),
             paddingBottom: headerCompact ? 12 : 25,
             borderBottomLeftRadius: headerCompact ? 24 : 32,
@@ -189,7 +191,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
             </AnimatedButton>
           </AnimatedView>
         )}
-      </LinearGradient>
+      </View>
 
       <ScrollView
         refreshControl={
@@ -234,6 +236,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
               <GarzonHomeActions
                 bloqueado={bloqueado}
                 accentColor={accentColor}
+                pendingOrders={pendingOrders}
                 onOpenPedidos={() => router.push('/garzon/pedidos')}
                 onOpenServicios={() => router.push('/garzon/servicios')}
                 onOpenEntradas={() => router.push('/garzon/entradas')}
@@ -241,9 +244,16 @@ export function HomeScreen({ role }: HomeScreenProps) {
               />
             )}
 
-            {role === 'cajero' && <CajeroActionGrid />}
+            {role === 'cajero' && (
+              <CajeroActionGrid
+                pendingCount={pendingCount}
+                pendingAdvances={pendingAdvances}
+              />
+            )}
 
-            {role === 'barman' && <BarmanActionGrid />}
+            {role === 'barman' && (
+              <BarmanActionGrid pendingTransfers={pendingTransfers} />
+            )}
 
           </View>
         </AnimatedScreen>

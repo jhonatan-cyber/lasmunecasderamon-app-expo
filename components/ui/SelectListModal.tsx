@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
@@ -12,6 +13,11 @@ export interface SelectListItem<T = any> {
   onPress?: () => void;
   disabled?: boolean;
   disabledReason?: string;
+  /**
+   * Selección controlada. Si se omite, el modal la rastrea internamente al
+   * pulsar un ítem y la reinicia cada vez que se abre.
+   */
+  selected?: boolean;
 }
 
 export interface SelectListModalProps<T = any> {
@@ -46,11 +52,33 @@ export const SelectListModal = <T = any>({
   emptyText = 'No hay elementos disponibles',
 }: SelectListModalProps<T>) => {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const insets = useSafeAreaInsets();
+
+  // La selección vive en el cuerpo, que solo se monta con el modal abierto:
+  // al reabrir se monta de cero y no queda la selección de la vez anterior.
+  const [selectedId, setSelectedId] = useState<string | number | null>(null);
+
+  const isItemSelected = (item: SelectListItem<T>) =>
+    item.selected !== undefined ? item.selected : selectedId === item.id;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.content, { backgroundColor: cardBg, height, maxWidth: 720, alignSelf: 'center' }]} accessibilityViewIsModal>
+        {/* El fondo es un hermano del contenido para que tocar dentro no cierre el modal. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar modal"
+        />
+        {visible ? (
+        <View
+          style={[
+            styles.content,
+            { backgroundColor: cardBg, height, maxWidth: 720, alignSelf: 'center', paddingBottom: 24 + insets.bottom },
+          ]}
+          accessibilityViewIsModal
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
@@ -70,49 +98,65 @@ export const SelectListModal = <T = any>({
           </View>
 
           {/* List */}
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
             {items.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="list-outline" size={48} color={textSecondary} />
                 <Text style={[styles.emptyText, { color: textSecondary }]}>{emptyText}</Text>
               </View>
             ) : (
-              items.map((item, index) => (
-                <Pressable
-                  key={`${String(item.id)}-${index}`}
-                  disabled={item.disabled}
-                  onPress={() => !item.disabled && item.onPress?.()}
-                  style={[
-                    styles.item,
-                    {
-                      borderColor: item.disabled ? borderColor : accentColor,
-                      opacity: item.disabled ? 0.5 : 1,
-                    },
-                  ]}
-                >
-                  {item.renderContent(false, accentColor, textPrimary, textSecondary)}
-                  {item.disabled && item.disabledReason && (
-                    <Text style={[styles.disabledReason, { color: '#EF4444' }]}>
-                      {item.disabledReason}
-                    </Text>
-                  )}
-                </Pressable>
-              ))
+              items.map((item, index) => {
+                const selected = isItemSelected(item);
+                return (
+                  <Pressable
+                    key={`${String(item.id)}-${index}`}
+                    disabled={item.disabled}
+                    onPress={() => {
+                      if (item.disabled) return;
+                      setSelectedId(item.id);
+                      item.onPress?.();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected, disabled: !!item.disabled }}
+                    style={[
+                      styles.item,
+                      {
+                        borderColor: item.disabled ? borderColor : selected ? accentColor : borderColor,
+                        backgroundColor: selected ? `${accentColor}12` : 'transparent',
+                        opacity: item.disabled ? 0.5 : 1,
+                      },
+                    ]}
+                  >
+                    {item.renderContent(selected, accentColor, textPrimary, textSecondary)}
+                    {item.disabled && item.disabledReason && (
+                      <Text style={[styles.disabledReason, { color: '#EF4444' }]}>
+                        {item.disabledReason}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })
             )}
           </ScrollView>
 
-          {/* Confirm Button */}
-          {(onConfirm || true) && (
-            <Pressable
-              style={[styles.confirmBtn, { backgroundColor: accentColor }]}
-              onPress={onConfirm || onClose}
-              accessibilityRole="button"
-              accessibilityLabel={confirmLabel}
-            >
-              <Text style={[styles.confirmBtnText, { color: accentTextColor(accentColor) }]}>{confirmLabel}</Text>
-            </Pressable>
-          )}
+          {/* Botón de cierre: con `onConfirm` confirma la selección; sin él,
+              simplemente descarta. Antes la condición `(onConfirm || true)`
+              era siempre verdadera y el botón se pintaba igual. */}
+          <Pressable
+            style={[styles.confirmBtn, { backgroundColor: accentColor }]}
+            onPress={onConfirm ?? onClose}
+            accessibilityRole="button"
+            accessibilityLabel={confirmLabel}
+          >
+            <Text style={[styles.confirmBtnText, { color: accentTextColor(accentColor) }]}>{confirmLabel}</Text>
+          </Pressable>
         </View>
+        ) : null}
       </View>
     </Modal>
   );

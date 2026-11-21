@@ -1,8 +1,16 @@
 import { ActionGrid, type ActionGridItem } from "@/components/ui/ActionGrid";
 import { useOutbox } from "@/hooks/useOutbox";
 
-export const BarmanActionGrid = () => {
+interface BarmanActionGridProps {
+  /** Transferencias de stock que el servidor todavía no confirmó. */
+  pendingTransfers?: number;
+}
+
+export const BarmanActionGrid = ({
+  pendingTransfers = 0,
+}: BarmanActionGridProps) => {
   const { pendingCount, failedCount, isOffline } = useOutbox();
+  const operacionesSinEnviar = pendingCount + failedCount;
 
   const actions: ActionGridItem[] = [
     {
@@ -11,6 +19,8 @@ export const BarmanActionGrid = () => {
       icon: "beer",
       color: "#F97316",
       route: "/barman/bar",
+      badge: pendingTransfers,
+      badgeLabel: "transferencias sin confirmar",
     },
     {
       title: "PEDIDOS",
@@ -49,7 +59,7 @@ export const BarmanActionGrid = () => {
     },
     // Solo aparece cuando hay algo que resolver: sin conexión o trabajo que el
     // servidor todavía no confirmó.
-    ...(isOffline || pendingCount > 0 || failedCount > 0
+    ...(isOffline || operacionesSinEnviar > 0
       ? [
           {
             title: "PENDIENTES",
@@ -57,6 +67,8 @@ export const BarmanActionGrid = () => {
             icon: "cloud-offline" as const,
             color: "#EF4444",
             route: "/barman/pendientes",
+            badge: operacionesSinEnviar,
+            badgeLabel: "operaciones sin enviar",
           },
         ]
       : []),

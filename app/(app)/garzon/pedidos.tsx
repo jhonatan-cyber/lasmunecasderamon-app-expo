@@ -22,7 +22,7 @@ import { isBarmanRole } from '@/utils/userRole';
 
 
 export default function PedidosScreen() {
-    const { gradientColors, bg } = useAccentColor();
+    const { accentColor, gradientColors, bg } = useAccentColor();
     const { isTablet, isLandscape } = useResponsiveMetrics();
     // 3 columnas cuando el ancho lo permite (horizontal o tablet).
     const columnas = isTablet || isLandscape ? 3 : 2;
@@ -87,7 +87,7 @@ export default function PedidosScreen() {
                 estimatedItemSize={180}
                 contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E11D48" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />}
                 ListEmptyComponent={
                     <EmptyState
                         icon="basket-outline"

@@ -1,0 +1,173 @@
+import React from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { AppModal as Modal } from '@/components/ui/AppModal';
+import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
+import { useAccentColor } from '@/hooks/useAccentColor';
+
+interface MixerChoice {
+  id: string;
+  producto_nombre: string;
+  nombre: string;
+  foto?: string;
+  producto_foto?: string;
+  stock_bar?: number;
+  ml_abierta?: number;
+}
+
+interface MixerSelectorModalProps {
+  visible: boolean;
+  title: string;
+  search: string;
+  setSearch: (value: string) => void;
+  choices: MixerChoice[];
+  cardBg: string;
+  borderColor: string;
+  textPrimary: string;
+  textSecondary: string;
+  accentColor: string;
+  sinRecargo: boolean;
+  topeAcompanamiento: number;
+  stockLabel: (choice: MixerChoice) => string | null;
+  precioOf: (choice: MixerChoice) => number;
+  onSelect: (choice: MixerChoice) => void;
+  onClose: () => void;
+}
+
+export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
+  visible,
+  title,
+  search,
+  setSearch,
+  choices,
+  cardBg,
+  borderColor,
+  textPrimary,
+  textSecondary,
+  accentColor,
+  sinRecargo,
+  topeAcompanamiento,
+  stockLabel,
+  precioOf,
+  onSelect,
+  onClose,
+}) => {
+    const { accentOnSurface } = useAccentColor();
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#0008',
+          justifyContent: 'center',
+          padding: 20,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: cardBg,
+            borderRadius: 20,
+            padding: 20,
+            maxHeight: '80%',
+            gap: 12,
+          }}
+        >
+          <Text style={{ color: textPrimary, fontWeight: '700' }}>
+            {title}
+          </Text>
+          <TextInput
+            accessibilityLabel="Buscar bebida en bar"
+            placeholder="Buscar producto o sabor"
+            placeholderTextColor={textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            style={{
+              color: textPrimary,
+              borderColor,
+              borderWidth: 1,
+              padding: 12,
+              borderRadius: 10,
+            }}
+          />
+          <ScrollView
+            style={{ maxHeight: 360 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {choices.map((p) => {
+              const stock = stockLabel(p);
+              const precio = precioOf(p);
+              const exceso = Math.max(0, precio - topeAcompanamiento);
+              return (
+                <Pressable
+                  key={p.id}
+                  accessibilityRole="button"
+                  onPress={() => onSelect(p)}
+                  style={{
+                    paddingVertical: 14,
+                    borderBottomWidth: 1,
+                    borderColor,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <OrderProductPhoto
+                      foto={
+                        p.foto && p.foto !== 'default.png'
+                          ? p.foto
+                          : p.producto_foto
+                      }
+                      name={`${p.producto_nombre} ${p.nombre}`}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: textPrimary }}>
+                        {p.producto_nombre} {p.nombre}
+                      </Text>
+                      {!sinRecargo && topeAcompanamiento > 0 && precio <= 0 && (
+                        <Text style={{ color: '#F59E0B', fontSize: 12, marginTop: 2 }}>
+                          Sin precio configurado: no suma excedente
+                        </Text>
+                      )}
+                      {!sinRecargo && topeAcompanamiento > 0 && precio > 0 && (
+                        <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>
+                          {exceso > 0
+                            ? `Suma $${exceso.toLocaleString('es-CL')} sobre el tope de $${topeAcompanamiento.toLocaleString('es-CL')}`
+                            : 'Incluido en el tope'}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  {!!stock && (
+                    <Text style={{ color: textSecondary }}>{stock}</Text>
+                  )}
+                </Pressable>
+              );
+            })}
+            {!choices.length && (
+              <Text style={{ color: textSecondary }}>
+                Sin productos disponibles en el bar
+              </Text>
+            )}
+          </ScrollView>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onClose}
+            style={{ padding: 12 }}
+          >
+            <Text style={{ color: accentOnSurface, textAlign: 'center' }}>
+              Cerrar
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+};

@@ -187,7 +187,7 @@ export function StaffCallOverlay() {
                             styles.card,
                             {
                                 backgroundColor: cardBg,
-                                borderColor: isUrgent ? '#EF4444' : '#E11D48',
+                                borderColor: isUrgent ? '#EF4444' : '#FF2D55',
                                 borderWidth: isUrgent ? 2 : 1,
                                 zIndex: 1000 - index,
                             },
@@ -195,7 +195,7 @@ export function StaffCallOverlay() {
                     >
                         <View style={styles.cardHeader}>
                             <View style={[styles.iconBox, isUrgent && { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-                                <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#E11D48"} />
+                                <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#FF2D55"} />
                             </View>
                             <View style={styles.textContainer}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

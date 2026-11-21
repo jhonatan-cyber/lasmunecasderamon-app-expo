@@ -1,7 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 
@@ -39,10 +38,10 @@ export const PremiumTabBar = ({
     descriptors,
 }: PremiumTabBarProps) => {
     const {
-        gradientColors,
+        accentColor,
+        accentGlow,
         gradientText,
         gradientTextMuted,
-        gradientOverlay,
         gradientActiveBg,
         gradientControlBorder,
     } = useAccentColor();
@@ -50,9 +49,9 @@ export const PremiumTabBar = ({
     const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
 
-    // El blanco puro sobre el degradado no llega a 4.5:1 en varios acentos
-    // (ámbar 3.2:1, esmeralda 3.8:1). El velo oscuro sube el contraste de toda
-    // la barra por encima de AA sin perder el color de marca.
+    // El texto de la barra se mide contra el color plano del acento: blanco
+    // en los acentos profundos y casi negro en los neón luminosos. Ambos
+    // superan 4.5:1 (ver `resolveAccentSurface`).
     const activeTintColor = gradientText;
     const inactiveTintColor = gradientTextMuted;
     const borderColor = gradientControlBorder;
@@ -68,12 +67,14 @@ export const PremiumTabBar = ({
                 {
                     // El fondo sólido del envoltorio evita que asome ningún color
                     // claro (blanco) por las esquinas redondeadas de la barra.
-                    backgroundColor: gradientColors[0],
+                    backgroundColor: accentColor,
+                    // La sombra de la barra más el halo neón del acento: la luz
+                    // que escapa del color hacia el contenido.
+                    boxShadow: `0 -4px 16px rgba(0,0,0,0.18), ${accentGlow}`,
                 },
             ]}
         >
-            <LinearGradient
-                colors={gradientColors as unknown as readonly [string, string, ...string[]]}
+            <View
                 style={[
                     styles.tabBarContainer,
                     compact && styles.tabBarContainerCompact,
@@ -84,8 +85,6 @@ export const PremiumTabBar = ({
                     },
                 ]}
             >
-            <View pointerEvents="none" style={[styles.scrim, { backgroundColor: gradientOverlay }]} />
-
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
 
@@ -153,7 +152,7 @@ export const PremiumTabBar = ({
                     </Pressable>
                 );
             })}
-            </LinearGradient>
+            </View>
         </View>
     );
 };
@@ -197,14 +196,6 @@ const styles = StyleSheet.create({
     tabBarContainerCompact: {
         minHeight: 52,
     },
-    scrim: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.20)',
-    },
     tabItem: {
         flex: 1,
         justifyContent: 'center',
@@ -236,10 +227,12 @@ const styles = StyleSheet.create({
         borderRadius: 17,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
     },
     iconSlotCompact: {
         width: 30,
         height: 30,
         borderRadius: 15,
+        overflow: 'hidden',
     },
 });

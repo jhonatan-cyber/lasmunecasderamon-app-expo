@@ -41,7 +41,7 @@ export function PremiumLiquidationCard({
   totalAmount,
   onExportSuccess,
 }: PremiumLiquidationCardProps) {
-  const {accentColor, accentText, cardBg, textSecondary, borderColor} = useAccentColor();
+  const {accentColor, accentText, cardBg, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const [exporting, setExporting] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -248,7 +248,7 @@ export function PremiumLiquidationCard({
             </Text>
           </View>
           <Text
-            style={[styles.value, { color: accentColor }]}
+            style={[styles.value, { color: accentOnSurface }]}
             numberOfLines={1}
             adjustsFontSizeToFit
           >
@@ -284,6 +284,7 @@ export function PremiumLiquidationCard({
         onConfirm={() =>
           setAlertConfig((prev) => ({ ...prev, visible: false }))
         }
+        onCancel={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
       />
     </View>
   );

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lasmunecasderamon-app",
+    "name": "Las Muñecas de Ramón",
     "slug": "lasmunecasderamon-app",
     "version": "1.0.0",
     "orientation": "default",
@@ -71,7 +71,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/logo1.png",
-          "color": "#E11D48"
+          "color": "#FF1B3D"
         }
       ],
       [

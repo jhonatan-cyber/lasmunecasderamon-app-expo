@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
@@ -43,6 +44,7 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
   animationType = 'slide',
 }) => {
   const { accentColor, cardBg, textPrimary, textSecondary, isDark } = useAccentColor();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType={animationType} transparent onRequestClose={onClose}>
@@ -57,7 +59,15 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
         <View
           style={[
             styles.content,
-            { backgroundColor: cardBg, height, maxWidth: 720, alignSelf: 'center' },
+            {
+              backgroundColor: cardBg,
+              height,
+              maxWidth: 720,
+              alignSelf: 'center',
+              // El padding inferior absorbe el indicador de inicio del iPhone:
+              // con 24 fijos el botón de acción quedaba bajo el gesto del sistema.
+              paddingBottom: 24 + insets.bottom,
+            },
             contentStyle,
           ]}
           accessibilityViewIsModal
@@ -112,6 +122,8 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
                 haptic.tap();
                 onAction();
               }}
+              accessibilityRole="button"
+              accessibilityLabel={actionLabel}
             >
               <Text style={[styles.actionBtnText, { color: accentTextColor(accentColor), fontFamily: FontFamily.bold }]}>{actionLabel}</Text>
             </Pressable>
@@ -134,7 +146,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: BorderRadius.xxl,
     paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 24,
+    // `paddingBottom` se aplica en runtime (24 + safe area inferior).
   },
   dragHandleWrapper: {
     alignItems: 'center',

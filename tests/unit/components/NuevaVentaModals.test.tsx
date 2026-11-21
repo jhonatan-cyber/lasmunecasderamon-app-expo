@@ -28,6 +28,11 @@ vi.mock('react-native', () => ({
     />
   ),
   ActivityIndicator: () => null,
+  Appearance: {
+    getColorScheme: () => 'dark',
+    addChangeListener: () => ({ remove: () => {} }),
+  },
+  useColorScheme: () => 'dark',
   KeyboardAvoidingView: ({ children }: Children) => <div>{children}</div>,
 }));
 

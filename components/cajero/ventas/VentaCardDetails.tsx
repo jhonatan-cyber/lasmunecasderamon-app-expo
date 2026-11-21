@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { FontFamily } from "@/constants/fonts";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface VentaCardDetailsProps {
   clienteNombre?: string;
@@ -27,7 +28,9 @@ export const VentaCardDetails: React.FC<VentaCardDetailsProps> = ({
   textSecondary,
   formatDateTime,
   renderTimer,
-}) => (
+} ) => {
+    const { accentOnSurface } = useAccentColor();
+    return (
   <View style={styles.cardDetailsList}>
     <View style={styles.detailItemRow}>
       <Ionicons name="person-outline" size={14} color={textSecondary} style={styles.rowIcon} />
@@ -54,7 +57,7 @@ export const VentaCardDetails: React.FC<VentaCardDetailsProps> = ({
       <Ionicons name="people-outline" size={14} color={textSecondary} style={styles.rowIcon} />
       {anfitrionasNicks ? (
         <View style={[styles.hostessPill, { backgroundColor: `${accentColor}15` }]}>
-          <Text style={[styles.hostessText, { color: accentColor }]} numberOfLines={1}>
+          <Text style={[styles.hostessText, { color: accentOnSurface }]} numberOfLines={1}>
             {anfitrionasNicks}
           </Text>
         </View>
@@ -75,6 +78,7 @@ export const VentaCardDetails: React.FC<VentaCardDetailsProps> = ({
     {renderTimer}
   </View>
 );
+};
 
 const styles = StyleSheet.create({
   cardDetailsList: { gap: 6 },

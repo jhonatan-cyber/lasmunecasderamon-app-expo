@@ -1,10 +1,8 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useCallback, useState } from 'react';
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -12,6 +10,7 @@ import {
 } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { OvertimeCard } from '@/components/ui/OvertimeCard';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
@@ -22,7 +21,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useHorasExtras, HoraExtra } from '@/hooks/useHorasExtras';
 
 export default function HorasExtrasScreen() {
-  const { accentColor, isDark, bg, cardBg, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const {
     data: horasExtras,
@@ -189,7 +188,7 @@ export default function HorasExtrasScreen() {
         <Text style={[styles.summaryLabel, { color: textSecondary }]}>
           HORAS EXTRAS PENDIENTES
         </Text>
-        <Text style={[styles.summaryAmount, { color: accentColor }]}>
+        <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
           ${totalPendiente.toLocaleString()}
         </Text>
         <View style={styles.summaryDetails}>
@@ -225,23 +224,13 @@ export default function HorasExtrasScreen() {
       />
 
       {error ? (
-        <View
-          style={[
-            styles.errorCard,
-            { backgroundColor: isDark ? '#1C1917' : '#FEF2F2' },
-          ]}
-        >
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-          <Pressable
-            onPress={() => fetchData()}
-            style={({ pressed }) => [
-              styles.retryButton,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Text style={styles.retryText}>Reintentar</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="No se pudieron cargar las horas extras"
+          message={error}
+          onRetry={() => fetchData()}
+        />
       ) : null}
 
       <VirtualizedList
@@ -259,7 +248,7 @@ export default function HorasExtrasScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="time-outline" title="No se encontraron horas extras" />
+          <EmptyState icon="time-outline" title="No se encontraron horas extras" message="No hay horas extras registradas para este período. Las horas extras aparecerán cuando se aprueben." />
         }
         {...LIST_PERF_PROPS}
       />
@@ -302,24 +291,4 @@ const styles = StyleSheet.create({
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  errorCard: {
-    marginHorizontal: 16,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
-  retryButton: {
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 9999,
-  },
-  retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 });
