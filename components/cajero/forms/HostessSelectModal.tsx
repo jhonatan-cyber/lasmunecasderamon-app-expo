@@ -49,7 +49,6 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   const {
     accentColor,
     textPrimary,
-    textSecondary,
     borderColor: subtleBorder,
   } = useAccentColor();
 

@@ -11,7 +11,7 @@ import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriv
  * de conectividad y el `AppState` sustituidos.
  */
 const red = vi.hoisted(() => ({
-    listeners: [] as Array<(state: string) => void>,
+    listeners: [] as ((state: string) => void)[],
     subscribe: vi.fn((listener: (state: string) => void) => {
         red.listeners.push(listener);
         return () => {};
@@ -22,7 +22,7 @@ const red = vi.hoisted(() => ({
 vi.mock('@/services/connectivity', () => ({ connectivity: red }));
 
 const appState = vi.hoisted(() => ({
-    handlers: [] as Array<(state: string) => void>,
+    handlers: [] as ((state: string) => void)[],
 }));
 
 vi.mock('react-native', () => ({

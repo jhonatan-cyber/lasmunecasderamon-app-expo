@@ -4,8 +4,6 @@ import { Stack, useRouter } from 'expo-router';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
-import { useCajaAbierta } from '@/hooks/useCajaAbierta';
-import { showToast } from '@/utils/toast-lazy';
 
 interface Empleado {
   id: string;
@@ -24,7 +22,6 @@ interface Empleado {
 export default function PersonalAsistenciaSummaryScreen() {
   const router = useRouter();
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
-  const caja = useCajaAbierta();
 
   const [empleados, setEmpleados] = React.useState<Empleado[]>([]);
 
@@ -41,11 +38,6 @@ export default function PersonalAsistenciaSummaryScreen() {
   }, []);
 
   const [selectedEmpleadoId, setSelectedEmpleadoId] = React.useState<string | null>(null);
-
-  const selectedEmpleado = React.useMemo(() =>
-    empleados.find(e => e.id === selectedEmpleadoId) ?? null,
-    [empleados, selectedEmpleadoId]
-  );
 
   const calcularMinimo = React.useMemo(() => {
     const horas = empleados.map(e => {

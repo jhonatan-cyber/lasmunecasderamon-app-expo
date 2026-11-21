@@ -12,10 +12,8 @@ import { useAsistencia } from '@/hooks/useAsistencia';
 import { useStableCallback } from '@/hooks/useStableCallback';
 import { DateRangeFilterModal } from '@/components/screens/asistencia/DateRangeFilterModal';
 import { AsistenciaCard } from '@/components/asistencia/AsistenciaCard';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useState } from 'react';
 import {
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,

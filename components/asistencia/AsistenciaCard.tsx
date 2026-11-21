@@ -113,7 +113,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
                 fontStyle: 'italic',
               }}
             >
-              "{item.descripcion}"
+              &quot;{item.descripcion}&quot;
             </Text>
           ) : null}
           <View style={styles.dateRow}>

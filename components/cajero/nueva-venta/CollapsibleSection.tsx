@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, type TextStyle, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { haptic } from '@/utils/haptics';
 
 interface CollapsibleSectionProps {

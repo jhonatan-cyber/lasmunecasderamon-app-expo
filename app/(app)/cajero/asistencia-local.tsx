@@ -29,7 +29,7 @@ const horaCorta = (hora: string) => String(hora ?? '').slice(0, 5);
 
 export default function AsistenciaLocalScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<AsistenciaHoy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +97,7 @@ export default function AsistenciaLocalScreen() {
         </View>
       );
     },
-    [accentColor, borderColor, cardBg, isDark, textPrimary, textSecondary],
+    [accentColor, accentOnSurface, borderColor, cardBg, surfaceMuted, textPrimary, textSecondary],
   );
 
   if (loading) {

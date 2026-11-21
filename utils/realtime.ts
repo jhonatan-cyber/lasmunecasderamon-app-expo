@@ -137,7 +137,7 @@ export const emitRefreshProducts = (payload?: RealtimePayload) => {
 
 const RESOURCE_UPDATED_MODULES: Record<
   string,
-  ReadonlyArray<keyof typeof REALTIME_EVENT_NAMES>
+  readonly (keyof typeof REALTIME_EVENT_NAMES)[]
 > = {
   users: ["refreshPersonal", "refreshCuentas"],
   hostesses: ["refreshPersonal"],

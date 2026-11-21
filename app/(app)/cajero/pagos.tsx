@@ -188,7 +188,7 @@ export default function PagosTrabajadoresScreen() {
         </View>
       );
     },
-    [accentColor, borderColor, cardBg, payingId, textPrimary, textSecondary],
+    [accentColor, accentOnSurface, borderColor, cardBg, payingId, textPrimary, textSecondary],
   );
 
   if (loading) {

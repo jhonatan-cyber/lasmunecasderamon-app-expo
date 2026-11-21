@@ -5,7 +5,6 @@ import Animated, {
   useSharedValue,
   withTiming,
   withRepeat,
-  withSequence,
   interpolate,
 } from 'react-native-reanimated';
 import { useAccentColor } from '@/hooks/useAccentColor';

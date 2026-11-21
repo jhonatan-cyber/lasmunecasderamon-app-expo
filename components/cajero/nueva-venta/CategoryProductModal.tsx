@@ -12,9 +12,8 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
+ StyleSheet } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
-import { StyleSheet } from 'react-native';
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import {
   resolverVentaProducto,

@@ -19,7 +19,7 @@ interface ServiceCardProps {
 }
 
 export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardProps) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
 
     const estadoInfo = estadoServicio(item.estado);
     const isProceso = estadoInfo.key === "en_proceso";

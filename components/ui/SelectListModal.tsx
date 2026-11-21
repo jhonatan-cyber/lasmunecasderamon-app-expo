@@ -7,7 +7,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
 import { accentTextColor } from '@/utils/color';
 
-export interface SelectListItem<T = any> {
+export interface SelectListItem {
   id: string | number;
   renderContent: (isSelected: boolean, accentColor: string, textColor: string, mutedColor: string) => React.ReactNode;
   onPress?: () => void;
@@ -20,12 +20,12 @@ export interface SelectListItem<T = any> {
   selected?: boolean;
 }
 
-export interface SelectListModalProps<T = any> {
+export interface SelectListModalProps {
   visible: boolean;
   onClose: () => void;
   title: string;
   subtitle?: string;
-  items: SelectListItem<T>[];
+  items: SelectListItem[];
   onConfirm?: () => void;
   confirmLabel?: string;
   height?: number | string;
@@ -40,7 +40,7 @@ export interface SelectListModalProps<T = any> {
  * Each item provides its own renderContent function for custom rendering,
  * while the modal handles the common layout, selection state, and interactions.
  */
-export const SelectListModal = <T = any>({
+export const SelectListModal = ({
   visible,
   onClose,
   title,
@@ -50,7 +50,7 @@ export const SelectListModal = <T = any>({
   confirmLabel = 'Listo',
   height = '85%',
   emptyText = 'No hay elementos disponibles',
-}: SelectListModalProps<T>) => {
+}: SelectListModalProps) => {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const insets = useSafeAreaInsets();
 
@@ -58,7 +58,7 @@ export const SelectListModal = <T = any>({
   // al reabrir se monta de cero y no queda la selección de la vez anterior.
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
 
-  const isItemSelected = (item: SelectListItem<T>) =>
+  const isItemSelected = (item: SelectListItem) =>
     item.selected !== undefined ? item.selected : selectedId === item.id;
 
   return (

@@ -4,8 +4,7 @@ import {
   isChampagneProduct,
   MENSAJE_CHAMPAGNE_SIN_CONFIGURAR,
   faltaConfiguracionChampagne,
-} from "@/hooks/utils/cartUtils";
-import { showToast } from "@/hooks/utils/cartUtils";
+ showToast } from "@/hooks/utils/cartUtils";
 import { blockOffline } from "@/utils/offlineGuard";
 import { getOutbox } from "@/services/outbox";
 import logger from "@/utils/logger";

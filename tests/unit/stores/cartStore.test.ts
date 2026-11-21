@@ -1,7 +1,7 @@
 import { apiClientSafe } from "@/api/client";
-vi.mock("@/api/client", () => ({ apiClientSafe: vi.fn() }));
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useCartStore } from "@/store/cartStore";
+vi.mock("@/api/client", () => ({ apiClientSafe: vi.fn() }));
 
 afterEach(() => useCartStore.setState({ topeAcompanamiento: 0 }));
 

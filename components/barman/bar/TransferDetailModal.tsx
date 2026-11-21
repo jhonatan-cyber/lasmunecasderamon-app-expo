@@ -293,7 +293,6 @@ function DetailRow({
   textPrimary: string;
   textSecondary: string;
 }) {
-  const { accentOnSurface } = useAccentColor();
   return (
     <View style={styles.detailRow}>
       <Ionicons name={icon} size={18} color={textSecondary} />

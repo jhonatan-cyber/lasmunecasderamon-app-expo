@@ -1,5 +1,5 @@
 import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
-import React, { useState } from "react";
+import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { OpcionVentaProducto, SaleChoice } from "@/hooks/utils/saleChoice";

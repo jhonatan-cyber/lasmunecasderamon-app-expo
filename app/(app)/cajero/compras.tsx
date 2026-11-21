@@ -31,7 +31,7 @@ const fechaCorta = (fecha: string) =>
 
 export default function ComprasScreen() {
   const router = useRouter();
-  const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
     useAccentColor();
   const [data, setData] = useState<Compra[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +116,7 @@ export default function ComprasScreen() {
         </View>
       </Pressable>
     ),
-    [accentColor, borderColor, cardBg, isDark, textPrimary, textSecondary],
+    [accentColor, accentOnSurface, borderColor, cardBg, surfaceMuted, textPrimary, textSecondary],
   );
 
   if (loading) {

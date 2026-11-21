@@ -81,7 +81,7 @@ interface StatItem {
 }
 
 export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }: CajeroStatsProps) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, accentOnSurface} = useAccentColor();
+    const { isDark, cardBg, textPrimary, textSecondary, accentOnSurface} = useAccentColor();
     const { isTablet } = useResponsiveMetrics();
 
     const statItems: StatItem[] = [

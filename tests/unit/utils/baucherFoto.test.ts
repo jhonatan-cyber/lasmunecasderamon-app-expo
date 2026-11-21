@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ajustarFotoBaucher } from "@/utils/baucherFoto";
+import { BAUCHER_FOTO_MAX_CHARS } from "@lasmunecasderamon/validations";
+
 const manipulador = vi.hoisted(() => ({
   manipulate: vi.fn(),
   saveAsync: vi.fn(),
@@ -9,9 +12,6 @@ vi.mock("expo-image-manipulator", () => ({
   ImageManipulator: { manipulate: manipulador.manipulate },
   SaveFormat: { JPEG: "jpeg", PNG: "png", WEBP: "webp" },
 }));
-
-import { ajustarFotoBaucher } from "@/utils/baucherFoto";
-import { BAUCHER_FOTO_MAX_CHARS } from "@lasmunecasderamon/validations";
 
 /** Contexto encadenable del manipulador: `resize()` devuelve siempre el mismo. */
 function contextoEncadenable() {

@@ -54,7 +54,7 @@ function fechaHoraLocal() {
 }
 
 export default function GarzonEntradasScreen() {
-  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, isDark } =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
     useAccentColor();
   const router = useRouter();
 

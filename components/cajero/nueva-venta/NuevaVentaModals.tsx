@@ -1,7 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,

@@ -5,26 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEntregaCovers } from '@/components/entradas/entrega-covers/useEntregaCovers';
 import { entradasService } from '@/services/entradas';
 import { productsService } from '@/services/products';
-
-vi.mock('@tanstack/react-query', async importOriginal =>
-  importOriginal<typeof import('@tanstack/react-query')>(),
-);
-
-vi.mock('@/services/entradas', () => ({
-  entradasService: {
-    entregarGrupo: vi.fn(),
-    solicitarEntregaCovers: vi.fn(),
-    entregar: vi.fn(),
-  },
-}));
-vi.mock('@/services/products', () => ({
-  productsService: { forSale: vi.fn(), forCover: vi.fn() },
-}));
-vi.mock('@/utils/logger', () => ({ default: { fetchError: vi.fn() } }));
-vi.mock('@/utils/toast-lazy', () => ({ showToast: vi.fn() }));
-
-afterEach(cleanup);
-beforeEach(() => vi.clearAllMocks());
 import {
   acompanamientoDe,
   bebidaDe,
@@ -48,6 +28,26 @@ import {
   type SeleccionAction,
 } from '@/components/entradas/entrega-covers/reducer';
 import type { Acompanamiento, Bebida, Seleccion } from '@/components/entradas/entrega-covers/types';
+
+vi.mock('@tanstack/react-query', async importOriginal =>
+  importOriginal<typeof import('@tanstack/react-query')>(),
+);
+
+vi.mock('@/services/entradas', () => ({
+  entradasService: {
+    entregarGrupo: vi.fn(),
+    solicitarEntregaCovers: vi.fn(),
+    entregar: vi.fn(),
+  },
+}));
+vi.mock('@/services/products', () => ({
+  productsService: { forSale: vi.fn(), forCover: vi.fn() },
+}));
+vi.mock('@/utils/logger', () => ({ default: { fetchError: vi.fn() } }));
+vi.mock('@/utils/toast-lazy', () => ({ showToast: vi.fn() }));
+
+afterEach(cleanup);
+beforeEach(() => vi.clearAllMocks());
 
 const bebida = (extra: Partial<Bebida> = {}): Bebida => ({
   presentacion_id: 'pres-1',

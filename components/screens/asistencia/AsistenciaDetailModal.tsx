@@ -175,9 +175,6 @@ export function AsistenciaDetailModal({
 
                 {/* Attendance records */}
                 {asistencias.map((a, idx) => {
-                  const estadoInfo = isDark
-                    ? getEstadoLabelDark(a.estado)
-                    : getEstadoLabel(a.estado);
                   const estado = isDark
                     ? { ...getEstadoLabelDark(a.estado) }
                     : { ...getEstadoLabel(a.estado) };

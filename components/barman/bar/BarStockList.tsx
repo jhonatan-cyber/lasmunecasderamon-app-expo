@@ -56,7 +56,7 @@ export function BarStockList({
     }
   }, [onSelectedCategoryChange]);
 
-  const { accentColor, textPrimary, textSecondary, accentOnSurface} = useAccentColor();
+  const { accentColor, textPrimary, textSecondary} = useAccentColor();
 
   const categories = useMemo(() => {
     const grouped = new Map<string, BarStockItem[]>();

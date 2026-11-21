@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useAppearanceStore } from '@/store/appearanceStore';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
-import { isAdminRole, isBarmanRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
+import { isAdminRole, isCajeroRole } from '@/utils/userRole';
 import { BiometricEnrollmentModal } from '@/components/shared/BiometricEnrollmentModal';
 import { IconButton } from '@/components/ui/IconButton';
 
@@ -46,7 +46,6 @@ export const PremiumHeaderActions = ({
     const [showEnrollment, setShowEnrollment] = useState(false);
     const router = useRouter();
 
-    const isRestrictedRole = isGarzonRole(user) || isHostessRole(user) || isBarmanRole(user);
     const canUseCajeroActions = isCajeroRole(user);
     const isAdmin = isAdminRole(user);
     // Íconos y botones van sobre el degradado del acento: con el tema negro en

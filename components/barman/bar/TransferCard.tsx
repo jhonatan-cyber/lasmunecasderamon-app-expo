@@ -106,7 +106,7 @@ export function TransferActions({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { accentColor, accentOnSurface} = useAccentColor();
+  const { accentColor} = useAccentColor();
   const btnTextColor = readableTextColor(accentColor);
 
   return (

@@ -73,7 +73,9 @@ export default function LoginForm({
     const isFormValid = username.trim().length > 0 && password.length > 0;
 
     // Error shake animation
-    const shakeValue = React.useRef(new Animated.Value(0)).current;
+    // `useMemo` y no `useRef(...).current`: leer el ref durante el render lo
+    // prohíbe la regla react-hooks/refs (y el compilador de React).
+    const shakeValue = React.useMemo(() => new Animated.Value(0), []);
     const startShake = React.useCallback(() => {
         shakeValue.setValue(0);
         Animated.sequence([

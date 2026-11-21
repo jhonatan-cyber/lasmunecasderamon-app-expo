@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { bloqueaChampanaSinConfigurar } from "@/hooks/utils/champagneConfig";
+import { MENSAJE_CHAMPAGNE_SIN_CONFIGURAR } from "@/hooks/utils/cuentaUtils";
+
 /**
  * La app móvil deja agregar consumos a una cuenta desde dos modales. Una
  * champaña sin tabla de precios por anfitrionas (ni máximo explícito) no tiene
@@ -15,9 +18,6 @@ vi.mock("@/utils/toast-lazy", () => ({
   showToast: vi.fn(),
   hideToast: vi.fn(),
 }));
-
-import { bloqueaChampanaSinConfigurar } from "@/hooks/utils/champagneConfig";
-import { MENSAJE_CHAMPAGNE_SIN_CONFIGURAR } from "@/hooks/utils/cuentaUtils";
 
 const champana = {
   id: "prod-champ",

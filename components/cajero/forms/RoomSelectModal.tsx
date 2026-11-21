@@ -1,7 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRenderCount } from "@/hooks/useRenderCount";

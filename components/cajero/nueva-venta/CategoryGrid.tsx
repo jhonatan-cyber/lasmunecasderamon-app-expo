@@ -17,7 +17,7 @@ interface CategoryGridProps {
   borderColor: string;
 }
 
-const CATEGORY_ICONS: ReadonlyArray<[RegExp, string]> = [
+const CATEGORY_ICONS: readonly [RegExp, string][] = [
   [/cerve/, 'beer'],
   [/vino/, 'wine'],
   [/cocktail|coctail/, 'wine'],

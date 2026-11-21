@@ -10,7 +10,6 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
-  Text,
   TextInput,
   View
 } from "react-native";
@@ -290,10 +289,10 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     warning: colors.warning,
     info: colors.info,
     isDark,
-  }), [isDark, accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor]);
+  }), [isDark, accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, colors.danger, colors.info, colors.success, colors.warning]);
 
   const tabsList = useMemo(() => {
-    const base: Array<{ key: 'activos' | 'finalizados'; label: string; icon: any }> = [
+    const base: { key: 'activos' | 'finalizados'; label: string; icon: any }[] = [
       { key: 'activos', label: 'Activos', icon: 'timer-outline' },
     ];
     if (capacidades.muestraFinalizados) {

@@ -27,7 +27,7 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
   onSelect,
   hint,
 }) => {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
 
   return (
     <>

@@ -151,23 +151,6 @@ export default function ColacionesScreen() {
     return true;
   }, [isCajaAbierta, saving, workerId, ruleFromWorker, productoSeleccionado, rule, mlPorRegistrar, requiereAcompanamiento, selectedAcompanamiento]);
 
-  // La bebida se elige en el carrusel; este bloque solo resume la selección.
-  const resumenBebida = useMemo(() => {
-    if (productosLoading || analcoholicasLoading) return 'Cargando…';
-    if (productoSeleccionado)
-      return `${productoSeleccionado.producto_nombre} ${productoSeleccionado.presentacion_nombre}`.trim();
-    if (!selectedWorker) return 'Selecciona un trabajador';
-    if (!ruleFromWorker) return 'Este rol no recibe colación';
-    return catalogoVisible.length ? 'Elige una de la lista' : 'Sin bebidas disponibles';
-  }, [
-    productosLoading,
-    analcoholicasLoading,
-    productoSeleccionado,
-    selectedWorker,
-    ruleFromWorker,
-    catalogoVisible.length,
-  ]);
-
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />

@@ -4,8 +4,6 @@ import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { useCajaAbierta } from '@/hooks/useCajaAbierta';
-import { showToast } from '@/utils/toast-lazy';
 
 interface Empleado {
   id: string;
@@ -25,7 +23,6 @@ interface Venta {
 export default function ParesDivisionScreen() {
   const router = useRouter();
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
-  const caja = useCajaAbierta();
 
   const [empleados, setEmpleados] = React.useState<Empleado[]>([]);
   const [ventas, setVentas] = React.useState<Venta[]>([]);
@@ -53,7 +50,7 @@ export default function ParesDivisionScreen() {
     // Inicialización sincrónica de datos estáticos — no hay fuente externa
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEmpleados(data.empleados);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setVentas(data.ventas);
   }, []);
 
@@ -77,37 +74,11 @@ export default function ParesDivisionScreen() {
     [empleados, selectedVentaId]
   );
 
-  const ventaSeleccionada = React.useMemo(() =>
-    ventas.find(v => v.id === selectedVentaId) ?? null,
-    [ventas, selectedVentaId]
-  );
-
   const roleLabels: Record<string, string> = {
     cajero: 'Cajero',
     barman: 'Barman',
     garzon: 'Garzón',
   };
-
-  const handleAsignar = React.useCallback((ventaId: string, role: string, empleadoId: string) => {
-    setPares(prev => {
-      const copy = new Map(prev);
-      if (!copy.has(role)) copy.set(role, []);
-      const actual = copy.get(role) ?? [];
-      copy.set(role, [...actual, empleadoId]);
-      return copy;
-    });
-    showToast({ type: 'success', text1: 'Par asignado' });
-  }, []);
-
-  const handleQuitar = React.useCallback((ventaId: string, role: string) => {
-    setPares(prev => {
-      const copy = new Map(prev);
-      const actual = copy.get(role) ?? [];
-      copy.set(role, actual.filter(id => id !== ventaId));
-      return copy;
-    });
-    showToast({ type: 'info', text1: 'Par quitado' });
-  }, []);
 
   const calcularTotalPorRole = React.useCallback(() => {
     const totals = new Map<string, number>();
@@ -199,7 +170,6 @@ export default function ParesDivisionScreen() {
               </Text>
 
               {['cajero', 'barman', 'garzon'].map(role => {
-                const empleadosRole = empleados.filter(e => e.role === role);
                 const panesRole = pares.get(role) ?? [];
                 return (
                   <View key={role} style={[styles.roleRow, { borderColor }]}>
