@@ -69,5 +69,5 @@ export const CajeroActionGrid = ({
           : undefined,
   }));
 
-  return <ActionGrid actions={actions} />;
+  return <ActionGrid actions={actions} bentoLayout={esAdmin} />;
 };

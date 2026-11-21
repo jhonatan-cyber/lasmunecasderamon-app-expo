@@ -3,6 +3,7 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import { useCallback, useMemo, useState } from "react";
 import { LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { BorderRadius } from "@/constants/spacing";
 
 type UserRole = "anfitriona" | "garzon" | "barman" | "cajero";
 
@@ -127,6 +128,13 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
         <View style={styles.grid}>
         {breakdownItems.map((item) => {
           const color = colorVariantsFor(item.colorIndex, accentColor, accentUi, isDark);
+          const itemNeonGlow = isDark ? {
+            shadowColor: color,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 2,
+          } : {};
           return (
             <View
               key={item.label}
@@ -135,6 +143,7 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
                 {
                   backgroundColor: bgVariantsFor(item.colorIndex, accentColor, surfaceMuted, isDark),
                   borderColor,
+                  ...itemNeonGlow,
                 },
               ]}
             >
@@ -191,7 +200,7 @@ function bgVariantsFor(index: number, accentColor: string, surfaceMuted: string,
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 16,
     gap: 14,

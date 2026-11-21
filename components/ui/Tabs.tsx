@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,10 +9,17 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { readableTextColor } from '@/utils/color';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { readableTextColor, withAlpha } from '@/utils/color';
 import { haptic } from '@/utils/haptics';
 import { FontFamily } from '@/constants/fonts';
-import { BorderRadius, MIN_TOUCH_TARGET } from '@/constants/spacing';
+import { BorderRadius, FontSize, MIN_TOUCH_TARGET } from '@/constants/spacing';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 /** Alto visual del pill; el área táctil se completa con hitSlop hasta 44. */
 export const PILL_HEIGHT = 32;
@@ -24,6 +31,8 @@ export type TabItem<T extends string> = {
   label: string;
   icon?: React.ComponentProps<typeof Ionicons>['name'];
   count?: number;
+  /** `true` cuando el tab está bloqueado (ej. caja cerrada). */
+  bloqueado?: boolean;
 };
 
 type TabsProps<T extends string> = {
@@ -51,6 +60,7 @@ type TabsProps<T extends string> = {
   /** Custom accessibility label, e.g. "Ron, 3 productos" */
   getAccessibilityLabel?: (tab: TabItem<T>) => string;
   isTablet?: boolean;
+  isDark?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -75,12 +85,28 @@ export function Tabs<T extends string>({
   leadingChildren,
   getAccessibilityLabel,
   isTablet = false,
+  isDark = false,
   style,
 }: TabsProps<T>) {
   const activeTextColor = accentText ?? readableTextColor(accentColor);
   const isPills = variant === 'pills';
   const adaptive = scrollable !== false;
+  const reducedMotion = useReducedMotion();
   const gap = isTablet ? 10 : 8;
+
+  // Micro-animación de scale para cada tab: el activo escala ligeramente
+  const tabScales = tabs.map(() => useSharedValue(1));
+  useEffect(() => {
+    tabs.forEach((_, i) => {
+      const isActive = tabs[i].key === activeKey;
+      if (reducedMotion) {
+        // Sin animación de escala cuando el usuario prefiere movimiento reducido.
+        tabScales[i].value = isActive ? 1.04 : 1;
+      } else {
+        tabScales[i].value = withSpring(isActive ? 1.04 : 1, { damping: 15, stiffness: 200 });
+      }
+    });
+  }, [activeKey, tabs, reducedMotion]);
 
   const signature = tabs
     .map((tab) => `${tab.key}:${tab.label}:${tab.count ?? ''}:${tab.icon ?? ''}`)
@@ -126,75 +152,111 @@ export function Tabs<T extends string>({
     [],
   );
 
-  const renderTab = (tab: TabItem<T>) => {
+  const renderTab = (tab: TabItem<T>, index: number) => {
     const isActive = activeKey === tab.key;
     const showPillCount = isPills && tab.count !== undefined;
     const showBadge = !isPills && tab.count !== undefined;
+    const isBloqueado = tab.bloqueado === true;
+
+    // Animated scale wrapper
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: tabScales[index].value }],
+    }));
+
+    // Glow neón en modo oscuro para el tab activo
+    const neonGlow = isDark && isActive && !isBloqueado ? {
+      shadowColor: accentColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 4,
+    } : {};
 
     return (
-      <Pressable
-        key={tab.key}
-        onPress={() => {
-          haptic.select();
-          onChange(tab.key);
-        }}
-        accessibilityRole="tab"
-        accessibilityLabel={
-          getAccessibilityLabel
-            ? getAccessibilityLabel(tab)
-            : `${tab.label}${tab.count !== undefined ? ` (${tab.count})` : ''}`
-        }
-        accessibilityState={{ selected: isActive }}
-        hitSlop={
-          isPills
-            ? { top: PILL_HIT_SLOP, bottom: PILL_HIT_SLOP }
-            : undefined
-        }
-        style={[
-          isPills ? styles.pill : styles.segment,
-          stretches ? styles.tabStretch : styles.tabNatural,
-          isTablet && (isPills ? styles.pillTablet : styles.segmentTablet),
-          {
-            backgroundColor: isActive ? accentColor : cardBg,
-            borderColor: isActive ? accentColor : borderColor,
-          },
-        ]}
-      >
-        {tab.icon ? (
-          <Ionicons
-            name={tab.icon}
-            size={isPills ? 14 : (isTablet ? 20 : 18)}
-            color={isActive ? activeTextColor : textSecondary}
-          />
-        ) : null}
-        <Text
-          numberOfLines={1}
+      <Animated.View key={tab.key} style={animatedStyle}>
+        <Pressable
+          onPress={() => {
+            if (!isBloqueado) {
+              haptic.select();
+              onChange(tab.key);
+            }
+          }}
+          accessibilityRole="tab"
+          accessibilityLabel={
+            getAccessibilityLabel
+              ? getAccessibilityLabel(tab)
+              : `${tab.label}${tab.count !== undefined ? ` (${tab.count})` : ''}${isBloqueado ? ', bloqueado' : ''}`
+          }
+          accessibilityState={{ selected: isActive, disabled: isBloqueado }}
+          hitSlop={
+            isPills
+              ? { top: PILL_HIT_SLOP, bottom: PILL_HIT_SLOP }
+              : undefined
+          }
           style={[
-            isPills ? styles.pillText : styles.segmentText,
-            isTablet && !isPills && styles.segmentTextTablet,
-            { color: isActive ? activeTextColor : textSecondary },
+            isPills ? styles.pill : styles.segment,
+            stretches ? styles.tabStretch : styles.tabNatural,
+            isTablet && (isPills ? styles.pillTablet : styles.segmentTablet),
+            {
+              backgroundColor: isActive ? accentColor : cardBg,
+              borderColor: isActive ? accentColor : borderColor,
+              opacity: isBloqueado ? 0.5 : 1,
+              ...neonGlow,
+            },
           ]}
         >
-          {showPillCount ? `${tab.label} (${tab.count})` : tab.label}
-        </Text>
-        {showBadge ? (
-          <View
+          {isBloqueado ? (
+            <Ionicons
+              name="lock-closed"
+              size={isPills ? 14 : (isTablet ? 20 : 18)}
+              color={isActive ? activeTextColor : textSecondary}
+            />
+          ) : tab.icon ? (
+            <Ionicons
+              name={tab.icon}
+              size={isPills ? 14 : (isTablet ? 20 : 18)}
+              color={isActive ? activeTextColor : textSecondary}
+            />
+          ) : null}
+          <Text
+            numberOfLines={1}
             style={[
-              styles.badge,
-              { backgroundColor: isActive ? activeTextColor : accentColor },
+              isPills ? styles.pillText : styles.segmentText,
+              isTablet && !isPills && styles.segmentTextTablet,
+              { color: isActive ? activeTextColor : textSecondary },
             ]}
           >
-            <Text
+            {showPillCount ? `${tab.label} (${tab.count})` : tab.label}
+          </Text>
+          {showBadge ? (
+            <View
               style={[
-                styles.badgeText,
-                { color: isActive ? accentColor : activeTextColor },
+                styles.badge,
+                { backgroundColor: isActive ? activeTextColor : accentColor },
               ]}
             >
-              {tab.count}
-            </Text>
+              <Text
+                style={[
+                  styles.badgeText,
+                  { color: isActive ? accentColor : activeTextColor },
+                ]}
+              >
+                {tab.count}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+        {/* Indicador de dot animado debajo del tab activo */}
+        {isActive && !isPills && (
+          <View style={styles.dotIndicatorContainer}>
+            <Animated.View style={[styles.dotIndicator, { backgroundColor: accentColor }]}>
+              {isDark && (
+                <View style={[styles.dotGlow, { backgroundColor: withAlpha(accentColor, 0.5) }]} />
+              )}
+            </Animated.View>
           </View>
-        ) : null}
-      </Pressable>
+        )}
+      </Animated.View>
     );
   };
 
@@ -210,7 +272,7 @@ export function Tabs<T extends string>({
         ]}
       >
         {leadingChildren}
-        {tabs.map(renderTab)}
+        {tabs.map((tab, i) => renderTab(tab, i))}
       </View>
     );
   }
@@ -243,7 +305,7 @@ export function Tabs<T extends string>({
           }
         >
           {leadingChildren}
-          {tabs.map(renderTab)}
+          {tabs.map((tab, i) => renderTab(tab, i))}
         </View>
       </ScrollView>
     );
@@ -266,7 +328,7 @@ export function Tabs<T extends string>({
       }
     >
       {leadingChildren}
-      {tabs.map(renderTab)}
+      {tabs.map((tab, i) => renderTab(tab, i))}
     </View>
   );
 }
@@ -321,7 +383,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   segmentText: {
-    fontSize: 13,
+    fontSize: FontSize.xs,
     fontFamily: FontFamily.semibold,
     flexShrink: 1,
   },
@@ -343,11 +405,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   pillText: {
-    fontSize: PILL_TEXT_SIZE,
+    fontSize: FontSize.xs,
     fontFamily: FontFamily.semibold,
   },
   segmentTextTablet: {
-    fontSize: 16,
+    fontSize: FontSize.sm,
   },
   badge: {
     minWidth: 20,
@@ -359,7 +421,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: FontSize.xxs,
     fontFamily: FontFamily.bold,
+  },
+  dotIndicatorContainer: {
+    alignItems: 'center',
+    marginTop: 4,
+    height: 4,
+  },
+  dotIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  dotGlow: {
+    position: 'absolute',
+    top: -3,
+    left: -3,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    opacity: 0.6,
   },
 });

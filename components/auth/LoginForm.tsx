@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { FontFamily } from '@/constants/fonts';
 import { BorderRadius } from '@/constants/spacing';
 import React from 'react';
@@ -58,6 +59,31 @@ export default function LoginForm({
     onRememberMeChange,
 }: Props) {
     const { isLandscape } = useResponsiveMetrics();
+    const reducedMotion = useReducedMotion();
+
+    // Estado de foco para glow neón en inputs
+    const [usernameFocused, setUsernameFocused] = React.useState(false);
+    const [passwordFocused, setPasswordFocused] = React.useState(false);
+
+    // Glow neón en inputs cuando están enfocados (modo oscuro)
+    const inputNeonGlow = isDark ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: accentColor,
+        borderWidth: 2.5,
+    } : {};
+
+    // Glow neón en botón de login (modo oscuro)
+    const loginButtonNeonGlow = isDark ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+        elevation: 6,
+    } : {};
 
     // Colors derived from theme
     const textColor = isDark ? '#FFFFFF' : '#111827';
@@ -77,6 +103,10 @@ export default function LoginForm({
     // prohíbe la regla react-hooks/refs (y el compilador de React).
     const shakeValue = React.useMemo(() => new Animated.Value(0), []);
     const startShake = React.useCallback(() => {
+        if (reducedMotion) {
+            // Sin animación shake cuando el usuario prefiere movimiento reducido.
+            return;
+        }
         shakeValue.setValue(0);
         Animated.sequence([
             Animated.timing(shakeValue, { toValue: 8, duration: 80, useNativeDriver: true }),
@@ -85,7 +115,7 @@ export default function LoginForm({
             Animated.timing(shakeValue, { toValue: -4, duration: 60, useNativeDriver: true }),
             Animated.timing(shakeValue, { toValue: 0, duration: 40, useNativeDriver: true }),
         ]).start();
-    }, [shakeValue]);
+    }, [shakeValue, reducedMotion]);
 
     // Trigger shake when error appears
     const prevErrorRef = React.useRef('');
@@ -126,7 +156,7 @@ export default function LoginForm({
 
             {/* Nick input with icon */}
             <Text style={[styles.label, { color: isDark ? textColor : '#FFFFFF' }]}>Nick</Text>
-            <View style={[styles.inputWithIcon, { backgroundColor: cardBg, borderColor: borderColor }]}>
+            <View style={[styles.inputWithIcon, { backgroundColor: cardBg, borderColor: usernameFocused && isDark ? accentColor : borderColor }, usernameFocused && isDark && inputNeonGlow]}>
                 <Ionicons name="person-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
                 <TextInput
                     style={[
@@ -148,6 +178,8 @@ export default function LoginForm({
                     onChangeText={onUsernameChange}
                     returnKeyType="next"
                     onSubmitEditing={() => passwordRef.current?.focus()}
+                    onFocus={() => setUsernameFocused(true)}
+                    onBlur={() => setUsernameFocused(false)}
                 />
             </View>
 
@@ -168,7 +200,7 @@ export default function LoginForm({
             </View>
 
             {/* Password input with icon */}
-            <View style={[styles.inputWithIcon, styles.passwordContainer, { backgroundColor: cardBg, borderColor: borderColor }]}>
+            <View style={[styles.inputWithIcon, styles.passwordContainer, { backgroundColor: cardBg, borderColor: passwordFocused && isDark ? accentColor : borderColor }, passwordFocused && isDark && inputNeonGlow]}>
                 <Ionicons name="lock-closed-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
                 <TextInput
                     style={[
@@ -191,6 +223,8 @@ export default function LoginForm({
                     ref={passwordRef}
                     returnKeyType="go"
                     onSubmitEditing={onLogin}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
                 />
                 <Pressable
                     style={styles.eyeButton}
@@ -224,7 +258,7 @@ export default function LoginForm({
             </Pressable>
 
             {/* Login button with accent color - no transparency */}
-            <View style={styles.loginButtonContainer}>
+            <View style={[styles.loginButtonContainer, isDark && loginButtonNeonGlow]}>
                 <Pressable
                     style={({ pressed }) => [
                         styles.loginButton,

@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 interface AsistenciaCardProps {
   item: any;
@@ -45,13 +46,25 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
       ? item.fecha_hora.split(' ')[1]
       : '';
 
+  // Glow neón en modo oscuro con el color del estado
+  const cardNeonColor = isPendiente ? '#10B981' : accentColor;
+  const cardNeonGlow = isDark ? {
+    shadowColor: cardNeonColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: cardNeonColor,
+    borderWidth: 1.5,
+  } : {};
+
   return (
     <AnimatedView
       from={{ opacity: 0, translateY: 30 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
     >
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+      <View style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
         <View style={styles.cardHeader}>
           <View
             style={[
@@ -217,7 +230,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.card, padding: 16, marginTop: 10, borderWidth: 1, overflow: 'hidden' },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

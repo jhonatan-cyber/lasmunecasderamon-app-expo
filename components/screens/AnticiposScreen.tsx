@@ -14,6 +14,7 @@ import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import {
   Anticipo,
   useAnticipos,
@@ -34,6 +35,7 @@ export default function AnticiposScreen() {
     textPrimary,
     textSecondary,
     borderColor, accentOnSurface} = useAccentColor();
+  const { bloqueado } = useCajaAbierta();
 
   const {
     loading,
@@ -374,6 +376,7 @@ export default function AnticiposScreen() {
         onPress={openSolicitarModal}
         visible={true}
         withTabBar
+        disabled={bloqueado}
       />
 
       {}

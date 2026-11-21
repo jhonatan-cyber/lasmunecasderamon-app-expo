@@ -5,6 +5,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useOutbox } from '@/hooks/useOutbox';
+import { Colors } from '@/constants/theme';
+import { FontSize, BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 /**
  * Aviso del modo offline, compartido por garzón y cajero.
@@ -27,12 +30,23 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
 }) => {
     const router = useRouter();
     const { pendingCount, failedCount, isOffline, isFlushing } = useOutbox();
+    const { isDark } = useAccentColor();
 
     if (!isOffline && pendingCount === 0) return null;
 
     const needsReview = failedCount > 0;
-    // Tonos oscurecidos para que el texto blanco pase AA (antes 2.2:1 en ámbar).
-    const backgroundColor = isOffline ? '#B91C1C' : needsReview ? '#B45309' : '#1D4ED8';
+    // Tonos oscurecidos para que el texto blanco pase AA, centralizados desde theme.ts.
+    const theme = Colors.light; // colores base para el banner
+    const backgroundColor = isOffline ? theme.error : needsReview ? theme.warning : theme.info;
+
+    // Glow neón en modo oscuro
+    const bannerNeonGlow = isDark ? {
+        shadowColor: backgroundColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 6,
+    } : {};
 
     const message = isOffline
         ? pendingCount > 0
@@ -48,7 +62,7 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
         <AnimatedView
             from={{ opacity: 0, translateY: -20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            style={[styles.banner, { backgroundColor }]}
+            style={[styles.banner, { backgroundColor }, bannerNeonGlow]}
         >
             <Pressable
                 onPress={() => router.push(pendientesHref)}
@@ -62,9 +76,9 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
                     size={20}
                     color='#FFFFFF'
                 />
-                <Text maxFontSizeMultiplier={1.3} style={styles.text}>{message}</Text>
+                <Text maxFontSizeMultiplier={1.5} style={styles.text}>{message}</Text>
                 <View style={styles.action}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.actionText}>Ver</Text>
+                    <Text maxFontSizeMultiplier={1.5} style={styles.actionText}>Ver</Text>
                     <Ionicons name='chevron-forward' size={14} color='#FFFFFF' />
                 </View>
             </Pressable>
@@ -76,8 +90,9 @@ const styles = StyleSheet.create({
     banner: {
         marginHorizontal: 16,
         marginTop: 12,
-        borderRadius: 12,
+        borderRadius: BorderRadius.card,
         elevation: 4,
+        overflow: 'hidden',
     },
     pressable: {
         flexDirection: 'row',
@@ -88,7 +103,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         gap: 10,
     },
-    text: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', flexShrink: 1 },
+    text: { color: '#FFFFFF', fontSize: FontSize.xs, fontWeight: '700', flexShrink: 1 },
     action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    actionText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', textDecorationLine: 'underline' },
+    actionText: { color: '#FFFFFF', fontSize: FontSize.xs, fontWeight: '800', textDecorationLine: 'underline' },
 });

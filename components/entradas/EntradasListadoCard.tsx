@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import type { EntradaCliente } from '@/services/entradas';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { formatCurrency } from '@/utils/format';
@@ -200,7 +200,7 @@ interface Props {
 }
 
 export function EntradasListadoCard({ entradas, vacio, titulo = 'HOY' }: Props) {
-  const { cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { cardBg, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
   const [abierto, setAbierto] = useState(true);
   const [detalleAbierto, setDetalleAbierto] = useState<string | null>(null);
 
@@ -340,7 +340,17 @@ export function EntradasListadoCard({ entradas, vacio, titulo = 'HOY' }: Props) 
                         {formatCurrency(grupo.total - grupo.devueltoMonto)} + barra
                       </Text>
                     )}
-                    <View style={[styles.badge, { backgroundColor: `${estado.color}1F` }]}>
+                    <View style={[
+                      styles.badge, 
+                      { backgroundColor: `${estado.color}1F` },
+                      isDark ? {
+                        shadowColor: estado.color,
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      } : {},
+                    ]}>
                       <Text style={{ color: estado.color, fontSize: FontSize.xxs, fontWeight: '800' }}>
                         {estado.label}
                       </Text>
@@ -363,7 +373,7 @@ export function EntradasListadoCard({ entradas, vacio, titulo = 'HOY' }: Props) 
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 28,
+    borderRadius: BorderRadius.card,
     padding: 20,
     borderWidth: 1,
   },

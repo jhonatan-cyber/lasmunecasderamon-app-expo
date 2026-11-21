@@ -12,6 +12,7 @@ export interface User {
     address?: string;
     estado_civil?: string;
     nick?: string;
+    recoveryEmail?: string | null;
     qr_token?: string;
     two_factor_enabled?: boolean;
     forcePasswordChange?: boolean;

@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface CardHeaderProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -36,32 +37,54 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   textColor,
   textMutedColor,
   formatDateTime,
-}) => (
-  <View style={styles.cardHeader}>
-    <View style={styles.headerInfo}>
-      <View style={[styles.iconBox, { backgroundColor: `${accentColor}15` }]}>
-        <Ionicons name={icon} size={18} color={accentColor} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={[styles.subtitle, { color: textMutedColor }]} numberOfLines={1}>
-          {subtitle}
-        </Text>
-        {date && formatDateTime && (
-          <Text style={[styles.date, { color: textMutedColor }]}>
-            {formatDateTime(date)}
+}) => {
+  const { isDark } = useAccentColor();
+
+  // Glow neón en iconBox en modo oscuro
+  const iconBoxNeon = isDark ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 3,
+  } : {};
+
+  // Glow neón en statusBadge en modo oscuro
+  const statusBadgeNeon = isDark ? {
+    shadowColor: statusColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  } : {};
+
+  return (
+    <View style={styles.cardHeader}>
+      <View style={styles.headerInfo}>
+        <View style={[styles.iconBox, { backgroundColor: `${accentColor}15` }, iconBoxNeon]}>
+          <Ionicons name={icon} size={18} color={accentColor} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+            {title}
           </Text>
-        )}
+          <Text style={[styles.subtitle, { color: textMutedColor }]} numberOfLines={1}>
+            {subtitle}
+          </Text>
+          {date && formatDateTime && (
+            <Text style={[styles.date, { color: textMutedColor }]}>
+              {formatDateTime(date)}
+            </Text>
+          )}
+        </View>
+      </View>
+      <View style={[styles.statusBadge, { backgroundColor: statusBgColor ?? `${statusColor}10` }, statusBadgeNeon]}>
+        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+        <Text style={[styles.statusText, { color: statusTextColor ?? statusColor }]}>{statusText}</Text>
       </View>
     </View>
-    <View style={[styles.statusBadge, { backgroundColor: statusBgColor ?? `${statusColor}10` }]}>
-      <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-      <Text style={[styles.statusText, { color: statusTextColor ?? statusColor }]}>{statusText}</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   cardHeader: {
@@ -79,9 +102,10 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: BorderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   title: {
     fontSize: 18,
@@ -102,8 +126,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: BorderRadius.sm,
     gap: 4,
+    overflow: 'hidden',
   },
   statusDot: {
     width: 6,

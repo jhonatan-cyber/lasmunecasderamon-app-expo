@@ -12,7 +12,8 @@ import {
     estadoServicio,
     estadoVisualServicio,
 } from '@/utils/servicioEstado';
-import { FontSize, MIN_TOUCH_TARGET } from '@/constants/spacing';
+import { FontSize, MIN_TOUCH_TARGET, BorderRadius, HitSlop } from '@/constants/spacing';
+import { haptic } from '@/utils/haptics';
 import { ServiceCardTimer } from './ServiceCardTimer';
 
 export interface DetailAction {
@@ -92,10 +93,30 @@ export function ServiceDetailModal({
                     ? theme.textMuted
                     : theme.accent;
 
+    // Glow neón en modo oscuro con el accentColor
+    const modalNeonGlow = theme.isDark ? {
+        shadowColor: theme.accent,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 6,
+        borderColor: theme.accent,
+        borderWidth: 1.5,
+    } : {};
+
+    // Glow neón en botón de finalizar en modo oscuro
+    const finalizarNeonGlow = theme.isDark ? {
+        shadowColor: theme.accent,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+    } : {};
+
     return (
         <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
-                <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }, modalNeonGlow]}>
                     <View style={styles.modalHeader}>
                         <View style={styles.headerInfo}>
                             <Text style={[styles.modalTitleText, { color: theme.text }]}>Detalle del Servicio</Text>
@@ -103,7 +124,7 @@ export function ServiceDetailModal({
                                 <Text style={[styles.modalSubText, { color: theme.textMuted }]}>
                                     #{service?.servicioCode || "S/N"}
                                 </Text>
-                                <View style={[styles.estadoChip, { backgroundColor: badge.background }]}>
+                                <View style={[styles.estadoChip, { backgroundColor: badge.background, borderRadius: BorderRadius.sm }]}>
                                     <View style={[styles.estadoDot, { backgroundColor: badge.foreground }]} />
                                     <Text style={[styles.estadoChipText, { color: badge.foreground }]}>
                                         {estadoTexto}
@@ -113,9 +134,14 @@ export function ServiceDetailModal({
                         </View>
                         <Pressable
                             style={[styles.closeBtn, { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(156,163,175,0.12)' }]}
-                            onPress={onClose}
+                            onPress={() => {
+                              haptic.tap();
+                              onClose();
+                            }}
                             accessibilityRole="button"
                             accessibilityLabel="Cerrar detalle del servicio"
+                            accessibilityHint="Cierra el modal de detalle"
+                            hitSlop={HitSlop.sm}
                         >
                             <Ionicons name="close" size={24} color={theme.text} />
                         </Pressable>
@@ -165,7 +191,7 @@ export function ServiceDetailModal({
                         )}
 
                         <View style={styles.detailsGrid}>
-                            <View style={[styles.gridItem, styles.wideGridItem]}>
+                            <View style={[styles.gridItem, styles.wideGridItem, { borderRadius: BorderRadius.card }]}>
                                 <View style={styles.gridSubItem}>
                                     <Text style={[styles.gridLabel, { color: theme.textMuted }]}>HABITACIÓN</Text>
                                     <Text style={[styles.gridValue, { color: theme.text }]} numberOfLines={1}>
@@ -190,7 +216,7 @@ export function ServiceDetailModal({
                                 </View>
                             </View>
 
-                            <View style={[styles.gridItem, { width: '100%' }]}>
+                            <View style={[styles.gridItem, { width: '100%', borderRadius: BorderRadius.card }]}>
                                 <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONAS</Text>
                                 <View style={styles.badgeContainer}>
                                     {service?.anfitrionas?.split(', ').map((name: string, idx: number) => {
@@ -198,7 +224,7 @@ export function ServiceDetailModal({
                                         const color = badgeColors[idx % badgeColors.length];
                                         const foto = service?.anfitrionas_fotos?.[idx];
                                         return (
-                                            <View key={`${name}-${idx}`} style={[styles.hostessBadge, { backgroundColor: color + '15', borderColor: color + '40' }]}>
+                                            <View key={`${name}-${idx}`} style={[styles.hostessBadge, { backgroundColor: color + '15', borderColor: color + '40', borderRadius: BorderRadius.sm }]}>
                                                 {foto && (
                                                     <Image source={{ uri: foto.startsWith('http') ? foto : `${BASE_URL}/img/users/${foto}` }} style={styles.avatarMini} />
                                                 )}
@@ -229,14 +255,14 @@ export function ServiceDetailModal({
                                 />
                             )}
 
-                            <View style={styles.gridItem}>
+                            <View style={[styles.gridItem, { borderRadius: BorderRadius.card }]}>
                                 <Text style={[styles.gridLabel, { color: theme.textMuted }]}>METODO PAGO</Text>
                                 <Text style={[styles.gridValue, { color: theme.text }]}>
                                     {service?.metodo_pago?.toUpperCase() || '—'}
                                 </Text>
                             </View>
 
-                            <View style={styles.gridItem}>
+                            <View style={[styles.gridItem, { borderRadius: BorderRadius.card }]}>
                                 <Text style={[styles.gridLabel, { color: theme.textMuted }]}>FECHA / HORA</Text>
                                 <Text style={[styles.gridValue, { color: theme.text }]}>
                                     {service?.created_at
@@ -250,14 +276,17 @@ export function ServiceDetailModal({
                             </View>
                         </View>
 
-                        <ServiceSummarySection service={service} theme={theme} />
+                        <ServiceSummarySection service={service} theme={theme} neonGlow={modalNeonGlow} />
 
                         {acciones.length > 0 && (
-                            <View style={[styles.actionsList, { borderColor: theme.border }]}>
+                            <View style={[styles.actionsList, { borderColor: theme.border, borderRadius: BorderRadius.card }]}>
                                 {acciones.map((accion) => (
                                     <Pressable
                                         key={accion.key}
-                                        onPress={accion.onPress}
+                                        onPress={() => {
+                                          haptic.tap();
+                                          accion.onPress();
+                                        }}
                                         style={({ pressed }) => [
                                             styles.actionRow,
                                             {
@@ -267,6 +296,8 @@ export function ServiceDetailModal({
                                         ]}
                                         accessibilityRole="button"
                                         accessibilityLabel={accion.label}
+                                        accessibilityHint={`Ejecuta la acción: ${accion.label}`}
+                                        hitSlop={HitSlop.sm}
                                     >
                                         <Ionicons name={accion.icon} size={20} color={theme.text} />
                                         <Text style={[styles.actionLabel, { color: theme.text }]}>{accion.label}</Text>
@@ -282,10 +313,16 @@ export function ServiceDetailModal({
                                     style={({ pressed }) => [
                                         styles.modalCloseBtn,
                                         { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
+                                        finalizarNeonGlow,
                                     ]}
-                                    onPress={onFinalizar}
+                                    onPress={() => {
+                                      haptic.confirm();
+                                      onFinalizar();
+                                    }}
                                     accessibilityRole="button"
                                     accessibilityLabel="Finalizar servicio"
+                                    accessibilityHint="Cierra y finaliza el servicio activo"
+                                    hitSlop={HitSlop.sm}
                                 >
                                     <Ionicons name="stop-circle-outline" size={20} color={theme.accentText || '#FFF'} />
                                     <Text style={[styles.modalCloseBtnText, { color: theme.accentText || '#FFF' }]}>
@@ -295,11 +332,16 @@ export function ServiceDetailModal({
                                 <Pressable
                                     style={({ pressed }) => [
                                         styles.secondaryBtn,
-                                        { borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
+                                        { borderColor: theme.border, opacity: pressed ? 0.85 : 1, borderRadius: BorderRadius.card },
                                     ]}
-                                    onPress={onClose}
+                                    onPress={() => {
+                                      haptic.tap();
+                                      onClose();
+                                    }}
                                     accessibilityRole="button"
                                     accessibilityLabel="Cerrar detalle"
+                                    accessibilityHint="Cierra el modal sin finalizar"
+                                    hitSlop={HitSlop.sm}
                                 >
                                     <Text style={[styles.secondaryBtnText, { color: theme.textMuted }]}>Cerrar</Text>
                                 </Pressable>
@@ -309,10 +351,16 @@ export function ServiceDetailModal({
                                 style={({ pressed }) => [
                                     styles.modalCloseBtn,
                                     { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
+                                    finalizarNeonGlow,
                                 ]}
-                                onPress={onClose}
+                                onPress={() => {
+                                  haptic.tap();
+                                  onClose();
+                                }}
                                 accessibilityRole="button"
                                 accessibilityLabel="Cerrar detalle"
+                                accessibilityHint="Cierra el modal de detalle"
+                                hitSlop={HitSlop.sm}
                             >
                                 <Text style={[styles.modalCloseBtnText, { color: theme.accentText || '#FFF' }]}>
                                     Cerrar
@@ -334,13 +382,13 @@ function UserInfoRow({ label, name, foto, icon, theme }: {
     theme: any;
 }) {
     return (
-        <View style={styles.gridItem}>
+        <View style={[styles.gridItem, { borderRadius: BorderRadius.card }]}>
             <Text style={[styles.gridLabel, { color: theme.textMuted }]}>{label}</Text>
             <View style={styles.userRow}>
                 {foto ? (
-                    <Image source={{ uri: foto.startsWith('http') ? foto : `${BASE_URL}/img/users/${foto}` }} style={styles.avatarSquare} />
+                    <Image source={{ uri: foto.startsWith('http') ? foto : `${BASE_URL}/img/users/${foto}` }} style={[styles.avatarSquare, { borderRadius: BorderRadius.sm }]} />
                 ) : (
-                    <View style={[styles.avatarSquare, styles.avatarPlaceholder]}>
+                    <View style={[styles.avatarSquare, styles.avatarPlaceholder, { borderRadius: BorderRadius.sm }]}>
                         <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={theme.textMuted} />
                     </View>
                 )}
@@ -350,11 +398,11 @@ function UserInfoRow({ label, name, foto, icon, theme }: {
     );
 }
 
-function ServiceSummarySection({ service, theme }: { service: any; theme: any }) {
+function ServiceSummarySection({ service, theme, neonGlow }: { service: any; theme: any; neonGlow?: any }) {
     const totalUsuarios = safeNumber(service?.total_usuarios);
 
     return (
-        <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border }, neonGlow]}>
             <SummaryRow label="Precio Servicio" value={`${(safeNumber(service?.precio_servicio) * totalUsuarios).toLocaleString()}`} theme={theme} />
             <SummaryRow label="Precio Habitación" value={`${safeNumber(service?.precio_habitacion).toLocaleString()}`} theme={theme} />
             {service?.iva > 0 && <SummaryRow label="IVA (Tarjeta)" value={`${safeNumber(service?.iva).toLocaleString()}`} theme={theme} />}
@@ -394,10 +442,10 @@ function CommissionSectionWithRoom({ service, theme, totalUsuarios }: { service:
                 </Text>
             </View>
             <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>
+                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: FontSize.xs }]}>
                     Comisión p/Anfitriona ({totalUsuarios})
                 </Text>
-                <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
+                <Text style={[styles.summaryVal, { color: theme.text, fontSize: FontSize.sm }]}>
                     ${safeNumber(service?.comision_individual).toLocaleString()} c/u
                 </Text>
             </View>
@@ -416,10 +464,10 @@ function CommissionSection({ service, theme, totalUsuarios }: { service: any; th
                 </Text>
             </View>
             <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: 13 }]}>
+                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: FontSize.xs }]}>
                     Comisión p/Anfitriona ({totalUsuarios})
                 </Text>
-                <Text style={[styles.summaryVal, { color: theme.text, fontSize: 14 }]}>
+                <Text style={[styles.summaryVal, { color: theme.text, fontSize: FontSize.sm }]}>
                     ${safeNumber(service?.comision_individual).toLocaleString()} c/u
                 </Text>
             </View>
@@ -430,7 +478,7 @@ function CommissionSection({ service, theme, totalUsuarios }: { service: any; th
 
 function InfoBanner({ text, theme }: { text: string; theme: any }) {
     return (
-        <View style={[styles.infoBannerBox, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '30' }]}>
+        <View style={[styles.infoBannerBox, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '30', borderRadius: BorderRadius.card }]}>
             <Text style={[styles.infoBannerText, { color: theme.accent }]}>{text}</Text>
         </View>
     );
@@ -438,43 +486,43 @@ function InfoBanner({ text, theme }: { text: string; theme: any }) {
 
 const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-    detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', borderTopWidth: 1 },
+    detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl, padding: 24, maxHeight: '90%', borderTopWidth: 1, overflow: 'hidden' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12 },
     headerInfo: { flex: 1 },
     headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },
-    estadoChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+    estadoChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3 },
     estadoDot: { width: 6, height: 6, borderRadius: 3 },
-    estadoChipText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.4 },
-    modalTitleText: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
-    modalSubText: { fontSize: 13, fontWeight: '600' },
+    estadoChipText: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.4 },
+    modalTitleText: { fontSize: FontSize.xl, fontWeight: '900', letterSpacing: -0.5 },
+    modalSubText: { fontSize: FontSize.xs, fontWeight: '600' },
     closeBtn: { width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET, borderRadius: MIN_TOUCH_TARGET / 2, justifyContent: 'center', alignItems: 'center' },
     detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 24 },
-    gridItem: { width: '47%', padding: 14, borderRadius: 18, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center' },
+    gridItem: { width: '47%', padding: 14, backgroundColor: 'rgba(156, 163, 175, 0.05)', justifyContent: 'center', overflow: 'hidden' },
     wideGridItem: { width: '100%', flexDirection: 'row', justifyContent: 'space-between' },
     gridSubItem: { flex: 1, marginRight: 8 },
-    gridLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6 },
-    gridValue: { fontSize: 15, fontWeight: '700' },
+    gridLabel: { fontSize: FontSize.xxs, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6 },
+    gridValue: { fontSize: FontSize.md, fontWeight: '700' },
     badgeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-    hostessBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
-    hostessBadgeText: { fontSize: 13, fontWeight: '800' },
-    avatarMini: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
+    hostessBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
+    hostessBadgeText: { fontSize: FontSize.xs, fontWeight: '800' },
+    avatarMini: { width: 24, height: 24, borderRadius: BorderRadius.sm, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
     userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-    avatarSquare: { width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
+    avatarSquare: { width: 32, height: 32, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
     avatarPlaceholder: { justifyContent: 'center', alignItems: 'center' },
-    summarySection: { padding: 24, borderRadius: 28, borderWidth: 1, marginBottom: 24 },
+    summarySection: { padding: 24, borderRadius: BorderRadius.xxl, borderWidth: 1, marginBottom: 24, overflow: 'hidden' },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
-    summaryLabel: { fontSize: 15, fontWeight: '600' },
-    summaryVal: { fontSize: 16, fontWeight: '700' },
+    summaryLabel: { fontSize: FontSize.md, fontWeight: '600' },
+    summaryVal: { fontSize: FontSize.sm, fontWeight: '700' },
     totalRow: { marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-    totalLabelFinal: { fontSize: 16, fontWeight: '900' },
-    totalValFinal: { fontSize: 26, fontWeight: '900' },
-    infoBannerBox: { marginTop: 16, padding: 12, borderRadius: 12, borderWidth: 1 },
-    infoBannerText: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
-    actionsList: { borderRadius: 20, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+    totalLabelFinal: { fontSize: FontSize.sm, fontWeight: '900' },
+    totalValFinal: { fontSize: FontSize.xl, fontWeight: '900' },
+    infoBannerBox: { marginTop: 16, padding: 12, borderWidth: 1 },
+    infoBannerText: { fontSize: FontSize.xs, fontWeight: '700', textAlign: 'center' },
+    actionsList: { borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
     actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
     actionLabel: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
-    modalCloseBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12, flexDirection: 'row', gap: 8, paddingHorizontal: 16 },
-    modalCloseBtnText: { fontSize: 18, fontWeight: '900' },
-    secondaryBtn: { minHeight: MIN_TOUCH_TARGET, borderRadius: 18, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+    modalCloseBtn: { minHeight: 56, borderRadius: BorderRadius.card, justifyContent: 'center', alignItems: 'center', marginBottom: 12, flexDirection: 'row', gap: 8, paddingHorizontal: 16, overflow: 'hidden' },
+    modalCloseBtnText: { fontSize: FontSize.lg, fontWeight: '900' },
+    secondaryBtn: { minHeight: MIN_TOUCH_TARGET, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
     secondaryBtnText: { fontSize: FontSize.md, fontWeight: '700' },
 });

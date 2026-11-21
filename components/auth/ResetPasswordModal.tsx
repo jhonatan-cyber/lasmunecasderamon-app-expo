@@ -46,7 +46,7 @@ export default function ResetPasswordModal({
                         Restablecer contraseña
                     </Text>
                     <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                        Ingresa tu RUT registrado. Tu contraseña temporal será ese mismo RUT y deberás cambiarla al iniciar sesión.
+                        Ingresa tu RUT registrado. Si tienes correo de recuperación configurado, recibirás una clave temporal por correo. Deberás cambiarla al iniciar sesión.
                     </Text>
                     <TextInput
                         style={[

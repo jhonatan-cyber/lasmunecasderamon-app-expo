@@ -6,6 +6,7 @@ import { useRenderCount } from '@/hooks/useRenderCount';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 import { formatCurrency } from '@/utils/format';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
     0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -37,10 +38,21 @@ export const OvertimeCard = React.memo(function OvertimeCard({
     textSecondary,
     onPress
 }: OvertimeCardProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, isDark } = useAccentColor();
     useRenderCount('OvertimeCard', { itemId: item.id_hora_extra, estado: item.estado });
     const status = statusConfig[item.estado] || statusConfig[1];
     const fecha = new Date(item.fecha_crea);
+
+    // Glow neón en modo oscuro con el color del estado
+    const cardNeonGlow = isDark ? {
+        shadowColor: status.color,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: status.color,
+        borderWidth: 1.5,
+    } : {};
 
     return (
         <AnimatedView
@@ -50,7 +62,7 @@ export const OvertimeCard = React.memo(function OvertimeCard({
         >
             <Pressable
                 onPress={() => onPress(item)}
-                style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+                style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}
             >
                 <View style={styles.empHeader}>
                     <View style={[styles.avatar, { backgroundColor: accentColor + '20' }]}>
@@ -108,7 +120,8 @@ OvertimeCard.displayName = 'OvertimeCard';
 
 const styles = StyleSheet.create({
     card: { 
-        borderRadius: 18, 
+        borderRadius: BorderRadius.card,
+        overflow: 'hidden',
         borderWidth: 1, 
         padding: 14, 
         marginBottom: 10, 

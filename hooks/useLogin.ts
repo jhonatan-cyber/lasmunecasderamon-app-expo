@@ -90,7 +90,7 @@ export default function useLogin() {
 
         showAlert(
             'Restablecer contraseña',
-            `¿Deseas restablecer la contraseña de la cuenta con RUT ${run}? La contraseña temporal será tu RUT registrado. Deberás cambiarla al ingresar.`,
+            `¿Deseas restablecer la contraseña de la cuenta con RUT ${run}? Si tienes correo de recuperación configurado, recibirás una clave temporal por correo.`,
             'info',
             async () => {
                 setLoading(true);
@@ -102,7 +102,7 @@ export default function useLogin() {
                         setResetRun('');
                         showAlert(
                             'Éxito',
-                            'Tu contraseña temporal es tu RUT registrado. Inicia sesión con tu usuario y ese RUT; luego deberás crear una contraseña nueva.',
+                            'Si tienes correo de recuperación configurado, recibirás una clave temporal por correo. Si no, tu contraseña temporal será tu RUT registrado.',
                             'success'
                         );
                     } else {

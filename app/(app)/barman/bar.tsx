@@ -25,6 +25,8 @@ import { useBarScreen } from '@/hooks/useBarScreen';
 import type { BarMovement, BarTransfer } from '@/hooks/useBarScreen';
 import { useEnvasesScreen } from '@/hooks/useEnvasesScreen';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useCajaAbierta } from '@/hooks/useCajaAbierta';
+import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
 
 type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 
@@ -33,6 +35,7 @@ export default function BarScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
+  const { bloqueado } = useCajaAbierta();
   const [activeTab, setActiveTab] = useState<TabId>(
     params.tab === 'pendientes' ? 'pendientes' : 'stock',
   );
@@ -116,9 +119,9 @@ export default function BarScreen() {
       <Tabs
         tabs={[
           { key: 'stock', label: 'Stock' },
-          { key: 'pendientes', label: 'Pendientes', count: transfers.length },
+          { key: 'pendientes', label: 'Pendientes', count: transfers.length, bloqueado: bloqueado },
           { key: 'historial', label: 'Historial' },
-          { key: 'envases', label: 'Envases' },
+          { key: 'envases', label: 'Envases', bloqueado: bloqueado },
         ]}
         activeKey={activeTab}
         onChange={onTabChange}
@@ -175,46 +178,52 @@ export default function BarScreen() {
           />
         )}
 
-        {activeTab === 'pendientes' &&
-          (loadingTransfers ? (
-            <View style={{ padding: 16, gap: 10 }}>
-              {[1, 2].map((i) => (
-                <Skeleton key={i} width="100%" height={170} borderRadius={16} />
-              ))}
-            </View>
-          ) : (
-            <VirtualizedList
-              data={transfers}
-              keyExtractor={(item: { id: string }) => item.id}
-              contentContainerStyle={styles.list}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={accentColor}
-                />
-              }
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={48}
-                    color={textSecondary}
+        {activeTab === 'pendientes' && (
+          <BloqueoPorCaja
+            bloqueado={bloqueado}
+            mensaje="Necesitás una caja abierta para gestionar recepciones pendientes."
+          >
+            {loadingTransfers ? (
+              <View style={{ padding: 16, gap: 10 }}>
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} width="100%" height={170} borderRadius={16} />
+                ))}
+              </View>
+            ) : (
+              <VirtualizedList
+                data={transfers}
+                keyExtractor={(item: { id: string }) => item.id}
+                contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor={accentColor}
                   />
-                  <Text style={[styles.emptyText, { color: textSecondary }]}>
-                    Sin recepciones pendientes
-                  </Text>
-                </View>
-              }
-              renderItem={({ item }: { item: (typeof transfers)[number] }) => (
-                <TransferCard
-                  item={item}
-                  onPress={() => setSelectedTransfer(item)}
-                />
-              )}
-            />
-          ))}
+                }
+                ListEmptyComponent={
+                  <View style={styles.empty}>
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={48}
+                      color={textSecondary}
+                    />
+                    <Text style={[styles.emptyText, { color: textSecondary }]}>
+                      Sin recepciones pendientes
+                    </Text>
+                  </View>
+                }
+                renderItem={({ item }: { item: (typeof transfers)[number] }) => (
+                  <TransferCard
+                    item={item}
+                    onPress={() => setSelectedTransfer(item)}
+                  />
+                )}
+              />
+            )}
+          </BloqueoPorCaja>
+        )}
 
         {activeTab === 'historial' && (
           <MovementsList
@@ -227,23 +236,28 @@ export default function BarScreen() {
         )}
 
         {activeTab === 'envases' && (
-          <ContainerReturnPanel
-            codigo={codigo}
-            setCodigo={setCodigo}
-            verificando={verificando}
-            resultado={resultado}
-            sesion={sesion}
-            entregados={entregados}
-            rechazados={rechazados}
-            devoluciones={devoluciones}
-            loading={loadingEnvases}
-            refreshing={refreshingEnvases}
-            error={errorEnvases}
-            onEnviar={enviarEnvase}
-            onLimpiarSesion={limpiarSesion}
-            onRefresh={onRefreshEnvases}
-            onAbrirScanner={() => setScannerVisible(true)}
-          />
+          <BloqueoPorCaja
+            bloqueado={bloqueado}
+            mensaje="Necesitás una caja abierta para gestionar devoluciones de envases."
+          >
+            <ContainerReturnPanel
+              codigo={codigo}
+              setCodigo={setCodigo}
+              verificando={verificando}
+              resultado={resultado}
+              sesion={sesion}
+              entregados={entregados}
+              rechazados={rechazados}
+              devoluciones={devoluciones}
+              loading={loadingEnvases}
+              refreshing={refreshingEnvases}
+              error={errorEnvases}
+              onEnviar={enviarEnvase}
+              onLimpiarSesion={limpiarSesion}
+              onRefresh={onRefreshEnvases}
+              onAbrirScanner={() => setScannerVisible(true)}
+            />
+          </BloqueoPorCaja>
         )}
       </View>
 

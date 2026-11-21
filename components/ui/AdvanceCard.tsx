@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
@@ -110,6 +110,18 @@ export function AdvanceCard({
 
     const statusColors = getStatusColors();
 
+    // Glow neón en modo oscuro con el color del estado
+    const cardNeonColor = isPendiente ? '#F59E0B' : isPagada ? '#10B981' : isRechazada ? '#EF4444' : isLiquidada ? '#8B5CF6' : accentColor;
+    const cardNeonGlow = isDark ? {
+        shadowColor: cardNeonColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: cardNeonColor,
+        borderWidth: 1.5,
+    } : {};
+
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'Sin fecha';
         try {
@@ -132,7 +144,7 @@ export function AdvanceCard({
     };
 
     const content = (
-        <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
             <View style={styles.cardHeader}>
                 {showIndexBadge ? (
                     <View style={[styles.indexBadge, { backgroundColor: surfaceMuted }]}>
@@ -230,10 +242,11 @@ export function AdvanceCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 18,
+        borderRadius: BorderRadius.card,
         padding: 16,
         marginTop: 12,
         borderWidth: 1,
+        overflow: 'hidden',
     },
     cardHeader: {
         flexDirection: 'row',

@@ -6,8 +6,8 @@ const tintColorDark = '#FFFFFF';
 export const Colors = {
   light: {
     text: '#000000',
-    textSecondary: '#4B5563',
-    textMuted: '#4B5563',
+    textSecondary: '#374151',
+    textMuted: '#6B7280',
     background: '#FFFFFF',
     backgroundSecondary: '#F3F4F6',
     card: '#FFFFFF',
@@ -35,8 +35,8 @@ export const Colors = {
   },
   dark: {
     text: '#FFFFFF',
-    textSecondary: '#9CA3AF',
-    textMuted: '#6B7280',
+    textSecondary: '#D1D5DB',
+    textMuted: '#9CA3AF',
     background: '#000000',
     backgroundSecondary: '#111827',
     card: '#111111',

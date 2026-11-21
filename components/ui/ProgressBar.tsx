@@ -27,10 +27,19 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     message,
     style,
 }) => {
-    const { accentColor, surfaceMuted, textSecondary } = useAccentColor();
+    const { accentColor, surfaceMuted, textSecondary, isDark } = useAccentColor();
     const reducedMotion = useReducedMotion();
     const barColor = color || accentColor;
     const indeterminateTranslateX = useSharedValue(-100);
+
+    // Glow neón en modo oscuro para el fill de la barra
+    const neonGlow = isDark ? {
+        shadowColor: barColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+        elevation: 3,
+    } : {};
 
     useEffect(() => {
         if (progress === undefined && !reducedMotion) {
@@ -77,6 +86,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                             ...(progress !== undefined
                                 ? { width: `${progress}%` }
                                 : [indeterminateStyle, indeterminateWidth]),
+                            ...neonGlow,
                         },
                     ]}
                 />

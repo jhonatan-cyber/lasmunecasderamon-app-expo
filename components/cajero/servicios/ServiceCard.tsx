@@ -1,6 +1,8 @@
 import { memo, useMemo } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { AnimatedView } from "@/components/ui/AnimatedView";
+import { BorderRadius, HitSlop } from "@/constants/spacing";
+import { haptic } from "@/utils/haptics";
 import type { Timer } from "@/context/types";
 import { formatTime, parseDateSafe } from "@/utils/timeUtils";
 import { tiempoServicio } from "@/utils/servicioTiempo";
@@ -53,6 +55,7 @@ const ServiceCardContent = ({
   sinAccionesBarman,
   theme,
 }: ServiceCardProps) => {
+    // AnimatedView ya maneja reducedMotion internamente.
     const tiempo = tiempoServicio(item, serverOffset);
     const visual = estadoVisualServicio(item.estado, {
       excedido: tiempo.estaExcedido,
@@ -167,6 +170,17 @@ const ServiceCardContent = ({
       return items;
     }, [item, onAgregarVenta, onCambiarAnfitrionas, onEditar]);
 
+    // Glow neón en modo oscuro con el color del estado visual
+    const cardNeonGlow = theme.isDark ? {
+      shadowColor: bordeColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    } : {};
+
+    const accessibilityLabel = `Servicio en ${item.roomName}, estado: ${statusText}`;
+
     return (
       <AnimatedView
         from={{ opacity: 0, scale: 0.9 }}
@@ -174,14 +188,21 @@ const ServiceCardContent = ({
         transition={{ type: "timing", duration: 500 }}
       >
         <Pressable
-          onPress={() => onPress && onPress(item)}
+          onPress={() => {
+            haptic.tap();
+            onPress && onPress(item);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint="Toque para ver detalles del servicio"
+          hitSlop={HitSlop.md}
           style={({ pressed }) => [
             styles.card,
             {
               backgroundColor: theme.card,
               borderColor: bordeColor,
-              opacity: pressed ? 0.9 : 1,
-              transform: [{ scale: pressed ? 0.98 : 1 }],
+              opacity: pressed ? 0.85 : 1,
+              ...cardNeonGlow,
             },
           ]}
         >
@@ -266,7 +287,7 @@ ServiceCard.displayName = "ServiceCard";
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     marginBottom: 16,

@@ -4,6 +4,7 @@ import { parseDateSafe } from "@/utils/timeUtils";
 import { rotateColor } from "@/utils/colors";
 import { useRenderCount } from "@/hooks/useRenderCount";
 import { FontFamily } from "@/constants/fonts";
+import { BorderRadius } from "@/constants/spacing";
 import { TimerPill } from "./TimerPill";
 import { statusColors } from "./constants";
 import { VentaCardDetails } from "./VentaCardDetails";
@@ -39,6 +40,7 @@ export const VentaCard = memo(function VentaCard({
   borderColor,
   textPrimary,
   textSecondary,
+  isDark,
   onPress,
   onFinalizar,
   timers,
@@ -67,6 +69,15 @@ export const VentaCard = memo(function VentaCard({
       minute: "2-digit",
     });
 
+  // Glow neón en modo oscuro con el color rotado
+  const cardNeonGlow = isDark ? {
+    shadowColor: itemAccent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  } : {};
+
   return (
     <View style={{ marginHorizontal: 8 }}>
       <Pressable
@@ -76,6 +87,7 @@ export const VentaCard = memo(function VentaCard({
             backgroundColor: cardBg,
             borderColor,
             borderLeftColor: statusColor,
+            ...cardNeonGlow,
           },
           pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
         ]}
@@ -131,7 +143,7 @@ export const VentaCard = memo(function VentaCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     borderLeftWidth: 6,

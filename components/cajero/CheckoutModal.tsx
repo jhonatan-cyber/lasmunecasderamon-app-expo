@@ -1,7 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
-import { FontSize } from '@/constants/spacing';
+import { FontSize, HitSlop } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
@@ -13,6 +12,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { MetodoPago } from '../../types/api';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { haptic } from '@/utils/haptics';
 
 interface CheckoutModalProps {
   visible: boolean;
@@ -132,7 +132,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {["efectivo", "tarjeta", "transferencia", ...(selectedClient ? ["prepago"] : [])].map((m: any) => {
                 const isSelected = metodoPago === m;
                 return (
-                  <Pressable key={m} style={[styles.payBtn, { borderColor: isSelected ? accentColor : borderColor }, isSelected && { backgroundColor: accentBg }]} onPress={() => { setMetodoPago(m); if (m !== "prepago") setMetodoPagoAdicional(""); }}>
+                  <Pressable
+                    key={m}
+                    style={[styles.payBtn, { borderColor: isSelected ? accentColor : borderColor }, isSelected && { backgroundColor: accentBg }]}
+                    onPress={() => { setMetodoPago(m); if (m !== "prepago") setMetodoPagoAdicional(""); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Pagar con ${m}`}
+                    accessibilityState={{ selected: isSelected }}
+                    hitSlop={HitSlop.sm}
+                  >
                     <Ionicons name={m === "efectivo" ? "cash" : m === "tarjeta" ? "card" : m === "prepago" ? "wallet" : "swap-horizontal"} size={24} color={isSelected ? accentColor : textSecondary} />
                     <Text style={[styles.payLabel, { color: isSelected ? accentColor : textSecondary }]}>{m}</Text>
                   </Pressable>
@@ -165,15 +173,37 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           <View style={styles.footer}>
             <View style={styles.btnRow}>
-              <Pressable style={[styles.btn, { borderWidth: 2, borderColor }]} onPress={onClose} disabled={submittingCheckout}>
+              <Pressable
+                style={[styles.btn, { borderWidth: 2, borderColor }]}
+                onPress={onClose}
+                disabled={submittingCheckout}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar checkout"
+                hitSlop={HitSlop.sm}
+              >
                 <Text style={[styles.btnText, { color: textSecondary }]}>Cancelar</Text>
               </Pressable>
               {selectedClient && onAddToCuenta && (
-                <Pressable style={[styles.btn, { backgroundColor: "#7C3AED" }]} onPress={onAddToCuenta} disabled={submittingCheckout}>
+                <Pressable
+                  style={[styles.btn, { backgroundColor: "#7C3AED" }]}
+                  onPress={onAddToCuenta}
+                  disabled={submittingCheckout}
+                  accessibilityRole="button"
+                  accessibilityLabel="Agregar a cuenta"
+                  hitSlop={HitSlop.sm}
+                >
                   {submittingCheckout ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={[styles.btnText, { color: "#FFF" }]}>Cuenta</Text>}
                 </Pressable>
               )}
-              <Pressable style={[styles.btn, { backgroundColor: accentColor, opacity: !metodoPago || submittingCheckout ? 0.5 : 1 }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onCheckoutSubmit(); }} disabled={!metodoPago || submittingCheckout}>
+              <Pressable
+                style={[styles.btn, { backgroundColor: accentColor, opacity: !metodoPago || submittingCheckout ? 0.5 : 1 }]}
+                onPress={() => { haptic.confirm(); onCheckoutSubmit(); }}
+                disabled={!metodoPago || submittingCheckout}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmar venta"
+                accessibilityHint="Procesa el pago del pedido"
+                hitSlop={HitSlop.sm}
+              >
                 {submittingCheckout ? <ActivityIndicator size="small" color={accentText} /> : <Text style={[styles.btnText, { color: accentText }]}>Venta</Text>}
               </Pressable>
             </View>
@@ -188,34 +218,34 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modal: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   header: { flexDirection: "row", alignItems: "center", gap: 12, padding: 20 },
-  title: { fontSize: 20, fontWeight: "800" },
-  subtitle: { fontSize: 14, fontWeight: "600", marginTop: 2 },
+  title: { fontSize: FontSize.xl, fontWeight: "800" },
+  subtitle: { fontSize: FontSize.sm, fontWeight: "600", marginTop: 2 },
   content: { flex: 1 },
   contentContainer: { padding: 20, paddingBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  sectionTitle: { fontSize: FontSize.sm, fontWeight: "700", marginBottom: 12 },
   metaRow: { flexDirection: "row", borderWidth: 1, borderRadius: 12, marginBottom: 16, overflow: "hidden" },
   metaItem: { flex: 1, padding: 10, alignItems: "center", gap: 2 },
   metaLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
-  metaValue: { fontSize: 12, fontWeight: "800", textAlign: "center" },
+  metaValue: { fontSize: FontSize.xs, fontWeight: "800", textAlign: "center" },
   divider: { width: 1 },
   receipt: { borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1 },
   productRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   qtyCol: { width: 44 },
   qtyLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
-  qty: { fontSize: 16, fontWeight: "900" },
+  qty: { fontSize: FontSize.sm, fontWeight: "900" },
   prodCol: { flex: 1 },
-  prodName: { fontSize: 14, fontWeight: "700" },
-  prodPrice: { fontSize: 12 },
-  prodSubtotal: { fontSize: 14, fontWeight: "800" },
+  prodName: { fontSize: FontSize.sm, fontWeight: "700" },
+  prodPrice: { fontSize: FontSize.xs },
+  prodSubtotal: { fontSize: FontSize.sm, fontWeight: "800" },
   paymentGrid: { flexDirection: "row", gap: 8, marginBottom: 16 },
   payBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 2, alignItems: "center", gap: 4 },
-  payLabel: { fontSize: 12, fontWeight: "700", textTransform: "capitalize" },
+  payLabel: { fontSize: FontSize.xs, fontWeight: "700", textTransform: "capitalize" },
   row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   totals: { padding: 16, borderRadius: 12, marginBottom: 10 },
-  totalLabel: { fontSize: 18, fontWeight: "800" },
-  totalValue: { fontSize: 20, fontWeight: "900" },
+  totalLabel: { fontSize: FontSize.lg, fontWeight: "800" },
+  totalValue: { fontSize: FontSize.xl, fontWeight: "900" },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.1)" },
   btnRow: { flexDirection: "row", gap: 8 },
   btn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center", justifyContent: "center", minHeight: 48 },
-  btnText: { fontSize: 14, fontWeight: "700" },
+  btnText: { fontSize: FontSize.sm, fontWeight: "700" },
 });

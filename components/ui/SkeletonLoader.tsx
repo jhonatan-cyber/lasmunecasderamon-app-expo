@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import Animated, {
   interpolate,
@@ -24,15 +25,20 @@ export function SkeletonLoader({
   style,
 }: SkeletonLoaderProps) {
   const { accentColor, isDark } = useAccentColor();
+  const reducedMotion = useReducedMotion();
   const shimmerValue = useSharedValue(0);
 
   useEffect(() => {
+    if (reducedMotion) {
+      // Sin animación shimmer cuando el usuario prefiere movimiento reducido.
+      return;
+    }
     shimmerValue.value = withRepeat(
       withTiming(1, { duration: 1500 }),
       -1,
       false,
     );
-  }, [shimmerValue]);
+  }, [shimmerValue, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const translateX = interpolate(shimmerValue.value, [0, 1], [-150, 150]);

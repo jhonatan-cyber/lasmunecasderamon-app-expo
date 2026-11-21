@@ -4,10 +4,13 @@ import { useOutbox } from "@/hooks/useOutbox";
 interface BarmanActionGridProps {
   /** Transferencias de stock que el servidor todavía no confirmó. */
   pendingTransfers?: number;
+  /** `true` cuando el servidor confirmó que no hay caja abierta. */
+  bloqueado?: boolean;
 }
 
 export const BarmanActionGrid = ({
   pendingTransfers = 0,
+  bloqueado = false,
 }: BarmanActionGridProps) => {
   const { pendingCount, failedCount, isOffline } = useOutbox();
   const operacionesSinEnviar = pendingCount + failedCount;
@@ -28,6 +31,7 @@ export const BarmanActionGrid = ({
       icon: "basket",
       color: "#8B5CF6",
       route: "/barman/pedidos",
+      bloqueoPorCaja: bloqueado,
     },
     {
       title: "SERVICIOS",
@@ -35,6 +39,7 @@ export const BarmanActionGrid = ({
       icon: "bed",
       color: "#10B981",
       route: "/barman/servicios",
+      bloqueoPorCaja: bloqueado,
     },
     {
       title: "COVERS",
@@ -42,6 +47,7 @@ export const BarmanActionGrid = ({
       icon: "ticket-outline",
       color: "#F59E0B",
       route: "/barman/covers",
+      bloqueoPorCaja: bloqueado,
     },
     {
       title: "COLACIONES",
@@ -49,6 +55,7 @@ export const BarmanActionGrid = ({
       icon: "beer-outline",
       color: "#EAB308",
       route: "/barman/colaciones",
+      bloqueoPorCaja: bloqueado,
     },
     {
       title: "RESUMEN",

@@ -24,6 +24,7 @@ import { PremiumFAB } from '@/components/ui/PremiumFAB';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { useTimer } from '@/context/TimerContext';
 import type { Timer } from '@/context/types';
 import { parseDateSafe } from '@/utils/timeUtils';
@@ -35,6 +36,7 @@ import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner';
 import { blockOffline } from '@/utils/offlineGuard';
 import { safeNumber } from '@/utils/format';
 import logger from '@/utils/logger';
+import { BorderRadius } from '@/constants/spacing';
 
 import {
   ServiceCard,
@@ -585,32 +587,14 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
       <View style={{ flex: 1 }}>
         {activeTab === "finalizados" && (
-          <View style={[styles.searchBox, { backgroundColor: cardBg, borderColor }]}>
-            <Ionicons name="search" size={18} color={textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: textPrimary }]}
-              value={busquedaFinalizados}
-              onChangeText={(text) =>
-                dispatch({ type: 'SET_BUSQUEDA_FINALIZADOS', payload: text })
-              }
-              placeholder="Habitación, código, anfitriona"
-              placeholderTextColor={textSecondary}
-              accessibilityLabel="Buscar servicios finalizados"
-              returnKeyType="search"
-            />
-            {busquedaFinalizados.length > 0 && (
-              <Pressable
-                onPress={() =>
-                  dispatch({ type: 'SET_BUSQUEDA_FINALIZADOS', payload: "" })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Limpiar búsqueda"
-                hitSlop={8}
-              >
-                <Ionicons name="close-circle" size={18} color={textSecondary} />
-              </Pressable>
-            )}
-          </View>
+          <SearchBar
+            value={busquedaFinalizados}
+            onChangeText={(text) =>
+              dispatch({ type: 'SET_BUSQUEDA_FINALIZADOS', payload: text })
+            }
+            placeholder="Habitación, código, anfitriona"
+            style={styles.searchContainer}
+          />
         )}
         <VirtualizedList
           data={activeTab === "activos" ? activeServicios : finalizadosVisibles}
@@ -636,7 +620,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
             loadingActivos || loadingFinalizados ? (
               <View style={{ padding: 16, gap: 12 }}>
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} height={96} borderRadius={16} />
+                  <Skeleton key={i} height={96} borderRadius={BorderRadius.card} />
                 ))}
               </View>
             ) : (
@@ -694,16 +678,8 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { ...contentColumn, padding: 12, paddingBottom: 100 },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  searchContainer: {
     marginHorizontal: 12,
     marginTop: 8,
-    paddingHorizontal: 14,
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
   },
-  searchInput: { flex: 1, fontSize: 15 },
 });

@@ -6,6 +6,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
 import { accentTextColor } from '@/utils/color';
+import { AnimatedView } from '@/components/ui/AnimatedView';
 
 export interface SelectListItem {
   id: string | number;
@@ -51,7 +52,7 @@ export const SelectListModal = ({
   height = '85%',
   emptyText = 'No hay elementos disponibles',
 }: SelectListModalProps) => {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
   const insets = useSafeAreaInsets();
 
   // La selección vive en el cuerpo, que solo se monta con el modal abierto:
@@ -112,33 +113,47 @@ export const SelectListModal = ({
             ) : (
               items.map((item, index) => {
                 const selected = isItemSelected(item);
+                const itemNeonGlow = isDark && selected ? {
+                  shadowColor: accentColor,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 3,
+                } : {};
                 return (
-                  <Pressable
+                  <AnimatedView
                     key={`${String(item.id)}-${index}`}
-                    disabled={item.disabled}
-                    onPress={() => {
-                      if (item.disabled) return;
-                      setSelectedId(item.id);
-                      item.onPress?.();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected, disabled: !!item.disabled }}
-                    style={[
-                      styles.item,
-                      {
-                        borderColor: item.disabled ? borderColor : selected ? accentColor : borderColor,
-                        backgroundColor: selected ? `${accentColor}12` : 'transparent',
-                        opacity: item.disabled ? 0.5 : 1,
-                      },
-                    ]}
+                    from={{ opacity: 0, translateY: 10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: 'timing', duration: 200, delay: Math.min(index, 8) * 50 }}
                   >
-                    {item.renderContent(selected, accentColor, textPrimary, textSecondary)}
-                    {item.disabled && item.disabledReason && (
-                      <Text style={[styles.disabledReason, { color: '#EF4444' }]}>
-                        {item.disabledReason}
-                      </Text>
-                    )}
-                  </Pressable>
+                    <Pressable
+                      disabled={item.disabled}
+                      onPress={() => {
+                        if (item.disabled) return;
+                        setSelectedId(item.id);
+                        item.onPress?.();
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected, disabled: !!item.disabled }}
+                      style={[
+                        styles.item,
+                        {
+                          borderColor: item.disabled ? borderColor : selected ? accentColor : borderColor,
+                          backgroundColor: selected ? `${accentColor}12` : 'transparent',
+                          opacity: item.disabled ? 0.5 : 1,
+                          ...itemNeonGlow,
+                        },
+                      ]}
+                    >
+                      {item.renderContent(selected, accentColor, textPrimary, textSecondary)}
+                      {item.disabled && item.disabledReason && (
+                        <Text style={[styles.disabledReason, { color: '#EF4444' }]}>
+                          {item.disabledReason}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </AnimatedView>
                 );
               })
             )}
@@ -147,14 +162,22 @@ export const SelectListModal = ({
           {/* Botón de cierre: con `onConfirm` confirma la selección; sin él,
               simplemente descarta. Antes la condición `(onConfirm || true)`
               era siempre verdadera y el botón se pintaba igual. */}
-          <Pressable
-            style={[styles.confirmBtn, { backgroundColor: accentColor }]}
-            onPress={onConfirm ?? onClose}
-            accessibilityRole="button"
-            accessibilityLabel={confirmLabel}
-          >
-            <Text style={[styles.confirmBtnText, { color: accentTextColor(accentColor) }]}>{confirmLabel}</Text>
-          </Pressable>
+          <View style={isDark ? {
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          } : {}}>
+            <Pressable
+              style={[styles.confirmBtn, { backgroundColor: accentColor }]}
+              onPress={onConfirm ?? onClose}
+              accessibilityRole="button"
+              accessibilityLabel={confirmLabel}
+            >
+              <Text style={[styles.confirmBtnText, { color: accentTextColor(accentColor) }]}>{confirmLabel}</Text>
+            </Pressable>
+          </View>
         </View>
         ) : null}
       </View>

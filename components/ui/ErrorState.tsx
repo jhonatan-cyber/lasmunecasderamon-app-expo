@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { accentTextColor } from '@/utils/color';
 import { haptic } from '@/utils/haptics';
 import { FontFamily } from '@/constants/fonts';
 import { BorderRadius, FontSize } from '@/constants/spacing';
+import { Colors } from '@/constants/theme';
 
 export interface ErrorStateProps {
     icon?: keyof typeof Ionicons.glyphMap;
@@ -24,15 +35,6 @@ export interface ErrorStateProps {
     variant?: 'full' | 'inline';
 }
 
-/**
- * Paleta de error única para toda la app. Los valores oscuros coinciden con
- * los que ya usaba `EmployeeListError`, para que las bandas de error se vean
- * iguales en ambos modos.
- */
-const ERROR_COLORS = {
-    light: { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', icon: '#B91C1C' },
-    dark: { bg: '#1F1414', border: '#7F1D1D', text: '#FCA5A5', icon: '#F87171' },
-} as const;
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
     icon = 'alert-circle-outline',
@@ -44,12 +46,55 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
     variant = 'full',
 }) => {
     const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
-    const colors = isDark ? ERROR_COLORS.dark : ERROR_COLORS.light;
+    const reducedMotion = useReducedMotion();
+    const theme = isDark ? Colors.dark : Colors.light;
+    const errorColor = theme.error;
+    const errorLight = theme.errorLight;
 
     const handleRetry = () => {
         haptic.tap();
         onRetry?.();
     };
+
+    // Animación de flotar en el ícono de error (desactivado con reducedMotion)
+    const floatValue = useSharedValue(0);
+    useEffect(() => {
+        if (reducedMotion) {
+            // Sin animación de flotar cuando el usuario prefiere movimiento reducido.
+            floatValue.value = 0;
+            return;
+        }
+        floatValue.value = withRepeat(
+            withSequence(
+                withTiming(6, { duration: 1500 }),
+                withTiming(0, { duration: 1500 }),
+            ),
+            -1,
+            true,
+        );
+    }, [floatValue, reducedMotion]);
+
+    const floatAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: floatValue.value }],
+    }));
+
+    // Glow neón en modo oscuro para el ícono
+    const iconNeonGlow = isDark ? {
+        shadowColor: errorColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+    } : {};
+
+    // Glow neón en el botón de acción en modo oscuro
+    const buttonNeonGlow = isDark && onRetry ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+    } : {};
 
     if (variant === 'inline') {
         return (
@@ -58,24 +103,24 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                 accessibilityLiveRegion="polite"
                 style={[
                     styles.inlineContainer,
-                    { backgroundColor: colors.bg, borderColor: colors.border },
+                    { backgroundColor: errorLight, borderColor: errorColor },
                     style,
                 ]}
             >
-                <View style={styles.inlineIconBox}>
-                    <Ionicons name={icon} size={20} color={colors.icon} />
+                <View style={[styles.inlineIconBox, { backgroundColor: errorLight }]}>
+                    <Ionicons name={icon} size={20} color={errorColor} />
                 </View>
                 <View style={styles.inlineBody}>
                     <Text
-                        maxFontSizeMultiplier={1.4}
+                        maxFontSizeMultiplier={1.5}
                         style={[styles.inlineTitle, { color: textPrimary }]}
                     >
                         {title}
                     </Text>
                     {message ? (
                         <Text
-                            maxFontSizeMultiplier={1.4}
-                            style={[styles.inlineMessage, { color: colors.text }]}
+                            maxFontSizeMultiplier={1.5}
+                            style={[styles.inlineMessage, { color: errorColor }]}
                         >
                             {message}
                         </Text>
@@ -85,15 +130,15 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                     <Pressable
                         style={({ pressed }) => [
                             styles.inlineRetry,
-                            { backgroundColor: colors.icon },
-                            pressed && styles.pressed,
+                            { backgroundColor: errorColor },
+                            pressed && { opacity: 0.85 },
                         ]}
                         onPress={handleRetry}
                         accessibilityRole="button"
                         accessibilityLabel={retryLabel}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Text maxFontSizeMultiplier={1.3} style={styles.inlineRetryText}>
+                        <Text maxFontSizeMultiplier={1.5} style={[styles.inlineRetryText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
                             {retryLabel}
                         </Text>
                     </Pressable>
@@ -112,19 +157,27 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                 accessibilityLiveRegion="polite"
                 style={[styles.container, { backgroundColor: cardBg }, style]}
             >
-                <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#FEE2E2' }]}>
-                    <Ionicons name={icon} size={48} color={colors.icon} />
-                </View>
-                <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary }]}>{title}</Text>
+                <Animated.View style={floatAnimatedStyle}>
+                    <View style={[styles.iconContainer, { backgroundColor: errorLight, ...iconNeonGlow }]}>
+                        <Ionicons name={icon} size={48} color={errorColor} />
+                    </View>
+                </Animated.View>
+                <Text maxFontSizeMultiplier={1.5} style={[styles.title, { color: textPrimary }]}>{title}</Text>
                 {message && (
-                    <Text maxFontSizeMultiplier={1.4} style={[styles.message, { color: textSecondary }]}>{message}</Text>
+                    <Text maxFontSizeMultiplier={1.5} style={[styles.message, { color: textSecondary }]}>{message}</Text>
                 )}
                 {retryLabel && onRetry && (
                     <Pressable
-                        style={[styles.actionButton, { backgroundColor: accentColor }]}
+                        style={({ pressed }) => [
+                            styles.actionButton,
+                            { backgroundColor: accentColor },
+                            buttonNeonGlow,
+                            pressed && { opacity: 0.85 },
+                        ]}
                         onPress={handleRetry}
                         accessibilityRole="button"
                         accessibilityLabel={retryLabel}
+                        hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
                     >
                         <Ionicons name="refresh" size={18} color={accentTextColor(accentColor)} />
                         <Text style={[styles.actionText, { color: accentTextColor(accentColor) }]}>{retryLabel}</Text>
@@ -153,13 +206,13 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: {
-        fontSize: 18,
+        fontSize: FontSize.lg,
         fontFamily: FontFamily.bold,
         textAlign: 'center',
         marginBottom: 8,
     },
     message: {
-        fontSize: 14,
+        fontSize: FontSize.sm,
         textAlign: 'center',
         lineHeight: 20,
         marginBottom: 20,
@@ -176,7 +229,7 @@ const styles = StyleSheet.create({
         minWidth: 160,
     },
     actionText: {
-        fontSize: 14,
+        fontSize: FontSize.sm,
         fontFamily: FontFamily.bold,
     },
 

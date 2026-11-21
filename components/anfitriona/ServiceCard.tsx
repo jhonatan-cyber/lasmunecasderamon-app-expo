@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -10,6 +9,8 @@ import {
     type EstadoServicioKey,
 } from '@/utils/servicioEstado';
 import { BorderRadius, FontSize, HitSlop } from '@/constants/spacing';
+import { haptic } from '@/utils/haptics';
+import { Colors } from '@/constants/theme';
 
 interface ServiceCardProps {
     item: Servicio;
@@ -24,10 +25,11 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
     const estadoInfo = estadoServicio(item.estado);
     const isProceso = estadoInfo.key === "en_proceso";
 
+    const theme = isDark ? Colors.dark : Colors.light;
     const statusColors: Record<EstadoServicioKey, { bg: string; text: string }> = {
-        anulado: { bg: isDark ? '#450a0a' : '#fee2e2', text: isDark ? '#fca5a5' : '#991b1b' },
-        finalizado: { bg: isDark ? '#064e3b' : '#d1fae5', text: isDark ? '#6ee7b7' : '#065f46' },
-        en_proceso: { bg: isDark ? '#7C2D12' : '#FEF3C7', text: isDark ? '#FDBA74' : '#92400E' },
+        anulado: { bg: theme.errorLight, text: theme.error },
+        finalizado: { bg: theme.successLight, text: theme.success },
+        en_proceso: { bg: theme.warningLight, text: theme.warning },
         pausado: { bg: isDark ? '#374151' : '#E5E7EB', text: isDark ? '#D1D5DB' : '#4B5563' },
         solicitud_anulada: { bg: isDark ? '#581c87' : '#f3e8ff', text: isDark ? '#c084fc' : '#6b21a8' },
         desconocido: { bg: '#999', text: '#FFF' },
@@ -52,6 +54,21 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
 
     const staggerDelay = Math.min(index, 5) * 30;
 
+    // Borde neón en modo oscuro con el color del estado (centralizado desde theme.ts)
+    const estadoNeonColor = estadoInfo.key === 'en_proceso' ? theme.warning :
+                            estadoInfo.key === 'finalizado' ? theme.success :
+                            estadoInfo.key === 'anulado' ? theme.error :
+                            estadoInfo.key === 'pausado' ? '#6B7280' : accentOnSurface;
+    const cardNeonGlow = isDark ? {
+        shadowColor: estadoNeonColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: estadoNeonColor,
+        borderWidth: 1.5,
+    } : {};
+
     return (
         <AnimatedView 
             from={{ opacity: 0, translateY: 20 }} 
@@ -59,7 +76,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
             transition={{ type: 'spring', delay: staggerDelay }}
         >
             <Pressable 
-                style={[styles.card, { backgroundColor: cardBg, borderColor }]} 
+                style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]} 
                 onPress={() => onPress(item)}
                 accessibilityRole="button"
                 accessibilityLabel={`Servicio en ${item.habitacion}, estado: ${status.label}`}
@@ -106,9 +123,10 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                             <View style={styles.assistanceGrid}>
                                 <Pressable 
                                     style={[styles.assistanceBtn, { backgroundColor: isDark ? '#1e3a8a30' : '#e0e7ff' }]} 
-                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onAssistance(item.id_servicio, item.habitacion, 'Tragos'); }}
+                                    onPress={() => { haptic.confirm(); onAssistance(item.id_servicio, item.habitacion, 'Tragos'); }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Solicitar tragos en ${item.habitacion}`}
+                                    accessibilityHint="Solicita tragos para esta habitación"
                                     hitSlop={HitSlop.md}
                                 >
                                     <Ionicons name="beer-outline" size={FontSize.xs} color={accentOnSurface} />
@@ -116,9 +134,10 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                 </Pressable>
                                 <Pressable 
                                     style={[styles.assistanceBtn, { backgroundColor: isDark ? '#065F4630' : '#d1fae5' }]} 
-                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo'); }}
+                                    onPress={() => { haptic.confirm(); onAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo'); }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Solicitar servicio en ${item.habitacion}`}
+                                    accessibilityHint="Solicita limpieza o hielo para esta habitación"
                                     hitSlop={HitSlop.md}
                                 >
                                     <Ionicons name="sparkles-outline" size={FontSize.xs} color="#10B981" />
@@ -126,9 +145,10 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                 </Pressable>
                                 <Pressable 
                                     style={[styles.assistanceBtn, { backgroundColor: isDark ? '#450a0a' : '#fee2e2' }]} 
-                                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onAssistance(item.id_servicio, item.habitacion, 'Seguridad'); }}
+                                    onPress={() => { haptic.error(); onAssistance(item.id_servicio, item.habitacion, 'Seguridad'); }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Enviar alerta de seguridad en ${item.habitacion}`}
+                                    accessibilityHint="Envía una alerta de seguridad urgente"
                                     hitSlop={HitSlop.md}
                                 >
                                     <Ionicons name="alert-circle-outline" size={FontSize.xs} color="#EF4444" />
@@ -149,7 +169,7 @@ const styles = StyleSheet.create({
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     indexBadge: { width: 24, height: 24, borderRadius: BorderRadius.sm, justifyContent: 'center', alignItems: 'center' },
     indexText: { fontWeight: '800' },
-    habitacionText: { fontSize: 18, fontWeight: '800' },
+    habitacionText: { fontSize: FontSize.lg, fontWeight: '800' },
     statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: BorderRadius.sm },
     statusText: { fontWeight: '700' },
     cardBody: {},
@@ -160,7 +180,7 @@ const styles = StyleSheet.create({
     detailRow: { flexDirection: 'row', justifyContent: 'space-between' },
     detailLabel: {},
     detailValue: { fontWeight: '700' },
-    priceValue: { fontSize: 18, fontWeight: '800' },
+    priceValue: { fontSize: FontSize.lg, fontWeight: '800' },
     assistanceContainer: { marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(155,155,155,0.1)' },
     assistanceTitle: { fontWeight: '800', marginBottom: 8, opacity: 0.5 },
     assistanceGrid: { flexDirection: 'row', gap: 6 },

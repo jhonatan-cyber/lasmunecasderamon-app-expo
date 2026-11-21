@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface AnimatedButtonProps extends Omit<PressableProps, 'style'> {
     children: React.ReactNode;
@@ -25,6 +26,7 @@ export function AnimatedButton({
     enableHaptics = true,
     ...props
 }: AnimatedButtonProps) {
+    const reducedMotion = useReducedMotion();
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
 
@@ -40,13 +42,22 @@ export function AnimatedButton({
         if (enableHaptics) {
             haptic.tap();
         }
-        scale.set(withSpring(scaleTo, { damping: 18, stiffness: 200 }));
-        opacity.set(withTiming(0.85, { duration: 100 }));
+        if (reducedMotion) {
+            // Sin escala cuando el usuario prefiere movimiento reducido.
+            opacity.set(withTiming(0.85, { duration: 100 }));
+        } else {
+            scale.set(withSpring(scaleTo, { damping: 18, stiffness: 200 }));
+            opacity.set(withTiming(0.85, { duration: 100 }));
+        }
     };
 
     const handlePressOut = () => {
-        scale.set(withSpring(1, { damping: 15, stiffness: 200 }));
-        opacity.set(withTiming(1, { duration: 100 }));
+        if (reducedMotion) {
+            opacity.set(withTiming(1, { duration: 100 }));
+        } else {
+            scale.set(withSpring(1, { damping: 15, stiffness: 200 }));
+            opacity.set(withTiming(1, { duration: 100 }));
+        }
     };
 
     return (

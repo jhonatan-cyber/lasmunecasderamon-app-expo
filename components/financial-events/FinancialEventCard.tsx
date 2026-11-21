@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 interface FinancialEventCardProps {
   item: any;
@@ -39,6 +40,18 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
   const isPendiente = item.estado === 1;
   const amount = item.comision || item.monto || 0;
   const code = item.codigo || item.codigo_venta;
+  
+  // Borde neón en modo oscuro con el color del tipo
+  const cardNeonColor = type === 'comisiones' ? accentColor : '#10B981';
+  const cardNeonGlow = isDark ? {
+    shadowColor: cardNeonColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: cardNeonColor,
+    borderWidth: 1.5,
+  } : {};
 
   return (
     <AnimatedView
@@ -54,6 +67,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
             backgroundColor: cardBg,
             borderColor,
             opacity: pressed ? 0.8 : 1,
+            ...cardNeonGlow,
           },
         ]}
       >
@@ -184,7 +198,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.card, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

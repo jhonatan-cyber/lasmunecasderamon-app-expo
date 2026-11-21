@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { View } from "react-native";
+import { BorderRadius } from "@/constants/spacing";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { styles } from "../HomeScreen.styles";
@@ -53,10 +54,11 @@ export function HomeScreenSkeleton({
         </View>
       </LinearGradient>
       <View style={{ padding: 20, gap: 15 }}>
-        <SkeletonLoader width="100%" height={150} borderRadius={24} />
+        {/* Analytics section skeleton */}
+        <SkeletonLoader width="100%" height={150} borderRadius={BorderRadius.card} />
         <View style={{ flexDirection: "row", gap: 15 }}>
-          <SkeletonLoader width="48%" height={100} borderRadius={20} />
-          <SkeletonLoader width="48%" height={100} borderRadius={20} />
+          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} />
+          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} />
         </View>
         {/* Módulos: replica el cuadro del dashboard (chip + título + descripción). */}
         {[0, 1].map((row) => (
@@ -66,11 +68,12 @@ export function HomeScreenSkeleton({
                 key={col}
                 style={{
                   flex: 1,
-                  borderRadius: 16,
+                  borderRadius: BorderRadius.card,
                   borderWidth: 1,
                   borderColor: "rgba(255,255,255,0.08)",
                   padding: 14,
                   gap: 10,
+                  overflow: 'hidden',
                 }}
               >
                 <SkeletonLoader width={46} height={46} borderRadius={14} />

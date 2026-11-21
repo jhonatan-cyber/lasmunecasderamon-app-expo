@@ -25,6 +25,8 @@ import {
   ScrollView,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { withAlpha } from '@/utils/color';
 
 import { useRouter } from 'expo-router';
 import { AnimatedView } from '@/components/ui/AnimatedView';
@@ -124,13 +126,19 @@ export function HomeScreen({ role }: HomeScreenProps) {
       />
     );
 
+  // Gradiente sutil en el header para dar profundidad
+  const headerGradientColors = [
+    accentColor,
+    withAlpha(accentColor, 0.85),
+  ];
+
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      <View
+      <LinearGradient
+        colors={headerGradientColors as any}
         style={[
           styles.header,
           {
-            backgroundColor: accentColor,
             boxShadow: accentGlow,
             paddingTop: insets.top + (headerCompact ? 4 : 10),
             paddingBottom: headerCompact ? 12 : 25,
@@ -191,7 +199,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
             </AnimatedButton>
           </AnimatedView>
         )}
-      </View>
+      </LinearGradient>
 
       <ScrollView
         refreshControl={
@@ -252,7 +260,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
             )}
 
             {role === 'barman' && (
-              <BarmanActionGrid pendingTransfers={pendingTransfers} />
+              <BarmanActionGrid bloqueado={bloqueado} pendingTransfers={pendingTransfers} />
             )}
 
           </View>

@@ -5,6 +5,7 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Propina } from "@/hooks/usePropinasScreen";
 import { rotateColor } from "@/utils/colors";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 interface TipRowItemProps {
   item: Propina;
@@ -45,6 +46,17 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
     ((Number(idNum) || index) % 10) * 36,
   );
 
+  // Glow neón en modo oscuro con el color rotado por propina
+  const cardNeonGlow = isDark ? {
+    shadowColor: itemAccent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: itemAccent,
+    borderWidth: 1.5,
+  } : {};
+
   return (
     <AnimatedView
       from={{ opacity: 0, translateY: 30 }}
@@ -52,7 +64,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
       transition={{ type: "spring", delay: Math.min(index, 4) * 30 }}
     >
       <Pressable onPress={() => onPress(item)}>
-        <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
           <View style={styles.cardHeader}>
             <View
               style={[
@@ -187,7 +199,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.card, padding: 16, marginTop: 10, borderWidth: 1, overflow: 'hidden' },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

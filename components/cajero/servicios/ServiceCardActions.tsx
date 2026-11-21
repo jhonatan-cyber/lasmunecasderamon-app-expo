@@ -2,7 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppModal as Modal } from "@/components/ui/AppModal";
-import { FontSize, HitSlop, MIN_TOUCH_TARGET } from "@/constants/spacing";
+import { FontSize, HitSlop, MIN_TOUCH_TARGET, BorderRadius } from "@/constants/spacing";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface ServiceCardMenuItem {
   key: string;
@@ -37,6 +38,16 @@ export const ServiceCardActions: React.FC<ServiceCardActionsProps> = ({
   onFinalizar,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isDark } = useAccentColor();
+
+  // Glow neón en botón de finalizar en modo oscuro
+  const finishBtnNeonGlow = isDark ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  } : {};
 
   return (
     <View style={styles.actionsBox}>
@@ -44,6 +55,7 @@ export const ServiceCardActions: React.FC<ServiceCardActionsProps> = ({
         style={({ pressed }) => [
           styles.finishBtn,
           { backgroundColor: accentColor, opacity: pressed ? 0.85 : 1 },
+          finishBtnNeonGlow,
         ]}
         onPress={onFinalizar}
         accessibilityRole="button"
@@ -75,8 +87,6 @@ export const ServiceCardActions: React.FC<ServiceCardActionsProps> = ({
           animationType="fade"
           onRequestClose={() => setMenuOpen(false)}
         >
-          {/* role=button aquí lo haría un <button> en web envolviendo los
-              botones de la hoja (HTML inválido). "Cancelar" ya da el cierre. */}
           <Pressable
             style={styles.overlay}
             onPress={() => setMenuOpen(false)}
@@ -131,11 +141,12 @@ const styles = StyleSheet.create({
   finishBtn: {
     flex: 1,
     height: MIN_TOUCH_TARGET,
-    borderRadius: 12,
+    borderRadius: BorderRadius.card,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
+    overflow: 'hidden',
   },
   finishText: {
     fontWeight: "900",
@@ -144,7 +155,7 @@ const styles = StyleSheet.create({
   moreBtn: {
     width: MIN_TOUCH_TARGET,
     height: MIN_TOUCH_TARGET,
-    borderRadius: 12,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -155,8 +166,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: BorderRadius.xxl,
+    borderTopRightRadius: BorderRadius.xxl,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 10,

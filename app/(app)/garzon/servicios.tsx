@@ -20,6 +20,9 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
+import { FontSize, HitSlop } from "@/constants/spacing";
+import { Colors } from "@/constants/theme";
+import { haptic } from "@/utils/haptics";
 import { habitacionesParaServicio } from "@/utils/habitaciones";
 import {
   MAX_ANFITRIONAS_CON_COMISION,
@@ -182,12 +185,20 @@ export default function ServiciosScreen() {
             HABITACIÓN
           </Text>
           <Pressable
-            onPress={() => setRoomModalVisible(true)}
-            style={[
+            onPress={() => {
+              haptic.tap();
+              setRoomModalVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Seleccionar habitación"
+            accessibilityHint="Abre la lista de habitaciones disponibles"
+            hitSlop={HitSlop.sm}
+            style={({ pressed }) => [
               styles.selectField,
               {
                 backgroundColor: cardBg,
                 borderColor: selectedRoom ? primaryColor : borderColor,
+                opacity: pressed ? 0.85 : 1,
               },
             ]}
           >
@@ -229,10 +240,11 @@ export default function ServiciosScreen() {
               }}
             >
               <Text
+                maxFontSizeMultiplier={1.5}
                 style={{
                   color: textPrimary,
                   fontWeight: "800",
-                  fontSize: 13,
+                  fontSize: FontSize.xs,
                   textAlign: "center",
                 }}
               >
@@ -246,13 +258,21 @@ export default function ServiciosScreen() {
             ANFITRIONAS {hasComision && `(MÁX ${maxHostesses})`}
           </Text>
           <Pressable
-            onPress={() => setHostessModalVisible(true)}
-            style={[
+            onPress={() => {
+              haptic.tap();
+              setHostessModalVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Seleccionar anfitrionas"
+            accessibilityHint="Abre la lista de anfitrionas disponibles"
+            hitSlop={HitSlop.sm}
+            style={({ pressed }) => [
               styles.selectField,
               {
                 backgroundColor: cardBg,
                 borderColor:
                   selectedHostesses.length > 0 ? primaryColor : borderColor,
+                opacity: pressed ? 0.85 : 1,
               },
             ]}
           >
@@ -298,13 +318,21 @@ export default function ServiciosScreen() {
             CLIENTES (OPCIONAL {hasComision && `- MÁX ${maxClients}`})
           </Text>
           <Pressable
-            onPress={() => setClientModalVisible(true)}
-            style={[
+            onPress={() => {
+              haptic.tap();
+              setClientModalVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Seleccionar clientes"
+            accessibilityHint="Abre la lista de clientes"
+            hitSlop={HitSlop.sm}
+            style={({ pressed }) => [
               styles.selectField,
               {
                 backgroundColor: cardBg,
                 borderColor:
                   selectedClients.length > 0 ? primaryColor : borderColor,
+                opacity: pressed ? 0.85 : 1,
               },
             ]}
           >
@@ -363,7 +391,7 @@ export default function ServiciosScreen() {
                   <Text
                     style={{
                       color: textSecondary,
-                      fontSize: 18,
+                      fontSize: FontSize.lg,
                       marginRight: 8,
                     }}
                   >
@@ -390,13 +418,21 @@ export default function ServiciosScreen() {
                   {["efectivo", "tarjeta", "transferencia"].map((m) => (
                     <Pressable
                       key={m}
-                      onPress={() => setPaymentMethod(m as any)}
-                      style={[
+                      onPress={() => {
+                        haptic.tap();
+                        setPaymentMethod(m as any);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Pagar con ${m}`}
+                      accessibilityHint={`Selecciona ${m} como método de pago`}
+                      hitSlop={HitSlop.sm}
+                      style={({ pressed }) => [
                         styles.methodBtn,
                         {
                           backgroundColor: cardBg,
                           borderColor:
                             paymentMethod === m ? primaryColor : borderColor,
+                          opacity: pressed ? 0.85 : 1,
                         },
                         paymentMethod === m && { borderWidth: 2 },
                       ]}
@@ -420,20 +456,26 @@ export default function ServiciosScreen() {
 
             {paymentMethod === "transferencia" && (
               <Pressable
-                onPress={() => void takeBaucherPhoto()}
+                onPress={() => {
+                  haptic.tap();
+                  void takeBaucherPhoto();
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={
                   baucherFoto
                     ? "Repetir foto del baucher"
                     : "Sacar foto del baucher (obligatoria)"
                 }
-                style={[
+                accessibilityHint="Sube el comprobante de transferencia"
+                hitSlop={HitSlop.sm}
+                style={({ pressed }) => [
                   styles.baucherRow,
                   {
-                    borderColor: baucherFoto ? primaryColor : "#EF4444",
+                    borderColor: baucherFoto ? primaryColor : Colors.light.error,
                     backgroundColor: baucherFoto
                       ? primaryColor + "1A"
-                      : "#EF44441A",
+                      : Colors.light.error + "1A",
+                    opacity: pressed ? 0.85 : 1,
                   },
                 ]}
               >
@@ -443,12 +485,12 @@ export default function ServiciosScreen() {
                     style={styles.baucherThumb}
                   />
                 ) : (
-                  <Ionicons name="camera-outline" size={20} color="#EF4444" />
+                  <Ionicons name="camera-outline" size={20} color={Colors.light.error} />
                 )}
                 <Text
                   style={[
                     styles.baucherText,
-                    { color: baucherFoto ? primaryColor : "#EF4444" },
+                    { color: baucherFoto ? primaryColor : Colors.light.error },
                   ]}
                 >
                   {baucherFoto
@@ -461,12 +503,12 @@ export default function ServiciosScreen() {
             {hasPrepago && (
               <View
                 style={{
-                  backgroundColor: "#10B98115",
+                  backgroundColor: Colors.light.success + "15",
                   padding: 15,
                   borderRadius: 20,
                   borderStyle: "dashed",
                   borderWidth: 1.5,
-                  borderColor: "#10B981",
+                  borderColor: Colors.light.success,
                 }}
               >
                 <View
@@ -476,22 +518,24 @@ export default function ServiciosScreen() {
                     gap: 10,
                   }}
                 >
-                  <Ionicons name="wallet" size={20} color="#10B981" />
+                  <Ionicons name="wallet" size={20} color={Colors.light.success} />
                   <View style={{ flex: 1 }}>
                     <Text
+                      maxFontSizeMultiplier={1.5}
                       style={{
                         color: textPrimary,
                         fontWeight: "900",
-                        fontSize: 14,
+                        fontSize: FontSize.sm,
                       }}
                     >
                       PAGO AUTOMÁTICO CON SALDO
                     </Text>
                     <Text
+                      maxFontSizeMultiplier={1.5}
                       style={{
-                        color: "#10B981",
+                        color: Colors.light.success,
                         fontWeight: "800",
-                        fontSize: 12,
+                        fontSize: FontSize.xs,
                       }}
                     >
                       Saldo disponible: $
@@ -516,7 +560,7 @@ export default function ServiciosScreen() {
                   <Text
                     style={{
                       color: textSecondary,
-                      fontSize: 18,
+                      fontSize: FontSize.lg,
                       marginRight: 8,
                     }}
                   >
@@ -543,8 +587,16 @@ export default function ServiciosScreen() {
           />
 
           <Pressable
-            onPress={handleSubmit}
+            onPress={() => {
+              haptic.confirm();
+              handleSubmit();
+            }}
             disabled={submitting}
+            accessibilityRole="button"
+            accessibilityLabel="Solicitar servicio"
+            accessibilityHint="Envía la solicitud de servicio"
+            accessibilityState={{ busy: submitting, disabled: submitting }}
+            hitSlop={HitSlop.md}
             style={({ pressed }) => [
               styles.submitBtn,
               { backgroundColor: primaryColor },
@@ -621,11 +673,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectFieldText: {
-    fontSize: 16,
+    fontSize: FontSize.sm,
     fontWeight: "700",
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: FontSize.xs,
     fontWeight: "900",
     letterSpacing: 1,
     marginTop: 24,
@@ -633,7 +685,7 @@ const styles = StyleSheet.create({
   },
   formSection: { gap: 10 },
   inputGroup: { gap: 8 },
-  inputLabel: { fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
+  inputLabel: { fontSize: FontSize.xs, fontWeight: "800", letterSpacing: 0.5 },
   inputWrapper: {
     height: 56,
     borderRadius: 16,
@@ -642,7 +694,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
   },
-  input: { flex: 1, fontSize: 18, fontWeight: "700" },
+  input: { flex: 1, fontSize: FontSize.lg, fontWeight: "700" },
   methodContainer: { flexDirection: "row", gap: 10, marginBottom: 10 },
   methodBtn: {
     flex: 1,
@@ -652,7 +704,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  methodText: { fontSize: 12, fontWeight: "800" },
+  methodText: { fontSize: FontSize.xs, fontWeight: "800" },
   submitBtn: {
     height: 64,
     borderRadius: 20,
@@ -662,7 +714,7 @@ const styles = StyleSheet.create({
   },
   submitText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: FontSize.sm,
     fontWeight: "900",
     letterSpacing: 1,
   },
@@ -675,6 +727,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  baucherText: { fontSize: 13, fontWeight: "800", flex: 1 },
+  baucherText: { fontSize: FontSize.xs, fontWeight: "800", flex: 1 },
   baucherThumb: { width: 40, height: 40, borderRadius: 8 },
 });

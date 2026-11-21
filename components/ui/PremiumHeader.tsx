@@ -1,19 +1,30 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from "react";
+import React, { useEffect } from "react";
 import {
     Pressable,
     StyleSheet,
     Text,
     View
 } from "react-native";
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withRepeat,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { FontFamily } from "@/constants/fonts";
 import { IconButton } from '@/components/ui/IconButton';
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
 import { useAppearanceStore } from '@/store/appearanceStore';
+import { withAlpha } from '@/utils/color';
 
 export interface PremiumHeaderTab {
     id: string;
@@ -65,17 +76,59 @@ export function PremiumHeader({
         gradientControlBg,
         gradientControlBorder,
         gradientActiveBg,
+        isDark,
     } = useAccentColor();
     const insets = useSafeAreaInsets();
     const { isTablet, isLandscape } = useResponsiveMetrics();
+    const reducedMotion = useReducedMotion();
     const { toggleScheme, scheme } = useAppearanceStore();
     // En un móvil horizontal la altura es escasa: el header se compacta.
     const compact = isLandscape && !isTablet;
     // 40 visuales + hitSlop = 44 efectivos en móvil; en tablet entra 44 real.
     const headerIconSize = isTablet ? 44 : 40;
 
+    // Animación de entrada con slide down
+    const translateY = useSharedValue(-20);
+    const opacity = useSharedValue(0);
+    useEffect(() => {
+        if (reducedMotion) {
+            // Sin animación cuando el usuario prefiere movimiento reducido.
+            translateY.value = 0;
+            opacity.value = 1;
+        } else {
+            translateY.value = withTiming(0, { duration: 400 });
+            opacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+        }
+    }, [translateY, opacity, reducedMotion]);
+
+    // Pulso sutil en el botón "Nuevo" (desactivado con reducedMotion)
+    const pulseScale = useSharedValue(1);
+    useEffect(() => {
+        if (showAddButton && !reducedMotion) {
+            pulseScale.value = withRepeat(
+                withSequence(
+                    withTiming(1.04, { duration: 1200 }),
+                    withTiming(1, { duration: 1200 }),
+                ),
+                -1,
+                true,
+            );
+        } else {
+            pulseScale.value = 1;
+        }
+    }, [showAddButton, pulseScale, reducedMotion]);
+
+    const headerAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: translateY.value }],
+        opacity: opacity.value,
+    }));
+
+    const pulseAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseScale.value }],
+    }));
+
     return (
-        <View
+        <Animated.View
             style={[
                 styles.header,
                 {
@@ -85,7 +138,8 @@ export function PremiumHeader({
                     paddingBottom: compact ? 16 : 25,
                     borderBottomLeftRadius: compact ? 24 : 32,
                     borderBottomRightRadius: compact ? 24 : 32,
-                }
+                },
+                headerAnimatedStyle,
             ]}
         >
             <View style={styles.headerTop}>
@@ -147,19 +201,29 @@ export function PremiumHeader({
                     )}
                     {progressSteps && progressSteps.totalSteps > 1 && (
                         <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            {Array.from({ length: progressSteps.totalSteps }).map((_, i) => (
-                                <View
-                                    key={i}
-                                    style={{
-                                        flex: 1,
-                                        height: 3,
-                                        borderRadius: 2,
-                                        backgroundColor: i < progressSteps.currentStep
-                                            ? gradientText
-                                            : gradientControlBg,
-                                    }}
-                                />
-                            ))}
+                            {Array.from({ length: progressSteps.totalSteps }).map((_, i) => {
+                                const isActive = i < progressSteps.currentStep;
+                                const stepColor = isActive ? gradientText : gradientControlBg;
+                                const neonGlow = isDark && isActive ? {
+                                    shadowColor: accentColor,
+                                    shadowOffset: { width: 0, height: 0 },
+                                    shadowOpacity: 0.5,
+                                    shadowRadius: 4,
+                                    elevation: 3,
+                                } : {};
+                                return (
+                                    <View
+                                        key={i}
+                                        style={{
+                                            flex: 1,
+                                            height: 3,
+                                            borderRadius: 2,
+                                            backgroundColor: stepColor,
+                                            ...neonGlow,
+                                        }}
+                                    />
+                                );
+                            })}
                             <Text style={{ color: gradientTextMuted, fontSize: 12, fontFamily: FontFamily.semibold }}>
                                 {progressSteps.currentStep}/{progressSteps.totalSteps}
                             </Text>
@@ -168,16 +232,18 @@ export function PremiumHeader({
                 </View>
                 {rightComponent}
                 {showAddButton && (
-                    <Pressable
-                        onPress={onAdd}
-                        accessibilityRole="button"
-                        accessibilityLabel="Agregar nuevo"
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        style={[styles.plusBtn, { backgroundColor: gradientControlBg }]}
-                    >
-                        <Ionicons name="add" size={isTablet ? 24 : 20} color={gradientText} />
-                        <Text style={[styles.plusBtnText, { color: gradientText }, isTablet && { fontSize: 18 }]}>Nuevo</Text>
-                    </Pressable>
+                    <Animated.View style={pulseAnimatedStyle}>
+                        <Pressable
+                            onPress={onAdd}
+                            accessibilityRole="button"
+                            accessibilityLabel="Agregar nuevo"
+                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                            style={[styles.plusBtn, { backgroundColor: gradientControlBg }]}
+                        >
+                            <Ionicons name="add" size={isTablet ? 24 : 20} color={gradientText} />
+                            <Text style={[styles.plusBtnText, { color: gradientText }, isTablet && { fontSize: 18 }]}>Nuevo</Text>
+                        </Pressable>
+                    </Animated.View>
                 )}
                 {showThemeToggle && (
                     <IconButton
@@ -242,7 +308,7 @@ export function PremiumHeader({
                     })}
                 </View>
             )}
-        </View>
+        </Animated.View>
     );
 }
 

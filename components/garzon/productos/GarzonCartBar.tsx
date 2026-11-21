@@ -60,7 +60,17 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   textPrimary,
   textSecondary,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, isDark } = useAccentColor();
+
+  // Glow neón en el botón de enviar en modo oscuro
+  const submitBtnNeonGlow = isDark ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  } : {};
+
   return (
     <View
       style={[
@@ -171,25 +181,27 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
             ${cartTotal.toLocaleString()}
           </Text>
         </View>
-        <Pressable
-          onPress={submitOrder}
-          disabled={submitting}
-          accessibilityRole="button"
-          accessibilityLabel="Enviar Pedido"
-          accessibilityState={{ disabled: submitting, busy: submitting }}
-          style={({ pressed }) => [
-            styles.submitBtn,
-            { backgroundColor: accentColor },
-            submitting && { opacity: 0.5 },
-            pressed && { opacity: 0.8 },
-          ]}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.submitText}>Enviar Pedido</Text>
-          )}
-        </Pressable>
+        <View style={isDark ? submitBtnNeonGlow : {}}>
+          <Pressable
+            onPress={submitOrder}
+            disabled={submitting}
+            accessibilityRole="button"
+            accessibilityLabel="Enviar Pedido"
+            accessibilityState={{ disabled: submitting, busy: submitting }}
+            style={({ pressed }) => [
+              styles.submitBtn,
+              { backgroundColor: accentColor },
+              submitting && { opacity: 0.5 },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.submitText}>Enviar Pedido</Text>
+            )}
+          </Pressable>
+        </View>
       </View>
     </View>
   );

@@ -45,6 +45,7 @@ export interface UserProfileResponse {
   estado_civil?: string;
   maritalStatus?: string;
   foto?: string;
+  recovery_email?: string | null;
   status?: number;
 }
 

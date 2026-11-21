@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { FontFamily, TabularNumbers } from '@/constants/fonts';
+import { FontSize, HitSlop } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 
 interface ClientCardProps {
@@ -39,7 +40,8 @@ export const ClientCard = memo(function ClientCard({
         <View style={[
             styles.clientCard,
             !isTablet && styles.clientCardMobile,
-            { backgroundColor: bg, borderColor }
+            { backgroundColor: bg, borderColor },
+            isDark && styles.clientCardNeon,
         ]}>
             <View style={styles.cardHeader}>
                 {}
@@ -104,9 +106,13 @@ export const ClientCard = memo(function ClientCard({
                             haptic.tap();
                             handleOpenHistory(item);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ver historial de ${item.name}`}
+                        accessibilityHint="Muestra el historial de ventas"
+                        hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)', opacity: pressed ? 0.6 : 1 }]}>
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)', opacity: pressed ? 0.85 : 1 }]}>
                                 <Ionicons name="eye-outline" size={22} color="#A855F7" />
                             </View>
                         )}
@@ -116,9 +122,13 @@ export const ClientCard = memo(function ClientCard({
                             haptic.tap();
                             handleOpenLoad(item);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Cargar saldo a ${item.name}`}
+                        accessibilityHint="Abre el formulario para cargar saldo"
+                        hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: '#10B981', opacity: pressed ? 0.6 : 1 }]}>
+                            <View style={[styles.actionBtn, { backgroundColor: '#10B981', opacity: pressed ? 0.85 : 1 }]}>
                                 <Ionicons name="wallet" size={22} color="#FFFFFF" />
                             </View>
                         )}
@@ -128,9 +138,13 @@ export const ClientCard = memo(function ClientCard({
                             haptic.tap();
                             handleOpenEdit(item);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Editar ${item.name}`}
+                        accessibilityHint="Abre el formulario de edición"
+                        hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)', opacity: pressed ? 0.6 : 1 }]}>
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)', opacity: pressed ? 0.85 : 1 }]}>
                                 <Ionicons name="create-outline" size={22} color="#3B82F6" />
                             </View>
                         )}
@@ -140,9 +154,13 @@ export const ClientCard = memo(function ClientCard({
                             haptic.tap();
                             confirmDelete(item);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Eliminar ${item.name}`}
+                        accessibilityHint="Confirma la eliminación del cliente"
+                        hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', opacity: pressed ? 0.6 : 1 }]}>
+                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', opacity: pressed ? 0.85 : 1 }]}>
                                 <Ionicons name="trash-outline" size={22} color="#EF4444" />
                             </View>
                         )}
@@ -167,6 +185,13 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
+    },
+    clientCardNeon: {
+        shadowColor: '#A855F7',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 4,
     },
     clientCardMobile: {
         flex: undefined,
@@ -196,17 +221,17 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         gap: 6 
     },
-    clientName: { 
-        fontSize: 16, 
-        fontFamily: FontFamily.bold, 
-        letterSpacing: -0.2 
+    clientName: {
+        fontSize: FontSize.sm,
+        fontFamily: FontFamily.bold,
+        letterSpacing: -0.2
     },
-    clientSub: { 
-        fontSize: 10.5, 
-        fontFamily: FontFamily.semibold, 
-        textTransform: 'uppercase', 
+    clientSub: {
+        fontSize: FontSize.xxs,
+        fontFamily: FontFamily.semibold,
+        textTransform: 'uppercase',
         letterSpacing: 0.4,
-        opacity: 0.75 
+        opacity: 0.75
     },
     statusArea: { 
         marginTop: 12, 
@@ -222,15 +247,15 @@ const styles = StyleSheet.create({
         gap: 10,
         borderWidth: 1,
     },
-    pillLabel: { 
-        fontSize: 8, 
-        fontFamily: FontFamily.bold, 
-        letterSpacing: 0.6, 
-        marginBottom: -2, 
-        opacity: 0.7 
+    pillLabel: {
+        fontSize: FontSize.xxs,
+        fontFamily: FontFamily.bold,
+        letterSpacing: 0.6,
+        marginBottom: -2,
+        opacity: 0.7
     },
-    balanceValue: { 
-        fontSize: 15, 
+    balanceValue: {
+        fontSize: FontSize.sm,
         fontFamily: FontFamily.bold,
         ...TabularNumbers
     },

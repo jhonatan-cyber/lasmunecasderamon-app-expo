@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   getCurrentNotification,
   hideToast,
@@ -12,6 +13,7 @@ import {
 } from '@/utils/inAppNotifications';
 import { useModalLayerOpen } from '@/utils/modalLayer';
 import { FontFamily } from '@/constants/fonts';
+import { FontSize } from '@/constants/spacing';
 
 interface Props {
   /**
@@ -38,6 +40,7 @@ const TYPE_META: Record<
 
 export function NotificationBanner({ layer = 'root' }: Props) {
   const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const modalLayerOpen = useModalLayerOpen();
   const notification = useSyncExternalStore(subscribeNotifications, getCurrentNotification);
@@ -65,7 +68,13 @@ export function NotificationBanner({ layer = 'root' }: Props) {
       },
       onPanResponderRelease: (_event, gesture) => {
         if (gesture.dy < -30) dismiss();
-        else Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+        else {
+          if (reducedMotion) {
+            Animated.timing(translateY, { toValue: 0, duration: 160, useNativeDriver: true }).start();
+          } else {
+            Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+          }
+        }
       },
     })
   );
@@ -76,16 +85,24 @@ export function NotificationBanner({ layer = 'root' }: Props) {
     if (notificationId === null) return;
     translateY.setValue(HIDDEN_OFFSET);
     opacity.setValue(0);
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        friction: 9,
-        tension: 70,
-      }),
-      Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
-    ]).start();
-  }, [notificationId, opacity, translateY]);
+    if (reducedMotion) {
+      // Fade-only cuando el usuario prefiere movimiento reducido.
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: 0, duration: 160, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 9,
+          tension: 70,
+        }),
+        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [notificationId, opacity, translateY, reducedMotion]);
 
   useEffect(() => {
     if (!notification) return;
@@ -100,6 +117,15 @@ export function NotificationBanner({ layer = 'root' }: Props) {
   const titleColor = textPrimary;
   const messageColor = textSecondary;
   const label = [notification.text1, notification.text2].filter(Boolean).join('. ');
+
+  // Borde neón en modo oscuro con el color del tipo
+  const neonGlow = isDark ? {
+    shadowColor: meta.color,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  } : {};
 
   return (
     <View
@@ -117,8 +143,11 @@ export function NotificationBanner({ layer = 'root' }: Props) {
           {
             backgroundColor: cardBg,
             shadowOpacity: isDark ? 0.3 : 0.1,
+            borderColor: isDark ? meta.color : 'transparent',
+            borderWidth: isDark ? 1 : 0,
             opacity,
             transform: [{ translateY }],
+            ...neonGlow,
           },
         ]}
       >
@@ -139,6 +168,37 @@ export function NotificationBanner({ layer = 'root' }: Props) {
             ) : null}
           </View>
         </Pressable>
+        {/* Progress bar de tiempo restante en modo oscuro */}
+        {isDark && (
+          <Animated.View
+            style={[
+              styles.progressBar,
+              {
+                backgroundColor: `${meta.color}30`,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                borderRadius: 0,
+              },
+            ]}
+          >
+            <Animated.View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: meta.color,
+                  width: opacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['100%', '0%'],
+                  }),
+                  height: '100%',
+                  borderRadius: 0,
+                },
+              ]}
+            />
+          </Animated.View>
+        )}
       </Animated.View>
     </View>
   );
@@ -160,6 +220,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 12,
     elevation: 8,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    position: 'absolute',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
   },
   content: {
     flexDirection: 'row',
@@ -179,11 +247,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 15,
+    fontSize: FontSize.sm,
     fontFamily: FontFamily.semibold,
   },
   message: {
-    fontSize: 13.5,
+    fontSize: FontSize.xs,
     fontFamily: FontFamily.medium,
     marginTop: 2,
   },

@@ -1,8 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming,
+} from 'react-native-reanimated';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { BorderRadius, FontSize } from '@/constants/spacing';
 
 interface CategoryCardProps {
     item: {
@@ -91,21 +99,53 @@ function getCategoryIcon(name: string): string {
 const CategoryCardComponent = ({ item, index, onPress, compact = false }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
     const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const reducedMotion = useReducedMotion();
     // Alterna el color del icono para que la rejilla no se vea plana.
     const tone = index % 2 === 0 ? accentColor : '#10B981';
 
+    // Animación de entrada escalonada
+    const scale = useSharedValue(0.95);
+    const opacity = useSharedValue(0);
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+        opacity: opacity.value,
+    }));
+
+    // Glow neón en modo oscuro con el color alternado
+    const neonGlow = isDark ? {
+        shadowColor: tone,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
+    } : {};
+
+    React.useEffect(() => {
+        if (reducedMotion) {
+            // Sin animación cuando el usuario prefiere movimiento reducido.
+            scale.value = 1;
+            opacity.value = 1;
+            return;
+        }
+        const delay = index * 80;
+        scale.value = withDelay(delay, withTiming(1, { duration: 400 }));
+        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+    }, [index, scale, opacity, reducedMotion]);
+
     return (
-        <Pressable
-            style={({ pressed }) => [
-                styles.categoryCard,
-                compact && styles.categoryCardCompact,
-                { backgroundColor: cardBg, borderColor },
-                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-            ]}
-            onPress={() => onPress(item.id, item.name)}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.name}, ${item.total_products} productos`}
-        >
+        <Animated.View style={animatedStyle}>
+            <Pressable
+                style={({ pressed }) => [
+                    styles.categoryCard,
+                    compact && styles.categoryCardCompact,
+                    { backgroundColor: cardBg, borderColor },
+                    neonGlow,
+                    pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => onPress(item.id, item.name)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${item.total_products} productos`}
+            >
             <View style={[styles.iconContainer, compact && styles.iconContainerCompact, { backgroundColor: `${tone}20` }]}>
                 <Ionicons name={getCategoryIcon(item.name) as any} size={compact ? 22 : 30} color={tone} />
             </View>
@@ -125,6 +165,7 @@ const CategoryCardComponent = ({ item, index, onPress, compact = false }: Catego
                 </Text>
             </View>
         </Pressable>
+        </Animated.View>
     );
 };
 
@@ -135,7 +176,7 @@ const styles = StyleSheet.create({
     categoryCard: {
         flex: 1,
         minHeight: 170,
-        borderRadius: 24,
+        borderRadius: BorderRadius.card,
         padding: 16,
         borderWidth: 1,
         alignItems: 'center',
@@ -155,7 +196,7 @@ const styles = StyleSheet.create({
     },
     categoryCardCompact: {
         minHeight: 110,
-        borderRadius: 18,
+        borderRadius: BorderRadius.md,
         padding: 10,
         gap: 4,
     },
@@ -172,17 +213,17 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     categoryName: {
-        fontSize: 16,
+        fontSize: FontSize.sm,
         fontWeight: '800',
         letterSpacing: -0.3,
         textAlign: 'center',
     },
     categoryNameCompact: {
-        fontSize: 13,
+        fontSize: FontSize.xs,
         letterSpacing: 0,
     },
     categoryDescription: {
-        fontSize: 12,
+        fontSize: FontSize.xs,
         fontWeight: '500',
         textAlign: 'center',
     },
@@ -201,11 +242,11 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     productsCount: {
-        fontSize: 13,
+        fontSize: FontSize.xs,
         fontWeight: '900'
     },
     productsCountCompact: {
-        fontSize: 11,
+        fontSize: FontSize.xxs,
     },
 });
 

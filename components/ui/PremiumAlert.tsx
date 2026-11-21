@@ -2,13 +2,24 @@ import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withRepeat,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { MODAL_MAX_WIDTH } from '@/constants/layout';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { readableTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
 import { IconButton } from '@/components/ui/IconButton';
+import { BorderRadius } from '@/constants/spacing';
 
 interface PremiumAlertProps {
     visible: boolean;
@@ -43,6 +54,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
 }) => {
     const { isDark, cardBg, surfaceMuted, textPrimary, textSecondary, accentColor } = useAccentColor();
     const { isTablet } = useResponsiveMetrics();
+    const reducedMotion = useReducedMotion();
 
     // Descartar nunca ejecuta la acción confirmada: llama a `onDismiss` y, si
     // no existe, a `onCancel`. Sin ninguno de los dos no hay forma de cerrar,
@@ -109,6 +121,60 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     const alertWidth = isTablet ? '60%' : '90%';
     const iconSize = isTablet ? 56 : 40;
     const padding = isTablet ? 32 : 24;
+    const alertColor = getColor();
+
+    // Animación de entrada con scale y opacity (spring)
+    const alertScale = useSharedValue(0.8);
+    const alertOpacity = useSharedValue(0);
+    useEffect(() => {
+        if (visible) {
+            if (reducedMotion) {
+                // Sin animación cuando el usuario prefiere movimiento reducido.
+                alertScale.value = 1;
+                alertOpacity.value = 1;
+            } else {
+                alertScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+                alertOpacity.value = withDelay(50, withTiming(1, { duration: 250 }));
+            }
+        } else {
+            alertScale.value = 0.8;
+            alertOpacity.value = 0;
+        }
+    }, [visible, alertScale, alertOpacity, reducedMotion]);
+
+    // Shake animation en el ícono para tipo danger (desactivado con reducedMotion)
+    const shakeRotate = useSharedValue(0);
+    useEffect(() => {
+        if (visible && type === 'danger' && !reducedMotion) {
+            shakeRotate.value = withSequence(
+                withTiming(-8, { duration: 80 }),
+                withTiming(8, { duration: 160 }),
+                withTiming(-6, { duration: 120 }),
+                withTiming(6, { duration: 120 }),
+                withTiming(0, { duration: 80 }),
+            );
+        }
+    }, [visible, type, shakeRotate, reducedMotion]);
+
+    const alertAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: alertScale.value }],
+        opacity: alertOpacity.value,
+    }));
+
+    const iconAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${shakeRotate.value}deg` }],
+    }));
+
+    // Glow neón en modo oscuro con el color del tipo
+    const neonGlow = isDark ? {
+        shadowColor: alertColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
+        borderColor: `${alertColor}60`,
+        borderWidth: 1.5,
+    } : {};
 
     return (
         <Modal
@@ -118,8 +184,8 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
             onRequestClose={handleDismiss}
         >
             <View style={styles.modalOverlay} accessibilityLabel="Alerta" accessibilityRole="alert" accessibilityLiveRegion="assertive">
-                <View
-                    style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }]}
+                <Animated.View
+                    style={[styles.alertCard, { backgroundColor: cardBg, width: alertWidth, padding }, alertAnimatedStyle, neonGlow]}
                     accessibilityViewIsModal
                 >
 
@@ -137,9 +203,11 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                         />
                     )}
 
-                    <View style={[styles.alertIconHeader, { backgroundColor: `${getColor()}20`, width: iconSize + 16, height: iconSize + 16, borderRadius: (iconSize + 16) / 2 }]}>
-                        <Ionicons name={getIcon()} size={iconSize} color={getColor()} />
-                    </View>
+                    <Animated.View style={[iconAnimatedStyle]}>
+                        <View style={[styles.alertIconHeader, { backgroundColor: `${alertColor}20`, width: iconSize + 16, height: iconSize + 16, borderRadius: (iconSize + 16) / 2 }]}>
+                        <Ionicons name={getIcon()} size={iconSize} color={alertColor} />
+                        </View>
+                    </Animated.View>
 
                     <Text maxFontSizeMultiplier={1.4} style={[styles.alertTitle, { color: textPrimary, fontSize: isTablet ? 24 : 20 }]}>{title}</Text>
                     <Text maxFontSizeMultiplier={1.4} style={[styles.alertMessage, { color: textSecondary, fontSize: isTablet ? 17 : 15 }]}>{message}</Text>
@@ -155,24 +223,32 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                 <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: textPrimary, fontSize: isTablet ? 16 : 14 }]}>{cancelText}</Text>
                             </Pressable>
                         )}
-                        <Pressable
-                            onPress={handleConfirm}
-                            style={[
-                                styles.alertBtn,
-                                {
-                                    backgroundColor: getColor(),
-                                    flex: showCancel ? 1 : 0,
-                                    minWidth: showCancel ? 0 : (isTablet ? 160 : 120),
-                                    height: isTablet ? 60 : 54
-                                }
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={confirmText}
-                        >
-                            <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: readableTextColor(getColor()), fontSize: isTablet ? 16 : 14 }]}>{confirmText}</Text>
-                        </Pressable>
+                        <View style={isDark ? {
+                            shadowColor: alertColor,
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 8,
+                            elevation: 4,
+                        } : {}}>
+                            <Pressable
+                                onPress={handleConfirm}
+                                style={[
+                                    styles.alertBtn,
+                                    {
+                                        backgroundColor: alertColor,
+                                        flex: showCancel ? 1 : 0,
+                                        minWidth: showCancel ? 0 : (isTablet ? 160 : 120),
+                                        height: isTablet ? 60 : 54
+                                    }
+                                ]}
+                                accessibilityRole="button"
+                                accessibilityLabel={confirmText}
+                            >
+                                <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: readableTextColor(alertColor), fontSize: isTablet ? 16 : 14 }]}>{confirmText}</Text>
+                            </Pressable>
+                        </View>
                     </View>
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     );
@@ -189,7 +265,7 @@ const styles = StyleSheet.create({
     alertCard: {
         width: '90%',
         maxWidth: MODAL_MAX_WIDTH,
-        borderRadius: 32,
+        borderRadius: BorderRadius.xxl,
         padding: 24,
         alignItems: 'center',
         elevation: 20,
@@ -197,6 +273,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
+        overflow: 'hidden',
     },
     closeBtn: {
         position: 'absolute',

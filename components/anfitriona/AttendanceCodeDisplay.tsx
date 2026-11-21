@@ -7,6 +7,7 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontSize } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole, isCajeroRole } from '@/utils/userRole';
 
@@ -182,12 +183,12 @@ const styles = StyleSheet.create({
     },
     label: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: 14,
+        fontSize: FontSize.sm,
         fontWeight: '600',
     },
     code: {
         color: '#FFFFFF',
-        fontSize: 20,
+        fontSize: FontSize.lg,
         fontWeight: '900',
         fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
     },
@@ -229,12 +230,12 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     qrTitle: {
-        fontSize: 22,
+        fontSize: FontSize.xl,
         fontWeight: '900',
         marginBottom: 8,
     },
     qrSubtitle: {
-        fontSize: 14,
+        fontSize: FontSize.sm,
         textAlign: 'center',
         lineHeight: 20,
         paddingHorizontal: 20,
@@ -268,12 +269,12 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.03)',
     },
     codeLabel: {
-        fontSize: 14,
+        fontSize: FontSize.sm,
         fontWeight: '700',
         letterSpacing: 1,
     },
     codeValue: {
-        fontSize: 32,
+        fontSize: FontSize.xl,
         fontWeight: '900',
         letterSpacing: 4,
         fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     footerText: {
-        fontSize: 12,
+        fontSize: FontSize.xs,
         fontWeight: '600',
     }
 });

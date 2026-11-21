@@ -1,9 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { BorderRadius, FontSize } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { accentTextColor } from '@/utils/color';
@@ -44,7 +54,60 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
   animationType = 'slide',
 }) => {
   const { accentColor, cardBg, textPrimary, textSecondary, isDark } = useAccentColor();
+  const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+
+  // Animación de escala al contenido del modal
+  const contentScale = useSharedValue(0);
+  const contentOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      if (reducedMotion) {
+        // Sin animación cuando el usuario prefiere movimiento reducido.
+        contentScale.value = 1;
+        contentOpacity.value = 1;
+      } else {
+        contentScale.value = withDelay(100, withSpring(1, { damping: 12, stiffness: 100 }));
+        contentOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
+      }
+    }
+  }, [visible, contentScale, contentOpacity, reducedMotion]);
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: contentScale.value }],
+    opacity: contentOpacity.value,
+  }));
+
+  // Drag handle con pulso sutil (desactivado con reducedMotion)
+  const handleScale = useSharedValue(1);
+  useEffect(() => {
+    if (visible && !reducedMotion) {
+      handleScale.value = withDelay(400, withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 1500 }),
+          withTiming(1, { duration: 1500 }),
+        ),
+        -1,
+        true,
+      ));
+    } else {
+      handleScale.value = 1;
+    }
+  }, [visible, handleScale, reducedMotion]);
+
+  const handleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: handleScale.value }],
+  }));
+
+  // Glow neón en botón de acción en modo oscuro
+  const actionNeonGlow = isDark ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  } : {};
 
   return (
     <Modal visible={visible} animationType={animationType} transparent onRequestClose={onClose}>
@@ -56,79 +119,89 @@ export const ModalBottomSheet: React.FC<ModalBottomSheetProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Cerrar modal"
         />
-        <View
+        <Animated.View
           style={[
-            styles.content,
-            {
-              backgroundColor: cardBg,
-              height,
-              maxWidth: 720,
-              alignSelf: 'center',
-              // El padding inferior absorbe el indicador de inicio del iPhone:
-              // con 24 fijos el botón de acción quedaba bajo el gesto del sistema.
-              paddingBottom: 24 + insets.bottom,
-            },
-            contentStyle,
+            contentAnimatedStyle,
           ]}
-          accessibilityViewIsModal
         >
-          {/* Indicador de arrastre superior (Pill Handle) */}
-          <View style={styles.dragHandleWrapper}>
-            <View style={[styles.dragHandle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-          </View>
+          <View
+            style={[
+              styles.content,
+              {
+                backgroundColor: cardBg,
+                height,
+                maxWidth: 720,
+                alignSelf: 'center',
+                paddingBottom: 24 + insets.bottom,
+              },
+              contentStyle,
+            ]}
+            accessibilityViewIsModal
+          >
+            {/* Indicador de arrastre superior (Pill Handle) */}
+            <View style={styles.dragHandleWrapper}>
+              <Animated.View style={[styles.dragHandle, handleAnimatedStyle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+            </View>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary, fontFamily: FontFamily.bold }]}>{title}</Text>
-              {subtitle && (
-                <Text maxFontSizeMultiplier={1.4} style={[styles.subtitle, { color: textSecondary, fontFamily: FontFamily.regular }]}>{subtitle}</Text>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary, fontFamily: FontFamily.bold }]}>{title}</Text>
+                {subtitle && (
+                  <Text maxFontSizeMultiplier={1.4} style={[styles.subtitle, { color: textSecondary, fontFamily: FontFamily.regular }]}>{subtitle}</Text>
+                )}
+              </View>
+              {showCloseButton && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar modal"
+                  hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                  onPress={() => {
+                    haptic.tap();
+                    onClose();
+                  }}
+                >
+                  <Ionicons name="close" size={24} color={textPrimary} />
+                </Pressable>
               )}
             </View>
-            {showCloseButton && (
+
+            {/* Body */}
+            {scrollable ? (
+              <ScrollView
+                style={styles.body}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+              >
+                {children}
+              </ScrollView>
+            ) : (
+              <View style={styles.body}>{children}</View>
+            )}
+
+            {/* Action Button */}
+            {actionLabel && onAction && (
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar modal"
-                hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: accentColor },
+                  actionNeonGlow,
+                  pressed && { opacity: 0.85 },
+                ]}
                 onPress={() => {
                   haptic.tap();
-                  onClose();
+                  onAction();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={actionLabel}
+                hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
               >
-                <Ionicons name="close" size={24} color={textPrimary} />
+                <Text style={[styles.actionBtnText, { color: accentTextColor(accentColor), fontFamily: FontFamily.bold }]}>{actionLabel}</Text>
               </Pressable>
             )}
           </View>
-
-          {/* Body */}
-          {scrollable ? (
-            <ScrollView
-              style={styles.body}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-              {children}
-            </ScrollView>
-          ) : (
-            <View style={styles.body}>{children}</View>
-          )}
-
-          {/* Action Button */}
-          {actionLabel && onAction && (
-            <Pressable
-              style={[styles.actionBtn, { backgroundColor: accentColor }]}
-              onPress={() => {
-                haptic.tap();
-                onAction();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={actionLabel}
-            >
-              <Text style={[styles.actionBtnText, { color: accentTextColor(accentColor), fontFamily: FontFamily.bold }]}>{actionLabel}</Text>
-            </Pressable>
-          )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -164,7 +237,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: FontSize.xl,
     fontWeight: '900',
   },
   subtitle: {
@@ -184,7 +257,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: FontSize.sm,
     fontWeight: '900',
     letterSpacing: 1,
   },

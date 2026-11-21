@@ -17,7 +17,8 @@ import { showToast } from "@/hooks/utils/cartUtils";
 import { blockOffline } from "@/utils/offlineGuard";
 import { useDebouncedEventListener } from "@/hooks/useDebouncedEventListener";
 import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
-import { FontSize, MIN_TOUCH_TARGET } from "@/constants/spacing";
+import { FontSize, MIN_TOUCH_TARGET, BorderRadius, HitSlop } from "@/constants/spacing";
+import { haptic } from "@/utils/haptics";
 import type { Timer } from "@/context/types";
 
 interface ServiceHostessesModalProps {
@@ -32,7 +33,7 @@ interface ServiceHostessesModalProps {
  */
 export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostessesModalProps) {
   const { refreshTimers } = useTimer();
-  const { bg, cardBg, textPrimary, textSecondary, accentColor, accentText, borderColor, surfaceMuted } =
+  const { bg, cardBg, textPrimary, textSecondary, accentColor, accentText, borderColor, surfaceMuted, isDark } =
     useAccentColor();
   const [loading, setLoading] = useState(false);
   const [opciones, setOpciones] = useState<{ id: string; nombre: string }[]>([]);
@@ -179,10 +180,19 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
 
   if (!item) return null;
 
+  // Glow neón en botón de guardar en modo oscuro
+  const saveBtnNeonGlow = isDark && changed ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  } : {};
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor }]}>
+        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor, borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl }]}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: textPrimary }]}>Anfitrionas</Text>
@@ -191,7 +201,7 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
               </Text>
             </View>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: surfaceMuted }]}
+              style={[styles.closeBtn, { backgroundColor: surfaceMuted, borderRadius: BorderRadius.lg }]}
               onPress={onClose}
               accessibilityRole="button"
               accessibilityLabel="Cerrar anfitrionas"
@@ -213,7 +223,7 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
             placeholderTextColor={textSecondary}
             value={search}
             onChangeText={setSearch}
-            style={[styles.searchInput, { borderColor, color: textPrimary, backgroundColor: bg }]}
+            style={[styles.searchInput, { borderColor, color: textPrimary, backgroundColor: bg, borderRadius: BorderRadius.card }]}
           />
 
           {loading && <ActivityIndicator color={accentColor} style={styles.loader} />}
@@ -268,17 +278,39 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
               })}
           </ScrollView>
 
-          <Pressable disabled={loading} onPress={() => setSeleccion([])} style={styles.liberarBtn}>
+          <Pressable
+            disabled={loading}
+            onPress={() => {
+              haptic.tap();
+              setSeleccion([]);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Liberar todas las anfitrionas"
+            accessibilityHint="Deselecciona todas las anfitrionas asignadas"
+            hitSlop={HitSlop.sm}
+            style={({ pressed }) => [
+              styles.liberarBtn,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
             <Text style={{ color: textPrimary, textAlign: "center" }}>Liberar todas</Text>
           </Pressable>
           <Pressable
             disabled={loading || !changed}
-            onPress={guardar}
+            onPress={() => {
+              haptic.confirm();
+              guardar();
+            }}
             style={[
               styles.saveBtn,
               { backgroundColor: accentColor, opacity: loading || !changed ? 0.5 : 1 },
+              saveBtnNeonGlow,
             ]}
             accessibilityRole="button"
+            accessibilityLabel={seleccion.length ? "Guardar cambios de anfitrionas" : "Confirmar liberación de anfitrionas"}
+            accessibilityHint="Guarda los cambios en la asignación de anfitrionas"
+            accessibilityState={{ busy: loading, disabled: loading || !changed }}
+            hitSlop={HitSlop.sm}
           >
             <Text style={[styles.saveText, { color: accentText }]}>
               {loading
@@ -301,11 +333,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
     borderTopWidth: 1,
     padding: 20,
     maxHeight: "88%",
+    overflow: 'hidden',
   },
   header: {
     flexDirection: "row",
@@ -314,7 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 22,
+    fontSize: FontSize.xl,
     fontWeight: "900",
     letterSpacing: -0.5,
   },
@@ -326,7 +357,6 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: MIN_TOUCH_TARGET,
     height: MIN_TOUCH_TARGET,
-    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -342,7 +372,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1,
-    borderRadius: 24,
     paddingHorizontal: 14,
     minHeight: MIN_TOUCH_TARGET,
     fontSize: FontSize.md,
@@ -366,10 +395,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   saveBtn: {
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     minHeight: 52,
     justifyContent: "center",
     paddingHorizontal: 16,
+    overflow: 'hidden',
   },
   saveText: {
     textAlign: "center",

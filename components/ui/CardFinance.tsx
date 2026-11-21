@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface CardFinanceProps {
   total: number;
@@ -28,28 +29,41 @@ export const CardFinance: React.FC<CardFinanceProps> = ({
   textColor,
   textMutedColor,
   children,
-}) => (
-  <>
-    <View style={styles.financeBox}>
-      <View style={styles.pill}>
-        <Ionicons name="card-outline" size={12} color={textMutedColor} />
-        <Text style={[styles.pillText, { color: textMutedColor }]}>{pillText}</Text>
+}) => {
+  const { isDark } = useAccentColor();
+
+  // Glow neón en statusBadge en modo oscuro
+  const badgeNeon = statusBadge && isDark ? {
+    shadowColor: statusBadge.color,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  } : {};
+
+  return (
+    <>
+      <View style={styles.financeBox}>
+        <View style={[styles.pill, { borderRadius: BorderRadius.sm }]}>
+          <Ionicons name="card-outline" size={12} color={textMutedColor} />
+          <Text style={[styles.pillText, { color: textMutedColor }]}>{pillText}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[styles.totalLabel, { color: textMutedColor }]}>{label}</Text>
+          <Text style={[styles.totalPrice, { color: textColor }]}>
+            ${total.toLocaleString()}
+          </Text>
+          {statusBadge && (
+            <View style={[styles.statusBadge, { backgroundColor: `${statusBadge.color}15`, borderColor: statusBadge.color }, badgeNeon]}>
+              <Text style={[styles.statusText, { color: statusBadge.color }]}>{statusBadge.text}</Text>
+            </View>
+          )}
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={[styles.totalLabel, { color: textMutedColor }]}>{label}</Text>
-        <Text style={[styles.totalPrice, { color: textColor }]}>
-          ${total.toLocaleString()}
-        </Text>
-        {statusBadge && (
-          <View style={[styles.statusBadge, { backgroundColor: `${statusBadge.color}15`, borderColor: statusBadge.color }]}>
-            <Text style={[styles.statusText, { color: statusBadge.color }]}>{statusBadge.text}</Text>
-          </View>
-        )}
-      </View>
-    </View>
-    {children}
-  </>
-);
+      {children}
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   financeBox: {
@@ -65,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(156, 163, 175, 0.1)',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 10,
+    overflow: 'hidden',
   },
   pillText: {
     fontSize: FontSize.xxs,
@@ -84,10 +98,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: BorderRadius.sm,
     gap: 4,
     marginTop: 4,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   statusText: {
     fontSize: FontSize.xxs,

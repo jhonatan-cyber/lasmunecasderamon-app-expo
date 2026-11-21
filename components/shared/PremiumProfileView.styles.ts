@@ -51,7 +51,6 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarEmoji: { fontSize: 60 },
   editPhotoBadge: {
     position: "absolute",
     bottom: 5,

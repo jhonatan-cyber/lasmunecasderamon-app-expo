@@ -9,6 +9,7 @@ import { useRenderCount } from '@/hooks/useRenderCount';
 import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 interface PersonalCardProps {
     item: User;
@@ -37,10 +38,21 @@ export const PersonalCard = memo(function PersonalCard({
     textPrimary,
     textSecondary,
 }: PersonalCardProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, isDark } = useAccentColor();
     useRenderCount('PersonalCard', { userId: item.id });
     const photoUrl = item.foto ? `${BASE_URL}/img/users/${item.foto}` : null;
     const hasQR = !!item.qr_token;
+
+    // Glow neón en modo oscuro
+    const cardNeonGlow = isDark ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: accentColor,
+        borderWidth: 1.5,
+    } : {};
 
     return (
         <AnimatedView
@@ -57,6 +69,7 @@ export const PersonalCard = memo(function PersonalCard({
                 style={({ pressed }) => [
                     styles.card, 
                     { backgroundColor: cardBg, borderColor },
+                    cardNeonGlow,
                     pressed && { opacity: 0.9, transform: [{ scale: 0.96 }] }
                 ]}
             >
@@ -128,7 +141,7 @@ const styles = StyleSheet.create({
         padding: 6,
     },
     card: {
-        borderRadius: 20,
+        borderRadius: BorderRadius.card,
         overflow: 'hidden',
         borderWidth: 1,
         elevation: 4,

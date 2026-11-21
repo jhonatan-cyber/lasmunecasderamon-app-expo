@@ -4,7 +4,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, HitSlop } from '@/constants/spacing';
+import { haptic } from '@/utils/haptics';
 
 interface ActiveServiceCardProps {
     habitacion: string;
@@ -41,7 +42,16 @@ export const ActiveServiceCard = ({ habitacion, tiempoRestante, onPress }: Activ
             animate={{ opacity: 1, scale: 1, translateY: 0 }}
             transition={{ type: 'spring', damping: 15 }}
         >
-            <Pressable onPress={onPress}>
+            <Pressable
+                onPress={() => {
+                  haptic.tap();
+                  onPress && onPress();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Servicio activo en habitación ${habitacion}`}
+                accessibilityHint="Toque para ver más detalles"
+                hitSlop={HitSlop.sm}
+            >
                 <LinearGradient
                     colors={[accentColor, `${accentColor}CC`, `${accentColor}99`]}
                     start={{ x: 0, y: 0 }}
@@ -126,13 +136,13 @@ const styles = StyleSheet.create({
     },
     label: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: 12,
+        fontSize: FontSize.xs,
         fontWeight: '800',
         letterSpacing: 1,
     },
     roomNumber: {
         color: '#FFF',
-        fontSize: 42,
+        fontSize: FontSize.xl,
         fontWeight: '900',
         letterSpacing: -1,
     },
@@ -141,7 +151,7 @@ const styles = StyleSheet.create({
     },
     timerText: {
         color: '#FFF',
-        fontSize: 28,
+        fontSize: FontSize.xl,
         fontWeight: '800',
     },
     timerSubText: {
@@ -160,7 +170,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: 12,
+        fontSize: FontSize.xs,
         fontWeight: '600',
     },
 });

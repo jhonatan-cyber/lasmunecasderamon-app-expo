@@ -11,6 +11,7 @@ import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import { useCartStore } from "@/store/cartStore";
 import { haptic } from "@/utils/haptics";
 import { FontFamily } from "@/constants/fonts";
+import { BorderRadius } from "@/constants/spacing";
 
 export type { Anfitriona, CartItem, Product, Room };
 interface ProductCardProps {
@@ -33,7 +34,7 @@ export const ProductCard = React.memo(
     anfitrionas,
     rooms,
   }: ProductCardProps) => {
-    const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
+    const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark} =
       useAccentColor();
     const [open, setOpen] = useState(false);
     const selectedProduct = cartItem?.product || product;
@@ -66,6 +67,18 @@ export const ProductCard = React.memo(
       setLocalQty(0);
       setOpen(false);
     };
+
+    // Glow neón en modo oscuro
+    const cardNeonGlow = isDark ? {
+      shadowColor: accentColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+      borderColor: accentColor,
+      borderWidth: 1.5,
+    } : {};
+
     return (
       <>
         <Pressable
@@ -79,9 +92,10 @@ export const ProductCard = React.memo(
             backgroundColor: cardBg,
             borderColor,
             borderWidth: 1,
-            borderRadius: 20,
+            borderRadius: BorderRadius.card,
             padding: 16,
             marginBottom: 12,
+            ...cardNeonGlow,
           }}
         >
           <OrderProductPhoto foto={product.foto} name={product.name} />
@@ -127,7 +141,7 @@ export const ProductCard = React.memo(
             <View
               style={{
                 backgroundColor: cardBg,
-                borderRadius: 24,
+                borderRadius: BorderRadius.xxl,
                 padding: 20,
                 maxHeight: "90%",
                 gap: 14,

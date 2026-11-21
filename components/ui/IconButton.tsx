@@ -6,6 +6,7 @@ import {
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { MIN_TOUCH_TARGET } from '@/constants/spacing';
 
 export { MIN_TOUCH_TARGET };
@@ -59,6 +60,16 @@ export function IconButton({
     style,
 }: IconButtonProps) {
     const hitSlop = getIconButtonHitSlop(size);
+    const { isDark, accentColor } = useAccentColor();
+
+    // Glow neón en modo oscuro
+    const neonGlow = isDark && !disabled ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
+    } : {};
 
     return (
         <Pressable
@@ -83,6 +94,8 @@ export function IconButton({
                     borderColor,
                     borderWidth,
                     opacity: pressed ? 0.7 : disabled ? 0.5 : 1,
+                    transform: pressed ? [{ scale: 1.15 }] : [],
+                    ...neonGlow,
                 },
                 style,
             ]}

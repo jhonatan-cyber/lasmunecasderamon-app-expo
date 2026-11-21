@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 
 interface ColacionHistoryCardProps {
   fecha: string;
@@ -26,11 +28,23 @@ export const ColacionHistoryCard: React.FC<ColacionHistoryCardProps> = ({
   textPrimary,
   textSecondary,
 }) => {
+  const { accentColor, isDark } = useAccentColor();
   const fechaStr = fecha ? new Date(fecha).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : '';
   const hora = fecha ? new Date(fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
 
+  // Glow neón en modo oscuro
+  const cardNeonGlow = isDark ? {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: accentColor,
+    borderWidth: 1.5,
+  } : {};
+
   return (
-    <View style={[styles.historyCard, { backgroundColor: cardBg, borderColor }]}>
+    <View style={[styles.historyCard, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
       <View style={styles.historyCardLeft}>
         <Text style={[styles.historyCardNick, { color: textPrimary }]}>
           {nickRecibio}
@@ -67,11 +81,12 @@ export const ColacionHistoryCard: React.FC<ColacionHistoryCardProps> = ({
 const styles = StyleSheet.create({
   historyCard: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   historyCardLeft: {
     flex: 1,

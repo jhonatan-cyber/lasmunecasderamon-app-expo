@@ -7,6 +7,7 @@ export interface ProfileFormData {
   phone: string;
   address: string;
   estadoCivil: string;
+  recoveryEmail: string;
   password: string;
 }
 
@@ -112,6 +113,32 @@ export function ProfileFormFields({
           </Text>
           <Ionicons name="chevron-down" size={20} color={textSecondary} />
         </Pressable>
+      </View>
+
+      <View style={[styles.divider, { backgroundColor: borderColor }]} />
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: textSecondary }]}>
+          Correo de recuperación
+        </Text>
+        <View style={wrapperStyle}>
+          <Ionicons
+            name="mail-outline"
+            size={20}
+            color={accentUi}
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={[styles.input, { color: textPrimary }]}
+            value={formData.recoveryEmail}
+            onChangeText={(val) => updateField("recoveryEmail", val)}
+            placeholder="correo@ejemplo.com"
+            placeholderTextColor={textSecondary}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
       </View>
 
       <View style={[styles.divider, { backgroundColor: borderColor }]} />

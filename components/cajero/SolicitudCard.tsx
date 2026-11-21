@@ -18,6 +18,7 @@ interface SolicitudCardProps {
     borderColor: string;
     serverOffset: number;
     cajaAbierta: boolean;
+    isDark?: boolean;
     onAprobar: (id: string, tipo: "pedido" | "solicitud" | "anticipo", item: SolicitudItem) => void;
     onRechazar: (id: string, tipo: "pedido" | "solicitud" | "anticipo") => void;
     onShowServiceModal: (item: SolicitudItem) => void;
@@ -33,6 +34,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
     borderColor,
     serverOffset,
     cajaAbierta,
+    isDark = false,
     onAprobar,
     onRechazar,
     onShowServiceModal,
@@ -81,11 +83,21 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         }
     };
 
+    // Borde neón en modo oscuro con el color del tipo
+    const neonGlow = isDark ? {
+        shadowColor: color,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
+    } : {};
+
     return (
         <Pressable
             style={[
                 styles.card,
                 { backgroundColor: cardBg, borderColor },
+                neonGlow,
                 isUrgent && styles.cardUrgent
             ]}
             onPress={handleCardPress}

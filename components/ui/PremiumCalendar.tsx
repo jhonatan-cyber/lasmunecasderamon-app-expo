@@ -3,6 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback,useMemo,useState } from "react";
 import { Pressable,StyleSheet,Text,View } from "react-native";
 import { IconButton } from "@/components/ui/IconButton";
+import { BorderRadius } from '@/constants/spacing';
 
 interface CalendarEvent {
   date: string;
@@ -34,7 +35,7 @@ export const PremiumCalendar = ({
     borderColor,
     surfaceMuted,
     textPrimary,
-    textSecondary, accentOnSurface} = useAccentColor();
+    textSecondary, accentOnSurface, isDark} = useAccentColor();
   const [internalCurrentMonth, setInternalCurrentMonth] = useState(new Date());
 
   const currentMonth = propCurrentMonth || internalCurrentMonth;
@@ -243,6 +244,14 @@ export const PremiumCalendar = ({
           const hasEvnt = eventTypes.length > 0;
           const visibleEventTypes = eventTypes.slice(0, 3);
 
+          const dayNeonGlow = isDark && isSelected ? {
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
+            shadowRadius: 6,
+            elevation: 4,
+          } : {};
+
           return (
             <Pressable
               key={i}
@@ -261,6 +270,7 @@ export const PremiumCalendar = ({
                       borderWidth: 1.5,
                       borderColor: accentColor,
                     },
+                  dayNeonGlow,
                 ]}
               >
                 <Text
@@ -334,7 +344,7 @@ const styles = StyleSheet.create({
   calendarCard: {
     alignSelf: "stretch",
     marginHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     paddingHorizontal: 12,
     paddingTop: 16,
     paddingBottom: 14,

@@ -21,6 +21,7 @@ export function useProfile() {
     address: user?.address || "",
     estadoCivil: user?.estado_civil || "Soltero/a",
     password: "",
+    recoveryEmail: user?.recoveryEmail || "",
     image: null as string | null,
   });
 
@@ -40,6 +41,7 @@ export function useProfile() {
           phone: profile.telefono || profile.phone || prev.phone,
           address: profile.direccion || profile.address || prev.address,
           estadoCivil: profile.estado_civil || prev.estadoCivil,
+          recoveryEmail: profile.recovery_email || prev.recoveryEmail,
         }));
       }
     } catch (error) {
@@ -140,6 +142,7 @@ export function useProfile() {
       form.append("phone", formData.phone);
       form.append("address", formData.address);
       form.append("maritalStatus", formData.estadoCivil);
+      form.append("recoveryEmail", formData.recoveryEmail);
 
       if (formData.password.trim()) {
         if (formData.password.length < 4)
@@ -170,6 +173,7 @@ export function useProfile() {
           phone: d.phone || formData.phone,
           address: d.address || formData.address,
           estado_civil: d.maritalStatus || formData.estadoCivil,
+          recoveryEmail: (d.recovery_email ?? formData.recoveryEmail) || null,
           ...(d.foto ? { foto: d.foto } : {}),
         };
         await updateProfile(updatedUser, { localOnly: true });

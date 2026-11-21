@@ -10,6 +10,7 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
+import { FontSize } from "@/constants/spacing";
 import { useCallback,useState } from "react";
 import {
 RefreshControl,
@@ -247,19 +248,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     fontWeight: "700",
     letterSpacing: 1.5,
     marginBottom: 8,
   },
   summaryAmount: {
-    fontSize: 42,
+    fontSize: FontSize.xl,
     fontWeight: "900",
     marginBottom: 12,
     letterSpacing: -1,
   },
   summaryDetails: { flexDirection: "row", gap: 12 },
-  summaryDetail: { fontSize: 14, fontWeight: "600" },
+  summaryDetail: { fontSize: FontSize.sm, fontWeight: "600" },
   filterRow: {
     flexDirection: "row",
     paddingHorizontal: 16,

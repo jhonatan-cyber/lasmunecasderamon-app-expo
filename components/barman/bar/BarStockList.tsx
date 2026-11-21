@@ -15,6 +15,7 @@ import { formatCurrency } from "@/utils/format";
 import type { BarStockItem } from "@/hooks/useBarScreen";
 import { BASE_URL } from "@/api/client";
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
+import { BorderRadius } from "@/constants/spacing";
 
 interface BarStockListProps {
   items: BarStockItem[];
@@ -242,7 +243,7 @@ const BarStockCard = memo(function BarStockCard({
 }: {
   item: BarStockItem;
 }) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark } =
     useAccentColor();
   const opcionesVenta = useMemo(
     () => resolverVentaProducto(item).opciones,
@@ -252,8 +253,20 @@ const BarStockCard = memo(function BarStockCard({
   const hasLowStock = stock > 0 && stock <= 3;
   const hasShot = opcionesVenta.some((option) => option.esShot);
 
+  // Glow neón en modo oscuro
+  const cardNeonColor = hasLowStock ? "#F59E0B" : accentColor;
+  const cardNeonGlow = isDark ? {
+    shadowColor: cardNeonColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: cardNeonColor,
+    borderWidth: 1.5,
+  } : {};
+
   return (
-    <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
       {/* Image section */}
       <View style={styles.imageWrap}>
         {item.producto_foto ? (
@@ -437,10 +450,11 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 10,
     marginTop: 10,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   imageWrap: {
     position: "relative",

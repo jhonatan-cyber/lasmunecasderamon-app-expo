@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { FontSize } from "@/constants/spacing";
+import { FontSize, BorderRadius } from "@/constants/spacing";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface ServiceCardTimerProps {
   visible: boolean;
@@ -30,14 +31,24 @@ export const ServiceCardTimer: React.FC<ServiceCardTimerProps> = ({
   textMutedColor,
   accessibilityLabel,
 }) => {
+  const { isDark } = useAccentColor();
   if (!visible) return null;
 
   const avance = Number.isFinite(progreso) ? Math.min(1, Math.max(0, progreso)) : 0;
   const ancho = `${Math.round(avance * 100)}%` as `${number}%`;
 
+  // Glow neón en la barra de progreso en modo oscuro
+  const fillNeonGlow = isDark ? {
+    shadowColor: acento,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 3,
+  } : {};
+
   return (
     <View
-      style={[styles.timerHero, { backgroundColor: fondo }]}
+      style={[styles.timerHero, { backgroundColor: fondo, borderRadius: BorderRadius.card }]}
       accessible
       accessibilityLabel={accessibilityLabel}
     >
@@ -52,7 +63,7 @@ export const ServiceCardTimer: React.FC<ServiceCardTimerProps> = ({
         </Text>
       </View>
       <View style={[styles.track, { backgroundColor: barraFondo }]}>
-        <View style={[styles.fill, { width: ancho, backgroundColor: acento }]} />
+        <View style={[styles.fill, { width: ancho, backgroundColor: acento }, fillNeonGlow]} />
       </View>
     </View>
   );
@@ -79,7 +90,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   timerValue: {
-    fontSize: 26,
+    fontSize: FontSize.xl,
     fontWeight: '900',
     letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],

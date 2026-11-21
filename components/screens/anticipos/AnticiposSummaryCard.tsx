@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { styles } from "../AnticiposScreen.styles";
 import { formatCurrency, type VistaAnticipos } from "./anticiposUtils";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface AnticiposSummaryCardProps {
   viewMode: VistaAnticipos;
@@ -23,8 +24,20 @@ export function AnticiposSummaryCard({
   borderColor,
   textSecondary,
 }: AnticiposSummaryCardProps) {
+  const { isDark } = useAccentColor();
+  const summaryNeonColor = viewMode === "solicitudes" ? "#F59E0B" : accentColor;
+  const cardNeonGlow = isDark ? {
+    shadowColor: summaryNeonColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: summaryNeonColor,
+    borderWidth: 1.5,
+  } : {};
+
   return (
-    <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
+    <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
       <Text style={[styles.summaryLabel, { color: textSecondary }]}>
         {viewMode === "solicitudes"
           ? "SITUACIÓN DE SOLICITUDES"

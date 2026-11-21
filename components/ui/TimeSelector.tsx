@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { haptic } from '@/utils/haptics';
 
 interface TimeSelectorProps {
     value: number;
@@ -20,17 +21,30 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
     max = 999,
     label = "Tiempo (minutos)"
 }) => {
-    const { accentColor, textPrimary, textSecondary, borderColor, surfaceMuted } = useAccentColor();
+    const { accentColor, textPrimary, textSecondary, borderColor, surfaceMuted, isDark } = useAccentColor();
     const cardBg = surfaceMuted;
+
+    // Glow neón en modo oscuro
+    const neonGlow = isDark ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+        borderColor: accentColor,
+        borderWidth: 1.5,
+    } : {};
 
     const handleIncrement = () => {
         if (value + step <= max) {
+            haptic.tap();
             onChange(value + step);
         }
     };
 
     const handleDecrement = () => {
         if (value - step >= min) {
+            haptic.tap();
             onChange(value - step);
         }
     };
@@ -38,7 +52,7 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
     return (
         <View style={styles.container}>
             {label ? <Text style={[styles.label, { color: textSecondary }]}>{label.toUpperCase()}</Text> : null}
-            <View style={[styles.selectorWrapper, { borderColor, backgroundColor: cardBg }]}>
+            <View style={[styles.selectorWrapper, { borderColor, backgroundColor: cardBg }, neonGlow]}>
                 <Pressable
                     onPress={handleDecrement}
                     style={({ pressed }) => [
