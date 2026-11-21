@@ -50,6 +50,57 @@ export interface ActionGridProps {
   bentoLayout?: boolean;
 }
 
+interface AnimatedActionCardProps {
+  action: ActionGridItem;
+  index: number;
+  variant: DashboardCardVariant;
+  reducedMotion: boolean;
+  disableEntranceAnimation: boolean;
+  onPress: (action: ActionGridItem) => void;
+}
+
+function AnimatedActionCard({ action, index, variant, reducedMotion, disableEntranceAnimation, onPress }: AnimatedActionCardProps) {
+  const scale = useSharedValue(reducedMotion || disableEntranceAnimation ? 1 : 0);
+  const opacity = useSharedValue(reducedMotion || disableEntranceAnimation ? 1 : 0);
+
+  if (!(reducedMotion || disableEntranceAnimation)) {
+    const delay = index * 80;
+    scale.value = withDelay(delay, withSpring(1, { damping: 12, stiffness: 100 }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+  }
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const card = (
+    <DashboardActionCard
+      title={action.title}
+      description={action.description}
+      icon={action.icon}
+      color={action.color}
+      borderColor={action.borderColor}
+      onPress={() => onPress(action)}
+      disabled={action.disabled}
+      variant={action.variant ?? variant}
+      badge={action.badge}
+      badgeLabel={action.badgeLabel}
+      bloqueado={!!action.bloqueoPorCaja}
+    />
+  );
+
+  return (
+    <Animated.View style={animatedStyle}>
+      {action.bloqueoPorCaja ? (
+        <BloqueoPorCaja bloqueado style={styles.cell}>
+          {card}
+        </BloqueoPorCaja>
+      ) : card}
+    </Animated.View>
+  );
+}
+
 const ROW_GAP = 12;
 const TOP_GAP = 15;
 
@@ -69,27 +120,10 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
   const { isTablet, isLandscape } = useResponsiveMetrics();
   const reducedMotion = useReducedMotion();
 
-  // Animación de entrada escalonada: cada card aparece con un delay progresivo.
-  const cardAnimations = actions.map(() => useSharedValue(0));
-  const fadeAnimations = actions.map(() => useSharedValue(0));
-
-  if (reducedMotion || disableEntranceAnimation) {
-    // Sin animación cuando el usuario prefiere movimiento reducido.
-    cardAnimations.forEach(sv => sv.value = 1);
-    fadeAnimations.forEach(sv => sv.value = 1);
-  } else {
-    actions.forEach((_, index) => {
-      const delay = index * 80;
-      cardAnimations[index].value = withDelay(delay, withSpring(1, { damping: 12, stiffness: 100 }));
-      fadeAnimations[index].value = withDelay(delay, withTiming(1, { duration: 300 }));
-    });
-  }
-
   const columnCount =
     columns ??
     (variant === 'row' ? 2 : isTablet || isLandscape ? 3 : 2);
 
-  // Bento layout: primera card destacada a todo ancho, resto en grid
   const bentoFeatured = bentoLayout ? actions[0] : null;
   const bentoRemaining = bentoLayout ? actions.slice(1) : actions;
 
@@ -106,49 +140,19 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
     }
   };
 
-  const renderCard = (action: ActionGridItem, index: number) => {
-    const card = (
-      <DashboardActionCard
-        title={action.title}
-        description={action.description}
-        icon={action.icon}
-        color={action.color}
-        borderColor={action.borderColor}
-        onPress={() => handlePress(action)}
-        disabled={action.disabled}
-        variant={action.variant ?? variant}
-        badge={action.badge}
-        badgeLabel={action.badgeLabel}
-        bloqueado={!!action.bloqueoPorCaja}
-      />
-    );
-
-    // Wrapper con animación de entrada escalonada
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: cardAnimations[index].value }],
-      opacity: fadeAnimations[index].value,
-    }));
-
-    const wrapped = (
-      <Animated.View style={animatedStyle}>
-        {action.bloqueoPorCaja ? (
-          <BloqueoPorCaja bloqueado style={styles.cell}>
-            {card}
-          </BloqueoPorCaja>
-        ) : card}
-      </Animated.View>
-    );
-
-    return wrapped;
-  };
-
   return (
     <View>
-      {/* Bento: primera card destacada a todo ancho */}
       {bentoFeatured && (
         <View style={[styles.row, { marginTop: TOP_GAP }]}>
           <View style={styles.cell}>
-            {renderCard(bentoFeatured, 0)}
+            <AnimatedActionCard
+              action={bentoFeatured}
+              index={0}
+              variant={variant}
+              reducedMotion={reducedMotion}
+              disableEntranceAnimation={disableEntranceAnimation}
+              onPress={handlePress}
+            />
           </View>
         </View>
       )}
@@ -164,11 +168,17 @@ export const ActionGrid: React.FC<ActionGridProps> = ({
             const globalIndex = (bentoLayout ? 1 : 0) + rowIndex * columnCount + colIndex;
             return (
               <View key={action.title} style={styles.cell}>
-                {renderCard(action, globalIndex)}
+                <AnimatedActionCard
+                  action={action}
+                  index={globalIndex}
+                  variant={variant}
+                  reducedMotion={reducedMotion}
+                  disableEntranceAnimation={disableEntranceAnimation}
+                  onPress={handlePress}
+                />
               </View>
             );
           })}
-          {/* Rellena la última fila para que las tarjetas conserven el ancho. */}
           {row.length < columnCount &&
             Array.from({ length: columnCount - row.length }).map((_, index) => (
               <View key={`empty-${index}`} style={styles.cell} />

@@ -130,7 +130,7 @@ const CategoryCardComponent = ({ item, index, onPress, compact = false }: Catego
         const delay = index * 80;
         scale.value = withDelay(delay, withTiming(1, { duration: 400 }));
         opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
-    }, [index, scale, opacity, reducedMotion]);
+    }, [index, reducedMotion]);
 
     return (
         <Animated.View style={animatedStyle}>

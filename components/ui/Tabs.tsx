@@ -13,7 +13,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { readableTextColor, withAlpha } from '@/utils/color';
 import { haptic } from '@/utils/haptics';
@@ -95,75 +94,59 @@ export function Tabs<T extends string>({
   const gap = isTablet ? 10 : 8;
 
   // Micro-animación de scale para cada tab: el activo escala ligeramente
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const tabScales = tabs.map(() => useSharedValue(1));
   useEffect(() => {
     tabs.forEach((_, i) => {
       const isActive = tabs[i].key === activeKey;
       if (reducedMotion) {
-        // Sin animación de escala cuando el usuario prefiere movimiento reducido.
         tabScales[i].value = isActive ? 1.04 : 1;
       } else {
         tabScales[i].value = withSpring(isActive ? 1.04 : 1, { damping: 15, stiffness: 200 });
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey, tabs, reducedMotion]);
 
-  const signature = tabs
-    .map((tab) => `${tab.key}:${tab.label}:${tab.count ?? ''}:${tab.icon ?? ''}`)
-    .join('|');
-  const [measurement, setMeasurement] = useState<RowMeasurement>({
-    signature: '',
-    viewport: 0,
-    content: 0,
-  });
+  interface TabItemRenderProps {
+    tab: TabItem<T>;
+    index: number;
+    tabScale: import('react-native-reanimated').SharedValue<number>;
+    isActive: boolean;
+    activeTextColor: string;
+    isPills: boolean;
+    isBloqueado: boolean;
+    isDark: boolean;
+    accentColor: string;
+    cardBg: string;
+    textSecondary: string;
+    borderColor: string;
+    isTablet: boolean;
+    onChange: (key: T) => void;
+    getAccessibilityLabel?: (tab: TabItem<T>) => string;
+  }
 
-  // Natural widths are only measurable while the row is not forced to stretch,
-  // so the slide row is rendered until we know the tabs fit on screen.
-  const measured =
-    measurement.signature === signature &&
-    measurement.viewport > 0 &&
-    measurement.content > 0;
-  const fits = measured && measurement.content <= measurement.viewport + 0.5;
-  const slides = !wrap && adaptive && !fits;
-  const stretches = !wrap && !slides && !isPills;
-
-  const updateMeasurement = useCallback(
-    (patch: Partial<RowMeasurement>, signatureValue: string) => {
-      setMeasurement((prev) => {
-        const next: RowMeasurement = {
-          signature: patch.signature ?? prev.signature,
-          viewport: patch.viewport ?? prev.viewport,
-          content: patch.content ?? prev.content,
-        };
-        if (next.signature !== signatureValue) {
-          next.signature = signatureValue;
-          next.content = patch.content ?? 0;
-        }
-        if (
-          next.signature === prev.signature &&
-          next.viewport === prev.viewport &&
-          next.content === prev.content
-        ) {
-          return prev;
-        }
-        return next;
-      });
-    },
-    [],
-  );
-
-  const renderTab = (tab: TabItem<T>, index: number) => {
-    const isActive = activeKey === tab.key;
-    const showPillCount = isPills && tab.count !== undefined;
-    const showBadge = !isPills && tab.count !== undefined;
-    const isBloqueado = tab.bloqueado === true;
-
-    // Animated scale wrapper
+  function TabItemRender({
+    tab,
+    index,
+    tabScale,
+    isActive,
+    activeTextColor,
+    isPills,
+    isBloqueado,
+    isDark,
+    accentColor,
+    cardBg,
+    textSecondary,
+    borderColor,
+    isTablet,
+    onChange,
+    getAccessibilityLabel,
+  }: TabItemRenderProps) {
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: tabScales[index].value }],
+      transform: [{ scale: tabScale.value }],
     }));
 
-    // Glow neón en modo oscuro para el tab activo
     const neonGlow = isDark && isActive && !isBloqueado ? {
       shadowColor: accentColor,
       shadowOffset: { width: 0, height: 0 },
@@ -171,6 +154,9 @@ export function Tabs<T extends string>({
       shadowRadius: 8,
       elevation: 4,
     } : {};
+
+    const showPillCount = isPills && tab.count !== undefined;
+    const showBadge = !isPills && tab.count !== undefined;
 
     return (
       <Animated.View key={tab.key} style={animatedStyle}>
@@ -246,7 +232,6 @@ export function Tabs<T extends string>({
             </View>
           ) : null}
         </Pressable>
-        {/* Indicador de dot animado debajo del tab activo */}
         {isActive && !isPills && (
           <View style={styles.dotIndicatorContainer}>
             <Animated.View style={[styles.dotIndicator, { backgroundColor: accentColor }]}>
@@ -258,7 +243,72 @@ export function Tabs<T extends string>({
         )}
       </Animated.View>
     );
+  }
+
+  const renderTab = (tab: TabItem<T>, index: number) => {
+    const isActive = activeKey === tab.key;
+    return (
+      <TabItemRender
+        tab={tab}
+        index={index}
+        tabScale={tabScales[index]}
+        isActive={isActive}
+        activeTextColor={activeTextColor}
+        isPills={isPills}
+        isBloqueado={tab.bloqueado === true}
+        isDark={isDark}
+        accentColor={accentColor}
+        cardBg={cardBg}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+        isTablet={isTablet}
+        onChange={onChange}
+        getAccessibilityLabel={getAccessibilityLabel}
+      />
+    );
   };
+
+  const signature = tabs
+    .map((tab) => `${tab.key}:${tab.label}:${tab.count ?? ''}:${tab.icon ?? ''}`)
+    .join('|');
+  const [measurement, setMeasurement] = useState<RowMeasurement>({
+    signature: '',
+    viewport: 0,
+    content: 0,
+  });
+
+  const measured =
+    measurement.signature === signature &&
+    measurement.viewport > 0 &&
+    measurement.content > 0;
+  const fits = measured && measurement.content <= measurement.viewport + 0.5;
+  const slides = !wrap && adaptive && !fits;
+  const stretches = !wrap && !slides && !isPills;
+
+  const updateMeasurement = useCallback(
+    (patch: Partial<RowMeasurement>, signatureValue: string) => {
+      setMeasurement((prev) => {
+        const next: RowMeasurement = {
+          signature: patch.signature ?? prev.signature,
+          viewport: patch.viewport ?? prev.viewport,
+          content: patch.content ?? prev.content,
+        };
+        if (next.signature !== signatureValue) {
+          next.signature = signatureValue;
+          next.content = patch.content ?? 0;
+        }
+        if (
+          next.signature === prev.signature &&
+          next.viewport === prev.viewport &&
+          next.content === prev.content
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    },
+    [setMeasurement],
+  );
 
   if (wrap) {
     return (

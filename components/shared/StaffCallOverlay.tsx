@@ -9,7 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -38,6 +38,125 @@ interface StaffCall {
     timestamp: string;
     habitacion_nombre?: string;
     anfitriona_nick_api?: string;
+}
+
+interface StaffCallCardProps {
+    call: StaffCall;
+    index: number;
+    now: number;
+    isDark: boolean;
+    cardBg: string;
+    accentColor: string;
+    accepting: number | string | null;
+    onAccept: (id: number | string) => void;
+}
+
+function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, accepting, onAccept }: StaffCallCardProps) {
+    const elapsedMins = Math.max(0, Math.floor((now - new Date(call.timestamp).getTime()) / 60000));
+    const isUrgent = elapsedMins >= 2;
+    const callBorderColor = isUrgent ? '#EF4444' : '#FF2D55';
+
+    const neonOpacity = useSharedValue(0.3);
+    useEffect(() => {
+        if (isDark) {
+            neonOpacity.value = withRepeat(
+                withSequence(
+                    withTiming(0.5, { duration: 1000 }),
+                    withTiming(0.2, { duration: 1000 }),
+                ),
+                -1,
+                true,
+            );
+        }
+    }, [isDark, neonOpacity]);
+
+    const cardNeonStyle = useAnimatedStyle(() => isDark ? {
+        shadowColor: callBorderColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: neonOpacity.value,
+        shadowRadius: 12,
+        elevation: 6,
+    } : {});
+
+    const shakeRotate = useSharedValue(0);
+    useEffect(() => {
+        if (isUrgent) {
+            shakeRotate.value = withRepeat(
+                withSequence(
+                    withTiming(-5, { duration: 100 }),
+                    withTiming(5, { duration: 200 }),
+                    withTiming(0, { duration: 100 }),
+                ),
+                -1,
+                true,
+            );
+        }
+    }, [isUrgent, shakeRotate]);
+
+    const iconShakeStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${shakeRotate.value}deg` }],
+    }));
+
+    return (
+        <Animated.View
+            key={call.id}
+            entering={FadeIn}
+            exiting={FadeOut}
+            style={[
+                styles.card,
+                {
+                    backgroundColor: cardBg,
+                    borderColor: callBorderColor,
+                    borderWidth: isUrgent ? 2 : 1,
+                    zIndex: 1000 - index,
+                },
+                cardNeonStyle,
+            ]}
+        >
+            <View style={styles.cardHeader}>
+                <Animated.View style={[iconShakeStyle]}>
+                    <View style={[styles.iconBox, isUrgent && { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
+                        <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#FF2D55"} />
+                    </View>
+                </Animated.View>
+                <View style={styles.textContainer}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={[styles.title, { color: isUrgent ? '#EF4444' : (isDark ? '#FFF' : '#000') }]}>
+                            {isUrgent ? "LLAMADO URGENTE" : "SOLICITUD DE PERSONAL"}
+                        </Text>
+                        {elapsedMins > 0 && (
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: isUrgent ? '#EF4444' : (isDark ? '#9CA3AF' : '#6B7280') }}>
+                                hace {elapsedMins} min
+                            </Text>
+                        )}
+                    </View>
+                    <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                        {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
+                    </Text>
+                </View>
+            </View>
+            <Text style={[styles.typeText, { color: isDark ? '#FFF' : '#333' }]}>
+                {call.assistanceType}{call.message ? `: ${call.message}` : ''}
+            </Text>
+            <Pressable
+                style={({ pressed }) => [
+                    styles.btn,
+                    {
+                        backgroundColor: isUrgent ? '#EF4444' : accentColor,
+                        opacity: (pressed || accepting === call.id) ? 0.7 : 1,
+                    },
+                ]}
+                onPress={() => onAccept(call.id)}
+                disabled={accepting !== null}
+            >
+                {accepting === call.id ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                    <Text style={styles.btnText}>ACEPTAR Y ATENDER</Text>
+                )}
+            </Pressable>
+        </Animated.View>
+    );
 }
 
 export function StaffCallOverlay() {
@@ -176,115 +295,19 @@ export function StaffCallOverlay() {
 
     return (
         <View style={styles.container}>
-            {pendingCalls.map((call, index) => {
-                const elapsedMins = Math.max(0, Math.floor((now - new Date(call.timestamp).getTime()) / 60000));
-                const isUrgent = elapsedMins >= 2;
-                const callBorderColor = isUrgent ? '#EF4444' : '#FF2D55';
-
-                // Glow neón pulsante en modo oscuro
-                const neonOpacity = useSharedValue(0.3);
-                useEffect(() => {
-                    if (isDark) {
-                        neonOpacity.value = withRepeat(
-                            withSequence(
-                                withTiming(0.5, { duration: 1000 }),
-                                withTiming(0.2, { duration: 1000 }),
-                            ),
-                            -1,
-                            true,
-                        );
-                    }
-                }, [isDark, neonOpacity]);
-
-                const cardNeonStyle = useAnimatedStyle(() => isDark ? {
-                    shadowColor: callBorderColor,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: neonOpacity.value,
-                    shadowRadius: 12,
-                    elevation: 6,
-                } : {});
-
-                // Shake animation en el ícono para llamadas urgentes
-                const shakeRotate = useSharedValue(0);
-                useEffect(() => {
-                    if (isUrgent) {
-                        shakeRotate.value = withRepeat(
-                            withSequence(
-                                withTiming(-5, { duration: 100 }),
-                                withTiming(5, { duration: 200 }),
-                                withTiming(0, { duration: 100 }),
-                            ),
-                            -1,
-                            true,
-                        );
-                    }
-                }, [isUrgent, shakeRotate]);
-
-                const iconShakeStyle = useAnimatedStyle(() => ({
-                    transform: [{ rotate: `${shakeRotate.value}deg` }],
-                }));
-
-                return (
-                    <Animated.View
-                        key={call.id}
-                        entering={FadeInUp}
-                        exiting={FadeOutUp}
-                        style={[
-                            styles.card,
-                            {
-                                backgroundColor: cardBg,
-                                borderColor: callBorderColor,
-                                borderWidth: isUrgent ? 2 : 1,
-                                zIndex: 1000 - index,
-                            },
-                            cardNeonStyle,
-                        ]}
-                    >
-                        <View style={styles.cardHeader}>
-                            <Animated.View style={[iconShakeStyle]}>
-                                <View style={[styles.iconBox, isUrgent && { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-                                    <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#FF2D55"} />
-                                </View>
-                            </Animated.View>
-                            <View style={styles.textContainer}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Text style={[styles.title, { color: isUrgent ? '#EF4444' : (isDark ? '#FFF' : '#000') }]}>
-                                        {isUrgent ? "LLAMADO URGENTE" : "SOLICITUD DE PERSONAL"}
-                                    </Text>
-                                    {elapsedMins > 0 && (
-                                        <Text style={{ fontSize: 11, fontWeight: '700', color: isUrgent ? '#EF4444' : (isDark ? '#9CA3AF' : '#6B7280') }}>
-                                            hace {elapsedMins} min
-                                        </Text>
-                                    )}
-                                </View>
-                                <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
-                                    {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
-                                </Text>
-                            </View>
-                        </View>
-                        <Text style={[styles.typeText, { color: isDark ? '#FFF' : '#333' }]}>
-                            {call.assistanceType}{call.message ? `: ${call.message}` : ''}
-                        </Text>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.btn,
-                                {
-                                    backgroundColor: isUrgent ? '#EF4444' : accentColor,
-                                    opacity: (pressed || accepting === call.id) ? 0.7 : 1,
-                                },
-                            ]}
-                            onPress={() => handleAccept(call.id)}
-                            disabled={accepting !== null}
-                        >
-                            {accepting === call.id ? (
-                                <ActivityIndicator size="small" color="#FFF" />
-                            ) : (
-                                <Text style={styles.btnText}>ACEPTAR Y ATENDER</Text>
-                            )}
-                        </Pressable>
-                    </Animated.View>
-                );
-            })}
+            {pendingCalls.map((call, index) => (
+                <StaffCallCard
+                    key={call.id}
+                    call={call}
+                    index={index}
+                    now={now}
+                    isDark={isDark}
+                    cardBg={cardBg}
+                    accentColor={accentColor}
+                    accepting={accepting}
+                    onAccept={handleAccept}
+                />
+            ))}
         </View>
     );
 }

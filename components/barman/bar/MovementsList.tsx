@@ -24,6 +24,143 @@ interface MovementsListProps {
   onPressItem: (item: BarMovement) => void;
 }
 
+interface MovementCardProps {
+  item: BarMovement;
+  index: number;
+  onPressItem: (item: BarMovement) => void;
+  cardBg: string;
+  textPrimary: string;
+  textSecondary: string;
+  borderColor: string;
+  accentOnSurface: string;
+  isDark: boolean;
+  reducedMotion: boolean;
+}
+
+function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark, reducedMotion }: MovementCardProps) {
+  const cardAnim = useSharedValue(reducedMotion ? 1 : 0);
+  const fadeAnim = useSharedValue(reducedMotion ? 1 : 0);
+
+  if (!reducedMotion) {
+    cardAnim.value = withDelay(index * 50, withSpring(1, { damping: 12, stiffness: 100 }));
+    fadeAnim.value = withDelay(index * 50, withTiming(1, { duration: 250 }));
+  }
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cardAnim.value }],
+    opacity: fadeAnim.value,
+  }));
+
+  const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
+  const precios = preciosOpcionesVenta(item.opciones_venta);
+  const precioRegistrado =
+    item.precio_venta !== null && item.precio_venta !== undefined
+      ? formatCurrency(item.precio_venta)
+      : null;
+  const comisionRegistrada =
+    Number(item.comision ?? 0) > 0
+      ? formatCurrency(Number(item.comision))
+      : null;
+
+  const statusColor = estadoColor(item);
+  const neonGlow = isDark ? {
+    shadowColor: statusColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  } : {};
+
+  const isPendiente = item.estado === 'pendiente';
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver detalle de ${item.tipo} de ${item.producto_nombre || 'producto'}`}
+        onPress={() => onPressItem(item)}
+        style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.78 : 1 }, neonGlow]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
+              {item.producto_nombre || '—'}
+            </Text>
+            <Text style={[styles.presentation, { color: textSecondary }]} numberOfLines={1}>
+              {item.presentacion_nombre || '—'}
+            </Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
+            {isPendiente && isDark && (
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+            )}
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {estadoLabel(item)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={[styles.amount, { color: textPrimary }]}>
+            {item.cantidad} und.
+            {(item.ml ?? 0) > 0 ? ` · ${item.ml} ml` : ''}
+          </Text>
+          {precios.length === 0 && (
+            <View style={styles.amountRight}>
+              <Text style={[styles.amount, { color: accentOnSurface }]}>
+                {precioRegistrado ?? '—'}
+              </Text>
+              {comisionRegistrada && (
+                <Text style={[styles.amount, { color: textSecondary }]}>
+                  Comisión {comisionRegistrada}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        {precios.length > 0 && (
+          <View style={styles.amountsList}>
+            {precios.map((precio, pIndex) => (
+              <View key={`${precio.label}-${pIndex}`} style={styles.amountRow}>
+                <Text
+                  style={[styles.priceLabel, { color: textSecondary }]}
+                  numberOfLines={1}
+                >
+                  {precio.label}
+                </Text>
+                <Text style={[styles.amount, { color: textPrimary }]}>
+                  {formatCurrency(precio.precio)}
+                  {precio.comision > 0
+                    ? ` · Comisión ${formatCurrency(precio.comision)}`
+                    : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.footer}>
+          <Ionicons name="person-outline" size={13} color={textSecondary} />
+          <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
+            {item.usuario_nombre || item.usuario_nick || '—'}
+          </Text>
+          {fecha && (
+            <Text style={[styles.footerText, { color: textSecondary }]}>
+              {fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })}{' '}
+              {fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          )}
+        </View>
+        <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
+          <Text style={[styles.detailHintText, { color: accentOnSurface }]}>Ver detalle completo</Text>
+          <Ionicons name="chevron-forward" size={16} color={accentOnSurface} />
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 const estadoLabel = (m: BarMovement) => {
   if (m.tipo === 'venta') return 'Vendida';
   if (m.estado === 'aceptada') return 'Aceptada';
@@ -43,23 +180,6 @@ const estadoColor = (m: BarMovement) => {
 export function MovementsList({ items, loading, refreshing, onRefresh, onPressItem }: MovementsListProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark } = useAccentColor();
   const reducedMotion = useReducedMotion();
-
-  // Animación de entrada escalonada para las cards
-  const cardAnimations = items.map(() => useSharedValue(0));
-  const fadeAnimations = items.map(() => useSharedValue(0));
-
-  if (reducedMotion) {
-    // Sin animación cuando el usuario prefiere movimiento reducido.
-    cardAnimations.forEach(sv => sv.value = 1);
-    fadeAnimations.forEach(sv => sv.value = 1);
-  } else {
-    cardAnimations.forEach((sv, index) => {
-      sv.value = withDelay(index * 50, withSpring(1, { damping: 12, stiffness: 100 }));
-    });
-    fadeAnimations.forEach((sv, index) => {
-      sv.value = withDelay(index * 50, withTiming(1, { duration: 250 }));
-    });
-  }
 
   if (loading) {
     return (
@@ -88,124 +208,20 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
           </Text>
         </View>
       }
-      renderItem={({ item, index }: { item: BarMovement; index: number }) => {
-        const fecha = item.fecha_crea ? new Date(item.fecha_crea) : null;
-        const precios = preciosOpcionesVenta(item.opciones_venta);
-        const precioRegistrado =
-          item.precio_venta !== null && item.precio_venta !== undefined
-            ? formatCurrency(item.precio_venta)
-            : null;
-        const comisionRegistrada =
-          Number(item.comision ?? 0) > 0
-            ? formatCurrency(Number(item.comision))
-            : null;
-
-        // Animación de entrada escalonada
-        const animatedStyle = useAnimatedStyle(() => ({
-          transform: [{ scale: cardAnimations[index]?.value ?? 1 }],
-          opacity: fadeAnimations[index]?.value ?? 1,
-        }));
-
-        // Borde neón en modo oscuro con el color del estado
-        const statusColor = estadoColor(item);
-        const neonGlow = isDark ? {
-          shadowColor: statusColor,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.25,
-          shadowRadius: 6,
-          elevation: 3,
-        } : {};
-
-        // Dot animado para estado pendiente
-        const isPendiente = item.estado === 'pendiente';
-
-        return (
-          <Animated.View style={animatedStyle}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Ver detalle de ${item.tipo} de ${item.producto_nombre || 'producto'}`}
-              onPress={() => onPressItem(item)}
-              style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.78 : 1 }, neonGlow]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
-                    {item.producto_nombre || '—'}
-                  </Text>
-                  <Text style={[styles.presentation, { color: textSecondary }]} numberOfLines={1}>
-                    {item.presentacion_nombre || '—'}
-                  </Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-                  {isPendiente && isDark && (
-                    <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                  )}
-                  <Text style={[styles.statusText, { color: statusColor }]}>
-                    {estadoLabel(item)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.row}>
-                <Text style={[styles.amount, { color: textPrimary }]}>
-                  {item.cantidad} und.
-                  {(item.ml ?? 0) > 0 ? ` · ${item.ml} ml` : ''}
-                </Text>
-                {precios.length === 0 && (
-                  <View style={styles.amountRight}>
-                    <Text style={[styles.amount, { color: accentOnSurface }]}>
-                      {precioRegistrado ?? '—'}
-                    </Text>
-                    {comisionRegistrada && (
-                      <Text style={[styles.amount, { color: textSecondary }]}>
-                        Comisión {comisionRegistrada}
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-
-              {precios.length > 0 && (
-                <View style={styles.amountsList}>
-                  {precios.map((precio, pIndex) => (
-                    <View key={`${precio.label}-${pIndex}`} style={styles.amountRow}>
-                      <Text
-                        style={[styles.priceLabel, { color: textSecondary }]}
-                        numberOfLines={1}
-                      >
-                        {precio.label}
-                      </Text>
-                      <Text style={[styles.amount, { color: textPrimary }]}>
-                        {formatCurrency(precio.precio)}
-                        {precio.comision > 0
-                          ? ` · Comisión ${formatCurrency(precio.comision)}`
-                          : ''}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.footer}>
-                <Ionicons name="person-outline" size={13} color={textSecondary} />
-                <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
-                  {item.usuario_nombre || item.usuario_nick || '—'}
-                </Text>
-                {fecha && (
-                  <Text style={[styles.footerText, { color: textSecondary }]}>
-                    {fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })}{' '}
-                    {fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                )}
-              </View>
-              <View style={[styles.detailHint, { borderTopColor: borderColor }]}>
-                <Text style={[styles.detailHintText, { color: accentOnSurface }]}>Ver detalle completo</Text>
-                <Ionicons name="chevron-forward" size={16} color={accentOnSurface} />
-              </View>
-            </Pressable>
-          </Animated.View>
-        );
-      }}
+      renderItem={({ item, index }: { item: BarMovement; index: number }) => (
+        <MovementCard
+          item={item}
+          index={index}
+          onPressItem={onPressItem}
+          cardBg={cardBg}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          borderColor={borderColor}
+          accentOnSurface={accentOnSurface}
+          isDark={isDark}
+          reducedMotion={reducedMotion}
+        />
+      )}
     />
   );
 }

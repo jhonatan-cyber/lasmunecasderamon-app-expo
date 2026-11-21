@@ -4,13 +4,107 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+
+interface PremiumTabItemProps {
+    route: any;
+    index: number;
+    isFocused: boolean;
+    tabScale: import('react-native-reanimated').SharedValue<number>;
+    onPress: () => void;
+    labelText: string;
+    options: any;
+    descriptors: any;
+    compact: boolean;
+    isDark: boolean;
+    accentColor: string;
+    activeTintColor: string;
+    inactiveTintColor: string;
+    gradientActiveBg: string;
+}
+
+function PremiumTabItem({
+    route,
+    index,
+    isFocused,
+    tabScale,
+    onPress,
+    labelText,
+    options,
+    compact,
+    isDark,
+    accentColor,
+    activeTintColor,
+    inactiveTintColor,
+    gradientActiveBg,
+}: PremiumTabItemProps) {
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: tabScale.value }],
+    }));
+
+    const neonGlow = isDark && isFocused ? {
+        shadowColor: accentColor,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+    } : {};
+
+    return (
+        <Animated.View key={route.key} style={[animatedStyle, styles.tabWrapper]}>
+            <Pressable
+                accessibilityRole="tab"
+                accessibilityLabel={labelText}
+                accessibilityState={isFocused ? { selected: true } : {}}
+                hitSlop={{ top: 6, bottom: 6 }}
+                onPress={onPress}
+                style={[styles.tabItem, compact && styles.tabItemCompact]}
+            >
+                <View
+                    style={[
+                        styles.iconSlot,
+                        compact && styles.iconSlotCompact,
+                        isFocused ? { backgroundColor: gradientActiveBg, ...neonGlow } : null,
+                    ]}
+                >
+                    {options.tabBarIcon && options.tabBarIcon({
+                        focused: isFocused,
+                        color: isFocused ? activeTintColor : inactiveTintColor,
+                        size: 22,
+                    })}
+                </View>
+
+                {!compact && (
+                    <Text
+                        maxFontSizeMultiplier={1.2}
+                        numberOfLines={1}
+                        style={[
+                            styles.tabLabel,
+                            { color: isFocused ? activeTintColor : inactiveTintColor },
+                            isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+                        ]}
+                    >
+                        {labelText}
+                    </Text>
+                )}
+            </Pressable>
+            {isFocused && !compact && (
+                <View style={styles.dotIndicatorContainer}>
+                    <Animated.View style={[styles.dotIndicator, { backgroundColor: accentColor }]}>
+                        {isDark && (
+                            <View style={[styles.dotGlow, { backgroundColor: `${accentColor}80` }]} />
+                        )}
+                    </Animated.View>
+                </View>
+            )}
+        </Animated.View>
+    );
+}
 
 type PremiumTabBarProps = {
     state: {
@@ -60,18 +154,19 @@ export const PremiumTabBar = ({
     const insets = useSafeAreaInsets();
 
     // Micro-animación de scale para cada tab activo
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const tabScales = state.routes.map(() => useSharedValue(1));
     useEffect(() => {
         state.routes.forEach((_, i) => {
             const isActive = state.index === i;
             if (reducedMotion) {
-                // Sin animación de escala cuando el usuario prefiere movimiento reducido.
                 tabScales[i].value = isActive ? 1.08 : 1;
             } else {
                 tabScales[i].value = withSpring(isActive ? 1.08 : 1, { damping: 15, stiffness: 200 });
             }
         });
-    }, [state.index, state.routes, tabScales, reducedMotion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.index, state.routes, reducedMotion]);
 
     // El texto de la barra se mide contra el color plano del acento: blanco
     // en los acentos profundos y casi negro en los neón luminosos. Ambos
@@ -136,69 +231,24 @@ export const PremiumTabBar = ({
 
                 const labelText = typeof label === 'string' ? label : route.name;
 
-                // Animated scale wrapper
-                const animatedStyle = useAnimatedStyle(() => ({
-                    transform: [{ scale: tabScales[index].value }],
-                }));
-
-                // Glow neón en modo oscuro para el tab activo
-                const neonGlow = isDark && isFocused ? {
-                    shadowColor: accentColor,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 8,
-                    elevation: 4,
-                } : {};
-
                 return (
-                    <Animated.View key={route.key} style={[animatedStyle, styles.tabWrapper]}>
-                        <Pressable
-                            accessibilityRole="tab"
-                            accessibilityLabel={labelText}
-                            accessibilityState={isFocused ? { selected: true } : {}}
-                            hitSlop={{ top: 6, bottom: 6 }}
-                            onPress={onPress}
-                            style={[styles.tabItem, compact && styles.tabItemCompact]}
-                        >
-                            <View
-                                style={[
-                                    styles.iconSlot,
-                                    compact && styles.iconSlotCompact,
-                                    isFocused ? { backgroundColor: gradientActiveBg, ...neonGlow } : null,
-                                ]}
-                            >
-                                {options.tabBarIcon && options.tabBarIcon({
-                                    focused: isFocused,
-                                    color: isFocused ? activeTintColor : inactiveTintColor,
-                                    size: 22,
-                                })}
-                            </View>
-
-                            {!compact && (
-                                <Text
-                                    maxFontSizeMultiplier={1.2}
-                                    numberOfLines={1}
-                                    style={[
-                                        styles.tabLabel,
-                                        { color: isFocused ? activeTintColor : inactiveTintColor },
-                                        isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
-                                    ]}
-                                >
-                                    {labelText}
-                                </Text>
-                            )}
-                        </Pressable>
-                        {/* Indicador de dot animado debajo del tab activo */}
-                        {isFocused && !compact && (
-                            <View style={styles.dotIndicatorContainer}>
-                                <Animated.View style={[styles.dotIndicator, { backgroundColor: accentColor }]}>
-                                    {isDark && (
-                                        <View style={[styles.dotGlow, { backgroundColor: `${accentColor}80` }]} />
-                                    )}
-                                </Animated.View>
-                            </View>
-                        )}
-                    </Animated.View>
+                    <PremiumTabItem
+                        key={route.key}
+                        route={route}
+                        index={index}
+                        isFocused={isFocused}
+                        tabScale={tabScales[index]}
+                        onPress={onPress}
+                        labelText={labelText}
+                        options={options}
+                        descriptors={descriptors}
+                        compact={compact}
+                        isDark={isDark}
+                        accentColor={accentColor}
+                        activeTintColor={activeTintColor}
+                        inactiveTintColor={inactiveTintColor}
+                        gradientActiveBg={gradientActiveBg}
+                    />
                 );
             })}
             </View>

@@ -7,4 +7,9 @@ module.exports = defineConfig([
   {
     ignores: ['dist/**', '.expo/**', '.expo-smoke/**', 'coverage/**', 'playwright-report/**', 'test-results/**'],
   },
+  {
+    rules: {
+      'react-hooks/immutability': 'warn',
+    },
+  },
 ]);

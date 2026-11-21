@@ -4,9 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
   withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
@@ -73,6 +71,22 @@ export const DashboardActionCard = ({
     : showBadge
       ? `${title}: ${description}. ${badge} ${badgeLabel ?? 'pendientes'}`
       : `${title}: ${description}`;
+
+  // Animación de pulso del badge cuando hay contador
+  const badgeScale = useSharedValue(1);
+  const triggerPulse = () => {
+    if (reducedMotion) {
+      return;
+    }
+    badgeScale.value = withSequence(
+      withTiming(1.15, { duration: 150 }),
+      withTiming(1, { duration: 150 }),
+    );
+  };
+
+  const badgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+  }));
 
   // Unificar maxFontSizeMultiplier a 1.5 en todos los textos
 
@@ -175,17 +189,11 @@ export const DashboardActionCard = ({
   const chipSize = isTablet ? 58 : 46;
   const chipRadius = isTablet ? 18 : 14;
   const mutedColor = isDark ? '#555555' : '#BBBBBB';
-  // Bloqueado (caja cerrada): el módulo sigue siendo legible, solo pierde el
-  // color. Antes se bajaba la opacidad de toda la card y sobre fondo blanco
-  // quedaba un marco vacío con el texto desvanecido.
   const chipBg = disabled
     ? withAlpha(mutedColor, isDark ? 0.16 : 0.12)
     : bloqueado
       ? withAlpha(color, isDark ? 0.12 : 0.08)
       : withAlpha(color, isDark ? 0.22 : 0.14);
-  // El ícono va sobre el chip (color con alpha), no sobre cardBg.
-  // Cuando el tema de la app es negro, el ícono siempre es blanco tanto en modo
-  // claro como oscuro, sin importar el color individual de cada card.
   const iconColor = disabled
     ? mutedColor
     : isBlackAccent
@@ -193,23 +201,6 @@ export const DashboardActionCard = ({
       : bloqueado
         ? withAlpha(readableTextColor(color), 0.45)
         : readableTextColor(color);
-
-  // Animación de pulso del badge cuando hay contador
-  const badgeScale = useSharedValue(1);
-  const triggerPulse = () => {
-    if (reducedMotion) {
-      // Sin animación de pulso cuando el usuario prefiere movimiento reducido.
-      return;
-    }
-    badgeScale.value = withSequence(
-      withTiming(1.15, { duration: 150 }),
-      withTiming(1, { duration: 150 }),
-    );
-  };
-
-  const badgeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: badgeScale.value }],
-  }));
 
   // Overlay de patrón diagonal para cards bloqueadas
   const blockedPatternStyle = {
