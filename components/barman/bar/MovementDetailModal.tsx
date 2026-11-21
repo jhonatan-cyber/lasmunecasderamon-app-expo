@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
@@ -125,15 +126,15 @@ function Info({ label, value, accentColor, textPrimary, textSecondary }: { label
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 18, backgroundColor: 'rgba(0,0,0,0.65)' },
-  modalCard: { width: '100%', maxWidth: 540, maxHeight: '90%', borderRadius: 22, borderWidth: 1, padding: 16, overflow: 'hidden' },
+  modalCard: { width: '100%', maxWidth: 540, maxHeight: '90%', borderRadius: BorderRadius.full, borderWidth: 1, padding: 16, overflow: 'hidden' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingBottom: 13, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(148,163,184,0.25)' },
-  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 44, height: 44, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
   eyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   title: { fontSize: 18, fontWeight: '900', marginTop: 3 },
   details: { gap: 15, paddingVertical: 15 },
   product: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  image: { width: 74, height: 74, borderRadius: 14 },
+  image: { width: 74, height: 74, borderRadius: BorderRadius.full },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.12)' },
   productInfo: { flex: 1, gap: 3 },
   productName: { fontSize: 16, fontWeight: '900' },
@@ -142,9 +143,9 @@ const styles = StyleSheet.create({
   section: { gap: 8 },
   sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
   volumeGrid: { marginTop: 8 },
-  infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: 12, justifyContent: 'space-between', gap: 4 },
+  infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: BorderRadius.full, justifyContent: 'space-between', gap: 4 },
   infoLabel: { fontSize: 9, fontWeight: '700' },
   infoValue: { fontSize: 12, fontWeight: '900' },
-  closeButton: { borderRadius: 9999, alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+  closeButton: { borderRadius: BorderRadius.full, alignItems: 'center', paddingVertical: 12, marginTop: 4 },
   closeText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
 });

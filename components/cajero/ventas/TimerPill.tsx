@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { FontFamily, TabularNumbers } from "@/constants/fonts";
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 8,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     marginTop: 10,
     borderWidth: 1,
   },

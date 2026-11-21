@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 36,
         height: 36,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         backgroundColor: `20`,
         justifyContent: 'center',
         alignItems: 'center',
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     },
     btn: {
         height: 48,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },

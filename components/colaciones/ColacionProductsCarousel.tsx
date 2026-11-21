@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -212,7 +213,7 @@ const styles = StyleSheet.create({
     right: 6,
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,19 +243,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   skeletonCard: {
     height: 200,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
   },
   emptyBox: {
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderStyle: 'dashed',
   },

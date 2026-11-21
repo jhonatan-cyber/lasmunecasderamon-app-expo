@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useConfigValue } from '@/hooks/useConfigValue';
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     paddingHorizontal: 12,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     fontSize: 14,
     fontWeight: '600',

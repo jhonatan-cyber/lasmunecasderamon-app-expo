@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { View, Text, TextInput, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     paddingLeft: 14,
     paddingRight: 6,
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 34,
     height: 34,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 44,
     paddingHorizontal: 16,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   submitText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
   resultCard: {
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     padding: 12,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   resultTitle: { fontSize: 13, fontWeight: '800' },
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     alignItems: 'center',
   },
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   productName: { fontSize: 15, fontWeight: '800' },
   presentation: { fontSize: 12, marginTop: 2 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full },
   badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
   footerText: { fontSize: 11, fontWeight: '600', flexShrink: 1 },

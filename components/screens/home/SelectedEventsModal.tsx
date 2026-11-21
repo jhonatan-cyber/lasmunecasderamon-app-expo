@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BorderRadius } from '@/constants/spacing';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { formatCurrency, formatDate } from "@/utils/format";
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -201,14 +202,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 12,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginBottom: 10,
   },
   eventIcon: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },

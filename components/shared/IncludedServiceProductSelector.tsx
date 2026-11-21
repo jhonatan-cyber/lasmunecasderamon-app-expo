@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import { apiClientSafe } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { OrderProductPhoto } from "./OrderProductPhoto";
@@ -79,7 +80,7 @@ export function IncludedServiceProductSelector({
         }}
         style={{
           padding: 12,
-          borderRadius: 30,
+          borderRadius: BorderRadius.full,
           borderColor,
           borderWidth: 1,
           flexDirection: "row",
@@ -133,7 +134,7 @@ export function IncludedServiceProductSelector({
               padding: 12,
               borderColor,
               borderWidth: 1,
-              borderRadius: 30,
+              borderRadius: BorderRadius.full,
               marginVertical: 16,
             }}
           />
@@ -180,7 +181,7 @@ export function IncludedServiceProductSelector({
             onPress={() => setOpen(false)}
             style={{
               padding: 16,
-              borderRadius: 30,
+              borderRadius: BorderRadius.full,
               backgroundColor: accentColor,
             }}
           >

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import type { AcompanamientoBotellaItem } from '@/types/cart';
 
@@ -49,7 +50,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
         style={{
           width: 32,
           height: 32,
-          borderRadius: 10,
+          borderRadius: BorderRadius.full,
           backgroundColor: 'rgba(155,155,155,0.1)',
           justifyContent: 'center',
           alignItems: 'center',
@@ -76,7 +77,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
         style={{
           width: 32,
           height: 32,
-          borderRadius: 10,
+          borderRadius: BorderRadius.full,
           backgroundColor: 'rgba(155,155,155,0.1)',
           justifyContent: 'center',
           alignItems: 'center',
@@ -92,7 +93,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
         style={{
           width: 32,
           height: 32,
-          borderRadius: 10,
+          borderRadius: BorderRadius.full,
           backgroundColor: 'rgba(239,68,68,0.1)',
           justifyContent: 'center',
           alignItems: 'center',

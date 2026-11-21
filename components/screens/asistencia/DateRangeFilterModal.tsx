@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   monthNavBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   legendDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: BorderRadius.full,
   },
   legendDotToday: {
     borderWidth: 2,
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
   },
   actionBtnText: {

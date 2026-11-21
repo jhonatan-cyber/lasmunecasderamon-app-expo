@@ -167,10 +167,10 @@ const styles = StyleSheet.create({
     card: { borderRadius: BorderRadius.card, padding: 16, marginTop: 10, borderWidth: 1 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    indexBadge: { width: 24, height: 24, borderRadius: BorderRadius.sm, justifyContent: 'center', alignItems: 'center' },
+    indexBadge: { width: 24, height: 24, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     indexText: { fontWeight: '800' },
     habitacionText: { fontSize: FontSize.lg, fontWeight: '800' },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: BorderRadius.sm },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: BorderRadius.full },
     statusText: { fontWeight: '700' },
     cardBody: {},
     infoRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     assistanceContainer: { marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(155,155,155,0.1)' },
     assistanceTitle: { fontWeight: '800', marginBottom: 8, opacity: 0.5 },
     assistanceGrid: { flexDirection: 'row', gap: 6 },
-    assistanceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderRadius: BorderRadius.sm },
+    assistanceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderRadius: BorderRadius.full },
     assistanceBtnText: { fontWeight: '700' },
 });
 

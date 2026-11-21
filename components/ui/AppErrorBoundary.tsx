@@ -1,4 +1,5 @@
 import logger from '@/utils/logger';
+import { BorderRadius } from '@/constants/spacing';
 import { router } from 'expo-router';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import {
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
   actions: { gap: 12, width: '100%', maxWidth: 320 },
   primaryBtn: {
     backgroundColor: '#FF2D55',
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     paddingVertical: 14,
     alignItems: 'center',
   },

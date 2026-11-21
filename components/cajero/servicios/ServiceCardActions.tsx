@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   finishBtn: {
     flex: 1,
     height: MIN_TOUCH_TARGET,
-    borderRadius: BorderRadius.card,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   moreBtn: {
     width: MIN_TOUCH_TARGET,
     height: MIN_TOUCH_TARGET,
-    borderRadius: BorderRadius.card,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",

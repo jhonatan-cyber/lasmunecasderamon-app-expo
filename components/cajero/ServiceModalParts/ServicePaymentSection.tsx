@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ComponentProps } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { styles } from "../ServiceModal.styles";
 import type { MetodoPago } from "../../../types/api";
 
@@ -215,7 +215,7 @@ export function ServicePaymentSection({
                   style={{
                     flex: 1,
                     paddingVertical: 10,
-                    borderRadius: 12,
+                    borderRadius: BorderRadius.full,
                     borderWidth: 1,
                     borderColor: isSelected ? accentColor : borderColor,
                     backgroundColor: isSelected
@@ -286,7 +286,7 @@ export function ServicePaymentSection({
                         style={{
                           flex: 1,
                           paddingVertical: 8,
-                          borderRadius: 10,
+                          borderRadius: BorderRadius.full,
                           borderWidth: 1,
                           borderColor:
                             metodoPagoAdicional === m

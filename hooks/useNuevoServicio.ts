@@ -24,6 +24,7 @@ import { REALTIME_EVENT_NAMES } from "@/utils/realtime";
 import { parseDateSafe } from "@/utils/timeUtils";
 import { ServiceCreateSchema } from "@lasmunecasderamon/validations";
 import { useRouter } from "expo-router";
+import { adjuntarBaucher } from "@/utils/baucherPicker";
 import {
   useCallback,
   useEffect,
@@ -51,6 +52,7 @@ export function useNuevoServicio() {
     metodoPagoAdicional,
     pagosMixtos,
     balanceAmount,
+    baucherFoto,
   } = state;
 
   const hasAnfitrionaComision =
@@ -140,7 +142,7 @@ export function useNuevoServicio() {
             (cajaRes as any).success && (cajaRes as any).data?.hasOpenCaja,
           anfitrionas: deduplicate(
             normalizeAnfitrionas(anfitrionasRes),
-            "id_usuario",
+            "id",
           ),
           habitaciones: deduplicate(
             ((roomsRes as any).success ? (roomsRes as any).data : []).map(
@@ -195,7 +197,7 @@ export function useNuevoServicio() {
           const patch: Record<string, unknown> = {};
 
           if ((anfitrionasRes as any)?.success || Array.isArray(anfitrionasRes)) {
-            patch.anfitrionas = deduplicate(normalizeAnfitrionas(anfitrionasRes), "id_usuario");
+            patch.anfitrionas = deduplicate(normalizeAnfitrionas(anfitrionasRes), "id");
           }
           if ((roomsRes as any)?.success) {
             patch.habitaciones = deduplicate(
@@ -247,7 +249,7 @@ export function useNuevoServicio() {
 
       dispatch({
         type: "SET_SELECTED_HOSTESSES",
-        payload: uniqueNext.map((id) => Number(id)),
+        payload: uniqueNext.map((id) => String(id)) as (string | number)[],
       });
     },
     [selectedHostesses, maxHostesses],
@@ -402,6 +404,14 @@ export function useNuevoServicio() {
       return;
     }
 
+    // Transferencia requiere foto del baucher
+    const necesitaBaucher = metodoPago === "transferencia" ||
+      (metodoPago === "mixto" && pagosMixtos.some((p) => p.metodo === "transferencia"));
+    if (necesitaBaucher && !baucherFoto) {
+      showToast("Baucher requerido", "Adjunta la foto del baucher de la transferencia.");
+      return;
+    }
+
     submittingRef.current = true;
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {
@@ -427,6 +437,7 @@ export function useNuevoServicio() {
         fecha_crea: parseDateSafe(new Date()).toISOString(),
         metodo_pago: metodoPago,
         usuarios: selectedHostesses.map((id) => String(id)),
+        baucher_foto: necesitaBaucher ? (baucherFoto ?? undefined) : undefined,
       };
 
       if (esMixto) {
@@ -487,6 +498,7 @@ export function useNuevoServicio() {
     selectedClientData,
     hasAnfitrionaComision,
     productoIncluido,
+    baucherFoto,
     router,
   ]);
 
@@ -543,6 +555,17 @@ export function useNuevoServicio() {
     [selectedClientData],
   );
 
+  const handleAttachBaucher = useCallback(async () => {
+    const dataUrl = await adjuntarBaucher("NuevoServicio:takeBaucherPhoto");
+    if (dataUrl) {
+      dispatch({ type: "SET_BAUCHER_FOTO", payload: dataUrl });
+    }
+  }, []);
+
+  const handleRemoveBaucher = useCallback(() => {
+    dispatch({ type: "SET_BAUCHER_FOTO", payload: null });
+  }, []);
+
   return {
     productoIncluido,
     setProductoIncluido,
@@ -556,11 +579,14 @@ export function useNuevoServicio() {
     totals,
     desgloseTarjeta,
     selectedClientData,
+    baucherFoto,
 
     toggleHostess,
     toggleClient,
     handleLoadBalance,
     handleSubmit,
     handleMetodoPagoChange,
+    handleAttachBaucher,
+    handleRemoveBaucher,
   };
 }

@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 100,
         height: 100,
-        borderRadius: 50,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     },
     dot: {
         height: 8,
-        borderRadius: 4,
+        borderRadius: BorderRadius.full,
     },
     actions: {
         flexDirection: 'row',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     skipBtn: {
         flex: 1,
         paddingVertical: 16,
-        borderRadius: BorderRadius.button,
+        borderRadius: BorderRadius.full,
         alignItems: 'center',
     },
     skipText: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     nextBtn: {
         flex: 2,
         paddingVertical: 16,
-        borderRadius: BorderRadius.button,
+        borderRadius: BorderRadius.full,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

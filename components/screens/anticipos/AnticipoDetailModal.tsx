@@ -3,7 +3,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { Anticipo } from '@/hooks/useAnticipos';
 
 interface AnticipoDetailModalProps {
@@ -261,13 +261,13 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(128,128,128,0.1)',
   },
   infoCard: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 16,
     borderWidth: 1,
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   statusText: {
     fontSize: FontSize.xxs,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   noteCard: {
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     padding: 14,
     borderWidth: 1,
   },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     padding: 14,
     borderWidth: 1,
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   closeAction: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,

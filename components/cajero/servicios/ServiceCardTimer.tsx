@@ -72,7 +72,7 @@ export const ServiceCardTimer: React.FC<ServiceCardTimerProps> = ({
 const styles = StyleSheet.create({
   timerHero: {
     padding: 14,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     marginBottom: 12,
     gap: 10,
   },

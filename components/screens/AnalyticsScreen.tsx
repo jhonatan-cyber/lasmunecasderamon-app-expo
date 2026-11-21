@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useAnalyticsScreen } from '@/hooks/useAnalyticsScreen';
 import { formatCurrency } from '@/utils/format';
 
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
         marginBottom: 14,
     },
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     cardHeader: { marginBottom: 14 },
     sectionTitle: { fontSize: 15, fontWeight: '900' },
     totalsRow: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
-    totalChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9999 },
+    totalChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: BorderRadius.full },
     totalChipText: { fontSize: 11, fontWeight: '800' },
     chartArea: {
         height: CHART_HEIGHT + 22,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     distRow: { marginTop: 14 },
     distHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
     distLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    dot: { width: 10, height: 10, borderRadius: 5 },
+    dot: { width: 10, height: 10, borderRadius: BorderRadius.full },
     distLabel: { fontSize: 13, fontWeight: '700' },
     distValue: { fontSize: 12, fontWeight: '700' },
     track: { height: 8, borderRadius: 4, overflow: 'hidden' },

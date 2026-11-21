@@ -10,6 +10,7 @@ export type ServicePayload = ServiceCreateType & {
   pagos_mixtos?: MetodoPagoMonto[];
   metodo_pago_adicional?: string;
   monto_prepago?: number;
+  baucher_foto?: string;
 };
 
 
@@ -21,7 +22,7 @@ export type ServiceState = {
   habitaciones: any[];
   clientes: any[];
   cajaAbierta: boolean | null;
-  selectedHostesses: number[];
+  selectedHostesses: (string | number)[];
   selectedClients: (number | string)[];
   selectedHabitacion: any;
   precioServicio: string;
@@ -35,12 +36,13 @@ export type ServiceState = {
   balanceModalVisible: boolean;
   balanceAmount: string;
   balanceSubmitting: boolean;
+  baucherFoto: string | null;
 };
 
 export type ServiceAction =
   | { type: 'SET_LOADING_INITIAL'; payload: boolean }
   | { type: 'SET_INITIAL_DATA'; payload: Partial<{ anfitrionas: any[]; habitaciones: any[]; clientes: any[]; cajaAbierta: boolean }> }
-  | { type: 'SET_SELECTED_HOSTESSES'; payload: number[] }
+  | { type: 'SET_SELECTED_HOSTESSES'; payload: (string | number)[] }
   | { type: 'SET_SELECTED_CLIENTS'; payload: (number | string)[] }
   | { type: 'SET_SELECTED_HABITACION'; payload: any }
   | { type: 'SET_PRECIO_SERVICIO'; payload: string }
@@ -54,4 +56,5 @@ export type ServiceAction =
   | { type: 'SET_MODAL_VISIBLE'; modal: 'hostess' | 'room' | 'client' | 'balance'; visible: boolean }
   | { type: 'SET_BALANCE_AMOUNT'; payload: string }
   | { type: 'SET_BALANCE_SUBMITTING'; payload: boolean }
-  | { type: 'UPDATE_CLIENT_SALDO'; payload: { id: string | number; saldo: number } };
+  | { type: 'UPDATE_CLIENT_SALDO'; payload: { id: string | number; saldo: number } }
+  | { type: 'SET_BAUCHER_FOTO'; payload: string | null };

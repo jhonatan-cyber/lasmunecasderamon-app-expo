@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { formatCurrency } from '@/utils/format';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4 
     },
     empSummaryCard: {
-        borderRadius: 16, 
+        borderRadius: BorderRadius.full, 
         borderWidth: 1, 
         padding: 12, 
         minWidth: 140,
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     empSummaryAvatar: { 
         width: 36, 
         height: 36, 
-        borderRadius: 12, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },

@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   },
   permissionContent: {
     backgroundColor: '#1E1B4B',
-    borderRadius: 32,
+    borderRadius: BorderRadius.full,
     padding: 28,
     alignItems: 'center',
     borderWidth: 1,
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B82F6',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     marginTop: 16,
   },
   btnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   headerBtn: {
     width: 46,
     height: 46,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     alignSelf: 'stretch',
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     padding: 12,
   },
   feedbackText: { flex: 1, color: '#FFF', fontSize: 13, fontWeight: '700' },
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 28,
     paddingVertical: 10,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   cerrarBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
   sendBtn: { backgroundColor: '#2563EB', minWidth: 200, alignItems: 'center' },

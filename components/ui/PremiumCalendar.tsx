@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   dayInner: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     height: 4,
     alignItems: "center",
   },
-  eventDot: { width: 4, height: 4, borderRadius: 2 },
+  eventDot: { width: 4, height: 4, borderRadius: BorderRadius.full },
   eventDotMore: { opacity: 0.8 },
   legend: {
     flexDirection: "row",
@@ -426,6 +426,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
-  legendDot: { width: 7, height: 7, borderRadius: 4 },
+  legendDot: { width: 7, height: 7, borderRadius: BorderRadius.full },
   legendText: { fontSize: 11, fontWeight: "600" },
 });

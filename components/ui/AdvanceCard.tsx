@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     indexBadge: {
         width: 24,
         height: 24,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     statusBadge: {
         paddingHorizontal: 10,
         paddingVertical: 5,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
     },
     statusText: {
         fontSize: 11,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     rejectionBox: {
         marginTop: 10,
         padding: 10,
-        borderRadius: 8,
+        borderRadius: BorderRadius.full,
         borderLeftWidth: 3,
         borderLeftColor: '#EF4444',
         flexDirection: 'row',

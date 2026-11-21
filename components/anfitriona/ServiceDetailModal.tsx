@@ -1,7 +1,7 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
 import { estadoServicio } from '@/utils/servicioEstado';
-import { FontSize, HitSlop, MIN_TOUCH_TARGET } from '@/constants/spacing';
+import { FontSize, HitSlop, MIN_TOUCH_TARGET, BorderRadius } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -190,28 +190,28 @@ const styles = StyleSheet.create({
     modalTitleText: { fontSize: FontSize.xl, fontWeight: "900", letterSpacing: -0.5 },
     modalSubText: { fontSize: FontSize.xs, fontWeight: "600", marginTop: 4 },
     closeBtn: { width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET, borderRadius: MIN_TOUCH_TARGET / 2, justifyContent: 'center', alignItems: 'center' },
-    estadoBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6, borderWidth: 1 },
-    estadoDot: { width: 6, height: 6, borderRadius: 3 },
+    estadoBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.full, gap: 6, borderWidth: 1 },
+    estadoDot: { width: 6, height: 6, borderRadius: BorderRadius.full },
     estadoText: { fontSize: FontSize.xxs, fontWeight: '900' },
     detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 20 },
-    gridItem: { width: "47%", padding: 14, borderRadius: 16, borderWidth: 1 },
+    gridItem: { width: "47%", padding: 14, borderRadius: BorderRadius.full, borderWidth: 1 },
     gridLabel: { fontSize: FontSize.xxs, fontWeight: "800", marginBottom: 6, letterSpacing: 0.5 },
     gridValue: { fontSize: FontSize.md, fontWeight: "700" },
-    summarySection: { marginTop: 20, marginHorizontal: 20, padding: 20, borderRadius: 20, borderWidth: 1 },
+    summarySection: { marginTop: 20, marginHorizontal: 20, padding: 20, borderRadius: BorderRadius.full, borderWidth: 1 },
     sectionTitle: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 1, marginBottom: 16 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summaryLabel: { fontSize: FontSize.sm, fontWeight: '600' },
     summaryVal: { fontSize: FontSize.md, fontWeight: '800' },
     totalLabel: { fontSize: FontSize.sm, fontWeight: '900' },
     totalVal: { fontSize: FontSize.xl, fontWeight: '900' },
-    comisionBox: { marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1 },
-    miComisionBox: { marginTop: 16, padding: 16, borderRadius: 16, borderWidth: 2, flexDirection: 'row', alignItems: 'center' },
+    comisionBox: { marginTop: 12, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1 },
+    miComisionBox: { marginTop: 16, padding: 16, borderRadius: BorderRadius.full, borderWidth: 2, flexDirection: 'row', alignItems: 'center' },
     miComisionLabel: { fontSize: FontSize.xs, fontWeight: '800', letterSpacing: 1 },
     miComisionVal: { fontSize: FontSize.xl, fontWeight: '900', marginTop: 4 },
     buttonRow: { flexDirection: 'row', gap: 12, padding: 20 },
-    modalEditBtn: { flex: 1, height: 54, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+    modalEditBtn: { flex: 1, height: 54, borderRadius: BorderRadius.full, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
     modalEditBtnText: { color: '#FFF', fontSize: FontSize.sm, fontWeight: '900' },
-    modalCloseBtn: { height: 54, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+    modalCloseBtn: { height: 54, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     modalCloseBtnText: { color: '#FFF', fontSize: FontSize.sm, fontWeight: '900' },
 });
 

@@ -11,7 +11,7 @@ import {
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 interface TipDetailModalProps {
     visible: boolean;
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     divisionCard: {
         flexDirection: 'row',
         padding: 16,
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -257,17 +257,17 @@ const styles = StyleSheet.create({
     divisionValue: { fontSize: 16, fontWeight: '800' },
     divisionDivider: { width: 1, height: '60%', backgroundColor: 'rgba(155,155,155,0.2)' },
     sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
-    productsList: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+    productsList: { borderRadius: BorderRadius.full, borderWidth: 1, overflow: 'hidden' },
     productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
     productNameDetail: { fontSize: 14, fontWeight: '700' },
     productSubtotal: { fontSize: 14, fontWeight: '800' },
     saleTotalRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderTopWidth: 1 },
     saleTotalLabel: { fontSize: 13, fontWeight: '800' },
     saleTotalValue: { fontSize: 16, fontWeight: '900' },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9999 },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full },
     closeModalBtn: {
         height: 54,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,

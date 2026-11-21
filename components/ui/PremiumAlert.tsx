@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     alertIconHeader: {
         width: 80,
         height: 80,
-        borderRadius: 40,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     alertBtn: {
         flex: 1,
         height: 54,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 12,

@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -215,12 +216,12 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   productName: { fontSize: 15, fontWeight: '800' },
   presentation: { fontSize: 12, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full, flexDirection: 'row', alignItems: 'center', gap: 4 },
   statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   statusDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: BorderRadius.full,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 },
   amountRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },

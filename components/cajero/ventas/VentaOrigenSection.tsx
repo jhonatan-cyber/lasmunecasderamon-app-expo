@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { VentaDetail } from "./types";
@@ -93,6 +94,6 @@ const styles = StyleSheet.create({
     personaLabel: { fontSize: 13, fontWeight: "500" },
     personaValue: { fontWeight: "700" },
     habitacionRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-    tiempoBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
+    tiempoBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
     tiempoText: { fontSize: 12, fontWeight: "800" },
 });

@@ -332,7 +332,7 @@ export function ServiceDetailModal({
                                 <Pressable
                                     style={({ pressed }) => [
                                         styles.secondaryBtn,
-                                        { borderColor: theme.border, opacity: pressed ? 0.85 : 1, borderRadius: BorderRadius.card },
+                                        { borderColor: theme.border, opacity: pressed ? 0.85 : 1, borderRadius: BorderRadius.full },
                                     ]}
                                     onPress={() => {
                                       haptic.tap();
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     headerInfo: { flex: 1 },
     headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },
     estadoChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3 },
-    estadoDot: { width: 6, height: 6, borderRadius: 3 },
+    estadoDot: { width: 6, height: 6, borderRadius: BorderRadius.full },
     estadoChipText: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.4 },
     modalTitleText: { fontSize: FontSize.xl, fontWeight: '900', letterSpacing: -0.5 },
     modalSubText: { fontSize: FontSize.xs, fontWeight: '600' },
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     actionsList: { borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
     actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
     actionLabel: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
-    modalCloseBtn: { minHeight: 56, borderRadius: BorderRadius.card, justifyContent: 'center', alignItems: 'center', marginBottom: 12, flexDirection: 'row', gap: 8, paddingHorizontal: 16, overflow: 'hidden' },
+    modalCloseBtn: { minHeight: 56, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center', marginBottom: 12, flexDirection: 'row', gap: 8, paddingHorizontal: 16, overflow: 'hidden' },
     modalCloseBtnText: { fontSize: FontSize.lg, fontWeight: '900' },
     secondaryBtn: { minHeight: MIN_TOUCH_TARGET, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
     secondaryBtnText: { fontSize: FontSize.md, fontWeight: '700' },

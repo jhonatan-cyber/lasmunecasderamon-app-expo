@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { haptic } from '@/utils/haptics';
@@ -71,7 +72,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
     marginBottom: 12,
   },

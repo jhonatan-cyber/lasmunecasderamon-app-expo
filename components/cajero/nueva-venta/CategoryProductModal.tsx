@@ -1,4 +1,5 @@
 import { matchesProductSearch } from "../../../hooks/utils/productSearch";
+import { BorderRadius } from '@/constants/spacing';
 import { BASE_URL } from "@/api/base-url";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -414,14 +415,14 @@ const thumbnailStyles = StyleSheet.create({
     alignItems: "center" as const,
     gap: 10,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginTop: 12,
     minHeight: 50,
   },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 14, fontSize: 14 },
   count: { fontSize: 12, marginVertical: 12 },
-  product: { borderRadius: 18, borderWidth: 1, padding: 16, marginBottom: 12 },
+  product: { borderRadius: BorderRadius.full, borderWidth: 1, padding: 16, marginBottom: 12 },
   productHeader: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
@@ -431,7 +432,7 @@ const thumbnailStyles = StyleSheet.create({
   thumbnail: {
     width: 72,
     height: 72,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     overflow: "hidden" as const,
     alignItems: "center" as const,
     justifyContent: "center" as const,
@@ -446,7 +447,7 @@ const thumbnailStyles = StyleSheet.create({
     justifyContent: "center" as const,
     gap: 8,
     minHeight: 54,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     marginTop: 12,
   },
   doneText: { fontSize: 15, fontWeight: "800" as const, color: "#FFFFFF" },
@@ -456,7 +457,7 @@ const thumbnailStyles = StyleSheet.create({
     justifyContent: "center" as const,
     gap: 8,
     minHeight: 54,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     marginTop: 10,
   },
   closeBtnText: { fontSize: 15, fontWeight: "800" as const, color: "#FFFFFF" },

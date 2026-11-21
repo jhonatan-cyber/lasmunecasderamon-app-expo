@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '@/api/client';
@@ -135,19 +136,19 @@ const styles = StyleSheet.create({
     avatarContainer: {
         width: 64,
         height: 64,
-        borderRadius: 24,
+        borderRadius: BorderRadius.full,
         backgroundColor: 'rgba(255,255,255,0.12)',
         overflow: 'hidden',
     },
     avatarContainerCompact: {
         width: 46,
         height: 46,
-        borderRadius: 18,
+        borderRadius: BorderRadius.full,
     },
     avatar: {
         width: '100%',
         height: '100%',
-        borderRadius: 24,
+        borderRadius: BorderRadius.full,
     },
     headerInfo: {
         flex: 1,
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     statusDot: {
         width: 8,
         height: 8,
-        borderRadius: 4,
+        borderRadius: BorderRadius.full,
         marginRight: 6,
     },
     statusText: {

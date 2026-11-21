@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { haptic } from '@/utils/haptics';
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
   stickyBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   stickyBadgeText: {
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
     height: 48,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     minWidth: 130,
   },
   stickySubmitText: {

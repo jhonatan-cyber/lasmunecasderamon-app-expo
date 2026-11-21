@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BorderRadius } from '@/constants/spacing';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DEFAULT_ACCENT_COLOR, THEME_OPTIONS, normalizeAccentColor, useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
@@ -122,14 +123,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "800", marginBottom: 6 },
   description: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
   // Sin `overflow: hidden`: el halo neón de la tarjeta se dibuja fuera del borde.
-  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: 20, marginBottom: 16 },
-  previewIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: BorderRadius.full, marginBottom: 16 },
+  previewIcon: { width: 48, height: 48, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center" },
   previewText: { flex: 1 },
   previewCaption: { fontSize: 11, fontWeight: "700", letterSpacing: 1 },
   previewName: { fontSize: 22, fontWeight: "800", marginTop: 4 },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
-  option: { width: "48%", flexDirection: "row", alignItems: "center", gap: 10, padding: 10, minHeight: 58, borderRadius: 16, borderWidth: 2 },
-  swatch: { width: 32, height: 32, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  option: { width: "48%", flexDirection: "row", alignItems: "center", gap: 10, padding: 10, minHeight: 58, borderRadius: BorderRadius.full, borderWidth: 2 },
+  swatch: { width: 32, height: 32, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center" },
   optionName: { flex: 1, fontSize: 13, fontWeight: "700" },
   hint: { fontSize: 12, lineHeight: 18, marginTop: 14 },
 });

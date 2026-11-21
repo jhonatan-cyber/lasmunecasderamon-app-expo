@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { FontFamily, TabularNumbers } from '@/constants/fonts';
-import { FontSize, HitSlop } from '@/constants/spacing';
+import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 
 interface ClientCardProps {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch', 
         paddingHorizontal: 12, 
         paddingVertical: 8, 
-        borderRadius: 14, 
+        borderRadius: BorderRadius.full, 
         gap: 10,
         borderWidth: 1,
     },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     actionBtn: { 
         width: 44, 
         height: 44, 
-        borderRadius: 12, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },

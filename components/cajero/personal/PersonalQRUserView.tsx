@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import { Image } from 'expo-image';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: BorderRadius.full,
     borderWidth: 3,
     padding: 3,
     marginBottom: 8,
@@ -134,12 +135,12 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: 37,
+    borderRadius: BorderRadius.full,
   },
   avatarPlaceholder: {
     width: '100%',
     height: '100%',
-    borderRadius: 37,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
   roleBadge: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
   },
   roleText: {
     fontSize: 12,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.04)',
   },
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     gap: 8,
   },

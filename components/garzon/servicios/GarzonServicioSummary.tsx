@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from "react-native";
 
 interface Totales {
@@ -105,7 +106,7 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
 const styles = StyleSheet.create({
   summaryCard: {
     padding: 20,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginVertical: 20,
     gap: 10,

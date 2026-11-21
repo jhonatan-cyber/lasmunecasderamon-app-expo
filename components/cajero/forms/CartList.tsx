@@ -1,4 +1,5 @@
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { BorderRadius } from '@/constants/spacing';
 import { useRenderCount } from "@/hooks/useRenderCount";
 import { haptic } from "@/utils/haptics";
 import { FontFamily } from "@/constants/fonts";
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
   qtyBtn: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(155,155,155,0.12)",
     justifyContent: "center",
     alignItems: "center",
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
   deleteBtnOnly: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
   },
   saleBadge: {
     borderWidth: 1,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },

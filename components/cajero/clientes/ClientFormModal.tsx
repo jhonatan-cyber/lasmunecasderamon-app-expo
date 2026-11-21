@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
     input: { 
         height: 50, 
         borderWidth: 1, 
-        borderRadius: 14, 
+        borderRadius: BorderRadius.full, 
         paddingHorizontal: 15, 
         fontSize: 14, 
         fontWeight: '700', 
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     },
     saveBtn: { 
         height: 56, 
-        borderRadius: 18, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center', 
         marginTop: 10 

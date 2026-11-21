@@ -1,4 +1,5 @@
 import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     padding: 8,
   },
   info: { flex: 1, minWidth: 0 },
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
   add: {
     width: 30,
     height: 30,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 2,

@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type SelectionFloatProps = {
@@ -51,7 +52,7 @@ export function SelectionFloat({
 const styles = StyleSheet.create({
   selectionFloat: {
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -68,6 +69,6 @@ const styles = StyleSheet.create({
   selectionActions: { flexDirection: "row", gap: 10 },
   clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   clearBtnText: { color: "#EF4444", fontWeight: "800" },
-  viewBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+  viewBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: BorderRadius.full },
   viewBtnText: { color: "#FFF", fontWeight: "800" },
 });

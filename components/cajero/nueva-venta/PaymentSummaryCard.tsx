@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { individualShorts } from '@/hooks/utils/individualShorts';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
@@ -200,7 +201,7 @@ export const PaymentSummaryCard: React.FC<PaymentSummaryCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  summaryCard: { padding: 24, borderRadius: 32, borderWidth: 1, marginTop: 12 },
+  summaryCard: { padding: 24, borderRadius: BorderRadius.full, borderWidth: 1, marginTop: 12 },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

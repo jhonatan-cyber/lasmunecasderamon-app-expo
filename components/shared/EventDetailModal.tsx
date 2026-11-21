@@ -1,4 +1,5 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     detailCard: {
         width: '100%',
         maxHeight: '85%',
-        borderRadius: 32,
+        borderRadius: BorderRadius.full,
         padding: 24,
         elevation: 20,
         shadowColor: '#000',
@@ -188,14 +189,14 @@ const styles = StyleSheet.create({
     detailIconBox: {
         width: 64,
         height: 64,
-        borderRadius: 22,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center'
     },
     detailCloseBtn: {
         width: 40,
         height: 40,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     statusBadgeDetail: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 99,
+        borderRadius: BorderRadius.full,
     },
     statusTextDetail: {
         fontSize: 11,
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
     confirmBtn: {
         width: '100%',
         height: 56,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 4,

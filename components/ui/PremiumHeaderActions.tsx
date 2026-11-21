@@ -1,4 +1,5 @@
 import { useRouter, type Href } from 'expo-router';
+import { BorderRadius } from '@/constants/spacing';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
         minWidth: 18,
         height: 18,
         paddingHorizontal: 4,
-        borderRadius: 9,
+        borderRadius: BorderRadius.full,
         backgroundColor: '#B91C1C',
         justifyContent: 'center',
         alignItems: 'center',

@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   indexBadge: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   statusText: { fontSize: 12, fontWeight: '600' },
   cardBody: {},

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import {
   Pressable,
   StyleSheet,
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: '100%',
-        borderRadius: 0,
+        borderRadius: BorderRadius.full,
         overflow: 'hidden',
     },
     closeBtnAbsolute: {
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
         right: 16,
         width: 36,
         height: 36,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         backgroundColor: 'rgba(150,150,150,0.15)',
         justifyContent: 'center',
         alignItems: 'center',

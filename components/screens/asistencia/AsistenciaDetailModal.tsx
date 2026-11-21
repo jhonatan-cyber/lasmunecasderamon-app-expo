@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 type AsistenciaItem = {
   id_asistencia: number;
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   summaryCard: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 16,
     borderWidth: 1,
     marginBottom: 16,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   recordCard: {
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     padding: 14,
     borderWidth: 1,
     marginBottom: 10,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   estadoBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   estadoText: {
     fontSize: FontSize.xxs,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   closeAction: {
     margin: 16,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
   },
   closeActionText: {

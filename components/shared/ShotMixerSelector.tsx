@@ -19,6 +19,7 @@ import {
 import { apiClientSafe } from "@/api/client";
 import { getMirror, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { useAccentColor } from "@/hooks/useAccentColor";
+import { BorderRadius } from '@/constants/spacing';
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { availableOrderMixers } from "@/hooks/utils/orderMixers";
 import { parseOpcionesVenta } from "@/hooks/utils/saleChoice";
@@ -279,7 +280,7 @@ export function ShotMixerSelector({
                     padding: 12,
                     borderColor,
                     borderWidth: 1,
-                    borderRadius: 10,
+                    borderRadius: BorderRadius.full,
                     opacity: loading || restante < 1 ? 0.5 : 1,
                   }}
                 >

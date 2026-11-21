@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import {
     Pressable,
@@ -31,7 +32,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     disabledMethods = [],
     showLabel = true,
 }) => {
-    const { accentColor, textSecondary, borderColor, cardBg } = useAccentColor();
+    const { accentColor, accentText, textSecondary, borderColor, cardBg } = useAccentColor();
 
     const methods: { id: PaymentMethod; icon: any; label: string }[] = [
         { id: 'efectivo', icon: 'cash', label: 'Efectivo' },
@@ -50,9 +51,8 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
     return (
         <View style={[styles.container, disabled && { opacity: 0.5, pointerEvents: 'none' as const }, !disabled && { pointerEvents: 'auto' as const }]}>
             {showLabel && <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO (Requerido)</Text>}
-            <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                <View style={styles.row}>
-                    {methods.map((method) => {
+            <View style={styles.row}>
+                {methods.map((method) => {
                         const isSelected = selectedMethod === method.id;
                         const isMethodDisabled = disabled || disabledMethods.includes(method.id);
                         return (
@@ -79,12 +79,12 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                 <Ionicons
                                     name={method.icon}
                                     size={18}
-                                    color={isSelected ? '#FFF' : textSecondary}
+                                    color={isSelected ? accentText : textSecondary}
                                 />
                                 <Text
                                     style={[
                                         styles.methodText,
-                                        { color: isSelected ? '#FFF' : textSecondary },
+                                        { color: isSelected ? accentText : textSecondary },
                                         isSelected && styles.methodTextSelected,
                                     ]}
                                     numberOfLines={1}
@@ -97,7 +97,6 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                         );
                     })}
                 </View>
-            </View>
         </View>
     );
 };
@@ -112,27 +111,20 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         letterSpacing: 1,
     },
-    card: {
-        borderRadius: 16,
-        borderWidth: 1,
-        padding: 6,
-        gap: 0,
-    },
     row: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 6,
     },
     methodBtn: {
-        flex: 1,
-        minWidth: 0,
+        width: '47%',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 5,
         paddingVertical: 10,
         paddingHorizontal: 6,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         borderWidth: 1.5,
     },
     methodText: {

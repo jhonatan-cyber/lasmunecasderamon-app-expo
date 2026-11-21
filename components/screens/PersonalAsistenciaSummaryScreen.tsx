@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 interface Empleado {
   id: string;
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   summaryItem: {
     flex: 1,
     minWidth: '45%',
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   empleadoBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: BorderRadius.full,
   },
   empleadoBadgeText: {
     fontSize: FontSize.xxs,

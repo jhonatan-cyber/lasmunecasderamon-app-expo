@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     headerIconSpacing: { marginLeft: 10 },
     headerTitle: { fontSize: 27, lineHeight: 34, fontFamily: FontFamily.display, letterSpacing: -0.2, textAlign: 'left' },
     headerSubtitle: { fontSize: 14, fontFamily: FontFamily.medium, opacity: 0.85, textAlign: 'left' },
-    plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.xl, gap: 4 },
+    plusBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.full, gap: 4 },
     plusBtnText: { color: '#FFFFFF', fontFamily: FontFamily.semibold, fontSize: 14 },
     tabContainer: { flexDirection: 'row', marginTop: 20, borderRadius: BorderRadius.lg, padding: 4, borderWidth: 1 },
     tab: { flex: 1, height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: BorderRadius.md },

@@ -1,4 +1,5 @@
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { BorderRadius } from '@/constants/spacing';
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,

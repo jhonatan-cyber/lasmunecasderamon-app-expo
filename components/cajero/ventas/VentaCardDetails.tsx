@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { FontFamily } from "@/constants/fonts";
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   hostessPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     flexShrink: 1,
   },
   hostessText: { fontSize: 13, fontFamily: FontFamily.semibold, flexShrink: 1 },

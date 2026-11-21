@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BorderRadius } from '@/constants/spacing';
 import {
   Pressable,
   ScrollView,
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 520,
     maxHeight: "88%",
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 18,
     overflow: "hidden",
@@ -388,7 +389,7 @@ const styles = StyleSheet.create({
     minHeight: 68,
     padding: 10,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     justifyContent: "space-between",
     gap: 8,
   },
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
   infoTileValue: { fontSize: 15, fontWeight: "900" },
   quantityCard: {
     alignItems: "center",
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 16,
   },
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 12,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   noticeText: { flex: 1, color: "#F59E0B", fontSize: 12, fontWeight: "700" },

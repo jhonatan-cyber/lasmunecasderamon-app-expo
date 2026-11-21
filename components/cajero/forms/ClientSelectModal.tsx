@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React, { useState, useMemo } from 'react';
 import {
     Pressable,
@@ -138,7 +139,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                             {onLoadBalance && (
                                 <Pressable
                                     onPress={() => onLoadBalance(item)}
-                                    style={{ backgroundColor: `${primaryColor}20`, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 }}
+                                    style={{ backgroundColor: `${primaryColor}20`, paddingHorizontal: 10, paddingVertical: 6, borderRadius: BorderRadius.full }}
                                 >
                                     {({ pressed }) => (
                                         <View style={{ opacity: pressed ? 0.6 : 1 }}>
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        borderRadius: 16,
+        borderRadius: BorderRadius.full,
         borderWidth: 2,
         marginBottom: 10,
     },
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         paddingHorizontal: 12,
         marginBottom: 12,
         gap: 8,
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 8,
         fontSize: 15,
-        borderRadius: 8,
+        borderRadius: BorderRadius.full,
     },
     clearButton: {
         padding: 4,

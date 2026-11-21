@@ -577,6 +577,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         cardBg={cardBg}
         textSecondary={textSecondary}
         borderColor={borderColor}
+        variant="pills"
       />
 
       {esCajero ? (

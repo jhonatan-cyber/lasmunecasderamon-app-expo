@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import type { ShortMixer } from '@/components/shared/ShotMixerSelector';
 
@@ -38,7 +39,7 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
           padding: 12,
           borderColor,
           borderWidth: 1,
-          borderRadius: 10,
+          borderRadius: BorderRadius.full,
         }}
       >
         <View

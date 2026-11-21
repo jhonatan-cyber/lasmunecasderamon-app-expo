@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AnimatedView } from "@/components/ui/AnimatedView";
 
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     padding: 10,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   iconBadge: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   btn: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
   },
   btnText: {
     color: "#FFF",

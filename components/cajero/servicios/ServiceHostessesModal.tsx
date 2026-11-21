@@ -201,7 +201,7 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
               </Text>
             </View>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: surfaceMuted, borderRadius: BorderRadius.lg }]}
+              style={[styles.closeBtn, { backgroundColor: surfaceMuted, borderRadius: BorderRadius.full }]}
               onPress={onClose}
               accessibilityRole="button"
               accessibilityLabel="Cerrar anfitrionas"
@@ -223,7 +223,7 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
             placeholderTextColor={textSecondary}
             value={search}
             onChangeText={setSearch}
-            style={[styles.searchInput, { borderColor, color: textPrimary, backgroundColor: bg, borderRadius: BorderRadius.card }]}
+            style={[styles.searchInput, { borderColor, color: textPrimary, backgroundColor: bg, borderRadius: BorderRadius.full }]}
           />
 
           {loading && <ActivityIndicator color={accentColor} style={styles.loader} />}
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   saveBtn: {
-    borderRadius: BorderRadius.card,
+    borderRadius: BorderRadius.full,
     minHeight: 52,
     justifyContent: "center",
     paddingHorizontal: 16,

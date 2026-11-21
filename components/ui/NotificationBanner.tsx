@@ -13,7 +13,7 @@ import {
 } from '@/utils/inAppNotifications';
 import { useModalLayerOpen } from '@/utils/modalLayer';
 import { FontFamily } from '@/constants/fonts';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 interface Props {
   /**
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '92%',
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 12,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

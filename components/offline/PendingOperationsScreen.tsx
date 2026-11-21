@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useOutbox } from '@/hooks/useOutbox';
 import type { OutboxIntent, OutboxIntentType } from '@/services/outbox';
 import { showToast } from '@/utils/toast-lazy';
@@ -282,14 +282,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         height: 46,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
     },
     syncText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12, letterSpacing: 0.8 },
     listContent: { paddingHorizontal: 16, paddingTop: 14, gap: 12 },
     card: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cardTitle: { flex: 1, fontSize: 14, fontWeight: '800' },
-    chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+    chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.full },
     chipText: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.6 },
     cardMeta: { fontSize: 12 },
     cardError: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 6,
         borderWidth: 1,
-        borderRadius: 10,
+        borderRadius: BorderRadius.full,
         paddingHorizontal: 12,
         paddingVertical: 8,
     },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 24,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
     },
     emptyTitle: { fontSize: 16, fontWeight: '800' },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
     },
     noteText: { flex: 1, fontSize: 12, lineHeight: 17 },
     devButton: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         paddingVertical: 12,
         marginTop: 4,
     },

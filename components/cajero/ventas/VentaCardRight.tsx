@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { statusColors, statusLabels, payMethodIcons } from "./constants";
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     marginBottom: 8,
   },
   finishBtnText: { color: "#FFF", fontSize: 11, fontFamily: FontFamily.bold },
@@ -135,8 +136,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusDot: { width: 6, height: 6, borderRadius: BorderRadius.full, marginRight: 6 },
   statusTextSmall: { fontSize: 11, fontFamily: FontFamily.bold, textTransform: "uppercase" },
 });

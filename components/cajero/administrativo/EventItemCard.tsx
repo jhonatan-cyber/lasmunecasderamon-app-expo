@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Event } from "@/hooks/types/administrativoTypes";
@@ -109,14 +110,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginBottom: 12,
   },
   iconBox: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },

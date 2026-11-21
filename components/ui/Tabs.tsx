@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   dotIndicator: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: BorderRadius.full,
   },
   dotGlow: {
     position: 'absolute',
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     left: -3,
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: BorderRadius.full,
     opacity: 0.6,
   },
 });

@@ -165,6 +165,8 @@ export interface ListarServiciosParams {
   /** `true` = finalizados/anulados, `false` = en curso, `undefined` = todos. */
   all?: boolean;
   estado?: number;
+  /** Filtra por caja/turno. */
+  caja_id?: string;
 }
 
 function normalizarPagina(
@@ -194,13 +196,14 @@ async function actualizarServicio(
 
 export const serviciosService = {
   async listar(params: ListarServiciosParams = {}): Promise<ServiciosListado> {
-    const { page = 1, limit = 100, all = true, estado } = params;
+    const { page = 1, limit = 100, all = true, estado, caja_id } = params;
     const query = new URLSearchParams({
       all: String(all),
       limit: String(limit),
       page: String(page),
     });
     if (estado != null) query.set('estado', String(estado));
+    if (caja_id) query.set('caja_id', caja_id);
 
     const res = await apiClientSafe<unknown>(`/services?${query.toString()}`);
     const { rows, total } = normalizarPagina(res.data);

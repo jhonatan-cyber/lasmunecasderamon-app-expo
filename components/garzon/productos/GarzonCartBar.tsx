@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
   paymentChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   paymentChipText: {
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
   baucherThumb: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: BorderRadius.full,
   },
   baucherText: {
     flexShrink: 1,
@@ -279,6 +280,6 @@ const styles = StyleSheet.create({
   },
   cartLabel: { fontSize: 12, fontWeight: "600" },
   cartTotal: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  submitBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 9999 },
+  submitBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: BorderRadius.full },
   submitText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
 });

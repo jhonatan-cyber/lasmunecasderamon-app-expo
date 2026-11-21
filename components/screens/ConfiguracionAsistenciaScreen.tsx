@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40, gap: 16 },
   card: {
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 16,
     gap: 12,
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
   activacionBox: { gap: 10 },
   input: {
     borderWidth: 2,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -518,7 +519,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     paddingVertical: 14,
   },
   saveButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   deviceMeta: { fontSize: 11 },
   revokeButton: {
     borderWidth: 2,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 14,
     paddingVertical: 8,
     minWidth: 96,

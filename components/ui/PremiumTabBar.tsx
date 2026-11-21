@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 type PremiumTabBarProps = {
     state: {
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     iconSlot: {
         width: 34,
         height: 34,
-        borderRadius: 17,
+        borderRadius: BorderRadius.full,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     iconSlotCompact: {
         width: 30,
         height: 30,
-        borderRadius: 15,
+        borderRadius: BorderRadius.full,
         overflow: 'hidden',
     },
     tabWrapper: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     dotIndicator: {
         width: 6,
         height: 6,
-        borderRadius: 3,
+        borderRadius: BorderRadius.full,
     },
     dotGlow: {
         position: 'absolute',
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
         left: -3,
         width: 12,
         height: 12,
-        borderRadius: 6,
+        borderRadius: BorderRadius.full,
         opacity: 0.6,
     },
 });

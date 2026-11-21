@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { formatCurrency } from '@/utils/format';
 import type { SolicitudItem } from '@/hooks/types/solicitudesTypes';
@@ -225,13 +225,13 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
 
 const styles = StyleSheet.create({
     cardUsual: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-    card: { flex: 1, borderRadius: 20, padding: 16, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+    card: { flex: 1, borderRadius: BorderRadius.full, padding: 16, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
     cardUrgent: { borderColor: '#EF4444', borderWidth: 2, shadowColor: '#EF4444', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    iconBox: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    iconBox: { width: 32, height: 32, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     codigo: { fontSize: 16, fontWeight: '800' },
-    typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginLeft: 8 },
+    typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full, marginLeft: 8 },
     typeText: { fontSize: 12, fontWeight: '700' },
     precio: { fontSize: 18, fontWeight: '900', color: '#10B981' },
     cardBody: { backgroundColor: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 12, marginBottom: 16 },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     responseText: { fontSize: 12, fontWeight: '600' },
     responseMeta: { fontSize: 11, fontWeight: '700' },
     cardFooter: { flexDirection: 'row', gap: 10 },
-    btnAction: { flex: 1, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+    btnAction: { flex: 1, height: 44, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     btnActionText: { fontSize: 14, fontWeight: '800' },
     urgentBadge: {
         position: 'absolute',
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#EF4444',
         paddingHorizontal: 12,
         paddingVertical: 4,
-        borderRadius: 8,
+        borderRadius: BorderRadius.full,
         zIndex: 10,
         elevation: 5,
         shadowColor: '#EF4444',

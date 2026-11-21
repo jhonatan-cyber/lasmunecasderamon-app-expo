@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 import { BASE_URL } from "@/api/client";
@@ -111,8 +112,8 @@ const styles = StyleSheet.create({
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
     rowBorder: { borderBottomWidth: 1, borderBottomColor: "rgba(0,0,0,0.05)" },
     persona: { flexDirection: "row", alignItems: "center", gap: 10 },
-    avatar: { width: 28, height: 28, borderRadius: 14 },
-    avatarPlaceholder: { width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center" },
+    avatar: { width: 28, height: 28, borderRadius: BorderRadius.full },
+    avatarPlaceholder: { width: 28, height: 28, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
     avatarText: { fontSize: 10, fontWeight: "900" },
     nick: { fontSize: 14, fontWeight: "800" },
     monto: { fontSize: 15, fontWeight: "900" },

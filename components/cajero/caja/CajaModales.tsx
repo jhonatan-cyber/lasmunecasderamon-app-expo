@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CajaAction } from '@/hooks/useCaja';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
     modalIconBox: {
         width: 70,
         height: 70,
-        borderRadius: 35,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'center',
@@ -248,7 +249,7 @@ const styles = StyleSheet.create({
     modalBtn: {
         flex: 1,
         height: 48,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
         color: '#FFF'
     },
     modalBreakdown: {
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
         padding: 16,
         gap: 10,
         marginBottom: 20,
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         height: 56,
-        borderRadius: 16,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
         paddingHorizontal: 16,
         marginBottom: 16
@@ -305,6 +306,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        borderRadius: 12
+        borderRadius: BorderRadius.full
     },
 });

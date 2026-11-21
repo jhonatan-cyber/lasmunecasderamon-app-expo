@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 
 interface SolicitarAnticipoModalProps {
   visible: boolean;
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: BorderRadius.full,
     backgroundColor: "#D1D5DB",
     alignSelf: "center",
     marginBottom: 16,
@@ -229,12 +229,12 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     backgroundColor: "rgba(128,128,128,0.15)",
   },
   disponibleCard: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     padding: 20,
     marginBottom: 20,
     shadowColor: '#000',
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   pendingBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
   },
   pendingBadgeText: {
     fontSize: FontSize.xxs,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 2,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   submitButton: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 18,
     alignItems: "center",
     marginTop: 12,

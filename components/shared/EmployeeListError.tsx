@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 export function EmployeeListError({
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 16,
     gap: 12,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   message: { fontSize: 15, lineHeight: 21 },
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     minHeight: 44,
     justifyContent: 'center',
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 20,
     backgroundColor: '#991B1B',
   },

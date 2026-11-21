@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingHorizontal: 24,
         paddingVertical: 14,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         minWidth: 160,
     },
     actionText: {

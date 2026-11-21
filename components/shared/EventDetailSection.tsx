@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
+import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface DetailRowProps {
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
   timelineDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: BorderRadius.full,
     marginTop: 4,
   },
   timelineConnector: {

@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { showToast } from '@/utils/toast-lazy';
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
         maxWidth: '92%',
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         backgroundColor: 'rgba(17, 24, 39, 0.95)',
     },
     tooltipTexto: {

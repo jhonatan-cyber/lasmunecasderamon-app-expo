@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
@@ -58,16 +59,16 @@ const styles = StyleSheet.create({
     offlineBanner: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         paddingVertical: 8, paddingHorizontal: 16, gap: 10,
-        margin: 16, marginBottom: 0, borderRadius: 12, elevation: 4,
+        margin: 16, marginBottom: 0, borderRadius: BorderRadius.full, elevation: 4,
     },
     offlineBannerText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
     totalBanner: {
         flexDirection: 'row', alignItems: 'center',
         marginHorizontal: 16, marginBottom: 4,
-        padding: 16, borderRadius: 20,
+        padding: 16, borderRadius: BorderRadius.full,
         borderWidth: 1, borderLeftWidth: 4, gap: 14, elevation: 2,
     },
-    totalBannerIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    totalBannerIcon: { width: 48, height: 48, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     totalBannerText: { flex: 1 },
     totalBannerLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
     totalBannerValue: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },

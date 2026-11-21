@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
@@ -205,7 +206,7 @@ export function LoadBalanceModal({
                                         justifyContent: 'center',
                                         paddingVertical: 14,
                                         paddingHorizontal: 20,
-                                        borderRadius: 14,
+                                        borderRadius: BorderRadius.full,
                                         borderWidth: 1,
                                         borderColor: isDark ? '#374151' : '#E5E7EB',
                                         backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
@@ -250,7 +251,7 @@ export function LoadBalanceModal({
                         <TouchableOpacity
                             style={[
                                 styles.saveBtn,
-                                { backgroundColor: accentColor, height: 60, borderRadius: 20 },
+                                { backgroundColor: accentColor, height: 60, borderRadius: BorderRadius.full },
                                 (submitting || cajaAbierta === false) && { opacity: 0.7 },
                             ]}
                             onPress={handleLoadBalance}
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     input: { 
         height: 50, 
         borderWidth: 1, 
-        borderRadius: 14, 
+        borderRadius: BorderRadius.full, 
         paddingHorizontal: 15, 
         fontSize: 14, 
         fontWeight: '700', 
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     },
     saveBtn: { 
         height: 56, 
-        borderRadius: 18, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center', 
         marginTop: 10 
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
         gap: 12, 
         backgroundColor: 'rgba(155,155,155,0.05)', 
         padding: 16, 
-        borderRadius: 20 
+        borderRadius: BorderRadius.full 
     },
     mixedHeader: { 
         flexDirection: 'row', 

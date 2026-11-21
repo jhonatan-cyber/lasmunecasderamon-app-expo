@@ -25,6 +25,7 @@ export const initialServiceState: ServiceState = {
   balanceModalVisible: false,
   balanceAmount: '',
   balanceSubmitting: false,
+  baucherFoto: null,
 };
 
 export function serviceReducer(state: ServiceState, action: ServiceAction): ServiceState {
@@ -82,6 +83,8 @@ export function serviceReducer(state: ServiceState, action: ServiceAction): Serv
             : c,
         ),
       };
+    case 'SET_BAUCHER_FOTO':
+      return { ...state, baucherFoto: action.payload };
     default:
       return state;
   }

@@ -37,7 +37,7 @@ export const CuentaDetailSkeleton: React.FC = () => {
             </View>
 
             {/* Close button */}
-            <Skeleton style={[styles.closeBtnFull, { borderRadius: BorderRadius.button }]} />
+            <Skeleton style={[styles.closeBtnFull, { borderRadius: BorderRadius.full }]} />
         </View>
     );
 };
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     headerIcon: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
     },
     headerTexts: {
         flex: 1,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     closeBtn: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
     },
     infoGrid: {
         flexDirection: 'row',

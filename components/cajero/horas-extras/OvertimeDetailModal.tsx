@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     modalAvatar: { 
         width: 42, 
         height: 42, 
-        borderRadius: 14, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
     modalCloseBtn: { 
         width: 34, 
         height: 34, 
-        borderRadius: 17, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },
@@ -231,20 +232,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         gap: 8,
         paddingVertical: 12, 
-        borderRadius: 14, 
+        borderRadius: BorderRadius.full, 
         marginBottom: 16,
     },
     modalStatusDot: { 
         width: 8, 
         height: 8, 
-        borderRadius: 4 
+        borderRadius: BorderRadius.full 
     },
     modalStatusBannerText: { 
         fontSize: 14, 
         fontWeight: '800' 
     },
     modalDetailCard: { 
-        borderRadius: 16, 
+        borderRadius: BorderRadius.full, 
         padding: 16, 
         borderWidth: 1, 
         marginBottom: 14 
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     modalDetailIconBox: { 
         width: 32, 
         height: 32, 
-        borderRadius: 10, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     modalTotalCard: {
         flexDirection: 'row', 
         alignItems: 'center',
-        borderRadius: 16, 
+        borderRadius: BorderRadius.full, 
         padding: 18, 
         borderWidth: 1, 
         marginBottom: 14,

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -46,7 +47,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 38,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     gap: 6,

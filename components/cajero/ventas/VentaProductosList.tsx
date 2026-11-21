@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -91,12 +92,12 @@ const styles = StyleSheet.create({
     sectionLabel: { fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1 },
     card: { borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 12 },
     cardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
-    cantBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+    cantBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full },
     cantText: { fontSize: 11, fontWeight: "900" },
     precioUnit: { fontSize: 14, fontWeight: "800" },
     infoRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-    productImage: { width: 40, height: 40, borderRadius: 10 },
-    productImagePlaceholder: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
+    productImage: { width: 40, height: 40, borderRadius: BorderRadius.full },
+    productImagePlaceholder: { width: 40, height: 40, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
     productName: { fontSize: 16, fontWeight: "800", flex: 1 },
     totalRow: { flexDirection: "row", justifyContent: "flex-end", borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.04)", paddingTop: 12 },
     productTotal: { fontSize: 18, fontWeight: "900" },

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     indexBadge: {
         width: 24,
         height: 24,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     statusBadge: {
         paddingHorizontal: 10,
         paddingVertical: 5,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
     },
     statusText: {
         fontSize: 11,

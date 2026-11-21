@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { Image } from "expo-image";
 import {
@@ -64,12 +65,12 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
     >
       <FlatList
         data={hostesses}
-        keyExtractor={(item) => String(item.id_usuario || item.id || 0)}
+        keyExtractor={(item) => String(item.id)}
         keyboardShouldPersistTaps="handled"
         initialNumToRender={10}
         windowSize={5}
         renderItem={({ item }) => {
-        const rawId = item.id_usuario || item.id || 0;
+        const rawId = item.id;
         const isSelected = selectedIds.some(
           (sid) => String(sid) === String(rawId),
         );
@@ -87,7 +88,6 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
 
         return (
           <Pressable
-            key={rawId.toString()}
             onPress={() =>
               !isDisabled && onToggle(rawId as number | string)
             }
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     marginBottom: 10,
   },
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   avatarMini: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",

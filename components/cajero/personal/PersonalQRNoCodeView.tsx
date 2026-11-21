@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 28,
     height: 54,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     gap: 10,
     marginTop: 8,
     elevation: 4,

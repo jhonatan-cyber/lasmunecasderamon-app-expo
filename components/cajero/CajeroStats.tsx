@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/utils/format';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 4,
         height: 4,
-        borderRadius: 2,
+        borderRadius: BorderRadius.full,
         opacity: 0.5,
     }
 });

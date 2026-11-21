@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   cabeceraIcono: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     height: 40,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
   },
   salirTexto: { fontSize: 13, fontWeight: '800' },
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     height: 50,
-    borderRadius: 25,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   searchInput: {

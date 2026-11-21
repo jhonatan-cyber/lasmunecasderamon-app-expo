@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { MODAL_MAX_WIDTH } from "@/constants/layout";
 import {
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   anulacionModalCard: {
     width: "92%",
     maxWidth: MODAL_MAX_WIDTH,
-    borderRadius: 28,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 22,
     gap: 16,
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   anulacionIconBox: {
     width: 52,
     height: 52,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   anulacionInfoCard: {
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     padding: 14,
     gap: 6,
   },
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
   anulacionInput: {
     height: 52,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 16,
     fontSize: 16,
     fontWeight: "700",
@@ -272,7 +273,7 @@ const styles = StyleSheet.create({
   anulacionTextarea: {
     minHeight: 110,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   anulacionSecondaryBtn: {
     flex: 1,
     height: 52,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
   anulacionPrimaryBtn: {
     flex: 1,
     height: 52,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },

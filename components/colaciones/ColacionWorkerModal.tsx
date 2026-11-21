@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 16,
     borderWidth: 1,
     maxHeight: '80%',
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     marginBottom: 6,
-    borderRadius: 10,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     backgroundColor: 'transparent',
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   buttonOutline: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 999,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface UnidadBebida {
@@ -87,7 +88,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
               gap: 4,
               paddingHorizontal: 12,
               paddingVertical: 8,
-              borderRadius: 10,
+              borderRadius: BorderRadius.full,
               backgroundColor: successColor,
             },
           ]}
@@ -108,7 +109,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
               gap: 4,
               paddingHorizontal: 12,
               paddingVertical: 8,
-              borderRadius: 10,
+              borderRadius: BorderRadius.full,
               backgroundColor: dangerColor,
             },
           ]}

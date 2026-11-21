@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -53,12 +54,12 @@ export function NuevoServicioSkeleton({ bg, cardBg, borderColor }: Props) {
 const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
-  summaryCard: { marginTop: 10, padding: 24, borderRadius: 32, borderWidth: 1, elevation: 20 },
+  summaryCard: { marginTop: 10, padding: 24, borderRadius: BorderRadius.full, borderWidth: 1, elevation: 20 },
   backBtnRight: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 38,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     gap: 6,

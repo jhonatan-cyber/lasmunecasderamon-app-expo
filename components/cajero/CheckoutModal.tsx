@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
-import { FontSize, HitSlop } from '@/constants/spacing';
+import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   prodPrice: { fontSize: FontSize.xs },
   prodSubtotal: { fontSize: FontSize.sm, fontWeight: "800" },
   paymentGrid: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  payBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 2, alignItems: "center", gap: 4 },
+  payBtn: { flex: 1, paddingVertical: 12, borderRadius: BorderRadius.full, borderWidth: 2, alignItems: "center", gap: 4 },
   payLabel: { fontSize: FontSize.xs, fontWeight: "700", textTransform: "capitalize" },
   row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   totals: { padding: 16, borderRadius: 12, marginBottom: 10 },
@@ -246,6 +246,6 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: FontSize.xl, fontWeight: "900" },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.1)" },
   btnRow: { flexDirection: "row", gap: 8 },
-  btn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center", justifyContent: "center", minHeight: 48 },
+  btn: { flex: 1, paddingVertical: 14, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center", minHeight: 48 },
   btnText: { fontSize: FontSize.sm, fontWeight: "700" },
 });

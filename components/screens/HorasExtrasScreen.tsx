@@ -1,4 +1,5 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
+import { BorderRadius } from '@/constants/spacing';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useCallback, useState } from 'react';
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,

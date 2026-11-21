@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, PressableProps, StyleProp, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, PressableProps, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
+import { haptic } from '@/utils/haptics';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
@@ -44,8 +45,9 @@ export function LoadingButton({
 
     return (
         <AnimatedButton
-            onPress={onPress}
+            onPress={() => { haptic.tap(); onPress(); }}
             disabled={loading || props.disabled}
+            accessibilityLabel={loading ? `${loadingLabel}: ${label}` : props.accessibilityLabel || label}
             style={[styles.button, { backgroundColor: accentColor }, neonGlow, style]}
             {...props}
         >
@@ -58,17 +60,17 @@ export function LoadingButton({
     );
 }
 
-const styles = {
+const styles = StyleSheet.create({
     button: {
         height: 50,
         borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         minWidth: 120,
-    } as ViewStyle,
+    },
     text: {
         fontSize: FontSize.sm,
         fontFamily: FontFamily.bold,
         letterSpacing: 0.5,
-    } as any,
-};
+    },
+});

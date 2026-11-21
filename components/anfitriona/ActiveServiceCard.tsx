@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize, HitSlop } from '@/constants/spacing';
+import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 
 interface ActiveServiceCardProps {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     container: {
         margin: 16,
         padding: 20,
-        borderRadius: 28,
+        borderRadius: BorderRadius.full,
         elevation: 12,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 8 },
@@ -113,13 +113,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         gap: 6,
     },
     pulseDot: {
         width: 8,
         height: 8,
-        borderRadius: 4,
+        borderRadius: BorderRadius.full,
         backgroundColor: '#FFF',
     },
     badgeText: {

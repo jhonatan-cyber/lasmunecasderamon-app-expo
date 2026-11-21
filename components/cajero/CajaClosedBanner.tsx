@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 14,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginBottom: 16,
   },
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   buttonText: {

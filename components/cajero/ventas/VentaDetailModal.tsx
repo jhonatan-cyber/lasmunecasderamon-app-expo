@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import {
   Pressable,
@@ -210,17 +211,17 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   modalTitleText: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
   modalSubText: { fontSize: 12, fontWeight: "600" },
-  closeBtn: { width: 40, height: 40, borderRadius: 9999, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
-  statusBadgeDetail: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
+  closeBtn: { width: 40, height: 40, borderRadius: BorderRadius.full, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
+  statusBadgeDetail: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
   statusTextDetail: { fontSize: 11, fontWeight: "900" },
-  infoCard: { flex: 1, padding: 16, borderRadius: 18, borderWidth: 1 },
+  infoCard: { flex: 1, padding: 16, borderRadius: BorderRadius.full, borderWidth: 1 },
   infoLabel: { fontSize: 10, fontWeight: "900", textTransform: "uppercase", marginBottom: 6 },
   infoValue: { fontSize: 14, fontWeight: "800" },
   sectionLabel: { fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
-  clienteCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 16, borderWidth: 1 },
-  avatarCircle: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center" },
+  clienteCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1 },
+  avatarCircle: { width: 32, height: 32, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
   clienteName: { fontSize: 14, fontWeight: "800" },
-  summaryCard: { marginTop: 20, padding: 20, borderRadius: 24, borderWidth: 1 },
+  summaryCard: { marginTop: 20, padding: 20, borderRadius: BorderRadius.full, borderWidth: 1 },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   summaryLabel: { fontWeight: "700" },
   summaryValue: { fontWeight: "800" },
@@ -228,6 +229,6 @@ const styles = StyleSheet.create({
   summaryTotalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { fontSize: 16, fontWeight: "900" },
   totalValue: { fontSize: 24, fontWeight: "900" },
-  modalCloseBtn: { height: 56, borderRadius: 9999, justifyContent: "center", alignItems: "center", marginTop: 10, marginBottom: 20 },
+  modalCloseBtn: { height: 56, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center", marginTop: 10, marginBottom: 20 },
   modalCloseBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 });

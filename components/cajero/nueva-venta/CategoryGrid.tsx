@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 
 interface CategoryItem {
@@ -68,7 +69,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
             style={{
               minWidth: 120,
               padding: 12,
-              borderRadius: 20,
+              borderRadius: BorderRadius.full,
               borderWidth: 1,
               borderColor,
               backgroundColor: 'rgba(155,155,155,0.03)',
@@ -80,7 +81,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 14,
+                borderRadius: BorderRadius.full,
                 backgroundColor: `${accentColor}15`,
                 justifyContent: 'center',
                 alignItems: 'center',

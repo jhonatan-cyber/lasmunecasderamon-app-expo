@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import VirtualizedList from "@/components/shared/VirtualizedList";
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
   },
   closeFooterBtn: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",

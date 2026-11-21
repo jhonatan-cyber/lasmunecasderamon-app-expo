@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
   },
   backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   card: { borderRadius: BorderRadius.xxl, padding: 20, borderWidth: 1, marginBottom: 20 },
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   },
   coverActionBtn: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.full,
     paddingVertical: 10,
     alignItems: 'center',
     flexDirection: 'row',
@@ -652,12 +652,12 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.full,
     marginTop: 4,
   },
   actionBtn: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.full,
     paddingVertical: 12,
     alignItems: 'center',
     flexDirection: 'row',
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
   },
   smallActionBtn: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.full,
     paddingVertical: 8,
     paddingHorizontal: 10,
     alignItems: 'center',

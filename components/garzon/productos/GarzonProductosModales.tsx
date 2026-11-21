@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import {
   Pressable,
   ScrollView,
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     marginBottom: 8,
     borderWidth: 2,
   },
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
   doneBtn: {
     margin: 20,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     alignItems: "center",
   },
   doneBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },

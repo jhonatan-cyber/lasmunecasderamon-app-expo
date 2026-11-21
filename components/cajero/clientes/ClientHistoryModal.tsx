@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { HistorySummaryCards } from './HistorySummaryCards';
@@ -141,6 +142,6 @@ const styles = StyleSheet.create({
     modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
     modalTitle: { fontSize: 22, fontWeight: '900' },
-    saveBtn: { height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+    saveBtn: { height: 56, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     saveBtnText: { color: '#FFF', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
 });

@@ -1,4 +1,5 @@
 import React from "react";
+import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from "react-native";
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     padding: 24,
     alignItems: "center",
     borderWidth: 1,

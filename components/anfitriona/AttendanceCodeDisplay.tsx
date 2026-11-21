@@ -7,7 +7,7 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole, isCajeroRole } from '@/utils/userRole';
 
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
         paddingHorizontal: 12,
         paddingVertical: 5,
-        borderRadius: 10,
+        borderRadius: BorderRadius.full,
         borderWidth: 2,
     },
     label: {
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        borderRadius: 32,
+        borderRadius: BorderRadius.full,
         padding: 24,
         alignItems: 'center',
         elevation: 10,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     iconCircle: {
         width: 64,
         height: 64,
-        borderRadius: 32,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 16,
+        borderRadius: BorderRadius.full,
         borderWidth: 2,
         backgroundColor: 'rgba(0,0,0,0.03)',
     },

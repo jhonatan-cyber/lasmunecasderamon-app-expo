@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 import type { MetodoPagoMonto } from './types';
 
 type Props = {
@@ -79,7 +80,7 @@ export function PagosMixtosSection({
             style={{
               flex: 1,
               backgroundColor: cardBg,
-              borderRadius: 8,
+              borderRadius: BorderRadius.full,
               paddingHorizontal: 8,
               paddingVertical: 6,
               color: textPrimary,
@@ -140,7 +141,7 @@ export function PagosMixtosSection({
                   style={{
                     paddingVertical: 8,
                     paddingHorizontal: 12,
-                    borderRadius: 8,
+                    borderRadius: BorderRadius.full,
                     borderWidth: 1,
                     borderColor: sinSaldo ? textSecondary : accentColor,
                     backgroundColor: sinSaldo ? 'transparent' : `${accentColor}10`,

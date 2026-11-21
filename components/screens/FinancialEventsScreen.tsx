@@ -1,4 +1,5 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, useCallback } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
   closeBtn: { padding: 4 },
   closeModalBtn: {
     height: 54,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 24,
@@ -460,7 +461,7 @@ const styles = StyleSheet.create({
   divisionCard: {
     flexDirection: 'row',
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   productsList: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 8,
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
   statusBadgeSmall: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   paymentInfoBox: {
     marginTop: 15,

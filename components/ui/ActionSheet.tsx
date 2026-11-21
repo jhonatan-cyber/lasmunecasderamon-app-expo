@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.full,
     marginBottom: 10,
     gap: 16,
   },

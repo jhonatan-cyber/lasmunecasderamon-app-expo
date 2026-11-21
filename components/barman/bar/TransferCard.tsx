@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
@@ -138,12 +139,12 @@ export function TransferActions({
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 14, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.full, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconWrapper: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  iconWrapper: { width: 36, height: 36, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
   productName: { fontSize: 15, fontWeight: '800' },
   presentation: { fontSize: 12, marginTop: 2 },
-  pendingBadge: { backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
+  pendingBadge: { backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full },
   pendingText: { color: '#F59E0B', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
   metaText: { fontSize: 12, fontWeight: '600' },
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     minHeight: 44,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
   },
   rejectBtn: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' },
   rejectText: { color: '#EF4444', fontWeight: '800', fontSize: 13 },

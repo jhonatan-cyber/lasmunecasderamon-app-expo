@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
   },
   registerCard: {
     padding: 16,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     gap: 12,
   },
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
   },
   selectorBlock: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     padding: 10,
     borderWidth: 1,
     gap: 6,
@@ -440,7 +441,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: BorderRadius.full,
     minHeight: 44,
   },
   selectButtonText: {
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   mlCard: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     padding: 12,
     borderWidth: 1,
     gap: 8,
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 14,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1.5,
     borderColor: 'rgba(0,0,0,0.05)',
   },
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
   roleTab: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1.5,
     marginRight: 8,
   },
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   registraBadgeLabel: {

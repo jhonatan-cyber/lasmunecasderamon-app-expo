@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
   cargarImagenBaucher,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   chipCompacto: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
   chipTexto: { fontSize: 12, fontWeight: '800' },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     maxHeight: '88%',
-    borderRadius: 26,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 18,
   },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   imagenMarco: {
     flexShrink: 1,
     minHeight: 220,
-    borderRadius: 18,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -208,6 +208,6 @@ const styles = StyleSheet.create({
   imagen: { width: '100%', height: 320 },
   errorBox: { alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 24 },
   errorTexto: { fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 19 },
-  reintentar: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 12, marginTop: 4 },
+  reintentar: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: BorderRadius.full, marginTop: 4 },
   reintentarTexto: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },
 });

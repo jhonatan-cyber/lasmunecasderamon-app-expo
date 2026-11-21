@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     alertCard: {
         width: '85%',
         maxWidth: 480,
-        borderRadius: 32,
+        borderRadius: BorderRadius.full,
         padding: 24,
         alignItems: 'center',
         elevation: 20,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     },
     alertBtn: {
         height: 54,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 15,

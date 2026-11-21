@@ -93,7 +93,7 @@ export function useAccentColor() {
         bg = isDark ? '#000000' : '#FFFFFF';
         cardBg = isDark ? '#111111' : '#FFFFFF';
         textPrimary = isDark ? '#FFFFFF' : '#111827';
-        textSecondary = isDark ? '#9CA3AF' : '#6B7280';
+        textSecondary = isDark ? '#9CA3AF' : '#4B5563';
     }
 
     // El borde separa las tarjetas blancas de la pantalla blanca: en claro

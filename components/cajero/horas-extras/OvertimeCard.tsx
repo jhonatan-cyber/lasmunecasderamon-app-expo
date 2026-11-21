@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     avatar: { 
         width: 36, 
         height: 36, 
-        borderRadius: 12, 
+        borderRadius: BorderRadius.full, 
         justifyContent: 'center', 
         alignItems: 'center' 
     },
@@ -171,12 +171,12 @@ const styles = StyleSheet.create({
         gap: 4, 
         paddingHorizontal: 10, 
         paddingVertical: 5, 
-        borderRadius: 9999 
+        borderRadius: BorderRadius.full 
     },
     statusDot: { 
         width: 6, 
         height: 6, 
-        borderRadius: 3 
+        borderRadius: BorderRadius.full 
     },
     statusText: { 
         fontSize: 10, 

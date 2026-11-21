@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 interface CajaSkeletonProps {
@@ -49,7 +50,7 @@ export function CajaSkeleton({ cardBg, borderColor }: CajaSkeletonProps) {
 
 const styles = StyleSheet.create({
     skeletonCard: {
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
         padding: 16,
     },

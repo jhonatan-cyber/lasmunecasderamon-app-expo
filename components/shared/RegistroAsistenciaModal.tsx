@@ -2,7 +2,7 @@ import { apiClientSafe } from '@/api/client';
 import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { FontSize, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     iconCircle: {
         width: 48,
         height: 48,
-        borderRadius: 24,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     avatarSmall: {
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     roleBadge: {
         paddingHorizontal: 8,
         paddingVertical: 2,
-        borderRadius: 10,
+        borderRadius: BorderRadius.full,
     },
     roleText: {
         fontSize: FontSize.xxs,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         paddingHorizontal: 14,
         height: 48,
         marginBottom: 12,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 48,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         gap: 8,
     },
     submitBtnText: {
@@ -427,14 +427,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: BorderRadius.full,
         padding: 12,
         gap: 10,
     },
     qrIconCircle: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
     },

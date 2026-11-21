@@ -1,0 +1,102 @@
+=== Interactive elements with hardcoded borderRadius ===
+
+components\anfitriona\AttendanceCodeDisplay.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: qrWrapper
+
+components\barman\bar\ContainerReturnPanel.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: sessionRow, card
+
+components\cajero\administrativo\DetailedEventsModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: dragHandle
+
+components\cajero\CheckoutModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: metaRow, receipt, totals
+
+components\cajero\nueva-venta\CategoryProductModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\cajero\nueva-venta\NuevaVentaModals.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: content
+
+components\cajero\nueva-venta\NuevaVentaSearch.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: container
+
+components\cajero\personal\PersonalQRUserView.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: qrGlow
+
+components\cajero\servicios\ServiceCardActions.tsx
+  Child View styles: handle
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\cajero\SolicitudCard.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: cardUsual, cardBody, responseBox
+
+components\colaciones\ColacionWorkerModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: row
+
+components\screens\asistencia\AsistenciaDetailModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\screens\asistencia\CalendarFilter.tsx
+  Child View styles: attendanceDot
+  Inline Pressable style: yes
+  All hardcoded styles: container, todayCell, attendanceDot
+
+components\screens\asistencia\DateRangeFilterModal.tsx
+  Child View styles: attendanceDot
+  Inline Pressable style: yes
+  All hardcoded styles: todayCell, edgeCell, attendanceDot
+
+components\screens\ConfiguracionAsistenciaScreen.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: warningBox
+
+components\screens\home\SelectedEventsModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\shared\BaucherFoto.tsx
+  Direct Pressable styles: cerrar
+  Inline Pressable style: yes
+  All hardcoded styles: cerrar
+
+components\shared\RegistroAsistenciaModal.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\shared\StaffCallOverlay.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: typeText
+
+components\ui\ActionSheet.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: handle
+
+components\ui\ErrorState.tsx
+  Direct Pressable styles: inlineRetry
+  Child View styles: container
+  Inline Pressable style: yes
+  All hardcoded styles: container, iconContainer, inlineIconBox, inlineRetry
+
+components\ui\ModalBottomSheet.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: dragHandle
+
+components\ui\PremiumCalendar.tsx
+  Inline Pressable style: yes
+  All hardcoded styles: legendItem
+
+
+Total files with interactive hardcoded borderRadius: 23

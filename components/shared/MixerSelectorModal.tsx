@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
+import { BorderRadius } from '@/constants/spacing';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -90,7 +91,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
               borderColor,
               borderWidth: 1,
               padding: 12,
-              borderRadius: 10,
+              borderRadius: BorderRadius.full,
             }}
           />
           <ScrollView

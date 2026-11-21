@@ -572,8 +572,6 @@ export default function NuevaVentaScreen() {
         {metodoPago === "transferencia" && (
           <BaucherCard
             baucherFoto={baucherFoto}
-            textPrimary={textPrimary}
-            textSecondary={textSecondary}
             accentColor={accentColor}
             onAttach={handleAdjuntarBaucher}
             onRemove={() => setBaucherFoto(null)}

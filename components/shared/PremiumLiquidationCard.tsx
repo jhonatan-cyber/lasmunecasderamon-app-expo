@@ -1,4 +1,5 @@
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
+import { BorderRadius } from '@/constants/spacing';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
   exportBtn: {
     height: 52,
     paddingHorizontal: 14,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",

@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BorderRadius } from '@/constants/spacing';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { haptic } from '@/utils/haptics';
 import { AnimatedView } from '@/components/ui/AnimatedView';
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     },
     permissionContent: {
         backgroundColor: '#1E1B4B',
-        borderRadius: 32,
+        borderRadius: BorderRadius.full,
         padding: 28,
         alignItems: 'center',
         borderWidth: 1,
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#60A5FA',
         paddingVertical: 15,
         paddingHorizontal: 30,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         width: '100%',
         alignItems: 'center',
     },
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     backButton: {
         width: 44,
         height: 44,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.6)',
         paddingHorizontal: 20,
         paddingVertical: 8,
-        borderRadius: 12,
+        borderRadius: BorderRadius.full,
         borderWidth: 2,
     },
     codigoLabel: {
@@ -389,13 +390,13 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 16,
-        borderRadius: 20,
+        borderRadius: BorderRadius.full,
     },
     cerrarBtn: {
         backgroundColor: 'rgba(255,255,255,0.15)',
         paddingVertical: 14,
         paddingHorizontal: 30,
-        borderRadius: 9999,
+        borderRadius: BorderRadius.full,
         alignItems: 'center',
         marginTop: 10,
     },

@@ -1,4 +1,5 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.full,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  card: { borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.full, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
   indexBadge: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   statusText: { fontSize: 12, fontWeight: '600' },
   ventaBadge: {
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 9999,
+    borderRadius: BorderRadius.full,
   },
   ventaText: { fontSize: 11, fontWeight: '600' },
   cardBody: {},

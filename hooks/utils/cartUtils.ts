@@ -41,12 +41,29 @@ export const normalizeClients = (clientsRes: unknown): Cliente[] => {
 };
 
 /**
+ * Normalizes a raw hostess/anfitriona object from the API into a consistent Anfitriona shape.
+ */
+export const normalizeAnfitriona = (hostess: Record<string, unknown>): Anfitriona => {
+  const rawId = hostess.id_usuario ?? hostess.id ?? 0;
+  return {
+    id: rawId as number | string,
+    id_usuario: hostess.id_usuario as number | string | undefined,
+    nick: (hostess.nick ?? hostess.nombre ?? hostess.name ?? `Anfitriona ${rawId}`) as string,
+    nombre: hostess.nombre as string | undefined,
+    name: hostess.name as string | undefined,
+    foto: hostess.foto as string | undefined,
+    estado_servicio: Number(hostess.estado_servicio ?? hostess.status ?? 0),
+    status: Number(hostess.status ?? hostess.estado_servicio ?? 0),
+  };
+};
+
+/**
  * Normalizes anfitrionas from API response.
  */
 export const normalizeAnfitrionas = (res: unknown): Anfitriona[] => {
-  if (Array.isArray(res)) return res as Anfitriona[];
+  if (Array.isArray(res)) return (res as any[]).map(normalizeAnfitriona);
   const r = res as Partial<ApiListResponse<Anfitriona>> | undefined;
-  return r?.success ? (r.data || []) : [];
+  return r?.success ? (r.data || []).map(h => normalizeAnfitriona(h as any)) : [];
 };
 
 /**

@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     height: 24,
     paddingHorizontal: 0,
     paddingVertical: 0,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
   },
   badgeText: {
     fontWeight: '800',

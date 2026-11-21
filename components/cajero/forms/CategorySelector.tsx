@@ -1,4 +1,5 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { BorderRadius } from '@/constants/spacing';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable,ScrollView,StyleSheet,Text,View } from 'react-native';
@@ -123,8 +124,8 @@ const styles = StyleSheet.create({
     browserContainer: { marginBottom: 20 },
     browserTitle: { fontSize: 13, fontWeight: '900', marginBottom: 15, letterSpacing: 1, textTransform: 'uppercase' },
     categoryScroll: { gap: 12 },
-    categorySmallCard: { minWidth: 120, padding: 12, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-    catIconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+    categorySmallCard: { minWidth: 120, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    catIconBox: { width: 44, height: 44, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
     catSmallName: { fontSize: 12, fontWeight: '800', textAlign: 'center' },
 });
 

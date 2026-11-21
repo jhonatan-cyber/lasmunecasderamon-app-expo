@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from "@/components/shared/VirtualizedList";
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
     borderWidth: 2,
     marginBottom: 10,
   },
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   roomIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: BorderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },

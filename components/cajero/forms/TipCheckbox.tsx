@@ -1,6 +1,7 @@
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { haptic } from "@/utils/haptics";
+import { BorderRadius } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     marginTop: 6,
     marginBottom: 6,
