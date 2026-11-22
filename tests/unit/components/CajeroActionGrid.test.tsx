@@ -126,24 +126,14 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
     expect(servicios?.getAttribute('data-color')).toBe('#F97316');
   });
 
-  it('muestra el contador de solicitudes pendientes en PEDIDOS', () => {
+  it('no repite en PEDIDOS el contador que ya muestra la campana del encabezado', () => {
     vi.mocked(useIsAdmin).mockReturnValue(false);
 
     render(<CajeroActionGrid pendingCount={3} />);
 
     const pedidos = screen.getByText('PEDIDOS').closest('[data-title="PEDIDOS"]');
 
-    expect(pedidos?.getAttribute('data-badge')).toBe('3');
-  });
-
-  it('deja el contador en cero cuando no hay solicitudes pendientes', () => {
-    vi.mocked(useIsAdmin).mockReturnValue(false);
-
-    render(<CajeroActionGrid pendingCount={0} />);
-
-    const pedidos = screen.getByText('PEDIDOS').closest('[data-title="PEDIDOS"]');
-
-    expect(pedidos?.getAttribute('data-badge')).toBe('0');
+    expect(pedidos?.getAttribute('data-badge')).toBeNull();
   });
 
   it('muestra el contador de anticipos por entregar al administrador', () => {

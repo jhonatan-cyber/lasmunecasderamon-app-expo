@@ -53,20 +53,14 @@ export const CajeroActionGrid = ({
   const actions: ActionGridItem[] = acciones.map((action) => ({
     ...action,
     bloqueoPorCaja: bloqueado && !esAdmin && rutaExigeCajaAbierta(action.route),
-    // El contador va en la tarjeta que el rol tiene que resolver: el cajero
-    // atiende solicitudes, el administrador entrega anticipos.
     badge:
-      action.title === "PEDIDOS"
-        ? pendingCount
-        : action.title === "ANTICIPOS"
-          ? pendingAdvances
-          : undefined,
+      action.title === "ANTICIPOS"
+        ? pendingAdvances
+        : undefined,
     badgeLabel:
-      action.title === "PEDIDOS"
-        ? "solicitudes pendientes"
-        : action.title === "ANTICIPOS"
-          ? "solicitudes de anticipo por revisar"
-          : undefined,
+      action.title === "ANTICIPOS"
+        ? "solicitudes de anticipo por revisar"
+        : undefined,
   }));
 
   return <ActionGrid actions={actions} bentoLayout={esAdmin} />;
