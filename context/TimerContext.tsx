@@ -9,7 +9,6 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { AppState } from "react-native";
 import type { Timer, TimerContextType } from '@/context/types';
 
 import { ExpiredTimerModal } from '@/context/components/ExpiredTimerModal';
@@ -28,7 +27,6 @@ interface TimerActionsContextType {
 }
 
 const TimerActionsContext = createContext<TimerActionsContextType | undefined>(undefined);
-const TimerTickContext = createContext(0);
 
 
 
@@ -40,7 +38,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const serverOffsetRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [expiredTimer, setExpiredTimer] = useState<Timer | null>(null);
-  const [timerTick, setTimerTick] = useState(0);
   const user = useAuthStore((state) => state.user);
   const timersRef = useRef<Timer[]>([]);
 
@@ -79,37 +76,6 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     hasActiveTimers,
   });
 
-  // El tick visual vive en un contexto separado: solo las tarjetas que muestran
-  // una cuenta regresiva se actualizan cada segundo. Las pantallas que solo
-  // necesitan saber qué timers existen mantienen referencias estables.
-  useEffect(() => {
-    if (!timers.some((timer) => timer.isActive && !timer.isPaused)) return;
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const stop = () => {
-      if (interval !== undefined) {
-        clearInterval(interval);
-        interval = undefined;
-      }
-    };
-    const start = () => {
-      stop();
-      setTimerTick((tick) => tick + 1);
-      interval = setInterval(() => setTimerTick((tick) => tick + 1), 1000);
-    };
-
-    if (AppState.currentState === "active") start();
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") start();
-      else stop();
-    });
-
-    return () => {
-      stop();
-      subscription.remove();
-    };
-  }, [timers]);
-
   // Initial fetch solo con sesión (antes fetcheaba pre-login y cosechaba 401).
   useEffect(() => {
     if (!user?.id) {
@@ -128,7 +94,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
     setExpiredTimer(null);
   }, []);
 
-  // Los valores de datos solo cambian al sincronizar timers, no en cada tick.
+  // Los valores de datos solo cambian al sincronizar timers.
   const dataValue = useMemo(
     () => ({ timers, serverOffset, loading }),
     [timers, serverOffset, loading],
@@ -146,10 +112,8 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({
           refreshTimers: actionsValue.refreshTimers,
         }}
       >
-        <TimerTickContext.Provider value={timerTick}>
-          {children}
-          <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
-        </TimerTickContext.Provider>
+        {children}
+        <ExpiredTimerModal timer={expiredTimer} onDismiss={handleDismissExpired} />
       </TimerContext.Provider>
     </TimerActionsContext.Provider>
   );
@@ -168,7 +132,7 @@ export const useTimer = () => {
 
 /**
  * Solo acciones (estable): para pantallas/hooks que disparan `refreshTimers`
- * pero no muestran el countdown. No re-renderiza con el tick de 1s.
+ * pero no muestran el countdown.
  */
 export const useTimerActions = () => {
   const context = useContext(TimerActionsContext);
@@ -177,6 +141,3 @@ export const useTimerActions = () => {
   }
   return context;
 };
-
-/** Suscripción de bajo costo para componentes que muestran una cuenta regresiva. */
-export const useTimerTick = () => useContext(TimerTickContext);

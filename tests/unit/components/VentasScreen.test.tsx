@@ -65,7 +65,6 @@ vi.mock('@/context/TimerContext', () => {
   const timerState = { timers: [], serverOffset: 0 };
   return {
     useTimer: () => timerState,
-    useTimerTick: () => 0,
   };
 });
 vi.mock('@/hooks/useIsAdmin', () => ({ useIsAdmin: () => true }));

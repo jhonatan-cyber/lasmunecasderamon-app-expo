@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { AnimatedView } from "@/components/ui/AnimatedView";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius, HitSlop } from "@/constants/spacing";
 import { haptic } from "@/utils/haptics";
 import type { Timer } from "@/context/types";
@@ -12,7 +13,6 @@ import {
   estadoServicio,
   estadoVisualServicio,
 } from "@/utils/servicioEstado";
-import { useTimerTick } from "@/context/TimerContext";
 import { ServiceCardHeader } from "./ServiceCardHeader";
 import { ServiceCardDetails } from "./ServiceCardDetails";
 import { ServiceCardTimer } from "./ServiceCardTimer";
@@ -54,9 +54,14 @@ const ServiceCardContent = ({
   readOnly,
   sinAccionesBarman,
   theme,
-}: ServiceCardProps) => {
-    // AnimatedView ya maneja reducedMotion internamente.
-    const tiempo = tiempoServicio(item, serverOffset);
+  now,
+}: ServiceCardProps & { now: number }) => {
+    // Collapsible state - only for active services
+    const [collapsed, setCollapsed] = useState(false);
+    const isCollapsible = activeTab === "activos";
+
+    // `now` forces re-render every second; tiempoServicio uses it for real-time calculation.
+    const tiempo = tiempoServicio(item, serverOffset, now);
     const visual = estadoVisualServicio(item.estado, {
       excedido: tiempo.estaExcedido,
       critico: tiempo.estaCritico,
@@ -181,53 +186,69 @@ const ServiceCardContent = ({
 
     const accessibilityLabel = `Servicio en ${item.roomName}, estado: ${statusText}`;
 
+    // Toggle collapse/expand when pressing the header area
+    const handleHeaderPress = () => {
+      haptic.tap();
+      if (isCollapsible) {
+        setCollapsed(prev => !prev);
+      } else {
+        onPress && onPress(item);
+      }
+    };
+
     return (
       <AnimatedView
         from={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "timing", duration: 500 }}
       >
-        <Pressable
-          onPress={() => {
-            haptic.tap();
-            onPress && onPress(item);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-          accessibilityHint="Toque para ver detalles del servicio"
-          hitSlop={HitSlop.md}
-          style={({ pressed }) => [
+        <View
+          style={[
             styles.card,
             {
               backgroundColor: theme.card,
               borderColor: bordeColor,
-              opacity: pressed ? 0.85 : 1,
               ...cardNeonGlow,
             },
           ]}
         >
-          <ServiceCardHeader
-            roomName={item.roomName}
-            servicioCode={item.servicioCode}
-            createdAt={item.created_at}
-            statusColor={badge.foreground}
-            statusText={statusText}
-            statusBgColor={badge.background}
-            statusTextColor={badge.foreground}
-            accentColor={theme.accent}
-            textColor={theme.text}
-            textMutedColor={theme.textMuted}
-            formatDateTime={formatDateTime}
-          />
+          {/* Header - pressable to toggle collapse */}
+          <Pressable
+            onPress={handleHeaderPress}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint={isCollapsible ? "Toque para expandir o contraer" : "Toque para ver detalles del servicio"}
+            hitSlop={HitSlop.md}
+            style={({ pressed }) => [
+              styles.headerContainer,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <View style={styles.headerContent}>
+              <ServiceCardHeader
+                roomName={item.roomName}
+                servicioCode={item.servicioCode}
+                createdAt={item.created_at}
+                statusColor={badge.foreground}
+                statusText={statusText}
+                statusBgColor={badge.background}
+                statusTextColor={badge.foreground}
+                accentColor={theme.accent}
+                textColor={theme.text}
+                textMutedColor={theme.textMuted}
+                formatDateTime={formatDateTime}
+              />
+              {isCollapsible && (
+                <Ionicons
+                  name={collapsed ? "chevron-forward" : "chevron-down"}
+                  size={20}
+                  color={theme.textMuted}
+                />
+              )}
+            </View>
+          </Pressable>
 
-          <ServiceCardDetails
-            anfitrionas={item.anfitrionas}
-            clienteNombre={item.clienteNombre}
-            waiterName={item.waiter_name}
-            textColor={theme.text}
-            textMutedColor={theme.textMuted}
-          />
-
+          {/* Timer - always visible in collapsed and expanded state for active tab */}
           <ServiceCardTimer
             visible={activeTab === "activos" && visual !== "anulado"}
             etiqueta={etiquetaReloj}
@@ -242,44 +263,77 @@ const ServiceCardContent = ({
             accessibilityLabel={`${etiquetaReloj.toLowerCase()} ${valorReloj} de ${safeNumber(item.duration)} minutos`}
           />
 
-          <ServiceCardFinance
-            metodoPago={item.metodo_pago}
-            total={total}
-            pagoEstado={item.pago_estado}
-            isFinalizadosTab={activeTab === "finalizados"}
-            textColor={theme.text}
-            textMutedColor={theme.textMuted}
-            successColor={theme.success}
-            dangerColor={theme.danger}
-          />
+          {/* Expanded content - hidden when collapsed */}
+          {!collapsed && (
+            <>
+              <ServiceCardDetails
+                anfitrionas={item.anfitrionas}
+                clienteNombre={item.clienteNombre}
+                waiterName={item.waiter_name}
+                textColor={theme.text}
+                textMutedColor={theme.textMuted}
+              />
 
-          {!readOnly && !sinAccionesBarman && activeTab === "activos" && (
-            <ServiceCardActions
-              accentColor={theme.accent}
-              accentTextColor={theme.accentText || "#FFFFFF"}
-              cardBg={theme.card}
-              textColor={theme.text}
-              textMutedColor={theme.textMuted}
-              borderColor={theme.border}
-              menuItems={menuItems}
-              onFinalizar={() => onFinalizar?.(item)}
-            />
+              <ServiceCardFinance
+                metodoPago={item.metodo_pago}
+                total={total}
+                isFinalizadosTab={activeTab === "finalizados"}
+                textColor={theme.text}
+                textMutedColor={theme.textMuted}
+              />
+
+              {!readOnly && !sinAccionesBarman && activeTab === "activos" && (
+                <ServiceCardActions
+                  accentColor={theme.accent}
+                  accentTextColor={theme.accentText || "#FFFFFF"}
+                  cardBg={theme.card}
+                  textColor={theme.text}
+                  textMutedColor={theme.textMuted}
+                  borderColor={theme.border}
+                  menuItems={menuItems}
+                  onFinalizar={() => onFinalizar?.(item)}
+                />
+              )}
+            </>
           )}
-        </Pressable>
+        </View>
       </AnimatedView>
     );
 };
 
-// Solo las tarjetas activas necesitan el tick por segundo; las finalizadas y
-// pausadas se quedan estáticas para no re-renderizar la lista completa.
-const TickingServiceCard = (props: ServiceCardProps) => {
-  useTimerTick();
-  return <ServiceCardContent {...props} />;
+// Local interval for real-time timer display in active services.
+// memo() blocks context-based ticks, so each card manages its own interval.
+const useNowTick = (active: boolean) => {
+  const [now, setNow] = useState(Date.now);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (active) {
+      intervalRef.current = setInterval(() => {
+        setNow(Date.now);
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [active]);
+
+  return now;
 };
 
 export const ServiceCard = memo((props: ServiceCardProps) => {
   const needsTick = props.activeTab === "activos" && props.item.estado !== 3;
-  return needsTick ? <TickingServiceCard {...props} /> : <ServiceCardContent {...props} />;
+  const now = useNowTick(needsTick);
+  return <ServiceCardContent {...props} now={now} />;
 });
 
 ServiceCard.displayName = "ServiceCard";
@@ -292,5 +346,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
     marginHorizontal: 8,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerContent: {
+    flex: 1,
   },
 });

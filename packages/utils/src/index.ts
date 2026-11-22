@@ -66,15 +66,17 @@ export const parseDateSafe = (dateStr: string | number | Date | null | undefined
 
 export const calculateRemainingTime = (
   timer: { startTime: Date | string; duration: number; isPaused: boolean; remainingTime: number },
-  serverOffset: number = 0
+  serverOffset: number = 0,
+  /** Instante de referencia (ms). Explícito para que quien anima la cuenta pueda pasarlo. */
+  now: number = Date.now()
 ): number => {
   if (timer.isPaused) {
     return timer.remainingTime;
   }
 
   const start = typeof timer.startTime === 'string' ? parseDateSafe(timer.startTime) : timer.startTime;
-  const now = new Date(Date.now() + serverOffset);
-  const diffMs = now.getTime() - start.getTime();
+  const ahora = new Date(now + serverOffset);
+  const diffMs = ahora.getTime() - start.getTime();
   const elapsedSeconds = Math.floor(diffMs / 1000);
   const totalDurationSeconds = (Number(timer.duration) || 0) * 60;
   const remaining = totalDurationSeconds - elapsedSeconds;

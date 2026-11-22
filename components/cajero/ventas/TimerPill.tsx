@@ -1,11 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 import type { Timer } from "@/context/types";
-import { useTimerTick } from "@/context/TimerContext";
 
 type TimerPillProps = {
   timer: Timer;
@@ -22,8 +21,17 @@ export function TimerPill({
   textSecondary,
   textPrimary,
 }: TimerPillProps) {
-  useTimerTick();
-  const remaining = calculateRemainingTime(timer, serverOffset);
+  // El instante entra como argumento del cálculo: React Compiler cachea las
+  // llamadas por sus argumentos, así que sin esto el reloj no avanza.
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (timer.isPaused) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [timer.isPaused]);
+
+  const remaining = calculateRemainingTime(timer, serverOffset, now);
 
   const fmt = (secs: number) => {
     const absSecs = isNaN(secs) ? 0 : Math.max(0, Math.floor(Math.abs(secs)));

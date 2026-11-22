@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
@@ -14,7 +14,6 @@ import {
 } from '@/utils/servicioEstado';
 import { FontSize, MIN_TOUCH_TARGET, BorderRadius, HitSlop } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
-import { ServiceCardTimer } from './ServiceCardTimer';
 
 export interface DetailAction {
     key: string;
@@ -54,23 +53,36 @@ export function ServiceDetailModal({
     onFinalizar,
     serverOffset = 0,
 }: DetailModalProps) {
-    const esActivo = Number(service?.estado) === 2 || Number(service?.estado) === 3;
+    // El tiempo se calcula con Date.now(); sin un tick propio el modal abierto
+    // en un servicio en curso se queda con el valor del momento en que se abrió.
+    // El reloj se recalcula desde este instante: React Compiler cachea las
+    // llamadas por sus argumentos, así que sin un `now` propio el modal se
+    // queda con el tiempo del momento en que se abrió.
+    const [now, setNow] = useState(() => Date.now());
+    const correReloj =
+        visible &&
+        Boolean(service?.startTime) &&
+        !service?.isPaused &&
+        ![0, 1, 3, 4].includes(Number(service?.estado));
 
-    const tiempo = useMemo(
-        () =>
-            service?.startTime
-                ? tiempoServicio(
-                    {
-                        startTime: service.startTime,
-                        duration: Number(service.duration) || 0,
-                        isPaused: Boolean(service.isPaused),
-                        remainingTime: Number(service.remainingTime) || 0,
-                    },
-                    serverOffset,
-                )
-                : null,
-        [service, serverOffset],
-    );
+    useEffect(() => {
+        if (!correReloj) return;
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, [correReloj]);
+
+    const tiempo = service?.startTime
+        ? tiempoServicio(
+            {
+                startTime: service.startTime,
+                duration: Number(service.duration) || 0,
+                isPaused: Boolean(service.isPaused),
+                remainingTime: Number(service.remainingTime) || 0,
+            },
+            serverOffset,
+            now,
+        )
+        : null;
 
     const visual = estadoVisualServicio(service?.estado, {
         excedido: tiempo?.estaExcedido ?? false,
@@ -83,15 +95,6 @@ export function ServiceDetailModal({
     if (visual === 'excedido') estadoTexto = 'EXCEDIDO';
     else if (visual === 'critico') estadoTexto = 'POR VENCER';
     else if (visual === 'pausado') estadoTexto = 'PAUSADO';
-
-    const acentoReloj =
-        visual === 'excedido' || visual === 'anulado'
-            ? theme.danger
-            : visual === 'critico'
-                ? theme.warning
-                : visual === 'pausado'
-                    ? theme.textMuted
-                    : theme.accent;
 
     // Glow neón en modo oscuro con el accentColor
     const modalNeonGlow = theme.isDark ? {
@@ -147,47 +150,45 @@ export function ServiceDetailModal({
                         </Pressable>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        {esActivo && tiempo && (
-                            <ServiceCardTimer
-                                visible
-                                etiqueta={
-                                    visual === 'pausado'
-                                        ? 'PAUSADO'
-                                        : tiempo.estaExcedido
-                                            ? 'TIEMPO EXCEDIDO'
-                                            : 'TIEMPO RESTANTE'
-                                }
-                                valor={
-                                    visual === 'pausado' || !tiempo.estaExcedido
-                                        ? formatTime(tiempo.restante)
-                                        : `+${formatTime(tiempo.excedidoSegundos)}`
-                                }
-                                totalMinutos={safeNumber(service?.duration)}
-                                progreso={tiempo.progreso}
-                                icono={
-                                    visual === 'pausado'
-                                        ? 'pause'
-                                        : tiempo.estaExcedido
-                                            ? 'alert-circle'
-                                            : 'time'
-                                }
-                                acento={acentoReloj}
-                                fondo={
-                                    visual === 'excedido'
-                                        ? `${theme.danger}14`
-                                        : visual === 'critico'
-                                            ? `${theme.warning}14`
-                                            : visual === 'pausado'
-                                                ? theme.isDark
-                                                    ? 'rgba(156,163,175,0.14)'
-                                                    : 'rgba(156,163,175,0.12)'
-                                                : theme.bg
-                                }
-                                barraFondo={theme.isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)'}
-                                textMutedColor={theme.textMuted}
-                                accessibilityLabel={`${visual === 'pausado' ? 'Servicio pausado' : tiempo.estaExcedido ? 'Servicio excedido' : 'Tiempo restante'} de ${safeNumber(service?.duration)} minutos`}
-                            />
+                    <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
+                        {/* Timer section - no mostrar en servicios finalizados */}
+                        {tiempo && visual !== 'finalizado' && (
+                            <View style={[styles.timerSection, { backgroundColor: theme.bg, borderRadius: BorderRadius.card, borderColor: theme.border }]}>
+                                <View style={styles.timerRow}>
+                                    <Ionicons
+                                        name={visual === 'pausado' ? 'pause' : visual === 'excedido' ? 'alert-circle' : 'time'}
+                                        size={22}
+                                        color={visual === 'excedido' ? theme.danger : visual === 'critico' ? theme.warning : visual === 'pausado' ? theme.textMuted : theme.accent}
+                                    />
+                                    <View style={styles.timerInfo}>
+                                        <Text style={[styles.timerLabel, { color: theme.textMuted }]}>
+                                            {visual === 'pausado' ? 'PAUSADO' : tiempo.estaExcedido ? 'TIEMPO EXCEDIDO' : 'TIEMPO RESTANTE'}
+                                        </Text>
+                                        <Text style={[
+                                            styles.timerValue,
+                                            {
+                                                color: visual === 'excedido' ? theme.danger : visual === 'critico' ? theme.warning : visual === 'pausado' ? theme.textMuted : theme.accent,
+                                            }
+                                        ]}>
+                                            {visual === 'pausado' || !tiempo.estaExcedido
+                                                ? formatTime(tiempo.restante)
+                                                : `+${formatTime(tiempo.excedidoSegundos)}`}
+                                        </Text>
+                                    </View>
+                                    <Text style={[styles.timerTotal, { color: theme.textMuted }]}>
+                                        de {safeNumber(service?.duration)} min
+                                    </Text>
+                                </View>
+                                <View style={[styles.progressTrack, { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)' }]}>
+                                    <View style={[
+                                        styles.progressFill,
+                                        {
+                                            width: `${Math.round(tiempo.progreso * 100)}%`,
+                                            backgroundColor: visual === 'excedido' ? theme.danger : visual === 'critico' ? theme.warning : visual === 'pausado' ? theme.textMuted : theme.accent,
+                                        }
+                                    ]} />
+                                </View>
+                            </View>
                         )}
 
                         <View style={styles.detailsGrid}>
@@ -276,7 +277,61 @@ export function ServiceDetailModal({
                             </View>
                         </View>
 
-                        <ServiceSummarySection service={service} theme={theme} neonGlow={modalNeonGlow} />
+                        {/* Financial summary section */}
+                        <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border, borderRadius: BorderRadius.card }]}>
+                            <View style={styles.summaryRow}>
+                                <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>
+                                    Precio Servicio
+                                </Text>
+                                <Text style={[styles.summaryVal, { color: theme.text }]}>
+                                    ${safeNumber(service?.precio_servicio).toLocaleString()}
+                                </Text>
+                            </View>
+                            <View style={styles.summaryRow}>
+                                <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>
+                                    Precio Habitación
+                                </Text>
+                                <Text style={[styles.summaryVal, { color: theme.text }]}>
+                                    ${safeNumber(service?.precio_habitacion).toLocaleString()}
+                                </Text>
+                            </View>
+                            {service?.iva > 0 && (
+                                <View style={styles.summaryRow}>
+                                    <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>
+                                        IVA (Tarjeta)
+                                    </Text>
+                                    <Text style={[styles.summaryVal, { color: theme.text }]}>
+                                        ${safeNumber(service?.iva).toLocaleString()}
+                                    </Text>
+                                </View>
+                            )}
+                            <View style={[styles.totalRow, { borderTopColor: theme.border }]}>
+                                <Text style={[styles.totalLabel, { color: theme.text }]}>TOTAL FINAL</Text>
+                                <Text style={[styles.totalValue, { color: theme.accent }]}>
+                                    ${safeNumber(service?.total).toLocaleString()}
+                                </Text>
+                            </View>
+                            {service?.comision_individual > 0 && (
+                                <>
+                                    <View style={[styles.summaryRow, { marginTop: 12, paddingTop: 12, borderTopColor: theme.border }]}>
+                                        <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>
+                                            {service?.habitacion_comision > 0 ? 'Comisión Habitación' : 'Total Comisión'}
+                                        </Text>
+                                        <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
+                                            ${safeNumber(service?.total_comision ?? (safeNumber(service?.comision_individual) * safeNumber(service?.total_usuarios))).toLocaleString()}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.summaryRow}>
+                                        <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: FontSize.xs }]}>
+                                            Comisión p/Anfitriona ({safeNumber(service?.total_usuarios)})
+                                        </Text>
+                                        <Text style={[styles.summaryVal, { color: theme.text, fontSize: FontSize.sm }]}>
+                                            ${safeNumber(service?.comision_individual).toLocaleString()} c/u
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
+                        </View>
 
                         {acciones.length > 0 && (
                             <View style={[styles.actionsList, { borderColor: theme.border, borderRadius: BorderRadius.card }]}>
@@ -306,7 +361,10 @@ export function ServiceDetailModal({
                                 ))}
                             </View>
                         )}
+                    </ScrollView>
 
+                    {/* Footer con botones fijos */}
+                    <View style={styles.footer}>
                         {onFinalizar ? (
                             <>
                                 <Pressable
@@ -367,7 +425,7 @@ export function ServiceDetailModal({
                                 </Text>
                             </Pressable>
                         )}
-                    </ScrollView>
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -398,95 +456,9 @@ function UserInfoRow({ label, name, foto, icon, theme }: {
     );
 }
 
-function ServiceSummarySection({ service, theme, neonGlow }: { service: any; theme: any; neonGlow?: any }) {
-    const totalUsuarios = safeNumber(service?.total_usuarios);
-
-    return (
-        <View style={[styles.summarySection, { backgroundColor: theme.bg, borderColor: theme.border }, neonGlow]}>
-            <SummaryRow label="Precio Servicio" value={`${(safeNumber(service?.precio_servicio) * totalUsuarios).toLocaleString()}`} theme={theme} />
-            <SummaryRow label="Precio Habitación" value={`${safeNumber(service?.precio_habitacion).toLocaleString()}`} theme={theme} />
-            {service?.iva > 0 && <SummaryRow label="IVA (Tarjeta)" value={`${safeNumber(service?.iva).toLocaleString()}`} theme={theme} />}
-
-            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
-                <Text style={[styles.totalLabelFinal, { color: theme.text }]}>TOTAL FINAL</Text>
-                <Text style={[styles.totalValFinal, { color: theme.accent }]}>
-                    ${safeNumber(service?.total).toLocaleString()}
-                </Text>
-            </View>
-
-            {service?.habitacion_comision > 0 ? (
-                <CommissionSectionWithRoom service={service} theme={theme} totalUsuarios={totalUsuarios} />
-            ) : (
-                <CommissionSection service={service} theme={theme} totalUsuarios={totalUsuarios} />
-            )}
-        </View>
-    );
-}
-
-function SummaryRow({ label, value, theme }: { label: string; value: string; theme: any }) {
-    return (
-        <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>{label}</Text>
-            <Text style={[styles.summaryVal, { color: theme.text }]}>${value}</Text>
-        </View>
-    );
-}
-
-function CommissionSectionWithRoom({ service, theme, totalUsuarios }: { service: any; theme: any; totalUsuarios: number }) {
-    return (
-        <>
-            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
-                <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Comisión Habitación</Text>
-                <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
-                    ${safeNumber(service?.total_comision).toLocaleString()}
-                </Text>
-            </View>
-            <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: FontSize.xs }]}>
-                    Comisión p/Anfitriona ({totalUsuarios})
-                </Text>
-                <Text style={[styles.summaryVal, { color: theme.text, fontSize: FontSize.sm }]}>
-                    ${safeNumber(service?.comision_individual).toLocaleString()} c/u
-                </Text>
-            </View>
-            <InfoBanner text={`* La comisión de habitación se divide entre las ${totalUsuarios} anfitrionas.`} theme={theme} />
-        </>
-    );
-}
-
-function CommissionSection({ service, theme, totalUsuarios }: { service: any; theme: any; totalUsuarios: number }) {
-    return (
-        <>
-            <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
-                <Text style={[styles.summaryLabel, { color: theme.success, fontWeight: 'bold' }]}>Total Comisión</Text>
-                <Text style={[styles.summaryVal, { color: theme.success, fontWeight: 'bold' }]}>
-                    ${safeNumber(service?.total_comision ?? (safeNumber(service?.comision_individual) * totalUsuarios)).toLocaleString()}
-                </Text>
-            </View>
-            <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: theme.textMuted, fontSize: FontSize.xs }]}>
-                    Comisión p/Anfitriona ({totalUsuarios})
-                </Text>
-                <Text style={[styles.summaryVal, { color: theme.text, fontSize: FontSize.sm }]}>
-                    ${safeNumber(service?.comision_individual).toLocaleString()} c/u
-                </Text>
-            </View>
-            <InfoBanner text="* La comisión total se divide entre las anfitrionas que participaron en el servicio." theme={theme} />
-        </>
-    );
-}
-
-function InfoBanner({ text, theme }: { text: string; theme: any }) {
-    return (
-        <View style={[styles.infoBannerBox, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '30', borderRadius: BorderRadius.card }]}>
-            <Text style={[styles.infoBannerText, { color: theme.accent }]}>{text}</Text>
-        </View>
-    );
-}
-
 const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-    detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl, padding: 24, maxHeight: '90%', borderTopWidth: 1, overflow: 'hidden' },
+    detailModal: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', borderRadius: BorderRadius.xxl, padding: 24, maxHeight: '90%', borderWidth: 1, overflow: 'hidden' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12 },
     headerInfo: { flex: 1 },
     headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },
@@ -509,15 +481,6 @@ const styles = StyleSheet.create({
     userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
     avatarSquare: { width: 32, height: 32, backgroundColor: 'rgba(156, 163, 175, 0.2)' },
     avatarPlaceholder: { justifyContent: 'center', alignItems: 'center' },
-    summarySection: { padding: 24, borderRadius: BorderRadius.xxl, borderWidth: 1, marginBottom: 24, overflow: 'hidden' },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
-    summaryLabel: { fontSize: FontSize.md, fontWeight: '600' },
-    summaryVal: { fontSize: FontSize.sm, fontWeight: '700' },
-    totalRow: { marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-    totalLabelFinal: { fontSize: FontSize.sm, fontWeight: '900' },
-    totalValFinal: { fontSize: FontSize.xl, fontWeight: '900' },
-    infoBannerBox: { marginTop: 16, padding: 12, borderWidth: 1 },
-    infoBannerText: { fontSize: FontSize.xs, fontWeight: '700', textAlign: 'center' },
     actionsList: { borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
     actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
     actionLabel: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
@@ -525,4 +488,21 @@ const styles = StyleSheet.create({
     modalCloseBtnText: { fontSize: FontSize.lg, fontWeight: '900' },
     secondaryBtn: { minHeight: MIN_TOUCH_TARGET, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
     secondaryBtnText: { fontSize: FontSize.md, fontWeight: '700' },
+    scrollContent: { paddingBottom: 20 },
+    footer: { paddingBottom: 24, gap: 12 },
+    timerSection: { padding: 14, marginBottom: 14, borderWidth: 1, gap: 10 },
+    timerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    timerInfo: { flex: 1 },
+    timerLabel: { fontSize: FontSize.xxs, fontWeight: '800', letterSpacing: 0.6 },
+    timerValue: { fontSize: FontSize.xl, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+    timerTotal: { fontSize: FontSize.xs, fontWeight: '700' },
+    progressTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+    progressFill: { height: 6, borderRadius: 3 },
+    summarySection: { padding: 16, marginBottom: 14, borderWidth: 1 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
+    summaryLabel: { fontSize: FontSize.md, fontWeight: '600' },
+    summaryVal: { fontSize: FontSize.sm, fontWeight: '700' },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+    totalLabel: { fontSize: FontSize.sm, fontWeight: '900' },
+    totalValue: { fontSize: FontSize.xl, fontWeight: '900' },
 });

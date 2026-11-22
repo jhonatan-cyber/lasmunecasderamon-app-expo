@@ -6,7 +6,6 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { showToast } from '@/utils/toast-lazy';
@@ -30,7 +29,6 @@ export default function AdministrativoScreen() {
   const { accentColor, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
-  useWindowDimensions();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

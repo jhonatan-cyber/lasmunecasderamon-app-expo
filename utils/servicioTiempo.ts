@@ -19,13 +19,18 @@ export interface TiempoServicio {
  * `calculateRemainingTime` recorta en 0, así que por sí solo no permite saber
  * cuánto se pasó el servicio. Este helper conserva ese excedente y el avance
  * para la barra de progreso de la tarjeta.
+ *
+ * `now` se recibe explícito (en vez de leer `Date.now()` adentro) para que
+ * React Compiler no pueda cachear el resultado: la caché se arma con los
+ * argumentos, así que un `now` que cambia cada segundo refresca el reloj.
  */
 export function tiempoServicio(
   timer: { startTime: Date | string; duration: number; isPaused: boolean; remainingTime: number },
   serverOffset = 0,
+  now = Date.now(),
 ): TiempoServicio {
   const totalSegundos = Math.max(0, Math.round(Number(timer.duration) || 0) * 60);
-  const restante = calculateRemainingTime(timer, serverOffset);
+  const restante = calculateRemainingTime(timer, serverOffset, now);
   const estaPausado = Boolean(timer.isPaused);
 
   let transcurrido = Math.max(0, totalSegundos - restante);
@@ -33,7 +38,7 @@ export function tiempoServicio(
 
   if (!estaPausado) {
     const start = typeof timer.startTime === "string" ? parseDateSafe(timer.startTime) : timer.startTime;
-    const transcurridoReal = Math.floor((Date.now() + serverOffset - start.getTime()) / 1000);
+    const transcurridoReal = Math.floor((now + serverOffset - start.getTime()) / 1000);
     transcurrido = Math.min(totalSegundos, Math.max(0, transcurridoReal));
     excedidoSegundos = Math.max(0, transcurridoReal - totalSegundos);
   }

@@ -82,6 +82,15 @@ describe('tiempoServicio', () => {
     expect(tiempo.transcurrido).toBe(60);
   });
 
+  it('usa el instante explícito recibido (reloj animado por React Compiler)', () => {
+    // React Compiler cachea las llamadas por sus argumentos: si `now` no entra
+    // en el cálculo, la tarjeta re-renderiza pero el reloj queda congelado.
+    const tiempo = tiempoServicio(timer(), 0, AHORA.getTime() + 60 * 1000);
+
+    expect(tiempo.restante).toBe(1140);
+    expect(tiempo.transcurrido).toBe(660);
+  });
+
   it('acepta startTime en texto y duración cero', () => {
     const tiempo = tiempoServicio({
       startTime: AHORA.toISOString(),
