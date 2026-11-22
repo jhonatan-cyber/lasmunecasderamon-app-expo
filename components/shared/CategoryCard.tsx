@@ -1,12 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useRenderCount } from '@/hooks/useRenderCount';
@@ -103,14 +98,6 @@ const CategoryCardComponent = ({ item, index, onPress, compact = false }: Catego
     // Alterna el color del icono para que la rejilla no se vea plana.
     const tone = index % 2 === 0 ? accentColor : '#10B981';
 
-    // Animación de entrada escalonada
-    const scale = useSharedValue(0.95);
-    const opacity = useSharedValue(0);
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-        opacity: opacity.value,
-    }));
-
     // Glow neón en modo oscuro con el color alternado
     const neonGlow = isDark ? {
         shadowColor: tone,
@@ -120,20 +107,15 @@ const CategoryCardComponent = ({ item, index, onPress, compact = false }: Catego
         elevation: 3,
     } : {};
 
-    React.useEffect(() => {
-        if (reducedMotion) {
-            // Sin animación cuando el usuario prefiere movimiento reducido.
-            scale.value = 1;
-            opacity.value = 1;
-            return;
-        }
-        const delay = index * 80;
-        scale.value = withDelay(delay, withTiming(1, { duration: 400 }));
-        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
-    }, [index, reducedMotion]);
+    // Animación de entrada escalonada. Se declara con `entering` en lugar de
+    // escribir shared values desde un efecto: así lo entiende el React Compiler
+    // y no hace falta listar dependencias a mano.
+    const entering = reducedMotion
+        ? undefined
+        : FadeIn.delay(index * 80).duration(400);
 
     return (
-        <Animated.View style={animatedStyle}>
+        <Animated.View entering={entering}>
             <Pressable
                 style={({ pressed }) => [
                     styles.categoryCard,
