@@ -4,10 +4,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
-    withDelay,
     withRepeat,
     withSequence,
-    withSpring,
     withTiming,
 } from 'react-native-reanimated';
 import { AnimatedView } from '@/components/ui/AnimatedView';

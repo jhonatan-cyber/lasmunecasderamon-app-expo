@@ -4,13 +4,10 @@ import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { eventBus } from "@/utils/eventBus";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   StyleSheet,
-  TextInput,
   View
 } from "react-native";
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
@@ -27,6 +24,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { useTimer } from '@/context/TimerContext';
 import type { Timer } from '@/context/types';
+import { useCajaAbiertaStore } from '@/store/cajaAbiertaStore';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -335,10 +333,13 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         payload: true,
       });
       try {
+        // El cajero ve solo los servicios de la caja actual.
+        const cajaId = esCajero ? useCajaAbiertaStore.getState().cajaInfo?.id_caja ?? null : null;
         const res = await serviciosService.listar({
           all: true,
           limit: SERVICIOS_POR_PAGINA,
           page,
+          ...(cajaId ? { caja_id: String(cajaId) } : {}),
         });
         if (!res.success) {
           if (isManual) {
@@ -363,7 +364,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         dispatch({ type: 'SET_LOADING_MORE_FINALIZADOS', payload: false });
       }
     },
-    [],
+    [esCajero],
   );
 
   const fetchFinalizados = useCallback(

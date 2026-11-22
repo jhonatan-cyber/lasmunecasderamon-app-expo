@@ -12,7 +12,6 @@ import Animated, {
     withDelay,
     withSequence,
     withRepeat,
-    withSpring,
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,7 +23,6 @@ import { IconButton } from '@/components/ui/IconButton';
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
 import { useAppearanceStore } from '@/store/appearanceStore';
-import { withAlpha } from '@/utils/color';
 
 export interface PremiumHeaderTab {
     id: string;

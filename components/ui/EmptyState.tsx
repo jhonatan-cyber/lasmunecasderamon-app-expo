@@ -12,10 +12,9 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { FontSize, BorderRadius } from '@/constants/spacing';
-import { accentTextColor, withAlpha } from '@/utils/color';
+import { accentTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
-import { useMinTouchTarget } from '@/hooks/useMinTouchTarget';
 
 export interface EmptyStateProps {
     icon?: keyof typeof Ionicons.glyphMap;

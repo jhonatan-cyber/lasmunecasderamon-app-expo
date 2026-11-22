@@ -5,7 +5,6 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming,
 } from 'react-native-reanimated';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -13,7 +12,6 @@ import { FontSize, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 import { IconButton } from '@/components/ui/IconButton';
-import { withAlpha } from '@/utils/color';
 
 export interface SearchBarProps {
     placeholder?: string;
@@ -102,7 +100,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }, [onChangeText, onClear]);
 
     return (
-        <View style={[style]}>
+        <View style={[style]} onStartShouldSetResponder={() => false}>
             <View style={[
                 styles.container,
                 {
@@ -111,8 +109,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     borderWidth: isFocused ? 1.5 : 1,
                     ...neonGlow,
                 },
-            ]}>
-                <Animated.View style={iconAnimatedStyle}>
+            ]} onStartShouldSetResponder={() => false}>
+                <Animated.View style={iconAnimatedStyle} pointerEvents="none">
                     <Ionicons
                         name="search"
                         size={FontSize.md}
@@ -132,6 +130,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     accessibilityLabel="Barra de búsqueda"
                     accessibilityHint="Escriba para filtrar resultados"
                     returnKeyType="search"
+                    keyboardType="default"
+                    textContentType="none"
+                    importantForAutofill="no"
                 />
                 {internalText.length > 0 && (
                     <IconButton

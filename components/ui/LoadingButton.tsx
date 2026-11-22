@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, PressableProps, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, PressableProps, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
 import { haptic } from '@/utils/haptics';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { useAccentColor } from '@/hooks/useAccentColor';

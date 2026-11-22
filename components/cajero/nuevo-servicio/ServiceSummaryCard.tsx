@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, LayoutAnimation, Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius } from '@/constants/spacing';
 import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
 

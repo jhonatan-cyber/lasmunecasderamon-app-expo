@@ -1,14 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Text, View } from 'react-native';
 import { Circle, Svg } from 'react-native-svg';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withTiming,
-} from 'react-native-reanimated';
 import { AnimatedView } from '@/components/ui/AnimatedView';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export interface DonutChartProps {
     percent: number;
@@ -20,29 +13,11 @@ export interface DonutChartProps {
 }
 
 export const DonutChart = ({ percent, color, size = 140, strokeWidth = 10, label = "", isDark = true }: DonutChartProps) => {
-    const reducedMotion = useReducedMotion();
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (percent / 100) * circumference;
     const textPrimary = isDark ? '#FFFFFF' : '#1E293B';
     const textSecondary = isDark ? '#94A3B8' : '#64748B';
-
-    // Animación de draw del círculo
-    const drawProgress = useSharedValue(0);
-    useEffect(() => {
-        if (reducedMotion) {
-            // Sin animación cuando el usuario prefiere movimiento reducido.
-            drawProgress.value = percent;
-            return;
-        }
-        drawProgress.value = withDelay(300, withTiming(percent, { duration: 1000 }));
-    }, [percent, drawProgress, reducedMotion]);
-
-    const currentDashoffset = useAnimatedStyle(() => {
-        const currentPercent = drawProgress.value;
-        const currentOffset = circumference - (currentPercent / 100) * circumference;
-        return { opacity: 1 };
-    });
 
     // Glow neón en modo oscuro alrededor del anillo
     const neonGlow = isDark ? {
