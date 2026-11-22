@@ -76,7 +76,15 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
         );
         const isMaxReached =
           max !== undefined && selectedIds.length >= max;
-        const isOccupied = Number(item.estado_servicio) === 1;
+        // Si el backend no informa el estado, se deja seleccionar (el backend
+        // valida la asignación); solo un 1 explícito marca la anfitriona como ocupada.
+        // Las anfitrionas listadas en allowedOccupiedIds están ocupadas por el
+        // servicio que se está editando, así que siguen siendo seleccionables.
+        const isAllowedOccupied = allowedOccupiedIds.some(
+          (id) => String(id) === String(rawId),
+        );
+        const isOccupied =
+          Number(item.estado_servicio) === 1 && !isAllowedOccupied;
         const isDisabled =
           (isMaxReached && !isSelected) || isOccupied;
 
