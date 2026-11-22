@@ -7,6 +7,11 @@ const h = vi.hoisted(() => ({
   rowRenders: {} as Record<string, number>,
 }));
 
+type PressableRenderProps = RenderProps & {
+  // Pressable de RN admite children como función ({ pressed }) => nodo.
+  children?: ReactNode | ((state: { pressed: boolean }) => ReactNode);
+};
+
 type RenderProps = {
   children?: ReactNode;
   style?: unknown;
@@ -17,28 +22,94 @@ type RenderProps = {
   value?: string;
 };
 
-vi.mock('react-native', () => ({
-  View: ({ children }: RenderProps) => <div>{children}</div>,
-  ScrollView: ({ children }: RenderProps) => <div>{children}</div>,
-  Text: ({ children }: RenderProps) => <span>{children}</span>,
-  Pressable: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,
-  TouchableOpacity: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,
-  RefreshControl: ({ onRefresh }: RenderProps) => <button onClick={onRefresh}>Actualizar</button>,
-  Dimensions: { get: () => ({ width: 400, height: 800 }) },
-  StyleSheet: { create: (styles: unknown) => styles },
-  FlatList: ({ data, renderItem, keyExtractor, ListEmptyComponent }: any) => (
-    <div>
-      {data.length > 0
-        ? data.map((item: any, index: number) => (
-            <Fragment key={keyExtractor(item)}>{renderItem({ item, index })}</Fragment>
-          ))
-        : typeof ListEmptyComponent === 'function'
-          ? <ListEmptyComponent />
-          : ListEmptyComponent}
-    </div>
-  ),
-}));
+vi.mock('react-native', () => {
+  // Valores animados de RN: basta con que se puedan crear, interpolar y
+  // arrancar para que AppModal/PremiumAlert/NotificationBanner rendericen.
+  class AnimatedValue {
+    value: number;
+    constructor(value: number) {
+      this.value = value;
+    }
+    setValue(value: number) {
+      this.value = value;
+    }
+    interpolate() {
+      return this;
+    }
+    addListener() {
+      return 'id';
+    }
+    removeListener() {}
+    stopAnimation() {}
+  }
+  const animation = () => ({
+    start: (callback?: (result: { finished: boolean }) => void) =>
+      callback?.({ finished: true }),
+    stop: () => {},
+    reset: () => {},
+  });
+  const Animated = {
+    Value: AnimatedValue,
+    View: ({ children }: RenderProps) => <div>{children}</div>,
+    Text: ({ children }: RenderProps) => <span>{children}</span>,
+    timing: animation,
+    spring: animation,
+    decay: animation,
+    sequence: animation,
+    parallel: animation,
+    stagger: animation,
+    loop: animation,
+    event: () => () => {},
+  };
+
+  return {
+    ActivityIndicator: () => null,
+    Alert: { alert: vi.fn() },
+    AccessibilityInfo: {
+      isReduceMotionEnabled: () => Promise.resolve(false),
+      addEventListener: () => ({ remove: () => {} }),
+    },
+    Animated,
+    Appearance: {
+      getColorScheme: () => 'light',
+      addChangeListener: () => ({ remove: () => {} }),
+    },
+    useColorScheme: () => 'light',
+    useWindowDimensions: () => ({ width: 400, height: 800, fontScale: 1 }),
+    Modal: ({ children, visible = true }: RenderProps & { visible?: boolean }) =>
+      visible ? <div>{children}</div> : null,
+    KeyboardAvoidingView: ({ children }: RenderProps) => <div>{children}</div>,
+    PanResponder: { create: () => ({ panHandlers: {} }) },
+    Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
+    View: ({ children }: RenderProps) => <div>{children}</div>,
+    ScrollView: ({ children }: RenderProps) => <div>{children}</div>,
+    Text: ({ children }: RenderProps) => <span>{children}</span>,
+    Pressable: ({ children, onPress }: PressableRenderProps) => (
+      <button onClick={onPress}>
+        {typeof children === 'function' ? children({ pressed: false }) : children}
+      </button>
+    ),
+    TouchableOpacity: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,
+    RefreshControl: ({ onRefresh }: RenderProps) => <button onClick={onRefresh}>Actualizar</button>,
+    Dimensions: { get: () => ({ width: 400, height: 800 }) },
+    StyleSheet: { create: (styles: unknown) => styles },
+    FlatList: ({ data, renderItem, keyExtractor, ListEmptyComponent }: any) => (
+      <div>
+        {data.length > 0
+          ? data.map((item: any, index: number) => (
+              <Fragment key={keyExtractor(item)}>{renderItem({ item, index })}</Fragment>
+            ))
+          : typeof ListEmptyComponent === 'function'
+            ? <ListEmptyComponent />
+            : ListEmptyComponent}
+      </div>
+    ),
+  };
+});
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+// El mock global de expo-image resuelve el `Image` desde react-native; con un
+// mock local de RN eso carga el módulo real, así que se mockea aquí.
+vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 vi.mock('expo-router', () => ({ Stack: { Screen: () => null } }));
 vi.mock('@/components/ui/PremiumHeader', () => ({ PremiumHeader: () => null }));
@@ -58,6 +129,9 @@ vi.mock('@/components/ui/SearchBar', () => ({
 vi.mock('@/components/cajero/clientes/ClientFormModal', () => ({ ClientFormModal: () => null }));
 vi.mock('@/components/cajero/clientes/LoadBalanceModal', () => ({ LoadBalanceModal: () => null }));
 vi.mock('@/components/cajero/clientes/ClientHistoryModal', () => ({ ClientHistoryModal: () => null }));
+// use-color-scheme hace `import('react-native')` fuera de web; con un mock
+// local de RN eso carga el módulo real, así que se fija el esquema claro.
+vi.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => 'light' }));
 vi.mock('@/hooks/useRenderCount', () => ({
   useRenderCount: (name: string, props?: Record<string, unknown>) => {
     if (name !== 'ClientCard' || props?.clientId === undefined) return;
