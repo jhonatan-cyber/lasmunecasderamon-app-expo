@@ -14,6 +14,7 @@ type RenderProps = {
 const h = vi.hoisted(() => ({
   apiClientSafe: vi.fn(),
   createTemporal: vi.fn(),
+  showToast: vi.fn(),
 }));
 
 vi.mock('react-native', () => ({
@@ -82,7 +83,7 @@ vi.mock('@/services/servicios', () => ({
   serviciosService: { createTemporal: h.createTemporal },
 }));
 vi.mock('@/utils/offlineGuard', () => ({ blockOffline: () => true }));
-vi.mock('@/utils/toast-lazy', () => ({ showToast: vi.fn() }));
+vi.mock('@/utils/toast-lazy', () => ({ showToast: h.showToast }));
 vi.mock('@/utils/logger', () => ({
   default: { debug: () => undefined, error: () => undefined, warn: () => undefined },
 }));
@@ -167,6 +168,7 @@ beforeEach(() => {
   h.apiClientSafe.mockReset();
   h.createTemporal.mockReset();
   h.createTemporal.mockResolvedValue({ success: true });
+  h.showToast.mockReset();
   mockApi();
 });
 
@@ -208,5 +210,26 @@ describe('EditServiceModal — anfitrionas del servicio', () => {
     expect(payload.usuarios).toEqual(['2']);
     expect(payload.servicio_original_id).toBe('srv-1');
     expect(payload.tiempo).toBe(30);
+  });
+
+  it('no guarda si el servicio se quedó sin anfitrionas', async () => {
+    renderModal();
+    await waitForFormHostesses('Ana');
+
+    openSelector();
+    fireEvent.click(selectorOption('Ana'));
+    await waitForFormHostesses('Ninguna seleccionada');
+
+    fireEvent.click(screen.getByText('INICIAR SERVICIO'));
+
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Debe seleccionar al menos una anfitriona',
+        }),
+      ),
+    );
+    expect(h.createTemporal).not.toHaveBeenCalled();
   });
 });
