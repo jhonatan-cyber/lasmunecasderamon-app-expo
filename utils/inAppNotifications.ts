@@ -9,6 +9,9 @@ const TYPE_PRIORITY: Record<AppNotificationType, number> = {
   info: 0,
 };
 
+/** Solo estos tipos pueden interrumpir el aviso visible; el resto espera turno. */
+const INTERRUPTIVE_TYPES: ReadonlySet<AppNotificationType> = new Set(['error', 'order']);
+
 export interface ShowToastParams {
   type?: AppNotificationType;
   text1?: string;
@@ -56,7 +59,8 @@ export function showToast(params: ShowToastParams) {
 
   if (current) {
     const currentPriority = TYPE_PRIORITY[current.type];
-    if (newPriority > currentPriority) {
+    // Un aviso urgente `error`/`order` gana al visible si es más prioritario.
+    if (INTERRUPTIVE_TYPES.has(notification.type) && newPriority > currentPriority) {
       // Interrumpir: la notificación actual vuelve a la cola.
       queue.unshift(current);
       current = notification;

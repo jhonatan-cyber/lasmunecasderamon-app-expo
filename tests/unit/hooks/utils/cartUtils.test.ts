@@ -93,19 +93,68 @@ describe('cartUtils', () => {
   });
 
   describe('normalizeAnfitrionas', () => {
-    it('pasa arrays directamente', () => {
-      const arr = [{ id: 1, nick: 'Ana' }];
-      expect(normalizeAnfitrionas(arr)).toBe(arr);
+    it('normaliza cada fila y usa id_usuario como id', () => {
+      const rows = [
+        { id_usuario: 7, nick: 'Ana', foto: 'ana.jpg', estado_servicio: 1 }
+      ];
+      const result = normalizeAnfitrionas(rows);
+
+      expect(result).toHaveLength(1);
+      expect(result).not.toBe(rows);
+      expect(result[0]).toMatchObject({
+        id: 7,
+        id_usuario: 7,
+        nick: 'Ana',
+        foto: 'ana.jpg',
+        estado_servicio: 1,
+        status: 1
+      });
     });
 
-    it('extrae data de { success, data }', () => {
-      const data = [{ id: 1, nick: 'Ana' }];
-      expect(normalizeAnfitrionas({ success: true, data })).toEqual(data);
+    it('usa nombre o name como fallback de nick', () => {
+      expect(normalizeAnfitrionas([{ id: 3, nombre: 'Luz' }])[0]).toMatchObject({
+        id: 3,
+        nick: 'Luz'
+      });
+      expect(normalizeAnfitrionas([{ id: 4, name: 'Sol' }])[0]).toMatchObject({
+        nick: 'Sol'
+      });
+    });
+
+    it('sin nickname genera uno por defecto y no inventa estado_servicio', () => {
+      const hostess = normalizeAnfitrionas([{ id_usuario: 9 }])[0];
+      expect(hostess.nick).toBe('Anfitriona 9');
+      expect(hostess.estado_servicio).toBeUndefined();
+      expect(hostess.status).toBeUndefined();
+
+      const conNull = normalizeAnfitrionas([{ id_usuario: 10, estado_servicio: null }])[0];
+      expect(conNull.estado_servicio).toBeUndefined();
+    });
+
+    it('usa status y estado_servicio como respaldo mutuo y convierte a número', () => {
+      expect(normalizeAnfitrionas([{ id_usuario: 11, status: 1 }])[0]).toMatchObject({
+        estado_servicio: 1,
+        status: 1
+      });
+      expect(normalizeAnfitrionas([{ id_usuario: 12, estado_servicio: 2 }])[0]).toMatchObject({
+        estado_servicio: 2,
+        status: 2
+      });
+      expect(normalizeAnfitrionas([{ id_usuario: 13, estado_servicio: '1' }])[0].estado_servicio).toBe(1);
+      expect(normalizeAnfitrionas([{ id_usuario: 14, estado_servicio: 'ocupada' }])[0].estado_servicio).toBeUndefined();
+    });
+
+    it('extrae data de { success, data } y también la normaliza', () => {
+      const data = [{ id_usuario: 1, nick: 'Ana' }];
+      expect(normalizeAnfitrionas({ success: true, data })).toEqual([
+        expect.objectContaining({ id: 1, id_usuario: 1, nick: 'Ana' })
+      ]);
     });
 
     it('devuelve array vacío en otros casos', () => {
       expect(normalizeAnfitrionas({ success: false })).toEqual([]);
       expect(normalizeAnfitrionas(null)).toEqual([]);
+      expect(normalizeAnfitrionas(undefined)).toEqual([]);
     });
   });
 

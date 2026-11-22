@@ -7,6 +7,7 @@ type Hostess = {
   id?: string | number;
   nick?: string;
   estado_servicio?: number;
+  status?: number;
 };
 
 type SelectionTarget = {
@@ -89,7 +90,7 @@ export function NuevaVentaHostessModal({
         id: String(item.id_usuario || item.id || ""),
         id_usuario: String(item.id_usuario || item.id || ""),
         nick: item.nick || "",
-        estado_servicio: item.estado_servicio || 0,
+        estado_servicio: item.estado_servicio ?? item.status,
       }))}
       selectedIds={selectedIds}
       allowedOccupiedIds={servicioAnfitrionas}

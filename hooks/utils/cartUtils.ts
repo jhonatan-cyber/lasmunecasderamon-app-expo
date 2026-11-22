@@ -41,6 +41,17 @@ export const normalizeClients = (clientsRes: unknown): Cliente[] => {
 };
 
 /**
+ * Convierte el estado de servicio a número sin inventar un valor.
+ * Si el backend omite el campo se conserva `undefined`: asumir 0 (= libre)
+ * haría pasar por disponible a una anfitriona que sí está ocupada.
+ */
+const toEstadoServicio = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+/**
  * Normalizes a raw hostess/anfitriona object from the API into a consistent Anfitriona shape.
  */
 export const normalizeAnfitriona = (hostess: Record<string, unknown>): Anfitriona => {
@@ -52,8 +63,8 @@ export const normalizeAnfitriona = (hostess: Record<string, unknown>): Anfitrion
     nombre: hostess.nombre as string | undefined,
     name: hostess.name as string | undefined,
     foto: hostess.foto as string | undefined,
-    estado_servicio: Number(hostess.estado_servicio ?? hostess.status ?? 0),
-    status: Number(hostess.status ?? hostess.estado_servicio ?? 0),
+    estado_servicio: toEstadoServicio(hostess.estado_servicio ?? hostess.status),
+    status: toEstadoServicio(hostess.status ?? hostess.estado_servicio),
   };
 };
 
