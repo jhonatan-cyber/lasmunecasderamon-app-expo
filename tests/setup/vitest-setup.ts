@@ -49,7 +49,6 @@ vi.mock('react-native-safe-area-context', () => ({
 vi.mock('@/context/TimerContext', () => ({
     useTimer: vi.fn(() => ({ timers: [], serverOffset: 0, refreshTimers: vi.fn() })),
     useTimerActions: vi.fn(() => ({ refreshTimers: vi.fn() })),
-    useTimerTick: vi.fn(() => 0),
     TimerProvider: ({ children }: { children: any }) => children,
 }));
 
@@ -163,6 +162,10 @@ vi.mock('react-native', () => ({
     // Usados por hooks de pantalla (useClientes: Alert, useWindowDimensions;
     // useAccentColor: useColorScheme) en tests unitarios.
     Alert: { alert: vi.fn() },
+    AccessibilityInfo: {
+        isReduceMotionEnabled: vi.fn(() => Promise.resolve(false)),
+        addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+    },
     useWindowDimensions: vi.fn(() => ({ width: 390, height: 844, fontScale: 1 })),
     Dimensions: {
         get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
@@ -185,6 +188,75 @@ vi.mock('react-native', () => ({
         ),
     ActivityIndicator: () => null,
 }));
+
+
+// react-native-reanimated: su build ESM usa imports sin extensión y arranca el
+// runtime nativo, algo que no aporta nada en happy-dom. Los tests unitarios solo
+// necesitan que las animaciones no rompan el render.
+vi.mock('react-native-reanimated', () => {
+    const passthrough = ({ children }: { children?: any }) => children ?? null;
+    // Propiedades encadenables (FadeIn.duration(300).delay(50)): toda propiedad
+    // es una función que devuelve el mismo objeto.
+    const chainable: any = new Proxy(function chainable() { }, {
+        get: () => () => chainable,
+        apply: () => chainable,
+    });
+    const identity = (value: any) => value;
+    const Animated: any = new Proxy(
+        { createAnimatedComponent: (component: any) => component },
+        { get: (target: any, prop: string) => (prop in target ? target[prop] : passthrough) },
+    );
+    const easing = (value: any) =>
+        typeof value === 'function' ? value : (t: number) => t;
+    const interpolate = (value: number, input: number[], output: number[]) => {
+        if (!input?.length || !output?.length || input.length !== output.length) {
+            return output?.[0] ?? 0;
+        }
+        if (value <= input[0]) return output[0];
+        for (let i = 1; i < input.length; i++) {
+            if (value <= input[i]) {
+                const t = (value - input[i - 1]) / (input[i] - input[i - 1]);
+                return output[i - 1] + t * (output[i] - output[i - 1]);
+            }
+        }
+        return output[output.length - 1];
+    };
+
+    return {
+        default: Animated,
+        Animated,
+        Easing: new Proxy({} as Record<string, unknown>, { get: () => easing }),
+        FadeIn: chainable,
+        FadeOut: chainable,
+        FadeInDown: chainable,
+        FadeOutDown: chainable,
+        SlideInRight: chainable,
+        SlideOutRight: chainable,
+        Layout: chainable,
+        LinearTransition: chainable,
+        interpolate,
+        interpolateColor: (_value: number, _input: number[], output: string[]) => output?.[0],
+        useSharedValue: (initial: any) => useRef({ value: initial }).current,
+        useAnimatedStyle: (factory: () => any) => factory(),
+        useAnimatedProps: (factory: () => any) => factory(),
+        useAnimatedReaction: () => undefined,
+        useAnimatedScrollHandler: () => () => undefined,
+        useAnimatedRef: () => useRef(null),
+        useDerivedValue: (factory: () => any) => ({ value: factory() }),
+        withTiming: identity,
+        withSpring: identity,
+        withDelay: (_delay: number, animation: any) => animation,
+        withRepeat: identity,
+        withSequence: (...animations: any[]) => animations[animations.length - 1],
+        withDecay: identity,
+        cancelAnimation: () => undefined,
+        runOnJS: (fn: any) => fn,
+        runOnUI: (fn: any) => fn,
+        isSharedValue: (value: any) =>
+            !!value && typeof value === 'object' && 'value' in value,
+        ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
+    };
+});
 
 
 vi.mock('@tanstack/react-query', () => ({

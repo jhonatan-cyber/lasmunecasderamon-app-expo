@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PremiumUserProfile } from '@/components/shared/PremiumUserProfile';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   Image: () => <img alt="" />,
   StyleSheet: { create: (styles: unknown) => styles },
   Text: ({ children }: any) => <span>{children}</span>,

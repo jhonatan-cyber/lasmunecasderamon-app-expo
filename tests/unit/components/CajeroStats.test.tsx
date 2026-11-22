@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CajeroStats } from '@/components/cajero/CajeroStats';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   StyleSheet: { create: (styles: unknown) => styles },
   Text: ({ children }: any) => <span>{children}</span>,
   View: ({ children }: any) => <div>{children}</div>,

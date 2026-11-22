@@ -7,6 +7,8 @@ import { useCartStore } from "@/store/cartStore";
 
 vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock("react-native", () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,
   ScrollView: ({ children }: any) => <div>{children}</div>,

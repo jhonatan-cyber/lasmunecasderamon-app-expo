@@ -6,6 +6,8 @@ import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
 import { useAuthStore } from '@/store/authStore';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   Appearance: { setColorScheme: vi.fn() },
   Pressable: ({ children, onPress }: any) => (
     <button onClick={onPress}>{children}</button>

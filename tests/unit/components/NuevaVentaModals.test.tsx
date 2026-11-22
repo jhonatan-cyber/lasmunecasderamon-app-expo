@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
 type Children = { children?: ReactNode };
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: Children) => <div>{children}</div>,

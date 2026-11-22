@@ -14,6 +14,7 @@ vi.mock('react-native', () => {
   };
 
   return {
+    AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
     Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },
     Dimensions: { get: () => ({ width: 390, height: 844 }) },
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),

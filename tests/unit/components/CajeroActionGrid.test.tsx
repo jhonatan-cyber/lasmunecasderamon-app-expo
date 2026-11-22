@@ -6,6 +6,7 @@ import { CajeroActionGrid } from '@/components/cajero/CajeroActionGrid';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <div>{children}</div>,

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PremiumTabBar } from '@/components/ui/PremiumTabBar';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Platform: { OS: 'ios', select: (obj: any) => obj?.ios ?? obj?.default },

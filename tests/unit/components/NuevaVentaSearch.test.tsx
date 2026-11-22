@@ -8,6 +8,8 @@ import { NuevaVentaSearch } from "@/components/cajero/nueva-venta/NuevaVentaSear
 // Los estilos de React Native (objetos/arrays) no se pueden volcar al DOM, así que
 // los mocks los descartan: aquí se verifica el texto y los handlers, no el aspecto.
 vi.mock("react-native", () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
   Text: ({ children }: { children?: React.ReactNode }) => (

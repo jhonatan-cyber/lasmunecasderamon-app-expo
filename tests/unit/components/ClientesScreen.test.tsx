@@ -19,6 +19,7 @@ type RenderProps = {
 
 vi.mock('react-native', () => ({
   View: ({ children }: RenderProps) => <div>{children}</div>,
+  ScrollView: ({ children }: RenderProps) => <div>{children}</div>,
   Text: ({ children }: RenderProps) => <span>{children}</span>,
   Pressable: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,
   TouchableOpacity: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,

@@ -37,6 +37,11 @@ vi.mock('react-native', () => {
       timing: () => noopAnimation,
       spring: () => noopAnimation,
     },
+    AccessibilityInfo: {
+      isReduceMotionEnabled: () => Promise.resolve(false),
+      addEventListener: () => ({ remove: () => {} }),
+    },
+    Dimensions: { get: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }) },
     PanResponder: { create: () => ({ panHandlers: {} }) },
     Pressable: ({ children, onPress }: RenderProps) => <button onClick={onPress}>{children}</button>,
     Text: ({ children }: RenderProps) => <span>{children}</span>,

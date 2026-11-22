@@ -5,6 +5,8 @@ import { TransferCard } from '@/components/barman/bar/TransferCard';
 import type { BarTransfer } from '@/hooks/useBarScreen';
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   View: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   Text: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
   Pressable: ({ children, onPress }: { children?: ReactNode; onPress?: () => void }) => (

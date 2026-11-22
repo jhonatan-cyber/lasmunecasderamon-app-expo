@@ -9,6 +9,7 @@ import {
 type Children = { children?: ReactNode };
 vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
   Dimensions: { get: () => ({ width: 390, height: 844 }) },

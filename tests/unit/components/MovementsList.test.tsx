@@ -7,6 +7,8 @@ import type { BarMovement } from '@/hooks/useBarScreen';
 type Children = { children?: ReactNode };
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   View: ({ children }: Children) => <div>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({ children }: Children) => <button>{children}</button>,

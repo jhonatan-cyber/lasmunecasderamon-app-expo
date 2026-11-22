@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { GarzonCartBar } from "@/components/garzon/productos/GarzonCartBar";
 
 vi.mock("react-native", () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
+  Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,
   Image: ({ source }: any) => <img src={source?.uri} alt="baucher" />,

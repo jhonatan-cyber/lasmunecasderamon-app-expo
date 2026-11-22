@@ -13,6 +13,7 @@ import { useModoPantallaStore } from '@/store/modoPantallaStore';
 // verificar qué se muestra.
 vi.mock('@/components/ui/NotificationBanner', () => ({ NotificationBanner: () => null }));
 vi.mock('react-native', () => ({
+  AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: any) => <div>{children}</div>,
   Text: ({ children }: any) => <span>{children}</span>,
