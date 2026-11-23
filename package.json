@@ -105,5 +105,5 @@
     "vitest": "^4.1.12"
   },
   "private": true,
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@12.21.0"
 }

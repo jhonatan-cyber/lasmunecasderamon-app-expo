@@ -1,10 +1,12 @@
 packages:
   - packages/*
 
-ignoredBuiltDependencies:
-  - '@sentry/cli'
-  - esbuild
-  - unrs-resolver
+nodeLinker: hoisted
+
+allowBuilds:
+  '@sentry/cli': false
+  esbuild: false
+  unrs-resolver: false
 
 overrides:
   '@expo/cli>zod': '>=4.6.6 <5'
