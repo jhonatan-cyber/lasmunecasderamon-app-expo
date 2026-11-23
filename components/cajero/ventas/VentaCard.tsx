@@ -97,7 +97,7 @@ export const VentaCard = memo(function VentaCard({
           <View style={styles.cardLeftContent}>
             <View style={styles.cardTopActions}>
               <Text style={[styles.cardCode, { color: textPrimary }]}>
-                Codigo : {item.codigo}
+                Código: {item.codigo}
               </Text>
             </View>
 
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderLeftWidth: 6,
-    marginBottom: 22,
+    marginBottom: 12,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

@@ -1,6 +1,8 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from "react-native";
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Totales {
   subtotal: number;
@@ -29,6 +31,8 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
   textPrimary,
   textSecondary,
 }) => {
+  const { accentOnSurface } = useAccentColor();
+  const successColor = accentOnSurface;
   return (
     <View
       style={[
@@ -52,7 +56,7 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
           ${totals.totalHabitacion.toLocaleString()}
         </Text>
       </View>
-      {hasComision && selectedHostessesCount > 0 && (
+      {hasComision && selectedHostessesCount > 0 && totals.comisionPorAnfitriona > 0 && (
         <View
           style={[
             styles.summaryRow,
@@ -67,7 +71,7 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
           <Text
             style={[
               styles.summaryLabel,
-              { color: "#10B981", fontWeight: "800" },
+              { color: successColor, fontFamily: FontFamily.bold },
             ]}
           >
             Comisión p/Anf:
@@ -75,7 +79,7 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
           <Text
             style={[
               styles.summaryValue,
-              { color: "#10B981", fontWeight: "800" },
+              { color: successColor, fontFamily: FontFamily.bold },
             ]}
           >
             ${totals.comisionPorAnfitriona.toLocaleString()} x{" "}
@@ -106,7 +110,7 @@ export const GarzonServicioSummary: React.FC<GarzonServicioSummaryProps> = ({
 const styles = StyleSheet.create({
   summaryCard: {
     padding: 20,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     marginVertical: 20,
     gap: 10,
@@ -118,11 +122,11 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FontFamily.medium,
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   totalRow: {
     flexDirection: "row",
@@ -134,10 +138,10 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 18,
-    fontWeight: "900",
+    fontFamily: FontFamily.bold,
   },
   totalAmount: {
     fontSize: 24,
-    fontWeight: "900",
+    fontFamily: FontFamily.bold,
   },
 });

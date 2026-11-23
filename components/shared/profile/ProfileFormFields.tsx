@@ -101,7 +101,7 @@ export function ProfileFormFields({
         <Text style={[styles.inputLabel, { color: textSecondary }]}>
           Estado Civil
         </Text>
-        <Pressable style={wrapperStyle} onPress={onOpenCivilPicker}>
+        <Pressable style={wrapperStyle} onPress={onOpenCivilPicker} accessibilityRole="button" accessibilityLabel="Seleccionar estado civil">
           <Ionicons
             name="heart-outline"
             size={20}

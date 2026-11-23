@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { HistorySummaryCards } from './HistorySummaryCards';
 import { HistoryEmptyState } from './HistoryEmptyState';
 import { HistoryItemCard } from './HistoryItemCard';
@@ -47,6 +49,7 @@ export function ClientHistoryModal({
     setRefreshingHistory,
     onClose
 }: ClientHistoryModalProps) {
+    const { cardBg, textPrimary: themePrimary, textSecondary: themeSecondary, accentText } = useAccentColor();
     const totalServicios = historyData
         .filter((i: any) => i.category === 'SERVICIO')
         .reduce((a: number, i: any) => a + Number(i.monto || 0), 0);
@@ -61,26 +64,26 @@ export function ClientHistoryModal({
         <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={[styles.modalContent, {
-                    backgroundColor: isDark ? "#111111" : "#FFFFFF",
+                    backgroundColor: cardBg,
                     height: '83%',
                     paddingBottom: Math.max(insets.bottom, 20)
                 }]}>
                     <View style={styles.modalHeader}>
                         <View>
-                            <Text style={[styles.modalTitle, { color: isDark ? "#FFFFFF" : "#111827" }]}>Historial de Cuenta</Text>
-                            <Text style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontWeight: '700' }}>
+                            <Text style={[styles.modalTitle, { color: themePrimary }]}>Historial de Cuenta</Text>
+                            <Text style={{ color: themeSecondary, fontFamily: FontFamily.bold }}>
                                 {editingClient?.name} {editingClient?.lastName}
                             </Text>
                         </View>
-                        <Pressable onPress={onClose}>
-                            <Ionicons name="close" size={26} color={isDark ? "#FFFFFF" : "#111827"} />
+                        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar historial de cuenta">
+                            <Ionicons name="close" size={26} color={themePrimary} />
                         </Pressable>
                     </View>
 
                     {historyLoading ? (
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                             <ActivityIndicator size="large" color={accentColor} />
-                            <Text style={{ marginTop: 10, color: textSecondary }}>Cargando movimientos...</Text>
+                            <Text style={{ marginTop: 10, color: themeSecondary }}>Cargando movimientos...</Text>
                         </View>
                     ) : (
                         <ScrollView
@@ -104,12 +107,11 @@ export function ClientHistoryModal({
                                     totalServicios={totalServicios}
                                     totalConsumo={totalConsumo}
                                     totalCargas={totalCargas}
-                                    isDark={isDark}
                                 />
                             )}
 
                             {historyData.length === 0 ? (
-                                <HistoryEmptyState isDark={isDark} textSecondary={textSecondary} />
+                                <HistoryEmptyState textSecondary={themeSecondary} />
                             ) : (
                                 historyData.map((item: any, index: number) => (
                                     <HistoryItemCard
@@ -117,8 +119,8 @@ export function ClientHistoryModal({
                                         item={item}
                                         index={index}
                                         isDark={isDark}
-                                        textPrimary={textPrimary}
-                                        textSecondary={textSecondary}
+                                        textPrimary={themePrimary}
+                                        textSecondary={themeSecondary}
                                     />
                                 ))
                             )}
@@ -129,7 +131,7 @@ export function ClientHistoryModal({
                         style={[styles.saveBtn, { backgroundColor: accentColor, marginTop: 10 }]}
                         onPress={onClose}
                     >
-                        <Text style={[styles.saveBtnText, { color: '#FFFFFF' }]}>CERRAR</Text>
+                        <Text style={[styles.saveBtnText, { color: accentText }]}>CERRAR</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
-    modalTitle: { fontSize: 22, fontWeight: '900' },
+    modalTitle: { fontSize: 22, fontFamily: FontFamily.black },
     saveBtn: { height: 56, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-    saveBtnText: { color: '#FFF', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
+    saveBtnText: { fontSize: 15, fontFamily: FontFamily.black, letterSpacing: 1 },
 });

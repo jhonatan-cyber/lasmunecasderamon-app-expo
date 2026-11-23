@@ -2,6 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface MetricCardProps {
     label: string;
@@ -28,6 +30,7 @@ export function MetricCard({
     subtitle,
     index = 0
 }: MetricCardProps) {
+    const { textPrimary, textSecondary } = useAccentColor();
     const displayValue = typeof value === 'number' ? `$${value.toLocaleString()}` : value;
 
     // Glow neón en modo oscuro con el color de la métrica
@@ -53,12 +56,12 @@ export function MetricCard({
                 <View style={[styles.metricIconBox, { backgroundColor: bgColor }]}>
                     <Ionicons name={icon} size={18} color={color} />
                 </View>
-                <Text style={[styles.metricLabel, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{label}</Text>
-                <Text style={[styles.metricValue, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+                <Text style={[styles.metricLabel, { color: textSecondary }]}>{label}</Text>
+                <Text style={[styles.metricValue, { color: textPrimary }]}>
                     {displayValue}
                 </Text>
                 {subtitle && (
-                    <Text style={[styles.metricSubtitle, { color: isDark ? '#6B7280' : '#9CA3AF' }]}>{subtitle}</Text>
+                    <Text style={[styles.metricSubtitle, { color: textSecondary }]}>{subtitle}</Text>
                 )}
             </View>
         </AnimatedView>
@@ -85,18 +88,18 @@ const styles = StyleSheet.create({
     },
     metricLabel: {
         fontSize: 10,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         textTransform: 'uppercase',
         letterSpacing: 0.5
     },
     metricValue: {
         fontSize: 20,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -0.5
     },
     metricSubtitle: {
         fontSize: 10,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
         marginTop: 2
     },
 });

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import type { Venta } from "./types";
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 type VentaAnulacionModalProps = {
@@ -52,7 +53,7 @@ export function VentaAnulacionModal({
   isDark,
   dangerColor,
 }: VentaAnulacionModalProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentBg, surfaceMuted, bg, accentText } = useAccentColor();
   return (
     <Modal
       animationType="slide"
@@ -74,7 +75,7 @@ export function VentaAnulacionModal({
             <View
               style={[
                 styles.anulacionIconBox,
-                { backgroundColor: "#EF444415" },
+                { backgroundColor: accentBg },
               ]}
             >
               <Ionicons
@@ -96,27 +97,25 @@ export function VentaAnulacionModal({
             style={[
               styles.anulacionInfoCard,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.04)"
-                  : "rgba(0,0,0,0.03)",
+                backgroundColor: surfaceMuted,
               },
             ]}
           >
             <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
               Código:{" "}
-              <Text style={{ color: textPrimary, fontWeight: "800" }}>
+              <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>
                 {activeVenta?.codigo || "-"}
               </Text>
             </Text>
             <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
               Cliente:{" "}
-              <Text style={{ color: textPrimary, fontWeight: "800" }}>
+              <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>
                 {activeVenta?.cliente_nombre || "Sin cliente"}
               </Text>
             </Text>
             <Text style={[styles.anulacionInfoText, { color: textSecondary }]}>
               Total referencia:{" "}
-              <Text style={{ color: accentOnSurface, fontWeight: "900" }}>
+              <Text style={{ color: accentOnSurface, fontFamily: FontFamily.black }}>
                 ${Number(activeVenta?.total || 0).toLocaleString("es-CL")}
               </Text>
             </Text>
@@ -139,7 +138,7 @@ export function VentaAnulacionModal({
                 {
                   color: textPrimary,
                   borderColor,
-                  backgroundColor: isDark ? "#0F0F0F" : "#FFFFFF",
+                  backgroundColor: isDark ? bg : cardBg,
                 },
               ]}
             />
@@ -161,7 +160,7 @@ export function VentaAnulacionModal({
                 {
                   color: textPrimary,
                   borderColor,
-                  backgroundColor: isDark ? "#0F0F0F" : "#FFFFFF",
+                  backgroundColor: isDark ? bg : cardBg,
                 },
               ]}
             />
@@ -199,7 +198,7 @@ export function VentaAnulacionModal({
                 },
               ]}
             >
-              <Text style={styles.anulacionPrimaryText}>
+              <Text style={[styles.anulacionPrimaryText, { color: accentText }]}>
                 {anulandoVenta ? "Enviando..." : "Enviar Solicitud"}
               </Text>
             </Pressable>
@@ -238,11 +237,11 @@ const styles = StyleSheet.create({
   },
   anulacionTitle: {
     fontSize: 22,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
   },
   anulacionSubtitle: {
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FontFamily.medium,
     textAlign: "center",
     lineHeight: 20,
   },
@@ -253,14 +252,14 @@ const styles = StyleSheet.create({
   },
   anulacionInfoText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FontFamily.semibold,
   },
   anulacionField: {
     gap: 8,
   },
   anulacionLabel: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   anulacionInput: {
     height: 52,
@@ -268,7 +267,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: 16,
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   anulacionTextarea: {
     minHeight: 110,
@@ -277,7 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: FontFamily.semibold,
   },
   anulacionActions: {
     flexDirection: "row",
@@ -294,7 +293,7 @@ const styles = StyleSheet.create({
   },
   anulacionSecondaryText: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   anulacionPrimaryBtn: {
     flex: 1,
@@ -304,8 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   anulacionPrimaryText: {
-    color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
   },
 });

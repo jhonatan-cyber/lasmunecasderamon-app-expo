@@ -1,5 +1,7 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import VirtualizedList from "@/components/shared/VirtualizedList";
@@ -7,6 +9,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Event } from "@/hooks/types/administrativoTypes";
 import { EventItemCard } from "./EventItemCard";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type DetailedEventsModalProps = {
   visible: boolean;
@@ -41,6 +44,7 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
   getEventLabel,
   getStatusLabel,
 }: DetailedEventsModalProps) {
+  const { surfaceMuted, accentText } = useAccentColor();
   useRenderCount('DetailedEventsModal', { visible, eventCount: selectedEvents.length });
   return (
     <Modal
@@ -51,9 +55,9 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
     >
       <View style={styles.modalOverlayBottom}>
         <View style={[styles.modalContent, { backgroundColor: bg }]}>
-          <View style={styles.dragHandle} />
+          <View style={[styles.dragHandle, { backgroundColor: surfaceMuted }]} />
 
-          <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
             <View>
               <Text style={[styles.modalTitle, { color: textPrimary }]}>
                 Eventos Detallados
@@ -69,7 +73,7 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
             <Pressable
               style={[
                 styles.closeBtn,
-                { backgroundColor: isDark ? "#374151" : "#F1F5F9" },
+                { backgroundColor: surfaceMuted },
               ]}
               onPress={onClose}
               accessibilityLabel="Cerrar modal"
@@ -95,7 +99,7 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
               />
             )}
             estimatedItemSize={80}
-            contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: tabBarBottomPadding }}
             ListEmptyComponent={
               <View style={styles.emptyEvents}>
                 <Ionicons
@@ -117,7 +121,7 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
               styles.modalFooter,
               {
                 backgroundColor: bg,
-                borderTopColor: isDark ? "#374151" : "#E5E7EB",
+                borderTopColor: borderColor,
               },
             ]}
           >
@@ -131,10 +135,10 @@ export const DetailedEventsModal = React.memo(function DetailedEventsModal({
               <Ionicons
                 name="close-circle-outline"
                 size={20}
-                color="#FFF"
+                color={accentText}
                 style={{ marginRight: 8 }}
               />
-              <Text style={styles.closeFooterBtnText}>Cerrar</Text>
+              <Text style={[styles.closeFooterBtnText, { color: accentText }]}>Cerrar</Text>
             </Pressable>
           </View>
         </View>
@@ -160,7 +164,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#D1D5DB",
     alignSelf: "center",
     marginTop: 14,
     marginBottom: 4,
@@ -172,9 +175,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#37415120",
   },
-  modalTitle: { fontSize: 22, fontWeight: "900" },
+  modalTitle: { fontSize: 22, fontFamily: FontFamily.black },
   modalSubtitle: { fontSize: 14, marginTop: 4 },
   closeBtn: {
     width: 40,
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyEvents: { alignItems: "center", paddingVertical: 48, gap: 12 },
-  emptyEventsText: { fontSize: 14, fontWeight: "600", textAlign: "center" },
+  emptyEventsText: { fontSize: 14, fontFamily: FontFamily.semibold, textAlign: "center" },
   modalFooter: {
     position: "absolute",
     bottom: 0,
@@ -200,5 +202,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeFooterBtnText: { fontSize: 16, fontWeight: "800", color: "#FFF" },
+  closeFooterBtnText: { fontSize: 16, fontFamily: FontFamily.extrabold },
 });

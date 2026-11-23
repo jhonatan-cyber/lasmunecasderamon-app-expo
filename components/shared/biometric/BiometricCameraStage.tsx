@@ -78,7 +78,7 @@ export function BiometricCameraStage({
 
                 {estado === 'ok' ? (
                     <View style={styles.okOverlay}>
-                        <Ionicons name="checkmark" size={72} color="#34D399" />
+                        <Ionicons name="checkmark" size={72} color={colorAnillo} />
                     </View>
                 ) : null}
 

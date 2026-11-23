@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, View, AccessibilityRole } from 'react-native';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -29,15 +29,15 @@ export const PedidosSkeleton: React.FC<PedidosSkeletonProps> = ({ bg, gradientCo
             }}
         >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                <Skeleton width={150} height={30} />
-                <Skeleton width={44} height={44} borderRadius={22} />
+                <Skeleton width={150} height={30} accessibilityRole="button" accessibilityLabel="Ver pedido" />
+                <Skeleton width={44} height={44} borderRadius={22} accessibilityRole="button" accessibilityLabel="Ver detalle" />
             </View>
             <Skeleton width="60%" height={24} />
         </LinearGradient>
 
         <View style={{ padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 15 }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} width={cardWidth} height={180} borderRadius={24} />
+                <Skeleton key={i} width={cardWidth} height={180} borderRadius={24} accessibilityRole="button" accessibilityLabel="Ver pedido" />
             ))}
         </View>
     </View>

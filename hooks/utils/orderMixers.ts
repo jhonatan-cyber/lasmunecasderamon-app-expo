@@ -20,6 +20,7 @@ export function availableOrderMixers(
     return bar.filter(
       (product) =>
         String(product.id) !== String(item.presentacion_id) &&
+        Number(product.producto_estado ?? 1) === 1 &&
         Number(product.stock_bar || 0) >= quantity &&
         matchesProductSearch(product, search),
     );
@@ -38,23 +39,32 @@ export function availableOrderMixers(
     const bottleOption = parseOpcionesVenta(product.opciones_venta).find(
       (option) => option.tipo === "botella",
     );
-    if (
-      item.shot_anfitriona
-        ? bottleOption?.corto_anfitriona_habilitado === false
-        : bottleOption?.cover_habilitado !== true
-    )
-      return false;
+    if (item.shot_anfitriona) {
+      // Corto con anfitriona: mismas bebidas que colaciones
+      if (bottleOption?.corto_anfitriona_habilitado === false) return false;
+      if (bottleOption?.colacion_habilitada !== true) return false;
+    } else {
+      // Corto cliente: debe estar habilitado para cover y ser un producto activo
+      if (bottleOption?.cover_habilitado !== true) return false;
+      if (Number(product.producto_estado ?? 1) !== 1) return false;
+    }
     const stock = Number(product.stock_bar || 0);
-    const requiredMl =
-      Number("ml_por_corto" in consumption ? consumption.ml_por_corto : 0) *
-      quantity;
+    if (item.shot_anfitriona) {
+      // El dashboard evalúa la bebida para cada corto por unidad: alcanza con
+      // los ml de un corto (o con stock sellado, que el servidor abre).
+      const requiredMl = Number(
+        "ml_por_corto" in consumption ? consumption.ml_por_corto : 0,
+      );
+      const available =
+        stock > 0 ||
+        (requiredMl > 0 && Number(product.ml_abierta || 0) >= requiredMl);
+      return available && matchesProductSearch(product, search);
+    }
     const available =
-      requiredMl > 0
-        ? stock > 0 || Number(product.ml_abierta || 0) >= requiredMl
-        : stock > 0 &&
-          stock >=
-            Number("unidades" in consumption ? consumption.unidades : 0) *
-              quantity;
+      stock > 0 &&
+      stock >=
+        Number("unidades" in consumption ? consumption.unidades : 0) *
+          quantity;
     return available && matchesProductSearch(product, search);
   });
 }

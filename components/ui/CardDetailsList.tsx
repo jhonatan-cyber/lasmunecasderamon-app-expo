@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 export interface DetailRowItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -60,6 +61,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bold: {
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
 });

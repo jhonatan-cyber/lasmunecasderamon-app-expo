@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -80,6 +81,8 @@ export default function ComprasScreen() {
       <Pressable
         onPress={() => setSelected(item)}
         style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver detalle de compra ${item.folio}`}
       >
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
@@ -188,7 +191,9 @@ export default function ComprasScreen() {
                   {selected ? fechaCorta(selected.fecha_crea) : ''}
                 </Text>
               </View>
-              <Pressable onPress={() => setSelected(null)} hitSlop={10}>
+              <Pressable onPress={() => setSelected(null)} hitSlop={10}
+                accessibilityRole="button" accessibilityLabel="Cerrar detalle de compra"
+              >
                 <Ionicons name="close" size={22} color={textSecondary} />
               </Pressable>
             </View>
@@ -252,9 +257,9 @@ const styles = StyleSheet.create({
   list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 10 },
   card: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  folio: { fontSize: 15, fontWeight: '900' },
+  folio: { fontSize: 15, fontFamily: FontFamily.black },
   meta: { fontSize: 12, marginTop: 3 },
-  total: { fontSize: 17, fontWeight: '900' },
+  total: { fontSize: 17, fontFamily: FontFamily.black },
   cardFooter: { marginTop: 12, gap: 8 },
   chipRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   chip: {
@@ -265,8 +270,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 9999,
   },
-  chipText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
-  proveedor: { fontSize: 12, fontWeight: '600' },
+  chipText: { fontSize: 12, fontFamily: FontFamily.bold, textTransform: 'capitalize' },
+  proveedor: { fontSize: 12, fontFamily: FontFamily.semibold },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,7 +281,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
   modalOverlay: {
@@ -292,7 +297,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   modalHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  modalTitle: { fontSize: 17, fontWeight: '900' },
+  modalTitle: { fontSize: 17, fontFamily: FontFamily.black },
   detalleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -300,8 +305,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
   },
-  detalleNombre: { fontSize: 13, fontWeight: '700' },
-  detalleSubtotal: { fontSize: 13, fontWeight: '800' },
+  detalleNombre: { fontSize: 13, fontFamily: FontFamily.bold },
+  detalleSubtotal: { fontSize: 13, fontFamily: FontFamily.extrabold },
   modalInfo: { borderTopWidth: 1, paddingTop: 12, marginTop: 4, gap: 6 },
   modalTotal: {
     flexDirection: 'row',
@@ -311,6 +316,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     marginTop: 12,
   },
-  modalTotalLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
-  modalTotalValue: { fontSize: 22, fontWeight: '900' },
+  modalTotalLabel: { fontSize: 12, fontFamily: FontFamily.extrabold, letterSpacing: 0.8 },
+  modalTotalValue: { fontSize: 22, fontFamily: FontFamily.black },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ViewStyle, StyleProp } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, {
   useAnimatedStyle,
@@ -11,6 +11,7 @@ import Animated, {
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { accentTextColor } from '@/utils/color';
 import { FontFamily } from '@/constants/fonts';
@@ -22,7 +23,7 @@ export interface EmptyStateProps {
     message?: string;
     actionLabel?: string;
     onAction?: () => void;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -35,6 +36,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
     const { cardBg, surfaceMuted, textPrimary, textSecondary, accentColor, borderColor, isDark } = useAccentColor();
     const reducedMotion = useReducedMotion();
+    const { isTablet } = useResponsiveMetrics();
+    const iconSize = isTablet ? 96 : 72;
+    const iconInnerSize = isTablet ? 48 : 36;
 
     // Animación de flotar del ícono (desactivado con reducedMotion)
     const floatValue = useSharedValue(0);
@@ -97,8 +101,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                         />
                     ))}
                 </View>
-                <Animated.View style={[styles.iconContainer, { backgroundColor: surfaceMuted }, floatAnimatedStyle]}>
-                    <Ionicons name={icon} size={48} color={textSecondary} />
+                <Animated.View style={[styles.iconContainer, { backgroundColor: surfaceMuted, width: iconSize, height: iconSize }, floatAnimatedStyle]}>
+                    <Ionicons name={icon} size={iconInnerSize} color={textSecondary} />
                 </Animated.View>
                 <Text maxFontSizeMultiplier={1.5} style={[styles.title, { color: textPrimary }]}>{title}</Text>
                 {message && (

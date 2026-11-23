@@ -53,6 +53,7 @@ const baseProps = {
   cartTotal: 20000,
   submitting: false,
   submitOrder: vi.fn(),
+  onViewCart: vi.fn(),
   insets: { bottom: 0 },
   accentColor: "#E11D48",
   borderColor: "#333",
@@ -94,6 +95,16 @@ describe("selector de método de pago del carrito", () => {
     expect(
       screen.getByRole("button", { name: "Enviar Pedido" }).hasAttribute("disabled")
     ).toBe(true);
+  });
+});
+
+describe("ver detalle del pedido", () => {
+  it("abre el detalle del pedido al tocar el total", () => {
+    const onViewCart = vi.fn();
+    render(<GarzonCartBar {...baseProps} onViewCart={onViewCart} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalle del pedido" }));
+    expect(onViewCart).toHaveBeenCalledTimes(1);
   });
 });
 

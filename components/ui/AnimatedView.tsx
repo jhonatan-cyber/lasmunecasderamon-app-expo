@@ -148,13 +148,16 @@ export function AnimatedView({
 
     return {
       opacity: opacity.value,
-      ...(heightVal.value >= 0 ? { height: heightVal.value } : {}),
       ...(transforms.length > 0 ? { transform: transforms } : {}),
     } as any;
   });
 
+  // `height` no es soportado por NativeAnimatedDriver en useAnimatedStyle.
+  // Se aplica como estilo estático fuera de la animación.
+  const staticHeight = heightVal.value >= 0 ? { height: heightVal.value } : {};
+
   return (
-    <Animated.View style={[style as any, animatedStyle]} {...rest}>
+    <Animated.View style={[style as any, staticHeight, animatedStyle]} {...rest}>
       {children}
     </Animated.View>
   );

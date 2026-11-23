@@ -1,10 +1,11 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAccentColor } from '@/hooks/useAccentColor';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
 import { formatCurrency } from '@/utils/format';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
     0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -37,8 +38,7 @@ export function OvertimeDetailModal({
     textPrimary,
     textSecondary,
 }: OvertimeDetailModalProps) {
-    const { accentOnSurface } = useAccentColor();
-    const { surfaceMuted } = useAccentColor();
+    const { accentOnSurface, accentColor: themeAccent, accentUi, surfaceMuted } = useAccentColor();
 
     if (!record) return null;
 
@@ -54,7 +54,7 @@ export function OvertimeDetailModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalle de horas extras" />
                 <View style={[styles.modalContainer, { backgroundColor: cardBg }]}>
                     {}
                     <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
@@ -75,6 +75,8 @@ export function OvertimeDetailModal({
                             <Pressable 
                                 onPress={onClose} 
                                 style={[styles.modalCloseBtn, { backgroundColor: surfaceMuted }]}
+                                accessibilityRole="button"
+                                accessibilityLabel="Cerrar detalle de horas extras"
                             >
                                 <Ionicons name="close" size={20} color={textPrimary} />
                             </Pressable>
@@ -102,8 +104,8 @@ export function OvertimeDetailModal({
                                     </View>
                                 </View>
                                 <View style={styles.modalDetailRow}>
-                                    <View style={[styles.modalDetailIconBox, { backgroundColor: '#3B82F615' }]}>
-                                        <Ionicons name="time-outline" size={16} color="#3B82F6" />
+                                    <View style={[styles.modalDetailIconBox, { backgroundColor: `${themeAccent}15` }]}>
+                                        <Ionicons name="time-outline" size={16} color={themeAccent} />
                                     </View>
                                     <View style={styles.rowText}>
                                         <Text style={[styles.modalDetailLabel, { color: textSecondary }]}>Horas extras</Text>
@@ -111,8 +113,8 @@ export function OvertimeDetailModal({
                                     </View>
                                 </View>
                                 <View style={styles.modalDetailRow}>
-                                    <View style={[styles.modalDetailIconBox, { backgroundColor: '#8B5CF615' }]}>
-                                        <Ionicons name="cash-outline" size={16} color="#8B5CF6" />
+                                    <View style={[styles.modalDetailIconBox, { backgroundColor: `${accentUi}15` }]}>
+                                        <Ionicons name="cash-outline" size={16} color={accentUi} />
                                     </View>
                                     <View style={styles.rowText}>
                                         <Text style={[styles.modalDetailLabel, { color: textSecondary }]}>Valor por hora</Text>
@@ -195,21 +197,21 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center' 
     },
-    modalAvatarText: { 
-        fontSize: 14, 
-        fontWeight: '900' 
+    modalAvatarText: {
+        fontSize: 14,
+        fontFamily: FontFamily.black
     },
-    titleContainer: { 
-        flex: 1 
+    titleContainer: {
+        flex: 1
     },
-    modalTitle: { 
-        fontSize: 16, 
-        fontWeight: '900' 
+    modalTitle: {
+        fontSize: 16,
+        fontFamily: FontFamily.black
     },
-    modalSubtitle: { 
-        fontSize: 12, 
-        fontWeight: '500', 
-        marginTop: 1 
+    modalSubtitle: {
+        fontSize: 12,
+        fontFamily: FontFamily.medium,
+        marginTop: 1
     },
     modalCloseBtn: { 
         width: 34, 
@@ -240,9 +242,9 @@ const styles = StyleSheet.create({
         height: 8, 
         borderRadius: BorderRadius.full 
     },
-    modalStatusBannerText: { 
-        fontSize: 14, 
-        fontWeight: '800' 
+    modalStatusBannerText: {
+        fontSize: 14,
+        fontFamily: FontFamily.extrabold
     },
     modalDetailCard: { 
         borderRadius: BorderRadius.full, 
@@ -250,11 +252,11 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         marginBottom: 14 
     },
-    modalDetailSectionTitle: { 
-        fontSize: 11, 
-        fontWeight: '700', 
-        textTransform: 'uppercase', 
-        letterSpacing: 0.5 
+    modalDetailSectionTitle: {
+        fontSize: 11,
+        fontFamily: FontFamily.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
     },
     detailsList: { 
         gap: 12, 
@@ -275,13 +277,13 @@ const styles = StyleSheet.create({
     rowText: { 
         flex: 1 
     },
-    modalDetailLabel: { 
-        fontSize: 11, 
-        fontWeight: '500' 
+    modalDetailLabel: {
+        fontSize: 11,
+        fontFamily: FontFamily.medium
     },
-    modalDetailValue: { 
-        fontSize: 15, 
-        fontWeight: '800' 
+    modalDetailValue: {
+        fontSize: 15,
+        fontFamily: FontFamily.extrabold
     },
     modalTotalCard: {
         flexDirection: 'row', 
@@ -294,14 +296,14 @@ const styles = StyleSheet.create({
     totalTextContainer: { 
         flex: 1 
     },
-    modalTotalLabel: { 
-        fontSize: 12, 
-        fontWeight: '600' 
+    modalTotalLabel: {
+        fontSize: 12,
+        fontFamily: FontFamily.semibold
     },
-    modalTotalValue: { 
-        fontSize: 22, 
-        fontWeight: '900', 
-        marginTop: 2 
+    modalTotalValue: {
+        fontSize: 22,
+        fontFamily: FontFamily.black,
+        marginTop: 2
     },
     metadataList: { 
         gap: 8, 
@@ -312,12 +314,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between', 
         alignItems: 'center' 
     },
-    modalMetaLabel: { 
-        fontSize: 12, 
-        fontWeight: '500' 
+    modalMetaLabel: {
+        fontSize: 12,
+        fontFamily: FontFamily.medium
     },
-    modalMetaValue: { 
-        fontSize: 13, 
-        fontWeight: '700' 
+    modalMetaValue: {
+        fontSize: 13,
+        fontFamily: FontFamily.bold
     },
 });

@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React, { useState, useMemo } from 'react';
 import {
     Pressable,
@@ -42,7 +43,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
     selectedIds,
     max,
 }) => {
-    const { accentColor: primaryColor, borderColor, textPrimary, textSecondary, cardBg } = useAccentColor();
+    const { accentColor: primaryColor, borderColor, textPrimary, textSecondary, cardBg, accentOnSurface } = useAccentColor();
     const [searchText, setSearchText] = useState('');
 
     const filteredClients = useMemo(() => {
@@ -129,8 +130,8 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                                 {fullName}
                             </Text>
                             <View style={{ flexDirection: 'row', gap: 15, marginTop: 4 }}>
-                                <Text style={{ fontSize: 12, color: saldo > 0 ? '#10B981' : textSecondary, fontWeight: '800' }}>
-                                    Saldo: <Text style={{ color: saldo > 0 ? '#10B981' : textPrimary }}>${Number(saldo).toLocaleString()}</Text>
+                                <Text style={{ fontSize: 12, color: saldo > 0 ? accentOnSurface : textSecondary, fontFamily: FontFamily.extrabold }}>
+                                    Saldo: <Text style={{ color: saldo > 0 ? accentOnSurface : textPrimary }}>${Number(saldo).toLocaleString()}</Text>
                                 </Text>
                             </View>
                         </View>
@@ -143,7 +144,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
                                 >
                                     {({ pressed }) => (
                                         <View style={{ opacity: pressed ? 0.6 : 1 }}>
-                                            <Text style={{ color: primaryColor, fontSize: 12, fontWeight: '900' }}>CARGAR</Text>
+                                            <Text style={{ color: primaryColor, fontSize: 12, fontFamily: FontFamily.black }}>CARGAR</Text>
                                         </View>
                                     )}
                                 </Pressable>
@@ -165,18 +166,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         borderWidth: 2,
         marginBottom: 10,
     },
     modalItemText: {
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         paddingHorizontal: 12,
         marginBottom: 12,
         gap: 8,
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 8,
         fontSize: 15,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
     },
     clearButton: {
         padding: 4,
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
 });
 

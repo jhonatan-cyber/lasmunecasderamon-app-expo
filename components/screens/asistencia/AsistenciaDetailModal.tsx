@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 type AsistenciaItem = {
   id_asistencia: number;
@@ -56,26 +57,15 @@ function formatTime(timeStr: string): string {
   return timeStr?.substring(0, 5);
 }
 
-function getEstadoLabel(estado: number | string): { label: string; color: string; bg: string; isDark: boolean } {
+function getEstadoLabel(estado: number | string, accentOnSurface: string, accentColor: string, surfaceMuted: string, textSecondary: string) {
   const val = typeof estado === 'number' ? estado : parseInt(estado, 10);
   if (val === 0) {
-    return { label: 'Cobrado', color: '#065F46', bg: '#D1FAE5', isDark: false };
+    return { label: 'Cobrado', color: accentOnSurface, bg: surfaceMuted };
   }
   if (val === 1) {
-    return { label: 'Pendiente', color: '#92400E', bg: '#FEF3C7', isDark: false };
+    return { label: 'Pendiente', color: accentColor, bg: surfaceMuted };
   }
-  return { label: 'Sin estado', color: '#374151', bg: '#E5E7EB', isDark: false };
-}
-
-function getEstadoLabelDark(estado: number | string): { label: string; color: string; bg: string } {
-  const val = typeof estado === 'number' ? estado : parseInt(estado, 10);
-  if (val === 0) {
-    return { label: 'Cobrado', color: '#10B981', bg: 'rgba(16, 185, 129, 0.2)' };
-  }
-  if (val === 1) {
-    return { label: 'Pendiente', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.2)' };
-  }
-  return { label: 'Sin estado', color: '#9CA3AF', bg: 'rgba(107, 114, 128, 0.2)' };
+  return { label: 'Sin estado', color: textSecondary, bg: surfaceMuted };
 }
 
 export function AsistenciaDetailModal({
@@ -90,8 +80,7 @@ export function AsistenciaDetailModal({
   borderColor,
   isDark,
 }: AsistenciaDetailModalProps) {
-    const { accentOnSurface } = useAccentColor();
-  const { surfaceMuted } = useAccentColor();
+  const { accentOnSurface, surfaceMuted, accentText } = useAccentColor();
   const totalSueldo = asistencias.reduce((sum, a) => sum + (a.sueldo || 0), 0);
   const totalAporte = asistencias.reduce((sum, a) => sum + (a.aporte || 0), 0);
   const totalNeto = asistencias.reduce((sum, a) => sum + (a.total || a.sueldo - a.aporte || 0), 0);
@@ -158,7 +147,7 @@ export function AsistenciaDetailModal({
                       <Text style={[styles.summaryItemLabel, { color: textSecondary }]}>
                         Aporte
                       </Text>
-                      <Text style={[styles.summaryItemValue, { color: '#EF4444' }]}>
+                      <Text style={[styles.summaryItemValue, { color: accentColor }]}>
                         -${totalAporte.toLocaleString()}
                       </Text>
                     </View>
@@ -166,7 +155,7 @@ export function AsistenciaDetailModal({
                       <Text style={[styles.summaryItemLabel, { color: textSecondary }]}>
                         Neto
                       </Text>
-                      <Text style={[styles.summaryItemValue, { color: accentOnSurface, fontWeight: '800' }]}>
+                      <Text style={[styles.summaryItemValue, { color: accentOnSurface, fontFamily: FontFamily.extrabold }]}>
                         ${totalNeto.toLocaleString()}
                       </Text>
                     </View>
@@ -175,9 +164,7 @@ export function AsistenciaDetailModal({
 
                 {/* Attendance records */}
                 {asistencias.map((a, idx) => {
-                  const estado = isDark
-                    ? { ...getEstadoLabelDark(a.estado) }
-                    : { ...getEstadoLabel(a.estado) };
+                  const estado = getEstadoLabel(a.estado, accentOnSurface, accentColor, surfaceMuted, textSecondary);
 
                   return (
                     <View key={a.id_asistencia || idx} style={[styles.recordCard, { borderColor }]}>
@@ -208,7 +195,7 @@ export function AsistenciaDetailModal({
                           <Text style={[styles.recordAmountLabel, { color: textSecondary }]}>
                             Aporte
                           </Text>
-                          <Text style={[styles.recordAmountValue, { color: '#EF4444' }]}>
+                          <Text style={[styles.recordAmountValue, { color: accentColor }]}>
                             -${(a.aporte || 0).toLocaleString()}
                           </Text>
                         </View>
@@ -216,7 +203,7 @@ export function AsistenciaDetailModal({
                           <Text style={[styles.recordAmountLabel, { color: textSecondary }]}>
                             Total
                           </Text>
-                          <Text style={[styles.recordAmountValue, { color: accentOnSurface, fontWeight: '800' }]}>
+                          <Text style={[styles.recordAmountValue, { color: accentOnSurface, fontFamily: FontFamily.extrabold }]}>
                             ${(a.total || a.sueldo - a.aporte || 0).toLocaleString()}
                           </Text>
                         </View>
@@ -244,7 +231,7 @@ export function AsistenciaDetailModal({
             accessibilityRole="button"
             accessibilityLabel="Cerrar detalle"
           >
-            <Text style={styles.closeActionText}>Cerrar</Text>
+            <Text style={[styles.closeActionText, { color: accentText }]}>Cerrar</Text>
           </Pressable>
         </View>
       </View>
@@ -282,7 +269,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   subtitle: {
     fontSize: FontSize.sm,
@@ -315,7 +302,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: FontSize.xxs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     letterSpacing: 1.5,
     marginBottom: 12,
     textTransform: 'uppercase',
@@ -330,12 +317,12 @@ const styles = StyleSheet.create({
   },
   summaryItemLabel: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginBottom: 4,
   },
   summaryItemValue: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   recordCard: {
     borderRadius: BorderRadius.full,
@@ -356,7 +343,7 @@ const styles = StyleSheet.create({
   },
   recordTimeText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   estadoBadge: {
     paddingHorizontal: 10,
@@ -365,7 +352,7 @@ const styles = StyleSheet.create({
   },
   estadoText: {
     fontSize: FontSize.xxs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   recordAmounts: {
     flexDirection: 'row',
@@ -377,12 +364,12 @@ const styles = StyleSheet.create({
   },
   recordAmountLabel: {
     fontSize: FontSize.xxs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginBottom: 2,
   },
   recordAmountValue: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -400,8 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeActionText: {
-    color: '#FFFFFF',
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

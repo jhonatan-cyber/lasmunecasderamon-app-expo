@@ -3,6 +3,7 @@ import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { VentaDetail } from "./types";
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface VentaOrigenSectionProps {
@@ -22,19 +23,19 @@ export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
     textSecondary,
     isDark,
 } ) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted } = useAccentColor();
     return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#1a1a2e" : "#F8FAFC", borderColor }]}>
+    <View style={[styles.container, { backgroundColor: surfaceMuted, borderColor }]}>
         <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: selectedVenta.pedido_id ? `${accentColor}20` : "#10B98120" }]}>
+            <View style={[styles.iconBox, { backgroundColor: selectedVenta.pedido_id ? `${accentColor}20` : `${accentOnSurface}20` }]}>
                 <Ionicons
                     name={selectedVenta.pedido_id ? "receipt-outline" : "storefront-outline"}
                     size={20}
-                    color={selectedVenta.pedido_id ? accentColor : "#10B981"}
+                    color={selectedVenta.pedido_id ? accentColor : accentOnSurface}
                 />
             </View>
-            <View style={{ flex: 1 }}>
-                <Text style={[styles.origenType, { color: selectedVenta.pedido_id ? accentColor : "#10B981" }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.origenType, { color: selectedVenta.pedido_id ? accentColor : accentOnSurface }]}>
                     {selectedVenta.pedido_id ? "VENTA DESDE PEDIDO" : "VENTA DIRECTA EN BARRA"}
                 </Text>
                 {selectedVenta.pedido_id ? (
@@ -89,11 +90,11 @@ const styles = StyleSheet.create({
     container: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 20 },
     row: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
     iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center" },
-    origenType: { fontSize: 11, fontWeight: "900", letterSpacing: 0.5, marginBottom: 6 },
+    origenType: { fontSize: 11, fontFamily: FontFamily.black, letterSpacing: 0.5, marginBottom: 6 },
     personas: { gap: 3 },
-    personaLabel: { fontSize: 13, fontWeight: "500" },
-    personaValue: { fontWeight: "700" },
+    personaLabel: { fontSize: 13, fontFamily: FontFamily.medium },
+    personaValue: { fontFamily: FontFamily.bold },
     habitacionRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
     tiempoBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
-    tiempoText: { fontSize: 12, fontWeight: "800" },
+    tiempoText: { fontSize: 12, fontFamily: FontFamily.extrabold },
 });

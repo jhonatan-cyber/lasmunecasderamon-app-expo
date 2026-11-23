@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CajaAction } from '@/hooks/useCaja';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -113,8 +114,8 @@ export function CajaModales({
                                     </View>
                                 )}
                                 <View style={[styles.breakdownItem, { borderTopWidth: 1, borderTopColor: borderColor, marginTop: 8, paddingTop: 8 }]}>
-                                    <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontWeight: '800' }]}>MONTO DE CIERRE</Text>
-                                    <Text style={[styles.breakdownItemValue, { color: accentColor, fontWeight: '900', fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
+                                    <Text style={[styles.breakdownItemLabel, { color: textPrimary, fontFamily: FontFamily.extrabold }]}>MONTO DE CIERRE</Text>
+                                    <Text style={[styles.breakdownItemValue, { color: accentColor, fontFamily: FontFamily.black, fontSize: 20 }]}>${(stats.monto_cierre_previsto ?? stats.balance_total ?? 0).toLocaleString()}</Text>
                                 </View>
                             </View>
                         )}
@@ -160,7 +161,7 @@ export function CajaModales({
                         {modalType === 'cerrar' && (
                             <View style={[styles.infoBox, { backgroundColor: `${modalConfig.color}12` }]}>
                                 <Ionicons name="shield-checkmark-outline" size={18} color={modalConfig.color} />
-                                <Text style={{ color: modalConfig.color, fontSize: 12, fontWeight: '700', marginLeft: 8, flex: 1 }}>
+                                <Text style={{ color: modalConfig.color, fontSize: 12, fontFamily: FontFamily.bold, marginLeft: 8, flex: 1 }}>
                                     Se envía el pedido por WhatsApp al administrador. La caja sigue abierta hasta que autorice.
                                 </Text>
                             </View>
@@ -170,7 +171,7 @@ export function CajaModales({
                         {modalType === 'retiro' && stats && (
                             <View style={[styles.infoBox, { backgroundColor: `${modalConfig.color}12`, marginTop: 16 }]}>
                                 <Ionicons name="information-circle-outline" size={18} color={modalConfig.color} />
-                                <Text style={{ color: modalConfig.color, fontSize: 13, fontWeight: '700', marginLeft: 8 }}>
+                                <Text style={{ color: modalConfig.color, fontSize: 13, fontFamily: FontFamily.bold, marginLeft: 8 }}>
                                     Efectivo disponible: ${(stats.total_efectivo || 0).toLocaleString()}
                                 </Text>
                             </View>
@@ -230,13 +231,13 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: 22,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         textAlign: 'center',
         marginBottom: 6
     },
     modalSubtitle: {
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         textAlign: 'center',
         marginBottom: 24,
         lineHeight: 20
@@ -255,11 +256,11 @@ const styles = StyleSheet.create({
     },
     modalBtnCancel: {
         fontSize: 14,
-        fontWeight: '700'
+        fontFamily: FontFamily.bold
     },
     modalBtnConfirm: {
         fontSize: 14,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         color: '#FFF'
     },
     modalBreakdown: {
@@ -276,11 +277,11 @@ const styles = StyleSheet.create({
     },
     breakdownItemLabel: {
         fontSize: 13,
-        fontWeight: '600'
+        fontFamily: FontFamily.semibold
     },
     breakdownItemValue: {
         fontSize: 13,
-        fontWeight: '800'
+        fontFamily: FontFamily.extrabold
     },
     inputBox: {
         flexDirection: 'row',
@@ -293,13 +294,13 @@ const styles = StyleSheet.create({
     },
     currencySign: {
         fontSize: 20,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         marginRight: 8
     },
     input: {
         flex: 1,
         fontSize: 22,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         padding: 0
     },
     infoBox: {

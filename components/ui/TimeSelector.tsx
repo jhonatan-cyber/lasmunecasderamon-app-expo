@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -12,6 +13,7 @@ interface TimeSelectorProps {
     min?: number;
     max?: number;
     label?: string;
+    disabled?: boolean;
 }
 
 export const TimeSelector: React.FC<TimeSelectorProps> = ({
@@ -20,7 +22,8 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
     step = 5,
     min = 0,
     max = 999,
-    label = "Tiempo (minutos)"
+    label = "Tiempo (minutos)",
+    disabled = false
 }) => {
     const { accentColor, textPrimary, textSecondary, borderColor, surfaceMuted, isDark } = useAccentColor();
     const cardBg = surfaceMuted;
@@ -53,9 +56,10 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
     return (
         <View style={styles.container}>
             {label ? <Text style={[styles.label, { color: textSecondary }]}>{label.toUpperCase()}</Text> : null}
-            <View style={[styles.selectorWrapper, { borderColor, backgroundColor: cardBg }, neonGlow]}>
+            <View style={[styles.selectorWrapper, { borderColor, backgroundColor: cardBg }, neonGlow, disabled && { opacity: 0.5 }]}>
                 <Pressable
                     onPress={handleDecrement}
+                    disabled={disabled}
                     style={({ pressed }) => [
                         styles.btn,
                         { borderColor },
@@ -68,12 +72,13 @@ export const TimeSelector: React.FC<TimeSelectorProps> = ({
                 <View style={styles.valueContainer}>
                     <Ionicons name="time-outline" size={20} color={textSecondary} style={styles.timeIcon} />
                     <Text style={[styles.valueText, { color: textPrimary }]}>
-                        {value} <Text style={{ fontSize: 14, fontWeight: '600', color: textSecondary }}>min</Text>
+                        {value} <Text style={{ fontSize: 14, fontFamily: FontFamily.semibold, color: textSecondary }}>min</Text>
                     </Text>
                 </View>
 
                 <Pressable
                     onPress={handleIncrement}
+                    disabled={disabled}
                     style={({ pressed }) => [
                         styles.btn,
                         { borderColor },
@@ -93,7 +98,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 11,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         marginBottom: 8,
         letterSpacing: 1,
     },
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
     },
     valueText: {
         fontSize: 18,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
 });
 

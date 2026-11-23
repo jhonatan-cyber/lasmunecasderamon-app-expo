@@ -42,7 +42,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
   const code = item.codigo || item.codigo_venta;
   
   // Borde neón en modo oscuro con el color del tipo
-  const cardNeonColor = type === 'comisiones' ? accentColor : '#10B981';
+  const cardNeonColor = type === 'comisiones' ? accentColor : accentOnSurface;
   const cardNeonGlow = isDark ? {
     shadowColor: cardNeonColor,
     shadowOffset: { width: 0, height: 0 },
@@ -88,9 +88,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
                 style={[
                   styles.badge,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255,255,255,0.05)'
-                      : '#F1F5F9',
+                    backgroundColor: surfaceMuted,
                   },
                 ]}
               >
@@ -108,13 +106,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
               style={[
                 styles.statusBadge,
                 {
-                  backgroundColor: isPendiente
-                    ? isDark
-                      ? '#065F46'
-                      : '#D1FAE5'
-                    : isDark
-                      ? '#1e3b8a'
-                      : '#DBEAFE',
+                  backgroundColor: surfaceMuted,
                 },
               ]}
             >
@@ -122,13 +114,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
                 style={[
                   styles.statusText,
                   {
-                    color: isPendiente
-                      ? isDark
-                        ? '#6EE7B7'
-                        : '#065F46'
-                      : isDark
-                        ? '#93C5FD'
-                        : '#1E40AF',
+                    color: accentOnSurface,
                   },
                 ]}
               >
@@ -163,7 +149,7 @@ export const FinancialEventCard: React.FC<FinancialEventCardProps> = ({
             <Text
               style={[
                 styles.amountValue,
-                { color: isPendiente ? accentColor : '#10B981' },
+                { color: isPendiente ? accentColor : accentOnSurface },
               ]}
             >
               ${amount.toLocaleString()}

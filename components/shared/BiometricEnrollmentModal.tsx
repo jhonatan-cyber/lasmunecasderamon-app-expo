@@ -81,7 +81,7 @@ export function BiometricEnrollmentModal({
     onEnrolled: () => void;
 }) {
     const setBiometricoFacialEnrolled = useAuthStore((state) => state.setBiometricoFacialEnrolled);
-    const { accentColor } = useAccentColor();
+    const { accentColor, accentOnSurface } = useAccentColor();
     const [phase, setPhase] = useState<Phase>('intro');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -406,7 +406,7 @@ export function BiometricEnrollmentModal({
         return fase === 'front' ? 'Mirá de frente a la cámara' : 'Seguí girando un poco';
     }, [estado, fase, pose, restante, sinDetector]);
 
-    const estadoColor = estado === 'ok' ? '#34D399' : 'rgba(255,255,255,0.78)';
+    const estadoColor = estado === 'ok' ? accentOnSurface : 'rgba(255,255,255,0.78)';
     const estadoIcono: React.ComponentProps<typeof Ionicons>['name'] =
         estado === 'ok'
             ? 'checkmark-circle'
@@ -416,7 +416,7 @@ export function BiometricEnrollmentModal({
                 ? 'sync-outline'
                 : 'person-circle-outline';
 
-    const colorAnillo = estado === 'ok' ? '#34D399' : accentColor;
+    const colorAnillo = estado === 'ok' ? accentOnSurface : accentColor;
     const indiceActual = fase
         ? PASOS[fase].numero - 1
         : phase === 'processing'
@@ -449,7 +449,7 @@ export function BiometricEnrollmentModal({
                 />
 
                 <View style={styles.header}>
-                    <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={8}>
+                    <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cerrar registro biométrico">
                         <Ionicons name="close" size={24} color="#FFF" />
                     </Pressable>
                     <Text style={styles.headerTitle}>Enrolamiento facial</Text>

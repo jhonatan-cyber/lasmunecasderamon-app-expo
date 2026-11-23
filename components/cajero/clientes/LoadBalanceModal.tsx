@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Client } from '@/hooks/useClientes';
 import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
@@ -71,7 +72,7 @@ export function LoadBalanceModal({
     onBaucherFotoChange,
     onClose
 }: LoadBalanceModalProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted, accentText, accentColor: themeAccent } = useAccentColor();
     const hasTransferencia =
         loadMetodoPago === 'transferencia' ||
         (loadMetodoPago === 'mixto' &&
@@ -81,19 +82,19 @@ export function LoadBalanceModal({
         <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
             <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
                 <View style={[styles.modalContent, {
-                    backgroundColor: isDark ? "#111111" : "#FFFFFF",
+                    backgroundColor: cardBg,
                     height: 'auto',
                     paddingBottom: Math.max(insets.bottom, 20) + 20
                 }]}>
                     <View style={styles.modalHeader}>
                         <View>
-                            <Text style={[styles.modalTitle, { color: isDark ? "#FFFFFF" : "#111827" }]}>Cargar Saldo</Text>
-                            <Text style={{ color: isDark ? "#9CA3AF" : "#6B7280", fontWeight: '700' }}>
+                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Cargar Saldo</Text>
+                            <Text style={{ color: textSecondary, fontFamily: FontFamily.bold }}>
                                 {editingClient?.name} {editingClient?.lastName}
                             </Text>
                         </View>
-                        <Pressable onPress={onClose}>
-                            <Ionicons name="close" size={26} color={isDark ? "#FFFFFF" : "#111827"} />
+                        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar carga de saldo">
+                            <Ionicons name="close" size={26} color={textPrimary} />
                         </Pressable>
                     </View>
 
@@ -103,20 +104,20 @@ export function LoadBalanceModal({
                         {cajaAbierta === false && <CajaClosedBanner />}
 
                         <View>
-                            <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>MONTO A CARGAR</Text>
+                            <Text style={[styles.formLabel, { color: textSecondary }]}>MONTO A CARGAR</Text>
                             <TextInput
                                 style={[styles.input, {
-                                    color: isDark ? "#FFFFFF" : "#111827",
-                                    borderColor: isDark ? "#374151" : "#E5E7EB",
+                                    color: textPrimary,
+                                    borderColor,
                                     fontSize: 24,
-                                    fontWeight: '800',
+                                    fontFamily: FontFamily.extrabold,
                                     height: 60,
                                     textAlign: 'center'
                                 }]}
                                 value={loadingAmount}
                                 onChangeText={(text) => setLoadingAmount(formatCurrency(text))}
                                 placeholder="0"
-                                placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
+                                placeholderTextColor={textSecondary}
                                 keyboardType="numeric"
                                 autoFocus
                             />
@@ -147,7 +148,7 @@ export function LoadBalanceModal({
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <TextInput
-                                            style={[styles.input, { color: isDark ? "#FFFFFF" : "#111827", borderColor: isDark ? "#374151" : "#E5E7EB" }]}
+                                            style={[styles.input, { color: textPrimary, borderColor }]}
                                             value={primaryAmount}
                                             onChangeText={(text) => {
                                                 const formatted = formatCurrency(text);
@@ -158,7 +159,7 @@ export function LoadBalanceModal({
                                                 else setSecondaryAmount("0");
                                             }}
                                             placeholder="$ 0"
-                                            placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
+                                            placeholderTextColor={textSecondary}
                                             keyboardType="numeric"
                                         />
                                     </View>
@@ -175,7 +176,7 @@ export function LoadBalanceModal({
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <TextInput
-                                            style={[styles.input, { color: isDark ? "#FFFFFF" : "#111827", borderColor: isDark ? "#374151" : "#E5E7EB" }]}
+                                            style={[styles.input, { color: textPrimary, borderColor }]}
                                             value={secondaryAmount}
                                             onChangeText={(text) => {
                                                 const formatted = formatCurrency(text);
@@ -186,7 +187,7 @@ export function LoadBalanceModal({
                                                 else setPrimaryAmount("0");
                                             }}
                                             placeholder="$ 0"
-                                            placeholderTextColor={isDark ? "#4B5563" : "#9CA3AF"}
+                                            placeholderTextColor={textSecondary}
                                             keyboardType="numeric"
                                         />
                                     </View>
@@ -196,7 +197,7 @@ export function LoadBalanceModal({
 
                         {hasTransferencia && (
                             <View>
-                                <Text style={[styles.formLabel, { color: isDark ? "#9CA3AF" : "#6B7280" }]}>
+                                <Text style={[styles.formLabel, { color: textSecondary }]}>
                                     COMPROBANTE DE TRANSFERENCIA
                                 </Text>
                                 <TouchableOpacity
@@ -208,8 +209,8 @@ export function LoadBalanceModal({
                                         paddingHorizontal: 20,
                                         borderRadius: BorderRadius.full,
                                         borderWidth: 1,
-                                        borderColor: isDark ? '#374151' : '#E5E7EB',
-                                        backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+                                        borderColor,
+                                        backgroundColor: surfaceMuted,
                                     }}
                                     onPress={async () => {
                                         const foto = await adjuntarBaucher('LoadBalanceModal');
@@ -219,11 +220,11 @@ export function LoadBalanceModal({
                                     <Ionicons
                                         name={loadBaucherFoto ? 'checkmark-circle' : 'camera-outline'}
                                         size={20}
-                                        color={loadBaucherFoto ? '#10B981' : accentColor}
+                                        color={loadBaucherFoto ? accentOnSurface : accentColor}
                                     />
                                     <Text style={{
-                                        color: loadBaucherFoto ? '#10B981' : isDark ? '#E5E7EB' : '#374151',
-                                        fontWeight: '700',
+                                        color: loadBaucherFoto ? accentOnSurface : textPrimary,
+                                        fontFamily: FontFamily.bold,
                                         fontSize: 13,
                                         marginLeft: 8,
                                     }}>
@@ -240,7 +241,7 @@ export function LoadBalanceModal({
                                         }}
                                         onPress={() => onBaucherFotoChange(null)}
                                     >
-                                        <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '700' }}>
+                                        <Text style={{ color: themeAccent, fontSize: 11, fontFamily: FontFamily.bold }}>
                                             Quitar comprobante
                                         </Text>
                                     </TouchableOpacity>
@@ -257,8 +258,8 @@ export function LoadBalanceModal({
                             onPress={handleLoadBalance}
                             disabled={submitting || cajaAbierta === false}
                         >
-                            {submitting ? <ActivityIndicator color="#FFF" /> : (
-                                <Text style={styles.saveBtnText}>CONFIRMAR CARGA</Text>
+                            {submitting ? <ActivityIndicator color={accentText} /> : (
+                                <Text style={[styles.saveBtnText, { color: accentText }]}>CONFIRMAR CARGA</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -286,24 +287,24 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         marginBottom: 25 
     },
-    modalTitle: { 
-        fontSize: 22, 
-        fontWeight: '900' 
+    modalTitle: {
+        fontSize: 22,
+        fontFamily: FontFamily.black
     },
-    formLabel: { 
-        fontSize: 11, 
-        fontWeight: '900', 
-        letterSpacing: 1, 
-        marginBottom: 8 
+    formLabel: {
+        fontSize: 11,
+        fontFamily: FontFamily.black,
+        letterSpacing: 1,
+        marginBottom: 8
     },
-    input: { 
-        height: 50, 
-        borderWidth: 1, 
-        borderRadius: BorderRadius.full, 
-        paddingHorizontal: 15, 
-        fontSize: 14, 
-        fontWeight: '700', 
-        backgroundColor: 'rgba(155,155,155,0.03)' 
+    input: {
+        height: 50,
+        borderWidth: 1,
+        borderRadius: BorderRadius.full,
+        paddingHorizontal: 15,
+        fontSize: 14,
+        fontFamily: FontFamily.bold,
+        backgroundColor: 'rgba(155,155,155,0.03)'
     },
     saveBtn: { 
         height: 56, 
@@ -312,28 +313,27 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         marginTop: 10 
     },
-    saveBtnText: { 
-        color: '#FFF', 
-        fontSize: 15, 
-        fontWeight: '900', 
-        letterSpacing: 1 
+    saveBtnText: {
+        fontSize: 15,
+        fontFamily: FontFamily.black,
+        letterSpacing: 1
     },
-    mixedInputs: { 
-        gap: 12, 
-        backgroundColor: 'rgba(155,155,155,0.05)', 
-        padding: 16, 
-        borderRadius: BorderRadius.full 
+    mixedInputs: {
+        gap: 12,
+        backgroundColor: 'rgba(155,155,155,0.05)',
+        padding: 16,
+        borderRadius: BorderRadius.full
     },
-    mixedHeader: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        gap: 8, 
-        marginBottom: 4 
+    mixedHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 4
     },
-    mixedTitle: { 
-        fontSize: 12, 
-        fontWeight: '900', 
-        letterSpacing: 0.5 
+    mixedTitle: {
+        fontSize: 12,
+        fontFamily: FontFamily.black,
+        letterSpacing: 0.5
     },
     mixedRow: { 
         flexDirection: 'row', 

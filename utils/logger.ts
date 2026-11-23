@@ -1,6 +1,7 @@
 import { addBreadcrumb, captureException, captureMessage } from '@/utils/sentry';
 import { formatPayload, makeLogEntry } from '@lasmunecasderamon/utils';
 import {
+  ForbiddenError,
   NetworkError,
   RetryExhaustedError,
   TimeoutError,
@@ -22,10 +23,12 @@ const isExpectedFetchError = (error: unknown): boolean => {
     error instanceof TimeoutError ||
     error instanceof RetryExhaustedError ||
     error instanceof UnauthorizedError ||
+    error instanceof ForbiddenError ||
     name === 'NetworkError' ||
     name === 'TimeoutError' ||
     name === 'RetryExhaustedError' ||
-    name === 'UnauthorizedError'
+    name === 'UnauthorizedError' ||
+    name === 'ForbiddenError'
   );
 };
 
@@ -91,8 +94,14 @@ const logger = {
   },
   captureException: (error: any, meta?: Record<string, any>) => {
     const scrubbed = scrubMeta(meta);
-    console.error(JSON.stringify(makeLogEntry('error', error?.message || String(error), scrubbed)));
-    captureBreadcrumb(error?.message || String(error), 'error', scrubbed);
+    const message = error?.message || String(error ?? 'Unknown error');
+    try {
+      console.error(JSON.stringify(makeLogEntry('error', message, scrubbed)));
+    } catch {
+      // Si JSON.stringify falla (referencia circular), loguear sin meta
+      console.error(JSON.stringify(makeLogEntry('error', message, undefined)));
+    }
+    captureBreadcrumb(message, 'error', scrubbed);
     handleSentryError(error);
   },
   /**

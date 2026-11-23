@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { BorderRadius, FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
@@ -59,6 +60,8 @@ export const DashboardActionCard = ({
     textSecondary,
     borderColor: themeBorder,
     surfaceMuted,
+    bg,
+    accentText,
   } = useAccentColor();
   const { isTablet } = useResponsiveMetrics();
   const reducedMotion = useReducedMotion();
@@ -99,13 +102,13 @@ export const DashboardActionCard = ({
   // En estado bloqueado (caja cerrada), el ícono se atenúa con alpha para
   // mantener coherencia visual con la variante tile.
   const rowIconColor = disabled
-    ? (isDark ? '#555555' : '#BBBBBB')
+    ? textSecondary
     : bloqueado
       ? isBlackAccent
-        ? withAlpha('#FFFFFF', 0.45)
+        ? withAlpha(accentText, 0.45)
         : withAlpha(color, 0.45)
       : isBlackAccent
-        ? '#FFFFFF'
+        ? accentText
         : color;
 
   // Borde neón en modo oscuro: aplica a ambas variantes (tile y row).
@@ -135,7 +138,7 @@ export const DashboardActionCard = ({
             backgroundColor: cardBg,
             padding,
             opacity: disabled ? 0.45 : 1,
-            borderLeftColor: disabled ? (isDark ? '#333333' : '#DDDDDD') : color,
+            borderLeftColor: disabled ? themeBorder : color,
             ...neonBorder,
           },
         ]}
@@ -158,7 +161,7 @@ export const DashboardActionCard = ({
                 styles.mainTitle,
                 {
                   fontSize: isTablet ? 20 : FontSize.sm,
-                  color: disabled ? (isDark ? '#666666' : '#999999') : textPrimary,
+                  color: disabled ? textSecondary : textPrimary,
                 },
               ]}
             >
@@ -173,7 +176,7 @@ export const DashboardActionCard = ({
                 styles.subDescription,
                 {
                   fontSize: isTablet ? 14 : FontSize.xs,
-                  color: disabled ? (isDark ? '#444444' : '#CCCCCC') : textSecondary,
+                  color: disabled ? textSecondary : textSecondary,
                 },
               ]}
             >
@@ -188,7 +191,7 @@ export const DashboardActionCard = ({
   // Variante tile: chip de color arriba, título y descripción debajo.
   const chipSize = isTablet ? 58 : 46;
   const chipRadius = isTablet ? 18 : 14;
-  const mutedColor = isDark ? '#555555' : '#BBBBBB';
+  const mutedColor = textSecondary;
   const chipBg = disabled
     ? withAlpha(mutedColor, isDark ? 0.16 : 0.12)
     : bloqueado
@@ -197,7 +200,7 @@ export const DashboardActionCard = ({
   const iconColor = disabled
     ? mutedColor
     : isBlackAccent
-      ? bloqueado ? withAlpha('#FFFFFF', 0.45) : '#FFFFFF'
+      ? bloqueado ? withAlpha(accentText, 0.45) : accentText
       : bloqueado
         ? withAlpha(readableTextColor(color), 0.45)
         : readableTextColor(color);
@@ -212,7 +215,7 @@ export const DashboardActionCard = ({
     borderRadius: BorderRadius.card,
     opacity: 0.04,
     borderWidth: 1,
-    borderColor: isDark ? '#FFFFFF' : '#000000',
+    borderColor: isDark ? accentText : bg,
     borderStyle: 'dashed' as const,
   };
 
@@ -249,7 +252,7 @@ export const DashboardActionCard = ({
           backgroundColor: cardBg,
           borderColor: borderColor ?? themeBorder,
           padding,
-          minHeight: isTablet ? 176 : 136,
+          minHeight: isTablet ? 150 : 110,
           opacity: disabled ? 0.45 : 1,
           ...neonBorder,
         },
@@ -324,7 +327,7 @@ export const DashboardActionCard = ({
           styles.tileTitle,
           {
             fontSize: titleSize,
-            color: disabled ? (isDark ? '#666666' : '#999999') : textPrimary,
+            color: disabled ? textSecondary : textPrimary,
           },
         ]}
       >
@@ -338,7 +341,7 @@ export const DashboardActionCard = ({
           styles.tileDescription,
           {
             fontSize: descSize,
-            color: disabled ? (isDark ? '#444444' : '#CCCCCC') : textSecondary,
+            color: disabled ? textSecondary : textSecondary,
           },
         ]}
       >
@@ -370,12 +373,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   mainTitle: {
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     letterSpacing: -0.2,
     lineHeight: 22,
   },
   subDescription: {
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
     lineHeight: 16,
   },
   tile: {
@@ -417,16 +420,16 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   badgeText: {
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     lineHeight: 15,
   },  tileTitle: {
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     letterSpacing: 0.2,
     lineHeight: 19,
     marginBottom: 3,
   },
   tileDescription: {
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
     lineHeight: 16,
   },
 });

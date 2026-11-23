@@ -132,7 +132,7 @@ export function PremiumHeader({
                 {
                     backgroundColor: accentColor,
                     boxShadow: accentGlow,
-                    paddingTop: insets.top + (compact ? 4 : isTablet ? 20 : 10),
+                    paddingTop: insets.top + (compact ? 10 : isTablet ? 26 : 16),
                     paddingBottom: compact ? 16 : 25,
                     borderBottomLeftRadius: compact ? 24 : 32,
                     borderBottomRightRadius: compact ? 24 : 32,
@@ -184,6 +184,8 @@ export function PremiumHeader({
                                         onPress={crumb.onPress}
                                         accessibilityRole="button"
                                         accessibilityLabel={`Navegar a ${crumb.label}`}
+                                        hitSlop={{ top: 10, right: 4, bottom: 10, left: 4 }}
+                                        style={{ paddingVertical: 2, paddingHorizontal: 2 }}
                                     >
                                         <Text style={{
                                             color: i === breadcrumbs.length - 1 ? gradientText : gradientTextMuted,

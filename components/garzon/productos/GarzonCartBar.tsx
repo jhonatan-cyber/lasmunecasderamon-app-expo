@@ -1,5 +1,6 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
@@ -33,6 +34,8 @@ interface GarzonCartBarProps {
   cartTotal: number;
   submitting: boolean;
   submitOrder: () => void;
+  /** Abre la vista/modal con el detalle del pedido. */
+  onViewCart: () => void;
 
   insets: { bottom: number };
   accentColor: string;
@@ -54,6 +57,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   cartTotal,
   submitting,
   submitOrder,
+  onViewCart,
   insets,
   accentColor,
   borderColor,
@@ -61,7 +65,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   textPrimary,
   textSecondary,
 }) => {
-    const { accentOnSurface, isDark } = useAccentColor();
+    const { accentOnSurface, isDark, accentColor: themeAccent } = useAccentColor();
 
   // Glow neón en el botón de enviar en modo oscuro
   const submitBtnNeonGlow = isDark ? {
@@ -93,7 +97,7 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
             accessibilityRole="button"
             accessibilityState={{ selected: tipEnabled }}
           >
-            <Text style={{ color: accentOnSurface, fontWeight: "600" }}>
+            <Text style={{ color: accentOnSurface, fontFamily: FontFamily.semibold }}>
               {tipEnabled ? "Activa" : "Inactiva"} · $
               {tipAmount.toLocaleString()}
             </Text>
@@ -150,20 +154,20 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
           style={[
             styles.baucherRow,
             {
-              borderColor: baucherFoto ? accentColor : "#EF4444",
-              backgroundColor: baucherFoto ? `${accentColor}1A` : "#EF44441A",
+              borderColor: baucherFoto ? accentColor : themeAccent,
+              backgroundColor: baucherFoto ? `${accentColor}1A` : `${themeAccent}1A`,
             },
           ]}
         >
           {baucherFoto ? (
             <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
           ) : (
-            <Ionicons name="camera-outline" size={20} color="#EF4444" />
+            <Ionicons name="camera-outline" size={20} color={themeAccent} />
           )}
           <Text
             style={[
               styles.baucherText,
-              { color: baucherFoto ? accentColor : "#EF4444" },
+              { color: baucherFoto ? accentColor : themeAccent },
             ]}
           >
             {baucherFoto
@@ -174,14 +178,22 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
       )}
 
       <View style={styles.cartMainRow}>
-        <View>
-          <Text style={[styles.cartLabel, { color: textSecondary }]}>
-            Total Pedido
-          </Text>
-          <Text style={[styles.cartTotal, { color: textPrimary }]}>
-            ${cartTotal.toLocaleString()}
-          </Text>
-        </View>
+        <Pressable
+          onPress={onViewCart}
+          accessibilityRole="button"
+          accessibilityLabel="Ver detalle del pedido"
+          style={styles.cartInfo}
+        >
+          <View style={styles.cartAmountColumn}>
+            <Text style={[styles.cartLabel, { color: textSecondary }]}>
+              Total Pedido
+            </Text>
+            <Text style={[styles.cartTotal, { color: textPrimary }]}>
+              ${cartTotal.toLocaleString()}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={textSecondary} />
+        </Pressable>
         <View style={isDark ? submitBtnNeonGlow : {}}>
           <Pressable
             onPress={submitOrder}
@@ -225,8 +237,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tipControl: { flexDirection: "row", alignItems: "center", gap: 10 },
-  tipText: { fontSize: 13, fontWeight: "600" },
-  tipAmount: { fontSize: 13, fontWeight: "700" },
+  tipText: { fontSize: 13, fontFamily: FontFamily.semibold },
+  tipAmount: { fontSize: 13, fontFamily: FontFamily.bold },
   paymentRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -234,7 +246,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  paymentLabel: { fontSize: 12, fontWeight: "600" },
+  paymentLabel: { fontSize: 12, fontFamily: FontFamily.semibold },
   paymentOptions: {
     flexDirection: "row",
     gap: 6,
@@ -250,7 +262,7 @@ const styles = StyleSheet.create({
   },
   paymentChipText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     textTransform: "capitalize",
   },
   baucherRow: {
@@ -271,15 +283,25 @@ const styles = StyleSheet.create({
   baucherText: {
     flexShrink: 1,
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   cartMainRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
   },
-  cartLabel: { fontSize: 12, fontWeight: "600" },
-  cartTotal: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
+  cartInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 1,
+  },
+  cartAmountColumn: {
+    gap: 2,
+  },
+  cartLabel: { fontSize: 12, fontFamily: FontFamily.semibold },
+  cartTotal: { fontSize: 24, fontFamily: FontFamily.black, letterSpacing: -0.5 },
   submitBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: BorderRadius.full },
-  submitText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  submitText: { color: "#FFF", fontSize: 16, fontFamily: FontFamily.bold },
 });

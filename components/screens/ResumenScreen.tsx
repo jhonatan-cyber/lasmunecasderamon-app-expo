@@ -11,7 +11,7 @@ import {
 } from "@/components/screens/home/eventLabels";
 import { PremiumCalendar } from "@/components/ui/PremiumCalendar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
-import { contentColumn } from "@/constants/layout";
+import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -118,7 +118,7 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
             tintColor={accentColor}
           />
         }
-        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
+        contentContainerStyle={[contentColumn, { paddingBottom: tabBarBottomPadding }]}
       >
         <View style={{ paddingHorizontal: 16 }}>
           {/* Total a cobrar y botón PDF - siempre visible */}

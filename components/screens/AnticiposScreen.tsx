@@ -1,5 +1,6 @@
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
@@ -218,6 +219,7 @@ export default function AnticiposScreen() {
       <PremiumHeader
         title="Anticipos"
         subtitle="Mis solicitudes y anticipos recibidos"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -268,6 +270,7 @@ export default function AnticiposScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader
           title="Anticipos"
+          showThemeToggle={false}
           rightComponent={
             <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
@@ -284,6 +287,7 @@ export default function AnticiposScreen() {
       <PremiumHeader
         title="Anticipos"
         subtitle="Mis solicitudes y anticipos recibidos"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -365,7 +369,7 @@ export default function AnticiposScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="card-outline" title="No se encontraron anticipos" message="No hay anticipos registrados para este período. Los anticipos aparecerán cuando se creen." />
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
         }
         {...LIST_PERF_PROPS}
       />
@@ -431,26 +435,26 @@ export default function AnticiposScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: BorderRadius.full,
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: BorderRadius.card,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
   },
   summaryLabel: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 1.5,
+    marginBottom: 6,
   },
   summaryAmount: {
-    fontSize: 38,
+    fontSize: 34,
     fontWeight: '900',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  summaryDetails: { flexDirection: 'row', gap: 16 },
-  summaryDetail: { fontSize: 13 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  summaryDetail: { fontSize: 12, fontWeight: '600' },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding + 20 },
 });

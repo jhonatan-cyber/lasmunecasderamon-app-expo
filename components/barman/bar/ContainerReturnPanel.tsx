@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { View, Text, TextInput, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
   MOTIVO_ENVASE,
@@ -71,7 +73,7 @@ export function ContainerReturnPanel({
   onRefresh,
   onAbrirScanner,
 }: ContainerReturnPanelProps) {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentText, accentBg, accentBorder, surfaceMuted } = useAccentColor();
 
   const enviar = () => {
     if (!verificando && codigo.trim()) onEnviar();
@@ -92,7 +94,7 @@ export function ContainerReturnPanel({
             onSubmitEditing={enviar}
             returnKeyType="send"
           />
-          <Pressable onPress={onAbrirScanner} style={[styles.iconBtn, { backgroundColor: `${accentColor}20` }]} accessibilityLabel="Abrir cámara">
+          <Pressable onPress={onAbrirScanner} style={[styles.iconBtn, { backgroundColor: `${accentColor}20` }]} accessibilityRole="button" accessibilityLabel="Abrir cámara">
             <Ionicons name="qr-code-outline" size={18} color={accentOnSurface} />
           </Pressable>
         </View>
@@ -104,7 +106,7 @@ export function ContainerReturnPanel({
             { backgroundColor: accentColor, opacity: verificando || !codigo.trim() ? 0.5 : 1 },
           ]}
         >
-          <Ionicons name="cube-outline" size={16} color="#FFFFFF" />
+          <Ionicons name="cube-outline" size={16} color={accentText} />
           <Text style={styles.submitText}>{verificando ? 'Verificando…' : 'Entregar'}</Text>
         </Pressable>
       </View>
@@ -114,22 +116,22 @@ export function ContainerReturnPanel({
           style={[
             styles.resultCard,
             resultado.ok
-              ? { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: '#10B981' }
+              ? { backgroundColor: accentBg, borderColor: accentOnSurface }
               : MOTIVOS_AVISO.includes(resultado.motivo ?? '')
-                ? { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }
-                : { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: '#EF4444' },
+                ? { backgroundColor: surfaceMuted, borderColor: accentOnSurface }
+                : { backgroundColor: accentBg, borderColor: accentBorder },
           ]}
         >
           <Ionicons
             name={resultado.ok ? 'checkmark-circle' : 'alert-circle'}
             size={18}
-            color={resultado.ok ? '#10B981' : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? '#F59E0B' : '#EF4444'}
+            color={resultado.ok ? accentOnSurface : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? accentOnSurface : accentColor}
           />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               style={[
                 styles.resultTitle,
-                { color: resultado.ok ? '#10B981' : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? '#F59E0B' : '#EF4444' },
+                { color: resultado.ok ? accentOnSurface : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? accentOnSurface : accentColor },
               ]}
             >
               {resultado.ok ? 'Envase entregado al almacén' : MOTIVO_ENVASE[resultado.motivo ?? ''] || 'No es nuestro'}
@@ -147,24 +149,28 @@ export function ContainerReturnPanel({
 
       {sesion.length > 0 && (
         <View style={[styles.sessionRow, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.sessionText, { color: textPrimary }]}>
-            Sesión: <Text style={{ color: '#10B981' }}>{entregados} entregados</Text>
+          <Text
+            style={[styles.sessionText, { color: textPrimary, flexShrink: 1, minWidth: 0 }]}
+            numberOfLines={1}
+          >
+            Sesión: <Text style={{ color: accentOnSurface }}>{entregados} entregados</Text>
             {' · '}
-            <Text style={{ color: '#EF4444' }}>{rechazados} rechazados</Text>
+            <Text style={{ color: accentColor }}>{rechazados} rechazados</Text>
           </Text>
-          <Pressable onPress={onLimpiarSesion} accessibilityLabel="Limpiar sesión de escaneos">
-            <Text style={[styles.sessionClear, { color: accentOnSurface }]}>Limpiar</Text>
+          <Pressable onPress={onLimpiarSesion} accessibilityRole="button" accessibilityLabel="Limpiar sesión de escaneos">
+            <Text style={[styles.sessionClear, { color: accentOnSurface, flexShrink: 0 }]}>Limpiar</Text>
           </Pressable>
         </View>
       )}
 
       {error ? (
-        <View style={styles.errorCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="warning" size={20} color="#B91C1C" style={{ marginRight: 8 }} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="Error de conexión"
+          message={error}
+          onRetry={onRefresh}
+        />
       ) : null}
 
       <Text style={[styles.sectionTitle, { color: textSecondary }]}>
@@ -197,7 +203,7 @@ export function ContainerReturnPanel({
           renderItem={({ item }: { item: EnvaseDevolucion }) => (
             <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
               <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
                     {item.producto_nombre || '—'}
                   </Text>
@@ -209,16 +215,14 @@ export function ContainerReturnPanel({
                   style={[
                     styles.badge,
                     {
-                      backgroundColor: item.pendiente_confirmacion
-                        ? 'rgba(245,158,11,0.15)'
-                        : 'rgba(16,185,129,0.15)',
+                      backgroundColor: surfaceMuted,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.badgeText,
-                      { color: item.pendiente_confirmacion ? '#F59E0B' : '#10B981' },
+                      { color: accentOnSurface },
                     ]}
                   >
                     {item.pendiente_confirmacion ? 'Pendiente' : 'Recibido'}
@@ -231,20 +235,23 @@ export function ContainerReturnPanel({
                 <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
                   {nombreDe(item.usuario_nombre, item.usuario_apellido, item.usuario_nick)}
                 </Text>
-                <Text style={[styles.footerText, { color: textSecondary }]}>
+                <Text
+                  style={[styles.footerText, { color: textSecondary, flexShrink: 0 }]}
+                  numberOfLines={1}
+                >
                   {fechaHora(item.fecha_devolucion)}
                 </Text>
               </View>
 
               {(item.ml_merma ?? 0) > 0 && (
-                <Text style={[styles.footerText, { color: '#F59E0B', marginTop: 5 }]}>
+                <Text style={[styles.footerText, { color: accentOnSurface, marginTop: 5 }]}>
                   Merma registrada: {item.ml_merma} ml
                 </Text>
               )}
 
               {!item.pendiente_confirmacion && (
                 <View style={styles.footer}>
-                  <Ionicons name="checkmark-done-outline" size={13} color="#10B981" />
+                  <Ionicons name="checkmark-done-outline" size={13} color={accentOnSurface} />
                   <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
                     Recibido por{' '}
                     {nombreDe(item.confirmado_nombre, item.confirmado_apellido, item.confirmado_nick)}
@@ -279,7 +286,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 6,
   },
-  input: { flex: 1, fontSize: 14, fontWeight: '700', paddingVertical: 6 },
+  input: { flex: 1, fontSize: 14, fontFamily: FontFamily.bold, paddingVertical: 6 },
   iconBtn: {
     width: 34,
     height: 34,
@@ -295,7 +302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: BorderRadius.full,
   },
-  submitText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
+  submitText: { fontFamily: FontFamily.extrabold, fontSize: 13 },
   resultCard: {
     flexDirection: 'row',
     gap: 8,
@@ -306,9 +313,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
-  resultTitle: { fontSize: 13, fontWeight: '800' },
+  resultTitle: { flexShrink: 1, fontSize: 13, fontFamily: FontFamily.extrabold },
   resultMessage: { fontSize: 12, marginTop: 2, lineHeight: 17 },
-  resultUnit: { fontSize: 11, marginTop: 4, fontWeight: '600' },
+  resultUnit: { fontSize: 11, marginTop: 4, fontFamily: FontFamily.semibold },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,20 +327,11 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     borderWidth: 1,
   },
-  sessionText: { fontSize: 12, fontWeight: '700' },
-  sessionClear: { fontSize: 12, fontWeight: '800' },
-  errorCard: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    padding: 12,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    alignItems: 'center',
-  },
-  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
+  sessionText: { fontSize: 12, fontFamily: FontFamily.bold },
+  sessionClear: { fontSize: 12, fontFamily: FontFamily.extrabold },
   sectionTitle: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginHorizontal: 16,
@@ -343,12 +341,12 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   card: { borderRadius: 16, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  productName: { fontSize: 15, fontWeight: '800' },
+  productName: { fontSize: 15, fontFamily: FontFamily.extrabold },
   presentation: { fontSize: 12, marginTop: 2 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full },
-  badgeText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  badgeText: { fontSize: 10, fontFamily: FontFamily.extrabold, textTransform: 'uppercase' },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-  footerText: { fontSize: 11, fontWeight: '600', flexShrink: 1 },
+  footerText: { fontSize: 11, fontFamily: FontFamily.semibold, flexShrink: 1, minWidth: 0 },
   empty: { alignItems: 'center', paddingTop: 40, gap: 10 },
-  emptyText: { fontSize: 14, fontWeight: '600' },
+  emptyText: { fontSize: 14, fontFamily: FontFamily.semibold },
 });

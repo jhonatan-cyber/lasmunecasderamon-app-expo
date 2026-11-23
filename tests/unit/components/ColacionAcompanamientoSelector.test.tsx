@@ -76,6 +76,7 @@ describe('ColacionAcompanamientoSelector', () => {
         onSelect={vi.fn()}
       />
     );
+    fireEvent.click(screen.getByText('Selecciona acompañamiento'));
 
     expect(screen.getByLabelText(/Sprite 1\.5 L/)).toBeTruthy();
     expect(screen.getByLabelText(/Coca-Cola 1\.5 L/)).toBeTruthy();
@@ -92,6 +93,7 @@ describe('ColacionAcompanamientoSelector', () => {
         onSelect={onSelect}
       />
     );
+    fireEvent.click(screen.getByText('Selecciona acompañamiento'));
 
     fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
     expect(onSelect).toHaveBeenCalledWith('2');
@@ -107,6 +109,7 @@ describe('ColacionAcompanamientoSelector', () => {
         onSelect={onSelect}
       />
     );
+    fireEvent.click(screen.getByText('1.5 L'));
 
     fireEvent.click(screen.getByLabelText(/Sprite 1\.5 L/));
     expect(onSelect).toHaveBeenCalledWith('');

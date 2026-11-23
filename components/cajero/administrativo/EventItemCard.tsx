@@ -1,9 +1,11 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Event } from "@/hooks/types/administrativoTypes";
 import { useRenderCount } from "@/hooks/useRenderCount";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type EventItemCardProps = {
   item: Event;
@@ -26,6 +28,7 @@ export function EventItemCard({
   getEventLabel,
   getStatusLabel,
 }: EventItemCardProps) {
+  const { accentColor, accentOnSurface } = useAccentColor();
   useRenderCount('EventItemCard', { eventId: item.id, eventType: item.type });
   const isAnticipo = item.type === "anticipo";
   const iconName =
@@ -38,7 +41,7 @@ export function EventItemCard({
           : item.type === "asistencia"
             ? "calendar"
             : "cash";
-  const iconColor = isAnticipo ? "#EF4444" : "#10B981";
+  const iconColor = isAnticipo ? accentColor : accentOnSurface;
 
   return (
     <Pressable
@@ -87,7 +90,7 @@ export function EventItemCard({
         <Text
           style={[
             styles.eventPrice,
-            { color: isAnticipo ? "#EF4444" : "#10B981" },
+            { color: isAnticipo ? accentColor : accentOnSurface },
           ]}
         >
           {isAnticipo ? "-" : "+"}${item.amount.toLocaleString()}
@@ -122,12 +125,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   eventInfo: { flex: 1, marginLeft: 15 },
-  eventTitle: { fontSize: 15, fontWeight: "700" },
+  eventTitle: { fontSize: 15, fontFamily: FontFamily.bold },
   eventTime: { fontSize: 12, marginTop: 2 },
-  eventPrice: { fontSize: 16, fontWeight: "800" },
+  eventPrice: { fontSize: 16, fontFamily: FontFamily.extrabold },
   statusMiniText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     marginTop: 4,
   },
 });

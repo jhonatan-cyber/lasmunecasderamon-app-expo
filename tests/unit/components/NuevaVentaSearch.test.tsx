@@ -10,6 +10,13 @@ import { NuevaVentaSearch } from "@/components/cajero/nueva-venta/NuevaVentaSear
 vi.mock("react-native", () => ({
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
+  Platform: { OS: 'web', select: (obj: any) => obj?.web ?? obj?.default },
+  Appearance: {
+    getColorScheme: () => 'dark',
+    addChangeListener: () => ({ remove: () => {} }),
+  },
+  useColorScheme: () => 'dark',
   StyleSheet: { create: (styles: unknown) => styles },
   View: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
   Text: ({ children }: { children?: React.ReactNode }) => (

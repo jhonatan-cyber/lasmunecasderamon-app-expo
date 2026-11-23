@@ -1,6 +1,8 @@
 import { Pressable, Text, View } from "react-native";
 import { styles } from "../ServiceModal.styles";
 
+import { readableTextColor } from '@/utils/color';
+
 interface ServiceModalActionsProps {
   accentColor: string;
   textSecondary: string;
@@ -35,7 +37,7 @@ export function ServiceModalActions({
         style={[styles.modalBtnAction, { backgroundColor: accentColor }]}
         onPress={onApprove}
       >
-        <Text style={[styles.modalBtnActionText, { color: "#FFFFFF" }]}>
+        <Text style={[styles.modalBtnActionText, { color: readableTextColor(accentColor) }]}>
           Aprobar Ahora
         </Text>
       </Pressable>

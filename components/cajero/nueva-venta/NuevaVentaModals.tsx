@@ -1,4 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 import { useCallback } from "react";
 import {
   Pressable,
@@ -89,6 +91,7 @@ export function NuevaVentaModals({
     [onRemoveFromCart],
   );
 
+  const { accentOnSurface, accentColor: themeAccent, accentUi, accentBg, accentText } = useAccentColor();
   return (
     <>
       <CategoryProductModal
@@ -132,7 +135,7 @@ export function NuevaVentaModals({
               <Text style={[modalStyles.title, { color: textPrimary }]}>
                 Tiempo de Estancia
               </Text>
-              <Pressable onPress={onCloseTimeModal}>
+              <Pressable onPress={onCloseTimeModal} accessibilityRole="button" accessibilityLabel="Cerrar selección de tiempo">
                 <Ionicons name="close" size={26} color={textPrimary} />
               </Pressable>
             </View>
@@ -151,8 +154,11 @@ export function NuevaVentaModals({
                     onSelectTime(item);
                     onCloseTimeModal();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${item} minutos`}
+                  accessibilityState={{ selected: selectedTime === item }}
                 >
-                  <Ionicons name="time" size={22} color="#10B981" />
+                  <Ionicons name="time" size={22} color={accentOnSurface} />
                   <Text
                     style={[
                       modalStyles.timeText,
@@ -216,7 +222,7 @@ const modalStyles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   timeItem: {
     flexDirection: "row",
@@ -226,6 +232,6 @@ const modalStyles = StyleSheet.create({
   },
   timeText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FontFamily.semibold,
   },
 });

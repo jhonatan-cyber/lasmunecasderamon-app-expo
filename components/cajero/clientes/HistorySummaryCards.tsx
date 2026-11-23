@@ -1,36 +1,35 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
 import { Text, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Props {
     totalServicios: number;
     totalConsumo: number;
     totalCargas: number;
-    isDark: boolean;
 }
 
-export function HistorySummaryCards({ totalServicios, totalConsumo, totalCargas, isDark }: Props) {
+export function HistorySummaryCards({ totalServicios, totalConsumo, totalCargas }: Props) {
+    const { accentColor, accentUi, accentOnSurface } = useAccentColor();
     return (
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
             <SummaryCard
                 icon="bed-outline"
                 label="Servicios"
                 amount={totalServicios}
-                color="#3B82F6"
-                isDark={isDark}
+                color={accentColor}
             />
             <SummaryCard
                 icon="cart-outline"
                 label="Consumo"
                 amount={totalConsumo}
-                color="#F59E0B"
-                isDark={isDark}
+                color={accentUi}
             />
             <SummaryCard
                 icon="arrow-up-circle-outline"
                 label="Cargado"
                 amount={totalCargas}
-                color="#10B981"
-                isDark={isDark}
+                color={accentOnSurface}
             />
         </View>
     );
@@ -41,26 +40,24 @@ function SummaryCard({
     label,
     amount,
     color,
-    isDark,
 }: {
     icon: string;
     label: string;
     amount: number;
     color: string;
-    isDark: boolean;
 }) {
     return (
         <View style={{
             flex: 1, padding: 12, borderRadius: 16,
-            backgroundColor: isDark ? `${color}14` : `${color}0F`,
+            backgroundColor: `${color}14`,
             borderWidth: 1,
-            borderColor: isDark ? `${color}26` : `${color}1A`,
+            borderColor: `${color}26`,
         }}>
             <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={color} />
-            <Text style={{ fontSize: 7, fontWeight: '900', color, letterSpacing: 0.5, marginTop: 4, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: 7, fontFamily: FontFamily.black, color, letterSpacing: 0.5, marginTop: 4, textTransform: 'uppercase' }}>
                 {label}
             </Text>
-            <Text style={{ fontSize: 13, fontWeight: '900', color, marginTop: 2 }}>
+            <Text style={{ fontSize: 13, fontFamily: FontFamily.black, color, marginTop: 2 }}>
                 ${amount.toLocaleString('es-CL')}
             </Text>
         </View>

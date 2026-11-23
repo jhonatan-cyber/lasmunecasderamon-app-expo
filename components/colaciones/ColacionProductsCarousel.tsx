@@ -5,6 +5,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { mlDeColacion, acompanamientoDeColacion, type ColacionProducto } from '@/services/colaciones';
+import { FontFamily } from '@/constants/fonts';
 import { BASE_URL } from '@/api/base-url';
 
 interface Props {
@@ -28,8 +29,8 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
   onSelect,
   hint,
 }) => {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
-
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted, accentText } = useAccentColor();
+  const themeSecondary = textSecondary;
   return (
     <>
       <View style={styles.headerRow}>
@@ -41,12 +42,12 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
       {loading ? (
         <View style={styles.loadingList}>
           {Array.from({ length: 2 }).map((_, i) => (
-            <View key={i} style={[styles.skeletonCard, { backgroundColor: '#F3F4F6' }]} />
+            <View key={i} style={[styles.skeletonCard, { backgroundColor: surfaceMuted }]} />
           ))}
         </View>
       ) : products.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Ionicons name="beer-outline" size={24} color="#9CA3AF" />
+          <Ionicons name="beer-outline" size={24} color={themeSecondary} />
           <Text style={[styles.emptyText, { color: textSecondary }]}>
             Sin bebidas disponibles.
           </Text>
@@ -80,7 +81,7 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
                     },
                   ]}
                 >
-                  <View style={styles.cardImageWrap}>
+                  <View style={[styles.cardImageWrap, { backgroundColor: surfaceMuted }]}>
                     {fotoUrl ? (
                       <Image
                         source={{ uri: fotoUrl }}
@@ -88,17 +89,17 @@ export const ColacionProductsCarousel: React.FC<Props> = ({
                         contentFit="contain"
                       />
                     ) : (
-                      <View style={[styles.cardImagePlaceholder, { backgroundColor: '#F3F4F6' }]}>
-                        <Ionicons name="beer-outline" size={24} color="#9CA3AF" />
+                      <View style={[styles.cardImagePlaceholder, { backgroundColor: surfaceMuted }]}>
+                        <Ionicons name="beer-outline" size={24} color={themeSecondary} />
                       </View>
                     )}
                     {isSelected && (
                       <View style={[styles.checkBadge, { backgroundColor: accentColor }]}>
-                        <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                        <Ionicons name="checkmark" size={12} color={accentText} />
                       </View>
                     )}
                   </View>
-                  <View style={styles.cardBody}>
+                  <View style={[styles.cardBody, { borderTopColor: surfaceMuted }]}>
                     <Text
                       style={[styles.cardProductName, { color: textPrimary }]}
                       numberOfLines={2}
@@ -193,7 +194,6 @@ const styles = StyleSheet.create({
   cardImageWrap: {
     height: 140,
     width: '100%',
-    backgroundColor: '#F3F4F6',
     position: 'relative',
   },
   cardImage: {
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     padding: 8,
     gap: 4,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
   cardProductName: {
     fontSize: 12,

@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import VirtualizedList from '@/components/shared/VirtualizedList';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
@@ -27,6 +28,7 @@ import { useEnvasesScreen } from '@/hooks/useEnvasesScreen';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
+import { FontFamily } from '@/constants/fonts';
 
 type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 
@@ -148,7 +150,7 @@ export default function BarScreen() {
             autoCorrect={false}
           />
           {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')}>
+            <Pressable onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="Limpiar búsqueda">
               <Ionicons name="close-circle" size={16} color={textSecondary} />
             </Pressable>
           )}
@@ -156,12 +158,13 @@ export default function BarScreen() {
       )}
 
       {error ? (
-        <View style={styles.errorCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="warning" size={20} color="#B91C1C" style={{ marginRight: 8 }} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        </View>
+        <ErrorState
+          variant="inline"
+          icon="warning-outline"
+          title="Error de conexión"
+          message={error}
+          onRetry={onRefresh}
+        />
       ) : null}
 
       <View style={{ flex: 1 }}>
@@ -320,8 +323,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextRight: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },
@@ -336,16 +338,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     borderWidth: 1,
   },
-  searchInput: { flex: 1, fontSize: 14, fontWeight: '600', padding: 0 },
-  errorCard: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    alignItems: 'center',
-  },
-  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
+  searchInput: { flex: 1, fontSize: 14, fontFamily: FontFamily.semibold, padding: 0 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyText: { fontSize: 14, fontWeight: '600' },
+  emptyText: { fontSize: 14, fontFamily: FontFamily.semibold },
 });

@@ -1,13 +1,14 @@
 import { useAuthStore } from '@/store/authStore';
 import { BorderRadius } from '@/constants/spacing';
-import { StyleSheet, Text, View } from 'react-native';
+import { FontFamily } from '@/constants/fonts';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 interface DetailRowProps {
   label: string;
   value: string | React.ReactNode;
   textPrimary: string;
   textSecondary: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 function DetailRow({ label, value, textPrimary, textSecondary, style }: DetailRowProps) {
@@ -41,6 +42,8 @@ export function EventDetailSection({
   formatAmount,
 }: EventDetailSectionProps) {
   const user = useAuthStore((state) => state.user);
+  const dangerColor = accentColor;
+  const successColor = accentColor;
 
   if (!eventDetail) return null;
 
@@ -51,24 +54,24 @@ export function EventDetailSection({
       {eventDetail.tipo === 'asistencia' && (
         <>
           <DetailRow label="Sueldo" value={`$${formatAmount(eventDetail.sueldo)}`} textPrimary={textPrimary} textSecondary={textSecondary} />
-          <DetailRow label="Aporte" value={`-$${formatAmount(eventDetail.aporte)}`} textPrimary="#EF4444" textSecondary={textSecondary} />
+          <DetailRow label="Aporte" value={`-$${formatAmount(eventDetail.aporte)}`} textPrimary={dangerColor} textSecondary={textSecondary} />
           {Number(eventDetail.descuento_total) > 0 && (
             <DetailRow
               label={`Desc. habitación (${eventDetail.semanas_con_descuento} sem.)`}
               value={`-$${formatAmount(eventDetail.descuento_total)}`}
-              textPrimary="#EF4444"
+              textPrimary={dangerColor}
               textSecondary={textSecondary}
             />
           )}
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
-          <DetailRow label="Neto por asistencia" value={`$${formatAmount(eventDetail.neto)}`} textPrimary="#10B981" textSecondary={textSecondary} />
+          <DetailRow label="Neto por asistencia" value={`$${formatAmount(eventDetail.neto)}`} textPrimary={successColor} textSecondary={textSecondary} />
         </>
       )}
 
       {eventDetail.tipo === 'anticipo' && (
         <>
           <DetailRow label="Solicitado por" value={eventDetail.solicitante_nick || eventDetail.solicitante_nombre} textPrimary={textPrimary} textSecondary={textSecondary} />
-          <DetailRow label="Monto" value={`$${formatAmount(eventDetail.monto)}`} textPrimary="#EF4444" textSecondary={textSecondary} />
+          <DetailRow label="Monto" value={`$${formatAmount(eventDetail.monto)}`} textPrimary={dangerColor} textSecondary={textSecondary} />
           {eventDetail.observacion && (
             <DetailRow
               label="Motivo"
@@ -155,7 +158,7 @@ export function EventDetailSection({
           <DetailRow
             label="Propina total"
             value={`$${formatAmount(eventDetail.propinas_detalle.reduce((s: number, p: any) => s + Number(p.monto), 0))}`}
-            textPrimary="#10B981"
+            textPrimary={successColor}
             textSecondary={textSecondary}
           />
           <DetailRow
@@ -173,7 +176,7 @@ export function EventDetailSection({
           {eventDetail.anfitrionas.map((a: any, i: number) => (
             <View key={i} style={[styles.detailRow, { marginBottom: 6 }]}>
               <Text style={[styles.detailLabel, { color: textPrimary, flex: 1 }]}>{a.nick || a.nombre}</Text>
-              <Text style={[styles.detailValue, { color: '#10B981' }]}>${formatAmount(a.comision || 0)}</Text>
+              <Text style={[styles.detailValue, { color: successColor }]}>${formatAmount(a.comision || 0)}</Text>
             </View>
           ))}
         </View>
@@ -217,11 +220,11 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   divider: {
     width: '100%',
@@ -256,11 +259,11 @@ const styles = StyleSheet.create({
   },
   timelineAction: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     marginBottom: 2,
   },
   timelineMeta: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
 });

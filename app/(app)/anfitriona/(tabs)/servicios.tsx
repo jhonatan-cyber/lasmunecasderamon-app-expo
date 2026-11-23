@@ -10,7 +10,9 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
+import { tabBarBottomPadding } from "@/constants/layout";
 import { FontSize } from "@/constants/spacing";
+import { FontFamily } from "@/constants/fonts";
 import { useCallback,useState } from "react";
 import {
 RefreshControl,
@@ -212,7 +214,6 @@ export default function ServiciosScreen() {
           <EmptyState
             icon="bed-outline"
             title="No hay servicios"
-            message={searchText ? "No se encontraron resultados para tu búsqueda." : "Cuando asignen un servicio, aparecerá aquí."}
             actionLabel={searchText ? undefined : "Actualizar"}
             onAction={searchText ? undefined : onRefresh}
           />
@@ -249,23 +250,23 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: FontSize.sm,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     letterSpacing: 1.5,
     marginBottom: 8,
   },
   summaryAmount: {
     fontSize: FontSize.xl,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     marginBottom: 12,
     letterSpacing: -1,
   },
   summaryDetails: { flexDirection: "row", gap: 12 },
-  summaryDetail: { fontSize: FontSize.sm, fontWeight: "600" },
+  summaryDetail: { fontSize: FontSize.sm, fontFamily: FontFamily.semibold },
   filterRow: {
     flexDirection: "row",
     paddingHorizontal: 16,
     gap: 10,
     marginBottom: 16,
   },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding },
 });

@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { ActivityIndicator, LayoutAnimation, Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 // ─── CollapsibleCard ───
 
@@ -122,11 +124,12 @@ export function ServiceInfoCard({
   textSecondary,
   isDark,
 }: ServiceInfoCardProps) {
+  const { accentColor, accentBg, accentOnSurface, accentBorder, surfaceMuted } = useAccentColor();
   return (
     <CollapsibleCard
       title="Información de Servicio"
       icon="information-circle"
-      iconColor="#3B82F6"
+      iconColor={textPrimary}
       cardBg={cardBg}
       borderColor={borderColor}
       textPrimary={textPrimary}
@@ -190,10 +193,10 @@ export function ServiceInfoCard({
               </View>
             ))}
             <View style={[summaryRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: borderColor }]}>
-              <Text style={[summaryLabel, { color: textPrimary, fontWeight: '800' }]}>
+              <Text style={[summaryLabel, { color: textPrimary, fontFamily: FontFamily.extrabold }]}>
                 Comisión total
               </Text>
-              <Text style={[summaryVal, { color: textPrimary, fontWeight: '800' }]}>
+              <Text style={[summaryVal, { color: textPrimary, fontFamily: FontFamily.extrabold }]}>
                 ${(totals.comisionPorAnfitriona * hostessCount).toLocaleString()}
               </Text>
             </View>
@@ -240,15 +243,15 @@ export function ServiceInfoCard({
             style={[
               cardNoteBox,
               {
-                backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB',
-                borderColor: isDark ? 'rgba(245,158,11,0.35)' : '#FDE68A',
+                backgroundColor: accentBg,
+                borderColor: accentBorder,
               },
             ]}
           >
-            <Text style={[cardNoteTitle, { color: isDark ? '#FCD34D' : '#92400E' }]}>
+            <Text style={[cardNoteTitle, { color: accentOnSurface }]}>
               Nota importante
             </Text>
-            <Text style={[cardNoteText, { color: isDark ? '#FDE68A' : '#78350F' }]}>
+            <Text style={[cardNoteText, { color: accentOnSurface }]}>
               Generá venta por ${desgloseTarjeta.venta.toLocaleString()} y propina por $
               {desgloseTarjeta.propina.toLocaleString()}
             </Text>
@@ -338,7 +341,7 @@ export function ServiceSummaryCard({
           accessibilityRole="button"
         >
           {submitting ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color={accentText} />
           ) : (
             <Text style={[submitBtnText, { color: accentText }]}>Generar Servicio</Text>
           )}
@@ -353,12 +356,12 @@ const summaryRow: any = {
   justifyContent: 'space-between',
   marginBottom: 6,
 };
-const summaryLabel: any = { fontSize: 14, fontWeight: '600' };
-const summaryVal: any = { fontSize: 15, fontWeight: '800' };
-const infoLabel: any = { fontSize: 13, fontWeight: '700', flexDirection: 'row', alignItems: 'center' };
-const infoVal: any = { fontSize: 14, fontWeight: '700' };
+const summaryLabel: any = { fontSize: 14, fontFamily: FontFamily.semibold };
+const summaryVal: any = { fontSize: 15, fontFamily: FontFamily.extrabold };
+const infoLabel: any = { fontSize: 13, fontFamily: FontFamily.bold, flexDirection: 'row', alignItems: 'center' };
+const infoVal: any = { fontSize: 14, fontFamily: FontFamily.bold };
 const dividerStyle: any = { height: 1, marginTop: 8, marginBottom: 8 };
-const sectionLabel: any = { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4, opacity: 0.6 };
+const sectionLabel: any = { fontSize: 12, fontFamily: FontFamily.extrabold, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4, opacity: 0.6 };
 const cardNoteBox: any = {
   marginTop: 12,
   borderRadius: 14,
@@ -367,16 +370,16 @@ const cardNoteBox: any = {
   paddingVertical: 10,
   gap: 4,
 };
-const cardNoteTitle: any = { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' };
-const cardNoteText: any = { fontSize: 12, fontWeight: '600', lineHeight: 18 };
+const cardNoteTitle: any = { fontSize: 11, fontFamily: FontFamily.black, textTransform: 'uppercase' };
+const cardNoteText: any = { fontSize: 12, fontFamily: FontFamily.semibold, lineHeight: 18 };
 const actionRow: any = {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
   gap: 16,
 };
-const stickyTotalLabel: any = { fontSize: 11, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.6 };
-const stickyTotalValue: any = { fontSize: 24, fontWeight: '900' };
+const stickyTotalLabel: any = { fontSize: 11, fontFamily: FontFamily.extrabold, letterSpacing: 1, textTransform: 'uppercase', opacity: 0.6 };
+const stickyTotalValue: any = { fontSize: 24, fontFamily: FontFamily.black };
 const submitBtn: any = {
   height: 48,
   borderRadius: BorderRadius.full,
@@ -387,4 +390,4 @@ const submitBtn: any = {
   minWidth: 140,
   flexShrink: 0,
 };
-const submitBtnText: any = { fontSize: 14, fontWeight: '800' };
+const submitBtnText: any = { fontSize: 14, fontFamily: FontFamily.extrabold };

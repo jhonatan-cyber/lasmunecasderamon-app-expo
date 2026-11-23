@@ -1,5 +1,6 @@
 import { formatCurrency } from '@/utils/format';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import React from 'react';
@@ -55,7 +56,7 @@ const StatCard = ({ label, value, icon, color, isDark, cardBg, textPrimary, text
                 <Text style={[styles.statLabel, { color: textSecondary, fontSize: isFullWidth ? (isTablet ? 14 : 11) : (isTablet ? 12 : 9) }]} numberOfLines={1}>{label}</Text>
                 <Text style={[styles.statValue, { color: textPrimary, fontSize: isFullWidth ? (isTablet ? 42 : 32) : (isTablet ? 28 : 22) }]} numberOfLines={1}>{value}</Text>
                 {subLabel && (
-                    <Text style={{ color: textSecondary, fontSize: isFullWidth ? (isTablet ? 14 : 12) : 10, marginTop: 4, fontWeight: '600' }}>
+                    <Text style={{ color: textSecondary, fontSize: isFullWidth ? (isTablet ? 14 : 12) : 10, marginTop: 4, fontFamily: FontFamily.semibold }}>
                         {subLabel}
                     </Text>
                 )}
@@ -90,7 +91,7 @@ export const CajeroStats = ({ stats, fullWidth = false, hideFullWidth = false }:
             label: 'Balance Total',
             value: formatCurrency(stats?.balance_total || 0),
             icon: 'wallet' as const,
-            color: '#10B981',
+            color: accentOnSurface,
             isFullWidth: true,
             subLabel: '+ ' + formatCurrency(stats?.monto_apertura || 0) + ' Apertura'
         },
@@ -178,13 +179,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     statLabel: {
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         marginBottom: 2,
     },
     statValue: {
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -0.5,
     },
     glowDot: {

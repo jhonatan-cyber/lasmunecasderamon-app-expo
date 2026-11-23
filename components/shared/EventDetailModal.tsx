@@ -1,5 +1,6 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
@@ -31,7 +32,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     getEventLabel,
     getStatusLabel
 }) => {
-    const {accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted} = useAccentColor();
+    const {accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, surfaceMuted, accentOnSurface, accentBg} = useAccentColor();
     const formatAmount = (value: any) =>
         Number(value || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -47,7 +48,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     };
 
     const isAnticipo = event?.type === 'anticipo';
-    const iconColor = isAnticipo ? '#EF4444' : '#10B981';
+    const iconColor = isAnticipo ? accentColor : accentOnSurface;
 
     return (
         <Modal
@@ -125,8 +126,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
                         <View style={styles.detailRow}>
                             <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
-                            <View style={[styles.statusBadgeDetail, { backgroundColor: `${(event?.estado === 3 ? '#EF4444' : '#10B981')}20` }]}>
-                                <Text style={[styles.statusTextDetail, { color: event?.estado === 3 ? '#EF4444' : '#10B981' }]}>
+                            <View style={[styles.statusBadgeDetail, { backgroundColor: event?.estado === 3 ? accentBg : `${accentOnSurface}20` }]}>
+                                <Text style={[styles.statusTextDetail, { color: event?.estado === 3 ? accentColor : accentOnSurface }]}>
                                     {event ? getStatusLabel(event) : ''}
                                 </Text>
                             </View>
@@ -206,13 +207,13 @@ const styles = StyleSheet.create({
     },
     detailType: {
         fontSize: 13,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         letterSpacing: 2,
         marginBottom: 8
     },
     detailAmount: {
         fontSize: 42,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -1
     },
     divider: {
@@ -230,11 +231,11 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: 13,
-        fontWeight: '600'
+        fontFamily: FontFamily.semibold
     },
     detailValue: {
         fontSize: 14,
-        fontWeight: '700'
+        fontFamily: FontFamily.bold
     },
     statusBadgeDetail: {
         paddingHorizontal: 12,
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     },
     statusTextDetail: {
         fontSize: 11,
-        fontWeight: '800'
+        fontFamily: FontFamily.extrabold
     },
     confirmBtn: {
         width: '100%',
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
     },
     confirmBtnText: {
         fontSize: 16,
-        fontWeight: '800'
+        fontFamily: FontFamily.extrabold
     }
 });
 

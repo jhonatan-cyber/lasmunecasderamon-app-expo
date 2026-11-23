@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
@@ -34,7 +35,7 @@ export function OvertimeCard({
     compactDate = false,
     showPaymentDate = true,
 }: OvertimeCardProps) {
-    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg } = useAccentColor();
 
     const isPendiente = item.estado === 1;
     const hourLabel = item.hora ? `${item.hora} hrs` : null;
@@ -71,14 +72,12 @@ export function OvertimeCard({
                     <View style={[
                         styles.statusBadge,
                         {
-                            backgroundColor: isPendiente
-                                ? (isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7')
-                                : (isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5')
+                            backgroundColor: accentBg
                         }
                     ]}>
                         <Text style={[
                             styles.statusText,
-                            { color: isPendiente ? '#F59E0B' : '#10B981' }
+                            { color: accentOnSurface }
                         ]}>
                             {isPendiente ? 'Por cobrar' : (usePagadoLabel ? 'Cobrado' : 'Cobrado')}
                         </Text>
@@ -112,13 +111,13 @@ export function OvertimeCard({
 
                     {}
                     <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
-                        <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
+                        <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : surfaceMuted }]}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto/hr</Text>
                             <Text style={[styles.amountValue, { color: textPrimary }]}>${(item.monto || 0).toLocaleString()}</Text>
                         </View>
-                        <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
+                        <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : surfaceMuted }]}>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Total</Text>
-                            <Text style={[styles.amountValue, { color: isPendiente ? '#EF4444' : textPrimary }]}>${(item.total || 0).toLocaleString()}</Text>
+                            <Text style={[styles.amountValue, { color: accentOnSurface }]}>${(item.total || 0).toLocaleString()}</Text>
                         </View>
                     </View>
 
@@ -153,7 +152,7 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 15,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -0.2,
         flex: 1,
     },
@@ -166,7 +165,7 @@ const styles = StyleSheet.create({
     },
     indexText: {
         fontSize: FontSize.xxs,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     statusBadge: {
         paddingHorizontal: 10,
@@ -175,7 +174,7 @@ const styles = StyleSheet.create({
     },
     statusText: {
         fontSize: 11,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     cardBody: {},
     cardBodyCompact: {},
@@ -200,7 +199,7 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: 13,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     timeTextCompact: {
         fontSize: 13,
@@ -223,13 +222,13 @@ const styles = StyleSheet.create({
     },
     amountLabel: {
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         marginBottom: 4,
         textTransform: 'uppercase',
     },
     amountValue: {
         fontSize: 18,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
     paymentRow: {
         flexDirection: 'row',

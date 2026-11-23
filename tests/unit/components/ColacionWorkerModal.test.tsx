@@ -5,10 +5,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ColacionWorkerModal } from '@/components/colaciones/ColacionWorkerModal';
 
 type Children = { children?: React.ReactNode };
+
+/** Aplana el style (objeto o array) para poder leer los colores en el test. */
+const flatStyle = (style: unknown): Record<string, unknown> => {
+  if (Array.isArray(style)) return Object.assign({}, ...style.map(flatStyle));
+  return (style as Record<string, unknown>) ?? {};
+};
 vi.mock('react-native', () => ({
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
-  View: ({ children }: Children) => <div>{children}</div>,
+  View: ({ children, style }: Children & { style?: unknown }) => (
+    <div data-bg={String(flatStyle(style).backgroundColor ?? '')}>{children}</div>
+  ),
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({
     children,
@@ -37,6 +45,7 @@ vi.mock('@/components/ui/AppModal', () => ({
 vi.mock('@/hooks/useAccentColor', () => ({
   useAccentColor: () => ({
     accentColor: '#933333',
+    cardBg: '#fff',
     textPrimary: '#111',
     textSecondary: '#555',
     borderColor: '#777',
@@ -86,6 +95,23 @@ describe('ColacionWorkerModal', () => {
 
     expect(onSelect).toHaveBeenCalledWith('1');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('el card del modal tiene fondo propio y no deja ver el overlay detrás', () => {
+    render(
+      <ColacionWorkerModal
+        visible
+        onClose={vi.fn()}
+        workers={trabajadores}
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const card = screen
+      .getByText('Seleccionar trabajador')
+      .closest('[data-bg="#fff"]');
+    expect(card).toBeTruthy();
   });
 
   it('muestra el error de carga en lugar de una lista vacía', () => {

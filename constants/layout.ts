@@ -27,3 +27,17 @@ export const formColumn = {
     maxWidth: FORM_MAX_WIDTH,
     alignSelf: 'center',
 } as const;
+
+/**
+ * Altura de la barra de tabs inferior (PremiumTabBar).
+ *
+ * La barra usa `minHeight: 60` + `paddingBottom: insets.bottom` + bordes y
+ * radio superior. Este valor es el padding mínimo que el contenido de una
+ * pantalla debe aplicar para no quedar tapado por la barra flotante.
+ * En modo compacto (landscape móvil) la barra es más baja (52 px), por lo que
+ * este valor es conservador y funciona en ambos modos.
+ */
+export const TAB_BAR_HEIGHT = 80;
+
+/** Padding inferior para listas/scroll en pantallas con tab bar. */
+export const tabBarBottomPadding = 100;

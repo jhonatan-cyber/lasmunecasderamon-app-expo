@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 export interface ActionSheetItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -131,11 +132,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   subtitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 4,
   },
   actionItem: {
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   cancelBtn: {
     height: 56,
@@ -173,6 +174,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
 });

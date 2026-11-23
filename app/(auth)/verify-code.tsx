@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
+import { FontFamily } from "@/constants/fonts";
 import { useAuthStore } from "@/store/authStore";
 import { getHomeRouteByRole } from "@/utils/userRole";
 
@@ -109,6 +110,8 @@ export default function VerifyCodeScreen() {
             pressed && { opacity: 0.7 },
           ]}
           onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver atrás"
         >
           <Text style={[styles.backButtonText, { color: theme.icon }]}>
             ← Volver
@@ -172,6 +175,9 @@ export default function VerifyCodeScreen() {
             ]}
             onPress={() => verifyCode(code.join(""))}
             disabled={loading || !code.every((d) => d !== "")}
+            accessibilityRole="button"
+            accessibilityLabel="Verificar código de acceso"
+            accessibilityState={{ disabled: loading || !code.every((d) => d !== "") }}
           >
             {loading ? (
               <ActivityIndicator color={theme.background} />
@@ -206,7 +212,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FontFamily.medium,
   },
   header: {
     marginBottom: 40,
@@ -214,7 +220,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     marginBottom: 8,
   },
   subtitle: {
@@ -237,7 +243,7 @@ const styles = StyleSheet.create({
     height: 75,
     borderRadius: 16,
     fontSize: 32,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     textAlign: "center",
     borderWidth: 2,
     shadowColor: "#000",
@@ -248,7 +254,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FontFamily.medium,
     marginBottom: 20,
     textAlign: "center",
     padding: 10,
@@ -267,6 +273,6 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
 });

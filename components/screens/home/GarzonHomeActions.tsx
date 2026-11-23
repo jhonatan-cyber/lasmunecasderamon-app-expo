@@ -22,7 +22,7 @@ export function GarzonHomeActions({
   onOpenResumen,
   pendingOrders = 0,
 }: GarzonHomeActionsProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentColor: themeAccentColor, accentUi } = useAccentColor();
     const actions: ActionGridItem[] = [
       {
         title: "PEDIDOS",
@@ -38,7 +38,7 @@ export function GarzonHomeActions({
         title: "SERVICIOS",
         description: "Atenciones activas",
         icon: "bed",
-        color: "#10B981",
+        color: accentOnSurface,
         onPress: onOpenServicios,
         bloqueoPorCaja: bloqueado && rutaExigeCajaAbierta("/garzon/servicios"),
       },
@@ -46,7 +46,7 @@ export function GarzonHomeActions({
         title: "ENTRADAS",
         description: "Cobro en la puerta",
         icon: "ticket-outline",
-        color: "#F59E0B",
+        color: themeAccentColor,
         onPress: onOpenEntradas,
         bloqueoPorCaja: bloqueado && rutaExigeCajaAbierta("/garzon/entradas"),
       },
@@ -54,7 +54,7 @@ export function GarzonHomeActions({
         title: "RESUMEN",
         description: "Total, reportes y calendario",
         icon: "stats-chart",
-        color: "#3B82F6",
+        color: accentUi,
         onPress: onOpenResumen,
       },
     ];

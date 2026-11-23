@@ -46,18 +46,18 @@ export const ColacionWorkerModal: React.FC<Props> = ({
   receivedCounts,
   error,
 }) => {
-  const { accentColor, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+  const { accentColor, textPrimary, textSecondary, borderColor, cardBg, accentOnSurface } = useAccentColor();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.card, { borderColor }]}>
+        <View style={[styles.card, { borderColor, backgroundColor: cardBg }]}>
           <Text style={[styles.title, { color: textPrimary }]}>Seleccionar trabajador</Text>
           <Text style={{ color: textSecondary, marginBottom: 8 }}>
             Elige quién recibe el corto del turno.
           </Text>
           {error ? (
-            <Text style={[styles.error, { color: '#EF4444' }]}>{error}</Text>
+            <Text style={[styles.error, { color: accentColor }]}>{error}</Text>
           ) : workers.length === 0 ? (
             <Text style={{ color: textSecondary, textAlign: 'center' }}>
               No hay trabajadores disponibles.
@@ -88,6 +88,7 @@ export const ColacionWorkerModal: React.FC<Props> = ({
                     }}
                     style={[
                       styles.row,
+                      { backgroundColor: cardBg },
                       isSelected && { backgroundColor: accentColor + '18' },
                       yaAtendido && styles.rowAttended,
                     ]}
@@ -118,7 +119,7 @@ export const ColacionWorkerModal: React.FC<Props> = ({
             />
           )}
           <View style={[styles.footer, { borderTopColor: borderColor }]}>
-            <Pressable onPress={onClose} style={[styles.buttonOutline, { borderColor }]}>
+            <Pressable onPress={onClose} style={[styles.buttonOutline, { borderColor }]} accessibilityRole="button" accessibilityLabel="Cancelar selección de trabajador">
               <Text style={{ color: textSecondary }}>Cancelar</Text>
             </Pressable>
           </View>
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     maxHeight: '80%',
@@ -157,10 +158,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     marginBottom: 6,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    backgroundColor: 'transparent',
   },
   rowText: {
     flex: 1,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   buttonOutline: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',

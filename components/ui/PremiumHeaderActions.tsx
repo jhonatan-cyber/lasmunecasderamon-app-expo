@@ -1,5 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -211,6 +212,6 @@ const styles = StyleSheet.create({
     notificationText: {
         color: '#FFFFFF',
         fontSize: 10,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
 });

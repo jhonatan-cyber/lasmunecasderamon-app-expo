@@ -12,6 +12,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { accentTextColor } from '@/utils/color';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAuthStore } from '@/store/authStore';
 
 export interface OnboardingStep {
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: FontSize.xl,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         textAlign: 'center',
         marginBottom: 12,
     },
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     },
     skipText: {
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     nextBtn: {
         flex: 2,
@@ -287,6 +288,6 @@ const styles = StyleSheet.create({
     },
     nextText: {
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
 });

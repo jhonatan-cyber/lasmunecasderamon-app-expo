@@ -1,6 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { contentColumn } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RefreshControl,
@@ -291,8 +292,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextHeader: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },

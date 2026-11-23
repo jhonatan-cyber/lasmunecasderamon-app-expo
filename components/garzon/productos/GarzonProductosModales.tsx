@@ -1,5 +1,6 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import {
   Pressable,
   ScrollView,
@@ -14,6 +15,9 @@ import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import type { Anfitriona, CartItem, Room } from "@/types/cart";
 import { Client } from "@/hooks/useGarzonProductos";
+import { useCartStore } from "@/store/cartStore";
+import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
+import type { Product } from "@/types/cart";
 
 interface GarzonProductosModalesProps {
   clientModalVisible: boolean;
@@ -33,6 +37,7 @@ interface GarzonProductosModalesProps {
   cart: CartItem[];
   anfitrionas: Anfitriona[];
   rooms: Room[];
+  products: Product[];
   getMaxHostesses: (item: CartItem) => number;
   updateItemHostesses: (
     productId: string,
@@ -61,6 +66,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
   cart,
   anfitrionas,
   rooms,
+  products,
   getMaxHostesses,
   updateItemHostesses,
   updateItemRoom,
@@ -70,12 +76,23 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
   cardBg,
   textPrimary,
 }) => {
+  // Suscribirse al carrito del store de forma reactiva para que el modal
+  // se re-renderice cuando updateItemHostesses actualice las selecciones.
+  const cartFromStore = useCartStore((state) => state.cart);
   const currentConfigItem = activeConfigItem
-    ? cart.find((i) => i.product.id === activeConfigItem.productId)
+    ? cartFromStore.find((i) => i.product.id === activeConfigItem.productId)
     : null;
+  // Si no hay item en el carrito, calcular el límite desde el producto directamente.
   const maxHostesses = currentConfigItem
     ? getMaxHostesses(currentConfigItem)
-    : 0;
+    : (() => {
+        const product = activeConfigItem
+          ? products.find((p) => p.id === activeConfigItem.productId)
+          : null;
+        if (!product) return 0;
+        if (product.tipo_venta === "shot") return product.shot_anfitriona ? 1 : 0;
+        return getHostessLimit(product, 1);
+      })();
 
   return (
     <>
@@ -104,6 +121,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
         cancelText="Cancelar"
         onConfirm={() => {
           clearCart();
+          setActiveConfigItem(null);
           setClearCartAlertVisible(false);
         }}
         onCancel={() => setClearCartAlertVisible(false)}
@@ -129,7 +147,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                   ? `Asignar Anfitrionas (Máx ${maxHostesses})`
                   : "Seleccionar Habitación"}
               </Text>
-              <Pressable onPress={() => setActiveConfigItem(null)}>
+              <Pressable onPress={() => setActiveConfigItem(null)} accessibilityRole="button" accessibilityLabel="Cerrar selección">
                 <Ionicons name="close" size={24} color={textPrimary} />
               </Pressable>
             </View>
@@ -140,7 +158,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                 {maxHostesses} seleccionadas
               </Text>
             )}
-            <ScrollView style={styles.modalList}>
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
               {activeConfigItem?.type === "hostess" ? (
                 anfitrionas.map((a) => {
                   const isSelected =
@@ -180,6 +198,9 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                             : "transparent",
                         },
                       ]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={a.nick || a.name}
+                      accessibilityState={{ selected: isSelected }}
                     >
                       <Text
                         style={[styles.modalItemText, { color: textPrimary }]}
@@ -214,6 +235,9 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                           : "transparent",
                       },
                     ]}
+                    accessibilityRole="radio"
+                    accessibilityLabel="Sin habitación"
+                    accessibilityState={{ selected: !currentConfigItem?.selectedRoom }}
                   >
                     <Text
                       style={[styles.modalItemText, { color: textPrimary }]}
@@ -241,6 +265,9 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                               : "transparent",
                         },
                       ]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={r.name}
+                      accessibilityState={{ selected: currentConfigItem?.selectedRoom === r.id }}
                     >
                       <Text
                         style={[styles.modalItemText, { color: textPrimary }]}
@@ -263,6 +290,8 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
             <Pressable
               onPress={() => setActiveConfigItem(null)}
               style={[styles.doneBtn, { backgroundColor: accentColor }]}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar selección"
             >
               <Text style={styles.doneBtnText}>Listo</Text>
             </Pressable>
@@ -292,7 +321,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#374151",
   },
-  modalTitle: { fontSize: 18, fontWeight: "800" },
+  modalTitle: { fontSize: 18, fontFamily: FontFamily.extrabold },
   modalList: { padding: 16 },
   modalItem: {
     flexDirection: "row",
@@ -303,12 +332,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 2,
   },
-  modalItemText: { fontSize: 16, fontWeight: "600" },
+  modalItemText: { fontSize: 16, fontFamily: FontFamily.semibold },
   doneBtn: {
     margin: 20,
     paddingVertical: 14,
     borderRadius: BorderRadius.full,
     alignItems: "center",
   },
-  doneBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  doneBtnText: { color: "#FFF", fontSize: 16, fontFamily: FontFamily.bold },
 });

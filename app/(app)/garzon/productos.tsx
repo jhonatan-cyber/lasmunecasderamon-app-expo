@@ -1,13 +1,13 @@
-import { ShotMixerSelector } from "@/components/shared/ShotMixerSelector";
 import { useCartDraft } from "@/hooks/useCartDraft";
 import { contentColumn } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { useCartStore } from "@/store/cartStore";
-import { OrderLineInfo } from "@/components/garzon/productos/OrderLineInfo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRouter } from "expo-router";
 import React from "react";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import type { Product } from "@/types/cart";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,13 +15,10 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
 } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProductCard } from "@/components/shared/ProductCard";
-import type { Product } from "@/types/cart";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -32,16 +29,19 @@ import {
 } from "@/components/garzon/productos";
 import { GarzonOfflineBanner } from "@/components/garzon/GarzonOfflineBanner";
 
+type ListItem =
+  | { type: 'header'; key: string; categoria: string }
+  | { type: 'product'; key: string; data: Product };
+
 export default function ProductosScreen() {
   const draftCart = useCartStore((state) => state.cart);
   const clearDraft = useCartDraft("orders", draftCart, (saved) =>
     useCartStore.setState({ cart: saved }),
   );
-  const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface} =
+  const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface } =
     useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [cartVisible, setCartVisible] = React.useState(false);
 
   const {
     categoryName,
@@ -88,18 +88,45 @@ export default function ProductosScreen() {
       new Map(cart.map((cartItem) => [String(cartItem.product.id), cartItem])),
     [cart],
   );
+
+  // Agrupa los productos por categoría manteniendo el orden de aparición.
+  // Solo incluye categorías que tengan al menos un producto (el hook ya filtra stock > 0).
+  const listItems = React.useMemo<ListItem[]>(() => {
+    const groups = new Map<string, Product[]>();
+    for (const p of products) {
+      const cat = p.categoria || 'Sin categoría';
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat)!.push(p);
+    }
+    const result: ListItem[] = [];
+    for (const [cat, prods] of groups) {
+      result.push({ type: 'header', key: `header:${cat}`, categoria: cat });
+      for (const p of prods) {
+        result.push({ type: 'product', key: String(p.id), data: p });
+      }
+    }
+    return result;
+  }, [products]);
   const handleProductConfig = useStableCallback(
     (productId: string, type: "hostess" | "room") => {
       setActiveConfigItem({ productId, type });
     },
   );
 
-  const renderItem = useStableCallback(({ item }: { item: Product }) => {
-    const cartItem = cartItemsByProductId.get(String(item.id));
-
+  const renderItem = useStableCallback(({ item }: { item: ListItem }) => {
+    if (item.type === 'header') {
+      return (
+        <View style={styles.categoryHeader}>
+          <Text style={[styles.categoryHeaderText, { color: textSecondary }]}>
+            {item.categoria}
+          </Text>
+        </View>
+      );
+    }
+    const cartItem = cartItemsByProductId.get(String(item.data.id));
     return (
       <ProductCard
-        product={item}
+        product={item.data}
         cartItem={cartItem}
         onAdd={addToCart}
         onRemove={removeFromCart}
@@ -123,8 +150,6 @@ export default function ProductosScreen() {
           fromCache ? { isConnected: false, label: "Modo Offline" } : undefined
         }
         onBack={() => {
-          clearDraft();
-          clearCart();
           router.back();
         }}
         rightComponent={
@@ -136,7 +161,7 @@ export default function ProductosScreen() {
               accessibilityRole="button"
               accessibilityLabel="Vaciar pedido"
             >
-              <Ionicons name="trash-outline" size={20} color="#FF4444" />
+              <Ionicons name="trash-outline" size={20} color="#FF0000" />
             </Pressable>
           ) : undefined
         }
@@ -150,11 +175,12 @@ export default function ProductosScreen() {
         </View>
       ) : (
         <VirtualizedList
-          data={products}
+          data={listItems}
           extraData={cart}
-          keyExtractor={(item: Product) => String(item.id)}
+          keyExtractor={(item: ListItem) => item.key}
           renderItem={renderItem}
           estimatedItemSize={150}
+          getItemType={(item: ListItem) => item.type}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: cart.length > 0 ? 230 : 40 },
@@ -171,7 +197,7 @@ export default function ProductosScreen() {
               <Pressable
                 onPress={() => {
                   useCartStore.getState().splitShorts();
-                  setCartVisible(true);
+                  router.push('/(app)/garzon/pedido-detalle');
                 }}
                 style={{
                   padding: 16,
@@ -181,11 +207,18 @@ export default function ProductosScreen() {
                   borderWidth: 1,
                   borderColor,
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Ver detalle del pedido"
               >
-                <Text style={{ color: textPrimary, fontWeight: "800" }}>
-                  Ver pedido completo ·{" "}
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)} unidades
-                </Text>
+                {(() => {
+                  const totalUnidades = cart.reduce((sum, item) => sum + item.quantity, 0);
+                  const productoTxt = totalUnidades === 1 ? 'producto' : 'productos';
+                  return (
+                    <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>
+                      {totalUnidades} {productoTxt} en el pedido
+                    </Text>
+                  );
+                })()}
               </Pressable>
             ) : null
           }
@@ -211,6 +244,10 @@ export default function ProductosScreen() {
           cartTotal={cartTotal}
           submitting={submitting}
           submitOrder={submitOrder}
+          onViewCart={() => {
+            useCartStore.getState().splitShorts();
+            router.push('/(app)/garzon/pedido-detalle');
+          }}
           insets={insets}
           accentColor={accentColor}
           borderColor={borderColor}
@@ -234,6 +271,7 @@ export default function ProductosScreen() {
         cart={cart}
         anfitrionas={anfitrionas}
         rooms={rooms}
+        products={products}
         getMaxHostesses={getMaxHostesses}
         updateItemHostesses={updateItemHostesses}
         updateItemRoom={updateItemRoom}
@@ -257,118 +295,6 @@ export default function ProductosScreen() {
         }}
         onCancel={() => setBaucherPromptVisible(false)}
       />
-      <Modal
-        visible={cartVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCartVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "#0008",
-            justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <View
-            style={{
-              maxHeight: "90%",
-              backgroundColor: cardBg,
-              borderRadius: 24,
-              padding: 20,
-              gap: 16,
-            }}
-          >
-            <Text
-              style={{ color: textPrimary, fontSize: 20, fontWeight: "800" }}
-            >
-              Detalle del pedido
-            </Text>
-            <ScrollView contentContainerStyle={{ gap: 20 }}>
-              {cart.map((item) => (
-                <View
-                  key={item.product.id}
-                  style={{
-                    borderBottomWidth: 1,
-                    borderColor,
-                    paddingBottom: 16,
-                  }}
-                >
-                  <OrderLineInfo
-                    item={item}
-                    anfitrionas={anfitrionas}
-                    rooms={rooms}
-                  />
-                  <ShotMixerSelector
-                    compact
-                    bottle={item.product.tipo_venta !== "shot"}
-                    items={[
-                      {
-                        ...item.product,
-                        nombre: item.product.name,
-                        cantidad: item.quantity,
-                      },
-                    ]}
-                    onChange={(_, mixer) =>
-                      useCartStore
-                        .getState()
-                        .updateItemMixer(item.product.id, mixer)
-                    }
-                    onChangeBottle={(_, sabores) =>
-                      useCartStore
-                        .getState()
-                        .updateItemBottleMixers(item.product.id, sabores)
-                    }
-                  />
-                  {item.product.commission > 0 && (
-                    <Pressable
-                      onPress={() => {
-                        setCartVisible(false);
-                        setActiveConfigItem({
-                          productId: item.product.id,
-                          type: "hostess",
-                        });
-                      }}
-                      style={{ paddingVertical: 8 }}
-                    >
-                      <Text style={{ color: accentOnSurface }}>
-                        Seleccionar anfitriona
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-            <Text style={{ color: textSecondary }}>
-              Propina: ${tipAmount.toLocaleString("es-CL")}
-            </Text>
-            <Text
-              style={{ color: textPrimary, fontSize: 20, fontWeight: "800" }}
-            >
-              Total: ${cartTotal.toLocaleString("es-CL")}
-            </Text>
-            <Pressable
-              onPress={() => setCartVisible(false)}
-              style={{
-                backgroundColor: accentColor,
-                borderRadius: 12,
-                padding: 14,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFF",
-                  textAlign: "center",
-                  fontWeight: "800",
-                }}
-              >
-                Cerrar
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -376,6 +302,17 @@ export default function ProductosScreen() {
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   listContent: { ...contentColumn, padding: 16 },
+  categoryHeader: {
+    paddingTop: 20,
+    paddingBottom: 6,
+    paddingHorizontal: 4,
+  },
+  categoryHeaderText: {
+    fontFamily: FontFamily.extrabold,
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   clearBtn: {
     width: 38,
@@ -395,8 +332,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },

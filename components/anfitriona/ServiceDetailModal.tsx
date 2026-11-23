@@ -2,6 +2,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
 import { estadoServicio } from '@/utils/servicioEstado';
 import { FontSize, HitSlop, MIN_TOUCH_TARGET, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -142,8 +143,8 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                             {habitacionComision > 0 && (
                                 <View style={[styles.comisionBox, { backgroundColor: '#10B981' + '15', borderColor: '#10B981' }]}>
                                     <View style={styles.summaryRow}>
-                                        <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: '800' }]}>Comisión Habitación</Text>
-                                        <Text style={[styles.summaryVal, { color: '#10B981', fontWeight: '800' }]}>
+                                        <Text style={[styles.summaryLabel, { color: '#10B981', fontFamily: FontFamily.extrabold }]}>Comisión Habitación</Text>
+                                        <Text style={[styles.summaryVal, { color: '#10B981', fontFamily: FontFamily.extrabold }]}>
                                             ${habitacionComision.toLocaleString()}
                                         </Text>
                                     </View>
@@ -187,31 +188,31 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
     detailModal: { width: '100%', maxWidth: 720, alignSelf: 'center', borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%', borderTopWidth: 1 },
     modalHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, gap: 12 },
-    modalTitleText: { fontSize: FontSize.xl, fontWeight: "900", letterSpacing: -0.5 },
-    modalSubText: { fontSize: FontSize.xs, fontWeight: "600", marginTop: 4 },
+    modalTitleText: { fontSize: FontSize.xl, fontFamily: FontFamily.black, letterSpacing: -0.5 },
+    modalSubText: { fontSize: FontSize.xs, fontFamily: FontFamily.semibold, marginTop: 4 },
     closeBtn: { width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET, borderRadius: MIN_TOUCH_TARGET / 2, justifyContent: 'center', alignItems: 'center' },
     estadoBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.full, gap: 6, borderWidth: 1 },
     estadoDot: { width: 6, height: 6, borderRadius: BorderRadius.full },
-    estadoText: { fontSize: FontSize.xxs, fontWeight: '900' },
+    estadoText: { fontSize: FontSize.xxs, fontFamily: FontFamily.black },
     detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 20 },
     gridItem: { width: "47%", padding: 14, borderRadius: BorderRadius.full, borderWidth: 1 },
-    gridLabel: { fontSize: FontSize.xxs, fontWeight: "800", marginBottom: 6, letterSpacing: 0.5 },
-    gridValue: { fontSize: FontSize.md, fontWeight: "700" },
+    gridLabel: { fontSize: FontSize.xxs, fontFamily: FontFamily.extrabold, marginBottom: 6, letterSpacing: 0.5 },
+    gridValue: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
     summarySection: { marginTop: 20, marginHorizontal: 20, padding: 20, borderRadius: BorderRadius.full, borderWidth: 1 },
-    sectionTitle: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 1, marginBottom: 16 },
+    sectionTitle: { fontSize: FontSize.xxs, fontFamily: FontFamily.black, letterSpacing: 1, marginBottom: 16 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    summaryLabel: { fontSize: FontSize.sm, fontWeight: '600' },
-    summaryVal: { fontSize: FontSize.md, fontWeight: '800' },
-    totalLabel: { fontSize: FontSize.sm, fontWeight: '900' },
-    totalVal: { fontSize: FontSize.xl, fontWeight: '900' },
+    summaryLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semibold },
+    summaryVal: { fontSize: FontSize.md, fontFamily: FontFamily.extrabold },
+    totalLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.black },
+    totalVal: { fontSize: FontSize.xl, fontFamily: FontFamily.black },
     comisionBox: { marginTop: 12, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1 },
     miComisionBox: { marginTop: 16, padding: 16, borderRadius: BorderRadius.full, borderWidth: 2, flexDirection: 'row', alignItems: 'center' },
-    miComisionLabel: { fontSize: FontSize.xs, fontWeight: '800', letterSpacing: 1 },
-    miComisionVal: { fontSize: FontSize.xl, fontWeight: '900', marginTop: 4 },
+    miComisionLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, letterSpacing: 1 },
+    miComisionVal: { fontSize: FontSize.xl, fontFamily: FontFamily.black, marginTop: 4 },
     buttonRow: { flexDirection: 'row', gap: 12, padding: 20 },
     modalEditBtn: { flex: 1, height: 54, borderRadius: BorderRadius.full, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
-    modalEditBtnText: { color: '#FFF', fontSize: FontSize.sm, fontWeight: '900' },
+    modalEditBtnText: { color: '#FFF', fontSize: FontSize.sm, fontFamily: FontFamily.black },
     modalCloseBtn: { height: 54, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
-    modalCloseBtnText: { color: '#FFF', fontSize: FontSize.sm, fontWeight: '900' },
+    modalCloseBtnText: { color: '#FFF', fontSize: FontSize.sm, fontFamily: FontFamily.black },
 });
 

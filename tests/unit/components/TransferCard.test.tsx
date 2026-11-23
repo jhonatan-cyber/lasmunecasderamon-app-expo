@@ -103,6 +103,26 @@ describe('TransferCard', () => {
     expect(screen.queryByText(/Comisión/)).toBeNull();
   });
 
+  it('no muestra comisiones en 0 aunque otra opción del traspaso sí tenga comisión', () => {
+    render(
+      <TransferCard
+        item={traspaso({
+          opciones_venta: [
+            { tipo: 'botella', precio: 30000, comision: 5000 },
+            { tipo: 'shot', precio: 8000, comision: 0 },
+          ],
+        })}
+        onPress={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('$30.000 · Comisión $5.000')).toBeTruthy();
+    expect(screen.getByText('$8.000')).toBeTruthy();
+    expect(screen.getByText('Corto')).toBeTruthy();
+    expect(screen.getAllByText(/Comisión/)).toHaveLength(1);
+    expect(screen.queryByText(/Comisión \$0/)).toBeNull();
+  });
+
   it('los traspasos antiguos sin opciones guardadas conservan el precio del movimiento', () => {
     render(
       <TransferCard

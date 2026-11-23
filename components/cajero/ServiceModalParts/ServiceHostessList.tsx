@@ -1,5 +1,7 @@
 import { Text, View } from "react-native";
 import { formatCurrency } from "@/utils/format";
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface ServiceHostessListProps {
   service: any;
@@ -20,6 +22,7 @@ export function ServiceHostessList({
   textPrimary,
   textSecondary,
 }: ServiceHostessListProps) {
+  const { accentOnSurface } = useAccentColor();
   const anfsIds = Array.isArray(service.anfitrionas_ids)
     ? service.anfitrionas_ids
     : [];
@@ -76,16 +79,16 @@ export function ServiceHostessList({
                   style={{
                     color: textPrimary,
                     fontSize: isTablet ? 16 : 13,
-                    fontWeight: "800",
+                    fontFamily: FontFamily.extrabold,
                   }}
                 >
                   {anf.nick || anf.nombre}
                 </Text>
                 <Text
                   style={{
-                    color: "#10B981",
+                    color: accentOnSurface,
                     fontSize: isTablet ? 15 : 12,
-                    fontWeight: "900",
+                    fontFamily: FontFamily.black,
                   }}
                 >
                   + {formatCurrency(comisionIndividual)}

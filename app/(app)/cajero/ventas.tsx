@@ -1,13 +1,17 @@
 import VirtualizedList from "@/components/shared/VirtualizedList";
-import { contentColumn } from "@/constants/layout";
+import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
+  Pressable,
   RefreshControl,
   StyleSheet,
+  Text,
   View
 } from "react-native";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -29,7 +33,14 @@ import {
   VentaActionSheet,
   VentasSkeleton,
   VentaCardSkeleton,
+  VentasStats,
+  VentasFiltersModal,
+  type VentasStatusFilter,
+  type VentasPaymentFilter,
+  type VentasSortBy,
+  type VentasSortOrder,
 } from '@/components/cajero/ventas';
+import { parseDateSafe } from '@/utils/timeUtils';
 
 const VENTA_SKELETON_ITEMS = [1, 2, 3, 4];
 
@@ -42,6 +53,11 @@ export default function VentasScreen() {
   const numColumns = isTablet ? 2 : 1;
   const { timers, serverOffset } = useTimer();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<VentasStatusFilter>('all');
+  const [paymentFilter, setPaymentFilter] = React.useState<VentasPaymentFilter>('all');
+  const [sortBy, setSortBy] = React.useState<VentasSortBy>('fecha_crea');
+  const [sortOrder, setSortOrder] = React.useState<VentasSortOrder>('desc');
+  const [filtersVisible, setFiltersVisible] = React.useState(false);
   const {
     loading,
     refreshing,
@@ -93,24 +109,85 @@ export default function VentasScreen() {
     ),
     [activeTimerServiceIds, getVentaId, ventasList],
   );
+  const activeFilterCount =
+    (statusFilter !== 'all' ? 1 : 0) +
+    (paymentFilter !== 'all' ? 1 : 0) +
+    (sortBy !== 'fecha_crea' ? 1 : 0) +
+    (sortOrder !== 'desc' ? 1 : 0);
+
+  const clearFilters = React.useCallback(() => {
+    setStatusFilter('all');
+    setPaymentFilter('all');
+    setSortBy('fecha_crea');
+    setSortOrder('desc');
+  }, []);
+
   const listData = React.useMemo(
     () => {
-      let data: any[];
-      if (loadingSales) {
-        data = VENTA_SKELETON_ITEMS;
-      } else {
-        data = activeTab === "historial" ? ventasList : processSales;
-      }
-      if (!searchQuery.trim()) return data;
-      const q = searchQuery.toLowerCase();
-      return data.filter((item: any) => {
+      if (loadingSales) return VENTA_SKELETON_ITEMS;
+
+      const base = activeTab === "historial" ? ventasList : processSales;
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = base.filter((item: any) => {
+        if (statusFilter !== 'all' && Number(item.estado) !== Number(statusFilter)) {
+          return false;
+        }
+        if (
+          paymentFilter !== 'all' &&
+          String(item.metodo_pago || '').toLowerCase() !== paymentFilter
+        ) {
+          return false;
+        }
+        if (!q) return true;
+
         const id = getVentaId(item);
-        const servicio = item.servicio || '';
-        const habitacion = item.habitacion || item.habitacion_id || '';
-        return String(id).includes(q) || String(servicio).toLowerCase().includes(q) || String(habitacion).toLowerCase().includes(q);
+        const values = [
+          id,
+          item.codigo,
+          item.servicio,
+          item.habitacion,
+          item.habitacion_id,
+          item.cliente_nombre,
+          item.usuarios_nicks,
+          item.anfitrionas_nicks,
+        ];
+        return values.some((value) =>
+          String(value ?? '').toLowerCase().includes(q),
+        );
+      });
+
+      return [...filtered].sort((a: any, b: any) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        if (sortBy === 'total') {
+          aValue = Number(a.total || 0);
+          bValue = Number(b.total || 0);
+        } else if (sortBy === 'fecha_crea') {
+          aValue = parseDateSafe(a.fecha_crea).getTime() || 0;
+          bValue = parseDateSafe(b.fecha_crea).getTime() || 0;
+        } else {
+          aValue = String(a[sortBy] ?? '').toLowerCase();
+          bValue = String(b[sortBy] ?? '').toLowerCase();
+        }
+
+        if (aValue === bValue) return 0;
+        const result = aValue > bValue ? 1 : -1;
+        return sortOrder === 'asc' ? result : -result;
       });
     },
-    [activeTab, loadingSales, processSales, ventasList, searchQuery, getVentaId],
+    [
+      activeTab,
+      loadingSales,
+      processSales,
+      ventasList,
+      searchQuery,
+      statusFilter,
+      paymentFilter,
+      sortBy,
+      sortOrder,
+      getVentaId,
+    ],
   );
   const handleCardPress = React.useCallback(
     (item: any) => {
@@ -176,6 +253,7 @@ export default function VentasScreen() {
       <OfflineStatusBanner pendientesHref={'/(app)/cajero/pendientes' as never} />
 
       <Tabs
+        variant="pills"
         tabs={[
           { key: 'historial', label: 'Listado de Ventas' },
           {
@@ -195,20 +273,52 @@ export default function VentasScreen() {
         style={{ marginTop: 15, gap: 12 }}
       />
 
-      <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
-        <SearchBar
-          placeholder="Buscar por código o habitación..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onClear={() => setSearchQuery('')}
-        />
+      <View style={styles.searchRow}>
+        <View style={{ flex: 1 }}>
+          <SearchBar
+            placeholder="Buscar por código, cliente o anfitriona..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+          />
+        </View>
+        <Pressable
+          onPress={() => setFiltersVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Filtrar ventas${activeFilterCount ? `, ${activeFilterCount} filtros activos` : ''}`}
+          style={[
+            styles.filterBtn,
+            {
+              backgroundColor: activeFilterCount ? `${accentColor}18` : cardBg,
+              borderColor: activeFilterCount ? accentColor : borderColor,
+            },
+          ]}
+        >
+          <Ionicons
+            name="options-outline"
+            size={20}
+            color={activeFilterCount ? accentColor : textPrimary}
+          />
+          {activeFilterCount > 0 && (
+            <View style={[styles.filterBadge, { backgroundColor: accentColor }]}>
+              <Text style={[styles.filterBadgeText, { color: accentText }]}>
+                {activeFilterCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       <VirtualizedList
         data={listData as any}
+        keyExtractor={(item: any, index: number) =>
+          String(getVentaId(item) ?? item?.codigo ?? `venta-${index}`)
+        }
         renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
         numColumns={numColumns}
-        ListHeaderComponent={null}
+        ListHeaderComponent={
+          !loadingSales ? <VentasStats ventas={ventasList as any} /> : null
+        }
         contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
           <RefreshControl
@@ -224,8 +334,11 @@ export default function VentasScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="receipt-outline"
-            title={searchQuery ? "No se encontraron ventas" : "No hay ventas registradas"}
-            message={searchQuery ? "Intenta con otros términos de búsqueda" : "Las ventas aparecerán conforme se procesen los pagos."}
+            title={
+              searchQuery || activeFilterCount > 0
+                ? "No se encontraron ventas"
+                : "No hay ventas registradas"
+            }
           />
         }
       />
@@ -290,6 +403,20 @@ export default function VentasScreen() {
         </>
       )}
 
+      <VentasFiltersModal
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        statusFilter={statusFilter}
+        paymentFilter={paymentFilter}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onStatusChange={setStatusFilter}
+        onPaymentChange={setPaymentFilter}
+        onSortByChange={setSortBy}
+        onSortOrderChange={setSortOrder}
+        onClear={clearFilters}
+      />
+
       <PremiumAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -307,7 +434,34 @@ export default function VentasScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContainer: { ...contentColumn, paddingVertical: 16, paddingHorizontal: 16, paddingBottom: 100 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  filterBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  filterBadgeText: { fontSize: 10, fontFamily: FontFamily.black },
+  listContainer: { ...contentColumn, paddingVertical: 16, paddingHorizontal: 16, paddingBottom: tabBarBottomPadding },
   backBtnRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,5 +471,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6
   },
-  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backTextRight: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
 });

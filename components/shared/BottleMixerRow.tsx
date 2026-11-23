@@ -1,4 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
@@ -8,6 +10,8 @@ import type { AcompanamientoBotellaItem } from '@/types/cart';
 interface BottleMixerRowProps {
   sabor: AcompanamientoBotellaItem;
   max: number;
+  /** Unidades que suma o resta cada toque; equivale a una unidad por botella. */
+  step?: number;
   stock: number;
   textPrimary: string;
   textSecondary: string;
@@ -19,6 +23,7 @@ interface BottleMixerRowProps {
 export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
   sabor,
   max,
+  step = 1,
   stock,
   textPrimary,
   textSecondary,
@@ -26,6 +31,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
   onIncrement,
   onDelete,
 }) => {
+  const { accentColor, accentBg } = useAccentColor();
   const nombre = sabor.nombre || sabor.presentacion_id;
   return (
     <View
@@ -45,7 +51,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Quitar una unidad de ${nombre}`}
-        disabled={sabor.unidades <= 1}
+        disabled={sabor.unidades <= step}
         onPress={onDecrement}
         style={{
           width: 32,
@@ -54,7 +60,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           backgroundColor: 'rgba(155,155,155,0.1)',
           justifyContent: 'center',
           alignItems: 'center',
-          opacity: sabor.unidades <= 1 ? 0.4 : 1,
+          opacity: sabor.unidades <= step ? 0.4 : 1,
         }}
       >
         <Ionicons name="remove" size={16} color={textPrimary} />
@@ -64,7 +70,7 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           color: textPrimary,
           marginHorizontal: 12,
           fontSize: 14,
-          fontWeight: '900',
+          fontFamily: FontFamily.black,
         }}
       >
         {sabor.unidades}
@@ -94,13 +100,13 @@ export const BottleMixerRow: React.FC<BottleMixerRowProps> = ({
           width: 32,
           height: 32,
           borderRadius: BorderRadius.full,
-          backgroundColor: 'rgba(239,68,68,0.1)',
+          backgroundColor: accentBg,
           justifyContent: 'center',
           alignItems: 'center',
           marginLeft: 12,
         }}
       >
-        <Ionicons name="trash-outline" size={16} color="#EF4444" />
+        <Ionicons name="trash-outline" size={16} color={accentColor} />
       </Pressable>
     </View>
   );

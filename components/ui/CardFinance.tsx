@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface CardFinanceProps {
@@ -83,15 +84,15 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: FontSize.xxs,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   totalLabel: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   totalPrice: {
     fontSize: 20,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -106,6 +107,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: FontSize.xxs,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
 });

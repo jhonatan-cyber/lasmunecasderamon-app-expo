@@ -1,5 +1,7 @@
 import React from 'react';
 import { BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { haptic } from '@/utils/haptics';
@@ -85,6 +87,7 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   scrollRef,
   onSubmit,
 }) => {
+  const { textSecondary: themeSecondary, surfaceMuted } = useAccentColor();
   const itemCount = cart.reduce((s, i) => s + (i.quantity || 1), 0);
   const cta = resolveCheckoutCta(isReadyToSubmit, missingReason);
   // Texto sobre el acento (Cobrar) y acento como texto sobre la tarjeta.
@@ -137,9 +140,7 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
           {
             backgroundColor: isReadyToSubmit
               ? accentColor
-              : isDark
-                ? '#262626'
-                : '#E5E7EB',
+              : surfaceMuted,
           },
         ]}
         disabled={submitting || cajaAbierta === false}
@@ -164,9 +165,7 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
                 {
                   color: isReadyToSubmit
                     ? onAccent
-                    : isDark
-                      ? '#A3A3A3'
-                      : '#4B5563',
+                    : themeSecondary,
                 },
               ]}
             >
@@ -178,11 +177,9 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
               color={
                 isReadyToSubmit
                   ? onAccent
-                  : isDark
-                    ? '#A3A3A3'
-                    : '#4B5563'
-              }
-            />
+                  : themeSecondary
+            }
+          />
           </>
         )}
       </Pressable>
@@ -221,11 +218,11 @@ const styles = StyleSheet.create({
   },
   stickyBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   stickyTotal: {
     fontSize: 22,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   stickySubmitBtn: {
     flexDirection: 'row',
@@ -239,6 +236,6 @@ const styles = StyleSheet.create({
   },
   stickySubmitText: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
 });

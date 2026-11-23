@@ -50,7 +50,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
     return (
         <View style={[styles.container, disabled && { opacity: 0.5, pointerEvents: 'none' as const }, !disabled && { pointerEvents: 'auto' as const }]}>
-            {showLabel && <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO (Requerido)</Text>}
+            {showLabel && <Text style={[styles.label, { color: textSecondary }]}>MÉTODO DE PAGO</Text>}
             <View style={styles.row}>
                 {methods.map((method) => {
                         const isSelected = selectedMethod === method.id;
@@ -78,7 +78,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                             >
                                 <Ionicons
                                     name={method.icon}
-                                    size={18}
+                                    size={20}
                                     color={isSelected ? accentText : textSecondary}
                                 />
                                 <Text
@@ -89,7 +89,7 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
                                     ]}
                                     numberOfLines={1}
                                     adjustsFontSizeToFit
-                                    minimumFontScale={0.65}
+                                    minimumFontScale={0.7}
                                 >
                                     {method.label}
                                 </Text>
@@ -103,38 +103,37 @@ export const PaymentMethodSelect: React.FC<PaymentMethodSelectProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 20,
+        marginTop: 16,
     },
     label: {
-        fontSize: 12,
+        fontSize: 13,
         fontFamily: FontFamily.bold,
-        marginBottom: 10,
-        letterSpacing: 1,
+        marginBottom: 12,
+        letterSpacing: 0.5,
     },
     row: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 6,
+        gap: 8,
     },
     methodBtn: {
         width: '47%',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 5,
-        paddingVertical: 10,
-        paddingHorizontal: 6,
-        borderRadius: BorderRadius.full,
+        gap: 8,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: BorderRadius.md,
         borderWidth: 1.5,
     },
     methodText: {
-        fontSize: 11,
+        fontSize: 13,
         fontFamily: FontFamily.bold,
-        textTransform: 'uppercase',
         textAlign: 'center',
     },
     methodTextSelected: {
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
 });
 

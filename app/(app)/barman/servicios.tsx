@@ -1,5 +1,5 @@
-import { ServiciosScreen } from '@/components/screens/ServiciosScreen';
+import { Redirect } from 'expo-router';
 
 export default function BarmanServiciosScreen() {
-  return <ServiciosScreen variant="barman" />;
+  return <Redirect href="/barman/solicitar-servicio" />;
 }

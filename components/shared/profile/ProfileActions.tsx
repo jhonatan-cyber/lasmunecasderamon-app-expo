@@ -28,6 +28,8 @@ export function ProfileActions({
         ]}
         onPress={onSave}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Guardar cambios del perfil"
       >
         {saving ? (
           <ActivityIndicator color={accentText} />
@@ -36,8 +38,8 @@ export function ProfileActions({
         )}
       </Pressable>
 
-      <Pressable style={styles.logoutBtn} onPress={onLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+      <Pressable style={styles.logoutBtn} onPress={onLogout} accessibilityRole="button" accessibilityLabel="Cerrar sesión">
+        <Ionicons name="log-out-outline" size={20} color={accentColor} />
         <Text style={styles.logoutBtnText}>Cerrar Sesión</Text>
       </Pressable>
     </View>

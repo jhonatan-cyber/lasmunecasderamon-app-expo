@@ -14,8 +14,6 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 
 /** Filtro que muestra el turno completo. */
 const ROL_TODOS = 'Todos';
-/** Único rol con permiso para registrar colaciones (ver app/(app)/barman/colaciones.tsx). */
-const ROL_QUE_REGISTRA = 'barman';
 
 
 /** Color según la categoría del producto para el card de ml. */
@@ -40,17 +38,8 @@ function colorDeCategoria(nombre?: string | null): string {
   return '#6B7280';
 }
 
-/** Construye un fondo sutil a partir de un color hexadecimal. */
-function colorConOpacidad(hex: string, alpha: number): string {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
 export default function ColacionesScreen() {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentColor: themeAccent, accentText } = useAccentColor();
   const router = useRouter();
   const {
     accentColor,
@@ -161,9 +150,22 @@ export default function ColacionesScreen() {
         onBack={() => router.back()}
         showThemeToggle
         rightComponent={
-          <View style={[styles.registraBadge, { borderColor, backgroundColor: surfaceMuted }]}>
-            <Text style={[styles.registraBadgeLabel, { color: textSecondary }]}>Registra</Text>
-            <Text style={[styles.registraBadgeValor, { color: accentOnSurface }]}>{ROL_QUE_REGISTRA}</Text>
+          <View
+            style={[
+              styles.registraBadge,
+              { borderColor, backgroundColor: surfaceMuted },
+            ]}
+          >
+            <Text
+              style={[styles.registraBadgeLabel, { color: textSecondary }]}
+            >
+              Registra
+            </Text>
+            <Text
+              style={[styles.registraBadgeValor, { color: accentOnSurface }]}
+            >
+              barman
+            </Text>
           </View>
         }
       />
@@ -171,18 +173,16 @@ export default function ColacionesScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}
+        stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl refreshing={productosLoading || trabajadoresLoading || registrosLoading} onRefresh={recargar} tintColor={accentColor} />
         }
       >
-        <View style={[styles.registerCard, { backgroundColor: cardBg, borderColor }]}>
-          <Pressable onPress={() => setRegisterCardCollapsed(!registerCardCollapsed)} style={styles.registerCardHeader}>
+        <View style={[styles.registerCard, { backgroundColor: cardBg, borderColor }]} collapsable={false}>
+          <Pressable onPress={() => setRegisterCardCollapsed(!registerCardCollapsed)} style={styles.registerCardHeader} accessibilityRole="button" accessibilityLabel={registerCardCollapsed ? 'Expandir registro de colación' : 'Colapsar registro de colación'} accessibilityState={{ expanded: !registerCardCollapsed }}>
             <Ionicons name="beer-outline" size={20} color={accentOnSurface} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: textPrimary }]}>Registrar colación</Text>
-              <Text style={[styles.cardSubtitle, { color: textSecondary }]}>
-                Un trabajador, un corto por turno.
-              </Text>
             </View>
             <Ionicons name={registerCardCollapsed ? "chevron-down" : "chevron-up"} size={20} color={accentOnSurface} />
           </Pressable>
@@ -191,7 +191,7 @@ export default function ColacionesScreen() {
           <>
           <View style={[styles.errorBox, { borderBottomColor: borderColor }]}>
             {productosError || analcoholicasError || trabajadoresError ? (
-              <Text style={[styles.error, { color: '#EF4444' }]}>
+              <Text style={[styles.error, { color: themeAccent }]}>
                 {productosError || analcoholicasError || trabajadoresError}
               </Text>
             ) : null}
@@ -200,6 +200,8 @@ export default function ColacionesScreen() {
           <Pressable
             onPress={() => !trabajadoresLoading && trabajadores.length > 0 && setWorkerModalVisible(true)}
             style={[styles.selectButton, { borderColor, opacity: trabajadoresLoading || trabajadores.length === 0 ? 0.5 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Seleccionar trabajador"
           >
             <Text
               style={[
@@ -214,17 +216,6 @@ export default function ColacionesScreen() {
             <Ionicons name="chevron-down" size={18} color={textSecondary} />
           </Pressable>
 
-          {ruleFromWorker && (
-            <View style={styles.productsCarousel}>
-              <ColacionProductsCarousel
-                products={catalogoVisible}
-                selectedId={productoId}
-                loading={productosLoading || analcoholicasLoading}
-                onSelect={handleSelectProducto}
-                hint="Este rol recibe bebidas analcohólicas habilitadas para colación."
-              />
-            </View>
-          )}
 
           {acompanamientoRenderer}
 
@@ -233,10 +224,7 @@ export default function ColacionesScreen() {
               ? colorDeCategoria(productoSeleccionado.categoria_nombre ?? productoSeleccionado.categoria ?? productoSeleccionado.producto_categoria)
               : null;
             return (
-              <View style={[styles.mlCard, {
-                backgroundColor: catColor ? colorConOpacidad(catColor, 0.1) : surfaceMuted,
-                borderColor: catColor ?? borderColor,
-              }]}>
+              <View style={styles.mlSection}>
                 <Text style={[styles.mlCardTitle, { color: catColor ?? textSecondary }]}>
                   Ml del producto seleccionado
                 </Text>
@@ -267,33 +255,20 @@ export default function ColacionesScreen() {
               Quedan {Number(productoSeleccionado.ml_abierta)} ml en la botella abierta.
             </Text>
           ) : null}
-
-          <View style={styles.actionsRow}>
-            <View style={styles.registerButtonWrap}>
-              <Pressable
-                onPress={registrar}
-                style={[
-                  styles.registerButton,
-                  {
-                    backgroundColor: canRegister ? accentColor : 'transparent',
-                  },
-                ]}
-                disabled={!canRegister}
-              >
-                {saving ? (
-                  <Ionicons name="sync" size={18} color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="receipt" size={18} color="#FFFFFF" />
-                )}
-                <Text style={styles.registerButtonText}>
-                  {saving ? 'Guardando…' : 'Registrar corto'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
           </>
           )}
         </View>
+
+        {/* — Catálogo de bebidas — */}
+        {ruleFromWorker && (
+          <ColacionProductsCarousel
+            products={catalogoVisible}
+            selectedId={productoId}
+            loading={productosLoading || analcoholicasLoading}
+            onSelect={handleSelectProducto}
+            hint="Este rol recibe bebidas analcohólicas habilitadas para colación."
+          />
+        )}
 
         {/* — Colaciones del turno — */}
         <View style={styles.historySection}>
@@ -322,7 +297,7 @@ export default function ColacionesScreen() {
                     onPress={() => setHistoryRole(rol)}
                     style={[styles.roleTab, { backgroundColor: isActive ? accentColor : surfaceMuted, borderColor: isActive ? accentColor : borderColor }]}
                   >
-                    <Text style={[styles.roleTabText, { color: isActive ? '#FFFFFF' : textPrimary }]}>
+                    <Text style={[styles.roleTabText, { color: isActive ? accentText : textPrimary }]}>
                       {rol} · {cantidad}
                     </Text>
                   </Pressable>
@@ -337,7 +312,7 @@ export default function ColacionesScreen() {
               <Text style={{ color: textSecondary, marginLeft: 4 }}>Cargando colaciones…</Text>
             </View>
           ) : registrosError ? (
-            <Text style={[styles.error, { color: '#EF4444' }]}>{registrosError}</Text>
+            <Text style={[styles.error, { color: themeAccent }]}>{registrosError}</Text>
           ) : filteredHistory.length === 0 ? (
             <Text style={[styles.emptyText, { color: textSecondary }]}>
               {registros.length === 0 ? 'Aún no hay colaciones en este turno.' : 'No hay colaciones para este filtro.'}
@@ -372,6 +347,34 @@ export default function ColacionesScreen() {
         </View>
       </ScrollView>
 
+      {/* FAB flotante — Registrar corto */}
+      {productoSeleccionado && (
+        <View style={styles.fabContainer}>
+          <Pressable
+            onPress={registrar}
+            style={[
+              styles.fabButton,
+              {
+                backgroundColor: canRegister ? accentColor : surfaceMuted,
+                opacity: canRegister ? 1 : 0.5,
+              },
+            ]}
+            disabled={!canRegister || saving}
+            accessibilityRole="button"
+            accessibilityLabel="Registrar colación"
+          >
+            {saving ? (
+              <Ionicons name="sync" size={18} color={accentText} />
+            ) : (
+              <Ionicons name="receipt" size={18} color={accentText} />
+            )}
+            <Text style={[styles.fabButtonText, { color: accentText }]}>
+              {saving ? 'Guardando…' : 'Registrar corto'}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
       <ColacionWorkerModal
         visible={workerModalVisible}
         onClose={() => setWorkerModalVisible(false)}
@@ -398,7 +401,7 @@ const styles = StyleSheet.create({
   },
   registerCard: {
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     gap: 12,
   },
@@ -439,7 +442,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     padding: 10,
     borderRadius: BorderRadius.full,
     minHeight: 44,
@@ -449,14 +451,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  productsCarousel: {
-    marginTop: 4,
-  },
-  mlCard: {
-    borderRadius: BorderRadius.full,
-    padding: 12,
-    borderWidth: 1,
-    gap: 8,
+  mlSection: {
+    marginTop: 8,
   },
   mlCardTitle: {
     fontSize: 11,
@@ -489,25 +485,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-  actionsRow: {
-    marginTop: 4,
+  fabContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 16,
+    right: 16,
+    zIndex: 10,
   },
-  registerButtonWrap: {
-    width: '100%',
-  },
-  registerButton: {
+  fabButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.05)',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: BorderRadius.card,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
-  registerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  fabButtonText: {
+    fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
   },

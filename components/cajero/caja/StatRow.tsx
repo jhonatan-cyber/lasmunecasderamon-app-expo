@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { FontFamily } from '@/constants/fonts';
 
 interface StatRowProps {
     label: string;
@@ -36,10 +37,10 @@ const styles = StyleSheet.create({
     },
     statRowLabel: {
         fontSize: 14,
-        fontWeight: '500'
+        fontFamily: FontFamily.medium
     },
     statRowValue: {
         fontSize: 15,
-        fontWeight: '800'
+        fontFamily: FontFamily.extrabold
     },
 });

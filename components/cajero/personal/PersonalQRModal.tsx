@@ -51,14 +51,14 @@ export function PersonalQRModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <Pressable style={styles.modalDismiss} onPress={onClose} />
+                <Pressable style={styles.modalDismiss} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar código QR" />
                 <AnimatedView 
                     from={{ opacity: 0, scale: 0.9, translateY: 50 }}
                     animate={{ opacity: 1, scale: 1, translateY: 0 }}
                     transition={{ type: 'spring', damping: 20 }}
                     style={[styles.modalContent, { backgroundColor: cardBg }]}
                 >
-                    <Pressable style={styles.closeBtnAbsolute} onPress={onClose}>
+                    <Pressable style={styles.closeBtnAbsolute} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar código QR">
                         <Ionicons name="close" size={24} color={textPrimary} />
                     </Pressable>
 

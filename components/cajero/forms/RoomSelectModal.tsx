@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import VirtualizedList from "@/components/shared/VirtualizedList";
@@ -41,6 +42,8 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
     borderColor,
     textPrimary,
     textSecondary,
+    accentOnSurface,
+    accentColor,
   } = useAccentColor();
 
   const estadoHabitacion = (room: Room) =>
@@ -50,6 +53,84 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
     if (estado === 1) return "LIBRE";
     if (estado === 2) return "OCUPADA";
     return "NO DISPONIBLE";
+  };
+
+  const renderItem = ({ item }: { item: Room }) => {
+    const itemId = String(item.id_habitacion || item.id);
+    const isSelected = String(selectedRoomId) === itemId;
+    const estado = estadoHabitacion(item);
+    const estaLibre = estado === 1;
+    const roomName =
+      item.nombre || `Habitación ${item.id_habitacion || item.id}`;
+
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
+        accessibilityState={{
+          disabled: !estaLibre,
+          selected: isSelected,
+        }}
+        disabled={!estaLibre}
+        onPress={() => {
+          if (estaLibre) onSelect(item);
+        }}
+        style={[
+          styles.modalItem,
+          {
+            borderColor: isSelected ? primaryColor : borderColor,
+            backgroundColor: isSelected
+              ? `${primaryColor}15`
+              : "transparent",
+            opacity: estaLibre ? 1 : 0.6,
+            borderWidth: isSelected ? 2 : 1.5,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.roomIcon,
+            {
+              backgroundColor: estaLibre ? `${accentOnSurface}20` : `${accentColor}20`,
+            },
+          ]}
+        >
+          <Ionicons
+            name="business"
+            size={24}
+            color={estaLibre ? accentOnSurface : accentColor}
+          />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text
+            style={[styles.modalItemText, { color: textPrimary }]}
+          >
+            {roomName}
+          </Text>
+          <View
+            style={{ flexDirection: "row", alignItems: "center" }}
+          >
+            <Text style={{ fontSize: 13, color: textSecondary }}>
+              ${Number(item.precio || 0).toLocaleString()} •{" "}
+              {item.tiempo || 0} min
+            </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                color: estaLibre ? accentOnSurface : accentColor,
+                marginLeft: 8,
+                fontFamily: FontFamily.bold,
+              }}
+            >
+              {`● ${etiquetaEstado(estado)}`}
+            </Text>
+          </View>
+        </View>
+        {isSelected && (
+          <Ionicons name="checkmark" size={18} color={primaryColor} />
+        )}
+      </Pressable>
+    );
   };
 
   return (
@@ -76,83 +157,8 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
             (item.id_habitacion || item.id).toString()
           }
           estimatedItemSize={80}
-          renderItem={({ item }: { item: Room }) => {
-            const itemId = String(item.id_habitacion || item.id);
-            const isSelected = String(selectedRoomId) === itemId;
-            const estado = estadoHabitacion(item);
-            const estaLibre = estado === 1;
-            const roomName =
-              item.nombre || `Habitación ${item.id_habitacion || item.id}`;
-
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
-                accessibilityState={{
-                  disabled: !estaLibre,
-                  selected: isSelected,
-                }}
-                disabled={!estaLibre}
-                onPress={() => {
-                  if (estaLibre) onSelect(item);
-                }}
-                style={[
-                  styles.modalItem,
-                  {
-                    borderColor: isSelected ? primaryColor : borderColor,
-                    backgroundColor: isSelected
-                      ? `${primaryColor}15`
-                      : "transparent",
-                    opacity: estaLibre ? 1 : 0.6,
-                    borderWidth: isSelected ? 2 : 1.5,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.roomIcon,
-                    {
-                      backgroundColor: estaLibre ? "#10B98120" : "#EF444420",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="business"
-                    size={24}
-                    color={estaLibre ? "#10B981" : "#EF4444"}
-                  />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text
-                    style={[styles.modalItemText, { color: textPrimary }]}
-                  >
-                    {roomName}
-                  </Text>
-                  <View
-                    style={{ flexDirection: "row", alignItems: "center" }}
-                  >
-                    <Text style={{ fontSize: 13, color: textSecondary }}>
-                      ${Number(item.precio || 0).toLocaleString()} •{" "}
-                      {item.tiempo || 0} min
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: estaLibre ? "#10B981" : "#EF4444",
-                        marginLeft: 8,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {`● ${etiquetaEstado(estado)}`}
-                    </Text>
-                  </View>
-                </View>
-                {isSelected && (
-                  <Ionicons name="checkmark" size={18} color={primaryColor} />
-                )}
-              </Pressable>
-            );
-          }}
+          renderItem={renderItem}
+          showVerticalScrollIndicator={false}
         />
       </View>
     </ModalBottomSheet>
@@ -166,13 +172,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 2,
     marginBottom: 10,
   },
   modalItemText: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   roomIcon: {
     width: 44,

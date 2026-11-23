@@ -93,7 +93,7 @@ export function SelectedEventsModal({
             }
             renderItem={({ item }) => {
               const isAnticipo = item?.type === "anticipo";
-              const color = isAnticipo ? "#EF4444" : accentColor;
+              const color = isAnticipo ? accentColor : accentColor;
               const icon = TYPE_ICONS[item?.type] ?? "ellipse";
               const eventDate = item?.date ? formatDate(item.date) : null;
 

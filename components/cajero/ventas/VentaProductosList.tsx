@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     infoRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
     productImage: { width: 40, height: 40, borderRadius: BorderRadius.full },
     productImagePlaceholder: { width: 40, height: 40, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
-    productName: { fontSize: 16, fontWeight: "800", flex: 1 },
+    productName: { fontSize: 16, fontWeight: "800", flex: 1, minWidth: 0 },
     totalRow: { flexDirection: "row", justifyContent: "flex-end", borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.04)", paddingTop: 12 },
     productTotal: { fontSize: 18, fontWeight: "900" },
 });

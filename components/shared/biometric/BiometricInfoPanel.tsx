@@ -61,6 +61,8 @@ export function BiometricInfoPanel({
                     <Pressable
                         style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                         onPress={onStart}
+                        accessibilityRole="button"
+                        accessibilityLabel="Empezar enrolamiento facial"
                     >
                         {({ pressed }) => (
                             <View style={{ opacity: pressed ? 0.6 : 1 }}>
@@ -95,15 +97,17 @@ export function BiometricInfoPanel({
                 <>
                     <View style={styles.panelHead}>
                         <View style={[styles.iconBadge, styles.badgeError]}>
-                            <Ionicons name="alert-circle" size={20} color="#F87171" />
+                            <Ionicons name="alert-circle" size={20} color={accentColor} />
                         </View>
-                        <Text style={[styles.kicker, { color: '#F87171' }]}>NO SE PUDO SEGUIR</Text>
+                        <Text style={[styles.kicker, { color: accentColor }]}>NO SE PUDO SEGUIR</Text>
                     </View>
                     <Text style={styles.panelTitle}>Probemos otra vez</Text>
                     <Text style={styles.panelHelp}>{error}</Text>
                     <Pressable
                         style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                         onPress={onRetry}
+                        accessibilityRole="button"
+                        accessibilityLabel="Reintentar enrolamiento facial"
                     >
                         {({ pressed }) => (
                             <View style={{ opacity: pressed ? 0.6 : 1 }}>
@@ -112,7 +116,7 @@ export function BiometricInfoPanel({
                         )}
                     </Pressable>
                     {errorTipo === 'deteccion' ? (
-                        <Pressable style={styles.ghostBtn} onPress={onSkip}>
+                        <Pressable style={styles.ghostBtn} onPress={onSkip} accessibilityRole="button" accessibilityLabel="Continuar sin verificar">
                             {({ pressed }) => (
                                 <View style={{ opacity: pressed ? 0.6 : 1 }}>
                                     <Text style={styles.ghostBtnText}>Continuar sin verificar</Text>
@@ -159,7 +163,7 @@ export function BiometricInfoPanel({
                             {statusText}
                         </Text>
                     </View>
-                    <Pressable style={styles.ghostBtn} onPress={onClose}>
+                    <Pressable style={styles.ghostBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancelar enrolamiento facial">
                         {({ pressed }) => (
                             <View style={{ opacity: pressed ? 0.6 : 1 }}>
                                 <Text style={styles.ghostBtnText}>Cancelar</Text>

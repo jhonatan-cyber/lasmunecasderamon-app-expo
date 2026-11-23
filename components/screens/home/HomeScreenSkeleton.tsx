@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { View } from "react-native";
+import { View, AccessibilityRole } from "react-native";
 import { BorderRadius } from "@/constants/spacing";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -30,6 +30,8 @@ export function HomeScreenSkeleton({
           width={40}
           height={40}
           borderRadius={20}
+          accessibilityRole="button"
+          accessibilityLabel="Icono de control"
           style={{ backgroundColor: gradientControlBg }}
         />
         <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
@@ -37,17 +39,23 @@ export function HomeScreenSkeleton({
             width={60}
             height={60}
             borderRadius={30}
+            accessibilityRole="button"
+            accessibilityLabel="Tarjeta principal"
             style={{ backgroundColor: gradientControlBg }}
           />
           <View style={{ gap: 8 }}>
             <SkeletonLoader
               width={120}
               height={20}
+              accessibilityRole="text"
+              accessibilityLabel="Título principal"
               style={{ backgroundColor: gradientControlBg }}
             />
             <SkeletonLoader
               width={80}
               height={15}
+              accessibilityRole="text"
+              accessibilityLabel="Subtítulo"
               style={{ backgroundColor: gradientControlBg }}
             />
           </View>
@@ -55,10 +63,10 @@ export function HomeScreenSkeleton({
       </LinearGradient>
       <View style={{ padding: 20, gap: 15 }}>
         {/* Analytics section skeleton */}
-        <SkeletonLoader width="100%" height={150} borderRadius={BorderRadius.card} />
+        <SkeletonLoader width="100%" height={150} borderRadius={BorderRadius.card} accessibilityRole="progressbar" accessibilityLabel="Estadísticas" />
         <View style={{ flexDirection: "row", gap: 15 }}>
-          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} />
-          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} />
+          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} accessibilityRole="button" accessibilityLabel="Módulo" />
+          <SkeletonLoader width="48%" height={100} borderRadius={BorderRadius.card} accessibilityRole="button" accessibilityLabel="Módulo" />
         </View>
         {/* Módulos: replica el cuadro del dashboard (chip + título + descripción). */}
         {[0, 1].map((row) => (
@@ -76,9 +84,9 @@ export function HomeScreenSkeleton({
                   overflow: 'hidden',
                 }}
               >
-                <SkeletonLoader width={46} height={46} borderRadius={14} />
-                <SkeletonLoader width="72%" height={14} borderRadius={7} />
-                <SkeletonLoader width="48%" height={12} borderRadius={6} />
+                <SkeletonLoader width={46} height={46} borderRadius={14} accessibilityRole="image" accessibilityLabel="Icono de módulo" />
+                <SkeletonLoader width="72%" height={14} borderRadius={7} accessibilityRole="text" accessibilityLabel="Título del módulo" />
+                <SkeletonLoader width="48%" height={12} borderRadius={6} accessibilityRole="text" accessibilityLabel="Descripción" />
               </View>
             ))}
           </View>

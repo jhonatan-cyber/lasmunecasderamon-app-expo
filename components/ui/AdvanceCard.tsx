@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
@@ -46,7 +47,7 @@ export function AdvanceCard({
     footer,
 }: AdvanceCardProps) {
     useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
-    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentUi } = useAccentColor();
 
     
     const normalize = normalizeEstado || ((estado: Anticipo['estado'] | number | string) => {
@@ -68,42 +69,42 @@ export function AdvanceCard({
     const getStatusColors = () => {
         if (isPendiente) {
             return {
-                backgroundColor: isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7',
-                color: isDark ? '#FBBF24' : '#B45309',
+                backgroundColor: accentBg,
+                color: accentOnSurface,
                 label: 'Pendiente'
             };
         }
         if (isPagada) {
             return {
-                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
-                color: isDark ? '#6EE7B7' : '#065F46',
+                backgroundColor: accentBg,
+                color: accentOnSurface,
                 label: 'Recibido'
             };
         }
         if (isLiquidada) {
             return {
-                backgroundColor: isDark ? 'rgba(139, 92, 246, 0.16)' : '#EDE9FE',
-                color: isDark ? '#C4B5FD' : '#6D28D9',
+                backgroundColor: accentBg,
+                color: accentOnSurface,
                 label: 'Liquidado'
             };
         }
         if (isAprobada) {
             return {
-                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
-                color: isDark ? '#93C5FD' : '#1D4ED8',
+                backgroundColor: accentBg,
+                color: accentOnSurface,
                 label: viewMode === 'solicitudes' ? 'Aprobado' : 'Recibido'
             };
         }
         if (isRechazada) {
             return {
-                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
-                color: isDark ? '#F87171' : '#B91C1C',
+                backgroundColor: accentBg,
+                color: accentOnSurface,
                 label: 'Rechazada'
             };
         }
         return {
-            backgroundColor: isDark ? 'rgba(107, 114, 128, 0.16)' : '#F3F4F6',
-            color: isDark ? '#9CA3AF' : '#4B5563',
+            backgroundColor: surfaceMuted,
+            color: textSecondary,
             label: 'Sin estado'
         };
     };
@@ -111,7 +112,7 @@ export function AdvanceCard({
     const statusColors = getStatusColors();
 
     // Glow neón en modo oscuro con el color del estado
-    const cardNeonColor = isPendiente ? '#F59E0B' : isPagada ? '#10B981' : isRechazada ? '#EF4444' : isLiquidada ? '#8B5CF6' : accentColor;
+    const cardNeonColor = accentColor;
     const cardNeonGlow = isDark ? {
         shadowColor: cardNeonColor,
         shadowOffset: { width: 0, height: 0 },
@@ -186,9 +187,9 @@ export function AdvanceCard({
                 )}
 
                 <View style={[styles.amountsRow, compactDate && styles.amountsRowCompact]}>
-                    <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}>
+                    <View style={[styles.amountItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : surfaceMuted }]}>
                         <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
-                        <Text style={[styles.amountValue, { color: isAprobada ? accentColor : isPendiente ? '#F59E0B' : isRechazada ? '#EF4444' : '#10B981' }]}>
+                        <Text style={[styles.amountValue, { color: accentOnSurface }]}>
                             ${(item.monto || 0).toLocaleString()}
                         </Text>
                     </View>
@@ -202,9 +203,9 @@ export function AdvanceCard({
                 ) : null}
 
                 {item.motivo_rechazo && isRechazada && (
-                    <View style={[styles.rejectionBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2' }]}>
-                        <Ionicons name="close-circle" size={14} color={isDark ? '#F87171' : '#B91C1C'} />
-                        <Text style={[styles.rejectionText, { color: isDark ? '#F87171' : '#991B1B' }]}>
+                    <View style={[styles.rejectionBox, { backgroundColor: accentBg }]}>
+                        <Ionicons name="close-circle" size={14} color={accentOnSurface} />
+                        <Text style={[styles.rejectionText, { color: accentOnSurface }]}>
                             Motivo rechazo: {item.motivo_rechazo}
                         </Text>
                     </View>
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 15,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -0.2,
         flex: 1,
     },
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
     },
     indexText: {
         fontSize: FontSize.xxs,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     statusBadge: {
         paddingHorizontal: 10,
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     },
     statusText: {
         fontSize: 11,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     cardBody: {},
     cardBodyCompact: {},
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: 13,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     timeTextCompact: {
         fontSize: 13,
@@ -327,13 +328,13 @@ const styles = StyleSheet.create({
     },
     amountLabel: {
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         marginBottom: 4,
         textTransform: 'uppercase',
     },
     amountValue: {
         fontSize: 18,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
     motivoRow: {
         marginTop: 10,

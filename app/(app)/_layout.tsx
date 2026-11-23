@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaModal';
 import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
@@ -142,7 +143,7 @@ export default function AppLayout() {
                         accessibilityRole="alert"
                     >
                         <View style={styles.iconContainer}>
-                            <Ionicons name="lock-closed" size={30} color="#EF4444" />
+                            <Ionicons name="lock-closed" size={30} color={accentColor} />
                         </View>
                         <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary }]}>
                             Sesión expirada
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         fontSize: 15,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     btnSecondary: {
         minHeight: 44,

@@ -1,4 +1,5 @@
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
+import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
 import { apiClientSafe } from "@/api/client";
 import {
   requiresShortMixer,
@@ -10,6 +11,7 @@ import { recargoAcompanamientoDeProducto } from "@/hooks/utils/recargoAcompanami
 import { create } from "zustand";
 import type {
   AcompanamientoBotellaItem,
+  AcompanamientoCorto,
   CartItem,
   Product,
 } from "@/types/cart";
@@ -54,6 +56,11 @@ interface CartState {
     productId: string,
     mixer: NonNullable<Product["acompanamiento_corto"]>,
   ) => void;
+  /** Reemplaza la bebida elegida para cada unidad de corto. */
+  updateItemShortMixers: (
+    productId: string,
+    mixers: (AcompanamientoCorto | undefined)[],
+  ) => void;
   updateItemBottleMixers: (
     productId: string,
     sabores: AcompanamientoBotellaItem[],
@@ -70,6 +77,23 @@ interface CartState {
 }
 
 const hostessRequests = new Map<string, number>();
+
+/**
+ * Bebida de cada unidad de corto. Los items antiguos guardaban una sola bebida
+ * en `product.acompanamiento_corto`; se replica para no perder esa selección.
+ */
+function shortMixersForItem(
+  item: CartItem,
+): (AcompanamientoCorto | undefined)[] {
+  const count = Math.max(0, Math.floor(Number(item.quantity) || 0));
+  if (item.shortMixers !== undefined) {
+    return Array.from({ length: count }, (_, index) => item.shortMixers?.[index]);
+  }
+  return Array.from(
+    { length: count },
+    () => item.product.acompanamiento_corto,
+  );
+}
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
@@ -117,16 +141,27 @@ export const useCartStore = create<CartState>((set, get) => ({
 
       const updated = [...state.cart];
       if (updated[idx].quantity > 1) {
+        const item = updated[idx];
+        const nextQuantity = item.quantity - 1;
+        // Las anfitrionas y los acompañamientos se asignan por unidad (o por
+        // unidad de botella en los productos con máximo configurado). Al bajar
+        // la cantidad se recortan para que no queden asignaciones de más.
+        const hostessLimit =
+          item.product.tipo_venta === "shot"
+            ? nextQuantity
+            : getHostessLimit(item.product, nextQuantity);
         updated[idx] = {
-          ...updated[idx],
-          quantity: updated[idx].quantity - 1,
-          selectedHostesses:
-            updated[idx].product.tipo_venta === "shot"
-              ? updated[idx].selectedHostesses.slice(
-                0,
-                updated[idx].quantity - 1,
-              )
-              : updated[idx].selectedHostesses,
+          ...item,
+          quantity: nextQuantity,
+          selectedHostesses: item.selectedHostesses.slice(
+            0,
+            Math.max(0, hostessLimit),
+          ),
+          ...(item.shortMixers !== undefined
+            ? {
+                shortMixers: item.shortMixers.slice(0, nextQuantity),
+              }
+            : {}),
         };
       } else {
         updated.splice(idx, 1);
@@ -153,14 +188,16 @@ export const useCartStore = create<CartState>((set, get) => ({
         const result = await apiClientSafe<any>(
           `/products/${encodeURIComponent(product.producto_id || product.id)}/tiers?configurados=1`,
         );
-        if (!result.success) return;
-        const tier = (result.data || []).find(
-          (row: any) => Number(row.anfitrionas) === hostessIds.length,
-        );
-        if (tier) {
-          price = Number(tier.precio);
-          commission = Number(tier.comision);
+        if (result.success) {
+          const tier = (result.data || []).find(
+            (row: any) => Number(row.anfitrionas) === hostessIds.length,
+          );
+          if (tier) {
+            price = Number(tier.precio);
+            commission = Number(tier.comision);
+          }
         }
+        // Si la API falla, se usan los precios base (no se bloquea la selección).
       }
       product = { ...product, price, commission };
     }
@@ -188,10 +225,37 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.product.id !== productId || item.product.tipo_venta !== "shot"
           ? item
           : {
-            ...item,
-            product: { ...item.product, acompanamiento_corto: mixer },
-          },
+              ...item,
+              shortMixers: Array.from(
+                { length: item.quantity },
+                () => mixer,
+              ),
+              product: { ...item.product, acompanamiento_corto: mixer },
+            },
       ),
+    })),
+
+  updateItemShortMixers: (productId, mixers) =>
+    set((state) => ({
+      cart: state.cart.map((item) => {
+        if (
+          item.product.id !== productId ||
+          item.product.tipo_venta !== "shot"
+        )
+          return item;
+        const normalized = Array.from(
+          { length: item.quantity },
+          (_, index) => mixers[index],
+        );
+        return {
+          ...item,
+          shortMixers: normalized,
+          product: {
+            ...item.product,
+            acompanamiento_corto: normalized[0],
+          },
+        };
+      }),
     })),
 
   updateItemBottleMixers: (productId, sabores) =>
@@ -212,37 +276,56 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   splitShorts: () =>
     set((state) => ({
-      cart: state.cart.flatMap((item) =>
-        item.product.tipo_venta === "shot" && item.quantity > 1
-          ? Array.from({ length: item.quantity }, (_, index) => ({
-            ...item,
-            quantity: 1,
-            selectedHostesses:
-              item.selectedHostesses[index] === undefined
-                ? []
-                : [item.selectedHostesses[index]],
-            product: {
-              ...item.product,
-              id:
-                index === 0
-                  ? item.product.id
-                  : `${item.product.id}:unit:${Date.now()}:${index}`,
-            },
-          }))
-          : [item],
-      ),
+      cart: state.cart.flatMap((item) => {
+        if (item.product.tipo_venta !== "shot" || item.quantity <= 1)
+          return [item];
+        const mixers = shortMixersForItem(item);
+        return Array.from({ length: item.quantity }, (_, index) => ({
+          ...item,
+          quantity: 1,
+          shortMixers: mixers[index] ? [mixers[index]] : [],
+          selectedHostesses:
+            item.selectedHostesses[index] === undefined
+              ? []
+              : [item.selectedHostesses[index]],
+          product: {
+            ...item.product,
+            id:
+              index === 0
+                ? item.product.id
+                : `${item.product.id}:unit:${Date.now()}:${index}`,
+            acompanamiento_corto: mixers[index],
+          },
+        }));
+      }),
     })),
   clearCart: () => set({ cart: [], tipEnabled: false }),
 
   getSubtotal: () => {
     const tope = get().topeAcompanamiento;
-    return get().cart.reduce(
-      (s, i) =>
-        s +
-        (i.product.price + recargoAcompanamientoDeProducto(i.product, tope)) *
-          i.quantity,
-      0,
-    );
+    return get().cart.reduce((sum, item) => {
+      if (item.product.tipo_venta === "shot") {
+        return (
+          sum +
+          shortMixersForItem(item).reduce(
+            (unitSum, mixer) =>
+              unitSum +
+              item.product.price +
+              recargoAcompanamientoDeProducto(
+                { ...item.product, acompanamiento_corto: mixer },
+                tope,
+              ),
+            0,
+          )
+        );
+      }
+      return (
+        sum +
+        (item.product.price +
+          recargoAcompanamientoDeProducto(item.product, tope)) *
+          item.quantity
+      );
+    }, 0);
   },
 
   getTipAmount: () => {
@@ -267,15 +350,22 @@ export const useCartStore = create<CartState>((set, get) => ({
     } = params;
     const state = get();
     if (
-      state.cart.some(
-        ({ product }) =>
-          (requiresShortMixer(product) &&
-            !product.acompanamiento_corto?.presentacion_id) ||
-          (product.tipo_venta !== "shot" &&
-            bottleMixerUnits(product) > 0 &&
-            totalUnidadesAcompanamientoBotella(product.acompanamiento_botella) !==
-            bottleMixerUnits(product)),
-      )
+      state.cart.some((item) => {
+        if (
+          requiresShortMixer(item.product) &&
+          shortMixersForItem(item).some(
+            (mixer) => !mixer?.presentacion_id,
+          )
+        )
+          return true;
+        return (
+          item.product.tipo_venta !== "shot" &&
+          bottleMixerUnits(item.product) > 0 &&
+          totalUnidadesAcompanamientoBotella(
+            item.product.acompanamiento_botella,
+          ) !== bottleMixerUnits(item.product)
+        );
+      })
     ) {
       return {
         success: false,
@@ -301,27 +391,54 @@ export const useCartStore = create<CartState>((set, get) => ({
       metodoPago,
       device_date,
       ...(baucherFoto ? { baucher_foto: baucherFoto } : {}),
-      detalles: state.cart.map((item) => {
-        const recargo = recargoAcompanamientoDeProducto(
-          item.product,
-          state.topeAcompanamiento,
-        );
-        return {
-          ...saleInventoryFields(item.product),
-          productoId: item.product.producto_id || item.product.id,
-          precio: item.product.price,
-          recargo_acompanamiento: recargo,
-          comision: (item.product.commission || 0) * item.quantity,
-          cantidad: item.quantity,
-          subtotal: (item.product.price + recargo) * item.quantity,
-          generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
-          hostessId:
-            item.selectedHostesses.length === 1
-              ? String(item.selectedHostesses[0])
-              : null,
-          selectedHostesses: item.selectedHostesses.map(String),
-          roomId: item.selectedRoom,
+      detalles: state.cart.flatMap((item) => {
+        const buildDetalle = (
+          quantity: number,
+          mixer: AcompanamientoCorto | undefined,
+          hostessIds: (string | number)[],
+        ) => {
+          // El recargo se calcula por unidad: cada corto puede llevar una
+          // bebida distinta y solo las de cliente suman exceso sobre el tope.
+          const recargo = recargoAcompanamientoDeProducto(
+            { ...item.product, acompanamiento_corto: mixer },
+            state.topeAcompanamiento,
+          );
+          const detalle = {
+            ...saleInventoryFields(item.product),
+            productoId: item.product.producto_id || item.product.id,
+            precio: item.product.price,
+            recargo_acompanamiento: recargo,
+            comision: (item.product.commission || 0) * quantity,
+            cantidad: quantity,
+            subtotal: (item.product.price + recargo) * quantity,
+            generaComision: (item.product.commission || 0) > 0 ? 1 : 0,
+            hostessId:
+              hostessIds.length === 1 ? String(hostessIds[0]) : null,
+            selectedHostesses: hostessIds.map(String),
+            roomId: item.selectedRoom,
+          };
+          if (item.product.tipo_venta === "shot") {
+            if (mixer) detalle.acompanamiento_corto = mixer;
+            else delete detalle.acompanamiento_corto;
+          }
+          return detalle;
         };
+
+        if (item.product.tipo_venta !== "shot") {
+          return [
+            buildDetalle(item.quantity, undefined, item.selectedHostesses),
+          ];
+        }
+        const mixers = shortMixersForItem(item);
+        return Array.from({ length: item.quantity }, (_, index) =>
+          buildDetalle(
+            1,
+            mixers[index],
+            item.selectedHostesses[index] === undefined
+              ? []
+              : [item.selectedHostesses[index]],
+          ),
+        );
       }),
       usuarios: Array.from(
         new Set(state.cart.flatMap((i) => i.selectedHostesses)),

@@ -1,7 +1,9 @@
 import React from 'react';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { formatBotellaAbierta } from '@/hooks/utils/cartUtils';
 import { resolverVentaProducto } from '@/hooks/utils/saleChoice';
@@ -50,6 +52,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
   textSecondary,
   borderColor,
 }) => {
+  const { accentUi } = useAccentColor();
   const hasText = searchProducto.trim().length > 0;
   // Ml por shot global de Configuraciones; cada presentación puede traer el suyo.
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
@@ -117,7 +120,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                       {categoria}
                     </Text>
                     {botellaAbierta && (
-                      <Text style={styles.resultOpenBottle} numberOfLines={1}>
+                      <Text style={[styles.resultOpenBottle, { color: accentUi }]} numberOfLines={1}>
                         {botellaAbierta}
                       </Text>
                     )}
@@ -154,7 +157,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     marginBottom: 15,
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   clearIconBtn: {
     position: 'absolute',
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     paddingVertical: 14,
   },
   resultRow: {
@@ -210,17 +213,16 @@ const styles = StyleSheet.create({
   },
   resultName: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   resultMeta: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 2,
   },
   resultOpenBottle: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     marginTop: 2,
-    color: '#F59E0B',
   },
 });

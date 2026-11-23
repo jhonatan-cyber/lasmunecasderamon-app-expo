@@ -63,7 +63,7 @@ export function SolicitarAnticipoModal({
   onClose,
   onSubmit,
 }: SolicitarAnticipoModalProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted } = useAccentColor();
   return (
     <Modal
       avoidKeyboard={false}
@@ -76,7 +76,7 @@ export function SolicitarAnticipoModal({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.modalOverlay}
       >
-        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <Pressable style={styles.modalBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar solicitud de anticipo" />
         <View
           style={[
             styles.modalContent,
@@ -88,7 +88,7 @@ export function SolicitarAnticipoModal({
             <Text style={[styles.modalTitle, { color: textPrimary }]}>
               Solicitar Anticipo
             </Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
+            <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Cerrar solicitud de anticipo">
               <Ionicons name="close" size={22} color={textSecondary} />
             </Pressable>
           </View>
@@ -113,16 +113,14 @@ export function SolicitarAnticipoModal({
                   style={[
                     styles.pendingBadge,
                     {
-                      backgroundColor: isDark
-                        ? "rgba(245,158,11,0.2)"
-                        : "#FEF3C7",
+                      backgroundColor: surfaceMuted,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.pendingBadgeText,
-                      { color: isDark ? "#FBBF24" : "#B45309" },
+                      { color: accentOnSurface },
                     ]}
                   >
                     Pendiente
@@ -133,7 +131,7 @@ export function SolicitarAnticipoModal({
             <Text
               style={[
                 styles.disponibleMonto,
-                { color: tieneSolicitudPendiente ? "#F59E0B" : accentColor },
+                { color: tieneSolicitudPendiente ? accentOnSurface : accentColor },
               ]}
             >
               ${formatCurrency(montoMaximo)}
@@ -207,9 +205,11 @@ export function SolicitarAnticipoModal({
             ]}
             onPress={onSubmit}
             disabled={sendingRequest || !canRequestAdvance}
+            accessibilityRole="button"
+            accessibilityLabel="Enviar solicitud de anticipo"
           >
             {sendingRequest ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#FFF" />
             ) : (
               <Text style={styles.submitButtonText}>
                 {!canRequestAdvance

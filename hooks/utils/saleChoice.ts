@@ -27,6 +27,23 @@ export type SaleChoice =
 export const esBotella = (value: string) =>
   value === "botella" || value === "botella_sin_anfitriona";
 
+/**
+ * 'Botella · 2 gaseosas' solo si la botella lleva acompañamiento; con 0
+ * unidades —o sin acompañamiento configurado— la etiqueta es solo 'Botella'.
+ */
+function nombreBotella(
+  acompanamiento?: SaleOption["acompanamiento"],
+): string {
+  const unidades = Number(acompanamiento?.unidades ?? 0);
+  if (unidades <= 0) return "Botella";
+  const tipo = acompanamiento?.tipo
+    ? acompanamiento.tipo === "gaseosa"
+      ? "gaseosas"
+      : "sodas"
+    : "acompañamientos";
+  return `Botella · ${unidades} ${tipo}`;
+}
+
 export interface OpcionVentaProducto {
   value: SaleChoice;
   /** Nombre sin precio: 'Botella', 'Shot' (o 'Shot cliente') y 'Shot anfitriona'. */
@@ -81,7 +98,7 @@ export function resolverVentaProducto(
   const precioShotCliente = Number(opcionShot?.precio ?? 0);
   const preciosAnfitriona = preciosCortoAnfitriona(opcionShot);
   const tieneShotCliente = Boolean(opcionShot && precioShotCliente > 0);
-  const tieneShotAnfitriona = Boolean(opcionShot && preciosAnfitriona.length > 0);
+  const tieneShotAnfitriona = preciosAnfitriona.length > 0;
   const tieneShot = tieneShotCliente || tieneShotAnfitriona;
   const botellaHabilitada =
     opcionBotella?.en_venta !== false &&
@@ -92,9 +109,7 @@ export function resolverVentaProducto(
     ...(botellaHabilitada && (opcionBotella || !tieneShot)
       ? [{
           value: "botella" as SaleChoice,
-          nombre: opcionBotella?.acompanamiento
-            ? `Botella · ${opcionBotella.acompanamiento.unidades} ${opcionBotella.acompanamiento.tipo ? (opcionBotella.acompanamiento.tipo === "gaseosa" ? "gaseosas" : "sodas") : "acompa\u00f1amientos"}`
-            : "Botella",
+          nombre: nombreBotella(opcionBotella?.acompanamiento),
           precio: precioBotella,
           comision: comisionBotella,
           esShot: false,
@@ -144,7 +159,7 @@ export function resolverVentaProducto(
     opciones.some((option) => option.value === eleccion)
       ? eleccion
       : (eleccion === "shot" || (eleccion && esCortoAnfitriona(eleccion))) &&
-          tieneShot
+          tieneShotCliente
         ? "shot"
         : (opciones[0]?.value ?? "botella");
 

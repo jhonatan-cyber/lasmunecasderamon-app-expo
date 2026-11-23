@@ -6,6 +6,7 @@ import { statusColors, statusLabels, payMethodIcons } from "./constants";
 import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { haptic } from "@/utils/haptics";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 const formatTotal = (value: number) =>
   `$${Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
@@ -34,7 +35,8 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
   textSecondary,
   onFinalizar,
 }) => {
-  const statusColor = statusColors[estado] || "#6B7280";
+  const { accentOnSurface } = useAccentColor();
+  const statusColor = statusColors[estado] || textSecondary;
 
   return (
     <View style={styles.cardRightContent}>
@@ -51,7 +53,7 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
           }}
         >
           <Ionicons name="stop-circle" size={16} color="#FFF" />
-          <Text style={styles.finishBtnText}>Finalizar</Text>
+          <Text style={[styles.finishBtnText, { color: "#FFF" }]}>Finalizar</Text>
         </Pressable>
       )}
 
@@ -91,7 +93,7 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
               <Text style={{ color: textSecondary, marginHorizontal: 4 }}>
                 {'\u00B7'}
               </Text>
-              <Text style={styles.cardPropinaGreen}>
+              <Text style={[styles.cardPropinaGreen, { color: accentOnSurface }]}>
                 +${propina.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
               </Text>
             </>
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
   cardTotalBig: { fontSize: 22, fontFamily: FontFamily.extrabold, ...TabularNumbers },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   cardSubCount: { fontSize: 12, fontFamily: FontFamily.medium },
-  cardPropinaGreen: { fontSize: 12, fontFamily: FontFamily.semibold, color: "#10B981", ...TabularNumbers },
+  cardPropinaGreen: { fontSize: 12, fontFamily: FontFamily.semibold, ...TabularNumbers },
   finishBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     marginBottom: 8,
   },
-  finishBtnText: { color: "#FFF", fontSize: 11, fontFamily: FontFamily.bold },
+  finishBtnText: { fontSize: 11, fontFamily: FontFamily.bold },
   statusBadgeSmall: {
     flexDirection: "row",
     alignItems: "center",

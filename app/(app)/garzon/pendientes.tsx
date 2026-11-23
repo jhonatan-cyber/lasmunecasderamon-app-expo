@@ -14,7 +14,6 @@ export default function PendientesScreen() {
     return (
         <PendingOperationsScreen
             title='Pendientes de envío'
-            emptySubtitle='Los pedidos que tomes sin conexión van a aparecer acá hasta que el servidor los confirme.'
             onBack={() => router.back()}
         />
     );

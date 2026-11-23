@@ -185,9 +185,7 @@ const styles = StyleSheet.create({
   qrHint: {
     marginTop: 20,
     fontSize: 13,
-    color: '#6B7280',
     textAlign: 'center',
-    fontWeight: '500',
     lineHeight: 18,
   },
   qrFooter: {

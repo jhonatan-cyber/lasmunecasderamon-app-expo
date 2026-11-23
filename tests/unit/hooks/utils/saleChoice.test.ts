@@ -102,6 +102,37 @@ describe("resolverVentaProducto", () => {
     expect(venta.precio).toBe(180000);
   });
 
+  it("no incluye acompañamientos en 0 en la etiqueta de botella", () => {
+    const conCero = resolverVentaProducto({
+      precio: 2000,
+      stock_bar: 3,
+      opciones_venta: [
+        { tipo: "botella", precio: 2000, comision: 0, acompanamiento: { tipo: "gaseosa", unidades: 0 } },
+      ],
+    });
+    expect(conCero.opciones[0].nombre).toBe("Botella");
+    expect(conCero.opciones[0].nombre).not.toContain("0");
+    expect(conCero.opciones[0].precio).toBe(2000);
+
+    const sinTipoNiUnidades = resolverVentaProducto({
+      precio: 2000,
+      stock_bar: 3,
+      opciones_venta: [
+        { tipo: "botella", precio: 2000, comision: 0, acompanamiento: { unidades: 0 } },
+      ],
+    });
+    expect(sinTipoNiUnidades.opciones[0].nombre).toBe("Botella");
+
+    const conUnidades = resolverVentaProducto({
+      precio: 2000,
+      stock_bar: 3,
+      opciones_venta: [
+        { tipo: "botella", precio: 2000, comision: 0, acompanamiento: { tipo: "gaseosa", unidades: 2 } },
+      ],
+    });
+    expect(conUnidades.opciones[0].nombre).toBe("Botella · 2 gaseosas");
+  });
+
   it("elige el shot de anfitriona con su precio y su comisión", () => {
     const venta = resolverVentaProducto(conCortoYAnfitriona, "shot_anfitriona");
 

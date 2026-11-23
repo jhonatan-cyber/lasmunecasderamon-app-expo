@@ -35,7 +35,7 @@ export function ProfileImagePickerModal({
             Elegir Foto
           </Text>
           <Pressable
-            style={styles.modalOption}
+            style={[styles.modalOption, { backgroundColor: cardBg }]}
             onPress={onTakePhoto}
             accessibilityRole="button"
             accessibilityLabel="Tomar foto con la cámara"
@@ -46,7 +46,7 @@ export function ProfileImagePickerModal({
             </Text>
           </Pressable>
           <Pressable
-            style={styles.modalOption}
+            style={[styles.modalOption, { backgroundColor: cardBg }]}
             onPress={onPickImage}
             accessibilityRole="button"
             accessibilityLabel="Elegir foto de la galería"
@@ -62,7 +62,7 @@ export function ProfileImagePickerModal({
             accessibilityRole="button"
             accessibilityLabel="Cancelar"
           >
-            <Text style={[styles.cancelModalBtnText, { color: "#EF4444" }]}>
+            <Text style={[styles.cancelModalBtnText, { color: accentColor }]}>
               Cancelar
             </Text>
           </Pressable>

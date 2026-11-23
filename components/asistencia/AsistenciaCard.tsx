@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface AsistenciaCardProps {
   item: any;
@@ -34,7 +35,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
   formatDate,
   normalizeEstado,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentBg } = useAccentColor();
   const estado = normalizeEstado(item.estado);
   const isPendiente = estado === 'pendiente';
   const isPagado = estado === 'pagado';
@@ -47,7 +48,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
       : '';
 
   // Glow neón en modo oscuro con el color del estado
-  const cardNeonColor = isPendiente ? '#10B981' : accentColor;
+  const cardNeonColor = isPendiente ? accentOnSurface : accentColor;
   const cardNeonGlow = isDark ? {
     shadowColor: cardNeonColor,
     shadowOffset: { width: 0, height: 0 },
@@ -80,13 +81,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
             style={[
               styles.statusBadge,
               {
-                backgroundColor: isPendiente
-                  ? isDark
-                    ? 'rgba(16, 185, 129, 0.2)'
-                    : '#D1FAE5'
-                  : isDark
-                    ? 'rgba(59, 130, 246, 0.2)'
-                    : '#DBEAFE',
+                backgroundColor: surfaceMuted,
               },
             ]}
           >
@@ -94,13 +89,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
               style={[
                 styles.statusText,
                 {
-                  color: isPendiente
-                    ? isDark
-                      ? '#10B981'
-                      : '#065F46'
-                    : isDark
-                      ? '#3B82F6'
-                      : '#1E40AF',
+                  color: accentOnSurface,
                 },
               ]}
             >
@@ -184,7 +173,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
                 <Text
                   style={[
                     styles.amountValue,
-                    { color: accentOnSurface, fontWeight: '800' },
+                    { color: accentOnSurface, fontFamily: FontFamily.extrabold },
                   ]}
                 >
                   ${(item.total || 0).toLocaleString()}
@@ -202,7 +191,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
                 <Text
                   style={[
                     styles.amountValue,
-                    { color: accentOnSurface, fontWeight: '800' },
+                    { color: accentOnSurface, fontFamily: FontFamily.extrabold },
                   ]}
                 >
                   ${(item.monto || 0).toLocaleString()}
@@ -244,13 +233,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  indexText: { fontSize: 14, fontWeight: '700' },
+  indexText: { fontSize: 14, fontFamily: FontFamily.bold },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
-  statusText: { fontSize: 12, fontWeight: '600' },
+  statusText: { fontSize: 12, fontFamily: FontFamily.semibold },
   cardBody: {},
   dateRow: {
     flexDirection: 'row',
@@ -264,13 +253,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   amountItem: { flex: 1 },
-  amountLabel: { fontSize: 11, fontWeight: '600' },
-  amountValue: { fontSize: 16, fontWeight: '700' },
+  amountLabel: { fontSize: 11, fontFamily: FontFamily.semibold },
+  amountValue: { fontSize: 16, fontFamily: FontFamily.bold },
   paymentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginTop: 10,
   },
-  paymentText: { fontSize: 12, fontWeight: '500' },
+  paymentText: { fontSize: 12, fontFamily: FontFamily.medium },
 });

@@ -4,8 +4,10 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAnalyticsScreen } from '@/hooks/useAnalyticsScreen';
 import { formatCurrency } from '@/utils/format';
+import { tabBarBottomPadding } from '@/constants/layout';
 
 const CHART_HEIGHT = 150;
 
@@ -25,7 +27,7 @@ interface AnalyticsScreenProps {
  * barras se dibujan con alturas proporcionales, como el resto de la app.
  */
 export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
-    const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder } = useAccentColor();
     const { stats, bars, distribution, totals, loading, refreshing, error, onRefresh } =
         useAnalyticsScreen();
 
@@ -92,11 +94,11 @@ export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
                         <View
                             style={[
                                 styles.errorBanner,
-                                { backgroundColor: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)' },
+                                { backgroundColor: accentBg, borderColor: accentBorder },
                             ]}
                         >
-                            <Ionicons name="warning-outline" size={16} color="#F59E0B" />
-                            <Text style={styles.errorText}>Datos parciales — {error}</Text>
+                            <Ionicons name="warning-outline" size={16} color={accentOnSurface} />
+                            <Text style={[styles.errorText, { color: accentOnSurface }]}>Datos parciales — {error}</Text>
                         </View>
                     )}
 
@@ -206,7 +208,7 @@ export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     loadingBox: { flex: 1, padding: 16, gap: 14 },
-    content: { padding: 16, paddingBottom: 100 },
+    content: { padding: 16, paddingBottom: tabBarBottomPadding },
     errorBanner: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -216,7 +218,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginBottom: 14,
     },
-    errorText: { color: '#F59E0B', fontSize: 12, fontWeight: '600', flex: 1 },
+    errorText: { fontSize: 12, fontFamily: FontFamily.semibold, flex: 1 },
     statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
     statCard: { flex: 1, borderRadius: 20, padding: 14, borderWidth: 1 },
     statIcon: {

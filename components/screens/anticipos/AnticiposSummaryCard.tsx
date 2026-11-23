@@ -24,8 +24,8 @@ export function AnticiposSummaryCard({
   borderColor,
   textSecondary,
 }: AnticiposSummaryCardProps) {
-  const { isDark } = useAccentColor();
-  const summaryNeonColor = viewMode === "solicitudes" ? "#F59E0B" : accentColor;
+  const { isDark, accentOnSurface } = useAccentColor();
+  const summaryNeonColor = viewMode === "solicitudes" ? accentOnSurface : accentColor;
   const cardNeonGlow = isDark ? {
     shadowColor: summaryNeonColor,
     shadowOffset: { width: 0, height: 0 },
@@ -46,7 +46,7 @@ export function AnticiposSummaryCard({
       <Text
         style={[
           styles.summaryAmount,
-          { color: viewMode === "solicitudes" ? "#F59E0B" : accentColor },
+          { color: viewMode === "solicitudes" ? accentOnSurface : accentColor },
         ]}
       >
         $

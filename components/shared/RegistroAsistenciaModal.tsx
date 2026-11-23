@@ -3,6 +3,7 @@ import { QRScannerModal } from '@/components/shared/QRScannerModal';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/utils/toast-lazy';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 18,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         marginBottom: 2,
     },
     subtitle: {
@@ -355,12 +356,12 @@ const styles = StyleSheet.create({
     },
     avatarText: {
         color: 'white',
-        fontWeight: 'bold',
+        fontFamily: FontFamily.bold,
         fontSize: 13,
     },
     userName: {
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
         flexShrink: 1,
     },
     roleBadge: {
@@ -370,14 +371,14 @@ const styles = StyleSheet.create({
     },
     roleText: {
         fontSize: FontSize.xxs,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     inputSection: {
         marginBottom: 12,
     },
     label: {
         fontSize: 12,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
         marginBottom: 6,
         marginLeft: 4,
     },
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 8,
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     submitBtn: {
         flexDirection: 'row',
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
     submitBtnText: {
         color: 'white',
         fontSize: 15,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     divider: {
         flexDirection: 'row',
@@ -421,7 +422,7 @@ const styles = StyleSheet.create({
     dividerText: {
         marginHorizontal: 12,
         fontSize: 12,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     qrBtn: {
         flexDirection: 'row',
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
     qrBtnTitle: {
         flex: 1,
         fontSize: 15,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
     skipBtn: {
         alignItems: 'center',
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     },
     skipText: {
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
 });
 

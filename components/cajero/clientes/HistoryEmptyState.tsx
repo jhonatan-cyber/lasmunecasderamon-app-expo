@@ -1,26 +1,25 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
 import { Text, View } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Props {
-    isDark: boolean;
     textSecondary: string;
 }
 
-export function HistoryEmptyState({ isDark, textSecondary }: Props) {
+export function HistoryEmptyState({ textSecondary }: Props) {
+    const { surfaceMuted, textSecondary: themeSecondary } = useAccentColor();
     return (
         <View style={{ alignItems: 'center', marginTop: 50 }}>
             <View style={{
                 width: 80, height: 80, borderRadius: 40,
-                backgroundColor: isDark ? 'rgba(155,155,155,0.05)' : 'rgba(155,155,155,0.08)',
+                backgroundColor: surfaceMuted,
                 justifyContent: 'center', alignItems: 'center',
             }}>
-                <Ionicons name="receipt-outline" size={36} color={isDark ? "#374151" : "#D1D5DB"} />
+                <Ionicons name="receipt-outline" size={36} color={themeSecondary} />
             </View>
-            <Text style={{ color: textSecondary, marginTop: 14, fontSize: 15, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, marginTop: 14, fontSize: 15, fontFamily: FontFamily.bold }}>
                 Sin movimientos
-            </Text>
-            <Text style={{ color: textSecondary, marginTop: 4, fontSize: 12, opacity: 0.7 }}>
-                Aún no hay actividad registrada
             </Text>
         </View>
     );

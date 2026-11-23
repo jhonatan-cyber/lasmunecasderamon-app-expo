@@ -42,6 +42,14 @@ export class RetryExhaustedError extends Error {
   }
 }
 
+export class ForbiddenError extends Error {
+  code = "FORBIDDEN";
+  constructor(message = "Sin permiso para esta acción") {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
 /** Lo que el servidor contestó cuando rechazó la petición. */
 export interface HttpErrorDetails {
   status: number;

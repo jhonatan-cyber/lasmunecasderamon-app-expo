@@ -1,4 +1,6 @@
 import { Text, View } from "react-native";
+import { FontFamily } from "@/constants/fonts";
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { styles } from "../EditServiceModal.styles";
 
 interface EditServiceInfoBoxProps {
@@ -18,7 +20,8 @@ export function EditServiceInfoBox({
   textPrimary,
   textSecondary,
 }: EditServiceInfoBoxProps) {
-  const valueStyle = { color: textPrimary, fontWeight: "bold" as const };
+  const { accentColor } = useAccentColor();
+  const valueStyle = { color: textPrimary, fontFamily: FontFamily.bold };
 
   return (
     <View style={styles.infoBox}>
@@ -37,7 +40,7 @@ export function EditServiceInfoBox({
           ${(precioHabitacionSinComision || 0).toLocaleString("es-CL")}
         </Text>
         {precioHabitacionSinComision === 0 && (
-          <Text style={{ color: "#EF4444", fontSize: 11 }}>
+          <Text style={{ color: accentColor, fontSize: 11 }}>
             {" "}
             (No encontrado)
           </Text>

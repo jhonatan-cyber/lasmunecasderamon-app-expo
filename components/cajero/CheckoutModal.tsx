@@ -1,6 +1,7 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TimeSelector } from "@/components/ui/TimeSelector";
 import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from "react";
 import { useConfigValue } from "@/hooks/useConfigValue";
@@ -49,7 +50,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   submittingCheckout, onCheckoutSubmit, onAddToCuenta,
   isDark, accentColor, accentBg, accentBorder, textPrimary, textSecondary, borderColor, cardBg,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted, accentUi } = useAccentColor();
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const accentText = accentTextColor(accentColor);
   const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
@@ -115,7 +116,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </View>
             )}
 
-            {pedidoDetails[0]?.room_id != null ? <View style={{ marginBottom: 16 }}><TimeSelector value={selectedMinutesPedido} onChange={setSelectedMinutesPedido} label="TIEMPO HABITACIÓN" /></View> : null}
+            {pedidoDetails[0]?.room_id != null ? <View style={{ marginBottom: 16 }}><TimeSelector value={selectedMinutesPedido} onChange={setSelectedMinutesPedido} label="TIEMPO HABITACIÓN" disabled={true} /></View> : null}
 
             <View style={[styles.receipt, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor }]}>
               {loadingDetails ? [1,2,3].map(i => <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}><Skeleton width={40} height={40} /><View style={{ flex: 1 }}><Skeleton width="100%" height={16} /><Skeleton width="40%" height={12} /></View><Skeleton width={60} height={20} /></View>) : pedidoDetails.map((item: any, idx: number) => (
@@ -128,45 +129,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </View>
 
             <Text style={[styles.sectionTitle, { color: textPrimary }]}>Método de Pago</Text>
-            <View style={styles.paymentGrid}>
-              {["efectivo", "tarjeta", "transferencia", ...(selectedClient ? ["prepago"] : [])].map((m: any) => {
-                const isSelected = metodoPago === m;
-                return (
-                  <Pressable
-                    key={m}
-                    style={[styles.payBtn, { borderColor: isSelected ? accentColor : borderColor }, isSelected && { backgroundColor: accentBg }]}
-                    onPress={() => { setMetodoPago(m); if (m !== "prepago") setMetodoPagoAdicional(""); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Pagar con ${m}`}
-                    accessibilityState={{ selected: isSelected }}
-                    hitSlop={HitSlop.sm}
-                  >
-                    <Ionicons name={m === "efectivo" ? "cash" : m === "tarjeta" ? "card" : m === "prepago" ? "wallet" : "swap-horizontal"} size={24} color={isSelected ? accentColor : textSecondary} />
-                    <Text style={[styles.payLabel, { color: isSelected ? accentColor : textSecondary }]}>{m}</Text>
-                  </Pressable>
-                );
-              })}
+            <View style={[styles.paymentBadge, { backgroundColor: accentBg, borderColor }]}>
+              <Ionicons
+                name={metodoPago === "efectivo" ? "cash" : metodoPago === "tarjeta" ? "card" : metodoPago === "prepago" ? "wallet" : "swap-horizontal"}
+                size={20}
+                color={accentOnSurface}
+              />
+              <Text style={[styles.paymentBadgeText, { color: textPrimary }]}>
+                {metodoPago ? metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1) : "No seleccionado"}
+              </Text>
             </View>
 
             {mixedPaymentDetails.isMixed && (
               <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderStyle: "dashed", borderWidth: 1, borderColor }}>
-                <Text style={{ color: textPrimary, fontWeight: "800", marginBottom: 8 }}>PAGO MIXTO</Text>
-                <View style={styles.row}><Text style={{ color: textSecondary }}>Prepago:</Text><Text style={{ color: "#10B981", fontWeight: "800" }}>-${mixedPaymentDetails.prepago.toLocaleString()}</Text></View>
-                <View style={styles.row}><Text style={{ color: textSecondary }}>Restante:</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${mixedPaymentDetails.adicional.toLocaleString()}</Text></View>
+                <Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold, marginBottom: 8 }}>PAGO MIXTO</Text>
+                <View style={styles.row}><Text style={{ color: textSecondary }}>Prepago:</Text><Text style={{ color: accentOnSurface, fontFamily: FontFamily.extrabold }}>-${mixedPaymentDetails.prepago.toLocaleString()}</Text></View>
+                <View style={styles.row}><Text style={{ color: textSecondary }}>Restante:</Text><Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>${mixedPaymentDetails.adicional.toLocaleString()}</Text></View>
               </View>
             )}
 
             {metodoPago === 'tarjeta' && totalFinal > 0 && (
-              <View style={{ marginTop: 12, marginBottom: 4, padding: 12, borderRadius: 12, borderWidth: 1, backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB", borderColor: isDark ? "rgba(245,158,11,0.35)" : "#FDE68A" }}>
-                <Text style={{ fontSize: 11, fontWeight: "900", textTransform: "uppercase", color: isDark ? "#FCD34D" : "#92400E", marginBottom: 4 }}>Tarjetero</Text>
-                <Text style={{ fontSize: 12, fontWeight: "600", lineHeight: 18, color: isDark ? "#FDE68A" : "#78350F" }}>
+              <View style={{ marginTop: 12, marginBottom: 4, padding: 12, borderRadius: 12, borderWidth: 1, backgroundColor: surfaceMuted, borderColor }}>
+                <Text style={{ fontSize: 11, fontFamily: FontFamily.black, textTransform: "uppercase", color: accentOnSurface, marginBottom: 4 }}>Tarjetero</Text>
+                <Text style={{ fontSize: 12, fontFamily: FontFamily.semibold, lineHeight: 18, color: textSecondary }}>
                   Genera venta por ${splitTarjeta.venta.toLocaleString()} ({splitVentaPct}%) y propina por ${splitTarjeta.propina.toLocaleString()} ({splitPropinaPct}%). Solo informativo, no afecta la caja.
                 </Text>
               </View>
              )}
             <View style={[styles.totals, { backgroundColor: accentBg }]}>
-              <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontWeight: "800" }}>${subtotalBase.toLocaleString()}</Text></View>
-              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentOnSurface, fontWeight: "800" }}>+${tipAmount.toLocaleString()}</Text></View>}
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Subtotal</Text><Text style={{ color: textPrimary, fontFamily: FontFamily.extrabold }}>${subtotalBase.toLocaleString()}</Text></View>
+              {tipAmount > 0 && <View style={styles.row}><Text style={{ color: textSecondary }}>{existingTip > 0 ? 'Propina incluida' : `Propina ${propinaPct}%`}</Text><Text style={{ color: accentOnSurface, fontFamily: FontFamily.extrabold }}>+${tipAmount.toLocaleString()}</Text></View>}
               <View style={[styles.row, { borderTopWidth: 1, borderTopColor: accentBorder, paddingTop: 8, marginTop: 8 }]}><Text style={[styles.totalLabel, { color: textPrimary }]}>Total</Text><Text style={[styles.totalValue, { color: accentOnSurface }]}>${totalFinal.toLocaleString()}</Text></View>
             </View>
           </ScrollView>
@@ -185,14 +177,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </Pressable>
               {selectedClient && onAddToCuenta && (
                 <Pressable
-                  style={[styles.btn, { backgroundColor: "#7C3AED" }]}
+                  style={[styles.btn, { backgroundColor: accentUi }]}
                   onPress={onAddToCuenta}
                   disabled={submittingCheckout}
                   accessibilityRole="button"
                   accessibilityLabel="Agregar a cuenta"
                   hitSlop={HitSlop.sm}
                 >
-                  {submittingCheckout ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={[styles.btnText, { color: "#FFF" }]}>Cuenta</Text>}
+                  {submittingCheckout ? <ActivityIndicator size="small" color={accentText} /> : <Text style={[styles.btnText, { color: accentText }]}>Cuenta</Text>}
                 </Pressable>
               )}
               <Pressable
@@ -218,34 +210,33 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modal: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   header: { flexDirection: "row", alignItems: "center", gap: 12, padding: 20 },
-  title: { fontSize: FontSize.xl, fontWeight: "800" },
-  subtitle: { fontSize: FontSize.sm, fontWeight: "600", marginTop: 2 },
+  title: { fontSize: FontSize.xl, fontFamily: FontFamily.extrabold },
+  subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semibold, marginTop: 2 },
   content: { flex: 1 },
   contentContainer: { padding: 20, paddingBottom: 10 },
-  sectionTitle: { fontSize: FontSize.sm, fontWeight: "700", marginBottom: 12 },
+  sectionTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, marginBottom: 12 },
   metaRow: { flexDirection: "row", borderWidth: 1, borderRadius: 12, marginBottom: 16, overflow: "hidden" },
   metaItem: { flex: 1, padding: 10, alignItems: "center", gap: 2 },
-  metaLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
-  metaValue: { fontSize: FontSize.xs, fontWeight: "800", textAlign: "center" },
+  metaLabel: { fontSize: FontSize.xxs, fontFamily: FontFamily.semibold },
+  metaValue: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, textAlign: "center" },
   divider: { width: 1 },
   receipt: { borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1 },
   productRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   qtyCol: { width: 44 },
-  qtyLabel: { fontSize: FontSize.xxs, fontWeight: "600" },
-  qty: { fontSize: FontSize.sm, fontWeight: "900" },
+  qtyLabel: { fontSize: FontSize.xxs, fontFamily: FontFamily.semibold },
+  qty: { fontSize: FontSize.sm, fontFamily: FontFamily.black },
   prodCol: { flex: 1 },
-  prodName: { fontSize: FontSize.sm, fontWeight: "700" },
+  prodName: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   prodPrice: { fontSize: FontSize.xs },
-  prodSubtotal: { fontSize: FontSize.sm, fontWeight: "800" },
-  paymentGrid: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  payBtn: { flex: 1, paddingVertical: 12, borderRadius: BorderRadius.full, borderWidth: 2, alignItems: "center", gap: 4 },
-  payLabel: { fontSize: FontSize.xs, fontWeight: "700", textTransform: "capitalize" },
+  prodSubtotal: { fontSize: FontSize.sm, fontFamily: FontFamily.extrabold },
+  paymentBadge: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1, marginBottom: 16 },
+  paymentBadgeText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, textTransform: "capitalize" },
   row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   totals: { padding: 16, borderRadius: 12, marginBottom: 10 },
-  totalLabel: { fontSize: FontSize.lg, fontWeight: "800" },
-  totalValue: { fontSize: FontSize.xl, fontWeight: "900" },
+  totalLabel: { fontSize: FontSize.lg, fontFamily: FontFamily.extrabold },
+  totalValue: { fontSize: FontSize.xl, fontFamily: FontFamily.black },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.1)" },
   btnRow: { flexDirection: "row", gap: 8 },
   btn: { flex: 1, paddingVertical: 14, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center", minHeight: 48 },
-  btnText: { fontSize: FontSize.sm, fontWeight: "700" },
+  btnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 });

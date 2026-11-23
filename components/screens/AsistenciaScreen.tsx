@@ -1,5 +1,6 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
@@ -33,6 +34,7 @@ export default function AsistenciaScreen() {
     textPrimary,
     textSecondary,
     borderColor,
+    accentOnSurface,
   } = useAccentColor();
   const {
     isHostess,
@@ -197,6 +199,7 @@ export default function AsistenciaScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader
           title="Asistencia"
+          showThemeToggle={false}
           rightComponent={
             <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
@@ -205,7 +208,7 @@ export default function AsistenciaScreen() {
           }
         />
         <View style={{ margin: 16 }}>
-          <SkeletonLoader width="100%" height={140} borderRadius={16} />
+          <SkeletonLoader width="100%" height={140} borderRadius={16} accessibilityRole="progressbar" accessibilityLabel="Cargando asistencias" />
         </View>
         <View style={{ padding: 16, gap: 10 }}>
           {[1, 2].map((i) => (
@@ -214,7 +217,8 @@ export default function AsistenciaScreen() {
               width="100%"
               height={100}
               borderRadius={16}
-            />
+              accessibilityRole="progressbar"
+              accessibilityLabel="Cargando datos" />
           ))}
         </View>
       </View>
@@ -225,6 +229,7 @@ export default function AsistenciaScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader
           title="Asistencia"
+          showThemeToggle={false}
           rightComponent={
             <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
@@ -241,6 +246,7 @@ export default function AsistenciaScreen() {
       <PremiumHeader
         title="Asistencia"
         subtitle="Registro de turnos y bonificaciones"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -259,6 +265,8 @@ export default function AsistenciaScreen() {
         cardBg={cardBg}
         textSecondary={textSecondary}
         borderColor={borderColor}
+        variant="pills"
+        wrap
       />
 
       <View
@@ -272,7 +280,7 @@ export default function AsistenciaScreen() {
         <Text
           style={[
             styles.summaryAmount,
-            { color: activeTab === 'asistencias' ? '#F59E0B' : accentColor },
+            { color: activeTab === 'asistencias' ? accentOnSurface : accentColor },
           ]}
         >
           $
@@ -354,7 +362,7 @@ export default function AsistenciaScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="clipboard-outline" title="No se encontraron registros" message="No hay registros de asistencia para los criterios seleccionados. Intenta ajustar el filtro de fechas." />
+          <EmptyState icon="clipboard-outline" title="No se encontraron registros" />
         }
         {...LIST_PERF_PROPS}
       />
@@ -388,10 +396,10 @@ export default function AsistenciaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: BorderRadius.full,
-    padding: 24,
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: BorderRadius.card,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
@@ -401,19 +409,19 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
   },
   summaryAmount: {
-    fontSize: 38,
+    fontSize: 34,
     fontWeight: '900',
     letterSpacing: -0.5,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  summaryDetail: { fontSize: 12, fontWeight: '600' },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding + 20 },
 });

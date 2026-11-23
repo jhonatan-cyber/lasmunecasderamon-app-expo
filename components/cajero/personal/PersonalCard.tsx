@@ -38,7 +38,7 @@ export const PersonalCard = memo(function PersonalCard({
     textPrimary,
     textSecondary,
 }: PersonalCardProps) {
-    const { accentOnSurface, isDark } = useAccentColor();
+    const { accentOnSurface, isDark, accentColor: themeAccent, accentText } = useAccentColor();
     useRenderCount('PersonalCard', { userId: item.id });
     const photoUrl = item.foto ? `${BASE_URL}/img/users/${item.foto}` : null;
     const hasQR = !!item.qr_token;
@@ -98,9 +98,9 @@ export const PersonalCard = memo(function PersonalCard({
                         {}
                         <View style={[
                             styles.qrStatusIndicator, 
-                            { backgroundColor: hasQR ? '#10B981' : '#EF4444' }
+                            { backgroundColor: hasQR ? accentOnSurface : themeAccent }
                         ]}>
-                            <Ionicons name={hasQR ? 'checkmark' : 'close'} size={10} color="white" />
+                            <Ionicons name={hasQR ? 'checkmark' : 'close'} size={10} color={accentText} />
                         </View>
                     </View>
                     
@@ -116,16 +116,16 @@ export const PersonalCard = memo(function PersonalCard({
                     {}
                     <View style={[
                         styles.qrStatusBadge, 
-                        { backgroundColor: hasQR ? '#10B98120' : '#EF444420' }
+                        { backgroundColor: hasQR ? `${accentOnSurface}20` : `${themeAccent}20` }
                     ]}>
                         <Ionicons 
                             name={hasQR ? 'qr-code' : 'qr-code-outline'} 
                             size={14} 
-                            color={hasQR ? '#10B981' : '#EF4444'} 
+                            color={hasQR ? accentOnSurface : themeAccent}
                         />
                         <Text style={[
                             styles.qrStatusText, 
-                            { color: hasQR ? '#10B981' : '#EF4444' }
+                            { color: hasQR ? accentOnSurface : themeAccent }
                         ]}>
                             {hasQR ? 'QR Activo' : 'Sin QR'}
                         </Text>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#FFFFFF',
+        borderColor: '#FFF',
     },
     qrStatusBadge: {
         flexDirection: 'row',

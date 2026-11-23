@@ -238,11 +238,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.xl,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   subtitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 2,
   },
   body: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#FFF',
     fontSize: FontSize.sm,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     letterSpacing: 1,
   },
 });

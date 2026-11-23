@@ -5,6 +5,7 @@ import { AnimatedView } from '@/components/ui/AnimatedView';
 import { Propina } from "@/hooks/usePropinasScreen";
 import { rotateColor } from "@/utils/colors";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 import { BorderRadius } from '@/constants/spacing';
 
 interface TipRowItemProps {
@@ -35,7 +36,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
   textSecondary,
   borderColor,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted, accentColor: themeAccent } = useAccentColor();
   const isPendiente = item.estado === 1;
   const idNum =
     typeof item.id_detalle_propina === "string"
@@ -63,13 +64,13 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "spring", delay: Math.min(index, 4) * 30 }}
     >
-      <Pressable onPress={() => onPress(item)}>
+      <Pressable onPress={() => onPress(item)} accessibilityRole="button" accessibilityLabel={`Ver detalle de propina ${item.codigo_venta || ''}`}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
           <View style={styles.cardHeader}>
             <View
               style={[
                 styles.indexBadge,
-                { backgroundColor: isDark ? "#374151" : "#E5E7EB" },
+                { backgroundColor: surfaceMuted },
               ]}
             >
               <Text style={[styles.indexText, { color: textPrimary }]}>
@@ -83,18 +84,18 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
                 <View
                   style={[
                     styles.ventaBadge,
-                    { backgroundColor: isDark ? "#1E3A5F" : "#DBEAFE" },
+                    { backgroundColor: surfaceMuted },
                   ]}
                 >
                   <Ionicons
                     name="receipt-outline"
                     size={12}
-                    color={isDark ? "#93C5FD" : "#1E40AF"}
+                    color={accentOnSurface}
                   />
                   <Text
                     style={[
                       styles.ventaText,
-                      { color: isDark ? "#93C5FD" : "#1E40AF" },
+                      { color: accentOnSurface },
                     ]}
                   >
                     Código: {item.codigo_venta}
@@ -105,13 +106,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
                 style={[
                   styles.statusBadge,
                   {
-                    backgroundColor: isPendiente
-                      ? isDark
-                        ? "rgba(16, 185, 129, 0.2)"
-                        : "#D1FAE5"
-                      : isDark
-                        ? "rgba(59, 130, 246, 0.2)"
-                        : "#DBEAFE",
+                    backgroundColor: surfaceMuted,
                   },
                 ]}
               >
@@ -119,13 +114,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
                   style={[
                     styles.statusText,
                     {
-                      color: isPendiente
-                        ? isDark
-                          ? "#10B981"
-                          : "#065F46"
-                        : isDark
-                          ? "#3B82F6"
-                          : "#1E40AF",
+                      color: isPendiente ? accentOnSurface : themeAccent,
                     },
                   ]}
                 >
@@ -185,7 +174,7 @@ export const TipRowItem: React.FC<TipRowItemProps> = ({
               }}
             >
               <Text
-                style={{ color: accentOnSurface, fontSize: 11, fontWeight: "700" }}
+                style={{ color: accentOnSurface, fontSize: 11, fontFamily: FontFamily.bold }}
               >
                 Ver detalles de venta
               </Text>
@@ -213,13 +202,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  indexText: { fontSize: 14, fontWeight: "700" },
+  indexText: { fontSize: 14, fontFamily: FontFamily.bold },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
-  statusText: { fontSize: 12, fontWeight: "600" },
+  statusText: { fontSize: 12, fontFamily: FontFamily.semibold },
   ventaBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -228,7 +217,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
-  ventaText: { fontSize: 11, fontWeight: "600" },
+  ventaText: { fontSize: 11, fontFamily: FontFamily.semibold },
   cardBody: {},
   dateRow: {
     flexDirection: "row",
@@ -243,8 +232,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  amountLabel: { fontSize: 14, fontWeight: "600" },
-  amountValue: { fontSize: 20, fontWeight: "800" },
+  amountLabel: { fontSize: 14, fontFamily: FontFamily.semibold },
+  amountValue: { fontSize: 20, fontFamily: FontFamily.extrabold },
   paymentRow: {
     flexDirection: "row",
     alignItems: "center",

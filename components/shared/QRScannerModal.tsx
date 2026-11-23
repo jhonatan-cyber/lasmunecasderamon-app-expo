@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { haptic } from '@/utils/haptics';
 import { AnimatedView } from '@/components/ui/AnimatedView';
@@ -38,7 +39,7 @@ export const QRScannerModal = ({
     const [zoom, setZoom] = useState(ZOOM_NORMAL);
     const [cameraActive, setCameraActive] = useState(false);
     const [codigo, setCodigo] = useState<string>('');
-    const { accentColor, accentOnSurface} = useAccentColor();
+    const { accentColor, accentOnSurface, accentText, accentUi, accentBg, accentBorder, cardBg } = useAccentColor();
     const timerRef = useRef<any>(null);
 
     const fetchCodigo = useCallback(async () => {
@@ -75,14 +76,14 @@ export const QRScannerModal = ({
         return (
             <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
                 <View style={styles.container}>
-                    <View style={styles.permissionContent}>
-                        <Ionicons name="camera" size={60} color="#60A5FA" />
+                    <View style={[styles.permissionContent, { backgroundColor: cardBg, borderColor: 'rgba(255,255,255,0.1)' }]}>
+                        <Ionicons name="camera" size={60} color={accentColor} />
                         <Text style={styles.title}>Permiso de Cámara</Text>
                         <Text style={styles.message}>
                             Necesitamos acceso a tu cámara para escanear el código QR de asistencia.
                         </Text>
                         {canAskAgain ? (
-                            <TouchableOpacity style={styles.btn} onPress={requestPermission}>
+                            <TouchableOpacity style={[styles.btn, { backgroundColor: accentColor }]} onPress={requestPermission}>
                                 <Text style={styles.btnText}>Conceder Permiso</Text>
                             </TouchableOpacity>
                         ) : (
@@ -91,7 +92,7 @@ export const QRScannerModal = ({
                                     El permiso fue denegado. Actívalo desde Ajustes para poder escanear.
                                 </Text>
                                 <TouchableOpacity
-                                    style={styles.btn}
+                                    style={[styles.btn, { backgroundColor: accentColor }]}
                                     onPress={() => {
                                         Linking.openSettings().catch(() => {
                                             showToast({
@@ -160,7 +161,7 @@ export const QRScannerModal = ({
 
                 <View style={styles.overlay}>
                     <View style={styles.header}>
-                        <Pressable onPress={onClose} style={styles.backButton}>
+                        <Pressable onPress={onClose} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Cerrar escáner QR">
                             <Ionicons name="close" size={28} color="#FFF" />
                         </Pressable>
                         <Text style={styles.headerTitle}>Escaneando QR</Text>
@@ -169,15 +170,21 @@ export const QRScannerModal = ({
                                 onPress={handleZoomToggle}
                                 style={[
                                     styles.backButton,
-                                    zoom > 0 && { backgroundColor: '#34D399' },
+                                    zoom > 0 && { backgroundColor: accentOnSurface },
                                     { marginRight: 8 }
                                 ]}
+                                accessibilityRole="button"
+                                accessibilityLabel={zoom > 0 ? 'Desactivar zoom' : 'Activar zoom'}
+                                accessibilityState={{ checked: zoom > 0 }}
                             >
                                 <Ionicons name="search" size={24} color="#FFF" />
                             </Pressable>
                             <Pressable
                                 onPress={() => setTorch(prev => !prev)}
-                                style={[styles.backButton, torch && { backgroundColor: '#FBBF24' }]}
+                                style={[styles.backButton, torch && { backgroundColor: accentUi }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={torch ? 'Apagar linterna' : 'Encender linterna'}
+                                accessibilityState={{ checked: torch }}
                             >
                                 <Ionicons
                                     name={torch ? 'flashlight' : 'flashlight-outline'}
@@ -195,11 +202,11 @@ export const QRScannerModal = ({
                             transition={{ loop: true, duration: 2000, type: 'timing' }}
                             style={styles.scannerFrame}
                         >
-                            <View style={[styles.corner, styles.topLeft]} />
-                            <View style={[styles.corner, styles.topRight]} />
-                            <View style={[styles.corner, styles.bottomLeft]} />
-                            <View style={[styles.corner, styles.bottomRight]} />
-                            {loading && <ActivityIndicator size="large" color="#60A5FA" />}
+                            <View style={[styles.corner, styles.topLeft, { borderColor: accentColor }]} />
+                            <View style={[styles.corner, styles.topRight, { borderColor: accentColor }]} />
+                            <View style={[styles.corner, styles.bottomLeft, { borderColor: accentColor }]} />
+                            <View style={[styles.corner, styles.bottomRight, { borderColor: accentColor }]} />
+                            {loading && <ActivityIndicator size="large" color={accentColor} />}
                         </AnimatedView>
                     </View>
 
@@ -237,7 +244,6 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     permissionContent: {
-        backgroundColor: '#1E1B4B',
         borderRadius: BorderRadius.full,
         padding: 28,
         alignItems: 'center',
@@ -247,7 +253,7 @@ const styles = StyleSheet.create({
     title: {
         color: '#FFF',
         fontSize: 22,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         marginTop: 20,
         textAlign: 'center',
     },
@@ -260,7 +266,6 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     btn: {
-        backgroundColor: '#60A5FA',
         paddingVertical: 15,
         paddingHorizontal: 30,
         borderRadius: BorderRadius.full,
@@ -270,7 +275,7 @@ const styles = StyleSheet.create({
     btnText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     closeBtn: {
         marginTop: 15,
@@ -279,7 +284,7 @@ const styles = StyleSheet.create({
     closeText: {
         color: 'rgba(255,255,255,0.5)',
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     camera: {
         ...StyleSheet.absoluteFill,
@@ -310,7 +315,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         color: '#FFF',
         fontSize: 18,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     scannerContainer: {
         alignItems: 'center',
@@ -327,7 +332,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 40,
         height: 40,
-        borderColor: '#60A5FA',
         borderWidth: 4,
     },
     topLeft: {
@@ -375,18 +379,17 @@ const styles = StyleSheet.create({
     codigoLabel: {
         color: 'rgba(255,255,255,0.7)',
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     codigoValue: {
         fontSize: 22,
-        fontWeight: '900',
         fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
     },
     footerText: {
         color: '#FFF',
         textAlign: 'center',
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
         lineHeight: 20,
         backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 16,
@@ -403,7 +406,7 @@ const styles = StyleSheet.create({
     cerrarBtnText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
     },
 });
 

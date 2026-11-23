@@ -1,8 +1,11 @@
 import React from 'react';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import { View, ScrollView, StyleSheet } from 'react-native';
+import { FontFamily } from '@/constants/fonts';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type Props = {
   bg: string;
@@ -52,7 +55,7 @@ export function NuevoServicioSkeleton({ bg, cardBg, borderColor }: Props) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { padding: 16, paddingBottom: 100, flexGrow: 1 },
+  scrollContent: { padding: 16, paddingBottom: tabBarBottomPadding, flexGrow: 1 },
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   summaryCard: { marginTop: 10, padding: 24, borderRadius: BorderRadius.full, borderWidth: 1, elevation: 20 },
   backBtnRight: {
@@ -64,5 +67,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backTextRight: { color: '#FFFFFF', fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
 });

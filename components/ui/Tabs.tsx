@@ -159,7 +159,7 @@ export function Tabs<T extends string>({
     const showBadge = !isPills && tab.count !== undefined;
 
     return (
-      <Animated.View key={tab.key} style={animatedStyle}>
+      <Animated.View style={animatedStyle}>
         <Pressable
           onPress={() => {
             if (!isBloqueado) {
@@ -249,6 +249,7 @@ export function Tabs<T extends string>({
     const isActive = activeKey === tab.key;
     return (
       <TabItemRender
+        key={tab.key}
         tab={tab}
         index={index}
         tabScale={tabScales[index]}

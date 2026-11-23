@@ -4,6 +4,7 @@ import logger from "@/utils/logger";
 import { API_URL } from "./base-url";
 import {
   attachHttpDetails,
+  ForbiddenError,
   InvalidResponseError,
   NetworkError,
   RetryExhaustedError,
@@ -232,7 +233,7 @@ export const apiClient = async <T = ApiRes<unknown>>(
         notifyForbidden();
         const serverMessage =
           data.message || data.error || "Sin permiso para esta acción";
-        throw attachHttpDetails(new Error(serverMessage), {
+        throw attachHttpDetails(new ForbiddenError(serverMessage), {
           status: response.status,
           body: data,
         });

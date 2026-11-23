@@ -35,29 +35,32 @@ const TYPE_META: Record<
   error: { icon: 'alert-circle', color: '#EF4444' },
   info: { icon: 'information-circle', color: '#3B82F6' },
   warning: { icon: 'warning', color: '#F59E0B' },
-  order: { icon: 'receipt-outline', color: '#FF2D55' },
+  order: { icon: 'receipt-outline', color: '' },
 };
 
 export function NotificationBanner({ layer = 'root' }: Props) {
-  const { isDark, cardBg, textPrimary, textSecondary } = useAccentColor();
+  const { isDark, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const modalLayerOpen = useModalLayerOpen();
   const notification = useSyncExternalStore(subscribeNotifications, getCurrentNotification);
 
-  const [{ translateY, opacity }] = useState(() => ({
+  const [{ translateY, opacity, progress }] = useState(() => ({
     translateY: new Animated.Value(HIDDEN_OFFSET),
     opacity: new Animated.Value(0),
+    // El driver nativo no admite `width`; el ancho de la barra corre en JS.
+    progress: new Animated.Value(1),
   }));
 
   const dismiss = useCallback(() => {
     Animated.parallel([
       Animated.timing(translateY, { toValue: HIDDEN_OFFSET, duration: 160, useNativeDriver: true }),
       Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+      Animated.timing(progress, { toValue: 1, duration: 160, useNativeDriver: false }),
     ]).start(({ finished }) => {
       if (finished) hideToast();
     });
-  }, [opacity, translateY]);
+  }, [opacity, progress, translateY]);
 
   // `dismiss` es estable, así que el PanResponder puede capturarlo una sola vez.
   const [panResponder] = useState(() =>
@@ -85,11 +88,14 @@ export function NotificationBanner({ layer = 'root' }: Props) {
     if (notificationId === null) return;
     translateY.setValue(HIDDEN_OFFSET);
     opacity.setValue(0);
+    progress.setValue(1);
+    const barra = Animated.timing(progress, { toValue: 0, duration: 180, useNativeDriver: false });
     if (reducedMotion) {
       // Fade-only cuando el usuario prefiere movimiento reducido.
       Animated.parallel([
         Animated.timing(translateY, { toValue: 0, duration: 160, useNativeDriver: true }),
         Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        barra,
       ]).start();
     } else {
       Animated.parallel([
@@ -100,9 +106,10 @@ export function NotificationBanner({ layer = 'root' }: Props) {
           tension: 70,
         }),
         Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        barra,
       ]).start();
     }
-  }, [notificationId, opacity, translateY, reducedMotion]);
+  }, [notificationId, opacity, progress, translateY, reducedMotion]);
 
   useEffect(() => {
     if (!notification) return;
@@ -114,13 +121,15 @@ export function NotificationBanner({ layer = 'root' }: Props) {
   if (layer === 'root' && modalLayerOpen) return null;
 
   const meta = TYPE_META[notification.type];
+  // El tipo "order" usa el acento del usuario en lugar de un color fijo.
+  const metaColor = meta.color || accentColor;
   const titleColor = textPrimary;
   const messageColor = textSecondary;
   const label = [notification.text1, notification.text2].filter(Boolean).join('. ');
 
   // Borde neón en modo oscuro con el color del tipo
   const neonGlow = isDark ? {
-    shadowColor: meta.color,
+    shadowColor: metaColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -143,7 +152,7 @@ export function NotificationBanner({ layer = 'root' }: Props) {
           {
             backgroundColor: cardBg,
             shadowOpacity: isDark ? 0.3 : 0.1,
-            borderColor: isDark ? meta.color : 'transparent',
+            borderColor: isDark ? metaColor : 'transparent',
             borderWidth: isDark ? 1 : 0,
             opacity,
             transform: [{ translateY }],
@@ -151,9 +160,9 @@ export function NotificationBanner({ layer = 'root' }: Props) {
           },
         ]}
       >
-        <Pressable onPress={dismiss} style={styles.content}>
-          <View style={[styles.iconCircle, { backgroundColor: `${meta.color}1F` }]}>
-            <Ionicons name={meta.icon} size={22} color={meta.color} />
+        <Pressable onPress={dismiss} style={styles.content} accessibilityRole="button" accessibilityLabel={`Cerrar notificación: ${notification.text1 || 'Notificación'}`}>
+          <View style={[styles.iconCircle, { backgroundColor: `${metaColor}1F` }]}>
+            <Ionicons name={meta.icon} size={22} color={metaColor} />
           </View>
           <View style={styles.texts}>
             {notification.text1 ? (
@@ -174,7 +183,7 @@ export function NotificationBanner({ layer = 'root' }: Props) {
             style={[
               styles.progressBar,
               {
-                backgroundColor: `${meta.color}30`,
+                backgroundColor: `${metaColor}30`,
                 bottom: 0,
                 left: 0,
                 right: 0,
@@ -187,10 +196,12 @@ export function NotificationBanner({ layer = 'root' }: Props) {
               style={[
                 styles.progressFill,
                 {
-                  backgroundColor: meta.color,
-                  width: opacity.interpolate({
+                  backgroundColor: metaColor,
+                  // Animado con su propio valor y driver JS: `width` no existe en
+                  // el módulo nativo de animación (ese era el aviso en consola).
+                  width: progress.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['100%', '0%'],
+                    outputRange: ['0%', '100%'],
                   }),
                   height: '100%',
                   borderRadius: 0,

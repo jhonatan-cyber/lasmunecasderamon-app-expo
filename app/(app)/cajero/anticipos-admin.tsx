@@ -19,8 +19,10 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { tabBarBottomPadding } from '@/constants/layout';
 import { anticiposService } from '@/services/anticipos';
 import { formatCurrency } from '@/utils/format';
+import { FontFamily } from '@/constants/fonts';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { showToast } from '@/utils/toast-lazy';
 
@@ -83,7 +85,7 @@ const normalizeEstado = (estado: number | string) => {
 
 export default function AnticiposAdminScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentText, surfaceMuted } =
     useAccentColor();
   const [data, setData] = useState<AnticipoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,28 +217,34 @@ export default function AnticiposAdminScreen() {
               onPress={() => setConfirmar({ item, estado: 1 })}
               style={[
                 styles.actionBtn,
-                { backgroundColor: 'rgba(16,185,129,0.14)', borderColor: 'rgba(16,185,129,0.4)' },
+                { backgroundColor: accentBg, borderColor: accentBorder },
                 procesandoItem && { opacity: 0.5 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Aprobar anticipo"
+              accessibilityState={{ disabled: !!procesando }}
             >
               {procesandoItem ? (
-                <ActivityIndicator size="small" color="#10B981" />
+                <ActivityIndicator size="small" color={accentOnSurface} />
               ) : (
-                <Ionicons name="checkmark" size={16} color="#10B981" />
+                <Ionicons name="checkmark" size={16} color={accentOnSurface} />
               )}
-              <Text style={[styles.actionText, { color: '#10B981' }]}>Aprobar</Text>
+              <Text style={[styles.actionText, { color: accentOnSurface }]}>Aprobar</Text>
             </Pressable>
             <Pressable
               disabled={!!procesando}
               onPress={() => setConfirmar({ item, estado: 3 })}
               style={[
                 styles.actionBtn,
-                { backgroundColor: 'rgba(239,68,68,0.14)', borderColor: 'rgba(239,68,68,0.4)' },
+                { backgroundColor: surfaceMuted, borderColor: accentBorder },
                 procesandoItem && { opacity: 0.5 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Rechazar anticipo"
+              accessibilityState={{ disabled: !!procesando }}
             >
-              <Ionicons name="close" size={16} color="#EF4444" />
-              <Text style={[styles.actionText, { color: '#EF4444' }]}>Rechazar</Text>
+              <Ionicons name="close" size={16} color={accentColor} />
+              <Text style={[styles.actionText, { color: accentColor }]}>Rechazar</Text>
             </Pressable>
           </View>
         ) : entregado ? (
@@ -404,7 +412,7 @@ export default function AnticiposAdminScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
         }
         ListEmptyComponent={
-          <EmptyState icon="card-outline" title="No se encontraron anticipos" message="No hay anticipos con el filtro seleccionado. Intenta cambiar el estado o crear uno nuevo." />
+          <EmptyState icon="card-outline" title="No se encontraron anticipos" />
         }
         {...LIST_PERF_PROPS}
       />
@@ -443,19 +451,19 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 13,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     letterSpacing: 1,
     marginBottom: 8,
   },
   summaryAmount: {
     fontSize: 38,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     letterSpacing: -0.5,
     marginBottom: 8,
   },
   summaryDetails: { flexDirection: 'row', gap: 16 },
   summaryDetail: { fontSize: 13 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding },
   actions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flex: 1,
@@ -467,6 +475,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  actionText: { fontSize: 13, fontWeight: '800' },
+  actionText: { fontSize: 13, fontFamily: FontFamily.extrabold },
   entregado: { fontSize: 13 },
 });

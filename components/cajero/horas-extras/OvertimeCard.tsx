@@ -4,9 +4,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { OvertimeRecord } from '@/hooks/types/overtimeTypes';
-import { formatCurrency } from '@/utils/format';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { formatCurrency } from '@/utils/format';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
     0: { label: 'Cobrado', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
@@ -38,7 +39,7 @@ export const OvertimeCard = React.memo(function OvertimeCard({
     textSecondary,
     onPress
 }: OvertimeCardProps) {
-    const { accentOnSurface, isDark } = useAccentColor();
+    const { accentOnSurface, accentColor: themeAccent, isDark } = useAccentColor();
     useRenderCount('OvertimeCard', { itemId: item.id_hora_extra, estado: item.estado });
     const status = statusConfig[item.estado] || statusConfig[1];
     const fecha = new Date(item.fecha_crea);
@@ -91,14 +92,14 @@ export const OvertimeCard = React.memo(function OvertimeCard({
 
                 <View style={styles.amountRow}>
                     <View style={styles.amountItem}>
-                        <Ionicons name="time-outline" size={13} color="#3B82F6" />
+                        <Ionicons name="time-outline" size={13} color={accentColor} />
                         <View>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Horas</Text>
                             <Text style={[styles.amountValue, { color: textPrimary }]}>{item.hora.toFixed(1)} hrs</Text>
                         </View>
                     </View>
                     <View style={styles.amountItem}>
-                        <Ionicons name="cash-outline" size={13} color="#10B981" />
+                        <Ionicons name="cash-outline" size={13} color={accentOnSurface} />
                         <View>
                             <Text style={[styles.amountLabel, { color: textSecondary }]}>Monto</Text>
                             <Text style={[styles.amountValue, { color: textPrimary }]}>{formatCurrency(item.monto)}</Text>
@@ -144,26 +145,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center' 
     },
-    avatarText: { 
-        fontSize: 12, 
-        fontWeight: '900' 
+    avatarText: {
+        fontSize: 12,
+        fontFamily: FontFamily.black
     },
-    empInfo: { 
-        flex: 1 
+    empInfo: {
+        flex: 1
     },
-    empName: { 
-        fontSize: 14, 
-        fontWeight: '800' 
+    empName: {
+        fontSize: 14,
+        fontFamily: FontFamily.extrabold
     },
-    dateRow: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        gap: 4, 
-        marginTop: 2 
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2
     },
-    dateText: { 
-        fontSize: 11, 
-        fontWeight: '500' 
+    dateText: {
+        fontSize: 11,
+        fontFamily: FontFamily.medium
     },
     statusBadge: { 
         flexDirection: 'row', 
@@ -178,9 +179,9 @@ const styles = StyleSheet.create({
         height: 6, 
         borderRadius: BorderRadius.full 
     },
-    statusText: { 
-        fontSize: 10, 
-        fontWeight: '800' 
+    statusText: {
+        fontSize: 10,
+        fontFamily: FontFamily.extrabold
     },
     divider: { 
         height: 1, 
@@ -197,18 +198,18 @@ const styles = StyleSheet.create({
         gap: 4, 
         flex: 1 
     },
-    amountLabel: { 
-        fontSize: 9, 
-        fontWeight: '700', 
-        textTransform: 'uppercase', 
-        letterSpacing: 0.3 
+    amountLabel: {
+        fontSize: 9,
+        fontFamily: FontFamily.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.3
     },
-    amountValue: { 
-        fontSize: 13, 
-        fontWeight: '700' 
+    amountValue: {
+        fontSize: 13,
+        fontFamily: FontFamily.bold
     },
-    amountValueTotal: { 
-        fontSize: 15, 
-        fontWeight: '900' 
+    amountValueTotal: {
+        fontSize: 15,
+        fontFamily: FontFamily.black
     },
 });

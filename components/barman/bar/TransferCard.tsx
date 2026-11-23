@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { formatCurrency } from '@/utils/format';
@@ -46,7 +47,7 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
         <View style={[styles.iconWrapper, { backgroundColor: `${accentColor}20` }]}>
           <Ionicons name="swap-horizontal" size={18} color={accentOnSurface} />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
             {item.producto_nombre}
           </Text>
@@ -54,20 +55,23 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
             {item.presentacion_nombre} · {item.cantidad} und.
           </Text>
         </View>
-        <View style={[styles.pendingBadge]}>
-          <Text style={styles.pendingText}>Pendiente</Text>
+        <View style={[styles.pendingBadge, { backgroundColor: `${accentOnSurface}15` }]}>
+          <Text style={[styles.pendingText, { color: accentOnSurface }]}>Pendiente</Text>
         </View>
       </View>
 
       <View style={styles.metaRow}>
         <Ionicons name="person-outline" size={14} color={textSecondary} />
-        <Text style={[styles.metaText, { color: textSecondary }]} numberOfLines={1}>
+        <Text
+          style={[styles.metaText, { color: textSecondary, flexShrink: 1, minWidth: 0 }]}
+          numberOfLines={1}
+        >
           {item.usuario_nombre || '—'}
         </Text>
         {fecha && (
           <>
             <Ionicons name="calendar-outline" size={14} color={textSecondary} style={{ marginLeft: 8 }} />
-            <Text style={[styles.metaText, { color: textSecondary }]}>
+            <Text style={[styles.metaText, { color: textSecondary }]} numberOfLines={1}>
               {fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })}
             </Text>
           </>
@@ -81,7 +85,10 @@ export function TransferCard({ item, onPress }: TransferCardProps) {
               <Text style={[styles.optionLabel, { color: textSecondary }]} numberOfLines={1}>
                 {etiquetaOpcionVenta(opcion, precios)}
               </Text>
-              <Text style={[styles.optionAmount, { color: textPrimary }]}>
+              <Text
+                style={[styles.optionAmount, { color: textPrimary }]}
+                numberOfLines={1}
+              >
                 {formatCurrency(opcion.precio)}
                 {opcion.comision > 0 ? ` · Comisión ${formatCurrency(opcion.comision)}` : ''}
               </Text>
@@ -107,7 +114,7 @@ export function TransferActions({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { accentColor} = useAccentColor();
+  const { accentColor, accentBg, accentBorder } = useAccentColor();
   const btnTextColor = readableTextColor(accentColor);
 
   return (
@@ -115,10 +122,10 @@ export function TransferActions({
       <Pressable
         onPress={onReject}
         disabled={resolving}
-        style={({ pressed }) => [styles.actionBtn, styles.rejectBtn, pressed && { opacity: 0.7 }, resolving && { opacity: 0.5 }]}
+        style={({ pressed }) => [styles.actionBtn, { backgroundColor: accentBg, borderColor: accentBorder }, pressed && { opacity: 0.7 }, resolving && { opacity: 0.5 }]}
       >
-        <Ionicons name="close" size={16} color="#EF4444" />
-        <Text style={styles.rejectText}>Rechazar</Text>
+        <Ionicons name="close" size={16} color={accentColor} />
+        <Text style={[styles.rejectText, { color: accentColor }]}>Rechazar</Text>
       </Pressable>
       <Pressable
         onPress={onAccept}
@@ -142,18 +149,18 @@ const styles = StyleSheet.create({
   card: { borderRadius: BorderRadius.full, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconWrapper: { width: 36, height: 36, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
-  productName: { fontSize: 15, fontWeight: '800' },
+  productName: { fontSize: 15, fontFamily: FontFamily.extrabold },
   presentation: { fontSize: 12, marginTop: 2 },
-  pendingBadge: { backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full },
-  pendingText: { color: '#F59E0B', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  pendingBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full },
+  pendingText: { fontSize: 10, fontFamily: FontFamily.extrabold, textTransform: 'uppercase' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
-  metaText: { fontSize: 12, fontWeight: '600' },
+  metaText: { fontSize: 12, fontFamily: FontFamily.semibold },
   amountsList: { gap: 4, marginTop: 8 },
   amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  optionLabel: { flexShrink: 1, fontSize: 12, fontWeight: '700' },
-  optionAmount: { fontSize: 12, fontWeight: '800' },
+  optionLabel: { flexShrink: 1, minWidth: 0, fontSize: 12, fontFamily: FontFamily.bold },
+  optionAmount: { flexShrink: 0, fontSize: 12, fontFamily: FontFamily.extrabold },
   detailHint: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  detailHintText: { fontSize: 12, fontWeight: '800' },
+  detailHintText: { fontSize: 12, fontFamily: FontFamily.extrabold },
   actionsRow: { flexDirection: 'column', gap: 10, marginTop: 14 },
   actionBtn: {
     flex: 1,
@@ -165,8 +172,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: BorderRadius.full,
   },
-  rejectBtn: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' },
-  rejectText: { color: '#EF4444', fontWeight: '800', fontSize: 13 },
+  rejectBtn: { borderWidth: 1 },
+  rejectText: { fontFamily: FontFamily.extrabold, fontSize: 13 },
   acceptBtn: {},
-  acceptText: { fontWeight: '800', fontSize: 13 },
+  acceptText: { fontFamily: FontFamily.extrabold, fontSize: 13 },
 });

@@ -20,7 +20,11 @@ vi.mock('expo-router', () => ({
 }));
 
 vi.mock('@/hooks/useAccentColor', () => ({
-  useAccentColor: () => ({ accentColor: '#E11D48' }),
+  useAccentColor: () => ({
+    accentColor: '#F97316',
+    accentOnSurface: '#22C55E',
+    accentUi: '#8B5CF6',
+  }),
 }));
 
 vi.mock('@/hooks/useCajaAbierta', () => ({
@@ -129,7 +133,7 @@ describe('CajeroActionGrid — tarjetas visibles según rol', () => {
   it('no repite en PEDIDOS el contador que ya muestra la campana del encabezado', () => {
     vi.mocked(useIsAdmin).mockReturnValue(false);
 
-    render(<CajeroActionGrid pendingCount={3} />);
+    render(<CajeroActionGrid />);
 
     const pedidos = screen.getByText('PEDIDOS').closest('[data-title="PEDIDOS"]');
 

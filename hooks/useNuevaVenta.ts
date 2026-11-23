@@ -1,8 +1,3 @@
-import {
-  requiresShortMixer,
-  bottleMixerUnits,
-  totalUnidadesAcompanamientoBotella,
-} from "@/hooks/utils/productConfiguration";
 import { recargoAcompanamientoDeProducto } from "@/hooks/utils/recargoAcompanamiento";
 import {
   useCallback,
@@ -989,6 +984,7 @@ export function useNuevaVenta() {
     totals,
     selectedTime,
     hasCommissionItem,
+    acompanamientoTope,
     servicioId,
     servicioListo,
     servicioAnfitrionas,

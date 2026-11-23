@@ -226,6 +226,7 @@ export function PremiumProfileView({
             textSecondary={textSecondary}
             borderColor={borderColor}
             isDark={isDark}
+            accentText={accentText}
           />
 
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -254,8 +255,8 @@ export function PremiumProfileView({
             <Switch
               value={voiceEnabled}
               onValueChange={handleToggleVoice}
-              trackColor={{ false: "#767577", true: accentColor }}
-              thumbColor="#FFF"
+              trackColor={{ false: textSecondary, true: accentColor }}
+               thumbColor={accentText}
             />
           </View>
 

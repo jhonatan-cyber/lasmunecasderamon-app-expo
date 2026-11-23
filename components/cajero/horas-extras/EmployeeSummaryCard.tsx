@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/format';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -67,7 +68,7 @@ export function EmployeeSummaryCard({
                                 <Text style={[styles.empSummaryStat, { color: textSecondary }]}>
                                     {emp.totalHoras.toFixed(1)}h · {emp.count} reg.
                                 </Text>
-                                <Text style={[styles.empSummaryAmount, { color: emp.totalACobrar > 0 ? '#F59E0B' : textPrimary }]}>
+                                <Text style={[styles.empSummaryAmount, { color: emp.totalACobrar > 0 ? accentOnSurface : textPrimary }]}>
                                     {formatCurrency(emp.totalMonto)}
                                 </Text>
                             </View>
@@ -110,24 +111,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center' 
     },
-    empSummaryInitials: { 
-        fontSize: 12, 
-        fontWeight: '900' 
+    empSummaryInitials: {
+        fontSize: 12,
+        fontFamily: FontFamily.black
     },
-    infoContainer: { 
-        gap: 2 
+    infoContainer: {
+        gap: 2
     },
-    empSummaryName: { 
-        fontSize: 12, 
-        fontWeight: '800', 
-        maxWidth: 90 
+    empSummaryName: {
+        fontSize: 12,
+        fontFamily: FontFamily.extrabold,
+        maxWidth: 90
     },
-    empSummaryStat: { 
-        fontSize: 10, 
-        fontWeight: '600' 
+    empSummaryStat: {
+        fontSize: 10,
+        fontFamily: FontFamily.semibold
     },
-    empSummaryAmount: { 
-        fontSize: 13, 
-        fontWeight: '900' 
+    empSummaryAmount: {
+        fontSize: 13,
+        fontFamily: FontFamily.black
     },
 });

@@ -1,7 +1,9 @@
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
 import { Text, View } from 'react-native';
 import { useRenderCount } from '@/hooks/useRenderCount';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Props {
     item: any;
@@ -20,16 +22,17 @@ const PAYMENT_ICONS: Record<string, string> = {
 };
 
 export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index, isDark, textPrimary, textSecondary }: Props) {
+    const { accentOnSurface, accentColor, accentUi, accentBg, surfaceMuted } = useAccentColor();
     useRenderCount('HistoryItemCard', { itemId: item.id, category: item.category });
     const isCarga = item.category === 'CARGA';
     const isServicio = item.category === 'SERVICIO';
     const isConsumo = item.category === 'CONSUMO';
-    const iconColor = isCarga ? '#10B981' : isServicio ? '#3B82F6' : '#F59E0B';
-    const iconBg = isCarga ? 'rgba(16,185,129,0.12)' : isServicio ? 'rgba(59,130,246,0.12)' : 'rgba(245,158,11,0.12)';
+    const iconColor = isCarga ? accentOnSurface : isServicio ? accentColor : accentUi;
+    const iconBg = isCarga ? `${accentOnSurface}1F` : isServicio ? `${accentColor}1F` : `${accentUi}1F`;
     const iconName = isCarga ? 'arrow-up-circle' : isServicio ? 'bed' : 'cart';
     const categoryLabel = isCarga ? 'Carga de Saldo' : isServicio ? 'Servicio' : 'Consumo';
-    const cardBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)';
-    const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+    const cardBg = surfaceMuted;
+    const cardBorder = surfaceMuted;
 
     return (
         <View key={`${item.id}-${index}`} style={{
@@ -44,10 +47,10 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                 <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 15, fontWeight: '900', color: isDark ? '#FFFFFF' : '#111827', letterSpacing: -0.2 }}>
+                            <Text style={{ fontSize: 15, fontFamily: FontFamily.black, color: textPrimary, letterSpacing: -0.2 }}>
                                 {categoryLabel}
                             </Text>
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: textSecondary, marginTop: 1 }}>
+                            <Text style={{ fontSize: 11, fontFamily: FontFamily.semibold, color: textSecondary, marginTop: 1 }}>
                                 {new Date(item.fecha_crea).toLocaleString('es-CL', {
                                     day: '2-digit', month: 'short', year: 'numeric',
                                     hour: '2-digit', minute: '2-digit'
@@ -55,10 +58,10 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                             </Text>
                         </View>
                         <View style={{
-                            backgroundColor: isCarga ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                            backgroundColor: isCarga ? `${accentOnSurface}1A` : accentBg,
                             paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
                         }}>
-                            <Text style={{ fontSize: 15, fontWeight: '900', color: isCarga ? '#10B981' : '#EF4444' }}>
+                            <Text style={{ fontSize: 15, fontFamily: FontFamily.black, color: isCarga ? accentOnSurface : accentColor }}>
                                 {isCarga ? '+' : '-'}${(Number(item.monto || 0)).toLocaleString('es-CL')}
                             </Text>
                         </View>
@@ -70,17 +73,17 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
             {isServicio && item.detalle && (
                 <View style={{
                     marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1,
-                    backgroundColor: isDark ? 'rgba(59,130,246,0.06)' : 'rgba(59,130,246,0.04)',
-                    borderColor: isDark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.08)',
+                    backgroundColor: `${accentColor}0D`,
+                    borderColor: `${accentColor}1F`,
                 }}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
                         {item.detalle.habitacion && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <View style={miniBoxBlue}>
-                                    <Ionicons name="bed-outline" size={14} color="#3B82F6" />
+                                    <Ionicons name="bed-outline" size={14} color={accentColor} />
                                 </View>
                                 <View>
-                                    <DetailLabel text="Habitación" color="#3B82F6" />
+                                    <DetailLabel text="Habitación" color={accentColor} />
                                     <DetailVal value={item.detalle.habitacion} color={textPrimary} />
                                 </View>
                             </View>
@@ -88,10 +91,10 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                         {item.detalle.tiempo && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <View style={miniBoxBlue}>
-                                    <Ionicons name="timer-outline" size={14} color="#3B82F6" />
+                                    <Ionicons name="timer-outline" size={14} color={accentColor} />
                                 </View>
                                 <View>
-                                    <DetailLabel text="Duración" color="#3B82F6" />
+                                    <DetailLabel text="Duración" color={accentColor} />
                                     <DetailVal value={`${item.detalle.tiempo} min`} color={textPrimary} />
                                 </View>
                             </View>
@@ -100,11 +103,11 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                     {Array.isArray(item.detalle.anfitrionas) && item.detalle.anfitrionas.length > 0 && (
                         <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <View style={miniBoxBlue}>
-                                <Ionicons name="people-outline" size={14} color="#3B82F6" />
+                                <Ionicons name="people-outline" size={14} color={accentColor} />
                             </View>
                             {item.detalle.anfitrionas.map((name: string, i: number) => (
                                 <View key={i} style={pillBlue}>
-                                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#3B82F6' }}>{name}</Text>
+                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentColor }}>{name}</Text>
                                 </View>
                             ))}
                         </View>
@@ -118,19 +121,19 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                     {Array.isArray(item.detalle.productos) && item.detalle.productos.length > 0 && (
                         <View style={{
                             marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1,
-                            backgroundColor: isDark ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.04)',
-                            borderColor: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.08)',
+                            backgroundColor: `${accentUi}0D`,
+                            borderColor: `${accentUi}1F`,
                         }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
                                 <View style={miniBoxOrange}>
-                                    <Ionicons name="fast-food-outline" size={12} color="#F59E0B" />
+                                    <Ionicons name="fast-food-outline" size={12} color={accentUi} />
                                 </View>
-                                <DetailLabel text="Productos" color="#F59E0B" />
+                                <DetailLabel text="Productos" color={accentUi} />
                             </View>
                             {item.detalle.productos.map((p: any, idx: number) => (
                                 <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 3, gap: 6 }}>
-                                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#F59E0B' }} />
-                                    <Text style={{ fontSize: 13, color: textPrimary, fontWeight: '700' }}>
+                                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: accentUi }} />
+                                    <Text style={{ fontSize: 13, color: textPrimary, fontFamily: FontFamily.bold }}>
                                         {p.cantidad || 1}x {p.nombre || 'Producto'}
                                     </Text>
                                 </View>
@@ -140,11 +143,11 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                     {Array.isArray(item.detalle.anfitrionas) && item.detalle.anfitrionas.length > 0 && (
                         <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <View style={miniBoxOrange}>
-                                <Ionicons name="people-outline" size={14} color="#F59E0B" />
+                                <Ionicons name="people-outline" size={14} color={accentUi} />
                             </View>
                             {item.detalle.anfitrionas.map((name: string, i: number) => (
                                 <View key={i} style={pillOrange}>
-                                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#F59E0B' }}>{name}</Text>
+                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentUi }}>{name}</Text>
                                 </View>
                             ))}
                         </View>
@@ -157,14 +160,14 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                 <View style={{
                     flexDirection: 'row', alignItems: 'center', gap: 5,
                     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                    backgroundColor: surfaceMuted,
                 }}>
                     <Ionicons
                         name={(PAYMENT_ICONS[item.metodo_pago] || 'wallet-outline') as keyof typeof Ionicons.glyphMap}
                         size={12}
                         color={textSecondary}
                     />
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                    <Text style={{ fontSize: 10, fontFamily: FontFamily.extrabold, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                         {item.metodo_pago || 'pago'}
                     </Text>
                 </View>
@@ -176,34 +179,30 @@ HistoryItemCard.displayName = 'HistoryItemCard';
 
 function DetailLabel({ text, color }: { text: string; color: string }) {
     return (
-        <Text style={{ fontSize: 8, fontWeight: '800', color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text style={{ fontSize: 8, fontFamily: FontFamily.extrabold, color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             {text}
         </Text>
     );
 }
 
 function DetailVal({ value, color }: { value: string; color: string }) {
-    return <Text style={{ fontSize: 13, fontWeight: '900', color }}>{value}</Text>;
+    return <Text style={{ fontSize: 13, fontFamily: FontFamily.black, color }}>{value}</Text>;
 }
 
 const miniBoxBlue = {
     width: 26, height: 26, borderRadius: 8,
-    backgroundColor: 'rgba(59,130,246,0.15)',
     justifyContent: 'center' as const, alignItems: 'center' as const,
 };
 
 const miniBoxOrange = {
     width: 22, height: 22, borderRadius: 7,
-    backgroundColor: 'rgba(245,158,11,0.15)',
     justifyContent: 'center' as const, alignItems: 'center' as const,
 };
 
 const pillBlue = {
-    backgroundColor: 'rgba(59,130,246,0.12)',
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
 };
 
 const pillOrange = {
-    backgroundColor: 'rgba(245,158,11,0.12)',
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
 };

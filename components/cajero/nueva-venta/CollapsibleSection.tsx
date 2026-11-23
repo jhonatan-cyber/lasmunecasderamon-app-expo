@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { haptic } from '@/utils/haptics';
 
 interface CollapsibleSectionProps {
@@ -10,12 +11,12 @@ interface CollapsibleSectionProps {
   onToggle: () => void;
   children: React.ReactNode;
   fontSize?: number;
-  fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+  fontFamily?: string;
   borderRadius?: number;
   padding?: number;
-  style?: any;
-  headerStyle?: any;
-  contentStyle?: any;
+  style?: StyleProp<ViewStyle>;
+  headerStyle?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
   accentColor: string;
   textPrimary: string;
   borderColor: string;
@@ -32,7 +33,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   onToggle,
   children,
   fontSize = 15,
-  fontWeight = '700',
+  fontFamily = FontFamily.bold,
   borderRadius = 16,
   padding = 14,
   style,
@@ -56,7 +57,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`${collapsed ? 'Expandir' : 'Colapsar'} ${title}`}
       >
-        <Text style={[styles.title, { color: textPrimary, fontSize, fontWeight }]}>
+        <Text style={[styles.title, { color: textPrimary, fontSize, fontFamily }]}>
           {title}
         </Text>
         <Ionicons
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   title: {
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   content: {
     paddingHorizontal: 14,

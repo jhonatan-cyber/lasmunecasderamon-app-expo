@@ -4,6 +4,7 @@ import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { FontFamily } from '@/constants/fonts';
 import { BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import React from 'react';
 import {
     ActivityIndicator,
@@ -60,13 +61,28 @@ export default function LoginForm({
 }: Props) {
     const { isLandscape } = useResponsiveMetrics();
     const reducedMotion = useReducedMotion();
+    const {
+        isDark: themeIsDark,
+        textPrimary,
+        textSecondary,
+        cardBg: themeCardBg,
+        borderColor: themeBorderColor,
+        surfaceMuted,
+        accentText,
+        accentOnSurface,
+        accentBg,
+        accentBorder,
+    } = useAccentColor();
+
+    // Usar isDark del tema para la lógica visual, pero mantener la prop para compatibilidad
+    const dark = isDark || themeIsDark;
 
     // Estado de foco para glow neón en inputs
     const [usernameFocused, setUsernameFocused] = React.useState(false);
     const [passwordFocused, setPasswordFocused] = React.useState(false);
 
     // Glow neón en inputs cuando están enfocados (modo oscuro)
-    const inputNeonGlow = isDark ? {
+    const inputNeonGlow = dark ? {
         shadowColor: accentColor,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.4,
@@ -77,23 +93,13 @@ export default function LoginForm({
     } : {};
 
     // Glow neón en botón de login (modo oscuro)
-    const loginButtonNeonGlow = isDark ? {
+    const loginButtonNeonGlow = dark ? {
         shadowColor: accentColor,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.5,
         shadowRadius: 12,
         elevation: 6,
     } : {};
-
-    // Colors derived from theme
-    const textColor = isDark ? '#FFFFFF' : '#111827';
-    const textMuted = isDark ? '#9CA3AF' : '#6B7280';
-    const cardBg = isDark ? '#1C1C1E' : '#F3F4F6';
-    const borderColor = isDark ? '#333' : '#F3F4F6';
-    const errorBg = isDark ? '#1C1917' : '#FEF2F2';
-    const inputIconColor = isDark ? '#9CA3AF' : '#6B7280';
-    const biometricBg = isDark ? '#1C1917' : '#F3F4F6';
-    const separatorColor = isDark ? '#374151' : '#D1D5DB';
 
     // Validation: disable login button when fields are empty
     const isFormValid = username.trim().length > 0 && password.length > 0;
@@ -145,29 +151,29 @@ export default function LoginForm({
                 <Animated.View
                     style={[
                         styles.errorContainer,
-                        { backgroundColor: errorBg, transform: [{ translateX: errorTranslateX }] }
+                        { backgroundColor: accentBg, transform: [{ translateX: errorTranslateX }] }
                     ]}
                     accessibilityRole="alert"
                     accessibilityLiveRegion="polite"
                 >
-                    <Text style={styles.errorText}>{error}</Text>
+                    <Text style={[styles.errorText, { color: accentOnSurface }]}>{error}</Text>
                 </Animated.View>
             ) : null}
 
             {/* Nick input with icon */}
-            <Text style={[styles.label, { color: isDark ? textColor : '#FFFFFF' }]}>Nick</Text>
-            <View style={[styles.inputWithIcon, { backgroundColor: cardBg, borderColor: usernameFocused && isDark ? accentColor : borderColor }, usernameFocused && isDark && inputNeonGlow]}>
-                <Ionicons name="person-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
+            <Text style={[styles.label, { color: textPrimary }]}>Nick</Text>
+            <View style={[styles.inputWithIcon, { backgroundColor: themeCardBg, borderColor: usernameFocused && dark ? accentColor : themeBorderColor }, usernameFocused && dark && inputNeonGlow]}>
+                <Ionicons name="person-outline" size={20} color={textSecondary} style={styles.inputIcon} />
                 <TextInput
                     style={[
                         styles.inputWithIconField,
                         {
                             backgroundColor: 'transparent',
-                            color: textColor,
+                            color: textPrimary,
                         },
                     ]}
                     placeholder="Ingresa tu nick"
-                    placeholderTextColor={textMuted}
+                    placeholderTextColor={textSecondary}
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="username"
@@ -185,7 +191,7 @@ export default function LoginForm({
 
             {/* Password label row with forgot password link */}
             <View style={styles.passwordLabelRow}>
-                <Text style={[styles.label, { color: isDark ? textColor : '#FFFFFF' }]}>Contraseña</Text>
+                <Text style={[styles.label, { color: textPrimary }]}>Contraseña</Text>
                 <Pressable
                     onPress={onForgotPassword}
                     hitSlop={{ top: 12, bottom: 12, right: 8, left: 8 }}
@@ -200,19 +206,19 @@ export default function LoginForm({
             </View>
 
             {/* Password input with icon */}
-            <View style={[styles.inputWithIcon, styles.passwordContainer, { backgroundColor: cardBg, borderColor: passwordFocused && isDark ? accentColor : borderColor }, passwordFocused && isDark && inputNeonGlow]}>
-                <Ionicons name="lock-closed-outline" size={20} color={inputIconColor} style={styles.inputIcon} />
+            <View style={[styles.inputWithIcon, styles.passwordContainer, { backgroundColor: themeCardBg, borderColor: passwordFocused && dark ? accentColor : themeBorderColor }, passwordFocused && dark && inputNeonGlow]}>
+                <Ionicons name="lock-closed-outline" size={20} color={textSecondary} style={styles.inputIcon} />
                 <TextInput
                     style={[
                         styles.inputWithIconField,
                         styles.passwordInput,
                         {
                             backgroundColor: 'transparent',
-                            color: textColor,
+                            color: textPrimary,
                         },
                     ]}
                     placeholder="Ingresa tu contraseña"
-                    placeholderTextColor={textMuted}
+                    placeholderTextColor={textSecondary}
                     secureTextEntry={!showPassword}
                     autoComplete="current-password"
                     textContentType="password"
@@ -237,7 +243,7 @@ export default function LoginForm({
                     <Ionicons
                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                         size={20}
-                        color={textColor}
+                        color={textPrimary}
                     />
                 </Pressable>
             </View>
@@ -251,10 +257,10 @@ export default function LoginForm({
                 accessibilityState={{ checked: rememberMe }}
                 style={styles.rememberMeRow}
             >
-                <View style={[styles.checkbox, { backgroundColor: rememberMe ? accentColor : 'transparent', borderColor: borderColor }]}>
-                    {rememberMe && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                <View style={[styles.checkbox, { backgroundColor: rememberMe ? accentColor : 'transparent', borderColor: themeBorderColor }]}>
+                    {rememberMe && <Ionicons name="checkmark" size={16} color={accentText} />}
                 </View>
-                <Text style={[styles.rememberMeText, { color: isDark ? textMuted : '#FFFFFF' }]}>Recordarme</Text>
+                <Text style={[styles.rememberMeText, { color: textSecondary }]}>Recordarme</Text>
             </Pressable>
 
             {/* Login button with accent color - no transparency */}
@@ -264,6 +270,7 @@ export default function LoginForm({
                         styles.loginButton,
                         {
                             backgroundColor: accentColor,
+                            shadowColor: accentColor,
                             opacity: 1,
                         },
                         (!isFormValid || loading) && { opacity: 0.6 },
@@ -275,9 +282,9 @@ export default function LoginForm({
                     accessibilityState={{ disabled: loading || !isFormValid, busy: loading }}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#FFFFFF" />
+                        <ActivityIndicator color={accentText} />
                     ) : (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.loginButtonText}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.loginButtonText, { color: accentText }]}>
                             Ingresar
                         </Text>
                     )}
@@ -286,9 +293,9 @@ export default function LoginForm({
 
             {/* Visual separator */}
             <View style={styles.separatorContainer}>
-                <View style={[styles.separatorLine, { backgroundColor: separatorColor }]} />
-                <Text style={[styles.separatorText, { color: textMuted }]}>o ingresa con</Text>
-                <View style={[styles.separatorLine, { backgroundColor: separatorColor }]} />
+                <View style={[styles.separatorLine, { backgroundColor: themeBorderColor }]} />
+                <Text style={[styles.separatorText, { color: textSecondary }]}>o ingresa con</Text>
+                <View style={[styles.separatorLine, { backgroundColor: themeBorderColor }]} />
             </View>
 
             {/* Alternative login methods with labels */}
@@ -298,8 +305,8 @@ export default function LoginForm({
                         style={({ pressed }) => [
                             styles.biometricButton,
                             {
-                                backgroundColor: biometricBg,
-                                borderColor: borderColor,
+                                backgroundColor: surfaceMuted,
+                                borderColor: themeBorderColor,
                             },
                             pressed && { opacity: 0.7 }
                         ]}
@@ -309,9 +316,9 @@ export default function LoginForm({
                         accessibilityLabel="Iniciar sesión con código QR"
                         accessibilityState={{ disabled: loading }}
                     >
-                        <Ionicons name="qr-code-outline" size={28} color={textColor} />
+                        <Ionicons name="qr-code-outline" size={28} color={textPrimary} />
                     </Pressable>
-                    <Text style={[styles.altMethodLabel, { color: textMuted }]}>Código QR</Text>
+                    <Text style={[styles.altMethodLabel, { color: textSecondary }]}>Código QR</Text>
                 </View>
 
                 {(isBiometricEnabled && isBiometricSupported) && (
@@ -320,8 +327,8 @@ export default function LoginForm({
                             style={({ pressed }) => [
                                 styles.biometricButton,
                                 {
-                                    backgroundColor: biometricBg,
-                                    borderColor: borderColor,
+                                    backgroundColor: surfaceMuted,
+                                    borderColor: themeBorderColor,
                                 },
                                 pressed && { opacity: 0.7 }
                             ]}
@@ -331,9 +338,9 @@ export default function LoginForm({
                             accessibilityLabel="Iniciar sesión con biometría"
                             accessibilityState={{ disabled: loading }}
                         >
-                            <Ionicons name="finger-print-outline" size={28} color={textColor} />
+                            <Ionicons name="finger-print-outline" size={28} color={textPrimary} />
                         </Pressable>
-                        <Text style={[styles.altMethodLabel, { color: textMuted }]}>Huella</Text>
+                        <Text style={[styles.altMethodLabel, { color: textSecondary }]}>Huella</Text>
                     </View>
                 )}
             </View>
@@ -444,7 +451,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     errorText: {
-        color: '#EF4444',
         fontSize: 14,
         fontFamily: FontFamily.medium,
         textAlign: 'center',
@@ -459,7 +465,7 @@ const styles = StyleSheet.create({
     checkbox: {
         width: 22,
         height: 22,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.xs,
         borderWidth: 2,
         justifyContent: 'center',
         alignItems: 'center',
@@ -478,7 +484,6 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#FF2D55',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
@@ -489,7 +494,6 @@ const styles = StyleSheet.create({
         fontFamily: FontFamily.bold,
         letterSpacing: 1.2,
         textTransform: 'uppercase',
-        color: '#FFFFFF',
     },
     // Separator
     separatorContainer: {

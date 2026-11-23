@@ -1,5 +1,6 @@
 import { esCortoAnfitriona } from "@/hooks/utils/hostessShortPrices";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -90,8 +91,10 @@ export function SaleFormatSelector({
                 {label}
               </Text>
               <Text style={[styles.meta, { color: textSecondary }]}>
-                ${option.precio.toLocaleString()} · comisión $
-                {option.comision.toLocaleString()}
+                ${option.precio.toLocaleString()}
+                {option.comision > 0
+                  ? ` · comisión $${option.comision.toLocaleString()}`
+                  : ""}
               </Text>
             </View>
             <View style={styles.controls}>
@@ -144,8 +147,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   info: { flex: 1, minWidth: 0 },
-  name: { fontSize: 11, fontWeight: "900" },
-  meta: { fontSize: 10, fontWeight: "600", marginTop: 2 },
+  name: { fontSize: 11, fontFamily: "900" as any },
+  meta: { fontSize: 10, fontFamily: FontFamily.semibold, marginTop: 2 },
   controls: { flexDirection: "row", alignItems: "center", gap: 5 },
   step: {
     width: 28,
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  count: { minWidth: 18, textAlign: "center", fontSize: 12, fontWeight: "900" },
+  count: { minWidth: 18, textAlign: "center", fontSize: 12, fontFamily: FontFamily.black },
   add: {
     width: 30,
     height: 30,

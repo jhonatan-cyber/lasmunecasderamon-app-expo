@@ -1,11 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { memo, useCallback, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  RefreshControl,
-} from "react-native";
+import { View, Text, StyleSheet, RefreshControl } from "react-native";
 import { Image } from "expo-image";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { SkeletonLoader as Skeleton } from "@/components/ui/SkeletonLoader";
@@ -16,6 +11,7 @@ import type { BarStockItem } from "@/hooks/useBarScreen";
 import { BASE_URL } from "@/api/client";
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
 import { BorderRadius } from "@/constants/spacing";
+import { FontFamily } from "@/constants/fonts";
 
 interface BarStockListProps {
   items: BarStockItem[];
@@ -162,8 +158,8 @@ export function BarStockList({
       <View style={styles.skeletonList}>
         {[1, 2, 3, 4].map((i) => (
           <View key={i} style={styles.skeletonRow}>
-            <Skeleton width="48%" height={220} borderRadius={16} />
-            <Skeleton width="48%" height={220} borderRadius={16} />
+            <Skeleton width="48%" height={220} borderRadius={16} accessibilityRole="progressbar" accessibilityLabel="Cargando productos del bar" />
+            <Skeleton width="48%" height={220} borderRadius={16} accessibilityRole="progressbar" accessibilityLabel="Cargando productos del bar" />
           </View>
         ))}
       </View>
@@ -243,7 +239,7 @@ const BarStockCard = memo(function BarStockCard({
 }: {
   item: BarStockItem;
 }) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark } =
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark, accentText } =
     useAccentColor();
   const opcionesVenta = useMemo(
     () => resolverVentaProducto(item).opciones,
@@ -254,7 +250,7 @@ const BarStockCard = memo(function BarStockCard({
   const hasShot = opcionesVenta.some((option) => option.esShot);
 
   // Glow neón en modo oscuro
-  const cardNeonColor = hasLowStock ? "#F59E0B" : accentColor;
+  const cardNeonColor = hasLowStock ? accentOnSurface : accentColor;
   const cardNeonGlow = isDark ? {
     shadowColor: cardNeonColor,
     shadowOffset: { width: 0, height: 0 },
@@ -283,23 +279,25 @@ const BarStockCard = memo(function BarStockCard({
             <Ionicons name="wine-outline" size={34} color={textSecondary} />
           </View>
         )}
-        <View
-          style={[
-            styles.badge,
-            {
-              backgroundColor: hasLowStock ? "#F59E0B" : `${accentColor}E8`,
-            },
-          ]}
-        >
-          <Ionicons
-            name={hasLowStock ? "warning" : "cube"}
-            size={10}
-            color="#FFFFFF"
-          />
-          <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
-            {stock}
-          </Text>
-        </View>
+        {stock > 0 && (
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: hasLowStock ? accentOnSurface : `${accentColor}E8`,
+              },
+            ]}
+          >
+            <Ionicons
+              name={hasLowStock ? "warning" : "cube"}
+              size={10}
+              color={accentText}
+            />
+            <Text style={[styles.badgeText, { color: accentText }]}>
+              {stock}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Product identity */}
@@ -324,21 +322,33 @@ const BarStockCard = memo(function BarStockCard({
       </View>
 
       {/* Prices section */}
-      {opcionesVenta.length > 0 && (
+      {opcionesVenta.filter((o) => (o.precio ?? 0) > 0).length > 0 && (
         <View style={[styles.prices, { borderTopColor: borderColor }]}>
-          {opcionesVenta.map((option) => (
+          {opcionesVenta.filter((o) => (o.precio ?? 0) > 0).map((option) => (
             <View key={option.value} style={styles.priceInfo}>
               <View style={styles.priceHeader}>
-                <Text style={[styles.statLabel, { color: textSecondary }]}>
+                <Text
+                  style={[styles.statLabel, { color: textSecondary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {option.nombre}
                 </Text>
-                <Text style={[styles.statValue, { color: textPrimary }]}>
+                <Text
+                  style={[styles.statValue, { color: textPrimary }]}
+                  numberOfLines={1}
+                >
                   {formatCurrency(option.precio)}
                 </Text>
               </View>
-              <Text style={[styles.commission, { color: accentOnSurface }]}>
-                Com. {formatCurrency(option.comision)}
-              </Text>
+              {(option.comision ?? 0) > 0 && (
+                <Text
+                  style={[styles.commission, { color: accentOnSurface }]}
+                  numberOfLines={1}
+                >
+                  Com. {formatCurrency(option.comision)}
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -346,25 +356,39 @@ const BarStockCard = memo(function BarStockCard({
 
       {/* Shot sizes */}
       {hasShot && (item.ml_shot ?? 0) > 0 && (
-        <View style={styles.metalInfo}>
-          <Ionicons name="water" size={11} color={textSecondary} />
-          <Text style={[styles.shotSize, { color: textSecondary }]}>
-            {item.ml_shot} ml
-          </Text>
+        <>
+          <View style={styles.metalInfo}>
+            <Ionicons name="water" size={11} color={textSecondary} />
+            <Text
+              style={[styles.shotSize, { color: textSecondary }]}
+              numberOfLines={1}
+            >
+              Corto: {item.ml_shot} ml
+            </Text>
+          </View>
           {item.ml_shot_anfitriona !== item.ml_shot &&
             (item.ml_shot_anfitriona ?? 0) > 0 && (
-              <Text style={[styles.shotSize, { color: textSecondary }]}>
-                · Anfitriona: {item.ml_shot_anfitriona} ml
-              </Text>
+              <View style={styles.metalInfo}>
+                <Ionicons name="person" size={11} color={textSecondary} />
+                <Text
+                  style={[styles.shotSize, { color: textSecondary }]}
+                  numberOfLines={1}
+                >
+                  Anfitriona: {item.ml_shot_anfitriona} ml
+                </Text>
+              </View>
             )}
-        </View>
+        </>
       )}
 
       {/* Remaining ml */}
       {(item.ml_abierta ?? 0) > 0 && (
-        <View style={[styles.warningRow, { backgroundColor: `${"#F59E0B"}15"` }]}>
-          <Ionicons name="alert-circle" size={12} color="#F59E0B" />
-          <Text style={[styles.warningText, { color: "#F59E0B" }]}>
+        <View style={[styles.warningRow, { backgroundColor: `${accentOnSurface}15` }]}>
+          <Ionicons name="alert-circle" size={12} color={accentOnSurface} />
+          <Text
+            style={[styles.warningText, { color: accentOnSurface }]}
+            numberOfLines={1}
+          >
             Restante: {item.ml_abierta} ml
           </Text>
         </View>
@@ -377,6 +401,7 @@ const BarStockCard = memo(function BarStockCard({
             <Ionicons name="wine" size={11} color={textSecondary} />
             <Text
               style={[styles.bottleDetailsTitle, { color: textSecondary }]}
+              numberOfLines={1}
             >
               Contenido por botella
             </Text>
@@ -397,8 +422,11 @@ const BarStockCard = memo(function BarStockCard({
       {(item.botellas_vacias_shots ?? 0) > 0 && (
         <View style={[styles.returnDetails, { borderColor }]}>
           <View style={styles.bottleDetailsHeader}>
-            <Ionicons name="return-up-back" size={11} color="#F59E0B" />
-            <Text style={[styles.returnDetailsTitle, { color: "#F59E0B" }]}>
+            <Ionicons name="return-up-back" size={11} color={accentOnSurface} />
+            <Text
+              style={[styles.returnDetailsTitle, { color: accentOnSurface }]}
+              numberOfLines={1}
+            >
               Para devolver ({item.botellas_vacias_shots})
             </Text>
           </View>
@@ -435,13 +463,13 @@ const styles = StyleSheet.create({
   skeletonList: { padding: 16, gap: 10 },
   categoryTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     paddingTop: 16,
     paddingBottom: 4,
   },
   cardSpacer: { flex: 1 },
   list: { paddingHorizontal: 12, paddingBottom: 120 },
-  row: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
+  row: { flexDirection: "row", justifyContent: "space-around", gap: 10 },
   skeletonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -451,7 +479,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     borderRadius: BorderRadius.card,
-    padding: 10,
+    padding: 12,
     marginTop: 10,
     borderWidth: 1,
     overflow: 'hidden',
@@ -459,10 +487,10 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: "relative",
     width: "100%",
-    height: 110,
-    borderRadius: BorderRadius.full,
+    height: 130,
+    borderRadius: BorderRadius.card,
     overflow: "hidden",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   image: { width: "100%", height: "100%" },
   imagePlaceholder: {
@@ -482,18 +510,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
-  badgeText: { fontSize: 10, fontWeight: "800" },
+  badgeText: { fontSize: 10, fontFamily: FontFamily.extrabold },
   identitySection: {
     gap: 3,
     marginBottom: 2,
   },
-  productName: { fontSize: 14, fontWeight: "800", lineHeight: 18 },
+  productName: { fontSize: 14, fontFamily: FontFamily.extrabold, lineHeight: 18 },
   presentationRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
   },
-  presentation: { fontSize: 11, fontWeight: "600" },
+  presentation: { flex: 1, minWidth: 0, fontSize: 11, fontFamily: FontFamily.semibold },
   prices: {
     marginTop: 8,
     paddingTop: 8,
@@ -505,22 +533,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
+    gap: 6,
   },
   statLabel: {
+    flex: 1,
+    minWidth: 0,
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  statValue: { fontSize: 13, fontWeight: "800" },
-  commission: { fontSize: 9, fontWeight: "700" },
+  statValue: { flexShrink: 0, fontSize: 13, fontFamily: FontFamily.extrabold },
+  commission: { fontSize: 9, fontFamily: FontFamily.bold },
   metalInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginTop: 6,
   },
-  shotSize: { fontSize: 10, fontWeight: "600" },
+  shotSize: { flexShrink: 1, minWidth: 0, fontSize: 10, fontFamily: FontFamily.semibold },
   warningRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -530,10 +561,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  warningText: { fontSize: 10, fontWeight: "700" },
+  warningText: { flexShrink: 1, minWidth: 0, fontSize: 10, fontFamily: FontFamily.bold },
   served: {
     fontSize: 10,
-    fontWeight: "600",
+    fontFamily: FontFamily.semibold,
   },
   bottleDetails: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -547,11 +578,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bottleDetailsTitle: {
+    flexShrink: 1,
+    minWidth: 0,
     fontSize: 9,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     textTransform: "uppercase",
   },
-  bottleDetailsRow: { fontSize: 10, fontWeight: "700", paddingLeft: 15 },
+  bottleDetailsRow: { fontSize: 10, fontFamily: FontFamily.bold, paddingLeft: 15 },
   returnDetails: {
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: 7,
@@ -564,12 +597,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   returnDetailsTitle: {
+    flexShrink: 1,
+    minWidth: 0,
     fontSize: 9,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     textTransform: "uppercase",
   },
   empty: { alignItems: "center", paddingTop: 60, gap: 10 },
-  emptyText: { fontSize: 14, fontWeight: "600" },
+  emptyText: { fontSize: 14, fontFamily: FontFamily.semibold },
   cardCell: { flex: 1, marginBottom: 15 },
   columnWrapper: { gap: 15 },
   categoryCard: {
@@ -582,6 +617,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
-  categoryName: { fontSize: 15, fontWeight: "800", textAlign: "center" },
-  categoryCount: { fontSize: 12, fontWeight: "700" },
+  categoryName: { fontSize: 15, fontFamily: FontFamily.extrabold, textAlign: "center" },
+  categoryCount: { fontSize: 12, fontFamily: FontFamily.bold },
 });

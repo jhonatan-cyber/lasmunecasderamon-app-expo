@@ -1,5 +1,6 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, useCallback } from 'react';
 import { useStableCallback } from '@/hooks/useStableCallback';
@@ -256,7 +257,7 @@ export function FinancialEventsScreen({
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="file-tray-outline" title="No se encontraron registros" message="No hay eventos financieros para el tipo seleccionado. Intenta cambiar el filtro." />
+          <EmptyState icon="file-tray-outline" title="No se encontraron registros" />
         }
         getItemLayout={(_: any, index: number) => ({
           length: 180,
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

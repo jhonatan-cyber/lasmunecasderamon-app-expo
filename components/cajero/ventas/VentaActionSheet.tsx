@@ -1,6 +1,7 @@
 import React from "react";
 import type { Venta } from "./types";
 import { ActionSheet, ActionSheetItem } from "@/components/ui/ActionSheet";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type VentaActionSheetProps = {
   visible: boolean;
@@ -24,11 +25,12 @@ export function VentaActionSheet({
   accentColor,
   dangerColor,
 }: VentaActionSheetProps) {
+  const { accentOnSurface, accentColor: themeAccentColor } = useAccentColor();
   const items: ActionSheetItem[] = [
     {
       icon: "eye-outline",
       label: "Ver Detalles",
-      color: "#22C55E",
+      color: accentOnSurface,
       onPress: onVerDetalles,
     },
   ];
@@ -37,7 +39,7 @@ export function VentaActionSheet({
     items.push({
       icon: "trash-outline",
       label: "Solicitar Anulación",
-      color: "#EF4444",
+      color: themeAccentColor,
       onPress: onSolicitarAnulacion,
     });
   }

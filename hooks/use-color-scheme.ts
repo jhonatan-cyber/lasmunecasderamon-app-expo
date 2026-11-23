@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 import { useAppearanceStore } from '@/store/appearanceStore';
 
 export function useColorScheme(): 'light' | 'dark' {
   const storedScheme = useAppearanceStore((state) => state.scheme);
-  const [systemScheme, setSystemScheme] = useState<'light' | 'dark'>('light');
+  // El esquema se conoce al montar: así el primer render usa el valor correcto
+  // y el efecto solo se suscribe a cambios externos.
+  const [systemScheme, setSystemScheme] = useState<'light' | 'dark'>(() => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+      }
+      return 'light';
+    }
+    return Appearance?.getColorScheme?.() === 'dark' ? 'dark' : 'light';
+  });
   
   // Detect system scheme changes based on platform
   useEffect(() => {
@@ -12,8 +24,7 @@ export function useColorScheme(): 'light' | 'dark' {
       // On web, use matchMedia to detect system preference without touching Appearance
       if (typeof window !== 'undefined' && window.matchMedia) {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        setSystemScheme(mediaQuery.matches ? 'dark' : 'light');
-        
+
         const handler = (e: MediaQueryListEvent) => {
           setSystemScheme(e.matches ? 'dark' : 'light');
         };
@@ -21,19 +32,15 @@ export function useColorScheme(): 'light' | 'dark' {
         return () => mediaQuery.removeEventListener('change', handler);
       }
     } else {
-      // On native, use Appearance API to detect system preference
-      import('react-native').then(({ Appearance }) => {
-        const current = Appearance.getColorScheme();
-        setSystemScheme(current === 'dark' ? 'dark' : 'light');
-        
-        const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      // On native, subscribe to changes in the system preference. El valor
+      // inicial ya se leyó al montar, así que no hace falta sincronizarlo acá.
+      const subscription = Appearance?.addChangeListener?.(
+        ({ colorScheme }) => {
           setSystemScheme(colorScheme === 'dark' ? 'dark' : 'light');
-        });
-        
-        return () => {
-          subscription?.remove();
-        };
-      });
+        },
+      );
+
+      return () => subscription?.remove();
     }
     return () => {};
   }, []);

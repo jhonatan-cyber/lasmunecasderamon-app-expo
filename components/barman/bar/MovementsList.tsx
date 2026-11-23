@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -33,11 +34,12 @@ interface MovementCardProps {
   textSecondary: string;
   borderColor: string;
   accentOnSurface: string;
+  accentColor: string;
   isDark: boolean;
   reducedMotion: boolean;
 }
 
-function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark, reducedMotion }: MovementCardProps) {
+function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentColor, isDark, reducedMotion }: MovementCardProps) {
   const cardAnim = useSharedValue(reducedMotion ? 1 : 0);
   const fadeAnim = useSharedValue(reducedMotion ? 1 : 0);
 
@@ -62,7 +64,8 @@ function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecon
       ? formatCurrency(Number(item.comision))
       : null;
 
-  const statusColor = estadoColor(item);
+  const key = estadoKey(item);
+  const statusColor = key === 'success' ? accentOnSurface : key === 'warning' ? accentOnSurface : key === 'error' ? accentColor : textSecondary;
   const neonGlow = isDark ? {
     shadowColor: statusColor,
     shadowOffset: { width: 0, height: 0 },
@@ -82,7 +85,7 @@ function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecon
         style={({ pressed }) => [styles.card, { backgroundColor: cardBg, borderColor, opacity: pressed ? 0.78 : 1 }, neonGlow]}
       >
         <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={1}>
               {item.producto_nombre || '—'}
             </Text>
@@ -101,7 +104,10 @@ function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecon
         </View>
 
         <View style={styles.row}>
-          <Text style={[styles.amount, { color: textPrimary }]}>
+          <Text
+            style={[styles.amount, { color: textPrimary, flexShrink: 1 }]}
+            numberOfLines={1}
+          >
             {item.cantidad} und.
             {(item.ml ?? 0) > 0 ? ` · ${item.ml} ml` : ''}
           </Text>
@@ -129,7 +135,10 @@ function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecon
                 >
                   {precio.label}
                 </Text>
-                <Text style={[styles.amount, { color: textPrimary }]}>
+                <Text
+                  style={[styles.amount, { color: textPrimary }]}
+                  numberOfLines={1}
+                >
                   {formatCurrency(precio.precio)}
                   {precio.comision > 0
                     ? ` · Comisión ${formatCurrency(precio.comision)}`
@@ -142,11 +151,14 @@ function MovementCard({ item, index, onPressItem, cardBg, textPrimary, textSecon
 
         <View style={styles.footer}>
           <Ionicons name="person-outline" size={13} color={textSecondary} />
-          <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[styles.footerText, { color: textSecondary, flexShrink: 1, minWidth: 0 }]}
+            numberOfLines={1}
+          >
             {item.usuario_nombre || item.usuario_nick || '—'}
           </Text>
           {fecha && (
-            <Text style={[styles.footerText, { color: textSecondary }]}>
+            <Text style={[styles.footerText, { color: textSecondary }]} numberOfLines={1}>
               {fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })}{' '}
               {fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
             </Text>
@@ -169,12 +181,12 @@ const estadoLabel = (m: BarMovement) => {
   return 'Histórica';
 };
 
-const estadoColor = (m: BarMovement) => {
-  if (m.tipo === 'venta') return '#10B981';
-  if (m.estado === 'aceptada') return '#10B981';
-  if (m.estado === 'pendiente') return '#F59E0B';
-  if (m.estado === 'rechazada') return '#EF4444';
-  return '#6B7280';
+const estadoKey = (m: BarMovement): 'success' | 'warning' | 'error' | 'neutral' => {
+  if (m.tipo === 'venta') return 'success';
+  if (m.estado === 'aceptada') return 'success';
+  if (m.estado === 'pendiente') return 'warning';
+  if (m.estado === 'rechazada') return 'error';
+  return 'neutral';
 };
 
 export function MovementsList({ items, loading, refreshing, onRefresh, onPressItem }: MovementsListProps) {
@@ -185,7 +197,7 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
     return (
       <View style={{ padding: 16, gap: 10 }}>
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} width="100%" height={90} borderRadius={16} />
+          <Skeleton key={i} width="100%" height={90} borderRadius={16} accessibilityRole="progressbar" accessibilityLabel="Cargando movimientos" />
         ))}
       </View>
     );
@@ -218,6 +230,7 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
           textSecondary={textSecondary}
           borderColor={borderColor}
           accentOnSurface={accentOnSurface}
+          accentColor={accentColor}
           isDark={isDark}
           reducedMotion={reducedMotion}
         />
@@ -230,17 +243,17 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   card: { borderRadius: 16, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  productName: { fontSize: 15, fontWeight: '800' },
+  productName: { fontSize: 15, fontFamily: FontFamily.extrabold },
   presentation: { fontSize: 12, marginTop: 2 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: BorderRadius.full, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  statusText: { fontSize: 10, fontFamily: FontFamily.extrabold, textTransform: 'uppercase' },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: BorderRadius.full,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 },
-  amountRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  amountRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
   amountsList: { gap: 4, marginTop: 8 },
   amountRow: {
     flexDirection: 'row',
@@ -248,12 +261,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
-  priceLabel: { flexShrink: 1, fontSize: 12, fontWeight: '700' },
-  amount: { fontSize: 13, fontWeight: '700' },
+  priceLabel: { flexShrink: 1, minWidth: 0, fontSize: 12, fontFamily: FontFamily.bold },
+  amount: { fontSize: 13, fontFamily: FontFamily.bold },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-  footerText: { fontSize: 11, fontWeight: '600' },
+  footerText: { fontSize: 11, fontFamily: FontFamily.semibold },
   detailHint: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 10, paddingTop: 9, borderTopWidth: StyleSheet.hairlineWidth },
-  detailHintText: { fontSize: 11, fontWeight: '800' },
+  detailHintText: { fontSize: 11, fontFamily: FontFamily.extrabold },
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyText: { fontSize: 14, fontWeight: '600' },
+  emptyText: { fontSize: 14, fontFamily: FontFamily.semibold },
 });

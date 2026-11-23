@@ -94,6 +94,22 @@ describe('MovementsList precios del historial', () => {
     expect(screen.getByText('$3.000')).toBeTruthy();
   });
 
+  it('no muestra comisiones en 0 aunque otra opción del movimiento sí tenga comisión', () => {
+    renderLista([
+      movimiento({
+        opciones_venta: [
+          { tipo: 'botella', precio: 30000, comision: 5000 },
+          { tipo: 'shot', precio: 3000, comision: 0 }
+        ]
+      })
+    ]);
+
+    expect(screen.getByText('$30.000 · Comisión $5.000')).toBeTruthy();
+    expect(screen.getByText('$3.000')).toBeTruthy();
+    expect(screen.getAllByText(/Comisión/)).toHaveLength(1);
+    expect(screen.queryByText(/Comisión \$0/)).toBeNull();
+  });
+
   it('sin venta con anfitriona solo lista la botella sin anfitriona y sin comisión', () => {
     renderLista([
       movimiento({

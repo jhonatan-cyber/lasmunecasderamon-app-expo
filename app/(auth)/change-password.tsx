@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
+import { FontFamily } from "@/constants/fonts";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services";
 import { changePasswordSchema } from "@lasmunecasderamon/validations";
@@ -189,6 +190,9 @@ export default function ChangePasswordScreen() {
             ]}
             onPress={handleChangePassword}
             disabled={loading || !password || !confirmPassword}
+            accessibilityRole="button"
+            accessibilityLabel="Guardar nueva contraseña"
+            accessibilityState={{ disabled: loading || !password || !confirmPassword }}
           >
             {loading ? (
               <ActivityIndicator color={theme.background} />
@@ -220,7 +224,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     marginBottom: 8,
   },
   subtitle: {
@@ -232,7 +236,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FontFamily.medium,
     marginBottom: 20,
     textAlign: "center",
     padding: 10,
@@ -278,6 +282,6 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
 });

@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import {
   Pressable,
   ScrollView,
@@ -34,7 +35,7 @@ export function TransferDetailModal({
   onAccept,
   onReject,
 }: TransferDetailModalProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface } =
     useAccentColor();
   const fecha = item?.fecha_crea ? new Date(item.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
@@ -68,7 +69,10 @@ export function TransferDetailModal({
                 <Text style={[styles.eyebrow, { color: textSecondary }]}>
                   DETALLE DEL TRASPASO
                 </Text>
-                <Text style={[styles.title, { color: textPrimary }]}>
+                <Text
+                  style={[styles.title, { color: textPrimary }]}
+                  numberOfLines={2}
+                >
                   {item.producto_nombre}
                 </Text>
               </View>
@@ -100,7 +104,10 @@ export function TransferDetailModal({
                 <Text style={[styles.quantityValue, { color: accentOnSurface }]}>
                   {item.cantidad} unidades
                 </Text>
-                <Text style={[styles.presentation, { color: textPrimary }]}>
+                <Text
+                  style={[styles.presentation, { color: textPrimary }]}
+                  numberOfLines={2}
+                >
                   {item.presentacion_nombre}
                 </Text>
               </View>
@@ -111,7 +118,12 @@ export function TransferDetailModal({
                     <Ionicons name="pricetag-outline" size={18} color={textSecondary} />
                     <View style={styles.detailText}>
                       <Text style={[styles.detailLabel, { color: textSecondary }]}>Categoría</Text>
-                      <Text style={[styles.detailValue, { color: textPrimary }]}>{item.categoria_nombre}</Text>
+                      <Text
+                        style={[styles.detailValue, { color: textPrimary }]}
+                        numberOfLines={2}
+                      >
+                        {item.categoria_nombre}
+                      </Text>
                     </View>
                   </View>
                 )}
@@ -119,7 +131,10 @@ export function TransferDetailModal({
                   <Ionicons name="shield-checkmark-outline" size={18} color={textSecondary} />
                   <View style={styles.detailText}>
                     <Text style={[styles.detailLabel, { color: textSecondary }]}>Estado</Text>
-                    <Text style={[styles.detailValue, { color: textPrimary }]}>
+                    <Text
+                      style={[styles.detailValue, { color: textPrimary }]}
+                      numberOfLines={2}
+                    >
                       {item.estado ? item.estado.charAt(0).toUpperCase() + item.estado.slice(1) : "—"}
                     </Text>
                   </View>
@@ -254,15 +269,15 @@ export function TransferDetailModal({
               <View
                 style={[
                   styles.notice,
-                  { borderColor: "#F59E0B50", backgroundColor: "#F59E0B12" },
+                  { borderColor: `${accentOnSurface}50`, backgroundColor: `${accentOnSurface}12` },
                 ]}
               >
                 <Ionicons
                   name="information-circle-outline"
                   size={18}
-                  color="#F59E0B"
+                  color={accentOnSurface}
                 />
-                <Text style={styles.noticeText}>
+                <Text style={[styles.noticeText, { color: accentOnSurface }]}>
                   Confirma que recibiste el producto antes de aprobar el
                   traspaso.
                 </Text>
@@ -301,7 +316,10 @@ function DetailRow({
         <Text style={[styles.detailLabel, { color: textSecondary }]}>
           {label}
         </Text>
-        <Text style={[styles.detailValue, { color: textPrimary }]}>
+        <Text
+          style={[styles.detailValue, { color: textPrimary }]}
+          numberOfLines={2}
+        >
           {value}
         </Text>
       </View>
@@ -377,11 +395,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(148,163,184,0.25)",
   },
-  headerText: { flex: 1 },
-  eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
-  title: { fontSize: 19, fontWeight: "900", marginTop: 3 },
+  headerText: { flex: 1, minWidth: 0 },
+  eyebrow: { fontSize: 10, fontFamily: FontFamily.extrabold, letterSpacing: 1 },
+  title: { fontSize: 19, fontFamily: FontFamily.black, marginTop: 3 },
   details: { gap: 16, paddingVertical: 16 },
-  sectionTitle: { fontSize: 10, fontWeight: "900", letterSpacing: 1 },
+  sectionTitle: { fontSize: 10, fontFamily: FontFamily.black, letterSpacing: 1 },
   section: { gap: 9 },
   infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   infoTile: {
@@ -394,23 +412,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoTileLabel: { flexDirection: "row", alignItems: "center", gap: 6 },
-  infoTileTitle: { flex: 1, fontSize: 10, lineHeight: 13, fontWeight: "700" },
-  infoTileValue: { fontSize: 15, fontWeight: "900" },
+  infoTileTitle: { flex: 1, minWidth: 0, fontSize: 10, lineHeight: 13, fontFamily: FontFamily.bold },
+  infoTileValue: { fontSize: 15, fontFamily: FontFamily.black },
   quantityCard: {
     alignItems: "center",
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     padding: 16,
   },
-  quantityLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
-  quantityValue: { fontSize: 26, fontWeight: "900", marginTop: 4 },
-  presentation: { fontSize: 14, fontWeight: "700", marginTop: 2 },
+  quantityLabel: { fontSize: 10, fontFamily: FontFamily.extrabold, letterSpacing: 1 },
+  quantityValue: { fontSize: 26, fontFamily: FontFamily.black, marginTop: 4 },
+  presentation: { fontSize: 14, fontFamily: FontFamily.bold, marginTop: 2 },
   detailRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   detailRowGroup: { flexDirection: "row", gap: 12 },
   detailRowHalf: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  detailText: { flex: 1 },
-  detailLabel: { fontSize: 11, fontWeight: "700" },
-  detailValue: { fontSize: 14, fontWeight: "800", marginTop: 2 },
+  detailText: { flex: 1, minWidth: 0 },
+  detailLabel: { fontSize: 11, fontFamily: FontFamily.bold },
+  detailValue: { fontSize: 14, fontFamily: FontFamily.extrabold, marginTop: 2 },
   notice: {
     flexDirection: "row",
     alignItems: "center",
@@ -419,5 +437,5 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
-  noticeText: { flex: 1, color: "#F59E0B", fontSize: 12, fontWeight: "700" },
+  noticeText: { flex: 1, fontSize: 12, fontFamily: FontFamily.bold },
 });

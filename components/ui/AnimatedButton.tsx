@@ -1,5 +1,5 @@
 import { haptic } from '@/utils/haptics';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -29,6 +29,15 @@ export function AnimatedButton({
     const reducedMotion = useReducedMotion();
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
+
+    // Opacidad reducida cuando el botón está deshabilitado
+    useEffect(() => {
+        if (disabled) {
+            opacity.value = withTiming(0.45, { duration: 150 });
+        } else {
+            opacity.value = withTiming(1, { duration: 150 });
+        }
+    }, [disabled, opacity]);
 
     const animatedStyle = useAnimatedStyle(() => {
         return {

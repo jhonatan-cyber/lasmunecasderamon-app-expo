@@ -67,7 +67,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
   timer,
   onSuccess,
 }) => {
-  const { cardBg, borderColor, accentColor, bg, textPrimary, textSecondary } =
+  const { cardBg, borderColor, accentColor, bg, textPrimary, textSecondary, accentOnSurface } =
     useAccentColor();
   const [loading, setLoading] = useState(false);
   const savingRef = useRef(false);
@@ -400,6 +400,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
               <Pressable
                 style={[styles.inputWrapper, { borderColor }]}
                 onPress={() => setShowHostessModal(true)}
+                accessibilityLabel="Seleccionar anfitrionas"
               >
                 <Ionicons
                   name="people-outline"
@@ -475,7 +476,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             )}
 
             <View style={styles.warningBox}>
-              <Ionicons name="alert-circle" size={20} color="#F59E0B" />
+              <Ionicons name="alert-circle" size={20} color={accentOnSurface} />
               <Text style={styles.warningText}>
                 Al guardar, el servicio actual de {timer.roomName} se pausará
                 automáticamente.

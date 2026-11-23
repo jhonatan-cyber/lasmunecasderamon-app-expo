@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 
 interface CategoryItem {
@@ -91,7 +92,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
               <Ionicons name={icon as any} size={20} color={accentColor} />
             </View>
             <Text
-              style={{ color: textPrimary, fontSize: 12, fontWeight: '800', textAlign: 'center' }}
+              style={{ color: textPrimary, fontSize: 12, fontFamily: FontFamily.extrabold, textAlign: 'center' }}
             >
               {name}
             </Text>

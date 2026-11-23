@@ -20,7 +20,9 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
-import { FontSize, HitSlop } from "@/constants/spacing";
+import { BorderRadius, FontSize, HitSlop } from "@/constants/spacing";
+import { tabBarBottomPadding } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import { Colors } from "@/constants/theme";
 import { haptic } from "@/utils/haptics";
 import { habitacionesParaServicio } from "@/utils/habitaciones";
@@ -167,7 +169,7 @@ export default function ServiciosScreen() {
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarBottomPadding }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -243,7 +245,7 @@ export default function ServiciosScreen() {
                 maxFontSizeMultiplier={1.5}
                 style={{
                   color: textPrimary,
-                  fontWeight: "800",
+                  fontFamily: FontFamily.extrabold,
                   fontSize: FontSize.xs,
                   textAlign: "center",
                 }}
@@ -415,38 +417,50 @@ export default function ServiciosScreen() {
                   MÉTODO DE PAGO
                 </Text>
                 <View style={styles.methodContainer}>
-                  {["efectivo", "tarjeta", "transferencia"].map((m) => (
+                  {[
+                    { id: "efectivo", icon: "cash-outline" },
+                    { id: "tarjeta", icon: "card-outline" },
+                    { id: "transferencia", icon: "send-outline" },
+                  ].map(({ id, icon }) => (
                     <Pressable
-                      key={m}
+                      key={id}
                       onPress={() => {
                         haptic.tap();
-                        setPaymentMethod(m as any);
+                        setPaymentMethod(id as any);
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Pagar con ${m}`}
-                      accessibilityHint={`Selecciona ${m} como método de pago`}
+                      accessibilityLabel={`Pagar con ${id}`}
+                      accessibilityHint={`Selecciona ${id} como método de pago`}
                       hitSlop={HitSlop.sm}
                       style={({ pressed }) => [
                         styles.methodBtn,
                         {
                           backgroundColor: cardBg,
                           borderColor:
-                            paymentMethod === m ? primaryColor : borderColor,
+                            paymentMethod === id ? primaryColor : borderColor,
                           opacity: pressed ? 0.85 : 1,
                         },
-                        paymentMethod === m && { borderWidth: 2 },
+                        paymentMethod === id && { borderWidth: 2 },
                       ]}
                     >
+                      <Ionicons
+                        name={icon as any}
+                        size={20}
+                        color={paymentMethod === id ? primaryColor : textSecondary}
+                      />
                       <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                         style={[
                           styles.methodText,
                           {
                             color:
-                              paymentMethod === m ? primaryColor : textPrimary,
+                              paymentMethod === id ? primaryColor : textPrimary,
                           },
                         ]}
                       >
-                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                        {id.charAt(0).toUpperCase() + id.slice(1)}
                       </Text>
                     </Pressable>
                   ))}
@@ -524,7 +538,7 @@ export default function ServiciosScreen() {
                       maxFontSizeMultiplier={1.5}
                       style={{
                         color: textPrimary,
-                        fontWeight: "900",
+                        fontFamily: FontFamily.black,
                         fontSize: FontSize.sm,
                       }}
                     >
@@ -534,7 +548,7 @@ export default function ServiciosScreen() {
                       maxFontSizeMultiplier={1.5}
                       style={{
                         color: Colors.light.success,
-                        fontWeight: "800",
+                        fontFamily: FontFamily.extrabold,
                         fontSize: FontSize.xs,
                       }}
                     >
@@ -651,8 +665,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextHeader: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },
@@ -674,18 +687,18 @@ const styles = StyleSheet.create({
   },
   selectFieldText: {
     fontSize: FontSize.sm,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   sectionLabel: {
     fontSize: FontSize.xs,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     letterSpacing: 1,
     marginTop: 24,
     marginBottom: 12,
   },
   formSection: { gap: 10 },
   inputGroup: { gap: 8 },
-  inputLabel: { fontSize: FontSize.xs, fontWeight: "800", letterSpacing: 0.5 },
+  inputLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, letterSpacing: 0.5 },
   inputWrapper: {
     height: 56,
     borderRadius: 16,
@@ -694,17 +707,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
   },
-  input: { flex: 1, fontSize: FontSize.lg, fontWeight: "700" },
-  methodContainer: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  input: { flex: 1, fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  methodContainer: { flexDirection: "row", gap: 8, marginBottom: 10 },
   methodBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
+    gap: 4,
+    flexDirection: "row",
+    paddingHorizontal: 8,
   },
-  methodText: { fontSize: FontSize.xs, fontWeight: "800" },
+  methodText: { fontSize: 11, fontFamily: FontFamily.bold, flexShrink: 1 },
   submitBtn: {
     height: 64,
     borderRadius: 20,
@@ -715,7 +731,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: "#FFF",
     fontSize: FontSize.sm,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     letterSpacing: 1,
   },
   baucherRow: {
@@ -727,6 +743,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  baucherText: { fontSize: FontSize.xs, fontWeight: "800", flex: 1 },
+  baucherText: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, flex: 1 },
   baucherThumb: { width: 40, height: 40, borderRadius: 8 },
 });

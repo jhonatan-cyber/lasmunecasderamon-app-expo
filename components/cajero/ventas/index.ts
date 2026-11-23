@@ -5,6 +5,14 @@ export { VentaCardRight } from "./VentaCardRight";
 export { VentaDetailModal } from "./VentaDetailModal";
 export { VentaAnulacionModal } from "./VentaAnulacionModal";
 export { VentaActionSheet } from "./VentaActionSheet";
+export { VentasStats } from "./VentasStats";
+export { VentasFiltersModal } from "./VentasFiltersModal";
+export type {
+  VentasStatusFilter,
+  VentasPaymentFilter,
+  VentasSortBy,
+  VentasSortOrder,
+} from "./VentasFiltersModal";
 export {
   VentasSkeleton,
   VentaCardSkeleton,

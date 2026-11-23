@@ -47,7 +47,7 @@ export function CivilStatusModal({
             {ESTADO_CIVIL_OPTIONS.map((opt) => (
               <Pressable
                 key={opt}
-                style={styles.modalOption}
+                style={[styles.modalOption, { backgroundColor: cardBg }]}
                 accessibilityRole="radio"
                 accessibilityLabel={opt}
                 accessibilityState={{ checked: selected === opt }}
@@ -73,8 +73,8 @@ export function CivilStatusModal({
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable style={styles.cancelModalBtn} onPress={onClose}>
-            <Text style={[styles.cancelModalBtnText, { color: "#EF4444" }]}>
+          <Pressable style={styles.cancelModalBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancelar selección de estado civil">
+            <Text style={[styles.cancelModalBtnText, { color: accentColor }]}>
               Cancelar
             </Text>
           </Pressable>

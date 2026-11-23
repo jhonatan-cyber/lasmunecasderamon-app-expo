@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -147,7 +148,7 @@ export default function PagosTrabajadoresScreen() {
                 <Text
                   style={[
                     styles.componenteValor,
-                    { color: componente.descuenta ? '#EF4444' : textPrimary },
+                    { color: componente.descuenta ? accentColor : textPrimary },
                   ]}
                 >
                   {componente.descuenta ? '-' : ''}
@@ -175,6 +176,9 @@ export default function PagosTrabajadoresScreen() {
               { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}55` },
               pagando && { opacity: 0.6 },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Pagar ${item.usuario} ${formatCurrency(item.total)}`}
+            accessibilityState={{ disabled: pagando }}
           >
             {pagando ? (
               <ActivityIndicator size="small" color={accentOnSurface} />
@@ -268,14 +272,14 @@ const styles = StyleSheet.create({
   card: { borderRadius: 20, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 17, fontWeight: '900' },
-  nombre: { fontSize: 15, fontWeight: '800' },
+  avatarText: { fontSize: 17, fontFamily: FontFamily.black },
+  nombre: { fontSize: 15, fontFamily: FontFamily.extrabold },
   meta: { fontSize: 12, marginTop: 2 },
-  total: { fontSize: 17, fontWeight: '900' },
+  total: { fontSize: 17, fontFamily: FontFamily.black },
   componentes: { marginTop: 12, gap: 6 },
   componenteRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  componenteLabel: { fontSize: 12, fontWeight: '600' },
-  componenteValor: { fontSize: 12, fontWeight: '800' },
+  componenteLabel: { fontSize: 12, fontFamily: FontFamily.semibold },
+  componenteValor: { fontSize: 12, fontFamily: FontFamily.extrabold },
   payBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  payText: { fontSize: 13, fontWeight: '800' },
+  payText: { fontSize: 13, fontFamily: FontFamily.extrabold },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -296,7 +300,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

@@ -12,6 +12,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface TipDetailModalProps {
     visible: boolean;
@@ -30,7 +31,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
     parentPropina,
     saleDetail
 }) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, surfaceMuted } = useAccentColor();
 
     return (
         <Modal
@@ -48,7 +49,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                 Codigo : {selectedPropina?.codigo_venta || selectedPropina?.codigo || '---'}
                             </Text>
                         </View>
-                        <Pressable onPress={onClose} style={styles.closeBtn}>
+                        <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle de propina">
                             <Ionicons name="close" size={24} color={textPrimary} />
                         </Pressable>
                     </View>
@@ -97,8 +98,8 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                                 </View>
                                                 <View style={{ alignItems: 'flex-end' }}>
                                                     <Text style={[styles.productSubtotal, { color: accentOnSurface }]}>${(p.monto || 0).toLocaleString()}</Text>
-                                                    <View style={[styles.statusBadge, { backgroundColor: p.estado === 1 ? (isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5') : (isDark ? 'rgba(59,130,246,0.2)' : '#DBEAFE'), marginTop: 4 }]}>
-                                                        <Text style={{ fontSize: FontSize.xxs, fontWeight: '700', color: p.estado === 1 ? (isDark ? '#10B981' : '#065F46') : (isDark ? '#3B82F6' : '#1E40AF') }}>
+                                                    <View style={[styles.statusBadge, { backgroundColor: surfaceMuted, marginTop: 4 }]}>
+                                                        <Text style={{ fontSize: FontSize.xxs, fontFamily: FontFamily.bold, color: accentOnSurface }}>
                                                             {p.estado === 1 ? 'Por cobrar' : 'Cobrada'}
                                                         </Text>
                                                     </View>
@@ -189,10 +190,10 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                     </View>
 
                                     {}
-                                    <View style={{ marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: isDark ? '#37415140' : '#F3F4F6', marginBottom: 8 }}>
+                                    <View style={{ marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: surfaceMuted, marginBottom: 8 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
                                             <Text style={{ color: textSecondary, fontSize: 12 }}>Método de Pago</Text>
-                                            <Text style={{ color: textPrimary, fontSize: 12, fontWeight: '700' }}>{String(saleDetail.metodo_pago ?? '').toUpperCase() || '---'}</Text>
+                                            <Text style={{ color: textPrimary, fontSize: 12, fontFamily: FontFamily.bold }}>{String(saleDetail.metodo_pago ?? '').toUpperCase() || '---'}</Text>
                                         </View>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                             <Text style={{ color: textSecondary, fontSize: 12 }}>Fecha</Text>
@@ -216,6 +217,8 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                     <Pressable
                         onPress={onClose}
                         style={[styles.closeModalBtn, { backgroundColor: accentColor }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cerrar detalle de propina"
                     >
                         <Text style={styles.closeModalBtnText}>Cerrar</Text>
                     </Pressable>
@@ -240,8 +243,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 24
     },
-    modalTitle: { fontSize: 20, fontWeight: '900' },
-    modalSubtitle: { fontSize: 13, fontWeight: '500', marginTop: 2 },
+    modalTitle: { fontSize: 20, fontFamily: FontFamily.black },
+    modalSubtitle: { fontSize: 13, fontFamily: FontFamily.medium, marginTop: 2 },
     closeBtn: { padding: 4 },
     detailLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     divisionCard: {
@@ -253,17 +256,17 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     divisionItem: { flex: 1, alignItems: 'center' },
-    divisionLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
-    divisionValue: { fontSize: 16, fontWeight: '800' },
+    divisionLabel: { fontSize: 11, fontFamily: FontFamily.semibold, marginBottom: 4 },
+    divisionValue: { fontSize: 16, fontFamily: FontFamily.extrabold },
     divisionDivider: { width: 1, height: '60%', backgroundColor: 'rgba(155,155,155,0.2)' },
-    sectionTitle: { fontSize: 11, fontWeight: '900', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
+    sectionTitle: { fontSize: 11, fontFamily: FontFamily.black, marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
     productsList: { borderRadius: BorderRadius.full, borderWidth: 1, overflow: 'hidden' },
     productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
-    productNameDetail: { fontSize: 14, fontWeight: '700' },
-    productSubtotal: { fontSize: 14, fontWeight: '800' },
+    productNameDetail: { fontSize: 14, fontFamily: FontFamily.bold },
+    productSubtotal: { fontSize: 14, fontFamily: FontFamily.extrabold },
     saleTotalRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderTopWidth: 1 },
-    saleTotalLabel: { fontSize: 13, fontWeight: '800' },
-    saleTotalValue: { fontSize: 16, fontWeight: '900' },
+    saleTotalLabel: { fontSize: 13, fontFamily: FontFamily.extrabold },
+    saleTotalValue: { fontSize: 16, fontFamily: FontFamily.black },
     statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full },
     closeModalBtn: {
         height: 54,
@@ -277,5 +280,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 5
     },
-    closeModalBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
+    closeModalBtnText: { color: '#FFF', fontSize: 16, fontFamily: FontFamily.extrabold }
 });

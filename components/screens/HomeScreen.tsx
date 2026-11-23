@@ -17,7 +17,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
 import { useAuthStore } from '@/store/authStore';
 import {
   RefreshControl,
@@ -209,7 +209,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
             tintColor={accentColor}
           />
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarBottomPadding }}
       >
         <AnimatedScreen>
           {error && (
@@ -254,7 +254,6 @@ export function HomeScreen({ role }: HomeScreenProps) {
 
             {role === 'cajero' && (
               <CajeroActionGrid
-                pendingCount={pendingCount}
                 pendingAdvances={pendingAdvances}
               />
             )}

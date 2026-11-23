@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { apiClientSafe } from "@/api/client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { OrderProductPhoto } from "./OrderProductPhoto";
@@ -69,7 +70,7 @@ export function IncludedServiceProductSelector({
         backgroundColor: cardBg,
       }}
     >
-      <Text style={{ color: textPrimary, fontWeight: "700" }}>
+      <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
         Producto incluido en la habitación
       </Text>
       <Pressable
@@ -111,7 +112,7 @@ export function IncludedServiceProductSelector({
         <View
           style={{ flex: 1, padding: 24, paddingTop: 54, backgroundColor: bg }}
         >
-          <Text style={{ color: textPrimary, fontWeight: "700", fontSize: 20 }}>
+          <Text style={{ color: textPrimary, fontFamily: FontFamily.bold, fontSize: 20 }}>
             Seleccionar producto incluido
           </Text>
           <TextInput

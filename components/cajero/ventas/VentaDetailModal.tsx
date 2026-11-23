@@ -18,6 +18,7 @@ import { VentaDistribucionSection } from "./VentaDistribucionSection";
 import { VentaProductosList } from "./VentaProductosList";
 import { BaucherFoto } from "@/components/shared/BaucherFoto";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 
 type VentaDetailModalProps = {
   visible: boolean;
@@ -44,7 +45,7 @@ export function VentaDetailModal({
   textSecondary,
   isDark,
 }: VentaDetailModalProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted, accentText } = useAccentColor();
   return (
     <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -56,10 +57,15 @@ export function VentaDetailModal({
               <View style={{ flex: 1 }}>
                 {}
                 <View style={styles.modalHeader}>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Text style={[styles.modalSubText, { color: textSecondary }]}>Código: {selectedVenta.codigo}</Text>
+                      <Text
+                        style={[styles.modalSubText, { color: textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        Código: {selectedVenta.codigo}
+                      </Text>
                       <View
                         style={[
                           styles.statusBadgeDetail,
@@ -75,7 +81,7 @@ export function VentaDetailModal({
                       </View>
                     </View>
                   </View>
-                  <Pressable onPress={onClose} style={styles.closeBtn}>
+                  <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalles de venta">
                     <Ionicons name="close" size={24} color={textSecondary} />
                   </Pressable>
                 </View>
@@ -94,7 +100,7 @@ export function VentaDetailModal({
                   {}
                   <View style={{ marginBottom: 25, paddingHorizontal: 4 }}>
                     <View style={{ flexDirection: "row", gap: 12 }}>
-                      <View style={[styles.infoCard, { backgroundColor: isDark ? "#1A1A1A" : "#F5F5F5", borderColor }]}>
+                      <View style={[styles.infoCard, { backgroundColor: surfaceMuted, borderColor }]}>
                         <Text style={[styles.infoLabel, { color: textSecondary }]}>Fecha y Hora</Text>
                         <Text style={[styles.infoValue, { color: textPrimary }]}>
                           {parseDateSafe(selectedVenta.fecha_crea).toLocaleString("es-CL", {
@@ -102,9 +108,9 @@ export function VentaDetailModal({
                           })}
                         </Text>
                       </View>
-                      <View style={[styles.infoCard, { backgroundColor: isDark ? "#1A1A1A" : "#F5F5F5", borderColor }]}>
+                      <View style={[styles.infoCard, { backgroundColor: surfaceMuted, borderColor }]}>
                         <Text style={[styles.infoLabel, { color: textSecondary }]}>Método Pago</Text>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <Ionicons
                             name={(payMethodIcons[selectedVenta.metodo_pago] || "wallet") as keyof typeof Ionicons.glyphMap}
                             size={16}
@@ -121,15 +127,15 @@ export function VentaDetailModal({
                   {}
                   <View style={{ marginBottom: 25 }}>
                     <Text style={[styles.sectionLabel, { color: textSecondary }]}>Cliente</Text>
-                    <View style={[styles.clienteCard, { backgroundColor: isDark ? "#1A1A1A" : "#F5F5F5", borderColor }]}>
-                      <View style={[styles.avatarCircle, { backgroundColor: isDark ? "#333" : "#DDD" }]}>
+                    <View style={[styles.clienteCard, { backgroundColor: surfaceMuted, borderColor }]}>
+                      <View style={[styles.avatarCircle, { backgroundColor: surfaceMuted }]}>
                         <Ionicons name="person-outline" size={18} color={textPrimary} />
                       </View>
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={[styles.clienteName, { color: textPrimary }]} numberOfLines={1}>
                           {selectedVenta.cliente_nombre || "Sin Cliente"}
                         </Text>
-                        <Text style={{ fontSize: 10, color: textSecondary }}>
+                        <Text style={{ fontSize: 10, color: textSecondary }} numberOfLines={1}>
                           {selectedVenta.habitacion_nombre || "General"}
                         </Text>
                       </View>
@@ -168,7 +174,7 @@ export function VentaDetailModal({
                   />
 
                   {}
-                  <View style={[styles.summaryCard, { backgroundColor: isDark ? "#111" : "#F9F9F9", borderColor }]}>
+                  <View style={[styles.summaryCard, { backgroundColor: surfaceMuted, borderColor }]}>
                     <View style={styles.summaryRow}>
                       <Text style={[styles.summaryLabel, { color: textSecondary }]}>Subtotal</Text>
                       <Text style={[styles.summaryValue, { color: textPrimary }]}>
@@ -178,7 +184,7 @@ export function VentaDetailModal({
                     {selectedVenta.propina > 0 && (
                       <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: textSecondary }]}>Propina</Text>
-                        <Text style={[styles.summaryValue, { color: "#10B981" }]}>
+                        <Text style={[styles.summaryValue, { color: accentOnSurface }]}>
                           +${Number(selectedVenta.propina).toLocaleString("es-CL")}
                         </Text>
                       </View>
@@ -193,8 +199,8 @@ export function VentaDetailModal({
                   </View>
                 </ScrollView>
 
-                <Pressable style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} onPress={onClose}>
-                  <Text style={styles.modalCloseBtnText}>Cerrar Detalles</Text>
+                <Pressable style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalles de venta">
+                  <Text style={[styles.modalCloseBtnText, { color: accentText }]}>Cerrar Detalles</Text>
                 </Pressable>
               </View>
             )
@@ -209,26 +215,26 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, borderWidth: 1, borderBottomWidth: 0, height: "85%" },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  modalTitleText: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  modalSubText: { fontSize: 12, fontWeight: "600" },
+  modalTitleText: { fontSize: 24, fontFamily: FontFamily.black, letterSpacing: -0.5 },
+  modalSubText: { fontSize: 12, fontFamily: FontFamily.semibold, flexShrink: 1, minWidth: 0 },
   closeBtn: { width: 40, height: 40, borderRadius: BorderRadius.full, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
-  statusBadgeDetail: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
-  statusTextDetail: { fontSize: 11, fontWeight: "900" },
+  statusBadgeDetail: { flexShrink: 0, paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
+  statusTextDetail: { fontSize: 11, fontFamily: FontFamily.black },
   infoCard: { flex: 1, padding: 16, borderRadius: BorderRadius.full, borderWidth: 1 },
-  infoLabel: { fontSize: 10, fontWeight: "900", textTransform: "uppercase", marginBottom: 6 },
-  infoValue: { fontSize: 14, fontWeight: "800" },
-  sectionLabel: { fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
+  infoLabel: { fontSize: 10, fontFamily: FontFamily.black, textTransform: "uppercase", marginBottom: 6 },
+  infoValue: { fontSize: 14, fontFamily: FontFamily.extrabold },
+  sectionLabel: { fontSize: 11, fontFamily: FontFamily.black, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
   clienteCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1 },
   avatarCircle: { width: 32, height: 32, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
-  clienteName: { fontSize: 14, fontWeight: "800" },
+  clienteName: { fontSize: 14, fontFamily: FontFamily.extrabold, flexShrink: 1 },
   summaryCard: { marginTop: 20, padding: 20, borderRadius: BorderRadius.full, borderWidth: 1 },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  summaryLabel: { fontWeight: "700" },
-  summaryValue: { fontWeight: "800" },
+  summaryLabel: { fontFamily: FontFamily.bold },
+  summaryValue: { fontFamily: FontFamily.extrabold },
   summaryDivider: { height: 1, marginVertical: 10 },
   summaryTotalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  totalLabel: { fontSize: 16, fontWeight: "900" },
-  totalValue: { fontSize: 24, fontWeight: "900" },
+  totalLabel: { fontSize: 16, fontFamily: FontFamily.black },
+  totalValue: { fontSize: 24, fontFamily: FontFamily.black },
   modalCloseBtn: { height: 56, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center", marginTop: 10, marginBottom: 20 },
-  modalCloseBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  modalCloseBtnText: { fontSize: 16, fontFamily: FontFamily.extrabold },
 });

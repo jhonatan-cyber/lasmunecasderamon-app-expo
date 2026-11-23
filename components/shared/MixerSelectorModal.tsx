@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -77,7 +78,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
             gap: 12,
           }}
         >
-          <Text style={{ color: textPrimary, fontWeight: '700' }}>
+          <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
             {title}
           </Text>
           <TextInput
@@ -97,6 +98,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
           <ScrollView
             style={{ maxHeight: 360 }}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {choices.map((p) => {
               const stock = stockLabel(p);
@@ -111,6 +113,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
                     paddingVertical: 14,
                     borderBottomWidth: 1,
                     borderColor,
+                    backgroundColor: cardBg,
                   }}
                 >
                   <View
@@ -133,7 +136,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
                         {p.producto_nombre} {p.nombre}
                       </Text>
                       {!sinRecargo && topeAcompanamiento > 0 && precio <= 0 && (
-                        <Text style={{ color: '#F59E0B', fontSize: 12, marginTop: 2 }}>
+                        <Text style={{ color: accentOnSurface, fontSize: 12, marginTop: 2 }}>
                           Sin precio configurado: no suma excedente
                         </Text>
                       )}
@@ -161,9 +164,20 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
           <Pressable
             accessibilityRole="button"
             onPress={onClose}
-            style={{ padding: 12 }}
+            style={{
+              backgroundColor: accentColor,
+              padding: 14,
+              borderRadius: 14,
+            }}
           >
-            <Text style={{ color: accentOnSurface, textAlign: 'center' }}>
+            <Text
+              style={{
+                color: cardBg,
+                textAlign: 'center',
+                fontFamily: FontFamily.bold,
+                fontSize: 16,
+              }}
+            >
               Cerrar
             </Text>
           </Pressable>

@@ -1,6 +1,8 @@
 import React from "react";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type SelectionFloatProps = {
   selectedDatesCount: number;
@@ -21,6 +23,7 @@ export function SelectionFloat({
   onClear,
   onViewDetails,
 }: SelectionFloatProps) {
+  const { accentColor: dangerColor, accentText } = useAccentColor();
   if (selectedDatesCount === 0) return null;
 
   return (
@@ -35,14 +38,16 @@ export function SelectionFloat({
         seleccionados
       </Text>
       <View style={styles.selectionActions}>
-        <Pressable onPress={onClear} style={styles.clearBtn}>
-          <Text style={styles.clearBtnText}>Borrar</Text>
+        <Pressable onPress={onClear} accessibilityRole="button" accessibilityLabel="Borrar selección de días" style={styles.clearBtn}>
+          <Text style={[styles.clearBtnText, { color: dangerColor }]}>Borrar</Text>
         </Pressable>
         <Pressable
           onPress={onViewDetails}
+          accessibilityRole="button"
+          accessibilityLabel="Ver detalles de días seleccionados"
           style={[styles.viewBtn, { backgroundColor: accentColor }]}
         >
-          <Text style={styles.viewBtnText}>Detalles</Text>
+          <Text style={[styles.viewBtnText, { color: accentText }]}>Detalles</Text>
         </Pressable>
       </View>
     </View>
@@ -65,10 +70,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 5,
   },
-  selectionText: { fontWeight: "700" },
+  selectionText: { fontFamily: FontFamily.bold },
   selectionActions: { flexDirection: "row", gap: 10 },
   clearBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  clearBtnText: { color: "#EF4444", fontWeight: "800" },
+  clearBtnText: { fontFamily: FontFamily.extrabold },
   viewBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: BorderRadius.full },
-  viewBtnText: { color: "#FFF", fontWeight: "800" },
+  viewBtnText: { fontFamily: FontFamily.extrabold },
 });

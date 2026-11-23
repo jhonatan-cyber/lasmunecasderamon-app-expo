@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 import { styles } from "../ServiceModal.styles";
 import { formatCurrency } from "@/utils/format";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 
 interface ServiceReceiptSummaryProps {
   service: any;
@@ -97,7 +98,7 @@ export function ServiceReceiptSummary({
               styles.productName,
               {
                 color: textPrimary,
-                fontWeight: "800",
+                fontFamily: FontFamily.extrabold,
                 fontSize: isTablet ? 22 : 16,
               },
             ]}
@@ -111,7 +112,7 @@ export function ServiceReceiptSummary({
             {
               color: accentOnSurface,
               fontSize: isTablet ? 26 : 18,
-              fontWeight: "900",
+              fontFamily: FontFamily.black,
             },
           ]}
         >

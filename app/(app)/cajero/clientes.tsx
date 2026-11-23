@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import VirtualizedList from "@/components/shared/VirtualizedList";
-import { contentColumn } from "@/constants/layout";
+import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -23,6 +23,7 @@ import { ClientCard } from "@/components/cajero/clientes/ClientCard";
 import { ClientFormModal } from "@/components/cajero/clientes/ClientFormModal";
 import { LoadBalanceModal } from "@/components/cajero/clientes/LoadBalanceModal";
 import { ClientHistoryModal } from "@/components/cajero/clientes/ClientHistoryModal";
+import { PremiumAlert } from "@/components/ui/PremiumAlert";
 
 const clientKey = (item: Client) => String(item.id);
 const formatSummaryMoney = (value: number) => `$${Math.round(value).toLocaleString()}`;
@@ -33,6 +34,10 @@ export default function ClientesScreen() {
     isDark,
     textPrimary,
     textSecondary,
+    bg,
+    accentOnSurface,
+    accentBg,
+    accentText,
     router,
     insets,
     isTablet,
@@ -88,6 +93,9 @@ export default function ClientesScreen() {
     unformatCurrency,
     handleLoadBalance,
     confirmDelete,
+    deleteConfirm,
+    setDeleteConfirm,
+    handleDelete,
   } = useClientes();
 
   const renderClientCard = React.useCallback(({ item }: { item: Client }) => (
@@ -108,7 +116,7 @@ export default function ClientesScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#FFFFFF" },
+        { backgroundColor: bg },
       ]}
     >
       <Stack.Screen options={{ headerShown: false }} />
@@ -120,55 +128,40 @@ export default function ClientesScreen() {
         onBack={() => router.back()}
       />
 
-      <View style={styles.content}>
-        <View style={styles.searchOuter}>
-          <SearchBar
-            placeholder="Buscar cliente por nombre, RUN o teléfono..."
-            value={search}
-            onChangeText={setSearch}
-            onClear={() => setSearch("")}
-          />
+      {/* Sticky header: buscador y total saldo */}
+      <View style={styles.searchOuter}>
+        <SearchBar
+          placeholder="Buscar cliente por nombre, RUN o teléfono..."
+          value={search}
+          onChangeText={setSearch}
+          onClear={() => setSearch("")}
+          debounceMs={0}
+        />
 
-          <View style={styles.summaryContainer}>
-            <View
-              style={[styles.summaryPill, { backgroundColor: "#10B98110" }]}
+        <View style={[styles.summaryContainer, { justifyContent: 'center' }]}>
+          <View
+            style={[styles.summaryPill, { backgroundColor: accentBg }]}
+          >
+            <Ionicons name="wallet-outline" size={FontSize.xs} color={accentOnSurface} />
+            <Text
+              style={[
+                styles.summaryLabel,
+                { color: accentText },
+              ]}
             >
-              <Ionicons name="wallet-outline" size={FontSize.xs} color="#10B981" />
-              <Text
-                style={[
-                  styles.summaryLabel,
-                  { color: isDark ? "#FFFFFF" : "#111827" },
-                ]}
-              >
-                TOTAL SALDO
-              </Text>
-              <AnimatedNumber
-                style={[styles.summaryValue, { color: "#10B981" }]}
-                value={Number(totals.totalSaldo || 0)}
-                format={formatSummaryMoney}
-              />
-            </View>
-            <View
-              style={[styles.summaryPill, { backgroundColor: "#EF444410" }]}
-            >
-              <Ionicons name="alert-circle-outline" size={FontSize.xs} color="#EF4444" />
-              <Text
-                style={[
-                  styles.summaryLabel,
-                  { color: isDark ? "#FFFFFF" : "#111827" },
-                ]}
-              >
-                TOTAL DEUDA
-              </Text>
-              <AnimatedNumber
-                style={[styles.summaryValue, { color: "#EF4444" }]}
-                value={Number(totals.totalDeuda || 0)}
-                format={formatSummaryMoney}
-              />
-            </View>
+              TOTAL SALDO
+            </Text>
+            <AnimatedNumber
+              style={[styles.summaryValue, { color: accentOnSurface }]}
+              value={Number(totals.totalSaldo || 0)}
+              format={formatSummaryMoney}
+            />
           </View>
         </View>
+      </View>
 
+      {/* Lista scrolleable de clientes */}
+      <View style={styles.listContainer}>
         {loading ? (
           <View style={{ padding: 16 }}>
             {[1, 2, 3, 4].map((i) => (
@@ -188,6 +181,7 @@ export default function ClientesScreen() {
             keyExtractor={clientKey}
             numColumns={isTablet ? 2 : 1}
             contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -203,7 +197,6 @@ export default function ClientesScreen() {
               <EmptyState
                 icon="people-outline"
                 title={search ? "No se encontraron clientes" : "No hay clientes registrados"}
-                message={search ? "Intenta con otros términos de búsqueda" : "Agrega tu primer cliente para comenzar"}
                 actionLabel={!search ? "Nuevo Cliente" : undefined}
                 onAction={!search ? handleOpenNew : undefined}
               />
@@ -286,13 +279,26 @@ export default function ClientesScreen() {
         setRefreshingHistory={setRefreshingHistory}
         onClose={() => setHistoryModalVisible(false)}
       />
+
+      {/* Delete Confirmation Alert */}
+      <PremiumAlert
+        visible={deleteConfirm !== null}
+        title="Eliminar Cliente"
+        message={deleteConfirm ? `¿Está seguro que desea eliminar a ${deleteConfirm.name} ${deleteConfirm.lastName}?` : ''}
+        type="danger"
+        showCancel
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+        onDismiss={() => setDeleteConfirm(null)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1 },
+  listContainer: { flex: 1 },
   searchOuter: {
     padding: 16,
     borderBottomWidth: 1,
@@ -309,7 +315,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   summaryContainer: {
     flexDirection: "row",
@@ -339,7 +345,7 @@ const styles = StyleSheet.create({
   listContent: {
     ...contentColumn,
     padding: 10,
-    paddingBottom: 100,
+    paddingBottom: tabBarBottomPadding,
   },
   emptyContainer: {
     alignItems: "center",
@@ -349,7 +355,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: FontSize.sm,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   backBtnRight: {
     flexDirection: "row",
@@ -361,9 +367,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextHeader: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
-    letterSpacing: 0.5,
   },
 });

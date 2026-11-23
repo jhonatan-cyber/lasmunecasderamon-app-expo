@@ -115,7 +115,7 @@ export default function PantallaAsistenciaScreen() {
           onPress={() => setConfirmacionSalida(true)}
           style={[styles.salirBtn, { borderColor: DANGER }]}
           accessibilityRole="button"
-          accessibilityLabel="Salir del modo pantalla"
+          accessibilityLabel="Salir de la pantalla de asistencia"
         >
           <Ionicons name="log-out-outline" size={18} color={DANGER} />
           <Text style={[styles.salirTexto, { color: DANGER }]}>Salir</Text>
@@ -145,7 +145,7 @@ export default function PantallaAsistenciaScreen() {
             onChangeText={setSearchTerm}
           />
           {searchTerm !== '' && (
-            <Pressable onPress={() => setSearchTerm('')}>
+            <Pressable onPress={() => setSearchTerm('')} accessibilityRole="button" accessibilityLabel="Limpiar búsqueda">
               <Ionicons name="close-circle" size={20} color={textSecondary} />
             </Pressable>
           )}

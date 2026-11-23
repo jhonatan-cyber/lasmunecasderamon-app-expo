@@ -1,5 +1,6 @@
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { formatCurrency } from "@/utils/format";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -319,13 +320,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
   value: {
     fontSize: 26,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     letterSpacing: -0.5,
   },
   exportBtn: {
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
     minWidth: 118,
   },
   exportBtnText: {
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 12,
   },
 });

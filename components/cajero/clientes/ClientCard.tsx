@@ -6,6 +6,7 @@ import { useRenderCount } from '@/hooks/useRenderCount';
 import { FontFamily, TabularNumbers } from '@/constants/fonts';
 import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface ClientCardProps {
     item: Client;
@@ -32,136 +33,112 @@ export const ClientCard = memo(function ClientCard({
     handleOpenEdit,
     confirmDelete
 }: ClientCardProps) {
+    const { cardBg, borderColor: themeBorderColor, accentOnSurface, accentColor, accentUi, accentBg } = useAccentColor();
     useRenderCount('ClientCard', { clientId: item.id, saldo: item.saldo });
-    const bg = isDark ? "#1A1A1A" : "#FFFFFF";
-    const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
+    const hasSaldo = Number(item.saldo) > 0;
+    const saldoColor = accentOnSurface;
 
     return (
         <View style={[
             styles.clientCard,
             !isTablet && styles.clientCardMobile,
-            { backgroundColor: bg, borderColor },
+            { backgroundColor: cardBg, borderColor: themeBorderColor },
             isDark && styles.clientCardNeon,
         ]}>
-            <View style={styles.cardHeader}>
-                {}
-                <View style={styles.clientInfoMain}>
-                    <View style={styles.textContainer}>
+            <View style={styles.cardContent}>
+                {/* Info + Balance section */}
+                <View style={styles.infoRow}>
+                    <View style={styles.infoMain}>
                         <Text style={[styles.clientName, { color: textPrimary }]} numberOfLines={1}>
                             {item.name} {item.lastName}
                         </Text>
-                        
-                        <View style={styles.metadataArea}>
-                            <View style={styles.infoRowSmall}>
-                                <Ionicons name="card-outline" size={13} color={textSecondary} />
-                                <Text style={[styles.clientSub, { color: textSecondary }]} numberOfLines={1}>
-                                    {item.run || "Sin RUN"}
-                                </Text>
-                            </View>
-                            <View style={styles.infoRowSmall}>
-                                <Ionicons name="call-outline" size={13} color={textSecondary} />
-                                <Text style={[styles.clientSub, { color: textSecondary }]} numberOfLines={1}>
-                                    {item.phone || "Sin Teléfono"}
-                                </Text>
-                            </View>
+                        <View style={styles.metadataRow}>
+                            {item.run ? (
+                                <View style={styles.metadataItem}>
+                                    <Ionicons name="card-outline" size={11} color={textSecondary} />
+                                    <Text style={[styles.metadataText, { color: textSecondary }]} numberOfLines={1}>
+                                        {item.run}
+                                    </Text>
+                                </View>
+                            ) : null}
+                            {item.phone ? (
+                                <View style={styles.metadataItem}>
+                                    <Ionicons name="call-outline" size={11} color={textSecondary} />
+                                    <Text style={[styles.metadataText, { color: textSecondary }]} numberOfLines={1}>
+                                        {item.phone}
+                                    </Text>
+                                </View>
+                            ) : null}
                         </View>
                     </View>
-
-                    <View style={styles.statusArea}>
-                        <View style={[styles.balancePill, { 
-                            backgroundColor: item.saldo > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(155,155,155,0.05)', 
-                            borderColor: item.saldo > 0 ? '#10B98130' : 'transparent' 
-                        }]}>
-                            <Ionicons name="wallet-outline" size={14} color={item.saldo > 0 ? '#10B981' : textSecondary} />
-                            <View>
-                                <Text style={[styles.pillLabel, { color: isDark ? '#FFFFFF' : '#111827' }]}>SALDO</Text>
-                                <Text style={[styles.balanceValue, { color: item.saldo > 0 ? '#10B981' : textPrimary }]}>
-                                    ${(Number(item.saldo) || 0).toLocaleString()}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={[styles.balancePill, { 
-                            backgroundColor: Number(item.deuda) > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(155,155,155,0.05)', 
-                            borderColor: Number(item.deuda) > 0 ? 'rgba(239, 68, 68, 0.2)' : 'transparent' 
-                        }]}>
-                            <Ionicons 
-                                name="alert-circle-outline" 
-                                size={14} 
-                                color={Number(item.deuda) > 0 ? '#EF4444' : textSecondary} 
-                            />
-                            <View>
-                                <Text style={[styles.pillLabel, { color: Number(item.deuda) > 0 ? '#EF4444' : textSecondary }]}>DEUDA</Text>
-                                <Text style={[styles.balanceValue, { color: Number(item.deuda) > 0 ? '#EF4444' : textPrimary }]}>
-                                    ${(Number(item.deuda) || 0).toLocaleString()}
-                                </Text>
-                            </View>
+                    <View style={[styles.balancePill, {
+                        backgroundColor: hasSaldo ? `${saldoColor}1A` : 'rgba(155,155,155,0.05)',
+                    }]}>
+                        <Ionicons name="wallet-outline" size={14} color={hasSaldo ? saldoColor : textSecondary} />
+                        <View>
+                            <Text style={[styles.pillLabel, { color: textSecondary }]}>SALDO</Text>
+                            <Text style={[styles.balanceValue, { color: hasSaldo ? saldoColor : textPrimary }]}>
+                                ${(Number(item.saldo) || 0).toLocaleString()}
+                            </Text>
                         </View>
                     </View>
                 </View>
 
-                <View style={styles.cardActionsSidebar}>
+                {/* Actions section */}
+                <View style={[styles.actionsRow, { borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]}>
                     <Pressable
-                        onPress={() => {
-                            haptic.tap();
-                            handleOpenHistory(item);
-                        }}
+                        onPress={() => { haptic.tap(); handleOpenHistory(item); }}
                         accessibilityRole="button"
                         accessibilityLabel={`Ver historial de ${item.name}`}
                         accessibilityHint="Muestra el historial de ventas"
                         hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(168, 85, 247, 0.1)', opacity: pressed ? 0.85 : 1 }]}>
-                                <Ionicons name="eye-outline" size={22} color="#A855F7" />
+                            <View style={[styles.actionBtn, { backgroundColor: `${accentUi}1A`, opacity: pressed ? 0.7 : 1 }]}>
+                                <Ionicons name="eye-outline" size={16} color={accentUi} />
+                                <Text style={[styles.actionLabel, { color: accentUi }]}>Historial</Text>
                             </View>
                         )}
                     </Pressable>
                     <Pressable
-                        onPress={() => {
-                            haptic.tap();
-                            handleOpenLoad(item);
-                        }}
+                        onPress={() => { haptic.tap(); handleOpenLoad(item); }}
                         accessibilityRole="button"
                         accessibilityLabel={`Cargar saldo a ${item.name}`}
                         accessibilityHint="Abre el formulario para cargar saldo"
                         hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: '#10B981', opacity: pressed ? 0.85 : 1 }]}>
-                                <Ionicons name="wallet" size={22} color="#FFFFFF" />
+                            <View style={[styles.actionBtn, { backgroundColor: `${saldoColor}1A`, opacity: pressed ? 0.7 : 1 }]}>
+                                <Ionicons name="wallet" size={16} color={saldoColor} />
+                                <Text style={[styles.actionLabel, { color: saldoColor }]}>Cargar</Text>
                             </View>
                         )}
                     </Pressable>
                     <Pressable
-                        onPress={() => {
-                            haptic.tap();
-                            handleOpenEdit(item);
-                        }}
+                        onPress={() => { haptic.tap(); handleOpenEdit(item); }}
                         accessibilityRole="button"
                         accessibilityLabel={`Editar ${item.name}`}
                         accessibilityHint="Abre el formulario de edición"
                         hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(59, 130, 246, 0.1)', opacity: pressed ? 0.85 : 1 }]}>
-                                <Ionicons name="create-outline" size={22} color="#3B82F6" />
+                            <View style={[styles.actionBtn, { backgroundColor: `${accentColor}1A`, opacity: pressed ? 0.7 : 1 }]}>
+                                <Ionicons name="create-outline" size={16} color={accentColor} />
+                                <Text style={[styles.actionLabel, { color: accentColor }]}>Editar</Text>
                             </View>
                         )}
                     </Pressable>
                     <Pressable
-                        onPress={() => {
-                            haptic.tap();
-                            confirmDelete(item);
-                        }}
+                        onPress={() => { haptic.tap(); confirmDelete(item); }}
                         accessibilityRole="button"
                         accessibilityLabel={`Eliminar ${item.name}`}
                         accessibilityHint="Confirma la eliminación del cliente"
                         hitSlop={HitSlop.sm}
                     >
                         {({ pressed }) => (
-                            <View style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', opacity: pressed ? 0.85 : 1 }]}>
-                                <Ionicons name="trash-outline" size={22} color="#EF4444" />
+                            <View style={[styles.actionBtn, { backgroundColor: accentBg, opacity: pressed ? 0.7 : 1 }]}>
+                                <Ionicons name="trash-outline" size={16} color={accentColor} />
+                                <Text style={[styles.actionLabel, { color: accentColor }]}>Eliminar</Text>
                             </View>
                         )}
                     </Pressable>
@@ -174,11 +151,10 @@ export const ClientCard = memo(function ClientCard({
 const styles = StyleSheet.create({
     clientCard: {
         flex: 1,
-        padding: 10,
-        paddingRight: 6,
-        borderRadius: 20,
+        padding: 12,
+        borderRadius: BorderRadius.xxl,
         borderWidth: 1,
-        marginBottom: 12,
+        marginBottom: 10,
         marginHorizontal: 6,
         elevation: 2,
         shadowColor: '#000',
@@ -187,7 +163,6 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
     },
     clientCardNeon: {
-        shadowColor: '#A855F7',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
@@ -197,81 +172,78 @@ const styles = StyleSheet.create({
         flex: undefined,
         width: '100%',
         marginHorizontal: 0,
-        paddingRight: 10,
     },
-    cardHeader: { 
-        flexDirection: 'row', 
-        alignItems: 'stretch', 
-        flex: 1 
+    cardContent: {
+        flex: 1,
+        gap: 10,
     },
-    clientInfoMain: { 
-        flex: 1, 
-        paddingRight: 4 
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
     },
-    textContainer: { 
-        flex: 1, 
-        justifyContent: 'flex-start' 
-    },
-    metadataArea: { 
-        marginTop: 8, 
-        gap: 4 
-    },
-    infoRowSmall: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        gap: 6 
+    infoMain: {
+        flex: 1,
+        minWidth: 0,
     },
     clientName: {
         fontSize: FontSize.sm,
         fontFamily: FontFamily.bold,
-        letterSpacing: -0.2
+        letterSpacing: -0.2,
+        marginBottom: 2,
     },
-    clientSub: {
+    metadataRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    metadataItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+    },
+    metadataText: {
         fontSize: FontSize.xxs,
-        fontFamily: FontFamily.semibold,
-        textTransform: 'uppercase',
-        letterSpacing: 0.4,
-        opacity: 0.75
+        fontFamily: FontFamily.medium,
+        opacity: 0.75,
     },
-    statusArea: { 
-        marginTop: 12, 
-        gap: 8 
-    },
-    balancePill: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        alignSelf: 'stretch', 
-        paddingHorizontal: 12, 
-        paddingVertical: 8, 
-        borderRadius: BorderRadius.full, 
-        gap: 10,
-        borderWidth: 1,
+    balancePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: BorderRadius.full,
+        gap: 6,
     },
     pillLabel: {
-        fontSize: FontSize.xxs,
+        fontSize: 9,
         fontFamily: FontFamily.bold,
         letterSpacing: 0.6,
-        marginBottom: -2,
-        opacity: 0.7
+        marginBottom: -1,
+        opacity: 0.7,
     },
     balanceValue: {
-        fontSize: FontSize.sm,
+        fontSize: FontSize.xs,
         fontFamily: FontFamily.bold,
-        ...TabularNumbers
+        ...TabularNumbers,
     },
-    cardActionsSidebar: { 
-        paddingLeft: 12, 
-        borderLeftWidth: 1, 
-        borderLeftColor: 'rgba(155,155,155,0.08)',
-        justifyContent: 'center',
+    actionsRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: 14
+        paddingTop: 10,
+        borderTopWidth: 1,
+        gap: 6,
     },
-    actionBtn: { 
-        width: 44, 
-        height: 44, 
-        borderRadius: BorderRadius.full, 
-        justifyContent: 'center', 
-        alignItems: 'center' 
+    actionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: BorderRadius.md,
+        gap: 4,
+    },
+    actionLabel: {
+        fontSize: FontSize.xxs,
+        fontFamily: FontFamily.semibold,
     },
 });

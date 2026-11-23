@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius, FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { accentTextColor } from '@/utils/color';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 
@@ -205,11 +206,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   subtitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 2,
   },
   list: {
@@ -228,12 +229,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 12,
   },
   disabledReason: {
     fontSize: FontSize.xxs,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     marginTop: 4,
   },
   confirmBtn: {
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
   confirmBtnText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     letterSpacing: 1,
   },
 });

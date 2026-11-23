@@ -1,5 +1,6 @@
 import { ActionGrid, type ActionGridItem } from "@/components/ui/ActionGrid";
 import { useOutbox } from "@/hooks/useOutbox";
+import { useAccentColor } from "@/hooks/useAccentColor";
 
 interface BarmanActionGridProps {
   /** Transferencias de stock que el servidor todavía no confirmó. */
@@ -13,6 +14,7 @@ export const BarmanActionGrid = ({
   bloqueado = false,
 }: BarmanActionGridProps) => {
   const { pendingCount, failedCount, isOffline } = useOutbox();
+  const { accentColor, accentOnSurface, accentUi } = useAccentColor();
   const operacionesSinEnviar = pendingCount + failedCount;
 
   const actions: ActionGridItem[] = [
@@ -20,7 +22,7 @@ export const BarmanActionGrid = ({
       title: "BAR",
       description: "Stock y transferencias",
       icon: "beer",
-      color: "#F97316",
+      color: accentColor,
       route: "/barman/bar",
       badge: pendingTransfers,
       badgeLabel: "transferencias sin confirmar",
@@ -29,7 +31,7 @@ export const BarmanActionGrid = ({
       title: "PEDIDOS",
       description: "Realizar pedidos",
       icon: "basket",
-      color: "#8B5CF6",
+      color: accentUi,
       route: "/barman/pedidos",
       bloqueoPorCaja: bloqueado,
     },
@@ -37,7 +39,7 @@ export const BarmanActionGrid = ({
       title: "SERVICIOS",
       description: "Gestión de privados",
       icon: "bed",
-      color: "#10B981",
+      color: accentOnSurface,
       route: "/barman/servicios",
       bloqueoPorCaja: bloqueado,
     },
@@ -45,7 +47,7 @@ export const BarmanActionGrid = ({
       title: "COVERS",
       description: "Entregar entradas del día",
       icon: "ticket-outline",
-      color: "#F59E0B",
+      color: accentOnSurface,
       route: "/barman/covers",
       bloqueoPorCaja: bloqueado,
     },
@@ -53,7 +55,7 @@ export const BarmanActionGrid = ({
       title: "COLACIONES",
       description: "Entregar el corto por turno",
       icon: "beer-outline",
-      color: "#EAB308",
+      color: accentOnSurface,
       route: "/barman/colaciones",
       bloqueoPorCaja: bloqueado,
     },
@@ -61,7 +63,7 @@ export const BarmanActionGrid = ({
       title: "RESUMEN",
       description: "Calendario de actividad",
       icon: "stats-chart",
-      color: "#3B82F6",
+      color: accentColor,
       route: "/barman/resumen",
     },
     // Solo aparece cuando hay algo que resolver: sin conexión o trabajo que el
@@ -72,7 +74,7 @@ export const BarmanActionGrid = ({
             title: "PENDIENTES",
             description: "Operaciones sin enviar",
             icon: "cloud-offline" as const,
-            color: "#EF4444",
+            color: accentColor,
             route: "/barman/pendientes",
             badge: operacionesSinEnviar,
             badgeLabel: "operaciones sin enviar",

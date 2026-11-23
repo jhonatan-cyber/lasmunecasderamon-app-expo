@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { showToast } from '@/utils/toast-lazy';
@@ -27,6 +29,7 @@ export function BloqueoPorCaja({
     style,
     mensaje = CAJA_REQUERIDA_MENSAJE,
 }: BloqueoPorCajaProps) {
+    const { accentText } = useAccentColor();
     const [mostrandoTooltip, setMostrandoTooltip] = useState(false);
 
     const avisar = useCallback(() => {
@@ -65,8 +68,8 @@ export function BloqueoPorCaja({
             >
                 {mostrandoTooltip && (
                     <View style={[styles.tooltip, { pointerEvents: 'none' as const }]}>
-                        <Ionicons name="lock-closed" size={12} color="#FFFFFF" />
-                        <Text style={styles.tooltipTexto}>{mensaje}</Text>
+                        <Ionicons name="lock-closed" size={12} color={accentText} />
+                        <Text style={[styles.tooltipTexto, { color: accentText }]}>{mensaje}</Text>
                     </View>
                 )}
             </Pressable>
@@ -102,9 +105,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(17, 24, 39, 0.95)',
     },
     tooltipTexto: {
-        color: '#FFFFFF',
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         flexShrink: 1,
     },
 });

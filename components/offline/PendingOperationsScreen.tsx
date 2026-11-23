@@ -35,7 +35,6 @@ const formatFecha = (timestamp: number) => {
 
 export interface PendingOperationsScreenProps {
     title: string;
-    emptySubtitle: string;
     createsWorkOffline?: boolean;
     onBack: () => void;
 }
@@ -43,11 +42,10 @@ export interface PendingOperationsScreenProps {
 
 export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = ({
     title,
-    emptySubtitle,
     createsWorkOffline = true,
     onBack,
 }) => {
-    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted, accentOnSurface} =
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted, accentOnSurface, accentText, accentBg } =
         useAccentColor();
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -148,7 +146,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                 </Text>
 
                 {intent.lastError ? (
-                    <Text style={styles.cardError} numberOfLines={2}>
+                    <Text style={[styles.cardError, { color: accentColor }]} numberOfLines={2}>
                         {intent.lastError}
                     </Text>
                 ) : null}
@@ -168,10 +166,10 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
 
                     <Pressable
                         onPress={() => discard(intent.id)}
-                        style={[styles.actionButton, { borderColor: '#EF4444' }]}
+                        style={[styles.actionButton, { borderColor: accentColor }]}
                     >
-                        <Ionicons name='trash-outline' size={16} color='#EF4444' />
-                        <Text style={[styles.actionText, { color: '#EF4444' }]}>DESCARTAR</Text>
+                        <Ionicons name='trash-outline' size={16} color={accentColor} />
+                        <Text style={[styles.actionText, { color: accentColor }]}>DESCARTAR</Text>
                     </Pressable>
                 </View>
             </View>
@@ -216,11 +214,11 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                     ]}
                 >
                     {isFlushing ? (
-                        <ActivityIndicator color='#FFFFFF' size='small' />
+                        <ActivityIndicator color={accentText} size='small' />
                     ) : (
-                        <Ionicons name='cloud-upload-outline' size={18} color='#FFFFFF' />
+                        <Ionicons name='cloud-upload-outline' size={18} color={accentText} />
                     )}
-                    <Text style={styles.syncText}>
+                    <Text style={[styles.syncText, { color: accentText }]}>
                         {isFlushing ? 'SINCRONIZANDO...' : 'SINCRONIZAR AHORA'}
                     </Text>
                 </Pressable>
@@ -235,13 +233,8 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
             >
                 {intents.length === 0 ? (
                     <View style={[styles.emptyCard, { backgroundColor: cardBg, borderColor }]}>
-                        <Ionicons name='checkmark-circle-outline' size={44} color='#10B981' />
+                        <Ionicons name='checkmark-circle-outline' size={44} color={accentOnSurface} />
                         <Text style={[styles.emptyTitle, { color: textPrimary }]}>Todo enviado</Text>
-                        <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                            {isOffline && createsWorkOffline
-                                ? 'Cuando vuelva la conexión, las operaciones nuevas que hagas saldrán solas.'
-                                : emptySubtitle}
-                        </Text>
                     </View>
                 ) : (
                     intents.map(renderIntent)
@@ -284,7 +277,7 @@ const styles = StyleSheet.create({
         height: 46,
         borderRadius: BorderRadius.full,
     },
-    syncText: { color: '#FFFFFF', fontWeight: '900', fontSize: 12, letterSpacing: 0.8 },
+    syncText: { fontWeight: '900', fontSize: 12, letterSpacing: 0.8 },
     listContent: { paddingHorizontal: 16, paddingTop: 14, gap: 12 },
     card: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -292,7 +285,7 @@ const styles = StyleSheet.create({
     chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.full },
     chipText: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.6 },
     cardMeta: { fontSize: 12 },
-    cardError: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
+    cardError: { fontSize: 12, fontWeight: '600' },
     cardActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
     actionButton: {
         flexDirection: 'row',

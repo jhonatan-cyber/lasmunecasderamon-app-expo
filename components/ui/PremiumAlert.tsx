@@ -214,7 +214,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                     <View style={styles.alertActions}>
                         {showCancel && (
                             <Pressable
-                                onPress={onCancel}
+                                onPress={handleDismiss}
                                 style={[styles.alertBtn, { backgroundColor: surfaceMuted, flex: 1, height: isTablet ? 60 : 54 }]}
                                 accessibilityRole="button"
                                 accessibilityLabel={cancelText}

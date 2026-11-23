@@ -14,6 +14,7 @@ import {
 } from '@/utils/servicioEstado';
 import { FontSize, MIN_TOUCH_TARGET, BorderRadius, HitSlop } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface DetailAction {
     key: string;
@@ -53,6 +54,7 @@ export function ServiceDetailModal({
     onFinalizar,
     serverOffset = 0,
 }: DetailModalProps) {
+    const { accentColor, accentUi, accentOnSurface } = useAccentColor();
     // El tiempo se calcula con Date.now(); sin un tick propio el modal abierto
     // en un servicio en curso se queda con el valor del momento en que se abrió.
     // El reloj se recalcula desde este instante: React Compiler cachea las
@@ -221,7 +223,7 @@ export function ServiceDetailModal({
                                 <Text style={[styles.gridLabel, { color: theme.textMuted }]}>ANFITRIONAS</Text>
                                 <View style={styles.badgeContainer}>
                                     {service?.anfitrionas?.split(', ').map((name: string, idx: number) => {
-                                        const badgeColors = ['#F59E0B', '#A855F7', '#3B82F6', '#EC4899', '#06B6D4', '#10B981'];
+                                        const badgeColors = [accentColor, accentUi, accentColor, accentColor, accentOnSurface, accentOnSurface];
                                         const color = badgeColors[idx % badgeColors.length];
                                         const foto = service?.anfitrionas_fotos?.[idx];
                                         return (

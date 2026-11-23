@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -167,7 +168,7 @@ export function CalendarFilter({
               style={[
                 styles.dayCell,
                 !isCurrentMonth && styles.dayOtherMonth,
-                isToday && styles.todayCell,
+                isToday && [styles.todayCell, { borderColor: accentColor }],
                 hasAttendance && styles.hasAttendanceCell,
               ]}
               accessibilityRole="button"
@@ -206,7 +207,7 @@ export function CalendarFilter({
           </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendDotToday]} />
+          <View style={[styles.legendDot, styles.legendDotToday, { borderColor: accentColor }]} />
           <Text style={[styles.legendText, { color: textSecondary }]}>
             Hoy
           </Text>
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   dayNamesRow: {
     flexDirection: 'row',
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -268,19 +269,18 @@ const styles = StyleSheet.create({
   todayCell: {
     borderRadius: 9999,
     borderWidth: 2,
-    borderColor: '#3B82F6',
   },
   hasAttendanceCell: {},
   dayText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     zIndex: 1,
   },
   dayTextOtherMonth: {
     opacity: 0.5,
   },
   todayText: {
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   attendanceDot: {
     position: 'absolute',
@@ -310,11 +310,10 @@ const styles = StyleSheet.create({
   },
   legendDotToday: {
     borderWidth: 2,
-    borderColor: '#3B82F6',
     backgroundColor: 'transparent',
   },
   legendText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

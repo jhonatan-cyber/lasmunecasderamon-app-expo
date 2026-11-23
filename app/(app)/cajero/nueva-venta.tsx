@@ -1,6 +1,7 @@
 import { useCartDraft } from "@/hooks/useCartDraft";
 import { useCartExitGuard } from "@/hooks/useCartExitGuard";
-import { formColumn } from "@/constants/layout";
+import { formColumn, tabBarBottomPadding } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import { useCallback, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -280,7 +281,7 @@ export default function NuevaVentaScreen() {
           collapsed={!sections.categories}
           onToggle={() => toggleSection("categories")}
           fontSize={13}
-          fontWeight="900"
+          fontFamily={FontFamily.black}
           accentColor={accentColor}
           textPrimary={textPrimary}
           borderColor={borderColor}
@@ -398,7 +399,7 @@ export default function NuevaVentaScreen() {
                     style={{
                       fontSize: 13,
                       color: accentOnSurface,
-                      fontWeight: "700",
+                      fontFamily: FontFamily.bold,
                       marginTop: 2,
                     }}
                   >
@@ -414,7 +415,7 @@ export default function NuevaVentaScreen() {
                       style={{
                         fontSize: 12,
                         color: textSecondary,
-                        fontWeight: "600",
+                        fontFamily: FontFamily.semibold,
                         marginTop: 1,
                       }}
                     >
@@ -554,6 +555,8 @@ export default function NuevaVentaScreen() {
                     dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
                   }
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={selectedSegundoCliente ? "Repartir prepago con otro cliente" : "Seleccionar segundo cliente para prepago"}
               >
                 <Ionicons
                   name={selectedSegundoCliente ? "people" : "person-add"}
@@ -803,11 +806,11 @@ export default function NuevaVentaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { ...formColumn, padding: 16, paddingBottom: 100 },
+  scrollContent: { ...formColumn, padding: 16, paddingBottom: tabBarBottomPadding },
   section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     marginBottom: 15,
     textTransform: "uppercase",
     opacity: 0.6,
@@ -820,7 +823,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: "rgba(155,155,155,0.03)",
   },
-  selectorText: { fontSize: 14, fontWeight: "700" },
+  selectorText: { fontSize: 14, fontFamily: FontFamily.bold },
   backBtnRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -831,8 +834,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextRight: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },

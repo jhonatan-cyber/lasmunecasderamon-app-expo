@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/format';
 import {
   FlatList,
@@ -40,7 +41,7 @@ import {
 export default function HorasExtrasScreen() {
     const router = useRouter();
     const esAdmin = useIsAdmin();
-    const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { accentColor, isDark, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentText} = useAccentColor();
     const [data, setData] = useState<OvertimeRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -256,8 +257,11 @@ export default function HorasExtrasScreen() {
                 onBack={() => router.back()}
                 rightComponent={
                     esAdmin ? (
-                        <Pressable onPress={openCreate} style={styles.addBtn} accessibilityLabel="Registrar hora extra">
-                            <Ionicons name="add" size={18} color="#FFFFFF" />
+                        <Pressable onPress={openCreate} style={styles.addBtn}
+                            accessibilityRole="button"
+                            accessibilityLabel="Registrar hora extra"
+                        >
+                            <Ionicons name="add" size={18} color={accentText} />
                             <Text style={styles.backText}>Registrar</Text>
                         </Pressable>
                     ) : undefined
@@ -375,7 +379,9 @@ export default function HorasExtrasScreen() {
                                     Total = horas × tarifa
                                 </Text>
                             </View>
-                            <Pressable onPress={() => !submitting && setCreateVisible(false)} hitSlop={10}>
+                            <Pressable onPress={() => !submitting && setCreateVisible(false)} hitSlop={10}
+                                accessibilityRole="button" accessibilityLabel="Cerrar formulario de hora extra"
+                            >
                                 <Ionicons name="close" size={22} color={textSecondary} />
                             </Pressable>
                         </View>
@@ -385,6 +391,7 @@ export default function HorasExtrasScreen() {
                             <Pressable
                                 style={[styles.selectedEmployee, { borderColor: accentColor, backgroundColor: `${accentColor}14` }]}
                                 onPress={() => setSelectedEmployee(null)}
+                                accessibilityRole="button" accessibilityLabel="Deseleccionar trabajador"
                             >
                                 <Ionicons name="person-circle-outline" size={20} color={accentOnSurface} />
                                 <Text style={[styles.selectedEmployeeText, { color: textPrimary }]} numberOfLines={1}>
@@ -419,6 +426,8 @@ export default function HorasExtrasScreen() {
                                                 <Pressable
                                                     style={[styles.employeeRow, { borderBottomColor: borderColor }]}
                                                     onPress={() => setSelectedEmployee({ id: emp.id, name: emp.name, lastName: emp.lastName })}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={`Seleccionar ${emp.name} ${emp.lastName}`}
                                                 >
                                                     <Text style={[styles.employeeName, { color: textPrimary }]} numberOfLines={1}>
                                                         {emp.name} {emp.lastName}
@@ -476,6 +485,8 @@ export default function HorasExtrasScreen() {
                                 style={[styles.modalBtn, { borderColor, backgroundColor: 'transparent' }]}
                                 onPress={() => !submitting && setCreateVisible(false)}
                                 disabled={submitting}
+                                accessibilityRole="button" accessibilityLabel="Cancelar registro de hora extra"
+                                accessibilityState={{ disabled: submitting }}
                             >
                                 <Text style={[styles.modalBtnText, { color: textSecondary }]}>Cancelar</Text>
                             </Pressable>
@@ -483,11 +494,13 @@ export default function HorasExtrasScreen() {
                                 style={[styles.modalBtn, { backgroundColor: accentColor, borderColor: accentColor }, submitting && { opacity: 0.6 }]}
                                 onPress={handleCreate}
                                 disabled={submitting}
+                                accessibilityRole="button" accessibilityLabel="Confirmar registro de hora extra"
+                                accessibilityState={{ disabled: submitting }}
                             >
                                 {submitting ? (
-                                    <ActivityIndicator color="#FFFFFF" size="small" />
+                                    <ActivityIndicator color={accentText} size="small" />
                                 ) : (
-                                    <Text style={[styles.modalBtnText, { color: '#FFFFFF' }]}>Registrar</Text>
+                                    <Text style={[styles.modalBtnText, { color: accentText }]}>Registrar</Text>
                                 )}
                             </Pressable>
                         </View>
@@ -508,8 +521,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', height: 38, borderRadius: 9999,
         backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, gap: 4,
     },
-    backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
-    listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: 100, paddingTop: 6 },
+    backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
+    listContent: { ...contentColumn, paddingHorizontal: 16, paddingBottom: tabBarBottomPadding, paddingTop: 6 },
 
     emptyCard: { borderRadius: 16, padding: 40, alignItems: 'center', marginTop: 20, marginHorizontal: 16 },
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
@@ -519,25 +532,25 @@ const styles = StyleSheet.create({
         padding: 20, paddingBottom: 28, maxHeight: '90%',
     },
     modalHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
-    modalTitle: { fontSize: 18, fontWeight: '800' },
-    modalSubtitle: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-    fieldLabel: { fontSize: 12, fontWeight: '700', marginBottom: 6, marginTop: 8 },
-    input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, fontWeight: '600' },
+    modalTitle: { fontSize: 18, fontFamily: FontFamily.extrabold },
+    modalSubtitle: { fontSize: 12, fontFamily: FontFamily.medium, marginTop: 2 },
+    fieldLabel: { fontSize: 12, fontFamily: FontFamily.bold, marginBottom: 6, marginTop: 8 },
+    input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, fontFamily: FontFamily.semibold },
     employeeList: { borderWidth: 1, borderRadius: 12, marginTop: 8, overflow: 'hidden' },
     employeeRow: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-    employeeName: { fontSize: 14, fontWeight: '700' },
-    employeeNick: { fontSize: 12, fontWeight: '500', marginTop: 1 },
-    emptyEmployees: { fontSize: 13, fontWeight: '500', textAlign: 'center', paddingVertical: 20 },
+    employeeName: { fontSize: 14, fontFamily: FontFamily.bold },
+    employeeNick: { fontSize: 12, fontFamily: FontFamily.medium, marginTop: 1 },
+    emptyEmployees: { fontSize: 13, fontFamily: FontFamily.medium, textAlign: 'center', paddingVertical: 20 },
     selectedEmployee: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
     },
-    selectedEmployeeText: { flex: 1, fontSize: 14, fontWeight: '700' },
+    selectedEmployeeText: { flex: 1, fontSize: 14, fontFamily: FontFamily.bold },
     fieldRow: { flexDirection: 'row', gap: 12 },
     totalPreview: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, marginTop: 18, paddingTop: 14 },
-    totalPreviewLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
-    totalPreviewValue: { fontSize: 22, fontWeight: '900' },
+    totalPreviewLabel: { fontSize: 12, fontFamily: FontFamily.extrabold, letterSpacing: 0.5 },
+    totalPreviewValue: { fontSize: 22, fontFamily: FontFamily.black },
     modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
     modalBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 14, paddingVertical: 13 },
-    modalBtnText: { fontSize: 14, fontWeight: '800' },
+    modalBtnText: { fontSize: 14, fontFamily: FontFamily.extrabold },
 });

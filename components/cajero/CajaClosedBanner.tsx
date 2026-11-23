@@ -1,5 +1,6 @@
 import React from 'react';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,7 +13,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
  * efímero, que se perdía al scrollear).
  */
 export const CajaClosedBanner: React.FC = () => {
-  const { isDark } = useAccentColor();
+  const { accentColor, accentText, accentBg, accentBorder, accentOnSurface } = useAccentColor();
   const router = useRouter();
 
   return (
@@ -20,29 +21,29 @@ export const CajaClosedBanner: React.FC = () => {
       style={[
         styles.banner,
         {
-          backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : '#FEF2F2',
-          borderColor: isDark ? 'rgba(239,68,68,0.40)' : '#FCA5A5',
+          backgroundColor: accentBg,
+          borderColor: accentBorder,
         },
       ]}
       accessibilityRole="alert"
     >
-      <Ionicons name="warning-outline" size={18} color={isDark ? '#F87171' : '#DC2626'} />
+      <Ionicons name="warning-outline" size={18} color={accentColor} />
       <View style={styles.texts}>
-        <Text style={[styles.title, { color: isDark ? '#FCA5A5' : '#B91C1C' }]}>
+        <Text style={[styles.title, { color: accentOnSurface }]}>
           No hay caja abierta.
         </Text>
-        <Text style={[styles.message, { color: isDark ? '#FECACA' : '#B91C1C' }]}>
+        <Text style={[styles.message, { color: accentOnSurface }]}>
           No se pueden realizar ventas sin una caja abierta.
         </Text>
       </View>
       <Pressable
         onPress={() => router.push('/cajero/caja')}
-        style={[styles.button, { borderColor: isDark ? '#F87171' : '#FCA5A5' }]}
+        style={[styles.button, { borderColor: accentColor }]}
         accessibilityLabel="Abrir Caja"
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Text style={[styles.buttonText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
+        <Text style={[styles.buttonText, { color: accentColor }]}>
           Abrir Caja
         </Text>
       </Pressable>
@@ -65,11 +66,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
   message: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 2,
   },
   button: {
@@ -80,6 +81,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
 });

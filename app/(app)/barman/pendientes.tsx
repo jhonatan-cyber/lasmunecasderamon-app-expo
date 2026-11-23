@@ -14,7 +14,6 @@ export default function PendientesScreen() {
     return (
         <PendingOperationsScreen
             title='Pendientes de envío'
-            emptySubtitle='Las operaciones que hagas sin conexión van a aparecer acá hasta que el servidor las confirme.'
             createsWorkOffline={false}
             onBack={() => router.back()}
         />

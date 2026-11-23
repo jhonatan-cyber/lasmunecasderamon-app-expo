@@ -8,6 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole, isCajeroRole } from '@/utils/userRole';
 
@@ -97,6 +98,8 @@ export const AttendanceCodeDisplay = () => {
                     { borderColor: accentColor, backgroundColor: `${accentColor}18` },
                     pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel="Ver código QR de asistencia"
             >
                 <Text style={[styles.label, { color: textSecondary }]}>Código: </Text>
                 <Text style={[styles.code, { color: accentOnSurface }]}>{codigo || '****'}</Text>
@@ -109,7 +112,7 @@ export const AttendanceCodeDisplay = () => {
                 onRequestClose={() => setShowQR(false)}
             >
                 <View style={[styles.modalOverlay, { backgroundColor: bgModal }]}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowQR(false)} />
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowQR(false)} accessibilityRole="button" accessibilityLabel="Cerrar código QR" />
                     {showQR && (
                             <AnimatedView
                                 from={{ opacity: 0, scale: 0.8, translateY: 50 }}
@@ -120,6 +123,8 @@ export const AttendanceCodeDisplay = () => {
                                 <Pressable 
                                     style={styles.closeBtn} 
                                     onPress={() => setShowQR(false)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Cerrar código QR"
                                 >
                                     <Ionicons name="close" size={28} color={textPrimary} />
                                 </Pressable>
@@ -184,13 +189,12 @@ const styles = StyleSheet.create({
     label: {
         color: 'rgba(255,255,255,0.7)',
         fontSize: FontSize.sm,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     code: {
         color: '#FFFFFF',
         fontSize: FontSize.lg,
-        fontWeight: '900',
-        fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
+        fontFamily: FontFamily.black,
     },
     
     modalOverlay: {
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
     },
     qrTitle: {
         fontSize: FontSize.xl,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         marginBottom: 8,
     },
     qrSubtitle: {
@@ -270,14 +274,13 @@ const styles = StyleSheet.create({
     },
     codeLabel: {
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         letterSpacing: 1,
     },
     codeValue: {
         fontSize: FontSize.xl,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: 4,
-        fontFamily: Platform.OS === 'ios' ? 'Courier-Bold' : 'monospace',
     },
     qrFooter: {
         flexDirection: 'row',
@@ -289,7 +292,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: FontSize.xs,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     }
 });
 

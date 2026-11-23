@@ -5,6 +5,7 @@ import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { buildAttendanceMap } from './CalendarFilter';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 export type AttendanceDate = {
   date: string;
@@ -42,7 +43,7 @@ export function DateRangeFilterModal({
   borderColor,
   isDark,
 }: DateRangeFilterModalProps) {
-  const { surfaceMuted } = useAccentColor();
+  const { surfaceMuted, accentText, accentBg } = useAccentColor();
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<[number, number]>([
     now.getFullYear(),
@@ -222,8 +223,8 @@ export function DateRangeFilterModal({
                   style={[
                     styles.dayCell,
                     !isCurrentMonth && styles.dayOtherMonth,
-                    isToday && styles.todayCell,
-                    isInRange && styles.inRangeCell,
+                    isToday && [styles.todayCell, { borderColor: accentColor }],
+                    isInRange && [styles.inRangeCell, { backgroundColor: accentBg }],
                     isEdge && [styles.edgeCell, { backgroundColor: accentColor }],
                   ]}
                   accessibilityRole="button"
@@ -236,7 +237,7 @@ export function DateRangeFilterModal({
                       { color: textPrimary },
                       !isCurrentMonth && styles.dayTextOtherMonth,
                       isToday && styles.todayText,
-                      isEdge && styles.edgeText,
+                      isEdge && [styles.edgeText, { color: accentText }],
                     ]}
                   >
                     {day}
@@ -263,7 +264,7 @@ export function DateRangeFilterModal({
               </Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotToday]} />
+              <View style={[styles.legendDot, styles.legendDotToday, { borderColor: accentColor }]} />
               <Text style={[styles.legendText, { color: textSecondary }]}>
                 Hoy
               </Text>
@@ -288,7 +289,7 @@ export function DateRangeFilterModal({
               accessibilityRole="button"
               accessibilityLabel="Aplicar filtro"
             >
-              <Text style={styles.actionBtnTextPrimary}>
+              <Text style={[styles.actionBtnTextPrimary, { color: accentText }]}>
                 Aplicar
               </Text>
             </Pressable>
@@ -320,11 +321,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   subtitle: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginTop: 2,
   },
   closeBtn: {
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontSize: FontSize.md,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   dayNamesRow: {
     flexDirection: 'row',
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: FontSize.xxs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -377,28 +378,24 @@ const styles = StyleSheet.create({
   todayCell: {
     borderRadius: 9999,
     borderWidth: 2,
-    borderColor: '#3B82F6',
   },
-  inRangeCell: {
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-  },
+  inRangeCell: {},
   edgeCell: {
     borderRadius: 9999,
   },
   dayText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     zIndex: 1,
   },
   dayTextOtherMonth: {
     opacity: 0.5,
   },
   todayText: {
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   edgeText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   attendanceDot: {
     position: 'absolute',
@@ -427,12 +424,11 @@ const styles = StyleSheet.create({
   },
   legendDotToday: {
     borderWidth: 2,
-    borderColor: '#3B82F6',
     backgroundColor: 'transparent',
   },
   legendText: {
     fontSize: FontSize.xxs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   actions: {
     flexDirection: 'row',
@@ -447,11 +443,10 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   actionBtnTextPrimary: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: FontFamily.bold,
   },
 });

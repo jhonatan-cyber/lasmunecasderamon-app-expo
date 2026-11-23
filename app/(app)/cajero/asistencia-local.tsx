@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -167,8 +168,8 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 17, fontWeight: '900' },
-  name: { fontSize: 14, fontWeight: '800' },
+  avatarText: { fontSize: 17, fontFamily: FontFamily.black },
+  name: { fontSize: 14, fontFamily: FontFamily.extrabold },
   meta: { fontSize: 12, marginTop: 2 },
   timePill: {
     flexDirection: 'row',
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 9999,
   },
-  timeText: { fontSize: 12, fontWeight: '800' },
+  timeText: { fontSize: 12, fontFamily: FontFamily.extrabold },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 6,
   },
-  backText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
   emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

@@ -162,6 +162,8 @@ vi.mock('@/components/cajero/ventas', async () => {
     VentaActionSheet: Null,
     VentasSkeleton: Null,
     VentaCardSkeleton: Null,
+    VentasStats: Null,
+    VentasFiltersModal: Null,
   };
 });
 

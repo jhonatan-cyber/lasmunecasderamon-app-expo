@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import React from "react";
 import { Image } from "expo-image";
 import {
@@ -51,6 +52,8 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
     accentColor,
     textPrimary,
     borderColor: subtleBorder,
+    accentBg,
+    accentOnSurface,
   } = useAccentColor();
 
   return (
@@ -106,12 +109,12 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 borderColor: isSelected
                   ? accentColor
                   : isOccupied
-                    ? "#EF444450"
+                    ? accentBg
                     : subtleBorder,
                 backgroundColor: isSelected
                   ? `${accentColor}15`
                   : isOccupied
-                    ? "#EF444408"
+                    ? accentBg
                     : "transparent",
                 opacity: isMaxReached && !isSelected ? 0.5 : 1,
               },
@@ -130,7 +133,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                   styles.avatarMini,
                   {
                     backgroundColor: isOccupied
-                      ? "#EF444420"
+                      ? accentBg
                       : `${accentColor}20`,
                   },
                 ]}
@@ -152,7 +155,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                     <Text
                       style={[
                         styles.avatarText,
-                        { color: isOccupied ? "#EF4444" : accentColor },
+                        { color: isOccupied ? accentColor : accentColor },
                       ]}
                     >
                       {(
@@ -168,7 +171,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 <Text
                   style={[
                     styles.modalItemText,
-                    { color: isOccupied ? "#EF4444" : textPrimary },
+                    { color: isOccupied ? accentColor : textPrimary },
                   ]}
                 >
                   {item.nick || item.nombre || item.name || "Anfitriona"}
@@ -176,9 +179,9 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 {isOccupied ? (
                   <Text
                     style={{
-                      color: "#EF4444",
+                      color: accentColor,
                       fontSize: 10,
-                      fontWeight: "800",
+                      fontFamily: FontFamily.extrabold,
                       marginTop: 2,
                     }}
                   >
@@ -187,9 +190,9 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 ) : (
                   <Text
                     style={{
-                      color: "#10B981",
+                      color: accentOnSurface,
                       fontSize: 10,
-                      fontWeight: "800",
+                      fontFamily: FontFamily.extrabold,
                       marginTop: 2,
                     }}
                   >
@@ -206,7 +209,7 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
               />
             )}
             {isOccupied && (
-              <Ionicons name="lock-closed" size={18} color="#EF4444" />
+              <Ionicons name="lock-closed" size={18} color={accentColor} />
             )}
           </Pressable>
         );
@@ -222,13 +225,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 2,
     marginBottom: 10,
   },
   modalItemText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   avatarMini: {
     width: 32,
@@ -245,6 +248,6 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: FontFamily.bold,
   },
 });

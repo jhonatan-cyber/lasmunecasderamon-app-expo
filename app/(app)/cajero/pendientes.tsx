@@ -16,7 +16,6 @@ export default function CajeroPendientesScreen() {
     return (
         <PendingOperationsScreen
             title='Pendientes de envío'
-            emptySubtitle='Las ventas y los consumos que hagas sin conexión van a aparecer acá hasta que el servidor los confirme. Abrir o cerrar la caja sí necesita conexión.'
             createsWorkOffline={false}
             onBack={() => router.back()}
         />

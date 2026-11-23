@@ -203,7 +203,7 @@ export function EntregaCoversModal({
                     </View>
                   )}
                 </View>
-                <Pressable onPress={cerrar} hitSlop={10}>
+                <Pressable onPress={cerrar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cerrar modal de entrega">
                   <Ionicons name="close" size={22} color={textSecondary} />
                 </Pressable>
               </View>
@@ -311,6 +311,9 @@ export function EntregaCoversModal({
                         <Pressable
                           onPress={() => toggleCategoria(categoria)}
                           style={styles.categoryHeader}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${expandida ? 'Colapsar' : 'Expandir'} categoría ${categoria}`}
+                          accessibilityState={{ expanded: expandida }}
                         >
                           <View
                             style={[

@@ -35,6 +35,9 @@ export const MIRROR_KEYS = {
     salesSummary: 'ventas.resumen',
     /** Detalle de una venta: lo que el cajero abre al tocar una tarjeta. */
     saleDetail: (id: string | number) => `ventas.detalle.${id}`,
+    /** Pedidos propios del garzón y detalle de cada uno. */
+    ordersList: 'pedidos.listado',
+    orderDetail: (id: string | number) => `pedidos.detalle.${id}`,
     salesReport: 'ventas.reporte',
     barStock: 'bar.stock',
     barMovements: 'bar.movimientos',

@@ -3,6 +3,8 @@ import type { ComponentProps } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { styles } from "../ServiceModal.styles";
 import type { MetodoPago } from "../../../types/api";
 
@@ -52,6 +54,7 @@ export function ServicePaymentSection({
   subtotalGeneral,
   ivaActual,
 }: ServicePaymentSectionProps) {
+  const { accentOnSurface } = useAccentColor();
   const metodoActual = metodoPago || service.metodo_pago;
 
   return (
@@ -145,7 +148,7 @@ export function ServicePaymentSection({
                   <Text
                     style={{
                       color: textPrimary,
-                      fontWeight: "800",
+                      fontFamily: FontFamily.extrabold,
                       fontSize: 13,
                     }}
                   >
@@ -161,19 +164,19 @@ export function ServicePaymentSection({
                   style={{
                     color: textSecondary,
                     fontSize: FontSize.xxs,
-                    fontWeight: "800",
+                    fontFamily: FontFamily.extrabold,
                   }}
                 >
                   SALDO DISPONIBLE
                 </Text>
                 <Text
                   style={{
-                    color:
+                      color:
                       Number(selectedClient.saldo) > 0
-                        ? "#10B981"
+                        ? accentOnSurface
                         : textSecondary,
                     fontSize: 16,
-                    fontWeight: "900",
+                    fontFamily: FontFamily.black,
                   }}
                 >
                   ${Number(selectedClient.saldo || 0).toLocaleString()}
@@ -234,7 +237,7 @@ export function ServicePaymentSection({
                     style={{
                       color: isSelected ? accentColor : textSecondary,
                       fontSize: FontSize.xxs,
-                      fontWeight: "800",
+                      fontFamily: FontFamily.extrabold,
                       marginTop: 4,
                     }}
                   >
@@ -271,7 +274,7 @@ export function ServicePaymentSection({
                   style={{
                     color: textPrimary,
                     fontSize: 12,
-                    fontWeight: "800",
+                    fontFamily: FontFamily.extrabold,
                     marginBottom: 8,
                   }}
                 >
@@ -306,7 +309,7 @@ export function ServicePaymentSection({
                                 ? accentColor
                                 : textSecondary,
                             fontSize: FontSize.xxs,
-                            fontWeight: "800",
+                            fontFamily: FontFamily.extrabold,
                           }}
                         >
                           {m.toUpperCase()}

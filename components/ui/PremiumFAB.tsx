@@ -15,6 +15,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/utils/haptics';
 import { BorderRadius } from '@/constants/spacing';
+import { TAB_BAR_HEIGHT } from '@/constants/layout';
 
 interface PremiumFABProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -27,9 +28,6 @@ interface PremiumFABProps {
     /** `true` cuando el botón está bloqueado (ej. caja cerrada). */
     disabled?: boolean;
 }
-
-// Altura aproximada del PremiumTabBar (minHeight 60 + padding + safe area).
-const TAB_BAR_HEIGHT = 80;
 
 export const PremiumFAB = ({
     icon,

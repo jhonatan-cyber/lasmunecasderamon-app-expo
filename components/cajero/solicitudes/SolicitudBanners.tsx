@@ -3,6 +3,7 @@ import { BorderRadius } from '@/constants/spacing';
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface SolicitudBannersProps {
@@ -22,16 +23,16 @@ export const SolicitudBanners: React.FC<SolicitudBannersProps> = ({
     borderColor,
     textSecondary,
 } ) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentColor: dangerColor, accentText } = useAccentColor();
     return (
     <>
         {isOffline && (
             <AnimatedView
                 from={{ opacity: 0, translateY: -20 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                style={[styles.offlineBanner, { backgroundColor: '#EF4444' }]}
+                style={[styles.offlineBanner, { backgroundColor: dangerColor }]}
             >
-                <Ionicons name="cloud-offline" size={20} color="#FFFFFF" />
+                <Ionicons name="cloud-offline" size={20} color={accentText} />
                 <Text style={styles.offlineBannerText}>MODO OFFLINE - VIENDO DATOS GUARDADOS</Text>
             </AnimatedView>
         )}
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8, paddingHorizontal: 16, gap: 10,
         margin: 16, marginBottom: 0, borderRadius: BorderRadius.full, elevation: 4,
     },
-    offlineBannerText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+    offlineBannerText: { color: '#FFFFFF', fontSize: 11, fontFamily: FontFamily.black, letterSpacing: 1 },
     totalBanner: {
         flexDirection: 'row', alignItems: 'center',
         marginHorizontal: 16, marginBottom: 4,
@@ -70,6 +71,6 @@ const styles = StyleSheet.create({
     },
     totalBannerIcon: { width: 48, height: 48, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
     totalBannerText: { flex: 1 },
-    totalBannerLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-    totalBannerValue: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    totalBannerLabel: { fontSize: 10, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+    totalBannerValue: { fontSize: 24, fontFamily: FontFamily.black, letterSpacing: -0.5 },
 });

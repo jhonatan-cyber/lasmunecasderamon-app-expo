@@ -17,9 +17,9 @@ export interface OfflineBlockedNoticeProps {
 
 export const OfflineBlockedNotice: React.FC<OfflineBlockedNoticeProps> = ({
     message,
-    accentColor = '#EF4444',
+    accentColor,
 } ) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentText } = useAccentColor();
     return (
     <View style={[styles.container, { backgroundColor: `${accentColor}14`, borderColor: `${accentColor}40` }]}>
         <Ionicons name='cloud-offline-outline' size={18} color={accentOnSurface} />

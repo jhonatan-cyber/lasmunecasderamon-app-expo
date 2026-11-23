@@ -45,12 +45,11 @@ export function AnimatedScreen({
         return {
             opacity: opacity.value,
             transform: [{ translateY: translateY.value }],
-            width: '100%',
         };
     });
 
     return (
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={[{ width: '100%' }, animatedStyle]}>
             {children}
         </Animated.View>
     );

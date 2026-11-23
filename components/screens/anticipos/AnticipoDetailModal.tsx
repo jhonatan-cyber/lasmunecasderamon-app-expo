@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Anticipo } from '@/hooks/useAnticipos';
 
 interface AnticipoDetailModalProps {
@@ -23,7 +24,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
   formatTime,
   normalizeEstado,
 }) => {
-  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentText, surfaceMuted } =
     useAccentColor();
 
   if (!anticipo) return null;
@@ -38,37 +39,37 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
   const getStatusColors = () => {
     if (isPendiente)
       return {
-        bg: isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7',
-        color: isDark ? '#FBBF24' : '#B45309',
+        bg: accentBg,
+        color: accentOnSurface,
         label: 'Pendiente',
       };
     if (isPagada)
       return {
-        bg: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
-        color: isDark ? '#6EE7B7' : '#065F46',
+        bg: surfaceMuted,
+        color: accentOnSurface,
         label: 'Recibido',
       };
     if (isLiquidada)
       return {
-        bg: isDark ? 'rgba(139, 92, 246, 0.16)' : '#EDE9FE',
-        color: isDark ? '#C4B5FD' : '#6D28D9',
+        bg: surfaceMuted,
+        color: accentColor,
         label: 'Liquidado',
       };
     if (isAprobada)
       return {
-        bg: isDark ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
-        color: isDark ? '#93C5FD' : '#1D4ED8',
+        bg: surfaceMuted,
+        color: accentOnSurface,
         label: 'Aprobado',
       };
     if (isRechazada)
       return {
-        bg: isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2',
-        color: isDark ? '#F87171' : '#B91C1C',
+        bg: accentBg,
+        color: accentColor,
         label: 'Rechazado',
       };
     return {
-      bg: isDark ? 'rgba(107, 114, 128, 0.16)' : '#F3F4F6',
-      color: isDark ? '#9CA3AF' : '#4B5563',
+      bg: surfaceMuted,
+      color: textSecondary,
       label: 'Sin estado',
     };
   };
@@ -83,7 +84,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
             <Text style={[styles.modalTitle, { color: textPrimary }]}>
               Detalle de Anticipo
             </Text>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
+            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle de anticipo">
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
           </View>
@@ -161,7 +162,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
                 <>
                   <View style={styles.divider} />
                   <View style={styles.infoRow}>
-                    <Ionicons name="cash-outline" size={18} color="#10B981" />
+                    <Ionicons name="cash-outline" size={18} color={accentOnSurface} />
                     <Text style={[styles.infoLabel, { color: textSecondary }]}>
                       Fecha recibido
                     </Text>
@@ -208,13 +209,13 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
                   style={[
                     styles.rejectionCard,
                     {
-                      borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
-                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                      borderColor: accentBorder,
+                      backgroundColor: accentBg,
                     },
                   ]}
                 >
-                  <Ionicons name="close-circle" size={18} color={isDark ? '#F87171' : '#B91C1C'} />
-                  <Text style={[styles.rejectionText, { color: isDark ? '#F87171' : '#991B1B' }]}>
+                  <Ionicons name="close-circle" size={18} color={accentColor} />
+                  <Text style={[styles.rejectionText, { color: accentColor }]}>
                     {anticipo.motivo_rechazo}
                   </Text>
                 </View>
@@ -223,8 +224,8 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
           </ScrollView>
 
           {}
-          <Pressable style={[styles.closeAction, { backgroundColor: accentColor }]} onPress={onClose}>
-            <Text style={styles.closeActionText}>Cerrar</Text>
+          <Pressable style={[styles.closeAction, { backgroundColor: accentColor }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalle de anticipo">
+            <Text style={[styles.closeActionText, { color: accentText }]}>Cerrar</Text>
           </Pressable>
         </View>
       </View>
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
   },
   closeBtn: {
     width: 36,
@@ -283,7 +284,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   divider: {
     height: 1,
@@ -297,11 +298,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: FontSize.xxs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     letterSpacing: 1,
   },
   noteCard: {
@@ -334,8 +335,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   closeActionText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

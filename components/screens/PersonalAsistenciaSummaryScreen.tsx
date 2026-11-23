@@ -80,6 +80,7 @@ export default function PersonalAsistenciaSummaryScreen() {
   const totalAporte = empleados.reduce((acc, e) => acc + e.aporte, 0);
   const totalACobrar = totalSueldo - totalAporte;
 
+  const { accentOnSurface: themeAccentOnSurface, accentColor: themeAccent, accentText } = useAccentColor();
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -104,11 +105,11 @@ export default function PersonalAsistenciaSummaryScreen() {
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>Promedio</Text>
-              <Text style={[styles.summaryValue, { color: accentOnSurface }]}>{calcularPromedio.toFixed(1)}h</Text>
+              <Text style={[styles.summaryValue, { color: themeAccentOnSurface }]}>{calcularPromedio.toFixed(1)}h</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryLabel, { color: textSecondary }]}>Total</Text>
-              <Text style={[styles.summaryValue, { color: '#F59E0B' }]}>{calcularTotalHoras}</Text>
+              <Text style={[styles.summaryValue, { color: themeAccentOnSurface }]}>{calcularTotalHoras}</Text>
             </View>
           </View>
         </View>
@@ -125,13 +126,13 @@ export default function PersonalAsistenciaSummaryScreen() {
             </View>
             <View style={styles.totalItem}>
               <Text style={[styles.totalLabel, { color: textSecondary }]}>Aporte</Text>
-              <Text style={[styles.totalValue, { color: '#EF4444' }]}>
+              <Text style={[styles.totalValue, { color: themeAccent }]}>
                 -${totalAporte.toLocaleString()}
               </Text>
             </View>
             <View style={styles.totalItem}>
               <Text style={[styles.totalLabel, { color: textSecondary }]}>A cobrar</Text>
-              <Text style={[styles.totalValue, { color: '#F59E0B', fontWeight: '700' }]}>
+              <Text style={[styles.totalValue, { color: themeAccentOnSurface, fontWeight: '700' }]}>
                 ${totalACobrar.toLocaleString()}
               </Text>
             </View>
@@ -165,12 +166,12 @@ export default function PersonalAsistenciaSummaryScreen() {
                   <Text style={[styles.empleadoHora, { color: textSecondary }]}>
                     {empleado.horaInicio} - {empleado.horaFin}
                   </Text>
-                  <Text style={[styles.empleadoTotal, { color: accentOnSurface, fontWeight: '700' }]}>
+                  <Text style={[styles.empleadoTotal, { color: themeAccentOnSurface, fontWeight: '700' }]}>
                     ${empleado.total.toLocaleString()}
                   </Text>
                 </View>
                 <View style={styles.empleadoBadge}>
-                  <Text style={[styles.empleadoBadgeText, { color: empleado.estado === 'pendiente' ? '#F59E0B' : '#10B981' }]}>
+                  <Text style={[styles.empleadoBadgeText, { color: themeAccentOnSurface }]}>
                     {empleado.estado}
                   </Text>
                 </View>
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  backTextHeader: { fontWeight: '700', fontSize: 13 },
   card: { borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 16 },
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
   summaryGrid: {

@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import {
   cargarImagenBaucher,
@@ -34,7 +36,7 @@ interface BaucherFotoProps {
  * ruta exige sesión, así que se carga con el token de la app.
  */
 export function BaucherFoto({ endpoint, descripcion, compacto = false }: BaucherFotoProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentText} = useAccentColor();
   const [visible, setVisible] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -92,7 +94,7 @@ export function BaucherFoto({ endpoint, descripcion, compacto = false }: Baucher
 
       <Modal visible={visible} transparent animationType="fade" onRequestClose={cerrar}>
         <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={cerrar} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar visor de baucher" />
           <View style={[styles.visor, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.visorHeader}>
               <View style={{ flex: 1 }}>
@@ -121,16 +123,14 @@ export function BaucherFoto({ endpoint, descripcion, compacto = false }: Baucher
               ) : uri ? (
                 <Image source={{ uri }} style={styles.imagen} contentFit="contain" />
               ) : (
-                <View style={styles.errorBox}>
-                  <Ionicons name="alert-circle-outline" size={28} color={textSecondary} />
-                  <Text style={[styles.errorTexto, { color: textSecondary }]}>{error}</Text>
-                  <Pressable
-                    onPress={reintentar}
-                    style={[styles.reintentar, { backgroundColor: accentColor }]}
-                  >
-                    <Text style={styles.reintentarTexto}>REINTENTAR</Text>
-                  </Pressable>
-                </View>
+                <ErrorState
+                  variant="inline"
+                  icon="alert-circle-outline"
+                  title="No se pudo cargar la imagen"
+                  message={error ?? 'Error desconocido'}
+                  retryLabel="Reintentar"
+                  onRetry={reintentar}
+                />
               )}
             </View>
           </View>
@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     borderWidth: 1,
   },
-  chipTexto: { fontSize: 12, fontWeight: '800' },
-  chipTextoCompacto: { fontSize: FontSize.xxs, fontWeight: '800' },
+  chipTexto: { fontSize: 12, fontFamily: FontFamily.extrabold },
+  chipTextoCompacto: { fontSize: FontSize.xxs, fontFamily: FontFamily.extrabold },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.82)',
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 14,
   },
-  visorTitulo: { fontSize: 16, fontWeight: '900' },
-  visorDescripcion: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  visorTitulo: { fontSize: 16, fontFamily: FontFamily.black },
+  visorDescripcion: { fontSize: 12, fontFamily: FontFamily.semibold, marginTop: 2 },
   cerrar: {
     width: 36,
     height: 36,
@@ -206,8 +206,4 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   imagen: { width: '100%', height: 320 },
-  errorBox: { alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 24 },
-  errorTexto: { fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 19 },
-  reintentar: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: BorderRadius.full, marginTop: 4 },
-  reintentarTexto: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },
 });

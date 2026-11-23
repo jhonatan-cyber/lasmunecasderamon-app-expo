@@ -13,6 +13,16 @@ export type AcompanamientoBotella =
   | AcompanamientoBotellaItem
   | AcompanamientoBotellaItem[];
 
+export interface AcompanamientoCorto {
+  presentacion_id: string;
+  unidades?: number;
+  ml_por_corto?: number;
+  nombre?: string;
+  foto?: string;
+  /** Precio unitario de la bebida elegida (del catálogo de productos). */
+  precio?: number;
+}
+
 export interface Product {
   producto_id?: string;
   presentacion_id?: string;
@@ -23,15 +33,7 @@ export interface Product {
   opciones_venta?: unknown;
   unidades_acompanamiento?: number;
   acompanamiento_botella?: AcompanamientoBotella;
-  acompanamiento_corto?: {
-    presentacion_id: string;
-    unidades?: number;
-    ml_por_corto?: number;
-    nombre?: string;
-    foto?: string;
-    /** Precio unitario de la bebida elegida (del catálogo de productos). */
-    precio?: number;
-  };
+  acompanamiento_corto?: AcompanamientoCorto;
   id: string;
   code: string;
   name: string;
@@ -55,6 +57,12 @@ export interface CartItem {
   quantity: number;
   selectedHostesses: (string | number)[];
   selectedRoom: string | null;
+  /**
+   * Bebida elegida para cada unidad de corto. El dashboard permite una bebida
+   * distinta por corto; al separar el pedido cada unidad toma su propio mixer.
+   * Ausente en items antiguos: se usa `product.acompanamiento_corto` para todas.
+   */
+  shortMixers?: (AcompanamientoCorto | undefined)[];
 }
 
 export type MetodoPagoPedido = "efectivo" | "tarjeta" | "transferencia";

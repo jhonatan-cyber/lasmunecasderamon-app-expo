@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 
+import { ErrorState } from '@/components/ui/ErrorState';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
@@ -66,7 +67,7 @@ function AccesoRestringido() {
 function PanelConfiguracionAsistencia() {
   const router = useRouter();
   const activarModoPantalla = useModoPantallaStore((state) => state.activar);
-  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface} =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentText, accentUi, accentBg } =
     useAccentColor();
 
   const {
@@ -268,7 +269,7 @@ function PanelConfiguracionAsistencia() {
                 <Text
                   style={[
                     styles.previewValue,
-                    { color: valida ? textPrimary : '#B45309' },
+                    { color: valida ? textPrimary : accentUi },
                   ]}
                 >
                   {valida
@@ -284,9 +285,9 @@ function PanelConfiguracionAsistencia() {
               </View>
 
               {!valida && (
-                <View style={styles.warningBox}>
-                  <Ionicons name="warning-outline" size={16} color="#B45309" />
-                  <Text style={styles.warningText}>
+                <View style={[styles.warningBox, { backgroundColor: accentBg }]}>
+                  <Ionicons name="warning-outline" size={16} color={accentUi} />
+                  <Text style={[styles.warningText, { color: accentUi }]}>
                     La hora de fin debe ser posterior a la de inicio.
                   </Text>
                 </View>
@@ -306,11 +307,11 @@ function PanelConfiguracionAsistencia() {
                 accessibilityState={{ disabled: saving || !sucio || !valida }}
               >
                 {saving ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={accentText} />
                 ) : (
-                  <Ionicons name="save-outline" size={18} color="#FFFFFF" />
+                  <Ionicons name="save-outline" size={18} color={accentText} />
                 )}
-                <Text style={styles.saveButtonText}>
+                <Text style={[styles.saveButtonText, { color: accentText }]}>
                   {saving ? 'Guardando...' : 'Guardar configuración'}
                 </Text>
               </Pressable>
@@ -358,11 +359,11 @@ function PanelConfiguracionAsistencia() {
                 accessibilityState={{ disabled: activando || !nombreValido }}
               >
                 {activando ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={accentText} size="small" />
                 ) : (
-                  <Ionicons name="tablet-portrait-outline" size={18} color="#FFFFFF" />
+                  <Ionicons name="tablet-portrait-outline" size={18} color={accentText} />
                 )}
-                <Text style={styles.saveButtonText}>
+                <Text style={[styles.saveButtonText, { color: accentText }]}>
                   {activando ? 'Activando...' : 'Activar pantalla de asistencia'}
                 </Text>
               </Pressable>
@@ -379,16 +380,14 @@ function PanelConfiguracionAsistencia() {
               <SkeletonLoader width="100%" height={64} borderRadius={16} />
             </View>
           ) : errorPantallas ? (
-            <View style={styles.errorBox}>
-              <Text style={[styles.errorText, { color: '#EF4444' }]}>
-                {errorPantallas}
-              </Text>
-              <Pressable onPress={() => void cargarPantallas()} style={styles.retryButton}>
-                <Text style={[styles.retryText, { color: accentOnSurface }]}>
-                  Reintentar
-                </Text>
-              </Pressable>
-            </View>
+            <ErrorState
+              variant="inline"
+              icon="warning-outline"
+              title="Error al cargar pantallas"
+              message={errorPantallas}
+              retryLabel="Reintentar"
+              onRetry={() => void cargarPantallas()}
+            />
           ) : pantallas.length === 0 ? (
             <Text style={[styles.cardDescription, { color: textSecondary }]}>
               Todavía no hay pantallas vinculadas.
@@ -421,6 +420,8 @@ function PanelConfiguracionAsistencia() {
                     disabled={revocando !== null}
                     style={[styles.revokeButton, { borderColor: accentColor }]}
                     accessibilityRole="button"
+                    accessibilityLabel={`Desvincular pantalla ${pantalla.nombre ?? ''}`}
+                    accessibilityState={{ disabled: revocando !== null }}
                   >
                     {revocando === pantalla.id ? (
                       <ActivityIndicator color={accentOnSurface} size="small" />
@@ -511,9 +512,8 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 14,
     padding: 12,
-    backgroundColor: 'rgba(245,158,11,0.15)',
   },
-  warningText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#B45309' },
+  warningText: { flex: 1, fontSize: 12, lineHeight: 17 },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingVertical: 14,
   },
-  saveButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  saveButtonText: { fontSize: 15, fontWeight: '800' },
   deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -543,8 +543,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   revokeText: { fontSize: 12, fontWeight: '800' },
-  errorBox: { gap: 8 },
-  errorText: { fontSize: 13 },
-  retryButton: { alignSelf: 'flex-start' },
-  retryText: { fontSize: 13, fontWeight: '800' },
 });

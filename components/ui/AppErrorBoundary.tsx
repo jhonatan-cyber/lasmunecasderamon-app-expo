@@ -1,21 +1,22 @@
 import logger from '@/utils/logger';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { router } from 'expo-router';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface BoundaryState {
   error: Error | null;
 }
 
 class Boundary extends Component<
-  { isDark: boolean; children: ReactNode },
+  { isDark: boolean; bg: string; textPrimary: string; textSecondary: string; accentColor: string; accentText: string; children: ReactNode },
   BoundaryState
 > {
   state: BoundaryState = { error: null };
@@ -34,15 +35,12 @@ class Boundary extends Component<
 
   render() {
     const { error } = this.state;
-    const { isDark, children } = this.props;
+    const { bg, textPrimary, textSecondary, accentColor, accentText, children } = this.props;
 
     if (!error) return children;
 
-    const textPrimary = isDark ? '#FFFFFF' : '#111827';
-    const textSecondary = isDark ? '#9CA3AF' : '#6B7280';
-
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
+      <View style={[styles.container, { backgroundColor: bg }]}>
         <Text style={[styles.title, { color: textPrimary }]}>Algo salió mal</Text>
         <Text style={[styles.message, { color: textSecondary }]}>
           La pantalla encontró un error inesperado. Podés reintentar o volver al inicio.
@@ -50,12 +48,16 @@ class Boundary extends Component<
         <View style={styles.actions}>
           <Pressable
             onPress={this.reintentar}
-            style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Reintentar carga de la pantalla"
+            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: accentColor }, pressed && styles.pressed]}
           >
-            <Text style={styles.primaryText}>Reintentar</Text>
+            <Text style={[styles.primaryText, { color: accentText }]}>Reintentar</Text>
           </Pressable>
           <Pressable
             onPress={() => router.replace('/')}
+            accessibilityRole="button"
+            accessibilityLabel="Volver al inicio de la aplicación"
             style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
           >
             <Text style={[styles.secondaryText, { color: textSecondary }]}>
@@ -69,8 +71,8 @@ class Boundary extends Component<
 }
 
 export function AppErrorBoundary({ children }: { children: ReactNode }) {
-  const isDark = useColorScheme() === 'dark';
-  return <Boundary isDark={isDark}>{children}</Boundary>;
+  const { isDark, bg, textPrimary, textSecondary, accentColor, accentText } = useAccentColor();
+  return <Boundary isDark={isDark} bg={bg} textPrimary={textPrimary} textSecondary={textSecondary} accentColor={accentColor} accentText={accentText}>{children}</Boundary>;
 }
 
 const styles = StyleSheet.create({
@@ -80,17 +82,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  title: { fontSize: 22, fontWeight: '900', marginBottom: 8, textAlign: 'center' },
+  title: { fontSize: 22, fontFamily: FontFamily.black, marginBottom: 8, textAlign: 'center' },
   message: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   actions: { gap: 12, width: '100%', maxWidth: 320 },
   primaryBtn: {
-    backgroundColor: '#FF2D55',
     borderRadius: BorderRadius.full,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 44,
   },
-  primaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  secondaryBtn: { paddingVertical: 12, alignItems: 'center' },
-  secondaryText: { fontSize: 14, fontWeight: '700' },
+  primaryText: { fontSize: 15, fontFamily: FontFamily.extrabold },
+  secondaryBtn: { paddingVertical: 12, alignItems: 'center', minHeight: 44 },
+  secondaryText: { fontSize: 14, fontFamily: FontFamily.bold },
   pressed: { opacity: 0.7 },
 });

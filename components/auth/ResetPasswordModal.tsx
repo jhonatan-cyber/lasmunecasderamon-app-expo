@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BorderRadius } from '@/constants/spacing';
-import { Colors } from '@/constants/theme';
+import { FontFamily } from '@/constants/fonts';
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface Props {
     visible: boolean;
@@ -31,7 +32,14 @@ export default function ResetPasswordModal({
     onClose,
     onReset,
 }: Props) {
-    const C = isDark ? Colors.dark : Colors.light;
+    const {
+        cardBg,
+        textPrimary,
+        textSecondary,
+        borderColor,
+        surfaceMuted,
+        accentText,
+    } = useAccentColor();
 
     return (
         <Modal
@@ -41,11 +49,11 @@ export default function ResetPasswordModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <View style={[styles.alertCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
-                    <Text style={[styles.alertTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>
+                <View style={[styles.alertCard, { backgroundColor: cardBg }]}>
+                    <Text style={[styles.alertTitle, { color: textPrimary }]}>
                         Restablecer contraseña
                     </Text>
-                    <Text style={[styles.alertMessage, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                    <Text style={[styles.alertMessage, { color: textSecondary }]}>
                         Ingresa tu RUT registrado. Si tienes correo de recuperación configurado, recibirás una clave temporal por correo. Deberás cambiarla al iniciar sesión.
                     </Text>
                     <TextInput
@@ -53,13 +61,13 @@ export default function ResetPasswordModal({
                             styles.input,
                             styles.resetInput,
                             {
-                                backgroundColor: isDark ? C.card : '#F3F4F6',
-                                color: isDark ? '#FFFFFF' : '#111827',
-                                borderColor: C.border,
+                                backgroundColor: surfaceMuted,
+                                color: textPrimary,
+                                borderColor,
                             },
                         ]}
                         placeholder="Ingresa tu RUT"
-                        placeholderTextColor={C.textMuted}
+                        placeholderTextColor={textSecondary}
                         autoCapitalize="none"
                         autoCorrect={false}
                         editable={!loading}
@@ -70,9 +78,9 @@ export default function ResetPasswordModal({
                     <View style={styles.alertActions}>
                         <Pressable
                             onPress={onClose}
-                            style={[styles.alertBtn, { backgroundColor: isDark ? '#333' : '#F3F4F6', flex: 1 }]}
+                            style={[styles.alertBtn, { backgroundColor: surfaceMuted, flex: 1 }]}
                         >
-                            <Text style={[styles.alertBtnText, { color: isDark ? '#FFFFFF' : '#111827' }]}>
+                            <Text style={[styles.alertBtnText, { color: textPrimary }]}>
                                 Cancelar
                             </Text>
                         </Pressable>
@@ -82,9 +90,9 @@ export default function ResetPasswordModal({
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator color="#FFF" />
+                                <ActivityIndicator color={accentText} />
                             ) : (
-                                <Text style={[styles.alertBtnText, { color: '#FFF' }]}>Restablecer</Text>
+                                <Text style={[styles.alertBtnText, { color: accentText }]}>Restablecer</Text>
                             )}
                         </Pressable>
                     </View>
@@ -115,7 +123,7 @@ const styles = StyleSheet.create({
     },
     alertTitle: {
         fontSize: 20,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         textAlign: 'center',
         marginBottom: 10,
     },
@@ -140,7 +148,7 @@ const styles = StyleSheet.create({
     },
     alertBtnText: {
         fontSize: 14,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         textAlign: 'center',
     },
     input: {

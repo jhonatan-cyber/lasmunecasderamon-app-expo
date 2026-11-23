@@ -102,7 +102,7 @@ export const CartList = React.memo(
                   <Text style={[styles.itemName, { color: textPrimary }]}>
                     {group.name}
                     {"  "}
-                    <Text style={{ fontWeight: "900", color: "#10B981" }}>
+                    <Text style={{ fontFamily: FontFamily.black, color: accentOnSurface }}>
                       x{group.totalQty}
                     </Text>
                   </Text>
@@ -131,7 +131,7 @@ export const CartList = React.memo(
                         style={{
                           fontSize: 13,
                           color: sub.hostessNames ? accentColor : textSecondary,
-                          fontWeight: "700",
+                          fontFamily: FontFamily.bold,
                         }}
                       >
                         {sub.hostessNames
@@ -201,7 +201,7 @@ export const CartList = React.memo(
                             <Ionicons
                               name="trash-outline"
                               size={18}
-                              color="#EF4444"
+                              color={accentColor}
                             />
                           </Pressable>
                         )}
@@ -222,7 +222,7 @@ CartList.displayName = "CartList";
 const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     marginBottom: 15,
     textTransform: "uppercase",
     opacity: 0.6,
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  itemName: { fontSize: 15, fontWeight: "700" },
-  itemSub: { fontSize: 13, fontWeight: "500", marginTop: 2 },
+  itemName: { fontSize: 15, fontFamily: FontFamily.bold },
+  itemSub: { fontSize: 13, fontFamily: FontFamily.medium, marginTop: 2 },
   qtyControls: { flexDirection: "row", alignItems: "center" },
   qtyBtn: {
     width: 38,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  saleBadgeText: { fontSize: 10, fontWeight: "900" },
+  saleBadgeText: { fontSize: 10, fontFamily: FontFamily.black },
   subItemsContainer: {
     paddingLeft: 8,
     marginTop: 4,

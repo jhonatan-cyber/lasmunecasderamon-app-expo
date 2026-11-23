@@ -95,6 +95,53 @@ describe("cartStore", () => {
     expect(cart).toHaveLength(1);
   });
 
+  it("removeFromCart: recorta una anfitriona de botella al reducir la cantidad", async () => {
+    useCartStore.getState().addToCart(mockProduct as any);
+    useCartStore.getState().addToCart(mockProduct as any);
+    await useCartStore.getState().updateItemHostesses("prod-1", [1, 2]);
+    expect(useCartStore.getState().cart[0].selectedHostesses).toEqual([1, 2]);
+
+    useCartStore.getState().removeFromCart("prod-1");
+
+    const cart = useCartStore.getState().cart;
+    expect(cart[0].quantity).toBe(1);
+    expect(cart[0].selectedHostesses).toEqual([1]);
+  });
+
+  it("removeFromCart: respeta el máximo de anfitrionas por botella restante", async () => {
+    const bottle = { ...mockProduct, max_anfitrionas: 2 };
+    useCartStore.getState().addToCart(bottle as any);
+    useCartStore.getState().addToCart(bottle as any);
+    await useCartStore.getState().updateItemHostesses("prod-1", [1, 2, 3, 4]);
+
+    useCartStore.getState().removeFromCart("prod-1");
+
+    const cart = useCartStore.getState().cart;
+    expect(cart[0].quantity).toBe(1);
+    expect(cart[0].selectedHostesses).toEqual([1, 2]);
+  });
+
+  it("removeFromCart: recorta la bebida de la unidad de corto eliminada", () => {
+    const short = {
+      ...mockProduct,
+      id: "short-1",
+      tipo_venta: "shot" as const,
+      shot_anfitriona: true,
+      commission: 1000,
+    };
+    const sprite = { presentacion_id: "sprite", nombre: "Sprite" };
+    const coca = { presentacion_id: "coca", nombre: "Coca-Cola" };
+    useCartStore.getState().addToCart(short as any);
+    useCartStore.getState().addToCart(short as any);
+    useCartStore.getState().updateItemShortMixers("short-1", [sprite, coca]);
+
+    useCartStore.getState().removeFromCart("short-1");
+
+    const cart = useCartStore.getState().cart;
+    expect(cart[0].quantity).toBe(1);
+    expect(cart[0].shortMixers).toEqual([sprite]);
+  });
+
   it("updateItemHostesses: debe actualizar las anfitrionas seleccionadas", () => {
     useCartStore.getState().addToCart(mockProduct as any);
     useCartStore.getState().updateItemHostesses("prod-1", [1, 2]);
@@ -300,12 +347,20 @@ it("preserva la soda y los ml en el pedido offline y exige seleccionarlos", () =
     .buildOrderPayload({ codigo: "ABC", meseroId: "u1" });
   expect(payload.success).toBe(true);
   if (!payload.success) throw new Error(payload.errors.join(", "));
+  // Cada corto viaja como una línea con su propia bebida y comisión.
+  expect(payload.data.detalles).toHaveLength(2);
   expect(payload.data.detalles[0]).toMatchObject({
     productoId: "prod-1",
     presentacion_id: "pres-1",
     tipo_venta: "shot",
     acompanamiento_corto: mixer,
-    comision: 2000,
+    cantidad: 1,
+    comision: 1000,
+  });
+  expect(payload.data.detalles[1]).toMatchObject({
+    acompanamiento_corto: mixer,
+    cantidad: 1,
+    comision: 1000,
   });
 });
 
@@ -374,10 +429,17 @@ describe("Pedidos de cortos por anfitriona", () => {
       .buildOrderPayload({ meseroId: "garzon", codigo: "PEDIDO" });
     expect(result.success).toBe(true);
     if (!result.success) throw new Error(result.errors.join(";"));
+    expect(result.data.detalles).toHaveLength(2);
     expect(result.data.detalles[0]).toMatchObject({
-      selectedHostesses: ids,
-      cantidad: 2,
-      comision: 6000,
+      selectedHostesses: [ids[0]],
+      cantidad: 1,
+      comision: 3000,
+      acompanamiento_corto: { presentacion_id: "sprite", ml_por_corto: 150 },
+    });
+    expect(result.data.detalles[1]).toMatchObject({
+      selectedHostesses: [ids[1]],
+      cantidad: 1,
+      comision: 3000,
       acompanamiento_corto: { presentacion_id: "sprite", ml_por_corto: 150 },
     });
     expect(result.data.usuarios.map((user) => user.usuarioId)).toEqual(ids);

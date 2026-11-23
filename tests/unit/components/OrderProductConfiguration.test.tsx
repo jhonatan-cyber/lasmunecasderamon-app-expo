@@ -63,7 +63,31 @@ vi.mock("@/services/mirror", () => ({
             nombre: "500 ml",
             stock_bar: 0,
             ml_abierta: 350,
+            producto_estado: 1,
             producto_foto: "sprite.png",
+            opciones_venta: [
+              {
+                tipo: "botella",
+                corto_anfitriona_habilitado: true,
+                colacion_habilitada: true,
+              },
+            ],
+          },
+          {
+            id: "fanta",
+            producto_nombre: "Fanta",
+            nombre: "500 ml",
+            stock_bar: 100,
+            ml_abierta: 0,
+            producto_estado: 1,
+            producto_foto: "fanta.png",
+            opciones_venta: [
+              {
+                tipo: "botella",
+                corto_anfitriona_habilitado: true,
+                colacion_habilitada: true,
+              },
+            ],
           },
         ],
       },
@@ -98,7 +122,7 @@ const item = {
 };
 
 describe("Configuración de producto en Expo", () => {
-  it("selecciona la bebida dentro del modal del producto y muestra foto y stock", async () => {
+  it("permite elegir una bebida distinta para cada corto y muestra foto y stock", async () => {
     useCartStore.setState({ cart: [item] });
     render(
       <ProductCard
@@ -114,32 +138,298 @@ describe("Configuración de producto en Expo", () => {
     fireEvent.click(
       screen.getByRole("button", { name: `Configurar ${product.name}` }),
     );
+    const primerCorto = `Soda o gaseosa para ${product.name}, corto 1`;
+    const segundoCorto = `Soda o gaseosa para ${product.name}, corto 2`;
     await waitFor(() =>
       expect(
-        screen
-          .getByRole("button", { name: `Soda o gaseosa para ${product.name}` })
-          .hasAttribute("disabled"),
+        screen.getByRole("button", { name: primerCorto }).hasAttribute("disabled"),
       ).toBe(false),
     );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: `Soda o gaseosa para ${product.name}`,
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: primerCorto }));
     expect(screen.getByText("350 ml abiertos")).toBeTruthy();
     expect(screen.getByAltText("Sprite 500 ml").getAttribute("src")).toContain(
       "sprite.png",
     );
     fireEvent.click(screen.getByRole("button", { name: /Sprite 500 ml/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: segundoCorto }));
+    fireEvent.click(screen.getByRole("button", { name: /Fanta 500 ml/ }));
+
+    expect(
+      useCartStore.getState().cart[0].shortMixers,
+    ).toMatchObject([
+      {
+        presentacion_id: "sprite",
+        ml_por_corto: 150,
+        foto: "sprite.png",
+      },
+      {
+        presentacion_id: "fanta",
+        ml_por_corto: 150,
+        foto: "fanta.png",
+      },
+    ]);
     expect(
       useCartStore.getState().cart[0].product.acompanamiento_corto,
-    ).toMatchObject({
-      presentacion_id: "sprite",
-      ml_por_corto: 150,
-      foto: "sprite.png",
-    });
+    ).toMatchObject({ presentacion_id: "sprite" });
   });
-  it("el resumen muestra las anfitrionas y el consumo total por ml", () => {
+  it("guarda una bebida por cada corto nuevo al agregar al pedido", async () => {
+    useCartStore.setState({ cart: [] });
+    render(
+      <ProductCard
+        product={product}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={vi.fn()}
+        onConfigPress={vi.fn()}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${product.name}` }),
+    );
+    const aumentar = screen.getByRole("button", {
+      name: `Aumentar ${product.name}`,
+    });
+    fireEvent.click(aumentar);
+    fireEvent.click(aumentar);
+
+    const primerCorto = `Soda o gaseosa para ${product.name}, corto 1`;
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: primerCorto }).hasAttribute("disabled"),
+      ).toBe(false),
+    );
+    fireEvent.click(screen.getByRole("button", { name: primerCorto }));
+    fireEvent.click(screen.getByRole("button", { name: /Sprite 500 ml/ }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Soda o gaseosa para ${product.name}, corto 2`,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Fanta 500 ml/ }));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Agregar 2 al pedido" }),
+    );
+
+    const cart = useCartStore.getState().cart;
+    expect(cart[0].quantity).toBe(2);
+    expect(cart[0].shortMixers?.map((mixer) => mixer?.presentacion_id)).toEqual([
+      "sprite",
+      "fanta",
+    ]);
+  });
+  it("muestra la bebida de acompañamiento antes de agregar el corto con anfitriona", async () => {
+    useCartStore.setState({ cart: [] });
+    render(
+      <ProductCard
+        product={product}
+        onAdd={vi.fn()}
+        onRemove={vi.fn()}
+        onConfigPress={vi.fn()}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${product.name}` }),
+    );
+    // El selector aparece dentro del modal aunque el corto todavía no esté en
+    // el carrito, igual que en el dashboard.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: `Soda o gaseosa para ${product.name}`,
+        }),
+      ).toBeTruthy(),
+    );
+  });
+  it("activa el selector de anfitrionas al subir el contador desde cero", () => {
+    useCartStore.setState({ cart: [] });
+    const onConfigPress = vi.fn();
+    const botella = {
+      ...product,
+      id: "whisky:botella",
+      producto_id: "whisky",
+      name: "Whisky Botella",
+      tipo_venta: "botella" as const,
+      shot_anfitriona: undefined,
+      price: 40000,
+      opciones_venta: [{ tipo: "botella" }],
+    };
+
+    render(
+      <ProductCard
+        product={botella}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={vi.fn()}
+        onConfigPress={onConfigPress}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${botella.name}` }),
+    );
+
+    const selectorDeshabilitado = screen
+      .getByText("Seleccionar anfitriona (máx 1)")
+      .closest("button");
+    expect(selectorDeshabilitado?.hasAttribute("disabled")).toBe(true);
+
+    const aumentar = screen.getByRole("button", {
+      name: `Aumentar ${botella.name}`,
+    });
+    fireEvent.click(aumentar);
+    fireEvent.click(aumentar);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Seleccionar anfitriona(s) (máx 2)",
+      }),
+    );
+
+    expect(onConfigPress).toHaveBeenCalledWith(botella.id, "hostess");
+    expect(useCartStore.getState().cart[0].quantity).toBe(2);
+    // El contador no vuelve a cero: sigue mostrando las 2 unidades elegidas.
+    expect(screen.getByText("2")).toBeTruthy();
+  });
+
+  it("permite repartir el acompañamiento total según la cantidad de botellas", async () => {
+    const botella = {
+      ...product,
+      id: "whisky:botella-acompanamiento",
+      producto_id: "whisky",
+      presentacion_id: "whisky",
+      name: "Whisky Acompañamiento",
+      tipo_venta: "botella" as const,
+      shot_anfitriona: undefined,
+      price: 40000,
+      opciones_venta: [
+        { tipo: "botella", acompanamiento: { unidades: 4 } },
+      ],
+    };
+    useCartStore.setState({
+      cart: [
+        {
+          product: botella,
+          quantity: 2,
+          selectedHostesses: [],
+          selectedRoom: null,
+        },
+      ],
+    });
+
+    render(
+      <ProductCard
+        product={botella}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={vi.fn()}
+        onConfigPress={vi.fn()}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${botella.name}` }),
+    );
+
+    const seleccionarBebida = `Agregar sabor para ${botella.name}`;
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: seleccionarBebida }),
+      ).toBeTruthy(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: seleccionarBebida }));
+    fireEvent.click(screen.getByRole("button", { name: /Fanta 500 ml/ }));
+
+    // 4 unidades por botella × 2 botellas = 8 en total.
+    expect(screen.getByText("Stock: 100 · máx 8")).toBeTruthy();
+    const agregar = screen.getByRole("button", {
+      name: "Agregar una unidad de Fanta 500 ml",
+    });
+    fireEvent.click(agregar);
+    fireEvent.click(agregar);
+    fireEvent.click(agregar);
+
+    expect(
+      useCartStore.getState().cart[0].product.acompanamiento_botella,
+    ).toMatchObject([{ presentacion_id: "fanta", unidades: 4 }]);
+  });
+
+  it("activa el selector de habitación al subir el contador desde cero", () => {
+    useCartStore.setState({ cart: [] });
+    const onConfigPress = vi.fn();
+    const botella = {
+      ...product,
+      id: "whisky:botella-room",
+      producto_id: "whisky",
+      name: "Whisky Habitación",
+      tipo_venta: "botella" as const,
+      shot_anfitriona: undefined,
+      price: 40000,
+      opciones_venta: [{ tipo: "botella" }],
+    };
+
+    render(
+      <ProductCard
+        product={botella}
+        onAdd={useCartStore.getState().addToCart}
+        onRemove={vi.fn()}
+        onConfigPress={onConfigPress}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${botella.name}` }),
+    );
+
+    const selectorHabitacion = screen
+      .getByText("Seleccionar habitación")
+      .closest("button");
+    expect(selectorHabitacion?.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Aumentar ${botella.name}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Seleccionar habitación" }),
+    );
+
+    expect(onConfigPress).toHaveBeenCalledWith(botella.id, "room");
+    expect(useCartStore.getState().cart[0].quantity).toBe(1);
+  });
+
+  it("avisa cuando el corto anfitriona no tiene ml de acompañamiento configurados", () => {
+    useCartStore.setState({ cart: [] });
+    render(
+      <ProductCard
+        product={{
+          ...product,
+          id: "vodka:shot-anfitriona-sin-ml",
+          opciones_venta: [{ tipo: "shot" }],
+        }}
+        onAdd={vi.fn()}
+        onRemove={vi.fn()}
+        onConfigPress={vi.fn()}
+        anfitrionas={[]}
+        rooms={[]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `Configurar ${product.name}` }),
+    );
+    expect(
+      screen.getByText(
+        "Configura los ml de bebida para corto anfitriona en este producto.",
+      ),
+    ).toBeTruthy();
+  });
+  it("el resumen muestra el precio y la comisión", () => {
     render(
       <OrderLineInfo
         item={{
@@ -153,15 +443,9 @@ describe("Configuración de producto en Expo", () => {
             },
           },
         }}
-        anfitrionas={[
-          { id: "ana", nick: "Ana" },
-          { id: "bea", nick: "Bea" },
-        ]}
-        rooms={[]}
       />,
     );
-    expect(screen.getByText("Anfitrionas: Ana, Bea")).toBeTruthy();
-    expect(screen.getByText("Bebida total: 300 ml")).toBeTruthy();
-    expect(screen.getByText("Subtotal: $40.000")).toBeTruthy();
+    expect(screen.getByText(/Precio c\/u:/)).toBeTruthy();
+    expect(screen.getByText(/Comisión:/)).toBeTruthy();
   });
 });

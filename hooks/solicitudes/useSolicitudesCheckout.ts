@@ -97,7 +97,7 @@ export function useSolicitudesCheckout({
       setPedidoDetails([]);
       setSelectedClient(null);
       setSelectedPedido(itemInfo);
-      setMetodoPago("");
+      setMetodoPago((itemInfo as any).metodo_pago || "");
       setMetodoPagoAdicional("");
       setAgregarPropina(false);
       setCheckoutModalVisible(true);
@@ -124,7 +124,8 @@ export function useSolicitudesCheckout({
             if (!isCurrent()) return;
             if (cRes.success && cRes.data) {
               setSelectedClient(cRes.data);
-              if (Number(cRes.data.saldo || 0) > 0) setMetodoPago("prepago");
+              // Solo usar prepago si el pedido no tiene método de pago y el cliente tiene saldo
+              if (Number(cRes.data.saldo || 0) > 0 && !(itemInfo as any).metodo_pago) setMetodoPago("prepago");
             }
           } else {
             setSelectedClient(null);

@@ -6,6 +6,7 @@ import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { contentColumn } from '@/constants/layout';
 import { useAuthStore } from '@/store/authStore';
 import { getUserRole, isAdminRole } from '@/utils/userRole';
@@ -47,7 +48,7 @@ export default function EnvasesPendientesScreen() {
   const user = useAuthStore((state) => state.user);
   const role = getUserRole(user);
   const allowed = isAdminRole(user) || role === 'cajero';
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface } = useAccentColor();
   const [pendientes, setPendientes] = useState<PendingContainer[]>([]);
   const [comparacion, setComparacion] = useState<BatchComparison[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,12 +122,12 @@ export default function EnvasesPendientesScreen() {
             <Text style={[styles.sectionTitle, { color: textPrimary }]}>RESULTADO DE COMPARACIÓN DEL LOTE</Text>
             {comparacion.map((item, index) => (
               <View key={`${item.codigo}-${index}`} style={[styles.comparisonRow, { borderBottomColor: borderColor }]}>
-                <Ionicons name={item.ok ? 'checkmark-circle' : 'close-circle'} size={20} color={item.ok ? '#10B981' : '#EF4444'} />
+                <Ionicons name={item.ok ? 'checkmark-circle' : 'close-circle'} size={20} color={item.ok ? accentOnSurface : accentColor} />
                 <View style={styles.rowText}>
                   <Text style={[styles.code, { color: textPrimary }]}>{item.codigo || item.sku || 'Código desconocido'}</Text>
                   <Text style={[styles.description, { color: textSecondary }]}>{item.existe ? `${item.producto || 'Producto'} · ${item.presentacion || 'Presentación'}` : 'No existe en nuestro inventario'} — {item.mensaje}</Text>
                 </View>
-                <Text style={[styles.status, { color: item.ok ? '#10B981' : '#EF4444' }]}>{item.ok ? 'VÁLIDO' : 'RECHAZADO'}</Text>
+                <Text style={[styles.status, { color: item.ok ? accentOnSurface : accentColor }]}>{item.ok ? 'VÁLIDO' : 'RECHAZADO'}</Text>
               </View>
             ))}
           </View>
@@ -147,7 +148,11 @@ export default function EnvasesPendientesScreen() {
             <Text style={[styles.code, { color: textPrimary }]}>SKU {item.codigo}{item.codigo_barras ? ` · EAN ${item.codigo_barras}` : ''}</Text>
             <Text style={[styles.description, { color: textSecondary }]}>Entregado por {item.usuario_nombre || item.usuario_nick || '—'} · {item.fecha_devolucion ? new Date(item.fecha_devolucion).toLocaleString('es-BO') : '—'}</Text>
             {item.compra_folio ? <Text style={[styles.description, { color: textSecondary }]}>Compra {item.compra_folio}</Text> : null}
-            <Pressable onPress={() => void aceptar(item)} disabled={confirmando === item.id} style={({ pressed }) => [styles.accept, { backgroundColor: accentColor, opacity: pressed || confirmando === item.id ? 0.65 : 1 }]}>
+            <Pressable onPress={() => void aceptar(item)} disabled={confirmando === item.id} style={({ pressed }) => [styles.accept, { backgroundColor: accentColor, opacity: pressed || confirmando === item.id ? 0.65 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Aceptar devolución de ${item.producto_nombre || item.codigo}`}
+              accessibilityState={{ disabled: confirmando === item.id }}
+            >
               {confirmando === item.id ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="checkmark-circle-outline" size={18} color="#FFF" /><Text style={styles.acceptText}>Aceptar devolución</Text></>}
             </Pressable>
           </View>
@@ -162,19 +167,19 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: 24 },
   content: { ...contentColumn, padding: 16, gap: 12, paddingBottom: 32 },
   back: { height: 38, borderRadius: 9999, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)' },
-  backText: { color: '#FFF', fontWeight: '800', fontSize: 12 },
-  sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 0.7, marginTop: 6 },
+  backText: { color: '#FFF', fontFamily: FontFamily.extrabold, fontSize: 12 },
+  sectionTitle: { fontSize: 12, fontFamily: FontFamily.black, letterSpacing: 0.7, marginTop: 6 },
   panel: { borderWidth: 1, borderRadius: 18, padding: 14, gap: 9 },
   comparisonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   rowText: { flex: 1, gap: 3 },
-  code: { fontSize: 12, fontWeight: '900' },
+  code: { fontSize: 12, fontFamily: FontFamily.black },
   description: { fontSize: 11, lineHeight: 16 },
-  status: { fontSize: FontSize.xxs, fontWeight: '900' },
-  empty: { textAlign: 'center', padding: 12, fontSize: 13, fontWeight: '600' },
+  status: { fontSize: FontSize.xxs, fontFamily: FontFamily.black },
+  empty: { textAlign: 'center', padding: 12, fontSize: 13, fontFamily: FontFamily.semibold },
   pendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  product: { fontSize: 15, fontWeight: '900' },
-  pendingBadge: { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 9999, paddingHorizontal: 9, paddingVertical: 5 },
-  pendingBadgeText: { color: '#F59E0B', fontSize: FontSize.xxs, fontWeight: '900' },
+  product: { fontSize: 15, fontFamily: FontFamily.black },
+  pendingBadge: { borderRadius: 9999, paddingHorizontal: 9, paddingVertical: 5 },
+  pendingBadgeText: { fontSize: FontSize.xxs, fontFamily: FontFamily.black },
   accept: { minHeight: 44, borderRadius: 9999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 3 },
-  acceptText: { color: '#FFF', fontSize: 13, fontWeight: '900' },
+  acceptText: { fontSize: 13, fontFamily: FontFamily.black },
 });

@@ -4,6 +4,7 @@ import { formatCurrency } from "@/utils/format";
 import { useCallback, useMemo, useState } from "react";
 import { LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BorderRadius } from "@/constants/spacing";
+import { FontFamily } from "@/constants/fonts";
 
 type UserRole = "anfitriona" | "garzon" | "barman" | "cajero";
 
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "800" as any,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
@@ -252,18 +253,18 @@ const styles = StyleSheet.create({
   itemLabel: {
     flexShrink: 1,
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "800" as any,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   itemAmount: {
     fontSize: 19,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     letterSpacing: -0.3,
   },
   itemSublabel: {
     fontSize: 11,
-    fontWeight: "500",
+    fontFamily: FontFamily.medium,
     opacity: 0.8,
   },
 });

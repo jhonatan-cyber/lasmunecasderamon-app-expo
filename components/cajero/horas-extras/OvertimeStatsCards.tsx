@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/format';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -27,19 +28,19 @@ export function OvertimeStatsCards({
     textPrimary,
     textSecondary,
 }: OvertimeStatsCardsProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentColor: themeAccent, accentOnSurface } = useAccentColor();
     return (
         <View style={styles.statsRow}>
             <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
-                <View style={[styles.statIconBox, { backgroundColor: '#3B82F615' }]}>
-                    <Ionicons name="time-outline" size={18} color="#3B82F6" />
+                <View style={[styles.statIconBox, { backgroundColor: `${themeAccent}15` }]}>
+                    <Ionicons name="time-outline" size={18} color={themeAccent} />
                 </View>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Horas</Text>
                 <Text style={[styles.statValue, { color: textPrimary }]}>{stats.totalHoras.toFixed(1)}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardBg, borderColor }]}>
-                <View style={[styles.statIconBox, { backgroundColor: '#10B98115' }]}>
-                    <Ionicons name="cash-outline" size={18} color="#10B981" />
+                <View style={[styles.statIconBox, { backgroundColor: `${accentOnSurface}15` }]}>
+                    <Ionicons name="cash-outline" size={18} color={accentOnSurface} />
                 </View>
                 <Text style={[styles.statLabel, { color: textSecondary }]}>Total Monto</Text>
                 <Text style={[styles.statValue, { color: textPrimary }]}>{formatCurrency(stats.totalMonto)}</Text>
@@ -78,14 +79,14 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         marginBottom: 2 
     },
-    statLabel: { 
-        fontSize: 8, 
-        fontWeight: '700', 
-        textTransform: 'uppercase', 
-        letterSpacing: 0.5 
+    statLabel: {
+        fontSize: 8,
+        fontFamily: FontFamily.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
     },
-    statValue: { 
-        fontSize: 14, 
-        fontWeight: '900' 
+    statValue: {
+        fontSize: 14,
+        fontFamily: FontFamily.black
     },
 });

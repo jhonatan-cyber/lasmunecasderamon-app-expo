@@ -1,5 +1,6 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -17,6 +18,7 @@ import VirtualizedList from '@/components/shared/VirtualizedList';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { PremiumHeaderActions } from '@/components/ui/PremiumHeaderActions';
 import { PremiumAlert } from '@/components/ui/PremiumAlert';
+import { LIST_PERF_PROPS } from '@/constants/listPerf';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { TipDetailModal } from '@/components/shared/TipDetailModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -33,7 +35,7 @@ export default function PropinasScreen() {
     surfaceMuted,
     textPrimary,
     textSecondary,
-    borderColor, accentOnSurface} = useAccentColor();
+    borderColor, accentOnSurface, accentBg } = useAccentColor();
   const {
     propinas,
     loading,
@@ -107,7 +109,7 @@ export default function PropinasScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'spring', delay: Math.min(index, 4) * 30 }}
         >
-          <Pressable onPress={() => handlePropinaPress(item)}>
+          <Pressable onPress={() => handlePropinaPress(item)} accessibilityRole="button" accessibilityLabel={`Ver detalle de propina ${item.codigo_venta || ''}`}>
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
             >
@@ -129,18 +131,18 @@ export default function PropinasScreen() {
                     <View
                       style={[
                         styles.ventaBadge,
-                        { backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE' },
+                        { backgroundColor: surfaceMuted },
                       ]}
                     >
                       <Ionicons
                         name="receipt-outline"
                         size={12}
-                        color={isDark ? '#93C5FD' : '#1E40AF'}
+                        color={accentOnSurface}
                       />
                       <Text
                         style={[
                           styles.ventaText,
-                          { color: isDark ? '#93C5FD' : '#1E40AF' },
+                          { color: accentOnSurface },
                         ]}
                       >
                         Codigo : {item.codigo_venta}
@@ -152,9 +154,7 @@ export default function PropinasScreen() {
                       style={[
                         styles.statusBadge,
                         {
-                          backgroundColor: isDark
-                            ? 'rgba(239, 68, 68, 0.2)'
-                            : '#FEE2E2',
+                          backgroundColor: accentBg,
                         },
                       ]}
                     >
@@ -162,7 +162,7 @@ export default function PropinasScreen() {
                         style={[
                           styles.statusText,
                           {
-                            color: isDark ? '#FCA5A5' : '#DC2626',
+                            color: accentOnSurface,
                           },
                         ]}
                       >
@@ -176,13 +176,7 @@ export default function PropinasScreen() {
                       style={[
                         styles.statusBadge,
                         {
-                          backgroundColor: isPendiente
-                            ? isDark
-                              ? 'rgba(16, 185, 129, 0.2)'
-                              : '#D1FAE5'
-                            : isDark
-                              ? 'rgba(59, 130, 246, 0.2)'
-                              : '#DBEAFE',
+                          backgroundColor: surfaceMuted,
                         },
                       ]}
                     >
@@ -190,13 +184,7 @@ export default function PropinasScreen() {
                         style={[
                           styles.statusText,
                           {
-                            color: isPendiente
-                              ? isDark
-                                ? '#10B981'
-                                : '#065F46'
-                              : isDark
-                                ? '#3B82F6'
-                                : '#1E40AF',
+                            color: accentOnSurface,
                           },
                         ]}
                       >
@@ -286,6 +274,7 @@ export default function PropinasScreen() {
       <PremiumHeader
         title="Propinas"
         subtitle="Mis ganancias por servicio"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -347,6 +336,7 @@ export default function PropinasScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader
           title="Propinas"
+          showThemeToggle={false}
           rightComponent={
             <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
@@ -363,6 +353,7 @@ export default function PropinasScreen() {
       <PremiumHeader
         title="Propinas"
         subtitle="Mis ganancias por servicio"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -432,6 +423,7 @@ export default function PropinasScreen() {
           item.id_detalle_propina?.toString() ?? index.toString()
         }
         renderItem={renderItem}
+        estimatedItemSize={200}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -442,17 +434,9 @@ export default function PropinasScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="cash-outline" title="No se encontraron propinas" message="No hay propinas registradas para este período. Las propinas aparecerán cuando se asignen." />
+          <EmptyState icon="cash-outline" title="No se encontraron propinas" />
         }
-        getItemLayout={(_: any, index: number) => ({
-          length: 200,
-          offset: 200 * index,
-          index,
-        })}
-        windowSize={10}
-        maxToRenderPerBatch={7}
-        initialNumToRender={5}
-        removeClippedSubviews={true}
+        {...LIST_PERF_PROPS}
       />
 
       <TipDetailModal
@@ -481,10 +465,10 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 15 },
   summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: BorderRadius.full,
-    padding: 24,
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: BorderRadius.card,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
@@ -494,17 +478,17 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
   },
-  summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
+  summaryAmount: { fontSize: 34, fontWeight: '900', marginBottom: 10 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  card: { borderRadius: BorderRadius.full, padding: 16, marginTop: 10, borderWidth: 1 },
+  summaryDetail: { fontSize: 12, fontWeight: '600' },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding + 20 },
+  card: { borderRadius: BorderRadius.card, padding: 16, marginTop: 10, borderWidth: 1 },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

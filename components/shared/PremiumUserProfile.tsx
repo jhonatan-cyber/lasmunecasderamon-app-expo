@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { BASE_URL } from '@/api/client';
 import { AttendanceCodeDisplay } from '@/components/anfitriona/AttendanceCodeDisplay';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
@@ -17,12 +18,12 @@ interface PremiumUserProfileProps {
     controlBg?: string;
 }
 
-export const getStatusColor = (status: number, isDark: boolean = true) => {
+export const getStatusColor = (status: number, accentOnSurface: string, accentColor: string, accentUi: string, textSecondary: string) => {
     switch (status) {
-        case 1: return '#10B981';
-        case 2: return '#EF4444';
-        case 3: return '#F59E0B';
-        default: return isDark ? '#9CA3AF' : '#6B7280';
+        case 1: return accentOnSurface;
+        case 2: return accentColor;
+        case 3: return accentUi;
+        default: return textSecondary;
     }
 };
 
@@ -52,19 +53,25 @@ export const PremiumUserProfile = ({
     user,
     userStatus,
     role,
-    gradientText = '#FFFFFF',
+    gradientText = 'rgba(255,255,255,0.95)',
     gradientTextMuted = 'rgba(255,255,255,0.7)',
     controlBg = 'rgba(255,255,255,0.12)',
 }: PremiumUserProfileProps) => {
     const { isTablet, isLandscape } = useResponsiveMetrics();
     const compact = isLandscape && !isTablet;
-    const [imageError, setImageError] = useState(false);
-    const [prevFoto, setPrevFoto] = useState(user?.foto);
-
-    if (prevFoto !== user?.foto) {
-        setPrevFoto(user?.foto);
-        setImageError(false);
+    // El estado de la imagen se reinicia cuando cambia la foto sin un efecto:
+    // así el primer render ya usa el estado correcto y no hay renders extra.
+    const fotoKey = user?.foto ?? '';
+    const [imageState, setImageState] = useState({
+        foto: fotoKey,
+        error: false,
+        loading: true,
+    });
+    if (imageState.foto !== fotoKey) {
+        setImageState({ foto: fotoKey, error: false, loading: true });
     }
+    const imageError = imageState.error;
+    const imageLoading = imageState.loading;
 
     const avatarUri = useMemo(() => {
         if (imageError) {
@@ -99,9 +106,47 @@ export const PremiumUserProfile = ({
             <View style={[styles.avatarContainer, { backgroundColor: controlBg }, compact && styles.avatarContainerCompact]}>
                 <Image
                     source={{ uri: avatarUri }}
-                    style={[styles.avatar, compact && { borderRadius: 18 }]}
-                    onError={() => setImageError(true)}
+                    style={[
+                        styles.avatar,
+                        compact && { borderRadius: 18 },
+                        imageLoading && { opacity: 0 },
+                    ]}
+                    onError={() =>
+                        setImageState((state) => ({
+                            ...state,
+                            error: true,
+                            loading: false,
+                        }))
+                    }
+                    onLoad={() =>
+                        setImageState((state) => ({
+                            ...state,
+                            loading: false,
+                        }))
+                    }
                 />
+                {imageLoading && (
+                    <View
+                        style={[
+                            styles.avatarSkeleton,
+                            StyleSheet.absoluteFill,
+                        ]}
+                    >
+                        <ActivityIndicator
+                            size="small"
+                            color="rgba(255,255,255,0.5)"
+                        />
+                    </View>
+                )}
+                {userStatus && (
+                    <View
+                        style={[
+                            styles.statusDot,
+                            { backgroundColor: getStatusColor(userStatus, gradientText, gradientText, gradientTextMuted, gradientTextMuted), borderColor: controlBg, borderWidth: 2 }
+                        ]}
+                        accessibilityLabel={`Estado: ${getStatusLabel(userStatus)}`}
+                    />
+                )}
             </View>
             <View style={styles.headerInfo}>
                 <View style={styles.nameHeaderContainer}>
@@ -139,11 +184,20 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.full,
         backgroundColor: 'rgba(255,255,255,0.12)',
         overflow: 'hidden',
+        position: 'relative',
     },
     avatarContainerCompact: {
         width: 46,
         height: 46,
         borderRadius: BorderRadius.full,
+    },
+    avatarSkeleton: {
+        width: '100%',
+        height: '100%',
+        borderRadius: BorderRadius.full,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     avatar: {
         width: '100%',
@@ -155,7 +209,7 @@ const styles = StyleSheet.create({
     },
     username: {
         fontSize: 24,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -0.5,
     },
     nameHeaderContainer: {
@@ -173,7 +227,7 @@ const styles = StyleSheet.create({
     nickText: {
         marginTop: 2,
         fontSize: 13,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         letterSpacing: 0.2,
     },
     statusRow: {
@@ -182,13 +236,15 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     statusDot: {
-        width: 8,
-        height: 8,
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 14,
+        height: 14,
         borderRadius: BorderRadius.full,
-        marginRight: 6,
     },
     statusText: {
         fontSize: 13,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
 });

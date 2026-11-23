@@ -1,5 +1,6 @@
 import { EmployeeListError } from '@/components/shared/EmployeeListError';
 import { BorderRadius } from '@/constants/spacing';
+import { tabBarBottomPadding } from '@/constants/layout';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { useCallback, useState } from 'react';
@@ -99,6 +100,7 @@ export default function HorasExtrasScreen() {
       <PremiumHeader
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -156,6 +158,7 @@ export default function HorasExtrasScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <PremiumHeader
           title="Horas Extras"
+          showThemeToggle={false}
           rightComponent={
             <PremiumHeaderActions onlyTheme
               showAlert={showAlert}
@@ -172,6 +175,7 @@ export default function HorasExtrasScreen() {
       <PremiumHeader
         title="Horas Extras"
         subtitle="Mi tiempo adicional laborado"
+        showThemeToggle={false}
         rightComponent={
           <PremiumHeaderActions onlyTheme
             showAlert={showAlert}
@@ -249,7 +253,7 @@ export default function HorasExtrasScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState icon="time-outline" title="No se encontraron horas extras" message="No hay horas extras registradas para este período. Las horas extras aparecerán cuando se aprueben." />
+          <EmptyState icon="time-outline" title="No se encontraron horas extras" />
         }
         {...LIST_PERF_PROPS}
       />
@@ -269,10 +273,10 @@ export default function HorasExtrasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: BorderRadius.full,
-    padding: 24,
+    marginHorizontal: 14,
+    marginTop: 14,
+    borderRadius: BorderRadius.card,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 1,
     elevation: 4,
@@ -282,14 +286,14 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
   },
-  summaryAmount: { fontSize: 38, fontWeight: '900', marginBottom: 12 },
+  summaryAmount: { fontSize: 34, fontWeight: '900', marginBottom: 10 },
   summaryDetails: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  summaryDetail: { fontSize: 13, fontWeight: '600' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  summaryDetail: { fontSize: 12, fontWeight: '600' },
+  listContent: { paddingHorizontal: 16, paddingBottom: tabBarBottomPadding + 20 },
 });

@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
@@ -28,18 +29,18 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
   return (
     <Modal visible={visible && movement !== null} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Cerrar detalle" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalle" />
         {movement && (
           <View style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.header}>
               <View style={[styles.iconWrap, { backgroundColor: `${accentColor}20` }]}>
                 <Ionicons name={movement.tipo === 'traspaso' ? 'swap-horizontal' : 'wine-outline'} size={22} color={accentColor} />
               </View>
-              <View style={styles.headerText}>
+              <View style={[styles.headerText, { minWidth: 0 }]}>
                 <Text style={[styles.eyebrow, { color: textSecondary }]}>DETALLE DEL MOVIMIENTO</Text>
                 <Text style={[styles.title, { color: textPrimary }]} numberOfLines={2}>{movement.producto_nombre || 'Producto'}</Text>
               </View>
-              <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Cerrar modal">
+              <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar modal">
                 <Ionicons name="close-circle" size={26} color={textSecondary} />
               </Pressable>
             </View>
@@ -52,10 +53,10 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
                   <View style={[styles.image, styles.imagePlaceholder]}><Ionicons name="wine-outline" size={30} color={textSecondary} /></View>
                 )}
                 <View style={styles.productInfo}>
-                  <Text style={[styles.productName, { color: textPrimary }]}>{movement.producto_nombre || '—'}</Text>
-                  <Text style={[styles.productMeta, { color: textSecondary }]}>{movement.presentacion_nombre || 'Presentación —'}</Text>
-                  {!!movement.categoria_nombre && <Text style={[styles.productMeta, { color: textSecondary }]}>Categoría: {movement.categoria_nombre}</Text>}
-                  {!!movement.codigo_barras && <Text style={[styles.productMeta, { color: textSecondary }]}>Código: {movement.codigo_barras}</Text>}
+                  <Text style={[styles.productName, { color: textPrimary }]} numberOfLines={2}>{movement.producto_nombre || '—'}</Text>
+                  <Text style={[styles.productMeta, { color: textSecondary }]} numberOfLines={1}>{movement.presentacion_nombre || 'Presentación —'}</Text>
+                  {!!movement.categoria_nombre && <Text style={[styles.productMeta, { color: textSecondary }]} numberOfLines={1}>Categoría: {movement.categoria_nombre}</Text>}
+                  {!!movement.codigo_barras && <Text style={[styles.productMeta, { color: textSecondary }]} numberOfLines={1}>Código: {movement.codigo_barras}</Text>}
                 </View>
               </View>
 
@@ -105,7 +106,7 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
               )}
             </ScrollView>
 
-            <Pressable onPress={onClose} style={({ pressed }) => [styles.closeButton, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalle" style={({ pressed }) => [styles.closeButton, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}>
               <Text style={[styles.closeText, { color: accentText }]}>Cerrar detalle</Text>
             </Pressable>
           </View>
@@ -118,8 +119,8 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
 function Info({ label, value, accentColor, textPrimary, textSecondary }: { label: string; value: string; accentColor: string; textPrimary: string; textSecondary: string }) {
   return (
     <View style={[styles.infoTile, { borderColor: `${accentColor}30`, backgroundColor: `${accentColor}08` }]}>
-      <Text style={[styles.infoLabel, { color: textSecondary }]}>{label}</Text>
-      <Text style={[styles.infoValue, { color: textPrimary }]}>{value}</Text>
+      <Text style={[styles.infoLabel, { color: textSecondary }]} numberOfLines={1}>{label}</Text>
+      <Text style={[styles.infoValue, { color: textPrimary }]} numberOfLines={2}>{value}</Text>
     </View>
   );
 }
@@ -130,22 +131,22 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingBottom: 13, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(148,163,184,0.25)' },
   iconWrap: { width: 44, height: 44, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
-  eyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  title: { fontSize: 18, fontWeight: '900', marginTop: 3 },
+  eyebrow: { fontSize: 9, fontFamily: FontFamily.black, letterSpacing: 1 },
+  title: { fontSize: 18, fontFamily: FontFamily.black, marginTop: 3 },
   details: { gap: 15, paddingVertical: 15 },
   product: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   image: { width: 74, height: 74, borderRadius: BorderRadius.full },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.12)' },
-  productInfo: { flex: 1, gap: 3 },
-  productName: { fontSize: 16, fontWeight: '900' },
-  productMeta: { fontSize: 11, fontWeight: '600' },
+  productInfo: { flex: 1, minWidth: 0, gap: 3 },
+  productName: { fontSize: 16, fontFamily: FontFamily.black },
+  productMeta: { fontSize: 11, fontFamily: FontFamily.semibold },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   section: { gap: 8 },
-  sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
+  sectionTitle: { fontSize: 10, fontFamily: FontFamily.black, letterSpacing: 0.8 },
   volumeGrid: { marginTop: 8 },
   infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: BorderRadius.full, justifyContent: 'space-between', gap: 4 },
-  infoLabel: { fontSize: 9, fontWeight: '700' },
-  infoValue: { fontSize: 12, fontWeight: '900' },
+  infoLabel: { fontSize: 9, fontFamily: FontFamily.bold },
+  infoValue: { fontSize: 12, fontFamily: FontFamily.black },
   closeButton: { borderRadius: BorderRadius.full, alignItems: 'center', paddingVertical: 12, marginTop: 4 },
-  closeText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
+  closeText: { fontSize: 13, fontFamily: FontFamily.black },
 });

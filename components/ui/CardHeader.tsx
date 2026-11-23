@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 export interface CardHeaderProps {
@@ -109,16 +110,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   date: {
     fontSize: FontSize.xxs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     marginTop: 2,
   },
   statusBadge: {
@@ -137,6 +138,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: FontSize.xxs,
-    fontWeight: '900',
+    fontFamily: FontFamily.black,
   },
 });

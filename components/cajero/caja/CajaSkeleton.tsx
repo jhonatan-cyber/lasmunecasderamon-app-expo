@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, AccessibilityRole } from 'react-native';
 import { BorderRadius } from '@/constants/spacing';
 import { Skeleton } from '@/components/ui/Skeleton';
 
@@ -13,8 +13,8 @@ export function CajaSkeleton({ cardBg, borderColor }: CajaSkeletonProps) {
             {}
             <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, padding: 20 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Skeleton width={130} height={32} borderRadius={20} />
-                    <Skeleton width={90} height={36} borderRadius={12} />
+                    <Skeleton width={130} height={32} borderRadius={20} accessibilityRole="button" accessibilityLabel="Monto de la caja" />
+                    <Skeleton width={90} height={36} borderRadius={12} accessibilityRole="button" accessibilityLabel="Forma de pago" />
                 </View>
                 <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 16 }} />
                 <Skeleton width={200} height={14} borderRadius={8} />
@@ -23,14 +23,14 @@ export function CajaSkeleton({ cardBg, borderColor }: CajaSkeletonProps) {
             {}
             <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1, padding: 16 }]}>
-                    <Skeleton width={40} height={40} borderRadius={12} style={{ marginBottom: 12 }} />
-                    <Skeleton width={60} height={10} borderRadius={6} />
-                    <Skeleton width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+                    <Skeleton width={40} height={40} borderRadius={12} accessibilityRole="button" accessibilityLabel="Producto" />
+                    <Skeleton width={60} height={10} borderRadius={6} accessibilityRole="button" accessibilityLabel="Cantidad" />
+                    <Skeleton width={90} height={26} borderRadius={8} accessibilityRole="button" accessibilityLabel="Disponible" />
                 </View>
                 <View style={[styles.skeletonCard, { backgroundColor: cardBg, borderColor, flex: 1, padding: 16 }]}>
-                    <Skeleton width={40} height={40} borderRadius={12} style={{ marginBottom: 12 }} />
-                    <Skeleton width={60} height={10} borderRadius={6} />
-                    <Skeleton width={90} height={26} borderRadius={8} style={{ marginTop: 8 }} />
+                    <Skeleton width={40} height={40} borderRadius={12} accessibilityRole="button" accessibilityLabel="Producto" />
+                    <Skeleton width={60} height={10} borderRadius={6} accessibilityRole="button" accessibilityLabel="Cantidad" />
+                    <Skeleton width={90} height={26} borderRadius={8} accessibilityRole="button" accessibilityLabel="Disponible" />
                 </View>
             </View>
 

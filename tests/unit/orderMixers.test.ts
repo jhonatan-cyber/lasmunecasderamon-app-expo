@@ -8,11 +8,13 @@ const bar = [
     producto_nombre: "Sprite",
     nombre: "500 ml",
     stock_bar: 3,
+    producto_estado: 1,
     opciones_venta: [
       {
         tipo: "botella",
         cover_habilitado: true,
         corto_anfitriona_habilitado: true,
+        colacion_habilitada: true,
       },
     ],
   },
@@ -22,11 +24,13 @@ const bar = [
     nombre: "1 litro",
     stock_bar: 0,
     ml_abierta: 350,
+    producto_estado: 1,
     opciones_venta: [
       {
         tipo: "botella",
         cover_habilitado: true,
         corto_anfitriona_habilitado: true,
+        colacion_habilitada: true,
       },
     ],
   },
@@ -49,7 +53,7 @@ const product = {
 };
 
 describe("Bebidas del pedido", () => {
-  it("permite ml abiertos suficientes para cortos de anfitriona y excluye el propio producto", () => {
+  it("evalúa los ml abiertos por corto de anfitriona, como el dashboard, y excluye el propio producto", () => {
     expect(
       availableOrderMixers(
         bar,
@@ -57,13 +61,15 @@ describe("Bebidas del pedido", () => {
         false,
       ).map((item) => item.id),
     ).toEqual(["sprite", "cola-open"]);
+    // Cada corto se elige por unidad: los 350 ml abiertos alcanzan para un
+    // corto de 150 ml, aunque la línea tenga 3 unidades.
     expect(
       availableOrderMixers(
         bar,
         { ...product, shot_anfitriona: true, cantidad: 3 },
         false,
       ).map((item) => item.id),
-    ).toEqual(["sprite"]);
+    ).toEqual(["sprite", "cola-open"]);
   });
   it("para cortos de cliente solo ofrece unidades completas suficientes", () => {
     expect(
@@ -79,11 +85,13 @@ describe("Bebidas del pedido", () => {
       producto_nombre: "Bebida anfitriona",
       nombre: "350 ml",
       stock_bar: 5,
+      producto_estado: 1,
       opciones_venta: [
         {
           tipo: "botella",
           cover_habilitado: false,
           corto_anfitriona_habilitado: true,
+          colacion_habilitada: true,
         },
       ],
     };
@@ -92,6 +100,7 @@ describe("Bebidas del pedido", () => {
       producto_nombre: "Bebida cover",
       nombre: "350 ml",
       stock_bar: 5,
+      producto_estado: 1,
       opciones_venta: [
         {
           tipo: "botella",

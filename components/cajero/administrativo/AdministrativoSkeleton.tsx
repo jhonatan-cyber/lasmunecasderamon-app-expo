@@ -1,54 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Animated, Easing, ScrollView, View } from "react-native";
+import React from "react";
+import { ScrollView, StyleProp, View, ViewStyle } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
-
-const SkeletonBox = ({
-  width,
-  height,
-  borderRadius = 10,
-  style = {},
-}: {
-  width: number | string;
-  height: number;
-  borderRadius?: number;
-  style?: any;
-}) => {
-  const [anim] = useState(() => new Animated.Value(0.3));
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0.3,
-          duration: 750,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [anim]);
-  return (
-    <Animated.View
-      style={[
-        {
-          width,
-          height,
-          borderRadius,
-          backgroundColor: "#111111",
-          opacity: anim,
-        },
-        style,
-      ]}
-    />
-  );
-};
+import { Skeleton } from "@/components/ui/Skeleton";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type AdministrativoSkeletonProps = {
   bg: string;
@@ -56,8 +12,9 @@ type AdministrativoSkeletonProps = {
 };
 
 export function AdministrativoSkeleton({ bg, isDark }: AdministrativoSkeletonProps) {
+  const { surfaceMuted, borderColor, bg: themeBg } = useAccentColor();
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View style={{ flex: 1, backgroundColor: themeBg }}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={isDark ? "light" : "dark"} />
 
@@ -73,8 +30,8 @@ export function AdministrativoSkeleton({ bg, isDark }: AdministrativoSkeletonPro
               borderRadius: 20,
               borderWidth: 1,
               padding: 16,
-              backgroundColor: isDark ? "#111111" : "#FFF",
-              borderColor: isDark ? "#374151" : "#E2E8F0",
+              backgroundColor: surfaceMuted,
+              borderColor,
             }}
           >
             <View
@@ -85,10 +42,10 @@ export function AdministrativoSkeleton({ bg, isDark }: AdministrativoSkeletonPro
                 marginBottom: 20,
               }}
             >
-              <SkeletonBox width={56} height={56} borderRadius={16} />
+              <Skeleton width={56} height={56} borderRadius={16} />
               <View style={{ gap: 8, flex: 1 }}>
-                <SkeletonBox width="60%" height={14} borderRadius={6} />
-                <SkeletonBox width="40%" height={28} borderRadius={8} />
+                <Skeleton width="60%" height={14} borderRadius={6} />
+                <Skeleton width="40%" height={28} borderRadius={8} />
               </View>
             </View>
           </View>

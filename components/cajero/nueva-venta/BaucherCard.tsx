@@ -2,6 +2,7 @@ import React from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 interface BaucherCardProps {
@@ -85,6 +86,6 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     borderWidth: 1,
   },
-  baucherBtnText: { fontSize: 12, fontWeight: '800' },
+  baucherBtnText: { fontSize: 12, fontFamily: FontFamily.extrabold },
   baucherQuitar: { padding: 2 },
 });

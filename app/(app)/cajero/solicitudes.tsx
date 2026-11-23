@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import VirtualizedList from "@/components/shared/VirtualizedList";
-import { contentColumn } from "@/constants/layout";
+import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -201,7 +202,6 @@ export default function SolicitudesScreen() {
         pendientesHref={"/(app)/cajero/pendientes" as never}
       />
 
-      {}
       {totalAPagar > 0 && (
         <AnimatedView
           from={{ opacity: 0, scale: 0.95 }}
@@ -234,7 +234,6 @@ export default function SolicitudesScreen() {
         </AnimatedView>
       )}
 
-      {}
       <FilterTabs
         scrollable
         tabs={[
@@ -250,26 +249,6 @@ export default function SolicitudesScreen() {
         textSecondary={textSecondary}
         borderColor={borderColor}
       />
-
-      {solicitudes.length > 0 && !isOffline && (
-        <AnimatedView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={[
-            styles.urgencyBar,
-            { backgroundColor: accentColor, marginHorizontal: 16 },
-          ]}
-        >
-          <Ionicons name="warning" size={20} color="#FFFFFF" />
-          <Text style={styles.urgencyBarText}>
-            {filteredSolicitudes.length}{" "}
-            {activeFilter === "all"
-              ? "SOLICITUDES"
-              : activeFilter.toUpperCase()}{" "}
-            PENDIENTE{filteredSolicitudes.length !== 1 ? "S" : ""}
-          </Text>
-        </AnimatedView>
-      )}
 
       <VirtualizedList
         data={filteredSolicitudes}
@@ -295,7 +274,7 @@ export default function SolicitudesScreen() {
             <Ionicons
               name="checkmark-circle-outline"
               size={48}
-              color="#10B981"
+              color={accentOnSurface}
               style={{ marginBottom: 12 }}
             />
             <Text style={[styles.emptyText, { color: textPrimary }]}>
@@ -304,11 +283,6 @@ export default function SolicitudesScreen() {
                 : activeFilter !== "all"
                   ? `Sin ${activeFilter === "anticipo" ? "anticipos" : activeFilter === "pedido" ? "pedidos" : "servicios"} pendientes`
                   : "Todo al día"}
-            </Text>
-            <Text style={[styles.emptySub, { color: textSecondary }]}>
-              {!cajaAbierta
-                ? "Abre una caja para procesar"
-                : "No hay solicitudes pendientes"}
             </Text>
           </View>
         }
@@ -395,12 +369,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextRight: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },
-  listContainer: { ...contentColumn, padding: 16, paddingBottom: 100 },
+  listContainer: { ...contentColumn, padding: 16, paddingBottom: tabBarBottomPadding },
   cardWrapper: { paddingBottom: 16 },
   cardWrapperGrid: { flex: 1, paddingHorizontal: 8 },
   columnWrapper: { marginHorizontal: -8 },
@@ -420,13 +393,14 @@ const styles = StyleSheet.create({
     marginTop: 40,
     borderStyle: "dashed",
   },
-  emptyText: { fontSize: 18, fontWeight: "800", marginBottom: 4 },
-  emptySub: { fontSize: 14, fontWeight: "500" },
+  emptyText: { fontSize: 18, fontFamily: FontFamily.extrabold, marginBottom: 4 },
+  emptySub: { fontSize: 14, fontFamily: FontFamily.medium },
   totalBanner: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 16,
-    marginBottom: 4,
+    marginTop: 12,
+    marginBottom: 12,
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
@@ -444,29 +418,10 @@ const styles = StyleSheet.create({
   totalBannerText: { flex: 1 },
   totalBannerLabel: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
-  totalBannerValue: { fontSize: 24, fontWeight: "900", letterSpacing: -0.5 },
-  urgencyBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    gap: 10,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    marginBottom: 8,
-  },
-  urgencyBarText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
+  totalBannerValue: { fontSize: 24, fontFamily: FontFamily.black, letterSpacing: -0.5 },
 });

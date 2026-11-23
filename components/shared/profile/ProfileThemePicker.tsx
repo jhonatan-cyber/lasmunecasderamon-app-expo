@@ -5,7 +5,7 @@ import { DEFAULT_ACCENT_COLOR, THEME_OPTIONS, normalizeAccentColor, useThemeStor
 import { useAuthStore } from "@/store/authStore";
 import { neonGlow, resolveAccentSurface } from "@/utils/color";
 
-export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark }: {
+export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark, accentText }: {
   /** Se mantiene en la firma porque la vista de perfil lo pasa, pero el
    *  selector usa el acento guardado en el store. */
   accentColor?: string;
@@ -13,6 +13,7 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
   textSecondary: string;
   borderColor: string;
   isDark: boolean;
+  accentText: string;
 }) {
   const setAccentColor = useThemeStore((state) => state.setAccentColor);
   const userId = useAuthStore((state) => state.user?.id);
@@ -47,7 +48,7 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
           { backgroundColor: selectedTheme.color, boxShadow: glowOf(selectedTheme.color) },
         ]}
       >
-        <View style={[styles.previewIcon, { backgroundColor: previewTextColor === "#FFFFFF" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)" }]}>
+        <View style={[styles.previewIcon, { backgroundColor: previewTextColor === accentText ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)" }]}>
           <Ionicons name="color-palette-outline" size={26} color={previewTextColor} />
         </View>
         <View style={styles.previewText}>
@@ -69,9 +70,9 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
           // seleccionado pasa a blanco para seguir siendo visible.
           const optionBorder = isSelected
             ? isThemeLight(theme.color)
-              ? "#6B7280"
+              ? textSecondary
               : isThemeBlack && isDark
-                ? "#FFFFFF"
+                ? accentText
                 : theme.color
             : borderColor;
           return (

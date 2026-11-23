@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, HitSlop, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 
 interface ActiveServiceCardProps {
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     badgeText: {
         color: '#FFF',
         fontSize: FontSize.xxs,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: 1,
     },
     content: {
@@ -137,13 +138,13 @@ const styles = StyleSheet.create({
     label: {
         color: 'rgba(255,255,255,0.7)',
         fontSize: FontSize.xs,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         letterSpacing: 1,
     },
     roomNumber: {
         color: '#FFF',
         fontSize: FontSize.xl,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: -1,
     },
     timerContainer: {
@@ -152,12 +153,12 @@ const styles = StyleSheet.create({
     timerText: {
         color: '#FFF',
         fontSize: FontSize.xl,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
     },
     timerSubText: {
         color: 'rgba(255,255,255,0.7)',
         fontSize: FontSize.xxs,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         marginTop: -4,
     },
     footer: {
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     footerText: {
         color: 'rgba(255,255,255,0.8)',
         fontSize: FontSize.xs,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
 });
 

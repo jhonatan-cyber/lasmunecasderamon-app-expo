@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, StyleProp, ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, {
     useAnimatedStyle,
@@ -19,7 +19,7 @@ export interface SearchBarProps {
     onChangeText?: (text: string) => void;
     onClear?: () => void;
     autoFocus?: boolean;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
     /** Debounce in ms for onChangeText callbacks (default 300). Set 0 to disable. */
     debounceMs?: number;
 }

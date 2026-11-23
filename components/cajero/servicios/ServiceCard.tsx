@@ -285,7 +285,7 @@ const ServiceCardContent = ({
               {!readOnly && !sinAccionesBarman && activeTab === "activos" && (
                 <ServiceCardActions
                   accentColor={theme.accent}
-                  accentTextColor={theme.accentText || "#FFFFFF"}
+                  accentTextColor={theme.accentText || "#FFF"}
                   cardBg={theme.card}
                   textColor={theme.text}
                   textMutedColor={theme.textMuted}

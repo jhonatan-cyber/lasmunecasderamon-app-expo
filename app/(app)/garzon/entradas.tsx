@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image } from 'expo-image';
@@ -54,7 +55,7 @@ function fechaHoraLocal() {
 }
 
 export default function GarzonEntradasScreen() {
-  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor } =
+  const { accentColor, bg, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentText, accentOnSurface, accentBg, accentBorder } =
     useAccentColor();
   const router = useRouter();
 
@@ -232,7 +233,7 @@ export default function GarzonEntradasScreen() {
       hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
       style={styles.backBtn}
     >
-      <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+      <Ionicons name="arrow-back" size={20} color={accentText} />
     </Pressable>
   );
 
@@ -265,7 +266,7 @@ export default function GarzonEntradasScreen() {
       <ScrollView
         automaticallyAdjustKeyboardInsets
         style={styles.container}
-        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
+        contentContainerStyle={[contentColumn, { paddingBottom: tabBarBottomPadding }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -278,9 +279,9 @@ export default function GarzonEntradasScreen() {
       >
         <View style={{ padding: 20 }}>
           {!caja && (
-            <View style={[styles.cajaBanner, { backgroundColor: '#F59E0B1F', borderColor: '#F59E0B' }]}>
-              <Ionicons name="lock-closed-outline" size={18} color="#F59E0B" />
-              <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '700', flex: 1 }}>
+            <View style={[styles.cajaBanner, { backgroundColor: accentBg, borderColor: accentBorder }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={accentOnSurface} />
+              <Text style={{ color: accentOnSurface, fontSize: 12, fontFamily: FontFamily.bold, flex: 1 }}>
                 Sin caja abierta. Las entradas del turno se listan mientras la caja esté
                 abierta: abre una caja para cobrar en la puerta.
               </Text>
@@ -294,6 +295,9 @@ export default function GarzonEntradasScreen() {
             <Pressable
               onPress={() => setRegistroAbierto(abierto => !abierto)}
               style={styles.cardToggle}
+              accessibilityRole="button"
+              accessibilityLabel={registroAbierto ? 'Colapsar nueva entrada' : 'Expandir nueva entrada'}
+              accessibilityState={{ expanded: registroAbierto }}
             >
               <Text
                 style={[styles.sectionLabel, { color: textSecondary, marginTop: 0, marginBottom: 0 }]}
@@ -340,6 +344,9 @@ export default function GarzonEntradasScreen() {
                 onPress={() => setCantidad(c => Math.max(1, c - 1))}
                 disabled={cantidad <= 1}
                 style={[styles.stepperBtn, cantidad <= 1 && { opacity: 0.4 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Reducir cantidad"
+                accessibilityState={{ disabled: cantidad <= 1 }}
               >
                 <Ionicons name="remove" size={20} color={textPrimary} />
               </Pressable>
@@ -350,6 +357,9 @@ export default function GarzonEntradasScreen() {
                 onPress={() => setCantidad(c => Math.min(100, c + 1))}
                 disabled={cantidad >= 100}
                 style={[styles.stepperBtn, cantidad >= 100 && { opacity: 0.4 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Aumentar cantidad"
+                accessibilityState={{ disabled: cantidad >= 100 }}
               >
                 <Ionicons name="add" size={20} color={textPrimary} />
               </Pressable>
@@ -372,6 +382,9 @@ export default function GarzonEntradasScreen() {
                         borderColor: activo ? accentColor : borderColor,
                       },
                     ]}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Pagar con ${metodoOp.label}`}
+                    accessibilityState={{ selected: activo }}
                   >
                     <Ionicons
                       name={metodoOp.icon}
@@ -398,11 +411,14 @@ export default function GarzonEntradasScreen() {
               <Pressable
                 onPress={tomarFotoBaucher}
                 disabled={fotoLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Tomar foto del baucher"
+                accessibilityState={{ disabled: fotoLoading }}
                 style={[
                   styles.fotoBtn,
                   {
-                    backgroundColor: baucherFoto ? '#10B9811F' : `${accentColor}1F`,
-                    borderColor: baucherFoto ? '#10B981' : accentColor,
+                    backgroundColor: baucherFoto ? accentBg : `${accentColor}1F`,
+                    borderColor: baucherFoto ? accentOnSurface : accentColor,
                   },
                 ]}
               >
@@ -415,8 +431,8 @@ export default function GarzonEntradasScreen() {
                 )}
                 <Text
                   style={{
-                    color: baucherFoto ? '#10B981' : accentColor,
-                    fontWeight: '700',
+                    color: baucherFoto ? accentOnSurface : accentColor,
+                    fontFamily: FontFamily.bold,
                     fontSize: 13,
                     flex: 1,
                   }}
@@ -442,7 +458,7 @@ export default function GarzonEntradasScreen() {
               ]}
             >
               {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={accentText} />
               ) : (
                 <Text style={styles.submitText}>REGISTRAR ENTRADA</Text>
               )}
@@ -492,7 +508,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     letterSpacing: 1,
     marginBottom: 8,
     marginTop: 12,
@@ -518,7 +534,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepperValue: { fontSize: 18, fontWeight: '900', minWidth: 56, textAlign: 'center' },
+  stepperValue: { fontSize: 18, fontFamily: FontFamily.black, minWidth: 56, textAlign: 'center' },
   metodosRow: { flexDirection: 'row', gap: 8 },
   metodoChip: {
     flex: 1,
@@ -536,7 +552,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 0,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     textAlign: 'center',
   },
   fotoBtn: {
@@ -556,7 +572,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     marginBottom: 14,
   },
-  totalValue: { fontSize: 22, fontWeight: '900' },
+  totalValue: { fontSize: 22, fontFamily: FontFamily.black },
   submitBtn: {
     borderRadius: 16,
     minHeight: 52,
@@ -564,7 +580,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+  submitText: { fontFamily: FontFamily.black, fontSize: 14, letterSpacing: 0.5 },
   cajaBanner: {
     flexDirection: 'row',
     alignItems: 'center',

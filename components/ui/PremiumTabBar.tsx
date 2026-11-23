@@ -1,21 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
+    type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface PremiumTabItemProps {
     route: any;
     index: number;
     isFocused: boolean;
-    tabScale: import('react-native-reanimated').SharedValue<number>;
+    tabScale: SharedValue<number>;
     onPress: () => void;
     labelText: string;
     options: any;
@@ -153,20 +155,39 @@ export const PremiumTabBar = ({
     const compact = isLandscape && !isTablet;
     const insets = useSafeAreaInsets();
 
-    // Micro-animación de scale para cada tab activo
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const tabScales = state.routes.map(() => useSharedValue(1));
+    // Guardia defensiva: state.routes y state.index pueden ser undefined durante
+    // la inicialización de React Navigation.
+    const routes = state.routes ?? [];
+    const currentIndex = state.index ?? 0;
+
+    // Micro-animación de scale para cada tab — se crean directamente en el cuerpo
+    // del componente (no dentro de useMemo) para cumplir con las reglas de hooks
+    // de React. Se usa un número fijo máximo de 6 tabs, suficiente para cualquier
+    // configuración de navegación de la app.
+    const MAX_TABS = 6;
+    const sv0 = useSharedValue(1);
+    const sv1 = useSharedValue(1);
+    const sv2 = useSharedValue(1);
+    const sv3 = useSharedValue(1);
+    const sv4 = useSharedValue(1);
+    const sv5 = useSharedValue(1);
+    const tabScales: SharedValue<number>[] = useMemo(
+        () => [sv0, sv1, sv2, sv3, sv4, sv5],
+        [sv0, sv1, sv2, sv3, sv4, sv5],
+    );
+
     useEffect(() => {
-        state.routes.forEach((_, i) => {
-            const isActive = state.index === i;
+        if (!routes.length) return;
+        for (let i = 0; i < Math.min(routes.length, MAX_TABS); i++) {
+            const isActive = currentIndex === i;
+            const sv = tabScales[i];
             if (reducedMotion) {
-                tabScales[i].value = isActive ? 1.08 : 1;
+                sv.value = isActive ? 1.08 : 1;
             } else {
-                tabScales[i].value = withSpring(isActive ? 1.08 : 1, { damping: 15, stiffness: 200 });
+                sv.value = withSpring(isActive ? 1.08 : 1, { damping: 15, stiffness: 200 });
             }
-        });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.index, state.routes, reducedMotion]);
+        }
+    }, [currentIndex, routes.length, reducedMotion, tabScales]);
 
     // El texto de la barra se mide contra el color plano del acento: blanco
     // en los acentos profundos y casi negro en los neón luminosos. Ambos
@@ -204,9 +225,12 @@ export const PremiumTabBar = ({
                     },
                 ]}
             >
-            {state.routes.map((route: any, index: number) => {
-                const { options } = descriptors[route.key];
+            {routes.map((route: any, index: number) => {
+                const descriptor = descriptors[route.key];
+                const options = descriptor?.options;
 
+                // Si no hay descriptor ni options, saltar esta ruta para evitar crash.
+                if (!options) return null;
                 if (estaOculta(options)) return null;
 
                 const label =
@@ -216,7 +240,7 @@ export const PremiumTabBar = ({
                             ? options.title
                             : route.name;
 
-                const isFocused = state.index === index;
+                const isFocused = currentIndex === index;
 
                 const onPress = () => {
                     const event = emitter.emit({
@@ -231,13 +255,17 @@ export const PremiumTabBar = ({
 
                 const labelText = typeof label === 'string' ? label : route.name;
 
+                // Guardia: si tabScales[index] no existe, no renderizar este tab.
+                const tabScale = tabScales[index];
+                if (!tabScale) return null;
+
                 return (
                     <PremiumTabItem
                         key={route.key}
                         route={route}
                         index={index}
                         isFocused={isFocused}
-                        tabScale={tabScales[index]}
+                        tabScale={tabScale}
                         onPress={onPress}
                         labelText={labelText}
                         options={options}
@@ -313,10 +341,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     tabLabelActive: {
-        fontWeight: '800',
+        fontFamily: FontFamily.bold,
     },
     tabLabelInactive: {
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     // Cuadrado fijo con radio = mitad del lado: así el fondo del ítem activo
     // siempre es un círculo perfecto y no una píldora o un cuadrado redondeado.

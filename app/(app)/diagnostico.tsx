@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useConnectivity } from '@/hooks/useConnectivity';
 import {
     collectOfflineDiagnostics,
@@ -57,10 +58,11 @@ const formatBytes = (bytes: number) => `${bytes} B`;
  * expone un solo dato. Es de sólo lectura: sirve para mirar, no para tocar.
  */
 export default function DiagnosticoScreen() {
+    const { textSecondary, cardBg } = useAccentColor();
     if (!__DEV__) {
         return (
-            <View style={styles.cerrado}>
-                <Ionicons name='lock-closed-outline' size={40} color='#9CA3AF' />
+            <View style={[styles.cerrado, { backgroundColor: cardBg }]}>
+                <Ionicons name='lock-closed-outline' size={40} color={textSecondary} />
                 <Text style={styles.cerradoTitulo}>Diagnóstico no disponible</Text>
                 <Text style={styles.cerradoTexto}>
                     Esta pantalla existe únicamente en build de desarrollo.
@@ -74,7 +76,7 @@ export default function DiagnosticoScreen() {
 
 function DiagnosticoContenido() {
     const router = useRouter();
-    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary } = useAccentColor();
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface, accentText } = useAccentColor();
     const { state, isOffline, isOnline } = useConnectivity();
     const insets = useSafeAreaInsets();
 
@@ -111,6 +113,9 @@ function DiagnosticoContenido() {
                 key={fila.key}
                 onPress={() => setFilaAbierta(abierto ? null : `mirror:${fila.key}`)}
                 style={[styles.fila, { borderColor }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${abierto ? 'Colapsar' : 'Expandir'} ${fila.key}`}
+                accessibilityState={{ expanded: abierto }}
             >
                 <View style={styles.filaTop}>
                     <Text style={[styles.filaClave, { color: textPrimary }]} numberOfLines={1}>
@@ -137,11 +142,11 @@ function DiagnosticoContenido() {
         const abierto = filaAbierta === `outbox:${fila.id}`;
         const color =
             fila.status === 'aplicada'
-                ? '#10B981'
+                ? accentOnSurface
                 : fila.status === 'fallida'
-                  ? '#EF4444'
+                  ? accentColor
                   : fila.status === 'enviando'
-                    ? '#F59E0B'
+                    ? accentOnSurface
                     : accentColor;
 
         return (
@@ -149,6 +154,9 @@ function DiagnosticoContenido() {
                 key={fila.id}
                 onPress={() => setFilaAbierta(abierto ? null : `outbox:${fila.id}`)}
                 style={[styles.fila, { borderColor }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${abierto ? 'Colapsar' : 'Expandir'} ${fila.label || fila.type}`}
+                accessibilityState={{ expanded: abierto }}
             >
                 <View style={styles.filaTop}>
                     <Text style={[styles.filaClave, { color: textPrimary }]} numberOfLines={1}>
@@ -197,8 +205,10 @@ function DiagnosticoContenido() {
                 <Pressable
                     onPress={recargar}
                     style={[styles.refrescar, { backgroundColor: accentColor }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Volver a leer diagnóstico"
                 >
-                    <Ionicons name='refresh' size={16} color='#FFFFFF' />
+                    <Ionicons name='refresh' size={16} color={accentText} />
                     <Text style={styles.refrescarTexto}>VOLVER A LEER</Text>
                 </Pressable>
 
@@ -275,22 +285,22 @@ const styles = StyleSheet.create({
         height: 44,
         borderRadius: 12,
     },
-    refrescarTexto: { color: '#FFFFFF', fontWeight: '900', fontSize: 12, letterSpacing: 0.8 },
+    refrescarTexto: { fontFamily: FontFamily.black, fontSize: 12, letterSpacing: 0.8 },
     seccion: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 8 },
     seccionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    seccionTitulo: { flex: 1, fontSize: 14, fontWeight: '800' },
-    seccionDetalle: { fontSize: 11, fontWeight: '700' },
+    seccionTitulo: { flex: 1, fontSize: 14, fontFamily: FontFamily.extrabold },
+    seccionDetalle: { fontSize: 11, fontFamily: FontFamily.bold },
     kv: { gap: 4 },
     kvFila: { fontSize: 12, lineHeight: 17 },
     fila: { borderTopWidth: 1, paddingTop: 8, gap: 3 },
     filaTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    filaClave: { flex: 1, fontSize: 13, fontWeight: '800' },
+    filaClave: { flex: 1, fontSize: 13, fontFamily: FontFamily.extrabold },
     filaMeta: { fontSize: 11 },
     filaId: { fontSize: FontSize.xxs },
-    filaError: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
+    filaError: { fontSize: 12, fontFamily: FontFamily.semibold },
     filaPayload: { fontSize: 11, lineHeight: 16 },
     chip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-    chipTexto: { fontSize: FontSize.xxs, fontWeight: '900', letterSpacing: 0.6 },
+    chipTexto: { fontSize: FontSize.xxs, fontFamily: FontFamily.black, letterSpacing: 0.6 },
     vacio: { fontSize: 12, lineHeight: 17 },
     nota: { fontSize: 11, lineHeight: 16, paddingHorizontal: 2 },
     cerrado: {
@@ -299,8 +309,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         paddingHorizontal: 32,
-        backgroundColor: '#FFFFFF',
     },
-    cerradoTitulo: { fontSize: 17, fontWeight: '800', color: '#111827' },
+    cerradoTitulo: { fontSize: 17, fontFamily: FontFamily.extrabold, color: '#111827' },
     cerradoTexto: { fontSize: 13, color: '#6B7280', textAlign: 'center', lineHeight: 19 },
 });

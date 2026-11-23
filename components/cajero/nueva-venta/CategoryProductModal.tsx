@@ -1,5 +1,6 @@
 import { matchesProductSearch } from "../../../hooks/utils/productSearch";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { BASE_URL } from "@/api/base-url";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -104,6 +105,7 @@ const ProductRow = memo(function ProductRow({
   onAdd,
   onRemove,
 }: ProductRowProps) {
+  const { surfaceMuted } = useAccentColor();
   const venta = resolverVentaProducto(item);
   const stockBar = Number(item.stock_bar ?? 0);
   return (
@@ -112,7 +114,7 @@ const ProductRow = memo(function ProductRow({
         thumbnailStyles.product,
         {
           borderColor,
-          backgroundColor: isDark ? "#ffffff05" : "#00000002",
+          backgroundColor: surfaceMuted,
         },
       ]}
     >
@@ -178,7 +180,7 @@ export const CategoryProductModal: React.FC<CategoryProductModalProps> = ({
   onAdd,
   onRemove,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, surfaceMuted } = useAccentColor();
   const [search, setSearch] = useState("");
   const insets = useSafeAreaInsets();
   const shotMl = useConfigValue<number>("bar", "shot_ml", 50);
@@ -266,7 +268,7 @@ export const CategoryProductModal: React.FC<CategoryProductModalProps> = ({
               thumbnailStyles.search,
               {
                 borderColor,
-                backgroundColor: isDark ? "#ffffff08" : "#00000004",
+                backgroundColor: surfaceMuted,
               },
             ]}
           >
@@ -366,7 +368,7 @@ export const CategoryProductModal: React.FC<CategoryProductModalProps> = ({
             </Text>
           </Pressable>
           <Pressable
-            style={[thumbnailStyles.closeBtn, { backgroundColor: "#EF4444" }]}
+            style={[thumbnailStyles.closeBtn, { backgroundColor: accentColor }]}
             onPress={onClose}
             accessibilityLabel="Cerrar modal"
             accessibilityRole="button"
@@ -405,10 +407,10 @@ const thumbnailStyles = StyleSheet.create({
   eyebrow: {
     fontSize: 10,
     letterSpacing: 1.5,
-    fontWeight: "800" as const,
+    fontFamily: FontFamily.extrabold,
     marginBottom: 5,
   },
-  title: { fontSize: 24, fontWeight: "800" as const },
+  title: { fontSize: 24, fontFamily: FontFamily.extrabold },
   subtitle: { fontSize: 13, lineHeight: 19, marginTop: 6, paddingRight: 8 },
   search: {
     flexDirection: "row" as const,
@@ -437,10 +439,10 @@ const thumbnailStyles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
-  productName: { fontSize: 17, fontWeight: "800" as const, marginBottom: 10 },
-  stock: { fontSize: 11, fontWeight: "700" as const, marginTop: 3 },
+  productName: { fontSize: 17, fontFamily: FontFamily.extrabold, marginBottom: 10 },
+  stock: { fontSize: 11, fontFamily: FontFamily.bold, marginTop: 3 },
   empty: { alignItems: "center" as const, paddingVertical: 40, gap: 12 },
-  emptyTitle: { fontSize: 17, fontWeight: "700" as const },
+  emptyTitle: { fontSize: 17, fontFamily: FontFamily.bold },
   done: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
@@ -450,7 +452,7 @@ const thumbnailStyles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     marginTop: 12,
   },
-  doneText: { fontSize: 15, fontWeight: "800" as const, color: "#FFFFFF" },
+  doneText: { fontSize: 15, fontFamily: FontFamily.extrabold },
   closeBtn: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
@@ -460,5 +462,5 @@ const thumbnailStyles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     marginTop: 10,
   },
-  closeBtnText: { fontSize: 15, fontWeight: "800" as const, color: "#FFFFFF" },
+  closeBtnText: { fontSize: 15, fontFamily: FontFamily.extrabold },
 });

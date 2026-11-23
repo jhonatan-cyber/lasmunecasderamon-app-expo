@@ -30,7 +30,7 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
 }) => {
     const router = useRouter();
     const { pendingCount, failedCount, isOffline, isFlushing } = useOutbox();
-    const { isDark } = useAccentColor();
+    const { isDark, accentText } = useAccentColor();
 
     if (!isOffline && pendingCount === 0) return null;
 
@@ -74,12 +74,12 @@ export const OfflineStatusBanner: React.FC<OfflineStatusBannerProps> = ({
                 <Ionicons
                     name={isOffline ? 'cloud-offline' : 'cloud-upload'}
                     size={20}
-                    color='#FFFFFF'
+                    color={accentText}
                 />
-                <Text maxFontSizeMultiplier={1.5} style={styles.text}>{message}</Text>
+                <Text maxFontSizeMultiplier={1.5} style={[styles.text, { color: accentText }]}>{message}</Text>
                 <View style={styles.action}>
-                    <Text maxFontSizeMultiplier={1.5} style={styles.actionText}>Ver</Text>
-                    <Ionicons name='chevron-forward' size={14} color='#FFFFFF' />
+                    <Text maxFontSizeMultiplier={1.5} style={[styles.actionText, { color: accentText }]}>Ver</Text>
+                    <Ionicons name='chevron-forward' size={14} color={accentText} />
                 </View>
             </Pressable>
         </AnimatedView>
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         gap: 10,
     },
-    text: { color: '#FFFFFF', fontSize: FontSize.xs, fontWeight: '700', flexShrink: 1 },
+    text: { fontSize: FontSize.xs, fontWeight: '700', flexShrink: 1 },
     action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    actionText: { color: '#FFFFFF', fontSize: FontSize.xs, fontWeight: '800', textDecorationLine: 'underline' },
+    actionText: { fontSize: FontSize.xs, fontWeight: '800', textDecorationLine: 'underline' },
 });

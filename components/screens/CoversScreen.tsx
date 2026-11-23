@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { FontSize, BorderRadius } from '@/constants/spacing';
-import { contentColumn } from '@/constants/layout';
+import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
 import {
   agruparEntradas,
   EntradasListadoCard,
@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { FontFamily } from '@/constants/fonts';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { entradasService, type EntradaCliente, type EntradaPendiente } from '@/services/entradas';
 import { productsService } from '@/services/products';
@@ -63,9 +64,7 @@ function fechaHoraLocal() {
 }
 
 export function CoversScreen() {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, isDark } = useAccentColor();
-  const successColor = isDark ? '#34D399' : '#10B981';
-  const dangerColor = isDark ? '#F87171' : '#EF4444';
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, isDark, accentOnSurface, accentText, accentBorder } = useAccentColor();
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const requiereSolicitud = isBarmanRole(user);
@@ -325,7 +324,7 @@ export function CoversScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[contentColumn, { paddingBottom: 100 }]}
+        contentContainerStyle={[contentColumn, { paddingBottom: tabBarBottomPadding }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -361,7 +360,6 @@ export function CoversScreen() {
                 <EmptyState
                   icon="cafe-outline"
                   title="Sin solicitudes"
-                  message="No hay covers por autorizar en este momento."
                 />
               )}
               {solicitudesCovers.length > 0 && (
@@ -373,8 +371,8 @@ export function CoversScreen() {
                       nombresBebida={nombresBebida}
                       textPrimary={textPrimary}
                       textSecondary={textSecondary}
-                      successColor={successColor}
-                      dangerColor={dangerColor}
+                      successColor={accentOnSurface}
+                      dangerColor={accentColor}
                       borderColor={borderColor}
                       onAprobar={aprobarSolicitud}
                       onRechazar={rechazarSolicitud}
@@ -411,7 +409,6 @@ export function CoversScreen() {
                 <EmptyState
                   icon="ticket-outline"
                   title="Sin pendientes"
-                  message="Las compras registradas en la puerta aparecerán aquí hasta entregar sus bebidas."
                 />
               )}
 
@@ -507,8 +504,8 @@ export function CoversScreen() {
                               onPress={() => abrirEntrega(grupo)}
                               style={[styles.coverActionBtn, { backgroundColor: accentColor }]}
                             >
-                              <Ionicons name="enter-outline" size={16} color="#FFF" />
-                              <Text style={styles.coverActionBtnText}>
+                              <Ionicons name="enter-outline" size={16} color={accentText} />
+                              <Text style={[styles.coverActionBtnText, { color: accentText }]}>
                                 {requiereSolicitud ? 'SOLICITAR' : 'ENTREGAR'}
                               </Text>
                             </Pressable>
@@ -517,14 +514,14 @@ export function CoversScreen() {
                           <Pressable
                             onPress={() => setGrupoAnular(grupo)}
                             disabled={anulandoId === grupo.id}
-                            style={[styles.coverActionBtn, { backgroundColor: dangerColor }, { opacity: anulandoId === grupo.id ? 0.5 : 1 }]}
+                            style={[styles.coverActionBtn, { backgroundColor: accentColor }, { opacity: anulandoId === grupo.id ? 0.5 : 1 }]}
                           >
                             {anulandoId === grupo.id ? (
-                              <ActivityIndicator size="small" color="#FFF" />
+                              <ActivityIndicator size="small" color={accentText} />
                             ) : (
                               <>
-                                <Ionicons name="close-circle-outline" size={16} color="#FFF" />
-                                <Text style={styles.coverActionBtnText}>ANULAR</Text>
+                                <Ionicons name="close-circle-outline" size={16} color={accentText} />
+                                <Text style={[styles.coverActionBtnText, { color: accentText }]}>ANULAR</Text>
                               </>
                             )}
                           </Pressable>
@@ -604,7 +601,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: BorderRadius.full,
   },
-  backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  backTextHeader: { fontWeight: '700', fontSize: 13 },
   card: { borderRadius: BorderRadius.xxl, padding: 20, borderWidth: 1, marginBottom: 20 },
   sectionLabel: {
     fontSize: 11,
@@ -645,8 +642,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   coverActionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     fontSize: 12,
   },
   badge: {
@@ -665,8 +661,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     fontSize: 12,
   },
   smallActionBtn: {
@@ -680,8 +675,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   smallActionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FontFamily.extrabold,
     fontSize: 10,
   },
 });

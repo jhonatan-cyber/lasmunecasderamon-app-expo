@@ -14,6 +14,7 @@ import { formatCurrency } from "@/utils/format";
 import { styles } from "../HomeScreen.styles";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { FontFamily } from '@/constants/fonts';
 
 interface AnfitrionaAnalyticsSectionProps {
   totalEarnings: number;
@@ -38,14 +39,14 @@ export function AnfitrionaAnalyticsSection({
   onOpenAnalytics,
   onOpenResumen,
 }: AnfitrionaAnalyticsSectionProps) {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentColor: themeAccentColor } = useAccentColor();
   const reducedMotion = useReducedMotion();
   const actions: ActionGridItem[] = [
     {
       title: "RESUMEN",
       description: "Total a cobrar y calendario",
       icon: "stats-chart",
-      color: "#3B82F6",
+      color: themeAccentColor,
       onPress: onOpenResumen,
     },
   ];
@@ -126,7 +127,7 @@ export function AnfitrionaAnalyticsSection({
             <Text
               style={{
                 fontSize: 24,
-                fontWeight: "900",
+                fontFamily: FontFamily.black,
                 color: accentOnSurface,
               }}
             >
@@ -169,7 +170,7 @@ export function AnfitrionaAnalyticsSection({
             style={{
               color: textPrimary,
               fontSize: 14,
-              fontWeight: "800",
+              fontFamily: FontFamily.extrabold,
             }}
           >
             Analíticas

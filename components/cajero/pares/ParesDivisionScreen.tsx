@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  backTextHeader: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  backTextHeader: { color: '#FFF', fontWeight: '700', fontSize: 13 },
   card: { borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 16 },
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12 },
   ventaList: { gap: 8 },

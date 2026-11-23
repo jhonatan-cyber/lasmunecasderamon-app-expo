@@ -13,12 +13,14 @@ import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withRepeat
 import { showToast } from '@/utils/toast-lazy';
 import { apiClientSafe } from '@/api/client';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useAuthStore } from '@/store/authStore';
 import { triggerNotificationEffects } from '@/services/pushNotifications';
 import { getUserRole, isAdminRole, isCajeroRole, isGarzonRole, isHostessRole } from '@/utils/userRole';
 import { haptic } from '@/utils/haptics';
 import logger from '@/utils/logger';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface PendingNotificationsResponse {
     success: boolean;
@@ -47,18 +49,22 @@ interface StaffCallCardProps {
     isDark: boolean;
     cardBg: string;
     accentColor: string;
+    textPrimary: string;
+    textSecondary: string;
+    accentText: string;
     accepting: number | string | null;
     onAccept: (id: number | string) => void;
 }
 
-function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, accepting, onAccept }: StaffCallCardProps) {
+function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, textPrimary, textSecondary, accentText, accepting, onAccept }: StaffCallCardProps) {
     const elapsedMins = Math.max(0, Math.floor((now - new Date(call.timestamp).getTime()) / 60000));
     const isUrgent = elapsedMins >= 2;
-    const callBorderColor = isUrgent ? '#EF4444' : '#FF2D55';
+    const urgentColor = accentColor;
+    const reducedMotion = useReducedMotion();
 
     const neonOpacity = useSharedValue(0.3);
     useEffect(() => {
-        if (isDark) {
+        if (isDark && !reducedMotion) {
             neonOpacity.value = withRepeat(
                 withSequence(
                     withTiming(0.5, { duration: 1000 }),
@@ -68,10 +74,10 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
                 true,
             );
         }
-    }, [isDark, neonOpacity]);
+    }, [isDark, neonOpacity, reducedMotion]);
 
     const cardNeonStyle = useAnimatedStyle(() => isDark ? {
-        shadowColor: callBorderColor,
+        shadowColor: isUrgent ? urgentColor : accentColor,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: neonOpacity.value,
         shadowRadius: 12,
@@ -80,7 +86,7 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
 
     const shakeRotate = useSharedValue(0);
     useEffect(() => {
-        if (isUrgent) {
+        if (isUrgent && !reducedMotion) {
             shakeRotate.value = withRepeat(
                 withSequence(
                     withTiming(-5, { duration: 100 }),
@@ -91,7 +97,7 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
                 true,
             );
         }
-    }, [isUrgent, shakeRotate]);
+    }, [isUrgent, shakeRotate, reducedMotion]);
 
     const iconShakeStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${shakeRotate.value}deg` }],
@@ -106,7 +112,7 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
                 styles.card,
                 {
                     backgroundColor: cardBg,
-                    borderColor: callBorderColor,
+                    borderColor: isUrgent ? urgentColor : accentColor,
                     borderWidth: isUrgent ? 2 : 1,
                     zIndex: 1000 - index,
                 },
@@ -116,33 +122,33 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
             <View style={styles.cardHeader}>
                 <Animated.View style={[iconShakeStyle]}>
                     <View style={[styles.iconBox, isUrgent && { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-                        <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? "#EF4444" : "#FF2D55"} />
+                        <Ionicons name={isUrgent ? "alert-circle" : "notifications"} size={20} color={isUrgent ? urgentColor : accentColor} />
                     </View>
                 </Animated.View>
                 <View style={styles.textContainer}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={[styles.title, { color: isUrgent ? '#EF4444' : (isDark ? '#FFF' : '#000') }]}>
+                        <Text style={[styles.title, { color: isUrgent ? urgentColor : textPrimary }]}>
                             {isUrgent ? "LLAMADO URGENTE" : "SOLICITUD DE PERSONAL"}
                         </Text>
                         {elapsedMins > 0 && (
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: isUrgent ? '#EF4444' : (isDark ? '#9CA3AF' : '#6B7280') }}>
+                            <Text style={{ fontSize: 11, fontFamily: FontFamily.bold, color: isUrgent ? urgentColor : textSecondary }}>
                                 hace {elapsedMins} min
                             </Text>
                         )}
                     </View>
-                    <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+                    <Text style={[styles.subtitle, { color: textSecondary }]}>
                         {call.anfitriona_nick} • {call.roomName !== 'N/A' ? `Hab: ${call.roomName}` : 'Salón'}
                     </Text>
                 </View>
             </View>
-            <Text style={[styles.typeText, { color: isDark ? '#FFF' : '#333' }]}>
+            <Text style={[styles.typeText, { color: textPrimary }]}>
                 {call.assistanceType}{call.message ? `: ${call.message}` : ''}
             </Text>
             <Pressable
                 style={({ pressed }) => [
                     styles.btn,
                     {
-                        backgroundColor: isUrgent ? '#EF4444' : accentColor,
+                        backgroundColor: isUrgent ? urgentColor : accentColor,
                         opacity: (pressed || accepting === call.id) ? 0.7 : 1,
                     },
                 ]}
@@ -150,9 +156,9 @@ function StaffCallCard({ call, index, now, isDark, cardBg, accentColor, acceptin
                 disabled={accepting !== null}
             >
                 {accepting === call.id ? (
-                    <ActivityIndicator size="small" color="#FFF" />
+                    <ActivityIndicator size="small" color={accentText} />
                 ) : (
-                    <Text style={styles.btnText}>ACEPTAR Y ATENDER</Text>
+                    <Text style={[styles.btnText, { color: accentText }]}>ACEPTAR Y ATENDER</Text>
                 )}
             </Pressable>
         </Animated.View>
@@ -172,7 +178,7 @@ export function StaffCallOverlay() {
         const id = setInterval(() => setNow(Date.now()), 30_000);
         return () => clearInterval(id);
     }, []);
-    const { accentColor, isDark, cardBg } = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, accentText } = useAccentColor();
     const safeRole = getUserRole(user);
 
     const isStaff = isGarzonRole(user) || isCajeroRole(user) || isAdminRole(user);
@@ -304,6 +310,9 @@ export function StaffCallOverlay() {
                     isDark={isDark}
                     cardBg={cardBg}
                     accentColor={accentColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    accentText={accentText}
                     accepting={accepting}
                     onAccept={handleAccept}
                 />
@@ -352,16 +361,16 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 14,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
         letterSpacing: 0.5,
     },
     subtitle: {
         fontSize: 12,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
     },
     typeText: {
         fontSize: 13,
-        fontWeight: '700',
+        fontFamily: FontFamily.bold,
         marginBottom: 15,
         backgroundColor: 'rgba(0,0,0,0.05)',
         padding: 8,
@@ -374,8 +383,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     btnText: {
-        color: '#FFFFFF',
         fontSize: 14,
-        fontWeight: '900',
+        fontFamily: FontFamily.black,
     },
 });

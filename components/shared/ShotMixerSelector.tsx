@@ -20,6 +20,7 @@ import { apiClientSafe } from "@/api/client";
 import { getMirror, MIRROR_MAX_AGE_MS } from "@/services/mirror";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { availableOrderMixers } from "@/hooks/utils/orderMixers";
 import { parseOpcionesVenta } from "@/hooks/utils/saleChoice";
@@ -43,6 +44,8 @@ type MixerSourceItem = {
   nombre: string;
   presentacion_id?: string;
   cantidad: number;
+  /** Número del corto cuando la línea se configura por unidad. */
+  unidad?: number;
   tipo_venta?: string;
   acompanamiento_corto?: ShortMixer;
   acompanamiento_botella?: AcompanamientoBotella;
@@ -178,27 +181,45 @@ export function ShotMixerSelector({
 
   const distribute = (index: number, next: AcompanamientoBotellaItem[]) =>
     onChangeBottle?.(index, next);
+
+  /** Las unidades del carrito son por botella; el selector trabaja con el total. */
+  const aTotal = (sabores: AcompanamientoBotellaItem[], cantidad: number) =>
+    sabores.map((sabor) => ({ ...sabor, unidades: sabor.unidades * cantidad }));
+  const aPorBotella = (sabores: AcompanamientoBotellaItem[], cantidad: number) =>
+    sabores
+      .map((sabor) => ({
+        ...sabor,
+        unidades: Math.floor(sabor.unidades / cantidad),
+      }))
+      .filter((sabor) => sabor.unidades > 0);
+
   const addFlavor = (index: number, choice: any) => {
-    const sabores = normalizarAcompanamientoBotella(
-      items[index]?.acompanamiento_botella,
-    );
-    const requerido = bottleMixerUnits(items[index]);
-    const asignado = sabores.reduce((sum, sabor) => sum + sabor.unidades, 0);
+    const item = items[index];
+    const cantidad = Math.max(1, Number(item?.cantidad) || 1);
+    const sabores = normalizarAcompanamientoBotella(item?.acompanamiento_botella);
+    const requerido = bottleMixerUnits(item) * cantidad;
+    const asignado = sabores.reduce((sum, sabor) => sum + sabor.unidades, 0) * cantidad;
     if (asignado >= requerido) return;
-    distribute(index, [
-      ...sabores,
-      {
-        presentacion_id: String(choice.id),
-        unidades: 1,
-        nombre: `${choice.producto_nombre} ${choice.nombre}`,
-        foto:
-          choice.foto && choice.foto !== "default.png"
-            ? choice.foto
-            : choice.producto_foto,
-        precio: priceOf(choice.id),
-        ml_botella: mlBotellaOf(choice.id),
-      },
-    ]);
+    distribute(
+      index,
+      aPorBotella(
+        [
+          ...aTotal(sabores, cantidad),
+          {
+            presentacion_id: String(choice.id),
+            unidades: Math.min(cantidad, requerido - asignado),
+            nombre: `${choice.producto_nombre} ${choice.nombre}`,
+            foto:
+              choice.foto && choice.foto !== "default.png"
+                ? choice.foto
+                : choice.producto_foto,
+            precio: priceOf(choice.id),
+            ml_botella: mlBotellaOf(choice.id),
+          },
+        ],
+        cantidad,
+      ),
+    );
   };
 
   return (
@@ -213,15 +234,10 @@ export function ShotMixerSelector({
       }}
     >
       {!compact && (
-        <Text style={{ color: textPrimary, fontWeight: "700" }}>
+        <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
           {bottle
             ? "Bebidas"
             : "Soda o gaseosa para los cortos"}
-        </Text>
-      )}
-      {cached && (
-        <Text style={{ color: textSecondary }}>
-          Catálogo guardado: el stock se comprobará al sincronizar.
         </Text>
       )}
       {loading && <ActivityIndicator color={accentColor} />}
@@ -239,39 +255,38 @@ export function ShotMixerSelector({
       )}
       {items.map((item, index) => {
         if (!needsMixer(item)) return null;
-        const sabores = normalizarAcompanamientoBotella(
-          item.acompanamiento_botella,
+        const botellas = Math.max(1, Number(item.cantidad) || 1);
+        const sabores = aTotal(
+          normalizarAcompanamientoBotella(item.acompanamiento_botella),
+          botellas,
         );
-        const requerido = bottleMixerUnits(item);
+        const requerido = bottleMixerUnits(item) * botellas;
         const asignado = sabores.reduce((sum, sabor) => sum + sabor.unidades, 0);
         const restante = Math.max(0, requerido - asignado);
-        const botellas = Math.max(1, Number(item.cantidad) || 1);
         const maxFor = (sabor: AcompanamientoBotellaItem) => {
           const otros = asignado - sabor.unidades;
+          const disponible = Math.min(
+            requerido - otros,
+            stockOf(sabor.presentacion_id),
+          );
+          // Cada sabor se reparte por botella, así que el total avanza en
+          // múltiplos de la cantidad de botellas.
           return Math.max(
-            1,
-            Math.min(
-              requerido - otros,
-              Math.floor(stockOf(sabor.presentacion_id) / botellas),
-            ),
+            botellas,
+            Math.floor(disponible / botellas) * botellas,
           );
         };
         return (
-          <View key={`${item.nombre}-${item.cantidad}`} style={{ gap: 8 }}>
-            <Text style={{ color: textPrimary }}>
-              {item.nombre} · {item.cantidad} {bottle ? "botellas" : "cortos"}
-            </Text>
+          <View
+            key={`${item.nombre}-${item.cantidad}-${item.unidad ?? 0}`}
+            style={{ gap: 8 }}
+          >
             {bottle ? (
               <>
-                <Text style={{ color: textSecondary }}>
-                  {restante > 0
-                    ? `Reparte ${requerido} unidades por botella · asignado ${asignado}/${requerido}`
-                    : `Reparto completo · ${requerido} unidades por botella`}
-                </Text>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Agregar sabor para ${item.nombre}`}
-                  disabled={loading || restante < 1}
+                  disabled={loading || restante < botellas}
                   onPress={() => {
                     setSearch("");
                     setSelected(index);
@@ -281,10 +296,10 @@ export function ShotMixerSelector({
                     borderColor,
                     borderWidth: 1,
                     borderRadius: BorderRadius.full,
-                    opacity: loading || restante < 1 ? 0.5 : 1,
+                    opacity: loading || restante < botellas ? 0.5 : 1,
                   }}
                 >
-                  <Text style={{ color: textPrimary }}>Agregar sabor…</Text>
+                  <Text style={{ color: textPrimary }}>Seleccionar bebida</Text>
                 </Pressable>
                 {sabores.map((sabor) => {
                   const max = maxFor(sabor);
@@ -293,35 +308,53 @@ export function ShotMixerSelector({
                       key={sabor.presentacion_id}
                       sabor={sabor}
                       max={max}
+                      step={botellas}
                       stock={stockOf(sabor.presentacion_id)}
                       textPrimary={textPrimary}
                       textSecondary={textSecondary}
                       onDecrement={() =>
                         distribute(
                           index,
-                          sabores.map((s) =>
-                            s.presentacion_id === sabor.presentacion_id
-                              ? { ...s, unidades: s.unidades - 1 }
-                              : s,
+                          aPorBotella(
+                            sabores
+                              .map((s) =>
+                                s.presentacion_id === sabor.presentacion_id
+                                  ? {
+                                      ...s,
+                                      unidades: s.unidades - botellas,
+                                    }
+                                  : s,
+                              )
+                              .filter((s) => s.unidades > 0),
+                            botellas,
                           ),
                         )
                       }
                       onIncrement={() =>
                         distribute(
                           index,
-                          sabores.map((s) =>
-                            s.presentacion_id === sabor.presentacion_id
-                              ? { ...s, unidades: s.unidades + 1 }
-                              : s,
+                          aPorBotella(
+                            sabores.map((s) =>
+                              s.presentacion_id === sabor.presentacion_id
+                                ? {
+                                    ...s,
+                                    unidades: s.unidades + botellas,
+                                  }
+                                : s,
+                            ),
+                            botellas,
                           ),
                         )
                       }
                       onDelete={() =>
                         distribute(
                           index,
-                          sabores.filter(
-                            (s) =>
-                              s.presentacion_id !== sabor.presentacion_id,
+                          aPorBotella(
+                            sabores.filter(
+                              (s) =>
+                                s.presentacion_id !== sabor.presentacion_id,
+                            ),
+                            botellas,
                           ),
                         )
                       }
@@ -332,6 +365,7 @@ export function ShotMixerSelector({
             ) : (
               <ShortMixerRow
                 item={item}
+                unidad={item.unidad}
                 loading={loading}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
@@ -348,7 +382,7 @@ export function ShotMixerSelector({
       })}
       <MixerSelectorModal
         visible={selected !== null}
-        title={bottle ? 'Agregar sabor del bar' : 'Elegir producto o sabor del bar'}
+        title={bottle ? 'Agregar bebida' : 'Seleccionar bebida'}
         search={search}
         setSearch={setSearch}
         choices={modalChoices}

@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { calculateRemainingTime } from "@/utils/timeUtils";
 import type { Timer } from "@/context/types";
+import { useAccentColor } from '@/hooks/useAccentColor';
 
 type TimerPillProps = {
   timer: Timer;
@@ -21,6 +22,7 @@ export function TimerPill({
   textSecondary,
   textPrimary,
 }: TimerPillProps) {
+  const { accentColor: urgentColor, accentBg: urgentBg, accentBorder: urgentBorder } = useAccentColor();
   // El instante entra como argumento del cálculo: React Compiler cachea las
   // llamadas por sus argumentos, así que sin esto el reloj no avanza.
   const [now, setNow] = useState(() => Date.now());
@@ -45,15 +47,15 @@ export function TimerPill({
       style={[
         styles.timerPill,
         {
-          backgroundColor: remaining < 60 ? "#EF444420" : `${accentColor}20`,
-          borderColor: remaining < 60 ? "#EF444440" : `${accentColor}40`,
+          backgroundColor: remaining < 60 ? urgentBg : `${accentColor}20`,
+          borderColor: remaining < 60 ? urgentBorder : `${accentColor}40`,
         },
       ]}
     >
       <Ionicons
         name="time"
         size={16}
-        color={remaining < 60 ? "#EF4444" : accentColor}
+        color={remaining < 60 ? urgentColor : accentColor}
       />
       <View>
         <Text style={[styles.timerLabel, { color: textSecondary }]}>
@@ -62,7 +64,7 @@ export function TimerPill({
         <Text
           style={[
             styles.timerValue,
-            { color: remaining < 60 ? "#EF4444" : textPrimary },
+            { color: remaining < 60 ? urgentColor : textPrimary },
           ]}
         >
           {fmt(remaining)}

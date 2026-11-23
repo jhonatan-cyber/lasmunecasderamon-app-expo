@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { FontFamily } from '@/constants/fonts';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
@@ -65,7 +66,7 @@ export const LoadBalanceModal: React.FC<LoadBalanceModalProps> = ({
                 {clientName}
               </Text>
             </View>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar carga de saldo">
               <Ionicons name="close" size={24} color={textPrimary} />
             </Pressable>
           </View>
@@ -76,7 +77,7 @@ export const LoadBalanceModal: React.FC<LoadBalanceModalProps> = ({
                 style={{
                   color: textSecondary,
                   fontSize: 12,
-                  fontWeight: '800',
+                  fontFamily: FontFamily.extrabold,
                   marginBottom: 8,
                 }}
               >
@@ -90,7 +91,7 @@ export const LoadBalanceModal: React.FC<LoadBalanceModalProps> = ({
                   padding: 16,
                   color: textPrimary,
                   fontSize: 18,
-                  fontWeight: '700',
+                  fontFamily: FontFamily.bold,
                   backgroundColor: isDark
                     ? 'rgba(255,255,255,0.05)'
                     : 'rgba(0,0,0,0.02)',
@@ -122,12 +123,14 @@ export const LoadBalanceModal: React.FC<LoadBalanceModalProps> = ({
               })}
               onPress={onConfirm}
               disabled={submitting}
+              accessibilityRole="button"
+              accessibilityLabel="Confirmar carga de saldo"
             >
               {submitting ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
                 <Text
-                  style={{ color: '#FFF', fontSize: 16, fontWeight: '900' }}
+                  style={{ color: '#FFF', fontSize: 16, fontFamily: FontFamily.black }}
                 >
                   CONFIRMAR CARGA
                 </Text>

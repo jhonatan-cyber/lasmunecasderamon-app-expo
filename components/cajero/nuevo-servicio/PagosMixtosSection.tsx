@@ -3,6 +3,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import type { MetodoPagoMonto } from './types';
 
 type Props = {
@@ -33,7 +34,7 @@ export function PagosMixtosSection({
   onRemovePago,
   onAddPago,
 }: Props) {
-  const { surfaceMuted } = useAccentColor();
+  const { surfaceMuted, accentOnSurface, accentColor: dangerColor } = useAccentColor();
   const sumaActual = pagosMixtos.reduce((sum, p) => sum + p.monto, 0);
   const yaCompleto = sumaActual >= totalsTotal;
 
@@ -109,7 +110,7 @@ export function PagosMixtosSection({
             onPress={() => onRemovePago(index)}
             style={{ marginLeft: 8, padding: 4 }}
           >
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Ionicons name="trash-outline" size={18} color={dangerColor} />
           </Pressable>
         </View>
       ))}
@@ -178,7 +179,7 @@ export function PagosMixtosSection({
           <Text style={{ color: textSecondary, fontSize: 12 }}>Suma actual:</Text>
           <Text
             style={{
-              color: sumaActual === totalsTotal ? '#10B981' : '#EF4444',
+              color: sumaActual === totalsTotal ? accentOnSurface : dangerColor,
               fontWeight: '700',
             }}
           >
@@ -186,7 +187,7 @@ export function PagosMixtosSection({
           </Text>
         </View>
         {sumaActual !== totalsTotal && (
-          <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 4 }}>
+          <Text style={{ color: dangerColor, fontSize: 10, marginTop: 4 }}>
             * Falta: ${(totalsTotal - sumaActual).toLocaleString()}
           </Text>
         )}

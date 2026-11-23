@@ -25,8 +25,11 @@ export function requiresShortMixer(product: any): boolean {
   );
 }
 export function bottleMixerUnits(product: any): number {
-  return Number((parseOpcionesVenta(product.opciones_venta) ?? [])
-    .find((option: any) => option.tipo === 'botella')?.acompanamiento?.unidades ?? 0);
+  const bottle = (parseOpcionesVenta(product.opciones_venta) ?? [])
+    .find((option: any) => option.tipo === 'botella');
+  return Number(
+    bottle ? (bottle.acompanamiento?.unidades ?? 0) : (product.unidades_acompanamiento ?? 0)
+  );
 }
 
 export function normalizarAcompanamientoBotella(

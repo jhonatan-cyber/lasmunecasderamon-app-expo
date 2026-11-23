@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack } from 'expo-router';
 import { contentColumn } from '@/constants/layout';
+import { FontFamily } from '@/constants/fonts';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import {
@@ -21,7 +22,7 @@ import { CajaSkeleton, MetricCard, StatRow, CajaModales } from '@/components/caj
 import { useAccentColor } from '@/hooks/useAccentColor';
 
 export default function CajaScreen() {
-    const { accentOnSurface } = useAccentColor();
+    const { accentOnSurface, accentText } = useAccentColor();
     const esAdmin = useIsAdmin();
     const {
         accentColor,
@@ -319,17 +320,14 @@ export default function CajaScreen() {
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Turno no iniciado</Text>
-                            <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                                {esAdmin
-                                    ? 'No hay una caja abierta en este momento.'
-                                    : 'Abre la caja para comenzar a registrar movimientos del turno'}
-                            </Text>
                             {!esAdmin && (
                                 <Pressable
                                     style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
                                     onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Abrir caja de turno"
                                 >
-                                    <Ionicons name="power-outline" size={18} color="#FFF" />
+                                    <Ionicons name="power-outline" size={18} color={accentText} />
                                     <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
                                 </Pressable>
                             )}
@@ -342,17 +340,14 @@ export default function CajaScreen() {
                                 <Ionicons name="wallet-outline" size={36} color={textSecondary} />
                             </View>
                             <Text style={[styles.emptyTitle, { color: textPrimary }]}>Sin datos de caja</Text>
-                            <Text style={[styles.emptySubtitle, { color: textSecondary }]}>
-                                {esAdmin
-                                    ? 'No hay registros de caja aún.'
-                                    : 'No hay registros de caja aún. Abre una para comenzar.'}
-                            </Text>
                             {!esAdmin && (
                                 <Pressable
                                     style={[styles.emptyOpenBtn, { backgroundColor: accentColor }]}
                                     onPress={() => dispatch({ type: 'OPEN_MODAL', payload: 'abrir' })}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Abrir caja sin datos"
                                 >
-                                    <Ionicons name="power-outline" size={18} color="#FFF" />
+                                    <Ionicons name="power-outline" size={18} color={accentText} />
                                     <Text style={styles.emptyOpenBtnText}>Abrir Caja</Text>
                                 </Pressable>
                             )}
@@ -393,7 +388,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         gap: 6
     },
-    backTextRight: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+    backTextRight: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     scroll: { ...contentColumn, padding: 16, gap: 12, paddingBottom: 40 },
     card: { borderRadius: 20, borderWidth: 1, padding: 16 },
@@ -403,41 +398,41 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20
     },
     statusDot: { width: 7, height: 7, borderRadius: 4 },
-    statusLabel: { fontSize: 13, fontWeight: '800' },
+    statusLabel: { fontSize: 13, fontFamily: FontFamily.extrabold },
     openedInfo: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
-    openedText: { fontSize: 12, fontWeight: '500' },
+    openedText: { fontSize: 12, fontFamily: FontFamily.medium },
     actionBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
         paddingHorizontal: 12, paddingVertical: 8,
         borderRadius: 12, borderWidth: 1
     },
     actionBtnDisabled: { opacity: 0.45 },
-    actionBtnText: { fontSize: 13, fontWeight: '700' },
+    actionBtnText: { fontSize: 13, fontFamily: FontFamily.bold },
     pendingNotice: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10,
         marginBottom: 12
     },
-    pendingNoticeText: { fontSize: 12, fontWeight: '700', flex: 1, lineHeight: 17 },
+    pendingNoticeText: { fontSize: 12, fontFamily: FontFamily.bold, flex: 1, lineHeight: 17 },
     resendBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
         borderWidth: 1, borderRadius: 14,
         paddingHorizontal: 12, paddingVertical: 10,
         marginBottom: 12
     },
-    resendBtnText: { fontSize: 12, fontWeight: '800' },
+    resendBtnText: { fontSize: 12, fontFamily: FontFamily.extrabold },
     metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     breakdownHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-    breakdownTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+    breakdownTitle: { fontSize: 14, fontFamily: FontFamily.extrabold, textTransform: 'uppercase', letterSpacing: 0.5 },
     totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, marginTop: 4 },
-    totalLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
-    totalValue: { fontSize: 22, fontWeight: '900' },
+    totalLabel: { fontSize: 12, fontFamily: FontFamily.extrabold, letterSpacing: 0.8 },
+    totalValue: { fontSize: 22, fontFamily: FontFamily.black },
     emptyIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-    emptyTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
-    emptySubtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center', marginBottom: 24, maxWidth: 260, lineHeight: 20 },
+    emptyTitle: { fontSize: 18, fontFamily: FontFamily.extrabold, marginBottom: 8 },
+    emptySubtitle: { fontSize: 13, fontFamily: FontFamily.medium, textAlign: 'center', marginBottom: 24, maxWidth: 260, lineHeight: 20 },
     emptyOpenBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14
     },
-    emptyOpenBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+    emptyOpenBtnText: { fontSize: 15, fontFamily: FontFamily.extrabold },
 });

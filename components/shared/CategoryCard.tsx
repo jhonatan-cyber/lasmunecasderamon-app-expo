@@ -6,6 +6,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { BorderRadius, FontSize } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface CategoryCardProps {
     item: {
@@ -93,10 +94,10 @@ function getCategoryIcon(name: string): string {
 
 const CategoryCardComponent = ({ item, index, onPress, compact = false }: CategoryCardProps) => {
     useRenderCount('CategoryCard', { itemId: item.id });
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentUi} = useAccentColor();
     const reducedMotion = useReducedMotion();
     // Alterna el color del icono para que la rejilla no se vea plana.
-    const tone = index % 2 === 0 ? accentColor : '#10B981';
+    const tone = index % 2 === 0 ? accentColor : accentUi;
 
     // Glow neón en modo oscuro con el color alternado
     const neonGlow = isDark ? {
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
     },
     categoryName: {
         fontSize: FontSize.sm,
-        fontWeight: '800',
+        fontFamily: FontFamily.extrabold,
         letterSpacing: -0.3,
         textAlign: 'center',
     },
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     },
     categoryDescription: {
         fontSize: FontSize.xs,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         textAlign: 'center',
     },
     productsBadge: {
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
     },
     productsCount: {
         fontSize: FontSize.xs,
-        fontWeight: '900'
+        fontFamily: FontFamily.black
     },
     productsCountCompact: {
         fontSize: FontSize.xxs,

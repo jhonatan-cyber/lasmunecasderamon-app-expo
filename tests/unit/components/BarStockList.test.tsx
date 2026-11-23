@@ -8,6 +8,12 @@ const list = vi.hoisted(() => ({
   rows: [] as unknown[],
   numColumns: undefined as number | undefined,
 }));
+// Opciones de venta que devuelve resolverVentaProducto; null = la opción por defecto.
+const saleOpts = vi.hoisted(() => ({
+  opciones: null as
+    | { value: string; nombre: string; precio: number; comision: number; esShot: boolean }[]
+    | null,
+}));
 type Children = { children?: ReactNode; accessibilityLabel?: string };
 vi.mock('react-native', () => ({
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
@@ -67,7 +73,7 @@ vi.mock('@/hooks/useAccentColor', () => ({
 }));
 vi.mock('@/hooks/utils/saleChoice', () => ({
   resolverVentaProducto: (item: BarStockItem) => ({
-    opciones: [
+    opciones: saleOpts.opciones ?? [
       {
         value: 'botella',
         nombre: 'Botella',
@@ -108,7 +114,10 @@ vi.mock('@/components/shared/VirtualizedList', () => ({
     );
   },
 }));
-afterEach(cleanup);
+afterEach(() => {
+  saleOpts.opciones = null;
+  cleanup();
+});
 
 const product = (id: string, category?: string | null): BarStockItem => ({
   id,
@@ -139,6 +148,38 @@ describe('BarStockList', () => {
     expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sin categoría, 1 productos' })).toBeTruthy();
     expect(items.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5']);
+  });
+
+  it('no muestra opciones de venta con precio 0 en la tarjeta de stock', () => {
+    saleOpts.opciones = [
+      {
+        value: 'botella',
+        nombre: 'Botella',
+        precio: 30000,
+        comision: 0,
+        esShot: false,
+      },
+      {
+        value: 'shot_anfitriona',
+        nombre: 'Corto anfitriona',
+        precio: 0,
+        comision: 0,
+        esShot: true,
+      },
+    ];
+
+    render(
+      <BarStockList
+        {...props}
+        items={[product('1', 'Ron')]}
+        selectedCategory="Ron"
+      />,
+    );
+
+    expect(screen.getByText('Botella')).toBeTruthy();
+    expect(screen.getByText('$30.000')).toBeTruthy();
+    expect(screen.queryByText('Corto anfitriona')).toBeNull();
+    expect(screen.queryByText('$0')).toBeNull();
   });
 
   it('navega a una categoría y vuelve a todas conservando conteos', () => {

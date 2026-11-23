@@ -4,6 +4,7 @@ import { useCallback,useMemo,useState } from "react";
 import { Pressable,StyleSheet,Text,View } from "react-native";
 import { IconButton } from "@/components/ui/IconButton";
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface CalendarEvent {
   date: string;
@@ -103,29 +104,35 @@ export const PremiumCalendar = ({
     const startDay = firstDayOfMonth(currentMonth);
 
     for (let i = startDay - 1; i >= 0; i--) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, prevMonthDays - i);
       days.push({
         day: prevMonthDays - i,
         month: currentMonth.getMonth() - 1,
         year: currentMonth.getFullYear(),
         current: false,
+        accessibilityLabel: `Día ${prevMonthDays - i} de ${date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`,
       });
     }
     const count = daysInMonth(currentMonth);
     for (let i = 1; i <= count; i++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i);
       days.push({
         day: i,
         month: currentMonth.getMonth(),
         year: currentMonth.getFullYear(),
         current: true,
+        accessibilityLabel: `Día ${i} de ${date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`,
       });
     }
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, i);
       days.push({
         day: i,
         month: currentMonth.getMonth() + 1,
         year: currentMonth.getFullYear(),
         current: false,
+        accessibilityLabel: `Día ${i} de ${date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`,
       });
     }
     return days;
@@ -257,7 +264,7 @@ export const PremiumCalendar = ({
               key={i}
               style={styles.dayCell}
               onPress={() => handleDatePress(d.day, d.month, d.year)}
-              accessibilityLabel={`Día ${d.day} de ${new Date(d.year, d.month, d.day).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`}
+              accessibilityLabel={d.accessibilityLabel}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
             >
@@ -280,7 +287,7 @@ export const PremiumCalendar = ({
                     !d.current && styles.dayTextMuted,
                     isSelected && { color: accentText },
                     isToday &&
-                      !isSelected && { color: accentOnSurface, fontWeight: "800" },
+                      !isSelected && { color: accentOnSurface, fontFamily: FontFamily.extrabold },
                   ]}
                 >
                   {d.day}
@@ -371,7 +378,7 @@ const styles = StyleSheet.create({
     gap: 8,
     flexShrink: 1,
   },
-  calMonth: { fontSize: 17, fontWeight: "800", textTransform: "capitalize" },
+  calMonth: { fontSize: 17, fontFamily: FontFamily.extrabold, textTransform: "capitalize" },
   calNav: { flexDirection: "row", alignItems: "center", gap: 6 },
   weekDays: {
     flexDirection: "row",
@@ -380,7 +387,7 @@ const styles = StyleSheet.create({
   weekDayText: {
     flex: 1,
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     letterSpacing: 0.4,
     textAlign: "center",
   },
@@ -402,7 +409,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 2,
   },
-  dayText: { fontSize: 14, fontWeight: "600", lineHeight: 16 },
+  dayText: { fontSize: 14, fontFamily: FontFamily.semibold, lineHeight: 16 },
   dayTextMuted: { opacity: 0.45 },
   eventDotsRow: {
     flexDirection: "row",
@@ -427,5 +434,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   legendDot: { width: 7, height: 7, borderRadius: BorderRadius.full },
-  legendText: { fontSize: 11, fontWeight: "600" },
+  legendText: { fontSize: 11, fontFamily: FontFamily.semibold },
 });

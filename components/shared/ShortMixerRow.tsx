@@ -11,6 +11,8 @@ interface ShortMixerRowProps {
     shot_anfitriona?: boolean;
     acompanamiento_corto?: ShortMixer;
   };
+  /** Número del corto cuando la línea se configura por unidad. */
+  unidad?: number;
   loading: boolean;
   borderColor: string;
   textPrimary: string;
@@ -21,6 +23,7 @@ interface ShortMixerRowProps {
 
 export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
   item,
+  unidad,
   loading,
   borderColor,
   textPrimary,
@@ -32,7 +35,9 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Soda o gaseosa para ${item.nombre}`}
+        accessibilityLabel={`Soda o gaseosa para ${item.nombre}${
+          unidad ? `, corto ${unidad}` : ""
+        }`}
         disabled={loading}
         onPress={onPress}
         style={{
@@ -42,6 +47,13 @@ export const ShortMixerRow: React.FC<ShortMixerRowProps> = ({
           borderRadius: BorderRadius.full,
         }}
       >
+        {unidad !== undefined && (
+          <Text
+            style={{ color: textSecondary, fontSize: 11, marginBottom: 6 }}
+          >
+            Corto {unidad}
+          </Text>
+        )}
         <View
           style={{
             flexDirection: 'row',

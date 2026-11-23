@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AnimatedView } from '@/components/ui/AnimatedView';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -9,6 +9,7 @@ import {
     type EstadoServicioKey,
 } from '@/utils/servicioEstado';
 import { BorderRadius, FontSize, HitSlop } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { haptic } from '@/utils/haptics';
 import { Colors } from '@/constants/theme';
 
@@ -20,7 +21,7 @@ interface ServiceCardProps {
 }
 
 export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardProps) => {
-    const { isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, surfaceMuted, accentColor, accentBg } = useAccentColor();
 
     const estadoInfo = estadoServicio(item.estado);
     const isProceso = estadoInfo.key === "en_proceso";
@@ -30,9 +31,9 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
         anulado: { bg: theme.errorLight, text: theme.error },
         finalizado: { bg: theme.successLight, text: theme.success },
         en_proceso: { bg: theme.warningLight, text: theme.warning },
-        pausado: { bg: isDark ? '#374151' : '#E5E7EB', text: isDark ? '#D1D5DB' : '#4B5563' },
+        pausado: { bg: surfaceMuted, text: textSecondary },
         solicitud_anulada: { bg: isDark ? '#581c87' : '#f3e8ff', text: isDark ? '#c084fc' : '#6b21a8' },
-        desconocido: { bg: '#999', text: '#FFF' },
+        desconocido: { bg: surfaceMuted, text: textPrimary },
     };
 
     const status = {
@@ -58,7 +59,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
     const estadoNeonColor = estadoInfo.key === 'en_proceso' ? theme.warning :
                             estadoInfo.key === 'finalizado' ? theme.success :
                             estadoInfo.key === 'anulado' ? theme.error :
-                            estadoInfo.key === 'pausado' ? '#6B7280' : accentOnSurface;
+                            estadoInfo.key === 'pausado' ? textSecondary : accentOnSurface;
     const cardNeonGlow = isDark ? {
         shadowColor: estadoNeonColor,
         shadowOffset: { width: 0, height: 0 },
@@ -84,7 +85,7 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
             >
                 <View style={styles.cardHeader}>
                     <View style={styles.headerLeft}>
-                        <View style={[styles.indexBadge, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                        <View style={[styles.indexBadge, { backgroundColor: surfaceMuted }]}>
                             <Text style={[styles.indexText, { color: textPrimary, fontSize: FontSize.xs }]}>{index + 1}</Text>
                         </View>
                         <Text style={[styles.habitacionText, { color: textPrimary }]}>{item.habitacion}</Text>
@@ -119,10 +120,10 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
 
                     {isProceso && (
                         <View style={styles.assistanceContainer}>
-                            <Text style={[styles.assistanceTitle, { fontSize: FontSize.xs }]}>SILENT ASSISTANCE:</Text>
+                            <Text style={[styles.assistanceTitle, { fontSize: FontSize.xs }]}>ASISTENCIA DISCRETA:</Text>
                             <View style={styles.assistanceGrid}>
-                                <Pressable 
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#1e3a8a30' : '#e0e7ff' }]} 
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: `${accentOnSurface}20` }]}
                                     onPress={() => { haptic.confirm(); onAssistance(item.id_servicio, item.habitacion, 'Tragos'); }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Solicitar tragos en ${item.habitacion}`}
@@ -132,27 +133,40 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                     <Ionicons name="beer-outline" size={FontSize.xs} color={accentOnSurface} />
                                     <Text style={[styles.assistanceBtnText, { color: accentOnSurface, fontSize: FontSize.xs }]}>Tragos</Text>
                                 </Pressable>
-                                <Pressable 
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#065F4630' : '#d1fae5' }]} 
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: `${accentColor}20` }]}
                                     onPress={() => { haptic.confirm(); onAssistance(item.id_servicio, item.habitacion, 'Limpieza/Hielo'); }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Solicitar servicio en ${item.habitacion}`}
                                     accessibilityHint="Solicita limpieza o hielo para esta habitación"
                                     hitSlop={HitSlop.md}
                                 >
-                                    <Ionicons name="sparkles-outline" size={FontSize.xs} color="#10B981" />
-                                    <Text style={[styles.assistanceBtnText, { color: '#10B981', fontSize: FontSize.xs }]}>Servicio</Text>
+                                    <Ionicons name="sparkles-outline" size={FontSize.xs} color={accentColor} />
+                                    <Text style={[styles.assistanceBtnText, { color: accentColor, fontSize: FontSize.xs }]}>Servicio</Text>
                                 </Pressable>
-                                <Pressable 
-                                    style={[styles.assistanceBtn, { backgroundColor: isDark ? '#450a0a' : '#fee2e2' }]} 
-                                    onPress={() => { haptic.error(); onAssistance(item.id_servicio, item.habitacion, 'Seguridad'); }}
+                                <Pressable
+                                    style={[styles.assistanceBtn, { backgroundColor: accentBg }]}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Confirmar alerta',
+                                            `¿Estás seguro de enviar una alerta de seguridad para ${item.habitacion}?`,
+                                            [
+                                                { text: 'Cancelar', style: 'cancel' },
+                                                {
+                                                    text: 'Enviar alerta',
+                                                    style: 'destructive',
+                                                    onPress: () => { haptic.error(); onAssistance(item.id_servicio, item.habitacion, 'Seguridad'); }
+                                                }
+                                            ]
+                                        );
+                                    }}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Enviar alerta de seguridad en ${item.habitacion}`}
                                     accessibilityHint="Envía una alerta de seguridad urgente"
                                     hitSlop={HitSlop.md}
                                 >
-                                    <Ionicons name="alert-circle-outline" size={FontSize.xs} color="#EF4444" />
-                                    <Text style={[styles.assistanceBtnText, { color: '#EF4444', fontSize: FontSize.xs }]}>ALERTA</Text>
+                                    <Ionicons name="alert-circle-outline" size={FontSize.xs} color={accentColor} />
+                                    <Text style={[styles.assistanceBtnText, { color: accentColor, fontSize: FontSize.xs }]}>ALERTA</Text>
                                 </Pressable>
                             </View>
                         </View>
@@ -168,10 +182,10 @@ const styles = StyleSheet.create({
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     indexBadge: { width: 24, height: 24, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
-    indexText: { fontWeight: '800' },
-    habitacionText: { fontSize: FontSize.lg, fontWeight: '800' },
+    indexText: { fontFamily: FontFamily.extrabold },
+    habitacionText: { fontSize: FontSize.lg, fontFamily: FontFamily.extrabold },
     statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: BorderRadius.full },
-    statusText: { fontWeight: '700' },
+    statusText: { fontFamily: FontFamily.bold },
     cardBody: {},
     infoRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
     infoItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -179,12 +193,12 @@ const styles = StyleSheet.create({
     detailsContainer: { gap: 4 },
     detailRow: { flexDirection: 'row', justifyContent: 'space-between' },
     detailLabel: {},
-    detailValue: { fontWeight: '700' },
-    priceValue: { fontSize: FontSize.lg, fontWeight: '800' },
+    detailValue: { fontFamily: FontFamily.bold },
+    priceValue: { fontSize: FontSize.lg, fontFamily: FontFamily.extrabold },
     assistanceContainer: { marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(155,155,155,0.1)' },
-    assistanceTitle: { fontWeight: '800', marginBottom: 8, opacity: 0.5 },
+    assistanceTitle: { fontFamily: FontFamily.extrabold, marginBottom: 8, opacity: 0.5 },
     assistanceGrid: { flexDirection: 'row', gap: 6 },
     assistanceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderRadius: BorderRadius.full },
-    assistanceBtnText: { fontWeight: '700' },
+    assistanceBtnText: { fontFamily: FontFamily.bold },
 });
 

@@ -1,6 +1,7 @@
 import { IncludedServiceProductSelector } from "@/components/shared/IncludedServiceProductSelector";
 import { BorderRadius } from "@/constants/spacing";
 import { formColumn } from "@/constants/layout";
+import { FontFamily } from "@/constants/fonts";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -35,6 +36,8 @@ export default function NuevoServicioScreen() {
   const {
     accentColor,
     accentText,
+    accentUi,
+    accentOnSurface,
     isDark,
     bg,
     cardBg,
@@ -164,7 +167,7 @@ export default function NuevoServicioScreen() {
           <CollapsibleCard
             title="Formulario de Servicio"
             icon="document-text"
-            iconColor="#8B5CF6"
+            iconColor={accentUi}
             collapsed={formCollapsed}
             onToggle={toggleFormCollapse}
             cardBg={cardBg}
@@ -207,7 +210,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar anfitrionas"
             accessibilityRole="button"
           >
-            <Ionicons name="people" size={22} color="#10B981" />
+            <Ionicons name="people" size={22} color={accentOnSurface} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedHostesses.length > 0
@@ -238,7 +241,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar clientes"
             accessibilityRole="button"
           >
-            <Ionicons name="person" size={22} color="#3B82F6" />
+            <Ionicons name="person" size={22} color={accentColor} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedClients.length > 0
@@ -308,7 +311,7 @@ export default function NuevoServicioScreen() {
                     style={{
                       color: textSecondary,
                       fontSize: 12,
-                      fontWeight: "700",
+                      fontFamily: FontFamily.bold,
                       textTransform: "uppercase",
                     }}
                   >
@@ -318,7 +321,7 @@ export default function NuevoServicioScreen() {
                     style={{
                       color: textPrimary,
                       fontSize: 20,
-                      fontWeight: "900",
+                      fontFamily: FontFamily.black,
                       marginTop: 2,
                     }}
                   >
@@ -339,9 +342,11 @@ export default function NuevoServicioScreen() {
                     paddingVertical: 6,
                     borderRadius: BorderRadius.full,
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cargar saldo al cliente"
                 >
                   <Text
-                    style={{ color: "#FFF", fontWeight: "bold", fontSize: 12 }}
+                    style={{ color: "#FFF", fontFamily: FontFamily.bold, fontSize: 12 }}
                   >
                     CARGAR
                   </Text>
@@ -358,7 +363,7 @@ export default function NuevoServicioScreen() {
               <CollapsibleCard
                 title="Método de Pago"
                 icon="card"
-                iconColor="#10B981"
+                iconColor={accentOnSurface}
                 cardBg={cardBg}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
@@ -576,7 +581,7 @@ const styles = StyleSheet.create({
   section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     marginBottom: 20,
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -589,11 +594,11 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     borderWidth: 1,
   },
-  selectorLabel: { fontSize: 12, fontWeight: "700" },
-  selectorVal: { fontSize: 15, fontWeight: "800", marginTop: 2 },
+  selectorLabel: { fontSize: 12, fontFamily: FontFamily.bold },
+  selectorVal: { fontSize: 15, fontFamily: FontFamily.extrabold, marginTop: 2 },
   inputGroupLabel: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     marginBottom: 10,
     letterSpacing: 1,
   },
@@ -605,7 +610,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 54,
   },
-  textInput: { flex: 1, marginLeft: 10, fontSize: 18, fontWeight: "700" },
+  textInput: { flex: 1, marginLeft: 10, fontSize: 18, fontFamily: FontFamily.bold },
   backBtnRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -616,8 +621,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backTextRight: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
     fontSize: 13,
     letterSpacing: 0.5,
   },

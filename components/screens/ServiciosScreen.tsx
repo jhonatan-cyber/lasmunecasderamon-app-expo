@@ -1,5 +1,5 @@
 import VirtualizedList from "@/components/shared/VirtualizedList";
-import { contentColumn } from "@/constants/layout";
+import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useStableCallback } from "@/hooks/useStableCallback";
@@ -277,7 +277,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const textSecondary = colors.textMuted;
   const borderColor = isDark ? `${accentColor}40` : colors.border;
   const theme = useMemo(() => ({
-    bg: isDark ? "#000000" : "#F8FAFC",
+    bg: colors.background,
     card: cardBg,
     text: textPrimary,
     textMuted: textSecondary,
@@ -629,11 +629,6 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
               <EmptyState
                 icon="documents-outline"
                 title="No hay servicios que mostrar"
-                message={
-                  activeTab === "finalizados" && busquedaFinalizados.trim()
-                    ? "Ningún servicio coincide con la búsqueda."
-                    : "No se encontraron servicios con el filtro actual. Intenta cambiar el tipo de servicio."
-                }
               />
             )
           }
@@ -679,7 +674,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { ...contentColumn, padding: 12, paddingBottom: 100 },
+  list: { ...contentColumn, padding: 12, paddingBottom: tabBarBottomPadding },
   searchContainer: {
     marginHorizontal: 12,
     marginTop: 8,

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 interface SolicitarAnticipoModalProps {
   visible: boolean;
@@ -28,6 +29,8 @@ interface SolicitarAnticipoModalProps {
   canRequestAdvance: boolean;
   formatCurrency: (amount: any) => string;
   accentColor: string;
+  accentOnSurface: string;
+  surfaceMuted: string;
   isDark: boolean;
   bg: string;
   cardBg: string;
@@ -53,6 +56,8 @@ export const SolicitarAnticipoModal: React.FC<SolicitarAnticipoModalProps> = ({
   canRequestAdvance,
   formatCurrency,
   accentColor,
+  accentOnSurface,
+  surfaceMuted,
   isDark,
   bg,
   cardBg,
@@ -67,14 +72,14 @@ export const SolicitarAnticipoModal: React.FC<SolicitarAnticipoModalProps> = ({
     onRequestClose={onClose}
   >
     <View style={styles.modalOverlay}>
-      <Pressable style={styles.modalBackdrop} onPress={onClose} />
+      <Pressable style={styles.modalBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar solicitud de anticipo" />
       <View style={[styles.modalContent, { backgroundColor: bg }]}>
         <View style={styles.modalHandle} />
         <View style={styles.modalHeader}>
           <Text style={[styles.modalTitle, { color: textPrimary }]}>
             Solicitar Anticipo
           </Text>
-          <Pressable onPress={onClose} style={styles.closeButton}>
+          <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Cerrar solicitud de anticipo">
             <Ionicons name="close" size={22} color={textSecondary} />
           </Pressable>
         </View>
@@ -93,16 +98,14 @@ export const SolicitarAnticipoModal: React.FC<SolicitarAnticipoModalProps> = ({
                 style={[
                   styles.pendingBadge,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(245,158,11,0.2)"
-                      : "#FEF3C7",
+                    backgroundColor: surfaceMuted,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.pendingBadgeText,
-                    { color: isDark ? "#FBBF24" : "#B45309" },
+                    { color: accentOnSurface },
                   ]}
                 >
                   Pendiente
@@ -113,7 +116,7 @@ export const SolicitarAnticipoModal: React.FC<SolicitarAnticipoModalProps> = ({
           <Text
             style={[
               styles.disponibleMonto,
-              { color: tieneSolicitudPendiente ? "#F59E0B" : accentColor },
+              { color: tieneSolicitudPendiente ? accentOnSurface : accentColor },
             ]}
           >
             ${formatCurrency(montoMaximo)}
@@ -171,9 +174,11 @@ export const SolicitarAnticipoModal: React.FC<SolicitarAnticipoModalProps> = ({
           ]}
           onPress={onSolicitar}
           disabled={loading || !canRequestAdvance}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar solicitud de anticipo"
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color="#FFF" />
           ) : (
             <Text style={styles.submitButtonText}>
               {!canRequestAdvance
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: BorderRadius.full,
-    backgroundColor: "#D1D5DB",
+    backgroundColor: "rgba(128,128,128,0.3)",
     alignSelf: "center",
     marginBottom: 16,
   },
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   closeButton: {
     padding: 8,
@@ -250,7 +255,7 @@ const styles = StyleSheet.create({
   },
   disponibleLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     letterSpacing: 1.5,
     marginBottom: 8,
   },
@@ -261,11 +266,11 @@ const styles = StyleSheet.create({
   },
   pendingBadgeText: {
     fontSize: FontSize.xxs,
-    fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   disponibleMonto: {
     fontSize: 36,
-    fontWeight: "900",
+    fontFamily: FontFamily.black,
     marginBottom: 16,
   },
   desgloseRow: {
@@ -280,12 +285,12 @@ const styles = StyleSheet.create({
   },
   desgloseLabel: {
     fontSize: FontSize.xxs,
-    fontWeight: "600",
+    fontFamily: FontFamily.semibold,
     marginBottom: 4,
   },
   desgloseValue: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
   },
   input: {
     borderWidth: 2,
@@ -313,9 +318,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   submitButtonText: {
-    color: "#FFFFFF",
+    color: "#FFF",
     fontSize: 17,
-    fontWeight: "700",
+    fontFamily: FontFamily.bold,
     letterSpacing: 0.5,
   },
 });

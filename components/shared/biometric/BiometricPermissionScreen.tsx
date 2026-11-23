@@ -34,6 +34,8 @@ export function BiometricPermissionScreen({
                         <Pressable
                             style={[styles.primaryBtn, { backgroundColor: accentColor }]}
                             onPress={onRequestPermission}
+                            accessibilityRole="button"
+                            accessibilityLabel="Solicitar permiso de cámara"
                         >
                             {({ pressed }) => (
                                 <View style={{ opacity: pressed ? 0.6 : 1 }}>
@@ -46,7 +48,7 @@ export function BiometricPermissionScreen({
                             El permiso está bloqueado. Activalo desde Ajustes del teléfono.
                         </Text>
                     )}
-                    <Pressable style={styles.ghostBtn} onPress={onClose}>
+                    <Pressable style={styles.ghostBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar pantalla de permiso">
                         {({ pressed }) => (
                             <View style={{ opacity: pressed ? 0.6 : 1 }}>
                                 <Text style={styles.ghostBtnText}>Cerrar</Text>

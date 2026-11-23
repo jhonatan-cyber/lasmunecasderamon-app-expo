@@ -1,12 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -36,6 +39,7 @@ const FEEDBACK_MS = 2500;
  * aquí en pantalla en vez de sonido).
  */
 export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseScannerModalProps) => {
+  const { accentColor, accentOnSurface, accentText } = useAccentColor();
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const [torch, setTorch] = useState(false);
@@ -135,7 +139,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.permissionContainer}>
           <View style={styles.permissionContent}>
-            <Ionicons name="camera" size={56} color="#60A5FA" />
+            <Ionicons name="camera" size={56} color={accentColor} />
             <Text style={styles.title}>Permiso de Cámara</Text>
             <Text style={styles.message}>
               Necesitamos acceso a tu cámara para escanear el código del envase.
@@ -190,13 +194,18 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
 
         <View style={styles.overlay}>
           <View style={styles.header}>
-            <Pressable onPress={onClose} style={styles.headerBtn}>
+            <Pressable onPress={onClose} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Cerrar escáner">
               <Ionicons name="close" size={28} color="#FFF" />
             </Pressable>
-            <Text style={styles.headerTitle}>Escaneando envase</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              Escaneando envase
+            </Text>
             <Pressable
               onPress={() => setTorch((prev) => !prev)}
-              style={[styles.headerBtn, torch && { backgroundColor: '#FBBF24' }]}
+              style={[styles.headerBtn, torch && { backgroundColor: accentOnSurface }]}
+              accessibilityRole="button"
+              accessibilityLabel={torch ? 'Apagar linterna' : 'Encender linterna'}
+              accessibilityState={{ checked: torch }}
             >
               <Ionicons name={torch ? 'flashlight' : 'flashlight-outline'} size={24} color="#FFF" />
             </Pressable>
@@ -208,36 +217,42 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
               <View style={[styles.corner, styles.topRight]} />
               <View style={[styles.corner, styles.bottomLeft]} />
               <View style={[styles.corner, styles.bottomRight]} />
-              {busy && <ActivityIndicator size="large" color="#60A5FA" />}
+              {busy && <ActivityIndicator size="large" color={accentColor} />}
             </View>
           </View>
 
           <View style={styles.footer}>
             {!batchResults && <Text style={styles.countText}>{codes.length} códigos en el lote</Text>}
             {batchResults && (
-              <View style={styles.resultsList}>
+              // La lista lleva su propio scroll: con muchos envases el veredicto
+              // de los últimos quedaba recortado por el maxHeight del bloque.
+              <ScrollView
+                style={styles.resultsList}
+                contentContainerStyle={styles.resultsContent}
+                showsVerticalScrollIndicator={false}
+              >
                 {batchResults.map((result) => (
-                  <Text key={result.codigo} style={[styles.resultLine, { color: result.ok ? '#86EFAC' : '#FCA5A5' }]} numberOfLines={2}>
+                  <Text key={result.codigo} style={[styles.resultLine, { color: result.ok ? accentOnSurface : accentColor }]} numberOfLines={2}>
                     {result.ok ? '✓' : '×'} {result.codigo}: {result.texto}
                   </Text>
                 ))}
-              </View>
+              </ScrollView>
             )}
             {feedback && (
               <View
                 style={[
                   styles.feedback,
                   {
-                    backgroundColor: feedback.ok ? 'rgba(16,185,129,0.9)' : 'rgba(239,68,68,0.9)',
+                    backgroundColor: feedback.ok ? `${accentOnSurface}E8` : `${accentColor}E8`,
                   },
                 ]}
               >
                 <Ionicons
                   name={feedback.ok ? 'checkmark-circle' : 'alert-circle'}
                   size={18}
-                  color="#FFF"
+                  color={accentText}
                 />
-                <Text style={styles.feedbackText} numberOfLines={3}>
+                <Text style={[styles.feedbackText, { color: accentText }]} numberOfLines={3}>
                   {feedback.texto}
                 </Text>
               </View>
@@ -253,7 +268,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
                 onPress={enviarLote}
                 disabled={!codes.length || busy}
               >
-                {busy ? <ActivityIndicator color="#FFF" /> : <Text style={styles.cerrarBtnText}>Enviar {codes.length} códigos</Text>}
+                {busy ? <ActivityIndicator color={accentText} /> : <Text style={styles.cerrarBtnText}>Enviar {codes.length} códigos</Text>}
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.cerrarBtn} onPress={onClose}>
@@ -289,24 +304,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  title: { color: '#FFF', fontSize: 20, fontWeight: '800', marginTop: 14 },
+  title: { fontSize: 20, fontFamily: FontFamily.extrabold, marginTop: 14 },
   message: {
-    color: '#C7D2FE',
     fontSize: 14,
     textAlign: 'center',
     marginTop: 10,
     lineHeight: 20,
   },
   btn: {
-    backgroundColor: '#3B82F6',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: BorderRadius.full,
     marginTop: 16,
   },
-  btnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  btnText: { fontFamily: FontFamily.bold, fontSize: 15 },
   closeBtn: { marginTop: 14, padding: 8 },
-  closeText: { color: '#9CA3AF', fontWeight: '600', fontSize: 14 },
+  closeText: { fontFamily: FontFamily.semibold, fontSize: 14 },
   overlay: {
     position: 'absolute',
     top: 0,
@@ -332,7 +345,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  headerTitle: {
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: FontFamily.extrabold,
+    flexShrink: 1,
+    textAlign: 'center',
+    marginHorizontal: 12,
+  },
   scannerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scannerFrame: {
     width: 260,
@@ -378,18 +398,19 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     padding: 12,
   },
-  feedbackText: { flex: 1, color: '#FFF', fontSize: 13, fontWeight: '700' },
+  feedbackText: { flex: 1, color: '#FFF', fontSize: 13, fontFamily: FontFamily.bold },
   footerText: { color: '#D1D5DB', fontSize: 12, textAlign: 'center' },
-  countText: { color: '#FFF', fontSize: 14, fontWeight: '900' },
-  resultsList: { maxHeight: 160, alignSelf: 'stretch', gap: 5 },
-  resultLine: { fontSize: 11, fontWeight: '700' },
+  countText: { color: '#FFF', fontSize: 14, fontFamily: FontFamily.black },
+  resultsList: { maxHeight: 160, alignSelf: 'stretch' },
+  resultsContent: { gap: 5 },
+  resultLine: { fontSize: 11, fontFamily: FontFamily.bold },
   cerrarBtn: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 28,
     paddingVertical: 10,
     borderRadius: BorderRadius.full,
   },
-  cerrarBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+  cerrarBtnText: { color: '#FFF', fontFamily: FontFamily.bold, fontSize: 14 },
   sendBtn: { backgroundColor: '#2563EB', minWidth: 200, alignItems: 'center' },
   cancelBtn: { paddingHorizontal: 20, paddingVertical: 8 },
   disabledBtn: { opacity: 0.45 },

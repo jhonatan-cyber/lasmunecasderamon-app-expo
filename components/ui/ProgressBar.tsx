@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AccessibilityRole, AccessibilityValue, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,6 +10,7 @@ import Animated, {
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontFamily } from '@/constants/fonts';
 
 export interface ProgressBarProps {
     /** 0-100 progress value. Omit for indeterminate mode. */
@@ -17,7 +18,9 @@ export interface ProgressBarProps {
     color?: string;
     height?: number;
     message?: string;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
+    /** Accessibility label for screen readers (e.g., "Cargando servicio") */
+    accessibilityLabel?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -26,6 +29,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     height = 6,
     message,
     style,
+    accessibilityLabel,
 }) => {
     const { accentColor, surfaceMuted, textSecondary, isDark } = useAccentColor();
     const reducedMotion = useReducedMotion();
@@ -55,14 +59,25 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         transform: [{ translateX: indeterminateTranslateX.value }],
     }));
 
-    const indeterminateWidth = useAnimatedStyle(() => {
+    const indeterminateScale = useAnimatedStyle(() => {
         const translateX = indeterminateTranslateX.value;
-        const width = interpolate(translateX, [-100, 0, 100, 200], [20, 40, 20, 5]);
-        return { width: `${width}%` };
+        const widthPercent = interpolate(translateX, [-100, 0, 100, 200], [20, 40, 20, 5]);
+        return { width: '100%', transform: [{ scaleX: widthPercent / 100 }] };
     });
 
+    // Accesibilidad: role y value dinámicos para lectores de pantalla
+    const accessibilityRole: AccessibilityRole = 'progressbar';
+    const accessibilityValue: AccessibilityValue = progress !== undefined
+        ? { min: 0, max: 100, now: Math.round(progress), text: `${Math.round(progress)}%` }
+        : { min: 0, max: 100, now: 0, text: 'Cargando' };
+
     return (
-        <View style={style}>
+        <View
+            accessibilityRole={accessibilityRole}
+            accessibilityLabel={accessibilityLabel || message || 'Progreso'}
+            accessibilityValue={accessibilityValue}
+            style={style}
+        >
             {message && (
                 <Text style={[styles.message, { color: textSecondary }]}>
                     {message}
@@ -83,9 +98,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                             height,
                             borderRadius: BorderRadius.xs,
                             backgroundColor: barColor,
+                            width: '100%',
                             ...(progress !== undefined
-                                ? { width: `${progress}%` }
-                                : [indeterminateStyle, indeterminateWidth]),
+                                ? { transform: [{ scaleX: progress / 100 }] }
+                                : [indeterminateStyle, indeterminateScale]),
                             ...neonGlow,
                         },
                     ]}
@@ -110,12 +126,12 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: FontSize.xs,
-        fontWeight: '500',
+        fontFamily: FontFamily.medium,
         marginBottom: 6,
     },
     percentage: {
         fontSize: FontSize.xs,
-        fontWeight: '600',
+        fontFamily: FontFamily.semibold,
         marginTop: 4,
         textAlign: 'right',
     },

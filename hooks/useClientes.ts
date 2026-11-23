@@ -1,5 +1,4 @@
 import { useCallback, useState, useMemo } from 'react';
-import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { showToast } from '@/utils/toast-lazy';
@@ -54,6 +53,7 @@ export function useClientes() {
     const [formRun, setFormRun] = useState("");
     const [formPhone, setFormPhone] = useState("");
     const [loadBaucherFoto, setLoadBaucherFoto] = useState<string | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<Client | null>(null);
 
     const fetchClients = useCallback(async (showRefreshing = false, signal?: AbortSignal) => {
         if (showRefreshing) setRefreshing(true);
@@ -291,31 +291,31 @@ export function useClientes() {
         }
     };
 
-    const confirmDelete = useCallback((client: Client) => {
-        Alert.alert(
-            "Eliminar Cliente",
-            `¿Está seguro que desea eliminar a ${client.name} ${client.lastName}?`,
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Eliminar",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            const res = await clientesService.delete(client.id);
-                            const delRes = res as unknown as { success: boolean; message?: string };
-                            if (delRes.success || delRes.message) {
-                                showToast({ type: 'success', text1: 'Eliminado', text2: 'Cliente eliminado correctamente' });
-                                fetchClients(true);
-                            }
-                        } catch (error: any) {
-                            showToast({ type: 'error', text1: 'Error', text2: error.message || 'No se pudo eliminar' });
-                        }
-                    }
-                }
-            ]
-        );
+    const handleDelete = useCallback(async (client: Client) => {
+        setDeleteConfirm(null);
+        try {
+            const res = await clientesService.delete(client.id);
+            const delRes = res as unknown as { success: boolean; message?: string };
+            if (delRes.success || delRes.message) {
+                showToast({ type: 'success', text1: 'Eliminado', text2: 'Cliente eliminado correctamente' });
+                fetchClients(true);
+            }
+        } catch (error: any) {
+            showToast({ type: 'error', text1: 'Error', text2: error.message || 'No se pudo eliminar' });
+        }
     }, [fetchClients]);
+
+    const confirmDelete = useCallback((client: Client) => {
+        if ((client.saldo || 0) > 0) {
+            showToast({
+                type: 'error',
+                text1: 'No se puede eliminar',
+                text2: 'El cliente tiene saldo pendiente. Debe ser cero para eliminar.'
+            });
+            return;
+        }
+        setDeleteConfirm(client);
+    }, []);
 
     return {
         ...theme,
@@ -375,6 +375,9 @@ export function useClientes() {
         formatCurrency,
         unformatCurrency,
         handleLoadBalance,
-        confirmDelete
+        confirmDelete,
+        deleteConfirm,
+        setDeleteConfirm,
+        handleDelete
     };
 }

@@ -2,7 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle, AccessibilityRole } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -14,7 +15,9 @@ import Animated, {
 interface SkeletonProps {
     width?: number | string;
     height?: number | string;
-    borderRadius?: number;
+    borderRadius?: number | typeof BorderRadius.sm | typeof BorderRadius.md | typeof BorderRadius.lg | typeof BorderRadius.xl | typeof BorderRadius.xxl | typeof BorderRadius.card | typeof BorderRadius.full;
+    accessibilityRole?: AccessibilityRole;
+    accessibilityLabel?: string;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -23,7 +26,9 @@ interface SkeletonProps {
 export const Skeleton: React.FC<SkeletonProps> = ({
     width = '100%',
     height = 20,
-    borderRadius = 8,
+    borderRadius = typeof BorderRadius.card !== 'undefined' ? BorderRadius.card : 12,
+    accessibilityRole,
+    accessibilityLabel,
     style
 }) => {
     const { accentColor, isDark } = useAccentColor();
@@ -58,6 +63,8 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
     return (
         <View
+            accessibilityRole={accessibilityRole}
+            accessibilityLabel={accessibilityLabel}
             style={[
                 styles.container,
                 {
