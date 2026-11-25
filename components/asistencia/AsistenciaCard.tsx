@@ -35,7 +35,7 @@ export const AsistenciaCard: React.FC<AsistenciaCardProps> = ({
   formatDate,
   normalizeEstado,
 }) => {
-    const { accentOnSurface, accentBg } = useAccentColor();
+    const { accentOnSurface } = useAccentColor();
   const estado = normalizeEstado(item.estado);
   const isPendiente = estado === 'pendiente';
   const isPagado = estado === 'pagado';

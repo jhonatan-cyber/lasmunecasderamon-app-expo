@@ -39,6 +39,7 @@ export default function ResetPasswordModal({
         borderColor,
         surfaceMuted,
         accentText,
+        overlayScrim: modalOverlayColor,
     } = useAccentColor();
 
     return (
@@ -48,7 +49,7 @@ export default function ResetPasswordModal({
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.modalOverlay}>
+            <View style={[styles.modalOverlay, { backgroundColor: modalOverlayColor }]}>
                 <View style={[styles.alertCard, { backgroundColor: cardBg }]}>
                     <Text style={[styles.alertTitle, { color: textPrimary }]}>
                         Restablecer contraseña
@@ -105,7 +106,6 @@ export default function ResetPasswordModal({
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         alignItems: 'center',
     },

@@ -90,7 +90,14 @@ export function useTimerVoiceAnnouncer({
             ),
           );
 
-          setExpiredTimer(timer);
+          // En cajero el aviso lo muestra GlobalTimerAlert (reacciona al
+          // refresh_sales con reason 'ended'). Setear acá también abriría
+          // ExpiredTimerModal y el usuario vería DOS modals para el mismo
+          // servicio. En otros roles GlobalTimerAlert no está montado, así
+          // que el modal global sí es el único aviso.
+          if (!isCajeroRole(user)) {
+            setExpiredTimer(timer);
+          }
         }
       });
   }, [serverOffset, setExpiredTimer, setTimers, timersRef]);

@@ -64,7 +64,7 @@ function fechaHoraLocal() {
 }
 
 export function CoversScreen() {
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, isDark, accentOnSurface, accentText, accentBorder } = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentText } = useAccentColor();
   const router = useRouter();
   const user = useAuthStore(state => state.user);
   const requiereSolicitud = isBarmanRole(user);

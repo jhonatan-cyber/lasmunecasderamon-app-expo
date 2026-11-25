@@ -114,7 +114,7 @@ export function TransferActions({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const { accentColor, accentBg, accentBorder } = useAccentColor();
+  const { accentColor, accentBg, accentBorder, accentOnSurface } = useAccentColor();
   const btnTextColor = readableTextColor(accentColor);
 
   return (
@@ -124,8 +124,8 @@ export function TransferActions({
         disabled={resolving}
         style={({ pressed }) => [styles.actionBtn, { backgroundColor: accentBg, borderColor: accentBorder }, pressed && { opacity: 0.7 }, resolving && { opacity: 0.5 }]}
       >
-        <Ionicons name="close" size={16} color={accentColor} />
-        <Text style={[styles.rejectText, { color: accentColor }]}>Rechazar</Text>
+        <Ionicons name="close" size={16} color={accentOnSurface} />
+        <Text style={[styles.rejectText, { color: accentOnSurface }]}>Rechazar</Text>
       </Pressable>
       <Pressable
         onPress={onAccept}

@@ -45,7 +45,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
     createsWorkOffline = true,
     onBack,
 }) => {
-    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted, accentOnSurface, accentText, accentBg } =
+    const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, surfaceMuted, accentOnSurface, accentText } =
         useAccentColor();
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -146,7 +146,7 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                 </Text>
 
                 {intent.lastError ? (
-                    <Text style={[styles.cardError, { color: accentColor }]} numberOfLines={2}>
+                    <Text style={[styles.cardError, { color: accentOnSurface }]} numberOfLines={2}>
                         {intent.lastError}
                     </Text>
                 ) : null}
@@ -168,8 +168,8 @@ export const PendingOperationsScreen: React.FC<PendingOperationsScreenProps> = (
                         onPress={() => discard(intent.id)}
                         style={[styles.actionButton, { borderColor: accentColor }]}
                     >
-                        <Ionicons name='trash-outline' size={16} color={accentColor} />
-                        <Text style={[styles.actionText, { color: accentColor }]}>DESCARTAR</Text>
+                        <Ionicons name='trash-outline' size={16} color={accentOnSurface} />
+                        <Text style={[styles.actionText, { color: accentOnSurface }]}>DESCARTAR</Text>
                     </Pressable>
                 </View>
             </View>

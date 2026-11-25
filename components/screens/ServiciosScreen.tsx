@@ -241,6 +241,11 @@ interface ServiciosScreenProps {
 
 export function ServiciosScreen({ variant }: ServiciosScreenProps) {
   const esCajero = variant === 'cajero';
+  const refrescarCaja = useCajaAbiertaStore((state) => state.refresh);
+  const cajaIdActual = useCajaAbiertaStore(
+    (state) => state.cajaInfo?.id_caja ?? null,
+  );
+  const cajaIdPrevio = useRef(cajaIdActual);
   const esAdmin = variant === 'admin';
   const capacidades = CAPACIDADES[variant];
   const { soloLectura, sinAccionesBarman } = capacidades;
@@ -289,7 +294,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     warning: colors.warning,
     info: colors.info,
     isDark,
-  }), [isDark, accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, colors.danger, colors.info, colors.success, colors.warning]);
+  }), [isDark, accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, colors.background, colors.danger, colors.info, colors.success, colors.warning]);
 
   const tabsList = useMemo(() => {
     const base: { key: 'activos' | 'finalizados'; label: string; icon: any }[] = [
@@ -333,8 +338,22 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         payload: true,
       });
       try {
-        // El cajero ve solo los servicios de la caja actual.
-        const cajaId = esCajero ? useCajaAbiertaStore.getState().cajaInfo?.id_caja ?? null : null;
+        // El cajero ve solo los servicios de la caja actual. El store puede
+        // estar vacío al entrar a la pantalla, así que lo refrescamos antes
+        // de pedir el listado: sin id de caja no se muestra nada (nunca se
+        // cae al listado completo).
+        let cajaId: string | number | null = null;
+        if (esCajero) {
+          await refrescarCaja();
+          cajaId = useCajaAbiertaStore.getState().cajaInfo?.id_caja ?? null;
+          if (!cajaId) {
+            dispatch({
+              type: 'SET_FINALIZADOS_PAGE',
+              payload: { items: [], page: 1, hasMore: false },
+            });
+            return;
+          }
+        }
         const res = await serviciosService.listar({
           all: true,
           limit: SERVICIOS_POR_PAGINA,
@@ -364,7 +383,7 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
         dispatch({ type: 'SET_LOADING_MORE_FINALIZADOS', payload: false });
       }
     },
-    [esCajero],
+    [esCajero, refrescarCaja],
   );
 
   const fetchFinalizados = useCallback(
@@ -382,6 +401,16 @@ export function ServiciosScreen({ variant }: ServiciosScreenProps) {
     finalizadosPage,
     cargarPaginaFinalizados,
   ]);
+
+  // Si cambia la caja abierta (otra apertura), el listado de finalizados debe
+  // recargarse aunque la pantalla ya estuviera enfocada.
+  useEffect(() => {
+    const anterior = cajaIdPrevio.current;
+    cajaIdPrevio.current = cajaIdActual;
+    if (anterior === cajaIdActual) return;
+    if (!esCajero || activeTab !== 'finalizados' || !isFocused.current) return;
+    fetchFinalizados();
+  }, [cajaIdActual, esCajero, activeTab, fetchFinalizados]);
 
   useFocusEffect(
     useCallback(() => {

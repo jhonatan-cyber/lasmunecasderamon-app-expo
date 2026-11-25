@@ -39,7 +39,7 @@ function colorDeCategoria(nombre?: string | null): string {
 }
 
 export default function ColacionesScreen() {
-    const { accentOnSurface, accentColor: themeAccent, accentText } = useAccentColor();
+    const { accentOnSurface, accentText } = useAccentColor();
   const router = useRouter();
   const {
     accentColor,
@@ -191,7 +191,7 @@ export default function ColacionesScreen() {
           <>
           <View style={[styles.errorBox, { borderBottomColor: borderColor }]}>
             {productosError || analcoholicasError || trabajadoresError ? (
-              <Text style={[styles.error, { color: themeAccent }]}>
+              <Text style={[styles.error, { color: accentOnSurface }]}>
                 {productosError || analcoholicasError || trabajadoresError}
               </Text>
             ) : null}
@@ -312,7 +312,7 @@ export default function ColacionesScreen() {
               <Text style={{ color: textSecondary, marginLeft: 4 }}>Cargando colaciones…</Text>
             </View>
           ) : registrosError ? (
-            <Text style={[styles.error, { color: themeAccent }]}>{registrosError}</Text>
+            <Text style={[styles.error, { color: accentOnSurface }]}>{registrosError}</Text>
           ) : filteredHistory.length === 0 ? (
             <Text style={[styles.emptyText, { color: textSecondary }]}>
               {registros.length === 0 ? 'Aún no hay colaciones en este turno.' : 'No hay colaciones para este filtro.'}

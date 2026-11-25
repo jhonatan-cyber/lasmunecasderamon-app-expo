@@ -82,7 +82,6 @@ export function ShotMixerSelector({
   const [barProducts, setBarProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cached, setCached] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [reload, setReload] = useState(0);
@@ -105,7 +104,6 @@ export function ShotMixerSelector({
         if (!barResult.data.success || !Array.isArray(barResult.data.data))
           throw new Error();
         setBar(barResult.data.data);
-        setCached(barResult.fromCache || productsResult.fromCache);
         const products = (productsResult.data?.success && Array.isArray(productsResult.data?.data))
           ? productsResult.data.data
           : [];
@@ -237,7 +235,7 @@ export function ShotMixerSelector({
         <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
           {bottle
             ? "Bebidas"
-            : "Soda o gaseosa para los cortos"}
+            : "Bebida para los cortos"}
         </Text>
       )}
       {loading && <ActivityIndicator color={accentColor} />}

@@ -145,7 +145,7 @@ export default function useLogin() {
                 // Navegar directamente a la ruta del rol para evitar la doble
                 // redirección (router.replace('/') → index.tsx → Redirect) que
                 // causa recarga visual en nativo.
-                const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+                const homeRoute = getHomeRouteByRole(useAuthStore.getState().user) ?? '/(auth)/login';
                 if (isBiometricSupported && !isBiometricEnabled) {
                     showAlert(
                         'Acceso Biométrico',
@@ -191,7 +191,7 @@ export default function useLogin() {
                 });
             }
 
-            const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+            const homeRoute = getHomeRouteByRole(useAuthStore.getState().user) ?? '/(auth)/login';
             router.replace(homeRoute);
         } catch (err: any) {
             setError(err.message || 'Error al validar código QR');

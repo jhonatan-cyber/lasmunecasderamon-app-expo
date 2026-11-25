@@ -90,7 +90,6 @@ export default function BarScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const onTabChange = (tabId: string) => {
-    // Reset category when switching tabs
     setSelectedCategory(null);
     setActiveTab(tabId as TabId);
     if (tabId === 'historial') loadMovements();
@@ -99,7 +98,6 @@ export default function BarScreen() {
     if (tabId === 'envases') fetchDevoluciones();
   };
 
-  // El envase se procesa y el campo queda libre para la siguiente lectura.
   const enviarEnvase = async () => {
     if (await enviarEscaneo(codigo)) setCodigo('');
   };

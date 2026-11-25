@@ -39,7 +39,7 @@ export const QRScannerModal = ({
     const [zoom, setZoom] = useState(ZOOM_NORMAL);
     const [cameraActive, setCameraActive] = useState(false);
     const [codigo, setCodigo] = useState<string>('');
-    const { accentColor, accentOnSurface, accentText, accentUi, accentBg, accentBorder, cardBg } = useAccentColor();
+    const { accentColor, accentOnSurface, accentUi, cardBg } = useAccentColor();
     const timerRef = useRef<any>(null);
 
     const fetchCodigo = useCallback(async () => {

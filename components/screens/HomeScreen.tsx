@@ -16,6 +16,7 @@ import { GarzonHomeActions } from '@/components/screens/home/GarzonHomeActions';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { usePendingSolicitudesCount } from '@/hooks/usePendingSolicitudesCount';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
 import { useAuthStore } from '@/store/authStore';
@@ -69,13 +70,13 @@ export function HomeScreen({ role }: HomeScreenProps) {
     userStatus,
     hasNewAlert,
     activeService,
-    pendingCount,
     pendingOrders,
     pendingTransfers,
     pendingAdvances,
     onRefresh,
     setHasNewAlert,
   } = useDashboardData(role);
+  const pendingSolicitudesCount = usePendingSolicitudesCount(role === 'cajero');
 
   const [alertConfig, setAlertConfig] = useState<any>({
     visible: false,
@@ -153,7 +154,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
           showAlert={showAlert}
           profilePath={`/${role}/perfil`}
           onQRScannerPress={() => setShowAsistenciaModal(true)}
-          notificationCount={role === 'cajero' ? pendingCount : 0}
+          notificationCount={role === 'cajero' ? pendingSolicitudesCount : 0}
           onNotificationPress={
             role === 'cajero'
               ? () => router.push('/cajero/solicitudes')

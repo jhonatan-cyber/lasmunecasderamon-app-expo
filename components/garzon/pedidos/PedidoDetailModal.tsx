@@ -1,15 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppModal as Modal } from '@/components/ui/AppModal';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { apiClientSafe } from '@/api/client';
@@ -25,6 +19,7 @@ import { BorderRadius } from '@/constants/spacing';
 import { formatCurrency } from '@/utils/format';
 import { parseDateSafe } from '@/utils/timeUtils';
 import type { Pedido } from '@/hooks/useMisPedidos';
+import { DetailSheet } from '@/components/ui/DetailSheet';
 
 type PedidoDetalleLinea = {
   id_detalle_pedido?: string | number;
@@ -70,16 +65,13 @@ export function PedidoDetailModal({
   onClose,
 }: PedidoDetailModalProps) {
   const {
-    accentColor,
-    accentText,
-    cardBg,
+    accentOnSurface,
     borderColor,
     textPrimary,
     textSecondary,
     surfaceMuted,
     isDark,
   } = useAccentColor();
-  const insets = useSafeAreaInsets();
   const [detail, setDetail] = useState<PedidoDetalleLinea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -169,75 +161,21 @@ export function PedidoDetailModal({
     );
 
   return (
-    <Modal
+    <DetailSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      onClose={onClose}
+      title={`Pedido ${pedido?.codigo || ''}`}
+      status={{
+        label: STATUS_LABELS[pedido?.estado ?? -1] || 'Desconocido',
+        color: statusColor,
+      }}
+      loading={loading}
+      loadingLabel="Cargando detalle…"
+      error={error || null}
+      height="88%"
+      footerActions={[{ label: 'Cerrar', onPress: onClose }]}
+      accessibilityLabel="Detalle del pedido"
     >
-      <View style={styles.overlay}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar detalle del pedido"
-        />
-        <View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: cardBg,
-              borderColor,
-              paddingBottom: insets.bottom + 16,
-            },
-          ]}
-          accessibilityViewIsModal
-        >
-          <View style={styles.header}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[styles.title, { color: textPrimary }]}>
-                Pedido {pedido?.codigo || ''}
-              </Text>
-              <View
-                style={[styles.status, { backgroundColor: `${statusColor}18` }]}
-              >
-                <View style={[styles.dot, { backgroundColor: statusColor }]} />
-                <Text style={[styles.statusText, { color: statusColor }]}>
-                  {STATUS_LABELS[pedido?.estado ?? -1] || 'Desconocido'}
-                </Text>
-              </View>
-            </View>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar detalle del pedido"
-              hitSlop={10}
-            >
-              <Ionicons name="close" size={24} color={textPrimary} />
-            </Pressable>
-          </View>
-
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={accentColor} />
-              <Text style={[styles.muted, { color: textSecondary }]}>
-                Cargando detalle…
-              </Text>
-            </View>
-          ) : error ? (
-            <View style={styles.center}>
-              <Ionicons
-                name="alert-circle-outline"
-                size={40}
-                color={textSecondary}
-              />
-              <Text style={[styles.error, { color: textPrimary }]}>{error}</Text>
-            </View>
-          ) : (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            >
               <View
                 style={[
                   styles.infoCard,
@@ -343,7 +281,7 @@ export function PedidoDetailModal({
                   label="TOTAL"
                   value={formatCurrency(total)}
                   color={textPrimary}
-                  valueColor={accentColor}
+                  valueColor={accentOnSurface}
                   strong
                 />
               </View>
@@ -356,20 +294,7 @@ export function PedidoDetailModal({
                   />
                 </View>
               )}
-            </ScrollView>
-          )}
-
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar detalle del pedido"
-            style={[styles.closeBtn, { backgroundColor: accentColor }]}
-          >
-            <Text style={[styles.closeText, { color: accentText }]}>Cerrar</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
+    </DetailSheet>
   );
 }
 
@@ -449,22 +374,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: { fontSize: 22, fontFamily: FontFamily.black },
-  status: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    marginTop: 5,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: {
-    fontSize: 10,
-    fontFamily: FontFamily.black,
-    textTransform: 'uppercase',
-  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   muted: { fontSize: 13, fontFamily: FontFamily.medium, textAlign: 'center' },
   error: { fontSize: 14, fontFamily: FontFamily.semibold, textAlign: 'center' },

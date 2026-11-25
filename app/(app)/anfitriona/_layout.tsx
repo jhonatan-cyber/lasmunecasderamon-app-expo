@@ -9,7 +9,6 @@ export default function AnfitrionaLayout() {
     const { bloqueado } = useCajaAbierta();
     const segmentos = useSegments();
 
-    // Sin caja abierta, las rutas que requieren caja redirigen al inicio.
     if (bloqueado && rutaRequiereCajaAbierta(segmentos)) {
         return <Redirect href="/(app)/anfitriona/(tabs)" />;
     }

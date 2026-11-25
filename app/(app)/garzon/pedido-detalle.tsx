@@ -16,7 +16,7 @@ import {
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 
 export default function PedidoDetalleScreen() {
-  const { accentColor, bg, cardBg, borderColor, textPrimary, accentOnSurface } =
+  const { accentColor, bg, borderColor, textPrimary, accentOnSurface } =
     useAccentColor();
   const router = useRouter();
   const cart = useCartStore((state) => state.cart);
@@ -84,7 +84,7 @@ export default function PedidoDetalleScreen() {
           accessibilityRole="button"
           accessibilityLabel="Volver al pedido"
         >
-          <Text style={[styles.backText, { color: accentColor }]}>Volver al pedido</Text>
+          <Text style={[styles.backText, { color: accentOnSurface }]}>Volver al pedido</Text>
         </Pressable>
       </View>
     </View>

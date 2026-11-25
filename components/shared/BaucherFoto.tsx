@@ -36,7 +36,7 @@ interface BaucherFotoProps {
  * ruta exige sesión, así que se carga con el token de la app.
  */
 export function BaucherFoto({ endpoint, descripcion, compacto = false }: BaucherFotoProps) {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentText} = useAccentColor();
+  const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
   const [visible, setVisible] = useState(false);
   const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

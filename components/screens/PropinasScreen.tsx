@@ -29,7 +29,6 @@ import { useCallback, useState } from 'react';
 export default function PropinasScreen() {
   const {
     accentColor,
-    isDark,
     bg,
     cardBg,
     surfaceMuted,

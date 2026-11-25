@@ -18,7 +18,7 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ visible, movement, transfer, onClose }: MovementDetailModalProps) {
-  const { accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface } = useAccentColor();
   const fecha = movement?.fecha_crea ? new Date(movement.fecha_crea) : null;
   const fechaValida = fecha && !Number.isNaN(fecha.getTime());
   const opciones = parseOpcionesVenta(transfer?.opciones_venta ?? movement?.opciones_venta);
@@ -34,7 +34,7 @@ export function MovementDetailModal({ visible, movement, transfer, onClose }: Mo
           <View style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.header}>
               <View style={[styles.iconWrap, { backgroundColor: `${accentColor}20` }]}>
-                <Ionicons name={movement.tipo === 'traspaso' ? 'swap-horizontal' : 'wine-outline'} size={22} color={accentColor} />
+                <Ionicons name={movement.tipo === 'traspaso' ? 'swap-horizontal' : 'wine-outline'} size={22} color={accentOnSurface} />
               </View>
               <View style={[styles.headerText, { minWidth: 0 }]}>
                 <Text style={[styles.eyebrow, { color: textSecondary }]}>DETALLE DEL MOVIMIENTO</Text>

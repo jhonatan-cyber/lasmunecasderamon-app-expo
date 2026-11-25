@@ -141,8 +141,8 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                     accessibilityHint="Solicita limpieza o hielo para esta habitación"
                                     hitSlop={HitSlop.md}
                                 >
-                                    <Ionicons name="sparkles-outline" size={FontSize.xs} color={accentColor} />
-                                    <Text style={[styles.assistanceBtnText, { color: accentColor, fontSize: FontSize.xs }]}>Servicio</Text>
+                                    <Ionicons name="sparkles-outline" size={FontSize.xs} color={accentOnSurface} />
+                                    <Text style={[styles.assistanceBtnText, { color: accentOnSurface, fontSize: FontSize.xs }]}>Servicio</Text>
                                 </Pressable>
                                 <Pressable
                                     style={[styles.assistanceBtn, { backgroundColor: accentBg }]}
@@ -165,8 +165,8 @@ export const ServiceCard = ({ item, index, onPress, onAssistance }: ServiceCardP
                                     accessibilityHint="Envía una alerta de seguridad urgente"
                                     hitSlop={HitSlop.md}
                                 >
-                                    <Ionicons name="alert-circle-outline" size={FontSize.xs} color={accentColor} />
-                                    <Text style={[styles.assistanceBtnText, { color: accentColor, fontSize: FontSize.xs }]}>ALERTA</Text>
+                                    <Ionicons name="alert-circle-outline" size={FontSize.xs} color={accentOnSurface} />
+                                    <Text style={[styles.assistanceBtnText, { color: accentOnSurface, fontSize: FontSize.xs }]}>ALERTA</Text>
                                 </Pressable>
                             </View>
                         </View>

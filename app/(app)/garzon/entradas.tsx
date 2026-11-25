@@ -33,16 +33,9 @@ import { formatCurrency } from '@/utils/format';
 import logger from '@/utils/logger';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import { showToast } from '@/utils/toast-lazy';
+import { PaymentMethodSelect, type PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
 
-const METODOS: {
-  id: MetodoPagoEntrada;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-    { id: 'efectivo', label: 'Efectivo', icon: 'cash-outline' },
-    { id: 'tarjeta', label: 'Tarjeta', icon: 'card-outline' },
-    { id: 'transferencia', label: 'Transferencia', icon: 'swap-horizontal-outline' },
-  ];
+const METODOS: PaymentMethod[] = ['efectivo', 'tarjeta', 'transferencia'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -246,7 +239,7 @@ export default function GarzonEntradasScreen() {
           rightComponent={headerBack}
         />
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={accentColor} />
+          <ActivityIndicator size="large" color={accentOnSurface} />
         </View>
       </View>
     );
@@ -365,47 +358,12 @@ export default function GarzonEntradasScreen() {
               </Pressable>
             </View>
 
-            <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-              MÉTODO DE PAGO
-            </Text>
-            <View style={styles.metodosRow}>
-              {METODOS.map(metodoOp => {
-                const activo = metodo === metodoOp.id;
-                return (
-                  <Pressable
-                    key={metodoOp.id}
-                    onPress={() => setMetodo(metodoOp.id)}
-                    style={[
-                      styles.metodoChip,
-                      {
-                        backgroundColor: activo ? `${accentColor}1F` : surfaceMuted,
-                        borderColor: activo ? accentColor : borderColor,
-                      },
-                    ]}
-                    accessibilityRole="radio"
-                    accessibilityLabel={`Pagar con ${metodoOp.label}`}
-                    accessibilityState={{ selected: activo }}
-                  >
-                    <Ionicons
-                      name={metodoOp.icon}
-                      size={16}
-                      color={activo ? accentColor : textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.metodoLabel,
-                        { color: activo ? accentColor : textSecondary },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.7}
-                    >
-                      {metodoOp.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <PaymentMethodSelect
+              methods={METODOS}
+              variant="compact"
+              selectedMethod={metodo}
+              onSelect={(metodoOp) => setMetodo(metodoOp as MetodoPagoEntrada)}
+            />
 
             {metodo === 'transferencia' && (
               <Pressable
@@ -423,15 +381,15 @@ export default function GarzonEntradasScreen() {
                 ]}
               >
                 {fotoLoading ? (
-                  <ActivityIndicator size="small" color={accentColor} />
+                  <ActivityIndicator size="small" color={accentOnSurface} />
                 ) : baucherFoto ? (
                   <Image source={{ uri: baucherFoto }} style={styles.fotoThumb} />
                 ) : (
-                  <Ionicons name="camera-outline" size={20} color={accentColor} />
+                  <Ionicons name="camera-outline" size={20} color={accentOnSurface} />
                 )}
                 <Text
                   style={{
-                    color: baucherFoto ? accentOnSurface : accentColor,
+                    color: accentOnSurface,
                     fontFamily: FontFamily.bold,
                     fontSize: 13,
                     flex: 1,
@@ -535,26 +493,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepperValue: { fontSize: 18, fontFamily: FontFamily.black, minWidth: 56, textAlign: 'center' },
-  metodosRow: { flexDirection: 'row', gap: 8 },
-  metodoChip: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-  },
-  metodoLabel: {
-    flexShrink: 1,
-    minWidth: 0,
-    fontSize: 12,
-    fontFamily: FontFamily.bold,
-    textAlign: 'center',
-  },
   fotoBtn: {
     flexDirection: 'row',
     alignItems: 'center',

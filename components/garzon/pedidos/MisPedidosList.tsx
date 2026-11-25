@@ -1,4 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+/**
+ * Historial de pedidos del garzón. Actualmente no tiene ningún punto de entrada
+ * en la app (no se importa desde ninguna ruta): se conserva por si se conecta
+ * más adelante, no se elimina durante la unificación de componentes.
+ */
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,

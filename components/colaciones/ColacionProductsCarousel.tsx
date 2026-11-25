@@ -5,7 +5,6 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { mlDeColacion, acompanamientoDeColacion, type ColacionProducto } from '@/services/colaciones';
-import { FontFamily } from '@/constants/fonts';
 import { BASE_URL } from '@/api/base-url';
 
 interface Props {

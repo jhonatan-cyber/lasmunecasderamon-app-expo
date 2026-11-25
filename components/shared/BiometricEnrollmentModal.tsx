@@ -472,6 +472,7 @@ export function BiometricEnrollmentModal({
                 <BiometricInfoPanel
                     phase={phase}
                     accentColor={accentColor}
+                    accentOnSurface={accentOnSurface}
                     error={error}
                     errorTipo={errorTipo}
                     statusIcon={estadoIcono}

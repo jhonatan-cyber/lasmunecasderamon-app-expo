@@ -9,8 +9,6 @@ export default function BarmanLayout() {
     const { bloqueado } = useCajaAbierta();
     const segmentos = useSegments();
 
-    // Mismo bloqueo que el garzón para pedidos, productos, servicios y
-    // cortesías. El bar queda accesible: mueve stock y no cobra al cliente.
     if (bloqueado && rutaRequiereCajaAbierta(segmentos)) {
         return <Redirect href="/(app)/barman/(tabs)" />;
     }

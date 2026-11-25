@@ -8,6 +8,7 @@ import { BorderRadius } from '@/constants/spacing';
 import { formatCurrency } from '@/utils/format';
 import { parseDateSafe } from '@/utils/timeUtils';
 import type { Pedido } from '@/hooks/useMisPedidos';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 type PedidoCardProps = {
   pedido: Pedido;
@@ -65,12 +66,12 @@ export function PedidoCard({ pedido, onPress }: PedidoCardProps) {
         <Text style={[styles.code, { color: textPrimary }]} numberOfLines={1}>
           {pedido.codigo || `#${pedido.id_pedido}`}
         </Text>
-        <View style={[styles.status, { backgroundColor: `${statusColor}18` }]}>
-          <View style={[styles.dot, { backgroundColor: statusColor }]} />
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {STATUS_LABELS[pedido.estado] || 'Desconocido'}
-          </Text>
-        </View>
+        <StatusBadge
+          label={STATUS_LABELS[pedido.estado] || 'Desconocido'}
+          color={statusColor}
+          bg={`${statusColor}18`}
+          dot
+        />
       </View>
 
       <View style={styles.infoRow}>
@@ -146,20 +147,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   code: { flex: 1, fontSize: 17, fontFamily: FontFamily.extrabold },
-  status: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: {
-    fontSize: 10,
-    fontFamily: FontFamily.black,
-    textTransform: 'uppercase',
-  },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   infoText: { flex: 1, fontSize: 13, fontFamily: FontFamily.medium },
   nicks: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 2 },

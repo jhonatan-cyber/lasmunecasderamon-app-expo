@@ -64,7 +64,7 @@ export default function ChangePasswordScreen() {
         text1: "Contraseña actualizada",
         text2: "Ya puedes continuar con tu sesión",
       });
-      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user) ?? '/(auth)/login';
       router.replace(homeRoute);
     } catch (err: any) {
       setError(err.message || "Error al cambiar la contraseña");
@@ -186,7 +186,7 @@ export default function ChangePasswordScreen() {
               { backgroundColor: theme.tint },
               (loading || !password || !confirmPassword) && { opacity: 0.5 },
               pressed &&
-                !(loading || !password || !confirmPassword) && { opacity: 0.8 },
+              !(loading || !password || !confirmPassword) && { opacity: 0.8 },
             ]}
             onPress={handleChangePassword}
             disabled={loading || !password || !confirmPassword}

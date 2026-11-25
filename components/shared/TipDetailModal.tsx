@@ -1,14 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
+import { DetailSheet } from '@/components/ui/DetailSheet';
 import { parseDateSafe } from "@/utils/timeUtils";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
@@ -31,36 +28,20 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
     parentPropina,
     saleDetail
 }) => {
-    const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, surfaceMuted } = useAccentColor();
+    const { isDark, textPrimary, textSecondary, borderColor, accentOnSurface, surfaceMuted } = useAccentColor();
 
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
+        <DetailSheet
             visible={visible}
-            onRequestClose={onClose}
+            onClose={onClose}
+            title="Detalle de Propina"
+            code={`Codigo : ${selectedPropina?.codigo_venta || selectedPropina?.codigo || '---'}`}
+            loading={loading}
+            loadingLabel="Cargando detalles..."
+            height="85%"
+            footerActions={[{ label: 'Cerrar', onPress: onClose }]}
+            accessibilityLabel="Detalle de propina"
         >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-                    <View style={styles.modalHeader}>
-                        <View>
-                            <Text style={[styles.modalTitle, { color: textPrimary }]}>Detalle de Propina</Text>
-                            <Text style={[styles.modalSubtitle, { color: textSecondary }]}>
-                                Codigo : {selectedPropina?.codigo_venta || selectedPropina?.codigo || '---'}
-                            </Text>
-                        </View>
-                        <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle de propina">
-                            <Ionicons name="close" size={24} color={textPrimary} />
-                        </Pressable>
-                    </View>
-
-                    {loading ? (
-                        <View style={styles.detailLoading}>
-                            <ActivityIndicator size="large" color={accentOnSurface} />
-                            <Text style={{ color: textSecondary, marginTop: 15 }}>Cargando detalles...</Text>
-                        </View>
-                    ) : (
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                             {}
                             <View style={[styles.divisionCard, { borderColor, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
                                 <View style={styles.divisionItem}>
@@ -211,20 +192,7 @@ export const TipDetailModal: React.FC<TipDetailModalProps> = ({
                                     </View>
                                 )
                             )}
-                        </ScrollView>
-                    )}
-
-                    <Pressable
-                        onPress={onClose}
-                        style={[styles.closeModalBtn, { backgroundColor: accentColor }]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Cerrar detalle de propina"
-                    >
-                        <Text style={styles.closeModalBtnText}>Cerrar</Text>
-                    </Pressable>
-                </View>
-            </View>
-        </Modal>
+        </DetailSheet>
     );
 };
 

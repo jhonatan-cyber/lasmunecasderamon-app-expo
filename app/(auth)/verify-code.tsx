@@ -66,7 +66,7 @@ export default function VerifyCodeScreen() {
     try {
       await login(tempAuthData.username, tempAuthData.password, fullCode);
 
-      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user);
+      const homeRoute = getHomeRouteByRole(useAuthStore.getState().user) ?? '/(auth)/login';
       router.replace(homeRoute);
     } catch (err: any) {
       setError(err.message || "Código incorrecto. Intenta nuevamente.");
@@ -171,7 +171,7 @@ export default function VerifyCodeScreen() {
               { backgroundColor: theme.tint },
               (loading || !code.every((d) => d !== "")) && { opacity: 0.5 },
               pressed &&
-                !(loading || !code.every((d) => d !== "")) && { opacity: 0.8 },
+              !(loading || !code.every((d) => d !== "")) && { opacity: 0.8 },
             ]}
             onPress={() => verifyCode(code.join(""))}
             disabled={loading || !code.every((d) => d !== "")}

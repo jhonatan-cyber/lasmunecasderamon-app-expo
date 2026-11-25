@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
+import { StyleSheet, Text, View } from 'react-native';
+import { DetailSheet } from '@/components/ui/DetailSheet';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
@@ -24,8 +24,17 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
   formatTime,
   normalizeEstado,
 }) => {
-  const { accentColor, isDark, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentText, surfaceMuted } =
-    useAccentColor();
+  const {
+    accentColor,
+    isDark,
+    textPrimary,
+    textSecondary,
+    borderColor,
+    accentOnSurface,
+    accentBg,
+    accentBorder,
+    surfaceMuted,
+  } = useAccentColor();
 
   if (!anticipo) return null;
 
@@ -52,7 +61,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
     if (isLiquidada)
       return {
         bg: surfaceMuted,
-        color: accentColor,
+        color: accentOnSurface,
         label: 'Liquidado',
       };
     if (isAprobada)
@@ -64,7 +73,7 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
     if (isRechazada)
       return {
         bg: accentBg,
-        color: accentColor,
+        color: accentOnSurface,
         label: 'Rechazado',
       };
     return {
@@ -77,23 +86,15 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
   const statusColors = getStatusColors();
 
   return (
-    <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: textPrimary }]}>
-              Detalle de Anticipo
-            </Text>
-            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle de anticipo">
-              <Ionicons name="close" size={24} color={textPrimary} />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            keyboardShouldPersistTaps="handled"
-          >
+    <DetailSheet
+      visible={visible}
+      onClose={onClose}
+      title="Detalle de Anticipo"
+      status={{ label: statusColors.label, color: statusColors.color }}
+      height="85%"
+      footerActions={[{ label: 'Cerrar', onPress: onClose }]}
+      accessibilityLabel="Detalle de anticipo"
+    >
             {}
             <View
               style={[
@@ -215,21 +216,13 @@ export const AnticipoDetailModal: React.FC<AnticipoDetailModalProps> = ({
                   ]}
                 >
                   <Ionicons name="close-circle" size={18} color={accentColor} />
-                  <Text style={[styles.rejectionText, { color: accentColor }]}>
+                  <Text style={[styles.rejectionText, { color: accentOnSurface }]}>
                     {anticipo.motivo_rechazo}
                   </Text>
                 </View>
               </>
             )}
-          </ScrollView>
-
-          {}
-          <Pressable style={[styles.closeAction, { backgroundColor: accentColor }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalle de anticipo">
-            <Text style={[styles.closeActionText, { color: accentText }]}>Cerrar</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
+    </DetailSheet>
   );
 };
 

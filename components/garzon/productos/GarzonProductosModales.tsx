@@ -13,11 +13,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { showToast } from "@/utils/toast-lazy";
 import { ClientSelectModal } from "@/components/cajero/forms/ClientSelectModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
-import type { Anfitriona, CartItem, Room } from "@/types/cart";
+import type { Anfitriona, CartItem, Room , Product } from "@/types/cart";
 import { Client } from "@/hooks/useGarzonProductos";
 import { useCartStore } from "@/store/cartStore";
 import { getHostessLimit } from "@/hooks/utils/cuentaUtils";
-import type { Product } from "@/types/cart";
+
 
 interface GarzonProductosModalesProps {
   clientModalVisible: boolean;
@@ -47,6 +47,7 @@ interface GarzonProductosModalesProps {
 
   insets: { bottom: number };
   accentColor: string;
+  accentOnSurface: string;
   borderColor: string;
   cardBg: string;
   textPrimary: string;
@@ -72,6 +73,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
   updateItemRoom,
   insets,
   accentColor,
+  accentOnSurface,
   borderColor,
   cardBg,
   textPrimary,
@@ -211,7 +213,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={16}
-                          color={accentColor}
+                          color={accentOnSurface}
                         />
                       )}
                     </Pressable>
@@ -278,7 +280,7 @@ export const GarzonProductosModales: React.FC<GarzonProductosModalesProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={16}
-                          color={accentColor}
+                          color={accentOnSurface}
                         />
                       )}
                     </Pressable>

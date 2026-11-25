@@ -35,7 +35,7 @@ type ListItem =
 
 export default function ProductosScreen() {
   const draftCart = useCartStore((state) => state.cart);
-  const clearDraft = useCartDraft("orders", draftCart, (saved) =>
+  useCartDraft("orders", draftCart, (saved) =>
     useCartStore.setState({ cart: saved }),
   );
   const { accentColor, bg, cardBg, borderColor, textPrimary, textSecondary, accentOnSurface } =
@@ -277,6 +277,7 @@ export default function ProductosScreen() {
         updateItemRoom={updateItemRoom}
         insets={insets}
         accentColor={accentColor}
+        accentOnSurface={accentOnSurface}
         borderColor={borderColor}
         cardBg={cardBg}
         textPrimary={textPrimary}

@@ -1,6 +1,5 @@
 import { IncludedServiceProductSelector } from "@/components/shared/IncludedServiceProductSelector";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import {
@@ -18,9 +17,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
-import { BorderRadius, FontSize, HitSlop } from "@/constants/spacing";
+import { FontSize, HitSlop } from "@/constants/spacing";
 import { tabBarBottomPadding } from "@/constants/layout";
 import { FontFamily } from "@/constants/fonts";
 import { Colors } from "@/constants/theme";
@@ -35,6 +33,8 @@ import {
   GarzonServiciosModales,
 } from "@/components/garzon/servicios";
 import { GarzonOfflineBanner } from "@/components/garzon/GarzonOfflineBanner";
+import { PaymentMethodSelect, type PaymentMethod } from "@/components/cajero/forms/PaymentMethodSelect";
+import { ScreenSkeleton } from "@/components/ui/ScreenSkeleton";
 
 function ServiciosSkeleton({
   bg,
@@ -46,50 +46,17 @@ function ServiciosSkeleton({
   insets: { top: number };
 }) {
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <LinearGradient
-        colors={
-          gradientColors as unknown as readonly [string, string, ...string[]]
-        }
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + (Platform.OS === "ios" ? 10 : 20),
-            paddingBottom: 25,
-            borderBottomLeftRadius: 32,
-            borderBottomRightRadius: 32,
-            minHeight: 140,
-          },
-        ]}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 20,
-            paddingHorizontal: 20,
-          }}
-        >
-          <Skeleton width={150} height={30} />
-          <Skeleton width={44} height={44} borderRadius={22} />
-        </View>
-        <View style={{ paddingHorizontal: 20 }}>
-          <Skeleton width="60%" height={24} />
-        </View>
-      </LinearGradient>
-
-      <ScrollView
-        style={{ flex: 1, padding: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {[1, 2, 3, 4, 5].map((i) => (
-          <View key={i} style={{ marginBottom: 20, gap: 10 }}>
-            <Skeleton width={100} height={18} />
-            <Skeleton width="100%" height={56} borderRadius={16} />
-          </View>
-        ))}
-      </ScrollView>
-    </View>
+    <ScreenSkeleton
+      bg={bg}
+      gradientColors={gradientColors}
+      insets={insets}
+      variant="form"
+      cardCount={5}
+      bodyPadding={20}
+      gap={10}
+      headerMinHeight={140}
+      headerPaddingHorizontal={20}
+    />
   );
 }
 
@@ -412,60 +379,13 @@ export default function ServiciosScreen() {
             )}
 
             {!hasPrepago && (
-              <>
-                <Text style={[styles.sectionLabel, { color: textSecondary }]}>
-                  MÉTODO DE PAGO
-                </Text>
-                <View style={styles.methodContainer}>
-                  {[
-                    { id: "efectivo", icon: "cash-outline" },
-                    { id: "tarjeta", icon: "card-outline" },
-                    { id: "transferencia", icon: "send-outline" },
-                  ].map(({ id, icon }) => (
-                    <Pressable
-                      key={id}
-                      onPress={() => {
-                        haptic.tap();
-                        setPaymentMethod(id as any);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Pagar con ${id}`}
-                      accessibilityHint={`Selecciona ${id} como método de pago`}
-                      hitSlop={HitSlop.sm}
-                      style={({ pressed }) => [
-                        styles.methodBtn,
-                        {
-                          backgroundColor: cardBg,
-                          borderColor:
-                            paymentMethod === id ? primaryColor : borderColor,
-                          opacity: pressed ? 0.85 : 1,
-                        },
-                        paymentMethod === id && { borderWidth: 2 },
-                      ]}
-                    >
-                      <Ionicons
-                        name={icon as any}
-                        size={20}
-                        color={paymentMethod === id ? primaryColor : textSecondary}
-                      />
-                      <Text
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.7}
-                        style={[
-                          styles.methodText,
-                          {
-                            color:
-                              paymentMethod === id ? primaryColor : textPrimary,
-                          },
-                        ]}
-                      >
-                        {id.charAt(0).toUpperCase() + id.slice(1)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
+              <PaymentMethodSelect
+                methods={['efectivo', 'tarjeta', 'transferencia']}
+                variant="compact"
+                selectedMethod={paymentMethod as PaymentMethod}
+                onSelect={(metodo) => setPaymentMethod(metodo as any)}
+                getAccessibilityLabel={(metodo) => `Pagar con ${metodo}`}
+              />
             )}
 
             {paymentMethod === "transferencia" && (
@@ -708,19 +628,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   input: { flex: 1, fontSize: FontSize.lg, fontFamily: FontFamily.bold },
-  methodContainer: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  methodBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 4,
-    flexDirection: "row",
-    paddingHorizontal: 8,
-  },
-  methodText: { fontSize: 11, fontFamily: FontFamily.bold, flexShrink: 1 },
   submitBtn: {
     height: 64,
     borderRadius: 20,

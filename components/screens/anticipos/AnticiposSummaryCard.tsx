@@ -1,7 +1,7 @@
-import { Text, View } from "react-native";
-import { styles } from "../AnticiposScreen.styles";
-import { formatCurrency, type VistaAnticipos } from "./anticiposUtils";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { MetricBanner } from '@/components/ui/MetricCards';
+import { styles } from '../AnticiposScreen.styles';
+import { formatCurrency, type VistaAnticipos } from './anticiposUtils';
 
 interface AnticiposSummaryCardProps {
   viewMode: VistaAnticipos;
@@ -22,45 +22,34 @@ export function AnticiposSummaryCard({
   accentColor,
   cardBg,
   borderColor,
-  textSecondary,
 }: AnticiposSummaryCardProps) {
   const { isDark, accentOnSurface } = useAccentColor();
-  const summaryNeonColor = viewMode === "solicitudes" ? accentOnSurface : accentColor;
-  const cardNeonGlow = isDark ? {
-    shadowColor: summaryNeonColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    borderColor: summaryNeonColor,
-    borderWidth: 1.5,
-  } : {};
+  const esSolicitudes = viewMode === 'solicitudes';
+  const neonColor = esSolicitudes ? accentOnSurface : accentColor;
 
   return (
-    <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }, cardNeonGlow]}>
-      <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-        {viewMode === "solicitudes"
-          ? "SITUACIÓN DE SOLICITUDES"
-          : "ANTICIPOS RECIBIDOS"}
-      </Text>
-      <Text
-        style={[
-          styles.summaryAmount,
-          { color: viewMode === "solicitudes" ? accentOnSurface : accentColor },
-        ]}
-      >
-        $
-        {viewMode === "solicitudes"
-          ? formatCurrency(totalPendiente)
-          : formatCurrency(totalPagado)}
-      </Text>
-      <View style={styles.summaryDetails}>
-        <Text style={[styles.summaryDetail, { color: textSecondary }]}>
-          {viewMode === "solicitudes"
-            ? `Solicitudes: $${formatCurrency(totalPendiente)} | Aprobadas: $${formatCurrency(totalEnCaja)}`
-            : `Total retirado históricamente: $${formatCurrency(totalPagado)}`}
-        </Text>
-      </View>
-    </View>
+    <MetricBanner
+      label={
+        esSolicitudes
+          ? 'Situación de solicitudes'
+          : 'Anticipos recibidos'
+      }
+      amount={`$${formatCurrency(
+        esSolicitudes ? totalPendiente : totalPagado,
+      )}`}
+      details={
+        esSolicitudes
+          ? [
+              `Solicitudes: $${formatCurrency(totalPendiente)} | Aprobadas: $${formatCurrency(totalEnCaja)}`,
+            ]
+          : [`Total retirado históricamente: $${formatCurrency(totalPagado)}`]
+      }
+      color={neonColor}
+      glowColor={neonColor}
+      borderColor={borderColor}
+      cardBg={cardBg}
+      isDark={isDark}
+      style={styles.summaryCard}
+    />
   );
 }

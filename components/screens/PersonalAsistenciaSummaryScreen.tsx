@@ -21,7 +21,7 @@ interface Empleado {
 
 export default function PersonalAsistenciaSummaryScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+  const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor} = useAccentColor();
 
   const [empleados, setEmpleados] = React.useState<Empleado[]>([]);
 
@@ -80,7 +80,7 @@ export default function PersonalAsistenciaSummaryScreen() {
   const totalAporte = empleados.reduce((acc, e) => acc + e.aporte, 0);
   const totalACobrar = totalSueldo - totalAporte;
 
-  const { accentOnSurface: themeAccentOnSurface, accentColor: themeAccent, accentText } = useAccentColor();
+  const { accentOnSurface: themeAccentOnSurface, accentColor: themeAccent } = useAccentColor();
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <Stack.Screen options={{ headerShown: false }} />

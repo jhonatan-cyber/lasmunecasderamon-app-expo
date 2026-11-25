@@ -3,7 +3,6 @@ import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { Image } from "expo-image";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +11,8 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { MetodoPagoPedido } from "@/types/cart";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
+import { CheckoutBarShell } from '@/components/ui/CheckoutBarShell';
 
 /** Los tres métodos que el dashboard acepta al crear el pedido. */
 const METODOS_PAGO_PEDIDO: MetodoPagoPedido[] = [
@@ -65,28 +66,10 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
   textPrimary,
   textSecondary,
 }) => {
-    const { accentOnSurface, isDark, accentColor: themeAccent } = useAccentColor();
+  const { accentOnSurface, accentColor: themeAccent } = useAccentColor();
 
-  // Glow neón en el botón de enviar en modo oscuro
-  const submitBtnNeonGlow = isDark ? {
-    shadowColor: accentColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
-  } : {};
-
-  return (
-    <View
-      style={[
-        styles.cartBar,
-        {
-          backgroundColor: cardBg,
-          borderTopColor: borderColor,
-          paddingBottom: 16 + insets.bottom,
-        },
-      ]}
-    >
+  const controls = (
+    <>
       <View style={styles.cartTopRow}>
         <View style={styles.tipControl}>
           <Text style={[styles.tipText, { color: textSecondary }]}>
@@ -113,32 +96,14 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
       <View style={styles.paymentRow}>
         <Text style={[styles.paymentLabel, { color: textSecondary }]}>Pago</Text>
         <View style={styles.paymentOptions}>
-          {METODOS_PAGO_PEDIDO.map((metodo) => {
-            const selected = metodoPago === metodo;
-            return (
-              <Pressable
-                key={metodo}
-                onPress={() => setMetodoPago(metodo)}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                accessibilityLabel={`Pago ${metodo}`}
-                style={[
-                  styles.paymentChip,
-                  { borderColor: selected ? accentColor : borderColor },
-                  selected && { backgroundColor: `${accentColor}1A` },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.paymentChipText,
-                    { color: selected ? accentColor : textSecondary },
-                  ]}
-                >
-                  {metodo}
-                </Text>
-              </Pressable>
-            );
-          })}
+          <PaymentMethodSelect
+            showLabel={false}
+            variant="compact"
+            methods={METODOS_PAGO_PEDIDO}
+            selectedMethod={metodoPago}
+            onSelect={(metodo) => setMetodoPago(metodo as MetodoPagoPedido)}
+            getAccessibilityLabel={(metodo) => `Pago ${metodo}`}
+          />
         </View>
       </View>
 
@@ -176,47 +141,32 @@ export const GarzonCartBar: React.FC<GarzonCartBarProps> = ({
           </Text>
         </Pressable>
       )}
+    </>
+  );
 
-      <View style={styles.cartMainRow}>
-        <Pressable
-          onPress={onViewCart}
-          accessibilityRole="button"
-          accessibilityLabel="Ver detalle del pedido"
-          style={styles.cartInfo}
-        >
-          <View style={styles.cartAmountColumn}>
-            <Text style={[styles.cartLabel, { color: textSecondary }]}>
-              Total Pedido
-            </Text>
-            <Text style={[styles.cartTotal, { color: textPrimary }]}>
-              ${cartTotal.toLocaleString()}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={textSecondary} />
-        </Pressable>
-        <View style={isDark ? submitBtnNeonGlow : {}}>
-          <Pressable
-            onPress={submitOrder}
-            disabled={submitting}
-            accessibilityRole="button"
-            accessibilityLabel="Enviar Pedido"
-            accessibilityState={{ disabled: submitting, busy: submitting }}
-            style={({ pressed }) => [
-              styles.submitBtn,
-              { backgroundColor: accentColor },
-              submitting && { opacity: 0.5 },
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.submitText}>Enviar Pedido</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
-    </View>
+  return (
+    <CheckoutBarShell
+      itemCount={0}
+      showItemBadge={false}
+      leftLabel="Total Pedido"
+      total={`$${cartTotal.toLocaleString()}`}
+      onViewDetails={onViewCart}
+      viewDetailsLabel="Ver detalle del pedido"
+      controls={controls}
+      bottomInset={16 + insets.bottom}
+      cardBg={cardBg}
+      borderColor={borderColor}
+      textPrimary={textPrimary}
+      textSecondary={textSecondary}
+      accentColor={accentColor}
+      submit={{
+        label: "Enviar Pedido",
+        onPress: submitOrder,
+        disabled: submitting,
+        submitting,
+        ready: true,
+      }}
+    />
   );
 };
 
@@ -253,17 +203,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexWrap: "wrap",
     justifyContent: "flex-end",
-  },
-  paymentChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  paymentChipText: {
-    fontSize: 12,
-    fontFamily: FontFamily.bold,
-    textTransform: "capitalize",
   },
   baucherRow: {
     flexDirection: "row",

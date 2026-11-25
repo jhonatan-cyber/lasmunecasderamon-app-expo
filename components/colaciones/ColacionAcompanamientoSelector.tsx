@@ -26,7 +26,7 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
   mlPorUnidad,
   onSelect,
 }) => {
-  const { accentColor, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentOnSurface, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const [expanded, setExpanded] = React.useState(false);
 
   // El acompañamiento seleccionado para mostrar en el botón.
@@ -121,7 +121,7 @@ export const ColacionAcompanamientoSelector: React.FC<Props> = ({
       {loading ? (
         <Text style={[styles.hint, { color: textSecondary }]}>Cargando opciones…</Text>
       ) : error ? (
-        <Text style={[styles.error, { color: accentColor }]}>{error}</Text>
+        <Text style={[styles.error, { color: accentOnSurface }]}>{error}</Text>
       ) : !expanded && acompanamientos.length === 0 ? (
         <Text style={[styles.hint, { color: textSecondary }]}>
           Sin bebidas con stock suficiente para acompañar.

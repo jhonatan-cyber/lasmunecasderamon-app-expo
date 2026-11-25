@@ -1,4 +1,6 @@
 import { Colors } from '@/constants/theme';
+import { BorderRadius } from '@/constants/spacing';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
 import { Timer } from '@/context/types';
@@ -9,6 +11,7 @@ interface ExpiredTimerModalProps {
 }
 
 export function ExpiredTimerModal({ timer, onDismiss }: ExpiredTimerModalProps) {
+  const { accentColor, accentText } = useAccentColor();
   return (
     <Modal visible={!!timer} animationType="fade" transparent onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
@@ -78,13 +81,14 @@ export function ExpiredTimerModal({ timer, onDismiss }: ExpiredTimerModalProps) 
             <Pressable
               onPress={onDismiss}
               style={({ pressed }) => ({
-                backgroundColor: pressed ? Colors.dark.error : '#DC2626',
+                backgroundColor: accentColor,
+                opacity: pressed ? 0.85 : 1,
                 paddingVertical: 14,
-                borderRadius: 999,
+                borderRadius: BorderRadius.full,
                 alignItems: 'center',
               })}
             >
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Entendido</Text>
+              <Text style={{ color: accentText, fontSize: 16, fontWeight: '700' }}>Entendido</Text>
             </Pressable>
           </View>
         </View>

@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { View, AccessibilityRole } from "react-native";
+import { View } from "react-native";
 import { BorderRadius } from "@/constants/spacing";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
 import { useAccentColor } from "@/hooks/useAccentColor";

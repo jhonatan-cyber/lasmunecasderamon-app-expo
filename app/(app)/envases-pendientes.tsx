@@ -122,19 +122,19 @@ export default function EnvasesPendientesScreen() {
             <Text style={[styles.sectionTitle, { color: textPrimary }]}>RESULTADO DE COMPARACIÓN DEL LOTE</Text>
             {comparacion.map((item, index) => (
               <View key={`${item.codigo}-${index}`} style={[styles.comparisonRow, { borderBottomColor: borderColor }]}>
-                <Ionicons name={item.ok ? 'checkmark-circle' : 'close-circle'} size={20} color={item.ok ? accentOnSurface : accentColor} />
+                <Ionicons name={item.ok ? 'checkmark-circle' : 'close-circle'} size={20} color={accentOnSurface} />
                 <View style={styles.rowText}>
                   <Text style={[styles.code, { color: textPrimary }]}>{item.codigo || item.sku || 'Código desconocido'}</Text>
                   <Text style={[styles.description, { color: textSecondary }]}>{item.existe ? `${item.producto || 'Producto'} · ${item.presentacion || 'Presentación'}` : 'No existe en nuestro inventario'} — {item.mensaje}</Text>
                 </View>
-                <Text style={[styles.status, { color: item.ok ? accentOnSurface : accentColor }]}>{item.ok ? 'VÁLIDO' : 'RECHAZADO'}</Text>
+                <Text style={[styles.status, { color: accentOnSurface }]}>{item.ok ? 'VÁLIDO' : 'RECHAZADO'}</Text>
               </View>
             ))}
           </View>
         )}
 
         <Text style={[styles.sectionTitle, { color: textPrimary }]}>PENDIENTES DE APROBACIÓN ({pendientes.length})</Text>
-        {loading ? <ActivityIndicator color={accentColor} size="large" style={{ marginTop: 30 }} /> : pendientes.length === 0 ? (
+        {loading ? <ActivityIndicator color={accentOnSurface} size="large" style={{ marginTop: 30 }} /> : pendientes.length === 0 ? (
           <View style={[styles.panel, { backgroundColor: cardBg, borderColor }]}><Text style={[styles.empty, { color: textSecondary }]}>No hay devoluciones pendientes.</Text></View>
         ) : pendientes.map((item) => (
           <View key={item.id} style={[styles.panel, { backgroundColor: cardBg, borderColor }]}>

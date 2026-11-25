@@ -125,13 +125,13 @@ export function ContainerReturnPanel({
           <Ionicons
             name={resultado.ok ? 'checkmark-circle' : 'alert-circle'}
             size={18}
-            color={resultado.ok ? accentOnSurface : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? accentOnSurface : accentColor}
+            color={accentOnSurface}
           />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
               style={[
                 styles.resultTitle,
-                { color: resultado.ok ? accentOnSurface : MOTIVOS_AVISO.includes(resultado.motivo ?? '') ? accentOnSurface : accentColor },
+                { color: accentOnSurface },
               ]}
             >
               {resultado.ok ? 'Envase entregado al almacén' : MOTIVO_ENVASE[resultado.motivo ?? ''] || 'No es nuestro'}
@@ -155,7 +155,7 @@ export function ContainerReturnPanel({
           >
             Sesión: <Text style={{ color: accentOnSurface }}>{entregados} entregados</Text>
             {' · '}
-            <Text style={{ color: accentColor }}>{rechazados} rechazados</Text>
+            <Text style={{ color: accentOnSurface }}>{rechazados} rechazados</Text>
           </Text>
           <Pressable onPress={onLimpiarSesion} accessibilityRole="button" accessibilityLabel="Limpiar sesión de escaneos">
             <Text style={[styles.sessionClear, { color: accentOnSurface, flexShrink: 0 }]}>Limpiar</Text>

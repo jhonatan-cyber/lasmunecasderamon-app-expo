@@ -1,12 +1,11 @@
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { Servicio } from '@/hooks/useServicios';
 import { estadoServicio } from '@/utils/servicioEstado';
-import { FontSize, HitSlop, MIN_TOUCH_TARGET, BorderRadius } from '@/constants/spacing';
+import { FontSize, MIN_TOUCH_TARGET, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
-import { haptic } from '@/utils/haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
+import { StyleSheet, Text, View } from 'react-native';
+import { DetailSheet } from '@/components/ui/DetailSheet';
 
 interface ServiceDetailModalProps {
     visible: boolean;
@@ -15,7 +14,7 @@ interface ServiceDetailModalProps {
 }
 
 export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetailModalProps) => {
-    const {accentColor, accentText, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface} = useAccentColor();
+    const { accentColor, bg, textPrimary, textSecondary, borderColor, accentOnSurface } = useAccentColor();
 
     if (!servicio) return null;
 
@@ -40,32 +39,16 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
     };
 
     return (
-        <Modal
+        <DetailSheet
             visible={visible}
-            animationType="slide"
-            transparent
-            onRequestClose={onClose}
+            onClose={onClose}
+            title="Detalle del Servicio"
+            code={`#${servicio.codigo}`}
+            status={{ label: estadoBadge.label, color: estadoBadge.color }}
+            height="90%"
+            footerActions={[{ label: 'Cerrar', onPress: onClose }]}
+            accessibilityLabel="Detalle del servicio"
         >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.modalHeader}>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle del Servicio</Text>
-                            <Text style={[styles.modalSubText, { color: textSecondary }]}>#{servicio.codigo}</Text>
-                        </View>
-                        <View style={[styles.estadoBadge, { backgroundColor: estadoBadge.color + '15', borderColor: estadoBadge.color }]}>
-                            <View style={[styles.estadoDot, { backgroundColor: estadoBadge.color }]} />
-                            <Text style={[styles.estadoText, { color: estadoBadge.color }]}>{estadoBadge.label}</Text>
-                        </View>
-                        <Pressable onPress={() => {
-                            haptic.tap();
-                            onClose();
-                        }} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalle del servicio" accessibilityHint="Cierra el modal de detalle" hitSlop={HitSlop.sm}>
-                            <Ionicons name="close" size={24} color={textPrimary} />
-                        </Pressable>
-                    </View>
-
-                    <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.detailsGrid}>
                             <View style={[styles.gridItem, { backgroundColor: bg, borderColor }]}>
                                 <Ionicons name="business" size={16} color={accentOnSurface} style={{ marginBottom: 4 }} />
@@ -161,26 +144,7 @@ export const ServiceDetailModal = ({ visible, servicio, onClose }: ServiceDetail
                                 </View>
                             </View>
                         </View>
-                    </ScrollView>
-
-                    <View style={styles.buttonRow}>
-                        <Pressable
-                            style={[styles.modalCloseBtn, { backgroundColor: accentColor, width: '100%' }]}
-                            onPress={() => {
-                              haptic.tap();
-                              onClose();
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel="Cerrar detalle"
-                            accessibilityHint="Cierra el modal de detalle"
-                            hitSlop={HitSlop.sm}
-                        >
-                            <Text style={[styles.modalCloseBtnText, { color: accentText }]}>Cerrar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </View>
-        </Modal>
+        </DetailSheet>
     );
 };
 

@@ -9,6 +9,7 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 interface BiometricInfoPanelProps {
     phase: Phase;
     accentColor: string;
+    accentOnSurface: string;
     error: string | null;
     errorTipo: TipoError | null;
     statusIcon: IconName;
@@ -23,6 +24,7 @@ interface BiometricInfoPanelProps {
 export function BiometricInfoPanel({
     phase,
     accentColor,
+    accentOnSurface,
     error,
     errorTipo,
     statusIcon,
@@ -99,7 +101,7 @@ export function BiometricInfoPanel({
                         <View style={[styles.iconBadge, styles.badgeError]}>
                             <Ionicons name="alert-circle" size={20} color={accentColor} />
                         </View>
-                        <Text style={[styles.kicker, { color: accentColor }]}>NO SE PUDO SEGUIR</Text>
+                        <Text style={[styles.kicker, { color: accentOnSurface }]}>NO SE PUDO SEGUIR</Text>
                     </View>
                     <Text style={styles.panelTitle}>Probemos otra vez</Text>
                     <Text style={styles.panelHelp}>{error}</Text>

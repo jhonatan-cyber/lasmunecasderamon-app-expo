@@ -1,10 +1,10 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
-import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { SearchBar } from '@/components/ui/SearchBar';
 
 interface MixerChoice {
   id: string;
@@ -81,19 +81,13 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
           <Text style={{ color: textPrimary, fontFamily: FontFamily.bold }}>
             {title}
           </Text>
-          <TextInput
-            accessibilityLabel="Buscar bebida en bar"
+          <SearchBar
+            compact
+            debounceMs={0}
             placeholder="Buscar producto o sabor"
-            placeholderTextColor={textSecondary}
             value={search}
             onChangeText={setSearch}
-            style={{
-              color: textPrimary,
-              borderColor,
-              borderWidth: 1,
-              padding: 12,
-              borderRadius: BorderRadius.full,
-            }}
+            accessibilityLabel="Buscar bebida en bar"
           />
           <ScrollView
             style={{ maxHeight: 360 }}

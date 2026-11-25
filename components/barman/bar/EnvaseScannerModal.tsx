@@ -139,7 +139,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.permissionContainer}>
           <View style={styles.permissionContent}>
-            <Ionicons name="camera" size={56} color={accentColor} />
+            <Ionicons name="camera" size={56} color={accentOnSurface} />
             <Text style={styles.title}>Permiso de Cámara</Text>
             <Text style={styles.message}>
               Necesitamos acceso a tu cámara para escanear el código del envase.
@@ -217,7 +217,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
               <View style={[styles.corner, styles.topRight]} />
               <View style={[styles.corner, styles.bottomLeft]} />
               <View style={[styles.corner, styles.bottomRight]} />
-              {busy && <ActivityIndicator size="large" color={accentColor} />}
+              {busy && <ActivityIndicator size="large" color={accentOnSurface} />}
             </View>
           </View>
 
@@ -232,7 +232,7 @@ export const EnvaseScannerModal = ({ visible, onClose, onSubmitBatch }: EnvaseSc
                 showsVerticalScrollIndicator={false}
               >
                 {batchResults.map((result) => (
-                  <Text key={result.codigo} style={[styles.resultLine, { color: result.ok ? accentOnSurface : accentColor }]} numberOfLines={2}>
+                  <Text key={result.codigo} style={[styles.resultLine, { color: accentOnSurface }]} numberOfLines={2}>
                     {result.ok ? '✓' : '×'} {result.codigo}: {result.texto}
                   </Text>
                 ))}

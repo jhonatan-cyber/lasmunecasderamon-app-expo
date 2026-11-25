@@ -57,7 +57,7 @@ export const ColacionWorkerModal: React.FC<Props> = ({
             Elige quién recibe el corto del turno.
           </Text>
           {error ? (
-            <Text style={[styles.error, { color: accentColor }]}>{error}</Text>
+            <Text style={[styles.error, { color: accentOnSurface }]}>{error}</Text>
           ) : workers.length === 0 ? (
             <Text style={{ color: textSecondary, textAlign: 'center' }}>
               No hay trabajadores disponibles.

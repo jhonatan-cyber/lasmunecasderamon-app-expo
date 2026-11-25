@@ -57,13 +57,13 @@ function formatTime(timeStr: string): string {
   return timeStr?.substring(0, 5);
 }
 
-function getEstadoLabel(estado: number | string, accentOnSurface: string, accentColor: string, surfaceMuted: string, textSecondary: string) {
+function getEstadoLabel(estado: number | string, accentOnSurface: string, surfaceMuted: string, textSecondary: string) {
   const val = typeof estado === 'number' ? estado : parseInt(estado, 10);
   if (val === 0) {
     return { label: 'Cobrado', color: accentOnSurface, bg: surfaceMuted };
   }
   if (val === 1) {
-    return { label: 'Pendiente', color: accentColor, bg: surfaceMuted };
+    return { label: 'Pendiente', color: accentOnSurface, bg: surfaceMuted };
   }
   return { label: 'Sin estado', color: textSecondary, bg: surfaceMuted };
 }
@@ -147,7 +147,7 @@ export function AsistenciaDetailModal({
                       <Text style={[styles.summaryItemLabel, { color: textSecondary }]}>
                         Aporte
                       </Text>
-                      <Text style={[styles.summaryItemValue, { color: accentColor }]}>
+                      <Text style={[styles.summaryItemValue, { color: accentOnSurface }]}>
                         -${totalAporte.toLocaleString()}
                       </Text>
                     </View>
@@ -164,7 +164,7 @@ export function AsistenciaDetailModal({
 
                 {/* Attendance records */}
                 {asistencias.map((a, idx) => {
-                  const estado = getEstadoLabel(a.estado, accentOnSurface, accentColor, surfaceMuted, textSecondary);
+                  const estado = getEstadoLabel(a.estado, accentOnSurface, surfaceMuted, textSecondary);
 
                   return (
                     <View key={a.id_asistencia || idx} style={[styles.recordCard, { borderColor }]}>
@@ -195,7 +195,7 @@ export function AsistenciaDetailModal({
                           <Text style={[styles.recordAmountLabel, { color: textSecondary }]}>
                             Aporte
                           </Text>
-                          <Text style={[styles.recordAmountValue, { color: accentColor }]}>
+                          <Text style={[styles.recordAmountValue, { color: accentOnSurface }]}>
                             -${(a.aporte || 0).toLocaleString()}
                           </Text>
                         </View>

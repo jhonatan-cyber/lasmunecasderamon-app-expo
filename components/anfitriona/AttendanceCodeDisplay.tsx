@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { eventBus } from '@/utils/eventBus';
 import { LazyQRCode } from '@/components/ui/LazyQRCode';
