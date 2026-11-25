@@ -55,7 +55,9 @@ export function nombreRolLegible(rol?: string | null): string {
  * Devuelve la ruta de navegación principal según el rol del usuario.
  * Se usa para evitar redirecciones intermedias que causan recargas en nativo.
  */
-export function getHomeRouteByRole(user: UserLike): '/(app)/garzon/(tabs)' | '/(app)/anfitriona/(tabs)' | '/(app)/barman/(tabs)' | '/(app)/cajero/(tabs)' {
+export type HomeRoute = '/(app)/garzon/(tabs)' | '/(app)/anfitriona/(tabs)' | '/(app)/barman/(tabs)' | '/(app)/cajero/(tabs)';
+
+export function getHomeRouteByRole(user: UserLike): HomeRoute | null {
   if (isGarzonRole(user)) {
     return '/(app)/garzon/(tabs)';
   } else if (isHostessRole(user)) {
@@ -65,6 +67,5 @@ export function getHomeRouteByRole(user: UserLike): '/(app)/garzon/(tabs)' | '/(
   } else if (isCajeroRole(user) || isAdminRole(user)) {
     return '/(app)/cajero/(tabs)';
   }
-  // Fallback por defecto
-  return '/(app)/garzon/(tabs)';
+  return null;
 }

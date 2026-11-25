@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { FontSize } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 
@@ -14,6 +14,8 @@ export interface CardDetailsListProps {
   items: DetailRowItem[];
   textColor: string;
   textMutedColor: string;
+  /** Permite ajustar gap/márgenes sin crear otra lista de detalles. */
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -25,23 +27,26 @@ export const CardDetailsList: React.FC<CardDetailsListProps> = ({
   items,
   textColor,
   textMutedColor,
+  style,
 }) => (
-  <View style={styles.list}>
-    {items.map((item, index) => (
-      <View key={`${item.label}-${index}`} style={styles.row}>
-        <Ionicons name={item.icon} size={14} color={textMutedColor} />
-        <Text style={[styles.text, { color: textColor }]}>
-          {typeof item.value === 'string' || typeof item.value === 'number' ? (
-            <>
+  <View style={[styles.list, style]}>
+    {items.map((item, index) => {
+      const isPrimitive =
+        typeof item.value === 'string' || typeof item.value === 'number';
+      return (
+        <View key={`${item.label}-${index}`} style={styles.row}>
+          <Ionicons name={item.icon} size={14} color={textMutedColor} style={styles.icon} />
+          {isPrimitive ? (
+            <Text style={[styles.text, { color: textColor }]}>
               <Text style={styles.bold}>{item.label}</Text>
               {' '}{item.value}
-            </>
+            </Text>
           ) : (
-            item.value
+            <View style={styles.valueSlot}>{item.value}</View>
           )}
-        </Text>
-      </View>
-    ))}
+        </View>
+      );
+    })}
   </View>
 );
 
@@ -55,6 +60,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  icon: {
+    width: 16,
+    textAlign: 'center',
+  },
+  valueSlot: {
+    flex: 1,
+    minWidth: 0,
   },
   text: {
     fontSize: FontSize.xs,

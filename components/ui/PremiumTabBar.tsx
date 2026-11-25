@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -171,23 +171,21 @@ export const PremiumTabBar = ({
     const sv3 = useSharedValue(1);
     const sv4 = useSharedValue(1);
     const sv5 = useSharedValue(1);
-    const tabScales: SharedValue<number>[] = useMemo(
-        () => [sv0, sv1, sv2, sv3, sv4, sv5],
-        [sv0, sv1, sv2, sv3, sv4, sv5],
-    );
+    const tabScales: SharedValue<number>[] = [sv0, sv1, sv2, sv3, sv4, sv5];
 
     useEffect(() => {
         if (!routes.length) return;
+        const scales = [sv0, sv1, sv2, sv3, sv4, sv5];
         for (let i = 0; i < Math.min(routes.length, MAX_TABS); i++) {
             const isActive = currentIndex === i;
-            const sv = tabScales[i];
+            const sv = scales[i];
             if (reducedMotion) {
                 sv.value = isActive ? 1.08 : 1;
             } else {
                 sv.value = withSpring(isActive ? 1.08 : 1, { damping: 15, stiffness: 200 });
             }
         }
-    }, [currentIndex, routes.length, reducedMotion, tabScales]);
+    }, [currentIndex, routes.length, reducedMotion, sv0, sv1, sv2, sv3, sv4, sv5]);
 
     // El texto de la barra se mide contra el color plano del acento: blanco
     // en los acentos profundos y casi negro en los neón luminosos. Ambos

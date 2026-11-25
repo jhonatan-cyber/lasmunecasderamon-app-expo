@@ -34,7 +34,7 @@ export default function AppLayout() {
     const segmentos = useSegments();
     const [showAsistenciaModal, setShowAsistenciaModal] = useState(false);
 
-    const { isDark, bg, cardBg, textPrimary, textSecondary, accentColor } = useAccentColor();
+    const { isDark, bg, cardBg, textPrimary, textSecondary, accentColor, accentOnSurface } = useAccentColor();
     const accentText = accentTextColor(accentColor);
 
     const isStaffMember = user?.role &&
@@ -143,7 +143,7 @@ export default function AppLayout() {
                         accessibilityRole="alert"
                     >
                         <View style={styles.iconContainer}>
-                            <Ionicons name="lock-closed" size={30} color={accentColor} />
+                            <Ionicons name="lock-closed" size={30} color={accentOnSurface} />
                         </View>
                         <Text maxFontSizeMultiplier={1.4} style={[styles.title, { color: textPrimary }]}>
                             Sesión expirada

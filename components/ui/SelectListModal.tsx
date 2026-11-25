@@ -15,6 +15,7 @@ export interface SelectListItem {
   onPress?: () => void;
   disabled?: boolean;
   disabledReason?: string;
+  accessibilityLabel?: string;
   /**
    * Selección controlada. Si se omite, el modal la rastrea internamente al
    * pulsar un ítem y la reinicia cada vez que se abre.
@@ -114,13 +115,6 @@ export const SelectListModal = ({
             ) : (
               items.map((item, index) => {
                 const selected = isItemSelected(item);
-                const itemNeonGlow = isDark && selected ? {
-                  shadowColor: accentColor,
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 6,
-                  elevation: 3,
-                } : {};
                 return (
                   <AnimatedView
                     key={`${String(item.id)}-${index}`}
@@ -136,14 +130,14 @@ export const SelectListModal = ({
                         item.onPress?.();
                       }}
                       accessibilityRole="button"
+                      accessibilityLabel={item.accessibilityLabel}
                       accessibilityState={{ selected, disabled: !!item.disabled }}
                       style={[
                         styles.item,
                         {
                           borderColor: item.disabled ? borderColor : selected ? accentColor : borderColor,
-                          backgroundColor: selected ? `${accentColor}12` : 'transparent',
+                          backgroundColor: selected ? `${accentColor}15` : 'transparent',
                           opacity: item.disabled ? 0.5 : 1,
-                          ...itemNeonGlow,
                         },
                       ]}
                     >
@@ -218,7 +212,7 @@ const styles = StyleSheet.create({
   },
   item: {
     padding: 16,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     borderWidth: 2,
     marginBottom: 10,
   },

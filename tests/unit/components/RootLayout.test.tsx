@@ -2,6 +2,7 @@ import React, { type ReactNode } from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RootLayout from '@/app/_layout';
+import { ThemeTokens } from '@/constants/colorTokens';
 
 const h = vi.hoisted(() => ({
   platform: 'web',
@@ -14,7 +15,7 @@ const h = vi.hoisted(() => ({
   cargar: vi.fn(),
   apiClientSafe: vi.fn(),
 }));
-type Children = { children?: ReactNode };
+type Children = { children?: ReactNode; style?: { backgroundColor?: string } };
 vi.mock('react-native', () => ({
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
   Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
@@ -24,15 +25,16 @@ vi.mock('react-native', () => ({
     getColorScheme: () => 'dark',
     addChangeListener: () => ({ remove: vi.fn() }),
   },
-  View: ({ children }: Children) => <div>{children}</div>,
+  View: ({ children, style }: Children) => <div data-background={style?.backgroundColor}>{children}</div>,
   Text: ({ children }: Children) => <span>{children}</span>,
   Pressable: ({ children, onPress }: Children & { onPress?: () => void }) => (
     <button onClick={onPress}>{children}</button>
   ),
   StyleSheet: { create: (styles: unknown) => styles },
-  ActivityIndicator: () => <span>Cargando</span>,
+  ActivityIndicator: ({ color }: { color?: string }) => <span data-color={color}>Cargando</span>,
   LogBox: { ignoreLogs: vi.fn() },
 }));
+vi.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => 'dark' }));
 vi.mock('expo-dev-client', () => ({}));
 vi.mock('expo-updates', () => ({}));
 vi.mock('expo-splash-screen', () => ({
@@ -93,6 +95,8 @@ describe('RootLayout: almacenamiento antes de montar pantallas', () => {
     h.prepare.mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
     render(<RootLayout />);
     expect(screen.getByText('Cargando')).toBeTruthy();
+    expect(screen.getByText('Cargando').getAttribute('data-color')).toBe(ThemeTokens.dark.textPrimary);
+    expect(screen.getByText('Cargando').parentElement?.getAttribute('data-background')).toBe(ThemeTokens.dark.background);
     expect(h.init).not.toHaveBeenCalled();
     await act(async () => { finish(); });
     expect(screen.getByText('Pantalla lista')).toBeTruthy();

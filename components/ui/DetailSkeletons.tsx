@@ -22,18 +22,18 @@ export const CuentaDetailSkeleton: React.FC = () => {
 
             {/* Info cards */}
             <View style={styles.infoGrid}>
-                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.xl }]} />
-                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.xl }]} />
-                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.xl }]} />
-                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.xl }]} />
+                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.card }]} />
+                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.card }]} />
+                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.card }]} />
+                <Skeleton style={[styles.infoCard, { borderRadius: BorderRadius.card }]} />
             </View>
 
             {/* Details list */}
             <View style={styles.detailsList}>
                 <Skeleton width={140} height={14} style={styles.sectionLabel} />
-                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.xl }]} />
-                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.xl }]} />
-                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.xl }]} />
+                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.card }]} />
+                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.card }]} />
+                <Skeleton style={[styles.detailItem, { borderRadius: BorderRadius.card }]} />
             </View>
 
             {/* Close button */}

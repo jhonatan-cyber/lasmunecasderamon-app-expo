@@ -15,6 +15,8 @@ export interface CardHeaderProps {
   /** Fondo/Texto de la píldora; por defecto deriva de `statusColor`. */
   statusBgColor?: string;
   statusTextColor?: string;
+  /** Contenido opcional sobre la esquina del badge (p. ej. chevron de colapso). */
+  badgeAccessory?: React.ReactNode;
   accentColor: string;
   textColor: string;
   textMutedColor: string;
@@ -34,12 +36,13 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   statusText,
   statusBgColor,
   statusTextColor,
+  badgeAccessory,
   accentColor,
   textColor,
   textMutedColor,
   formatDateTime,
 }) => {
-  const { isDark } = useAccentColor();
+  const { isDark, cardBg } = useAccentColor();
 
   // Glow neón en iconBox en modo oscuro
   const iconBoxNeon = isDark ? {
@@ -79,9 +82,21 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
           )}
         </View>
       </View>
-      <View style={[styles.statusBadge, { backgroundColor: statusBgColor ?? `${statusColor}10` }, statusBadgeNeon]}>
-        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-        <Text style={[styles.statusText, { color: statusTextColor ?? statusColor }]}>{statusText}</Text>
+      <View style={styles.badgeWrap}>
+        <View style={[styles.statusBadge, { backgroundColor: statusBgColor ?? `${statusColor}10` }, statusBadgeNeon]}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={[styles.statusText, { color: statusTextColor ?? statusColor }]}>{statusText}</Text>
+        </View>
+        {badgeAccessory && (
+          <View
+            style={[
+              styles.badgeAccessory,
+              { backgroundColor: cardBg, borderColor: statusColor },
+            ]}
+          >
+            {badgeAccessory}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -121,6 +136,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xxs,
     fontFamily: FontFamily.bold,
     marginTop: 2,
+  },
+  badgeWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  badgeAccessory: {
+    width: 20,
+    height: 20,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusBadge: {
     flexDirection: 'row',

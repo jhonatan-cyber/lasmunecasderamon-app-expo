@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { FontSize, BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export interface CardFinanceProps {
   total: number;
@@ -55,9 +56,11 @@ export const CardFinance: React.FC<CardFinanceProps> = ({
             ${total.toLocaleString()}
           </Text>
           {statusBadge && (
-            <View style={[styles.statusBadge, { backgroundColor: `${statusBadge.color}15`, borderColor: statusBadge.color }, badgeNeon]}>
-              <Text style={[styles.statusText, { color: statusBadge.color }]}>{statusBadge.text}</Text>
-            </View>
+            <StatusBadge
+              label={statusBadge.text}
+              color={statusBadge.color}
+              style={[styles.statusBadge, badgeNeon]}
+            />
           )}
         </View>
       </View>

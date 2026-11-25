@@ -22,6 +22,12 @@ export interface SearchBarProps {
     style?: StyleProp<ViewStyle>;
     /** Debounce in ms for onChangeText callbacks (default 300). Set 0 to disable. */
     debounceMs?: number;
+    /** Variante delgada (altura reducida) para pantallas con poco espacio vertical. */
+    compact?: boolean;
+    onSubmitEditing?: () => void;
+    accessibilityLabel?: string;
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+    autoCorrect?: boolean;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -32,6 +38,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     autoFocus = false,
     style,
     debounceMs = 300,
+    compact = false,
+    onSubmitEditing,
+    accessibilityLabel = 'Barra de búsqueda',
+    autoCapitalize = 'sentences',
+    autoCorrect = false,
 }) => {
     const { cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentColor, isDark } = useAccentColor();
     const reducedMotion = useReducedMotion();
@@ -103,6 +114,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <View style={[style]} onStartShouldSetResponder={() => false}>
             <View style={[
                 styles.container,
+                compact && styles.containerCompact,
                 {
                     backgroundColor: cardBg,
                     borderColor: isFocused ? accentColor : borderColor,
@@ -113,24 +125,27 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <Animated.View style={iconAnimatedStyle} pointerEvents="none">
                     <Ionicons
                         name="search"
-                        size={FontSize.md}
+                        size={compact ? 17 : FontSize.md}
                         color={isFocused ? accentColor : textSecondary}
                         style={styles.icon}
                     />
                 </Animated.View>
                 <TextInput
-                    style={[styles.input, { color: textPrimary, flex: 1 }]}
+                    style={[styles.input, compact && styles.inputCompact, { color: textPrimary, flex: 1 }]}
                     placeholder={placeholder}
                     placeholderTextColor={textSecondary}
                     value={internalText}
                     onChangeText={handleTextChange}
+                    onSubmitEditing={onSubmitEditing}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     autoFocus={autoFocus}
-                    accessibilityLabel="Barra de búsqueda"
+                    accessibilityLabel={accessibilityLabel}
                     accessibilityHint="Escriba para filtrar resultados"
                     returnKeyType="search"
                     keyboardType="default"
+                    autoCapitalize={autoCapitalize}
+                    autoCorrect={autoCorrect}
                     textContentType="none"
                     importantForAutofill="no"
                 />
@@ -140,8 +155,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         accessibilityLabel="Limpiar búsqueda"
                         onPress={handleClear}
                         color={textSecondary}
-                        size={28}
-                        iconSize={FontSize.md}
+                        size={compact ? 24 : 28}
+                        iconSize={compact ? 16 : FontSize.md}
                         backgroundColor={surfaceMuted}
                     />
                 )}
@@ -160,6 +175,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         gap: 10,
     },
+    containerCompact: {
+        height: 42,
+        paddingHorizontal: 12,
+        paddingVertical: 0,
+        gap: 8,
+    },
     icon: {
         marginLeft: 4,
     },
@@ -167,5 +188,10 @@ const styles = StyleSheet.create({
         fontSize: FontSize.sm,
         fontFamily: FontFamily.medium,
         minHeight: 22,
+    },
+    inputCompact: {
+        fontSize: FontSize.sm,
+        minHeight: 0,
+        paddingVertical: 0,
     },
 });

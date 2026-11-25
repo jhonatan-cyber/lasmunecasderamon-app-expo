@@ -6,6 +6,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
 import { parseDateSafe } from '../../utils/timeUtils';
+import { resolveSemanticStatusColors } from '@/utils/semanticStatusColors';
 
 export interface HoraExtra {
     id_hora_extra: number;
@@ -35,9 +36,15 @@ export function OvertimeCard({
     compactDate = false,
     showPaymentDate = true,
 }: OvertimeCardProps) {
-    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, semanticColors } = useAccentColor();
 
     const isPendiente = item.estado === 1;
+    const statusColors = resolveSemanticStatusColors(
+        isPendiente ? 'pending' : 'success',
+        semanticColors,
+        surfaceMuted,
+        textSecondary,
+    );
     const hourLabel = item.hora ? `${item.hora} hrs` : null;
 
     const formatDate = (dateStr: string) => {
@@ -72,12 +79,12 @@ export function OvertimeCard({
                     <View style={[
                         styles.statusBadge,
                         {
-                            backgroundColor: accentBg
+                            backgroundColor: statusColors.backgroundColor
                         }
                     ]}>
                         <Text style={[
                             styles.statusText,
-                            { color: accentOnSurface }
+                            { color: statusColors.textColor }
                         ]}>
                             {isPendiente ? 'Por cobrar' : (usePagadoLabel ? 'Cobrado' : 'Cobrado')}
                         </Text>

@@ -71,7 +71,6 @@ export default function LoginForm({
         accentText,
         accentOnSurface,
         accentBg,
-        accentBorder,
     } = useAccentColor();
 
     // Usar isDark del tema para la lógica visual, pero mantener la prop para compatibilidad
@@ -137,14 +136,16 @@ export default function LoginForm({
     return (
         <View style={styles.formContainer}>
             {/* Logo with accessibility label */}
-            <View style={[styles.logoContainer, isLandscape && styles.logoContainerCompact]}>
-                <Image
-                    source={require('../../assets/images/logo2.png')}
-                    style={[styles.logo, isLandscape && styles.logoCompact]}
-                    contentFit="contain"
-                    accessibilityLabel="Logo de Las Muñecas de Ramón"
-                />
-            </View>
+            {!isLandscape && (
+                <View style={styles.logoContainer}>
+                    <Image
+                        source={require('../../assets/images/logo2.png')}
+                        style={styles.logo}
+                        contentFit="contain"
+                        accessibilityLabel="Logo de Las Muñecas de Ramón"
+                    />
+                </View>
+            )}
 
             {/* Error message with shake animation */}
             {error ? (
@@ -199,7 +200,7 @@ export default function LoginForm({
                     accessibilityLabel="Recuperar contraseña"
                     style={({ pressed }) => [pressed && { opacity: 0.6 }]}
                 >
-                    <Text style={[styles.forgotPasswordText, { color: accentColor }]}>
+                    <Text style={[styles.forgotPasswordText, { color: accentOnSurface }]}>
                         ¿Olvidaste tu contraseña?
                     </Text>
                 </Pressable>
@@ -363,14 +364,6 @@ const styles = StyleSheet.create({
     logo: {
         width: 240,
         height: 160,
-    },
-    logoContainerCompact: {
-        marginTop: 4,
-        marginBottom: 8,
-    },
-    logoCompact: {
-        width: 160,
-        height: 100,
     },
     label: {
         fontSize: 14,

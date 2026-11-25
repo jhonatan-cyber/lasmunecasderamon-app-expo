@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '../../hooks/useAccentColor';
 import { parseDateSafe } from '../../utils/timeUtils';
 import { useRenderCount } from '../../hooks/useRenderCount';
+import { getAdvanceStatusTone, resolveSemanticStatusColors } from '@/utils/semanticStatusColors';
 
 export interface Anticipo {
     id_solicitud: number | string;
@@ -47,7 +48,7 @@ export function AdvanceCard({
     footer,
 }: AdvanceCardProps) {
     useRenderCount('AdvanceCard', { id: item.id_solicitud, estado: item.estado });
-    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentUi } = useAccentColor();
+    const { accentColor, isDark, cardBg, surfaceMuted, textPrimary, textSecondary, borderColor, accentOnSurface, semanticColors } = useAccentColor();
 
     
     const normalize = normalizeEstado || ((estado: Anticipo['estado'] | number | string) => {
@@ -66,50 +67,19 @@ export function AdvanceCard({
     const isLiquidada = estado === 'liquidada';
     const isRechazada = estado === 'rechazada';
 
-    const getStatusColors = () => {
-        if (isPendiente) {
-            return {
-                backgroundColor: accentBg,
-                color: accentOnSurface,
-                label: 'Pendiente'
-            };
-        }
-        if (isPagada) {
-            return {
-                backgroundColor: accentBg,
-                color: accentOnSurface,
-                label: 'Recibido'
-            };
-        }
-        if (isLiquidada) {
-            return {
-                backgroundColor: accentBg,
-                color: accentOnSurface,
-                label: 'Liquidado'
-            };
-        }
-        if (isAprobada) {
-            return {
-                backgroundColor: accentBg,
-                color: accentOnSurface,
-                label: viewMode === 'solicitudes' ? 'Aprobado' : 'Recibido'
-            };
-        }
-        if (isRechazada) {
-            return {
-                backgroundColor: accentBg,
-                color: accentOnSurface,
-                label: 'Rechazada'
-            };
-        }
-        return {
-            backgroundColor: surfaceMuted,
-            color: textSecondary,
-            label: 'Sin estado'
-        };
+    const statusColors = {
+        ...resolveSemanticStatusColors(
+            getAdvanceStatusTone(estado),
+            semanticColors,
+            surfaceMuted,
+            textSecondary,
+        ),
+        label: isPendiente ? 'Pendiente'
+            : isPagada ? 'Recibido'
+                : isLiquidada ? 'Liquidado'
+                    : isAprobada ? viewMode === 'solicitudes' ? 'Aprobado' : 'Recibido'
+                        : isRechazada ? 'Rechazada' : 'Sin estado',
     };
-
-    const statusColors = getStatusColors();
 
     // Glow neón en modo oscuro con el color del estado
     const cardNeonColor = accentColor;
@@ -156,7 +126,7 @@ export function AdvanceCard({
                 )}
 
                 <View style={[styles.statusBadge, { backgroundColor: statusColors.backgroundColor }]}>
-                    <Text style={[styles.statusText, { color: statusColors.color }]}>
+                    <Text style={[styles.statusText, { color: statusColors.textColor }]}>
                         {statusLabel || statusColors.label}
                     </Text>
                 </View>
@@ -203,9 +173,9 @@ export function AdvanceCard({
                 ) : null}
 
                 {item.motivo_rechazo && isRechazada && (
-                    <View style={[styles.rejectionBox, { backgroundColor: accentBg }]}>
-                        <Ionicons name="close-circle" size={14} color={accentOnSurface} />
-                        <Text style={[styles.rejectionText, { color: accentOnSurface }]}>
+                    <View style={[styles.rejectionBox, { backgroundColor: statusColors.backgroundColor }]}>
+                        <Ionicons name="close-circle" size={14} color={statusColors.textColor} />
+                        <Text style={[styles.rejectionText, { color: statusColors.textColor }]}>
                             Motivo rechazo: {item.motivo_rechazo}
                         </Text>
                     </View>

@@ -24,6 +24,7 @@ import { configurationsSchema } from "@lasmunecasderamon/validations";
 import { setExpensiveDrinkThreshold, setCardSplit, setIvaRate } from "@/hooks/utils/cuentaUtils";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAppFonts } from "@/hooks/useAppFonts";
+import { ThemeTokens } from "@/constants/colorTokens";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "setBackgroundColorAsync is not supported",
@@ -52,8 +53,6 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   logger.debug('SplashScreen.preventAutoHideAsync falló.');
 });
 
-// Chequea OTA al arrancar: si hay update disponible lo descarga y recarga.
-// Solo corre en builds nativos (no en dev client).
 if (!__DEV__) {
   Updates.checkForUpdateAsync()
     .then(({ isAvailable }) => {
@@ -61,21 +60,17 @@ if (!__DEV__) {
       return Updates.fetchUpdateAsync().then(() => Updates.reloadAsync());
     })
     .catch(() => {
-      // Error de red u OTA — no bloquea el arranque
     });
 }
 
-
-// Un driver SQLite colgado (no falla, tampoco responde) no debe dejar el
-// splash para siempre: pasado este plazo se arranca sin espejo offline.
 const MIRROR_STORAGE_TIMEOUT_MS = 3000;
-
 
 export default function RootLayout() {
   const [storageReady, setStorageReady] = useState(false);
   const fontsReady = useAppFonts();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const loadingTheme = isDark ? ThemeTokens.dark : ThemeTokens.light;
   useEffect(() => {
     let active = true;
     let settled = false;
@@ -124,7 +119,6 @@ export default function RootLayout() {
       void connectivity.start();
       initOutbox();
 
-      // Solo cargar configuraciones después de iniciar sesión
       if (user !== null) {
         apiClientSafe('/configurations', { retries: 1 }).then((res: any) => {
           if (!res?.success) return;
@@ -147,8 +141,6 @@ export default function RootLayout() {
       }
     };
 
-    // La petición ya es asíncrona: diferirla al hilo libre solo retrasaba hasta
-    // un segundo los umbrales de propina/IVA sin liberar nada.
     startServices();
   }, [isLoading, storageReady, user]);
 
@@ -159,10 +151,10 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: isDark ? "#000000" : "#FFFFFF",
+          backgroundColor: loadingTheme.background,
         }}
       >
-        <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#111827"} />
+        <ActivityIndicator size="large" color={loadingTheme.textPrimary} />
       </View>
     );
   }

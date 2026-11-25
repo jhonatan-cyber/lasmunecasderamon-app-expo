@@ -4,13 +4,7 @@ import {
   RUTA_PANTALLA_ASISTENCIA,
   useModoPantallaStore,
 } from "@/store/modoPantallaStore";
-import {
-  isAdminRole,
-  isBarmanRole,
-  isCajeroRole,
-  isGarzonRole,
-  isHostessRole,
-} from "@/utils/userRole";
+import { getHomeRouteByRole } from "@/utils/userRole";
 
 export default function Index() {
   const user = useAuthStore((state) => state.user);
@@ -20,7 +14,6 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // El dispositivo está configurado como pantalla de asistencia: no hay panel.
   if (enModoPantalla) {
     return <Redirect href={RUTA_PANTALLA_ASISTENCIA} />;
   }
@@ -29,15 +22,6 @@ export default function Index() {
     return <Redirect href="/(auth)/change-password" />;
   }
 
-  if (isGarzonRole(user)) {
-    return <Redirect href="/(app)/garzon/(tabs)" />;
-  } else if (isHostessRole(user)) {
-    return <Redirect href="/(app)/anfitriona/(tabs)" />;
-  } else if (isBarmanRole(user)) {
-    return <Redirect href="/(app)/barman/(tabs)" />;
-  } else if (isCajeroRole(user) || isAdminRole(user)) {
-    return <Redirect href="/(app)/cajero/(tabs)" />;
-  }
-
-  return <Redirect href="/(app)/garzon/(tabs)" />;
+  const homeRoute = getHomeRouteByRole(user);
+  return <Redirect href={homeRoute ?? "/(auth)/login"} />;
 }

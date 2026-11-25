@@ -23,6 +23,7 @@ import useLogin from "@/hooks/useLogin";
 import { useResponsiveMetrics } from "@/hooks/useResponsiveMetrics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoginForm from "@/components/auth/LoginForm";
+import LoginLandscapeLayout from "@/components/auth/LoginLandscapeLayout";
 import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
 import logger from "@/utils/logger";
 
@@ -67,9 +68,36 @@ export default function LoginScreen() {
   const { toggleScheme } = useAppearanceStore();
   const userColors = useThemeStore(state => state.userColors);
 
-  // Obtener el último color de acento guardado, o el default si no hay ninguno.
-  // Se normaliza para que un color de una paleta anterior caiga en la neón.
   const lastAccentColor = normalizeAccentColor(Object.values(userColors).pop() || DEFAULT_ACCENT_COLOR);
+
+  const loginContent = (
+    <View style={{ flex: 1 }}>
+      <AnimatedScreen delay={100}>
+        <StatusBar style={isLandscape || isDark ? "light" : "dark"} />
+        <LoginForm
+          username={username}
+          password={password}
+          showPassword={showPassword}
+          error={error}
+          loading={loading}
+          isDark={isDark}
+          accentColor={lastAccentColor}
+          isBiometricEnabled={isBiometricEnabled}
+          isBiometricSupported={isBiometricSupported}
+          rememberMe={rememberMe}
+          passwordRef={passwordRef}
+          onUsernameChange={setUsername}
+          onPasswordChange={setPassword}
+          onTogglePasswordVisibility={() => setShowPassword(!showPassword)}
+          onLogin={handleLogin}
+          onQRPress={() => setShowQRScanner(true)}
+          onBiometricPress={handleBiometricLogin}
+          onForgotPassword={() => setShowResetPasswordModal(true)}
+          onRememberMeChange={setRememberMe}
+        />
+      </AnimatedScreen>
+    </View>
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -79,81 +107,84 @@ export default function LoginScreen() {
             const setButtonStyleAsync = (NavigationBar as any)
               .setButtonStyleAsync;
             if (typeof setButtonStyleAsync === "function") {
-              void setButtonStyleAsync(isDark ? "light" : "dark");
+              void setButtonStyleAsync(isLandscape || isDark ? "light" : "dark");
             }
           } catch (error) {
             logger.warn("Failed to update navigation bar button style on login screen", { error });
           }
         }).catch(() => {
-          // expo-navigation-bar no disponible
         });
       }
-    }, [isDark]),
+    }, [isDark, isLandscape]),
   );
 
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={require("../../assets/images/login_bg.png")}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      >
-        {isDark && (
-          <LinearGradient
-            colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.75)", "#000000"]}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
+      {isLandscape ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
+          style={styles.landscapeKeyboardAvoiding}
         >
-          <ScrollView
-            automaticallyAdjustKeyboardInsets
-            contentContainerStyle={[
-              styles.inner,
-              isLandscape && { paddingTop: 16, paddingBottom: 24 },
-              {
-                paddingLeft: 25 + insets.left,
-                paddingRight: 25 + insets.right,
-                paddingBottom: (isLandscape ? 24 : 60) + insets.bottom,
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <LoginLandscapeLayout
+            backgroundColor={C.background}
+            backgroundImageSource={require("../../assets/images/login_bg.png")}
+            logoImageSource={require("../../assets/images/logo2.png")}
+            insets={insets}
           >
-            <View style={{ flex: 1 }}>
-              <AnimatedScreen delay={100}>
-                <StatusBar style={isDark ? "light" : "dark"} />
-
-                <LoginForm
-                  username={username}
-                  password={password}
-                  showPassword={showPassword}
-                  error={error}
-                  loading={loading}
-                  isDark={isDark}
-                  accentColor={lastAccentColor}
-                  isBiometricEnabled={isBiometricEnabled}
-                  isBiometricSupported={isBiometricSupported}
-                  rememberMe={rememberMe}
-                  passwordRef={passwordRef}
-                  onUsernameChange={setUsername}
-                  onPasswordChange={setPassword}
-                  onTogglePasswordVisibility={() =>
-                    setShowPassword(!showPassword)
-                  }
-                  onLogin={handleLogin}
-                  onQRPress={() => setShowQRScanner(true)}
-                  onBiometricPress={handleBiometricLogin}
-                  onForgotPassword={() => setShowResetPasswordModal(true)}
-                  onRememberMeChange={setRememberMe}
-                />
-              </AnimatedScreen>
-            </View>
-          </ScrollView>
+            <ScrollView
+              style={styles.landscapeScroll}
+              automaticallyAdjustKeyboardInsets
+              contentContainerStyle={[
+                styles.inner,
+                styles.landscapeInner,
+                {
+                  paddingTop: Math.max(20, insets.top + 56),
+                  paddingLeft: 28 + insets.left,
+                  paddingRight: 28 + insets.right,
+                  paddingBottom: 20 + insets.bottom,
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {loginContent}
+            </ScrollView>
+          </LoginLandscapeLayout>
         </KeyboardAvoidingView>
-      </ImageBackground>
+      ) : (
+        <ImageBackground
+          source={require("../../assets/images/login_bg.png")}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        >
+          {isDark && (
+            <LinearGradient
+              colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.75)", "#000000"]}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={{ flex: 1 }}
+          >
+            <ScrollView
+              automaticallyAdjustKeyboardInsets
+              contentContainerStyle={[
+                styles.inner,
+                {
+                  paddingLeft: 25 + insets.left,
+                  paddingRight: 25 + insets.right,
+                  paddingBottom: 60 + insets.bottom,
+                },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {loginContent}
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </ImageBackground>
+      )}
 
       {/* Theme toggle: esquina superior derecha, fija sobre el fondo */}
       <Pressable
@@ -221,6 +252,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 40,
     paddingBottom: 60,
+  },
+  landscapeKeyboardAvoiding: {
+    flex: 1,
+  },
+  landscapeInner: {
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  landscapeScroll: {
+    flex: 1,
   },
   themeToggle: {
     position: "absolute",
