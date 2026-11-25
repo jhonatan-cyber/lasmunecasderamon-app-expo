@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleProp, View, ViewStyle } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";

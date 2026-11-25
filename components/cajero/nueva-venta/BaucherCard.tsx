@@ -25,7 +25,7 @@ export const BaucherCard: React.FC<BaucherCardProps> = ({
    const { accentOnSurface } = useAccentColor();
   return (
     <View style={styles.baucherContainer}>
-      {baucherFoto && (
+      {!!baucherFoto && (
         <View style={styles.baucherInfoRow}>
           <Image source={{ uri: baucherFoto }} style={styles.baucherThumb} />
           <Pressable

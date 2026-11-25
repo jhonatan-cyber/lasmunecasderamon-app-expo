@@ -1,3 +1,5 @@
+import { PAYMENT_METHOD_ICONS } from '@/components/ui/StatusBadge';
+
 export const statusColors: Record<number, string> = {
   1: "#10B981", 
   2: "#3B82F6", 
@@ -12,8 +14,7 @@ export const statusLabels: Record<number, string> = {
   0: "Anulado",
 };
 
+/** Compatibilidad: el mapa canónico vive en `ui/StatusBadge`. */
 export const payMethodIcons: Record<string, string> = {
-  efectivo: "cash-outline",
-  tarjeta: "card-outline",
-  transferencia: "swap-horizontal-outline",
+  ...PAYMENT_METHOD_ICONS,
 };

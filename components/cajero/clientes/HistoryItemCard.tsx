@@ -4,6 +4,7 @@ import { FontFamily } from '@/constants/fonts';
 import { Text, View } from 'react-native';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { StatusBadge, paymentIconFor } from '@/components/ui/StatusBadge';
 
 interface Props {
     item: any;
@@ -13,22 +14,14 @@ interface Props {
     textSecondary: string;
 }
 
-const PAYMENT_ICONS: Record<string, string> = {
-    efectivo: 'cash-outline',
-    tarjeta: 'card-outline',
-    transferencia: 'swap-horizontal-outline',
-    prepago: 'wallet-outline',
-    mixto: 'layers-outline',
-};
-
 export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index, isDark, textPrimary, textSecondary }: Props) {
-    const { accentOnSurface, accentColor, accentUi, accentBg, surfaceMuted } = useAccentColor();
+    const { accentOnSurface, accentUi, surfaceMuted } = useAccentColor();
     useRenderCount('HistoryItemCard', { itemId: item.id, category: item.category });
     const isCarga = item.category === 'CARGA';
     const isServicio = item.category === 'SERVICIO';
     const isConsumo = item.category === 'CONSUMO';
-    const iconColor = isCarga ? accentOnSurface : isServicio ? accentColor : accentUi;
-    const iconBg = isCarga ? `${accentOnSurface}1F` : isServicio ? `${accentColor}1F` : `${accentUi}1F`;
+    const iconColor = accentUi;
+    const iconBg = surfaceMuted;
     const iconName = isCarga ? 'arrow-up-circle' : isServicio ? 'bed' : 'cart';
     const categoryLabel = isCarga ? 'Carga de Saldo' : isServicio ? 'Servicio' : 'Consumo';
     const cardBg = surfaceMuted;
@@ -58,10 +51,10 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                             </Text>
                         </View>
                         <View style={{
-                            backgroundColor: isCarga ? `${accentOnSurface}1A` : accentBg,
+                            backgroundColor: cardBg,
                             paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
                         }}>
-                            <Text style={{ fontSize: 15, fontFamily: FontFamily.black, color: isCarga ? accentOnSurface : accentColor }}>
+                            <Text style={{ fontSize: 15, fontFamily: FontFamily.black, color: accentOnSurface }}>
                                 {isCarga ? '+' : '-'}${(Number(item.monto || 0)).toLocaleString('es-CL')}
                             </Text>
                         </View>
@@ -73,17 +66,17 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
             {isServicio && item.detalle && (
                 <View style={{
                     marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1,
-                    backgroundColor: `${accentColor}0D`,
-                    borderColor: `${accentColor}1F`,
+                    backgroundColor: cardBg,
+                    borderColor: accentUi,
                 }}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
                         {item.detalle.habitacion && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <View style={miniBoxBlue}>
-                                    <Ionicons name="bed-outline" size={14} color={accentColor} />
+                                    <Ionicons name="bed-outline" size={14} color={accentUi} />
                                 </View>
                                 <View>
-                                    <DetailLabel text="Habitación" color={accentColor} />
+                                    <DetailLabel text="Habitación" color={accentOnSurface} />
                                     <DetailVal value={item.detalle.habitacion} color={textPrimary} />
                                 </View>
                             </View>
@@ -91,10 +84,10 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                         {item.detalle.tiempo && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <View style={miniBoxBlue}>
-                                    <Ionicons name="timer-outline" size={14} color={accentColor} />
+                                    <Ionicons name="timer-outline" size={14} color={accentUi} />
                                 </View>
                                 <View>
-                                    <DetailLabel text="Duración" color={accentColor} />
+                                    <DetailLabel text="Duración" color={accentOnSurface} />
                                     <DetailVal value={`${item.detalle.tiempo} min`} color={textPrimary} />
                                 </View>
                             </View>
@@ -103,11 +96,11 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                     {Array.isArray(item.detalle.anfitrionas) && item.detalle.anfitrionas.length > 0 && (
                         <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <View style={miniBoxBlue}>
-                                <Ionicons name="people-outline" size={14} color={accentColor} />
+                                <Ionicons name="people-outline" size={14} color={accentUi} />
                             </View>
                             {item.detalle.anfitrionas.map((name: string, i: number) => (
                                 <View key={i} style={pillBlue}>
-                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentColor }}>{name}</Text>
+                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentOnSurface }}>{name}</Text>
                                 </View>
                             ))}
                         </View>
@@ -121,14 +114,14 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                     {Array.isArray(item.detalle.productos) && item.detalle.productos.length > 0 && (
                         <View style={{
                             marginTop: 12, padding: 12, borderRadius: 14, borderWidth: 1,
-                            backgroundColor: `${accentUi}0D`,
-                            borderColor: `${accentUi}1F`,
+                            backgroundColor: cardBg,
+                            borderColor: accentUi,
                         }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
                                 <View style={miniBoxOrange}>
                                     <Ionicons name="fast-food-outline" size={12} color={accentUi} />
                                 </View>
-                                <DetailLabel text="Productos" color={accentUi} />
+                                <DetailLabel text="Productos" color={accentOnSurface} />
                             </View>
                             {item.detalle.productos.map((p: any, idx: number) => (
                                 <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 3, gap: 6 }}>
@@ -147,7 +140,7 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
                             </View>
                             {item.detalle.anfitrionas.map((name: string, i: number) => (
                                 <View key={i} style={pillOrange}>
-                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentUi }}>{name}</Text>
+                                    <Text style={{ fontSize: 11, fontFamily: FontFamily.extrabold, color: accentOnSurface }}>{name}</Text>
                                 </View>
                             ))}
                         </View>
@@ -157,20 +150,17 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
 
             {}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                <View style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 5,
-                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
-                    backgroundColor: surfaceMuted,
-                }}>
-                    <Ionicons
-                        name={(PAYMENT_ICONS[item.metodo_pago] || 'wallet-outline') as keyof typeof Ionicons.glyphMap}
-                        size={12}
-                        color={textSecondary}
-                    />
-                    <Text style={{ fontSize: 10, fontFamily: FontFamily.extrabold, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                        {item.metodo_pago || 'pago'}
-                    </Text>
-                </View>
+                <StatusBadge
+                    label={item.metodo_pago || 'pago'}
+                    color={textSecondary}
+                    bg={surfaceMuted}
+                    borderColor="transparent"
+                    icon={paymentIconFor(item.metodo_pago)}
+                    iconColor={textSecondary}
+                    textColor={textSecondary}
+                    uppercase
+                    style={{ borderRadius: 8 }}
+                />
             </View>
         </View>
     );

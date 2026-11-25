@@ -1,6 +1,8 @@
 import { apiClientSafe } from '@/api/client-safe';
 
-export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
+import type { MetodoPagoEntrada } from '@/types/payment';
+
+export type { MetodoPagoEntrada };
 export type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
 /** Anulada a mano se devuelve; anulada por el cierre del turno se cobra en caja. */
 export type AnulacionOrigen = 'manual' | 'cierre';

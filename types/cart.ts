@@ -65,7 +65,7 @@ export interface CartItem {
   shortMixers?: (AcompanamientoCorto | undefined)[];
 }
 
-export type MetodoPagoPedido = "efectivo" | "tarjeta" | "transferencia";
+export type { MetodoPagoPedido } from './payment';
 
 export interface Anfitriona {
   id: string;

@@ -3,12 +3,21 @@ import { eventBus } from '@/utils/eventBus';
 import { useRouter } from 'expo-router';
 import { showToast as showToastLazy } from '@/utils/toast-lazy';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { cajaService } from '@/services';
+import { cajaService, entradasService } from '@/services';
+import type { EntradaCliente } from '@/services/entradas';
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { useConnectivity } from '@/hooks/useConnectivity';
 import { blockOffline } from '@/utils/offlineGuard';
 import { httpDetailsOf } from '@/api/errors';
 import { useAuthStore } from '@/store/authStore';
+import { useCajaAbiertaStore } from '@/store/cajaAbiertaStore';
+import type { CajaInfo, CajaStats, CajaStatusData } from '@/types/caja';
+import {
+    formatearInputMonto,
+    formatearMonto,
+    parseMonto
+} from '@/utils/cajaFormat';
+import { resumenEntradasDelTurno } from '@/utils/cajaEntradas';
 
 export type CajaState = {
     loading: boolean;
@@ -16,8 +25,11 @@ export type CajaState = {
     /** `true` si lo que se está viendo viene del espejo local. */
     fromCache: boolean;
     cajaAbierta: boolean;
-    cajaInfo: any;
-    stats: any;
+    cajaInfo: CajaInfo | null;
+    stats: CajaStats | null;
+    /** Entradas del turno, calculadas desde `/tickets` filtrando por caja abierta. */
+    totalEntradas: number;
+    cantidadEntradas: number;
     modalVisible: boolean;
     modalType: 'abrir' | 'cerrar' | 'retiro';
     monto: string;
@@ -29,8 +41,9 @@ export type CajaAction =
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'SET_REFRESHING'; payload: boolean }
     | { type: 'SET_FROM_CACHE'; payload: boolean }
-    | { type: 'SET_CAJA_STATUS'; payload: { abierta: boolean; info: any } }
-    | { type: 'SET_STATS'; payload: any }
+    | { type: 'SET_CAJA_STATUS'; payload: { abierta: boolean; info: CajaInfo | null } }
+    | { type: 'SET_STATS'; payload: CajaStats | null }
+    | { type: 'SET_ENTRADAS'; payload: { total: number; cantidad: number } }
     | { type: 'OPEN_MODAL'; payload: 'abrir' | 'cerrar' | 'retiro' }
     | { type: 'CLOSE_MODAL' }
     | { type: 'SET_MONTO'; payload: string }
@@ -44,6 +57,8 @@ const initialCajaState: CajaState = {
     cajaAbierta: false,
     cajaInfo: null,
     stats: null,
+    totalEntradas: 0,
+    cantidadEntradas: 0,
     modalVisible: false,
     modalType: 'abrir',
     monto: '',
@@ -58,6 +73,11 @@ function cajaReducer(state: CajaState, action: CajaAction): CajaState {
         case 'SET_FROM_CACHE': return { ...state, fromCache: action.payload };
         case 'SET_CAJA_STATUS': return { ...state, cajaAbierta: action.payload.abierta, cajaInfo: action.payload.info };
         case 'SET_STATS': return { ...state, stats: action.payload };
+        case 'SET_ENTRADAS': return {
+            ...state,
+            totalEntradas: action.payload.total,
+            cantidadEntradas: action.payload.cantidad,
+        };
         case 'OPEN_MODAL': return { ...state, modalVisible: true, modalType: action.payload, monto: '', motivoRetiro: '' };
         case 'CLOSE_MODAL': return { ...state, modalVisible: false };
         case 'SET_MONTO': return { ...state, monto: action.payload };
@@ -77,7 +97,7 @@ export function useCaja() {
     const user = useAuthStore(state => state.user);
 
     const [state, dispatch] = useReducer(cajaReducer, initialCajaState);
-    const { loading, refreshing, fromCache, cajaAbierta, cajaInfo, stats, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
+    const { loading, refreshing, fromCache, cajaAbierta, cajaInfo, stats, totalEntradas, cantidadEntradas, modalVisible, modalType, monto, motivoRetiro, submitting } = state;
     const dataRef = useRef<string>('');
     const { isOffline } = useConnectivity();
     // Reenvío del aviso del cierre pendiente: estado propio para girar solo ese botón y
@@ -95,7 +115,7 @@ export function useCaja() {
     const fetchData = useCallback(async (isManual = false, signal?: AbortSignal) => {
         if (!isManual) dispatch({ type: 'SET_LOADING', payload: true });
         try {
-            const [statusResult, statsResult] = await Promise.all([
+            const [statusResult, statsResult, entradas] = await Promise.all([
                 getMirror()
                     .readThroughDetailed(
                         MIRROR_KEYS.cashregisterStatus,
@@ -109,7 +129,15 @@ export function useCaja() {
                         () => cajaService.resumen(signal),
                         { maxAgeMs: MIRROR_MAX_AGE_MS.dinero }
                     )
-                    .catch(() => ({ data: { success: false, data: null }, fromCache: false }))
+                    .catch(() => ({ data: { success: false, data: null }, fromCache: false })),
+                // Las entradas viven en `/tickets`, no en el resumen de caja. Se
+                // filtran por la caja abierta para que todo hable del mismo turno.
+                entradasService
+                    .listar()
+                    .then((res) =>
+                        res.success && Array.isArray(res.data) ? (res.data as EntradaCliente[]) : []
+                    )
+                    .catch(() => [] as EntradaCliente[])
             ]);
 
             if (signal?.aborted) return;
@@ -119,23 +147,38 @@ export function useCaja() {
                 payload: statusResult.fromCache || statsResult.fromCache
             });
 
-            const statusData = statusResult.data as unknown as { success: boolean; data?: { hasOpenCaja: boolean; cajaInfo: any } };
-            const statsData = statsResult.data as unknown as { success: boolean; data?: any };
+            const statusData = statusResult.data as unknown as {
+                success?: boolean;
+                data?: CajaStatusData | null;
+            };
+            const statsData = statsResult.data as unknown as {
+                success?: boolean;
+                data?: CajaStats | null;
+            };
 
-            const newData = { status: statusData.data, stats: statsData.data };
+            const abierta = Boolean(statusData.success && statusData.data?.hasOpenCaja);
+            const info = abierta ? statusData.data?.cajaInfo ?? null : null;
+            const resumenEntradas = resumenEntradasDelTurno(entradas, info?.id_caja);
+
+            const newData = {
+                status: statusData.data,
+                stats: statsData.data,
+                entradas: resumenEntradas,
+            };
             const serialized = JSON.stringify(newData);
             const hasChanges = dataRef.current !== serialized;
             dataRef.current = serialized;
 
-            if (statusData.success && statusData.data) {
-                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: statusData.data.hasOpenCaja, info: statusData.data.cajaInfo } });
-            } else {
-                dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta: false, info: null } });
-            }
+            dispatch({ type: 'SET_CAJA_STATUS', payload: { abierta, info } });
+            // El gate de rutas lee el store global: publicar aquí el mismo
+            // resultado evita esperar a otro viaje al servidor vía eventBus.
+            useCajaAbiertaStore.getState().setEstado(abierta, info);
 
             if (statsData.success && statsData.data) {
                 dispatch({ type: 'SET_STATS', payload: statsData.data });
             }
+
+            dispatch({ type: 'SET_ENTRADAS', payload: resumenEntradas });
 
             if (isManual) {
                 showToastLazy({
@@ -168,10 +211,8 @@ export function useCaja() {
         fetchData(true);
     }, [fetchData]);
 
-    const handleMontoChange = (text: string) => {
-        const clean = text.replace(/\D/g, '');
-        const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        dispatch({ type: 'SET_MONTO', payload: formatted });
+    const handleMontoChange = (texto: string) => {
+        dispatch({ type: 'SET_MONTO', payload: formatearInputMonto(texto) });
     };
 
     const handleSubmit = async () => {
@@ -179,22 +220,41 @@ export function useCaja() {
         // dependen del estado real del servidor: no se encolan nunca.
         if (!blockOffline('caja', () => !isOffline)) return;
 
+        const usuarioId = user?.id;
         let numericMonto = 0;
         if (modalType === 'cerrar') {
             // Lo que importa es el monto con que se va a cerrar: descuenta los
             // saldos prepago que los clientes todavía tienen cargados.
             numericMonto = stats?.monto_cierre_previsto ?? stats?.balance_total ?? 0;
         } else {
-            const cleanMonto = monto.replace(/\./g, '');
-            if (!cleanMonto || isNaN(Number(cleanMonto))) {
+            numericMonto = parseMonto(monto);
+            if (!monto.trim() || !Number.isFinite(numericMonto)) {
                 showToast('Error', 'Ingresa un monto válido');
                 return;
             }
-            numericMonto = Number(cleanMonto);
         }
 
         if (numericMonto < 0) {
             showToast('Error', 'El monto no puede ser negativo');
+            return;
+        }
+        if (modalType === 'retiro' && numericMonto === 0) {
+            showToast('Error', 'Ingresa un monto mayor a cero');
+            return;
+        }
+        if (modalType === 'retiro') {
+            const disponible = Number(stats?.efectivo_en_caja ?? stats?.total_efectivo ?? 0);
+            if (numericMonto > disponible) {
+                showToast(
+                    'Monto excedido',
+                    `Solo hay ${formatearMonto(disponible)} disponibles en caja`,
+                    'warning'
+                );
+                return;
+            }
+        }
+        if ((modalType === 'abrir' || modalType === 'retiro') && usuarioId == null) {
+            showToast('Error', 'No se pudo identificar al usuario de la sesión');
             return;
         }
         dispatch({ type: 'SET_SUBMITTING', payload: true });
@@ -202,7 +262,7 @@ export function useCaja() {
             if (modalType === 'abrir') {
                 const res = await cajaService.open({
                         monto_apertura: numericMonto,
-                        usuario_id_apertura: user?.id || 1
+                        usuario_id_apertura: String(usuarioId)
                     });
                 if (res.success) {
                     showToast('Turno Iniciado', 'Caja abierta correctamente', 'success');
@@ -227,10 +287,10 @@ export function useCaja() {
                         id_caja: cajaInfo.id_caja,
                         monto: numericMonto,
                         motivo: motivoRetiro,
-                        usuario_id: user?.id || 1
+                        usuario_id: String(usuarioId)
                     });
                 if (res.success) {
-                    showToast('Retiro Exitoso', `$${numericMonto.toLocaleString()} retirado correctamente`, 'success');
+                    showToast('Retiro Exitoso', `${formatearMonto(numericMonto)} retirado correctamente`, 'success');
                     dispatch({ type: 'CLOSE_MODAL' });
                     fetchData();
                     eventBus.emit('refresh_requests');
@@ -256,7 +316,7 @@ export function useCaja() {
                     showToast(
                         'Cierre enviado',
                         saldos > 0
-                            ? `Se pidió autorización al administrador. Se descontarán $${saldos.toLocaleString('es-CL')} de saldos de clientes.`
+                            ? `Se pidió autorización al administrador. Se descontarán ${formatearMonto(saldos)} de saldos de clientes.`
                             : 'Se pidió autorización al administrador por WhatsApp. La caja sigue abierta.',
                         'success'
                     );
@@ -396,6 +456,8 @@ export function useCaja() {
         cajaAbierta,
         cajaInfo,
         stats,
+        totalEntradas,
+        cantidadEntradas,
         modalVisible,
         modalType,
         monto,

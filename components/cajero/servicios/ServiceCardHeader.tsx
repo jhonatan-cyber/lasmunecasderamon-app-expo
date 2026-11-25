@@ -9,6 +9,7 @@ interface ServiceCardHeaderProps {
   statusText: string;
   statusBgColor?: string;
   statusTextColor?: string;
+  badgeAccessory?: React.ReactNode;
   accentColor: string;
   textColor: string;
   textMutedColor: string;
@@ -23,6 +24,7 @@ export const ServiceCardHeader: React.FC<ServiceCardHeaderProps> = ({
   statusText,
   statusBgColor,
   statusTextColor,
+  badgeAccessory,
   accentColor,
   textColor,
   textMutedColor,
@@ -37,6 +39,7 @@ export const ServiceCardHeader: React.FC<ServiceCardHeaderProps> = ({
     statusText={statusText}
     statusBgColor={statusBgColor}
     statusTextColor={statusTextColor}
+    badgeAccessory={badgeAccessory}
     accentColor={accentColor}
     textColor={textColor}
     textMutedColor={textMutedColor}

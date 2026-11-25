@@ -60,7 +60,7 @@ export default function CajeroLayout() {
         />
         <Stack.Screen
           name="caja"
-          options={{ title: "Estado de caja", headerShown: false }}
+          options={{ title: "Estado de caja", headerShown: false, orientation: 'all' }}
         />
         <Stack.Screen
           name="asistencia-local"

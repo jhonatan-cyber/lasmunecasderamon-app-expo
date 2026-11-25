@@ -1,11 +1,8 @@
 import React, { useMemo } from "react";
 import { BorderRadius } from '@/constants/spacing';
-import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { BASE_URL } from "@/api/client";
 import type { VentaDetail, VentaDetalle } from "./types";
-import { useAccentColor } from '@/hooks/useAccentColor';
+import { ProductLineRow } from '@/components/shared/ProductLineRow';
 
 interface VentaProductosListProps {
     selectedVenta: VentaDetail;
@@ -45,7 +42,6 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
     textSecondary,
     isDark,
 }) => {
-    const { accentOnSurface } = useAccentColor();
     const grouped = useMemo(
         () => groupDetalles(selectedVenta.detalles || [], selectedVenta.usuarios_nicks || ""),
         [selectedVenta.detalles, selectedVenta.usuarios_nicks],
@@ -55,34 +51,20 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
         <View style={{ marginTop: 5, paddingHorizontal: 4 }}>
             <Text style={[styles.sectionLabel, { color: textSecondary, marginBottom: 15 }]}>Listado de Productos</Text>
             {grouped.map((det, idx) => (
-                <View key={idx} style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.cantBadge, { backgroundColor: `${accentColor}10` }]}>
-                            <Text style={[styles.cantText, { color: accentOnSurface }]}>CANT: {det.cantidad}</Text>
-                        </View>
-                        <Text style={[styles.precioUnit, { color: textSecondary }]}>
-                            ${Number(det.precio).toLocaleString("es-CL")} c/u
-                        </Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        {det.producto_foto ? (
-                            <Image
-                                source={{ uri: `${BASE_URL}/api/images/products/${det.producto_foto}` }}
-                                style={styles.productImage}
-                            />
-                        ) : (
-                            <View style={[styles.productImagePlaceholder, { backgroundColor: isDark ? "#333" : "#EEE" }]}>
-                                <Ionicons name="cube-outline" size={20} color={textSecondary} />
-                            </View>
-                        )}
-                        <Text style={[styles.productName, { color: textPrimary }]}>{det.producto_etiqueta || [det.categoria_nombre, det.producto_nombre, det.presentacion_nombre].filter(Boolean).join(" - ") || det.producto_nombre || "Producto"}</Text>
-                    </View>
-                    <View style={styles.totalRow}>
-                        <Text style={[styles.productTotal, { color: textPrimary }]}>
-                            ${Number(det.sub_total).toLocaleString("es-CL")}
-                        </Text>
-                    </View>
-                </View>
+                <ProductLineRow
+                    key={idx}
+                    badge={`CANT: ${det.cantidad}`}
+                    unitPrice={`$${Number(det.precio).toLocaleString("es-CL")} c/u`}
+                    photo={det.producto_foto ?? undefined}
+                    name={det.producto_etiqueta || [det.categoria_nombre, det.producto_nombre, det.presentacion_nombre].filter(Boolean).join(" - ") || det.producto_nombre || "Producto"}
+                    lineTotal={`$${Number(det.sub_total).toLocaleString("es-CL")}`}
+                    cardBg={cardBg}
+                    borderColor={borderColor}
+                    textPrimary={textPrimary}
+                    textSecondary={textSecondary}
+                    accentColor={accentColor}
+                    isDark={isDark}
+                />
             ))}
         </View>
     );

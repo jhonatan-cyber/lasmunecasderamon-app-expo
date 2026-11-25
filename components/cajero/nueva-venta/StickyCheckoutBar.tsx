@@ -1,11 +1,7 @@
 import React from 'react';
-import { BorderRadius } from '@/constants/spacing';
-import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontFamily } from '@/constants/fonts';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { haptic } from '@/utils/haptics';
-import { accentTextColor, ensureContrast } from '@/utils/color';
+import { CheckoutBarShell } from '@/components/ui/CheckoutBarShell';
 
 /** Lo que impide cobrar, para que el botón diga qué falta en vez de un genérico. */
 export type CheckoutMissingReason = 'cash' | 'payment' | 'receipt' | null;
@@ -17,7 +13,6 @@ interface StickyCheckoutBarProps {
   cajaAbierta: boolean | null;
   isReadyToSubmit: boolean;
   missingReason: CheckoutMissingReason;
-  isDark: boolean;
   cardBg: string;
   borderColor: string;
   textPrimary: string;
@@ -66,10 +61,7 @@ export function resolveCheckoutCta(
   }
 }
 
-/**
- * Barra sticky en la parte inferior con total y botón de cobrar.
- * Extraído de nueva-venta.tsx para reducir el tamaño del screen.
- */
+/** Barra sticky en la parte inferior con total y botón de cobrar. */
 export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   cart,
   totals,
@@ -77,7 +69,6 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   cajaAbierta,
   isReadyToSubmit,
   missingReason,
-  isDark,
   cardBg,
   borderColor,
   textPrimary,
@@ -87,155 +78,41 @@ export const StickyCheckoutBar: React.FC<StickyCheckoutBarProps> = ({
   scrollRef,
   onSubmit,
 }) => {
-  const { textSecondary: themeSecondary, surfaceMuted } = useAccentColor();
   const itemCount = cart.reduce((s, i) => s + (i.quantity || 1), 0);
   const cta = resolveCheckoutCta(isReadyToSubmit, missingReason);
-  // Texto sobre el acento (Cobrar) y acento como texto sobre la tarjeta.
-  const onAccent = accentTextColor(accentColor);
-  const accentTextSafe = ensureContrast(accentColor, cardBg, 4.5);
 
-  const handleScrollToEnd = () => {
+  const scrollToEnd = () => {
     haptic.tap();
     scrollRef.current?.scrollToEnd({ animated: true });
   };
 
   return (
-    <View
-      style={[
-        styles.stickyCheckoutBar,
-        {
-          backgroundColor: cardBg,
-          borderColor,
-          paddingBottom: Math.max(bottomInset, 12),
-        },
-      ]}
-    >
-      <Pressable
-        style={styles.stickyLeft}
-        onPress={handleScrollToEnd}
-        accessibilityRole="button"
-        accessibilityLabel="Ver detalle del total"
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View
-            style={[
-              styles.stickyBadge,
-              { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}40` },
-            ]}
-          >
-            <Text style={[styles.stickyBadgeText, { color: accentTextSafe }]}>
-              {itemCount} {itemCount === 1 ? 'ítem' : 'ítems'}
-            </Text>
-          </View>
-          <Ionicons name="chevron-up" size={16} color={textSecondary} />
-        </View>
-        <Text style={[styles.stickyTotal, { color: textPrimary }]}>
-          ${totals.total.toLocaleString()}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        style={[
-          styles.stickySubmitBtn,
-          {
-            backgroundColor: isReadyToSubmit
-              ? accentColor
-              : surfaceMuted,
-          },
-        ]}
-        disabled={submitting || cajaAbierta === false}
-        onPress={() => {
-          if (isReadyToSubmit) {
-            haptic.success();
-            onSubmit();
-          } else {
-            handleScrollToEnd();
-          }
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={cta.accessibilityLabel}
-      >
-        {submitting ? (
-          <ActivityIndicator color={onAccent} size="small" />
-        ) : (
-          <>
-            <Text
-              style={[
-                styles.stickySubmitText,
-                {
-                  color: isReadyToSubmit
-                    ? onAccent
-                    : themeSecondary,
-                },
-              ]}
-            >
-              {cta.label}
-            </Text>
-            <Ionicons
-              name={cta.icon}
-              size={18}
-              color={
-                isReadyToSubmit
-                  ? onAccent
-                  : themeSecondary
+    <CheckoutBarShell
+      itemCount={itemCount}
+      totalLabel="ítem"
+      total={`$${totals.total.toLocaleString()}`}
+      onViewDetails={scrollToEnd}
+      viewDetailsLabel="Ver detalle del total"
+      bottomInset={bottomInset}
+      cardBg={cardBg}
+      borderColor={borderColor}
+      textPrimary={textPrimary}
+      textSecondary={textSecondary}
+      accentColor={accentColor}
+      submit={{
+        label: cta.label,
+        accessibilityLabel: cta.accessibilityLabel,
+        icon: cta.icon,
+        ready: isReadyToSubmit,
+        submitting,
+        disabled: cajaAbierta === false,
+        onPress: isReadyToSubmit
+          ? () => {
+              haptic.success();
+              onSubmit();
             }
-          />
-          </>
-        )}
-      </Pressable>
-    </View>
+          : scrollToEnd,
+      }}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  stickyCheckoutBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 8,
-    zIndex: 99,
-  },
-  stickyLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  stickyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  stickyBadgeText: {
-    fontSize: 11,
-    fontFamily: FontFamily.bold,
-  },
-  stickyTotal: {
-    fontSize: 22,
-    fontFamily: FontFamily.black,
-  },
-  stickySubmitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    minWidth: 130,
-  },
-  stickySubmitText: {
-    fontSize: 15,
-    fontFamily: FontFamily.extrabold,
-  },
-});

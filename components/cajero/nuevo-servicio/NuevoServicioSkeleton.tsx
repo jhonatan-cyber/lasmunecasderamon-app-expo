@@ -1,11 +1,6 @@
 import React from 'react';
-import { BorderRadius } from '@/constants/spacing';
-import { tabBarBottomPadding } from '@/constants/layout';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { FontFamily } from '@/constants/fonts';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { useAccentColor } from '@/hooks/useAccentColor';
+import { ScreenSkeleton } from '@/components/ui/ScreenSkeleton';
 
 type Props = {
   bg: string;
@@ -15,57 +10,20 @@ type Props = {
 
 export function NuevoServicioSkeleton({ bg, cardBg, borderColor }: Props) {
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
-      <PremiumHeader
-        title="Nuevo Servicio"
-        subtitle="Cargando información..."
-      />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
-          <Skeleton width={180} height={15} style={{ marginBottom: 20 }} />
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} width="100%" height={60} borderRadius={16} style={{ marginBottom: 12 }} />
-          ))}
-          <Skeleton width={150} height={12} style={{ marginTop: 10, marginBottom: 10 }} />
-          <Skeleton width="100%" height={54} borderRadius={16} />
-        </View>
-        <View style={[styles.summaryCard, { backgroundColor: cardBg, borderColor }]}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-            <Skeleton width={80} height={15} />
-            <Skeleton width={80} height={15} />
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginBottom: 25,
-              borderTopWidth: 1,
-              borderTopColor: borderColor,
-              paddingTop: 15,
-            }}
-          >
-            <Skeleton width={120} height={20} />
-            <Skeleton width={100} height={30} />
-          </View>
-          <Skeleton width="100%" height={60} borderRadius={20} />
-        </View>
-      </ScrollView>
-    </View>
+    <ScreenSkeleton
+      bg={bg}
+      cardBg={cardBg}
+      borderColor={borderColor}
+      gradientColors={[bg, bg]}
+      insets={{ top: 0 }}
+      showHeader={false}
+      headerSlot={
+        <PremiumHeader title="Nuevo Servicio" subtitle="Cargando información..." />
+      }
+      variant="form"
+      cardCount={5}
+      bodyPadding={16}
+      cardAccessibilityLabel="Cargando servicio"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: { padding: 16, paddingBottom: tabBarBottomPadding, flexGrow: 1 },
-  section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
-  summaryCard: { marginTop: 10, padding: 24, borderRadius: BorderRadius.full, borderWidth: 1, elevation: 20 },
-  backBtnRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 38,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    gap: 6,
-  },
-  backTextRight: { color: '#FFFFFF', fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
-});

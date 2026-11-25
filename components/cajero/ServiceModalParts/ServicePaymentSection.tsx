@@ -1,21 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import type { ComponentProps } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { FontSize, BorderRadius } from '@/constants/spacing';
+import { FontSize } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { styles } from "../ServiceModal.styles";
 import type { MetodoPago } from "../../../types/api";
+import {
+  PaymentMethodSelect,
+  type PaymentMethod,
+} from "@/components/cajero/forms/PaymentMethodSelect";
 
-const METODOS: MetodoPago[] = ["efectivo", "tarjeta", "transferencia", "prepago"];
-
-const ICONO_METODO: Record<string, ComponentProps<typeof Ionicons>["name"]> = {
-  efectivo: "cash",
-  tarjeta: "card",
-  prepago: "wallet",
-  transferencia: "swap-horizontal",
-};
+const METODOS: PaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "prepago"];
 
 interface ServicePaymentSectionProps {
   service: any;
@@ -189,64 +185,19 @@ export function ServicePaymentSection({
 
       {selectedClient && (
         <View style={{ marginBottom: 20 }}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: textPrimary,
-                fontSize: 11,
-                marginBottom: 8,
-                letterSpacing: 0.5,
-              },
-            ]}
-          >
-            MODIFICAR MÉTODO DE PAGO
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {METODOS.map((m) => {
-              const isSelected = metodoActual === m;
-              const isLockedPrepago =
-                m !== "prepago" && Number(selectedClient?.saldo || 0) > 0;
-
-              return (
-                <Pressable
-                  key={m}
-                  onPress={() => {
-                    if (isLockedPrepago) return;
-                    setMetodoPago(m);
-                  }}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: BorderRadius.full,
-                    borderWidth: 1,
-                    borderColor: isSelected ? accentColor : borderColor,
-                    backgroundColor: isSelected
-                      ? `${accentColor}15`
-                      : "transparent",
-                    alignItems: "center",
-                    opacity: isLockedPrepago ? 0.4 : 1,
-                  }}
-                >
-                  <Ionicons
-                    name={ICONO_METODO[m]}
-                    size={16}
-                    color={isSelected ? accentColor : textSecondary}
-                  />
-                  <Text
-                    style={{
-                      color: isSelected ? accentColor : textSecondary,
-                      fontSize: FontSize.xxs,
-                      fontFamily: FontFamily.extrabold,
-                      marginTop: 4,
-                    }}
-                  >
-                    {m.toUpperCase()}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <PaymentMethodSelect
+            label="MODIFICAR MÉTODO DE PAGO"
+            variant="compact"
+            methods={METODOS}
+            selectedMethod={metodoActual}
+            onSelect={setMetodoPago}
+            disabledMethods={
+              Number(selectedClient?.saldo || 0) > 0
+                ? ["efectivo", "tarjeta", "transferencia"]
+                : []
+            }
+            formatLabel={(_m, label) => label.toUpperCase()}
+          />
         </View>
       )}
 
@@ -280,44 +231,14 @@ export function ServicePaymentSection({
                 >
                   RESTANTE A PAGAR: ${restante.toLocaleString()}
                 </Text>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  {(["efectivo", "tarjeta", "transferencia"] as MetodoPago[]).map(
-                    (m) => (
-                      <Pressable
-                        key={m}
-                        onPress={() => setMetodoPagoAdicional(m)}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 8,
-                          borderRadius: BorderRadius.full,
-                          borderWidth: 1,
-                          borderColor:
-                            metodoPagoAdicional === m
-                              ? accentColor
-                              : borderColor,
-                          backgroundColor:
-                            metodoPagoAdicional === m
-                              ? `${accentColor}10`
-                              : "transparent",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color:
-                              metodoPagoAdicional === m
-                                ? accentColor
-                                : textSecondary,
-                            fontSize: FontSize.xxs,
-                            fontFamily: FontFamily.extrabold,
-                          }}
-                        >
-                          {m.toUpperCase()}
-                        </Text>
-                      </Pressable>
-                    ),
-                  )}
-                </View>
+                <PaymentMethodSelect
+                  showLabel={false}
+                  variant="compact"
+                  methods={["efectivo", "tarjeta", "transferencia"]}
+                  selectedMethod={metodoPagoAdicional}
+                  onSelect={setMetodoPagoAdicional}
+                  formatLabel={(_m, label) => label.toUpperCase()}
+                />
               </View>
             );
           }

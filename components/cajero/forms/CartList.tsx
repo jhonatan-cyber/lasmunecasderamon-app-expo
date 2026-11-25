@@ -106,7 +106,7 @@ export const CartList = React.memo(
                       x{group.totalQty}
                     </Text>
                   </Text>
-                  {group.badge && (
+                  {!!group.badge && (
                     <View
                       style={[styles.saleBadge, { borderColor: accentColor }]}
                     >

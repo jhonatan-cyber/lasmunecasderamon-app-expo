@@ -16,7 +16,6 @@ export type {
 export {
   VentasSkeleton,
   VentaCardSkeleton,
-  DetailSkeleton,
 } from "./VentasSkeletonComponent";
 export { statusColors, statusLabels, payMethodIcons } from "./constants";
 export type {

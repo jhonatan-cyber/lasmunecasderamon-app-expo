@@ -58,7 +58,19 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         : isAnticipo ? item.usuario || 'Desconocido' : item.mesero_nick || item.mesero_nombre || item.garzon || 'Desconocido';
 
     const recordTime = parseDateSafe(isSolicitud ? item.fecha_solicitud : item.fecha_crea);
-    const timeText = new Date(recordTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const hasValidDate = !isNaN(recordTime.getTime());
+    const timeText = hasValidDate
+        ? recordTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '—';
+    // Fecha de la solicitud (día/mes) para poder ubicarla en el listado.
+    const dateText = hasValidDate
+        ? recordTime.toLocaleDateString('es-CL', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        })
+        : '—';
     const responseTime = isAnticipo && item.fecha_mod
         ? new Date(parseDateSafe(item.fecha_mod)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : null;
@@ -104,22 +116,25 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
             neonGlow,
             isUrgent && styles.cardUrgent,
         ]}>
-            {isUrgent && (
-                <AnimatedView
-                    from={{ opacity: 0.5 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: true }}
-                    style={[styles.urgentBadge, { backgroundColor: themeAccent, shadowColor: themeAccent }]}
-                >
-                    <Text style={[styles.urgentBadgeText, { color: accentText }]}>CRÍTICA</Text>
-                </AnimatedView>
-            )}
-
             <Pressable
                 style={styles.cardInner}
                 onPress={handleCardPress}
                 hitSlop={HitSlop.sm}
             >
+                {/* Badge de criticidad en su propia fila: así no tapa el pill de monto */}
+                {isUrgent && (
+                    <View style={styles.urgentRow}>
+                        <AnimatedView
+                            from={{ opacity: 0.5 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ type: 'timing', duration: 1000, loop: true, repeatReverse: true }}
+                            style={[styles.urgentBadge, { backgroundColor: themeAccent, shadowColor: themeAccent }]}
+                        >
+                            <Text style={[styles.urgentBadgeText, { color: accentText }]}>CRÍTICA</Text>
+                        </AnimatedView>
+                    </View>
+                )}
+
                 {/* Header: tipo + código + monto pill */}
                 <View style={styles.headerRow}>
                     <View style={styles.headerLeft}>
@@ -164,9 +179,21 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                     </View>
                     <View style={styles.metadataItem}>
                         <Ionicons name="time-outline" size={12} color={isUrgent ? accentColor : textSecondary} />
-                        <Text style={[styles.metadataText, { color: isUrgent ? accentColor : textSecondary, fontFamily: isUrgent ? FontFamily.bold : FontFamily.medium }]}>
-                            {timeText}
-                            {isSolicitud && item.habitacion_nombre ? ` • ${minutesElapsed} min` : ''}
+                        <Text
+                            numberOfLines={1}
+                            style={[
+                                styles.metadataText,
+                                {
+                                    color: isUrgent ? accentColor : textSecondary,
+                                    fontFamily: isUrgent ? FontFamily.bold : FontFamily.medium,
+                                    flexShrink: 1,
+                                },
+                            ]}
+                        >
+                            {dateText} {timeText}
+                            {isSolicitud && item.habitacion_nombre && Number.isFinite(minutesElapsed)
+                                ? ` • ${minutesElapsed} min`
+                                : ''}
                         </Text>
                     </View>
                 </View>
@@ -209,7 +236,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                             {item.estado === 2 ? (
                                 <View style={[styles.actionBtn, { backgroundColor: `${accentColor}1A`, flex: 1 }]}>
                                     <Ionicons name="hourglass-outline" size={14} color={accentColor} />
-                                    <Text style={[styles.actionLabel, { color: accentColor }]}>Esp. Admin</Text>
+                                    <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Esp. Admin</Text>
                                 </View>
                             ) : anticipoEntregado ? (
                                 <View style={[styles.actionBtn, { backgroundColor: `${accentOnSurface}1A`, flex: 1 }]}>
@@ -232,7 +259,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                                     {({ pressed }) => (
                                         <View style={[styles.actionBtn, { backgroundColor: `${accentColor}1A`, flex: 1 }, !cajaAbierta && { opacity: 0.5 }, { opacity: pressed ? 0.7 : 1 }]}>
                                             <Ionicons name="cash" size={14} color={accentColor} />
-                                            <Text style={[styles.actionLabel, { color: accentColor }]}>Entregar</Text>
+                                            <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Entregar</Text>
                                         </View>
                                     )}
                                 </Pressable>
@@ -255,7 +282,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                                 {({ pressed }) => (
                                     <View style={[styles.actionBtn, { backgroundColor: accentBg }, !cajaAbierta && { opacity: 0.5 }, { opacity: pressed ? 0.7 : 1 }]}>
                                         <Ionicons name="close-circle-outline" size={14} color={accentColor} />
-                                        <Text style={[styles.actionLabel, { color: accentColor }]}>Rechazar</Text>
+                                        <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Rechazar</Text>
                                     </View>
                                 )}
                             </Pressable>
@@ -275,7 +302,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
                                 {({ pressed }) => (
                                     <View style={[styles.actionBtn, { backgroundColor: `${accentColor}1A`, flex: 1.5 }, !cajaAbierta && { opacity: 0.5 }, { opacity: pressed ? 0.7 : 1 }]}>
                                         <Ionicons name="checkmark-circle" size={14} color={accentColor} />
-                                        <Text style={[styles.actionLabel, { color: accentColor }]}>Aprobar</Text>
+                                        <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Aprobar</Text>
                                     </View>
                                 )}
                             </Pressable>
@@ -415,14 +442,14 @@ const styles = StyleSheet.create({
         fontSize: FontSize.xxs,
         fontFamily: FontFamily.semibold,
     },
+    urgentRow: {
+        alignItems: 'flex-end',
+    },
     urgentBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 12,
+        alignSelf: 'flex-end',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: BorderRadius.full,
-        zIndex: 10,
         elevation: 5,
         shadowOpacity: 0.5,
         shadowRadius: 5,

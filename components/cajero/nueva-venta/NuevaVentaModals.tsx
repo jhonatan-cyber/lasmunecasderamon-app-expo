@@ -91,7 +91,7 @@ export function NuevaVentaModals({
     [onRemoveFromCart],
   );
 
-  const { accentOnSurface, accentColor: themeAccent, accentUi, accentBg, accentText } = useAccentColor();
+  const { accentOnSurface } = useAccentColor();
   return (
     <>
       <CategoryProductModal

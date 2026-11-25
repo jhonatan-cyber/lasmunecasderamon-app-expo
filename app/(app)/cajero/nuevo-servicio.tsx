@@ -170,6 +170,7 @@ export default function NuevoServicioScreen() {
             iconColor={accentUi}
             collapsed={formCollapsed}
             onToggle={toggleFormCollapse}
+            accentOnSurface={accentOnSurface}
             cardBg={cardBg}
             borderColor={borderColor}
             textPrimary={textPrimary}
@@ -188,7 +189,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar habitación"
             accessibilityRole="button"
           >
-            <Ionicons name="business" size={22} color={accentColor} />
+            <Ionicons name="business" size={22} color={accentOnSurface} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedHabitacion?.nombre || "Seleccionar habitación"}
@@ -241,7 +242,7 @@ export default function NuevoServicioScreen() {
             accessibilityLabel="Seleccionar clientes"
             accessibilityRole="button"
           >
-            <Ionicons name="person" size={22} color={accentColor} />
+            <Ionicons name="person" size={22} color={accentOnSurface} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.selectorVal, { color: textPrimary }]}>
                 {selectedClients.length > 0
@@ -364,6 +365,7 @@ export default function NuevoServicioScreen() {
                 title="Método de Pago"
                 icon="card"
                 iconColor={accentOnSurface}
+                accentOnSurface={accentOnSurface}
                 cardBg={cardBg}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
@@ -403,7 +405,6 @@ export default function NuevoServicioScreen() {
                     borderColor={borderColor}
                     textPrimary={textPrimary}
                     textSecondary={textSecondary}
-                    isDark={isDark}
                     onUpdatePago={(index, monto, display) =>
                       dispatch({ type: "UPDATE_PAGO_MIXTO", index, monto, display })
                     }
@@ -459,6 +460,7 @@ export default function NuevoServicioScreen() {
             cajaAbierta={cajaAbierta}
             accentColor={accentColor}
             accentText={accentText}
+            accentOnSurface={accentOnSurface}
             cardBg={cardBg}
             borderColor={borderColor}
             textPrimary={textPrimary}
@@ -539,7 +541,6 @@ export default function NuevoServicioScreen() {
         borderColor={borderColor}
         textPrimary={textPrimary}
         textSecondary={textSecondary}
-        isDark={isDark}
         onClose={() =>
           dispatch({
             type: "SET_MODAL_VISIBLE",

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AnimatedView } from "@/components/ui/AnimatedView";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -18,6 +18,8 @@ import { ServiceCardDetails } from "./ServiceCardDetails";
 import { ServiceCardTimer } from "./ServiceCardTimer";
 import { ServiceCardFinance } from "./ServiceCardFinance";
 import { ServiceCardActions, type ServiceCardMenuItem } from "./ServiceCardActions";
+
+import { useServerNowTick } from '@/hooks/useServerNowTick';
 
 interface ServiceCardProps {
   item: Timer & {
@@ -233,18 +235,20 @@ const ServiceCardContent = ({
                 statusText={statusText}
                 statusBgColor={badge.background}
                 statusTextColor={badge.foreground}
+                badgeAccessory={
+                  isCollapsible ? (
+                    <Ionicons
+                      name={collapsed ? "chevron-forward" : "chevron-down"}
+                      size={14}
+                      color={theme.textMuted}
+                    />
+                  ) : undefined
+                }
                 accentColor={theme.accent}
                 textColor={theme.text}
                 textMutedColor={theme.textMuted}
                 formatDateTime={formatDateTime}
               />
-              {isCollapsible && (
-                <Ionicons
-                  name={collapsed ? "chevron-forward" : "chevron-down"}
-                  size={20}
-                  color={theme.textMuted}
-                />
-              )}
             </View>
           </Pressable>
 
@@ -301,38 +305,9 @@ const ServiceCardContent = ({
     );
 };
 
-// Local interval for real-time timer display in active services.
-// memo() blocks context-based ticks, so each card manages its own interval.
-const useNowTick = (active: boolean) => {
-  const [now, setNow] = useState(Date.now);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    if (active) {
-      intervalRef.current = setInterval(() => {
-        setNow(Date.now);
-      }, 1000);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [active]);
-
-  return now;
-};
-
 export const ServiceCard = memo((props: ServiceCardProps) => {
   const needsTick = props.activeTab === "activos" && props.item.estado !== 3;
-  const now = useNowTick(needsTick);
+  const now = useServerNowTick(needsTick);
   return <ServiceCardContent {...props} now={now} />;
 });
 

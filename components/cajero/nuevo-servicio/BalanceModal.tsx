@@ -1,8 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { AmountInput } from '@/components/ui/AmountInput';
 
 type Props = {
   visible: boolean;
@@ -14,7 +14,6 @@ type Props = {
   borderColor: string;
   textPrimary: string;
   textSecondary: string;
-  isDark: boolean;
   onClose: () => void;
   onAmountChange: (val: string) => void;
   onConfirm: () => void;
@@ -30,7 +29,6 @@ export function BalanceModal({
   borderColor,
   textPrimary,
   textSecondary,
-  isDark,
   onClose,
   onAmountChange,
   onConfirm,
@@ -53,18 +51,20 @@ export function BalanceModal({
             Ingresa el monto a cargar para {selectedClientName}
           </Text>
 
-          <View style={[styles.inputWrapper, { borderColor, marginBottom: 20 }]}>
-            <Ionicons name="cash-outline" size={20} color={textSecondary} />
-            <TextInput
-              style={[styles.textInput, { color: textPrimary }]}
-              placeholder="Monto"
-              placeholderTextColor={textSecondary}
-              keyboardType="numeric"
-              value={balanceAmount}
-              onChangeText={onAmountChange}
-              autoFocus
-            />
-          </View>
+          <AmountInput
+            value={balanceAmount}
+            onChange={onAmountChange}
+            placeholder="Monto"
+            autoFocus
+            icon="cash-outline"
+            fontSize={18}
+            height={50}
+            borderRadius={16}
+            borderColor={borderColor}
+            textColor={textPrimary}
+            placeholderTextColor={textSecondary}
+            style={{ marginBottom: 20 }}
+          />
 
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Pressable
@@ -127,13 +127,4 @@ const styles = {
     shadowRadius: 4,
   },
   modalTitleText: { fontSize: 22, fontWeight: '900' as const },
-  inputWrapper: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 54,
-  },
-  textInput: { flex: 1, marginLeft: 10, fontSize: 18, fontWeight: '700' as const },
 };

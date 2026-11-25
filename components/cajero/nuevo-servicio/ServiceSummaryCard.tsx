@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, LayoutAnimation, Pressable, Text, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { getIvaPercent } from '@/hooks/utils/cuentaUtils';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 
 // ─── CollapsibleCard ───
 
@@ -12,6 +13,7 @@ type CollapsibleCardProps = {
   title: string;
   icon?: string;
   iconColor?: string;
+  accentOnSurface: string;
   children: React.ReactNode;
   defaultCollapsed?: boolean;
   collapsed?: boolean;
@@ -33,52 +35,26 @@ export function CollapsibleCard({
   cardBg,
   borderColor,
   textPrimary,
-  textSecondary,
+  accentOnSurface,
 }: CollapsibleCardProps) {
-  const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
-  const collapsed = collapsedProp !== undefined ? collapsedProp : internalCollapsed;
-
-  const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    if (onToggle) {
-      onToggle();
-    } else {
-      setInternalCollapsed((p) => !p);
-    }
-  };
-
   return (
-    <View
-      style={{
-        padding: 14,
-        borderRadius: 20,
-        borderWidth: 1,
-        backgroundColor: cardBg,
-        borderColor: borderColor,
-        marginBottom: 16,
-      }}
+    <CollapsibleSection
+      title={title}
+      icon={icon as keyof typeof Ionicons.glyphMap}
+      iconColor={iconColor ?? textPrimary}
+      collapsed={collapsedProp}
+      defaultCollapsed={defaultCollapsed}
+      onToggle={onToggle}
+      borderRadius={20}
+      padding={14}
+      accentColor={textPrimary}
+      accentOnSurface={accentOnSurface}
+      textPrimary={textPrimary}
+      borderColor={borderColor}
+      cardBg={cardBg}
     >
-      <Pressable
-        onPress={toggle}
-        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: collapsed ? 0 : 12 }}
-        accessibilityRole="button"
-        accessibilityLabel={collapsed ? `Expandir ${title}` : `Contraer ${title}`}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {icon ? (
-            <Ionicons name={icon as any} size={18} color={iconColor || textPrimary} />
-          ) : null}
-          <Text style={{ fontSize: 15, fontWeight: '800', color: textPrimary }}>{title}</Text>
-        </View>
-        <Ionicons
-          name={collapsed ? 'chevron-down' : 'chevron-up'}
-          size={18}
-          color={textPrimary}
-          style={{ opacity: 0.6 }}
-        />
-      </Pressable>
-      {!collapsed && <View>{children}</View>}
-    </View>
+      {children}
+    </CollapsibleSection>
   );
 }
 
@@ -124,12 +100,13 @@ export function ServiceInfoCard({
   textSecondary,
   isDark,
 }: ServiceInfoCardProps) {
-  const { accentColor, accentBg, accentOnSurface, accentBorder, surfaceMuted } = useAccentColor();
+  const { accentBg, accentOnSurface, accentBorder } = useAccentColor();
   return (
     <CollapsibleCard
       title="Información de Servicio"
       icon="information-circle"
       iconColor={textPrimary}
+      accentOnSurface={accentOnSurface}
       cardBg={cardBg}
       borderColor={borderColor}
       textPrimary={textPrimary}
@@ -278,6 +255,7 @@ type ActionCardProps = {
   cajaAbierta: boolean | null;
   accentColor: string;
   accentText: string;
+  accentOnSurface: string;
   cardBg: string;
   borderColor: string;
   textPrimary: string;
@@ -296,6 +274,7 @@ export function ServiceSummaryCard({
   cajaAbierta,
   accentColor,
   accentText,
+  accentOnSurface,
   cardBg,
   borderColor,
   textPrimary,
@@ -325,7 +304,7 @@ export function ServiceSummaryCard({
       <View style={actionRow}>
         <View style={{ flex: 1 }}>
           <Text style={[stickyTotalLabel, { color: textSecondary }]}>TOTAL</Text>
-          <Text style={[stickyTotalValue, { color: accentColor }]}>
+          <Text style={[stickyTotalValue, { color: accentOnSurface }]}>
             ${totals.total.toLocaleString()}
           </Text>
         </View>

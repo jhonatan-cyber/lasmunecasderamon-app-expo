@@ -124,7 +124,7 @@ export const ClientCard = memo(function ClientCard({
                         {({ pressed }) => (
                             <View style={[styles.actionBtn, { backgroundColor: `${accentColor}1A`, opacity: pressed ? 0.7 : 1 }]}>
                                 <Ionicons name="create-outline" size={16} color={accentColor} />
-                                <Text style={[styles.actionLabel, { color: accentColor }]}>Editar</Text>
+                                <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Editar</Text>
                             </View>
                         )}
                     </Pressable>
@@ -138,7 +138,7 @@ export const ClientCard = memo(function ClientCard({
                         {({ pressed }) => (
                             <View style={[styles.actionBtn, { backgroundColor: accentBg, opacity: pressed ? 0.7 : 1 }]}>
                                 <Ionicons name="trash-outline" size={16} color={accentColor} />
-                                <Text style={[styles.actionLabel, { color: accentColor }]}>Eliminar</Text>
+                                <Text style={[styles.actionLabel, { color: accentOnSurface }]}>Eliminar</Text>
                             </View>
                         )}
                     </Pressable>

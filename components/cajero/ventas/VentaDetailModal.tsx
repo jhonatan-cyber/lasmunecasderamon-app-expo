@@ -2,16 +2,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import {
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
 import { parseDateSafe } from "@/utils/timeUtils";
-import { DetailSkeleton } from "./VentasSkeletonComponent";
-import { statusColors, statusLabels, payMethodIcons } from "./constants";
+import { statusColors, statusLabels } from "./constants";
 import type { VentaDetail } from "./types";
 import { VentaOrigenSection } from "./VentaOrigenSection";
 import { VentaDistribucionSection } from "./VentaDistribucionSection";
@@ -19,6 +15,8 @@ import { VentaProductosList } from "./VentaProductosList";
 import { BaucherFoto } from "@/components/shared/BaucherFoto";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontFamily } from '@/constants/fonts';
+import { paymentIconFor } from '@/components/ui/StatusBadge';
+import { DetailSheet } from '@/components/ui/DetailSheet';
 
 type VentaDetailModalProps = {
   visible: boolean;
@@ -45,56 +43,35 @@ export function VentaDetailModal({
   textSecondary,
   isDark,
 }: VentaDetailModalProps) {
-    const { accentOnSurface, surfaceMuted, accentText } = useAccentColor();
+    const { accentOnSurface, surfaceMuted } = useAccentColor();
   return (
-    <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.detailModal, { backgroundColor: cardBg, borderColor }]}>
-          {loadingDetail ? (
-            <DetailSkeleton borderColor={borderColor} />
-          ) : (
-            selectedVenta && (
-              <View style={{ flex: 1 }}>
-                {}
-                <View style={styles.modalHeader}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[styles.modalTitleText, { color: textPrimary }]}>Detalle de Venta</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Text
-                        style={[styles.modalSubText, { color: textSecondary }]}
-                        numberOfLines={1}
-                      >
-                        Código: {selectedVenta.codigo}
-                      </Text>
-                      <View
-                        style={[
-                          styles.statusBadgeDetail,
-                          {
-                            backgroundColor: (statusColors[selectedVenta.estado] || accentColor) + "15",
-                            borderColor: (statusColors[selectedVenta.estado] || accentColor) + "30",
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.statusTextDetail, { color: statusColors[selectedVenta.estado] || accentColor }]}>
-                          {(statusLabels[selectedVenta.estado] || "VENTA").toUpperCase()}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Cerrar detalles de venta">
-                    <Ionicons name="close" size={24} color={textSecondary} />
-                  </Pressable>
-                </View>
-
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
-                  {}
+    <DetailSheet
+      visible={visible}
+      onClose={onClose}
+      title="Detalle de Venta"
+      code={selectedVenta ? `Código: ${selectedVenta.codigo}` : undefined}
+      status={
+        selectedVenta
+          ? {
+              label: statusLabels[selectedVenta.estado] || 'VENTA',
+              color: statusColors[selectedVenta.estado] || accentColor,
+            }
+          : undefined
+      }
+      loading={loadingDetail}
+      loadingLabel="Cargando detalle de la venta…"
+      footerActions={[{ label: 'Cerrar Detalles', onPress: onClose }]}
+      height="85%"
+      accessibilityLabel="Detalle de venta"
+    >
+      {selectedVenta && (
+        <>
                   <VentaOrigenSection
                     selectedVenta={selectedVenta}
                     accentColor={accentColor}
                     borderColor={borderColor}
                     textPrimary={textPrimary}
                     textSecondary={textSecondary}
-                    isDark={isDark}
                   />
 
                   {}
@@ -112,7 +89,7 @@ export function VentaDetailModal({
                         <Text style={[styles.infoLabel, { color: textSecondary }]}>Método Pago</Text>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <Ionicons
-                            name={(payMethodIcons[selectedVenta.metodo_pago] || "wallet") as keyof typeof Ionicons.glyphMap}
+                            name={paymentIconFor(selectedVenta.metodo_pago)}
                             size={16}
                             color={accentOnSurface}
                           />
@@ -159,7 +136,6 @@ export function VentaDetailModal({
                     borderColor={borderColor}
                     textPrimary={textPrimary}
                     textSecondary={textSecondary}
-                    isDark={isDark}
                   />
 
                   {}
@@ -197,17 +173,9 @@ export function VentaDetailModal({
                       </Text>
                     </View>
                   </View>
-                </ScrollView>
-
-                <Pressable style={[styles.modalCloseBtn, { backgroundColor: accentColor }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar detalles de venta">
-                  <Text style={[styles.modalCloseBtnText, { color: accentText }]}>Cerrar Detalles</Text>
-                </Pressable>
-              </View>
-            )
-          )}
-        </View>
-      </View>
-    </Modal>
+        </>
+      )}
+    </DetailSheet>
   );
 }
 
@@ -220,14 +188,14 @@ const styles = StyleSheet.create({
   closeBtn: { width: 40, height: 40, borderRadius: BorderRadius.full, backgroundColor: "rgba(0,0,0,0.05)", justifyContent: "center", alignItems: "center" },
   statusBadgeDetail: { flexShrink: 0, paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1 },
   statusTextDetail: { fontSize: 11, fontFamily: FontFamily.black },
-  infoCard: { flex: 1, padding: 16, borderRadius: BorderRadius.full, borderWidth: 1 },
+  infoCard: { flex: 1, padding: 16, borderRadius: BorderRadius.card, borderWidth: 1 },
   infoLabel: { fontSize: 10, fontFamily: FontFamily.black, textTransform: "uppercase", marginBottom: 6 },
   infoValue: { fontSize: 14, fontFamily: FontFamily.extrabold },
   sectionLabel: { fontSize: 11, fontFamily: FontFamily.black, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
-  clienteCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1 },
+  clienteCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: BorderRadius.card, borderWidth: 1 },
   avatarCircle: { width: 32, height: 32, borderRadius: BorderRadius.full, justifyContent: "center", alignItems: "center" },
   clienteName: { fontSize: 14, fontFamily: FontFamily.extrabold, flexShrink: 1 },
-  summaryCard: { marginTop: 20, padding: 20, borderRadius: BorderRadius.full, borderWidth: 1 },
+  summaryCard: { marginTop: 20, padding: 20, borderRadius: BorderRadius.card, borderWidth: 1 },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   summaryLabel: { fontFamily: FontFamily.bold },
   summaryValue: { fontFamily: FontFamily.extrabold },

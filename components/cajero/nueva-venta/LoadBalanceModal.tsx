@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { FontFamily } from '@/constants/fonts';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import type { PaymentMethod } from '@/components/cajero/forms/PaymentMethodSelect';
+import { AmountInput } from '@/components/ui/AmountInput';
 
 interface LoadBalanceModalProps {
   visible: boolean;
@@ -72,38 +73,22 @@ export const LoadBalanceModal: React.FC<LoadBalanceModalProps> = ({
           </View>
 
           <View style={{ gap: 15 }}>
-            <View>
-              <Text
-                style={{
-                  color: textSecondary,
-                  fontSize: 12,
-                  fontFamily: FontFamily.extrabold,
-                  marginBottom: 8,
-                }}
-              >
-                MONTO A CARGAR
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor,
-                  borderRadius: 12,
-                  padding: 16,
-                  color: textPrimary,
-                  fontSize: 18,
-                  fontFamily: FontFamily.bold,
-                  backgroundColor: isDark
-                    ? 'rgba(255,255,255,0.05)'
-                    : 'rgba(0,0,0,0.02)',
-                }}
-                placeholder="0"
-                placeholderTextColor={textSecondary}
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={onAmountChange}
-                autoFocus
-              />
-            </View>
+            <AmountInput
+              label="MONTO A CARGAR"
+              value={amount}
+              onChange={onAmountChange}
+              placeholder="0"
+              autoFocus
+              fontSize={18}
+              height={54}
+              borderRadius={12}
+              backgroundColor={
+                isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'
+              }
+              borderColor={borderColor}
+              textColor={textPrimary}
+              placeholderTextColor={textSecondary}
+            />
 
             <PaymentMethodSelect
               selectedMethod={metodoPago}

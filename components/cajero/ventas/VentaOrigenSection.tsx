@@ -12,7 +12,6 @@ interface VentaOrigenSectionProps {
     borderColor: string;
     textPrimary: string;
     textSecondary: string;
-    isDark: boolean;
 }
 
 export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
@@ -21,7 +20,6 @@ export const VentaOrigenSection: React.FC<VentaOrigenSectionProps> = ({
     borderColor,
     textPrimary,
     textSecondary,
-    isDark,
 } ) => {
     const { accentOnSurface, surfaceMuted } = useAccentColor();
     return (

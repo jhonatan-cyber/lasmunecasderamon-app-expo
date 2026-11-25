@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { FontFamily } from '@/constants/fonts';
+import { formatearMonto } from '@/utils/cajaFormat';
 
 interface StatRowProps {
     label: string;
@@ -22,7 +23,7 @@ export function StatRow({
         <View style={[styles.statRow, { borderBottomColor: borderColor }]}>
             <Text style={[styles.statRowLabel, { color: textSecondary }]}>{label}</Text>
             <Text style={[styles.statRowValue, { color: accent ?? textPrimary }]}>
-                ${value.toLocaleString()}
+                {formatearMonto(value)}
             </Text>
         </View>
     );

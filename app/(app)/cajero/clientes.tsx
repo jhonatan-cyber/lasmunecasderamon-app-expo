@@ -37,7 +37,6 @@ export default function ClientesScreen() {
     bg,
     accentOnSurface,
     accentBg,
-    accentText,
     router,
     insets,
     isTablet,
@@ -146,7 +145,7 @@ export default function ClientesScreen() {
             <Text
               style={[
                 styles.summaryLabel,
-                { color: accentText },
+                { color: accentOnSurface },
               ]}
             >
               TOTAL SALDO

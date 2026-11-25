@@ -34,6 +34,7 @@ vi.mock("react-native", () => ({
     <img src={source.uri} alt={accessibilityLabel} />
   ),
   ActivityIndicator: () => null,
+  StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
   Platform: { OS: "web" },
   KeyboardAvoidingView: ({ children }: any) => <div>{children}</div>,
 }));

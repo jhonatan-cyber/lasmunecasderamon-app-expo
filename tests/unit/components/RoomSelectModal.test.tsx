@@ -15,6 +15,7 @@ vi.mock('react-native', () => ({
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   Platform: { OS: "web" },
   KeyboardAvoidingView: ({ children }: Children) => <div>{children}</div>,
+  ScrollView: ({ children }: Children) => <div>{children}</div>,
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Modal: ({
     children,
@@ -48,6 +49,9 @@ vi.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('@/components/ui/AnimatedView', () => ({
+  AnimatedView: ({ children }: Children) => <div>{children}</div>,
+}));
 vi.mock('@/hooks/useRenderCount', () => ({ useRenderCount: () => {} }));
 vi.mock('@/hooks/useAccentColor', () => ({
   useAccentColor: () => ({

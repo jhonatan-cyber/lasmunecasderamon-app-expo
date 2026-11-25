@@ -1,9 +1,12 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { BorderRadius } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import {
+  CardDetailsList,
+  type DetailRowItem,
+} from "@/components/ui/CardDetailsList";
 
 interface VentaCardDetailsProps {
   clienteNombre?: string;
@@ -29,34 +32,43 @@ export const VentaCardDetails: React.FC<VentaCardDetailsProps> = ({
   textSecondary,
   formatDateTime,
   renderTimer,
-} ) => {
-    const { accentOnSurface } = useAccentColor();
-    return (
-  <View style={styles.cardDetailsList}>
-    <View style={styles.detailItemRow}>
-      <Ionicons name="person-outline" size={14} color={textSecondary} style={styles.rowIcon} />
-      <Text style={[styles.detailValue, { color: textPrimary }]}>
-        {clienteNombre || "Sin cliente registrado"}
-      </Text>
-    </View>
+}) => {
+  const { accentOnSurface } = useAccentColor();
 
-    <View style={styles.detailItemRow}>
-      <Ionicons name="business-outline" size={14} color={textSecondary} style={styles.rowIcon} />
-      <Text style={[styles.detailValue, { color: textPrimary }]}>
-        {habitacionNombre || "Barra / General"}
-      </Text>
-    </View>
-
-    <View style={styles.detailItemRow}>
-      <Ionicons name="cube-outline" size={14} color={textSecondary} style={styles.rowIcon} />
-      <Text style={[styles.detailValue, { color: textPrimary }]}>
-        {productCount} {productCount === 1 ? "producto" : "productos"}
-      </Text>
-    </View>
-
-    <View style={styles.detailItemRow}>
-      <Ionicons name="people-outline" size={14} color={textSecondary} style={styles.rowIcon} />
-      {anfitrionasNicks ? (
+  // Se entregan valores como ReactNode para conservar el diseño original
+  // (sin etiqueta visible, pill de anfitrionas y fecha atenuada).
+  const items: DetailRowItem[] = [
+    {
+      icon: "person-outline",
+      label: "Cliente",
+      value: (
+        <Text style={[styles.detailValue, { color: textPrimary }]}>
+          {clienteNombre || "Sin cliente registrado"}
+        </Text>
+      ),
+    },
+    {
+      icon: "business-outline",
+      label: "Habitación",
+      value: (
+        <Text style={[styles.detailValue, { color: textPrimary }]}>
+          {habitacionNombre || "Barra / General"}
+        </Text>
+      ),
+    },
+    {
+      icon: "cube-outline",
+      label: "Productos",
+      value: (
+        <Text style={[styles.detailValue, { color: textPrimary }]}>
+          {productCount} {productCount === 1 ? "producto" : "productos"}
+        </Text>
+      ),
+    },
+    {
+      icon: "people-outline",
+      label: "Anfitrionas",
+      value: anfitrionasNicks ? (
         <View style={[styles.hostessPill, { backgroundColor: `${accentColor}15` }]}>
           <Text style={[styles.hostessText, { color: accentOnSurface }]} numberOfLines={1}>
             {anfitrionasNicks}
@@ -66,31 +78,41 @@ export const VentaCardDetails: React.FC<VentaCardDetailsProps> = ({
         <Text style={[styles.detailValue, { color: textSecondary, fontStyle: "italic" }]}>
           Venta en barra
         </Text>
-      )}
-    </View>
+      ),
+    },
+    {
+      icon: "time-outline",
+      label: "Fecha",
+      value: (
+        <Text style={[styles.detailValue, { color: textSecondary, fontSize: 12 }]}>
+          {formatDateTime(fechaCrea)}
+        </Text>
+      ),
+    },
+  ];
 
-    <View style={styles.detailItemRow}>
-      <Ionicons name="time-outline" size={14} color={textSecondary} style={styles.rowIcon} />
-      <Text style={[styles.detailValue, { color: textSecondary, fontSize: 12 }]}>
-        {formatDateTime(fechaCrea)}
-      </Text>
+  return (
+    <View>
+      <CardDetailsList
+        items={items}
+        textColor={textPrimary}
+        textMutedColor={textSecondary}
+        style={styles.list}
+      />
+      {renderTimer}
     </View>
-
-    {renderTimer}
-  </View>
-);
+  );
 };
 
 const styles = StyleSheet.create({
-  cardDetailsList: { gap: 6 },
-  detailItemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  rowIcon: { width: 16, textAlign: "center" },
+  list: { gap: 6, marginBottom: 0, paddingHorizontal: 0 },
   detailValue: { fontSize: 14, fontFamily: FontFamily.medium, flexShrink: 1 },
   hostessPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
     flexShrink: 1,
+    alignSelf: 'flex-start',
   },
   hostessText: { fontSize: 13, fontFamily: FontFamily.semibold, flexShrink: 1 },
 });

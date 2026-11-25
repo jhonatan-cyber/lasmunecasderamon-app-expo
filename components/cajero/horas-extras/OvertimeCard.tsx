@@ -39,7 +39,7 @@ export const OvertimeCard = React.memo(function OvertimeCard({
     textSecondary,
     onPress
 }: OvertimeCardProps) {
-    const { accentOnSurface, accentColor: themeAccent, isDark } = useAccentColor();
+    const { accentOnSurface, accentColor: isDark } = useAccentColor();
     useRenderCount('OvertimeCard', { itemId: item.id_hora_extra, estado: item.estado });
     const status = statusConfig[item.estado] || statusConfig[1];
     const fecha = new Date(item.fecha_crea);

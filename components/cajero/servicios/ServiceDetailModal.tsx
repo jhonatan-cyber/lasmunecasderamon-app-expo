@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AppModal as Modal } from '@/components/ui/AppModal';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BASE_URL } from '@/api/client';
 import { formatTime, parseDateSafe } from '@/utils/timeUtils';
@@ -15,6 +14,8 @@ import {
 import { FontSize, MIN_TOUCH_TARGET, BorderRadius, HitSlop } from '@/constants/spacing';
 import { haptic } from '@/utils/haptics';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { DetailSheet } from '@/components/ui/DetailSheet';
+import { useServerNowTick } from '@/hooks/useServerNowTick';
 
 export interface DetailAction {
     key: string;
@@ -55,23 +56,12 @@ export function ServiceDetailModal({
     serverOffset = 0,
 }: DetailModalProps) {
     const { accentColor, accentUi, accentOnSurface } = useAccentColor();
-    // El tiempo se calcula con Date.now(); sin un tick propio el modal abierto
-    // en un servicio en curso se queda con el valor del momento en que se abrió.
-    // El reloj se recalcula desde este instante: React Compiler cachea las
-    // llamadas por sus argumentos, así que sin un `now` propio el modal se
-    // queda con el tiempo del momento en que se abrió.
-    const [now, setNow] = useState(() => Date.now());
     const correReloj =
         visible &&
         Boolean(service?.startTime) &&
         !service?.isPaused &&
         ![0, 1, 3, 4].includes(Number(service?.estado));
-
-    useEffect(() => {
-        if (!correReloj) return;
-        const interval = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(interval);
-    }, [correReloj]);
+    const now = useServerNowTick(correReloj);
 
     const tiempo = service?.startTime
         ? tiempoServicio(
@@ -98,61 +88,29 @@ export function ServiceDetailModal({
     else if (visual === 'critico') estadoTexto = 'POR VENCER';
     else if (visual === 'pausado') estadoTexto = 'PAUSADO';
 
-    // Glow neón en modo oscuro con el accentColor
-    const modalNeonGlow = theme.isDark ? {
-        shadowColor: theme.accent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 6,
-        borderColor: theme.accent,
-        borderWidth: 1.5,
-    } : {};
-
-    // Glow neón en botón de finalizar en modo oscuro
-    const finalizarNeonGlow = theme.isDark ? {
-        shadowColor: theme.accent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 4,
-    } : {};
-
     return (
-        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={[styles.detailModal, { backgroundColor: theme.card, borderColor: theme.border }, modalNeonGlow]}>
-                    <View style={styles.modalHeader}>
-                        <View style={styles.headerInfo}>
-                            <Text style={[styles.modalTitleText, { color: theme.text }]}>Detalle del Servicio</Text>
-                            <View style={styles.headerMeta}>
-                                <Text style={[styles.modalSubText, { color: theme.textMuted }]}>
-                                    #{service?.servicioCode || "S/N"}
-                                </Text>
-                                <View style={[styles.estadoChip, { backgroundColor: badge.background, borderRadius: BorderRadius.sm }]}>
-                                    <View style={[styles.estadoDot, { backgroundColor: badge.foreground }]} />
-                                    <Text style={[styles.estadoChipText, { color: badge.foreground }]}>
-                                        {estadoTexto}
-                                    </Text>
-                                </View>
-                            </View>
-                        </View>
-                        <Pressable
-                            style={[styles.closeBtn, { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(156,163,175,0.12)' }]}
-                            onPress={() => {
-                              haptic.tap();
-                              onClose();
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel="Cerrar detalle del servicio"
-                            accessibilityHint="Cierra el modal de detalle"
-                            hitSlop={HitSlop.sm}
-                        >
-                            <Ionicons name="close" size={24} color={theme.text} />
-                        </Pressable>
-                    </View>
-
-                    <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
+        <DetailSheet
+            visible={visible}
+            onClose={onClose}
+            title="Detalle del Servicio"
+            code={`#${service?.servicioCode || 'S/N'}`}
+            status={{ label: estadoTexto, color: badge.foreground }}
+            height="90%"
+            footerActions={
+                onFinalizar
+                    ? [
+                        {
+                          label: 'Finalizar servicio',
+                          onPress: onFinalizar,
+                          primary: true,
+                          icon: 'stop-circle-outline',
+                        },
+                        { label: 'Cerrar', onPress: onClose },
+                      ]
+                    : [{ label: 'Cerrar', onPress: onClose }]
+            }
+            accessibilityLabel="Detalle del servicio"
+        >
                         {/* Timer section - no mostrar en servicios finalizados */}
                         {tiempo && visual !== 'finalizado' && (
                             <View style={[styles.timerSection, { backgroundColor: theme.bg, borderRadius: BorderRadius.card, borderColor: theme.border }]}>
@@ -363,74 +321,7 @@ export function ServiceDetailModal({
                                 ))}
                             </View>
                         )}
-                    </ScrollView>
-
-                    {/* Footer con botones fijos */}
-                    <View style={styles.footer}>
-                        {onFinalizar ? (
-                            <>
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.modalCloseBtn,
-                                        { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
-                                        finalizarNeonGlow,
-                                    ]}
-                                    onPress={() => {
-                                      haptic.confirm();
-                                      onFinalizar();
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Finalizar servicio"
-                                    accessibilityHint="Cierra y finaliza el servicio activo"
-                                    hitSlop={HitSlop.sm}
-                                >
-                                    <Ionicons name="stop-circle-outline" size={20} color={theme.accentText || '#FFF'} />
-                                    <Text style={[styles.modalCloseBtnText, { color: theme.accentText || '#FFF' }]}>
-                                        Finalizar servicio
-                                    </Text>
-                                </Pressable>
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.secondaryBtn,
-                                        { borderColor: theme.border, opacity: pressed ? 0.85 : 1, borderRadius: BorderRadius.full },
-                                    ]}
-                                    onPress={() => {
-                                      haptic.tap();
-                                      onClose();
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Cerrar detalle"
-                                    accessibilityHint="Cierra el modal sin finalizar"
-                                    hitSlop={HitSlop.sm}
-                                >
-                                    <Text style={[styles.secondaryBtnText, { color: theme.textMuted }]}>Cerrar</Text>
-                                </Pressable>
-                            </>
-                        ) : (
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.modalCloseBtn,
-                                    { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 },
-                                    finalizarNeonGlow,
-                                ]}
-                                onPress={() => {
-                                  haptic.tap();
-                                  onClose();
-                                }}
-                                accessibilityRole="button"
-                                accessibilityLabel="Cerrar detalle"
-                                accessibilityHint="Cierra el modal de detalle"
-                                hitSlop={HitSlop.sm}
-                            >
-                                <Text style={[styles.modalCloseBtnText, { color: theme.accentText || '#FFF' }]}>
-                                    Cerrar
-                                </Text>
-                            </Pressable>
-                        )}
-                    </View>
-                </View>
-            </View>
-        </Modal>
+        </DetailSheet>
     );
 }
 

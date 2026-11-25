@@ -195,7 +195,16 @@ export default function SolicitudesScreen() {
           isConnected: !isOffline,
           label: isOffline ? "Modo Offline" : "En Línea",
         }}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            // Entró directo a Solicitudes (deep link/notificación): no hay
+            // pantalla previa, así que va al inicio del cajero en vez de
+            // disparar un GO_BACK sin navigator (warning en development).
+            router.replace('/(app)/cajero/(tabs)' as never);
+          }
+        }}
       />
 
       <OfflineStatusBanner

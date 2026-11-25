@@ -3,8 +3,11 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { BorderRadius } from '@/constants/spacing';
-import { FontFamily } from '@/constants/fonts';
 import type { MetodoPagoMonto } from './types';
+import {
+  PaymentMethodSelect,
+  type PaymentMethod,
+} from '@/components/cajero/forms/PaymentMethodSelect';
 
 type Props = {
   pagosMixtos: MetodoPagoMonto[];
@@ -15,7 +18,6 @@ type Props = {
   borderColor: string;
   textPrimary: string;
   textSecondary: string;
-  isDark: boolean;
   onUpdatePago: (index: number, monto: number, display?: string) => void;
   onRemovePago: (index: number) => void;
   onAddPago: (metodo: string) => void;
@@ -128,41 +130,19 @@ export function PagosMixtosSection({
           {yaCompleto ? 'Total completado' : 'Agregar método de pago:'}
         </Text>
         {!yaCompleto && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {['efectivo', 'tarjeta', 'transferencia', 'prepago'].map((metodo) => {
-              if (pagosMixtos.some((p) => p.metodo === metodo)) return null;
-              const sinSaldo = metodo === 'prepago' && selectedClientSaldo <= 0;
-              return (
-                <Pressable
-                  key={metodo}
-                  onPress={() => {
-                    if (sinSaldo) return;
-                    onAddPago(metodo);
-                  }}
-                  style={{
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderRadius: BorderRadius.full,
-                    borderWidth: 1,
-                    borderColor: sinSaldo ? textSecondary : accentColor,
-                    backgroundColor: sinSaldo ? 'transparent' : `${accentColor}10`,
-                    opacity: sinSaldo ? 0.35 : 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: sinSaldo ? textSecondary : accentColor,
-                      fontSize: 11,
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {metodo}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <PaymentMethodSelect
+            showLabel={false}
+            variant="compact"
+            methods={
+              (['efectivo', 'tarjeta', 'transferencia', 'prepago'] as PaymentMethod[])
+                .filter((metodo) => !pagosMixtos.some((p) => p.metodo === metodo))
+            }
+            selectedMethod=""
+            onSelect={(metodo) => onAddPago(metodo)}
+            disabledMethods={selectedClientSaldo <= 0 ? ['prepago'] : []}
+            formatLabel={(_metodo, label) => label.toUpperCase()}
+            getAccessibilityLabel={(_metodo, label) => `Agregar ${label}`}
+          />
         )}
       </View>
 

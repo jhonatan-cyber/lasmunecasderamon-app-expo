@@ -10,9 +10,6 @@ type VentaActionSheetProps = {
   onVerDetalles: () => void;
   onSolicitarAnulacion: () => void;
   accentColor: string;
-  cardBg: string;
-  textPrimary: string;
-  textSecondary: string;
   dangerColor: string;
 };
 

@@ -13,7 +13,6 @@ interface VentaDistribucionSectionProps {
     borderColor: string;
     textPrimary: string;
     textSecondary: string;
-    isDark: boolean;
 }
 
 interface PersonaRowProps {
@@ -51,7 +50,6 @@ export const VentaDistribucionSection: React.FC<VentaDistribucionSectionProps> =
     borderColor,
     textPrimary,
     textSecondary,
-    isDark,
 }) => {
     const { accentOnSurface, surfaceMuted } = useAccentColor();
     const hasComisiones = (selectedVenta.comisiones_detalle?.length ?? 0) > 0;

@@ -41,6 +41,10 @@ import { useNuevaVenta } from "@/hooks/useNuevaVenta";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { NuevaVentaSkeleton } from "@/components/cajero/nueva-venta/NuevaVentaSkeleton";
 import { adjuntarBaucher } from "@/utils/baucherPicker";
+import {
+  bottleMixerUnits,
+  requiresShortMixer,
+} from "@/hooks/utils/productConfiguration";
 
 export default function NuevaVentaScreen() {
   const {
@@ -137,6 +141,14 @@ export default function NuevaVentaScreen() {
   });
   const cartItemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
+  // Los cards de bebidas solo aparecen cuando alguna línea del carrito realmente
+  // lleva acompañamiento (según la presentación elegida). Un producto sin
+  // unidades de acompañamiento no debe mostrar el selector de bebidas.
+  const needsBottleMixer = cart.some(
+    (item) => item.tipo_venta !== "shot" && bottleMixerUnits(item) > 0,
+  );
+  const needsShortMixer = cart.some((item) => requiresShortMixer(item));
+
   /** Foto del baucher en data URL; se exige con transferencia al finalizar. */
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [clientSelectionTarget, setClientSelectionTarget] = useState<"primary" | "secondary">("primary");
@@ -148,6 +160,7 @@ export default function NuevaVentaScreen() {
     carrito: true,
     bebidas: true,
     soda: true,
+    pago: true,
   });
   const toggleSection = (key: keyof typeof sections) => {
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -283,6 +296,7 @@ export default function NuevaVentaScreen() {
           fontSize={13}
           fontFamily={FontFamily.black}
           accentColor={accentColor}
+          accentOnSurface={accentOnSurface}
           textPrimary={textPrimary}
           borderColor={borderColor}
           cardBg={cardBg}
@@ -294,6 +308,7 @@ export default function NuevaVentaScreen() {
             accentColor={accentColor}
             textPrimary={textPrimary}
             borderColor={borderColor}
+            cardBg={cardBg}
           />
         </CollapsibleSection>
 
@@ -306,11 +321,12 @@ export default function NuevaVentaScreen() {
           borderRadius={borderRadius}
           padding={spacing}
           accentColor={accentColor}
+          accentOnSurface={accentOnSurface}
           textPrimary={textPrimary}
           borderColor={borderColor}
           cardBg={cardBg}
         >
-          {servicioId && (
+          {!!servicioId && (
             <Text style={{ color: textPrimary, padding: 12 }}>
               Venta adicional · {servicioNombre || "Cargando habitación…"}
               {"\n"}
@@ -437,6 +453,7 @@ export default function NuevaVentaScreen() {
           collapsed={!sections.carrito}
           onToggle={() => toggleSection("carrito")}
           accentColor={accentColor}
+          accentOnSurface={accentOnSurface}
           textPrimary={textPrimary}
           borderColor={borderColor}
           cardBg={cardBg}
@@ -449,41 +466,45 @@ export default function NuevaVentaScreen() {
           />
         </CollapsibleSection>
 
-        {/* Bebidas - Collapsible */}
-        <CollapsibleSection
-          title="Bebidas"
-          collapsed={!sections.bebidas}
-          onToggle={() => toggleSection("bebidas")}
-          accentColor={accentColor}
-          textPrimary={textPrimary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-        >
-          <ShotMixerSelector
-            bottle
-            compact
-            items={cart.map((p) => ({
-              ...p,
-              nombre: p.nombre || p.name || "",
-              cantidad: p.quantity,
-            }))}
-            onChangeBottle={(index, sabores) =>
-              dispatch({
-                type: "SET_CART",
-                payload: cart.map((p, i) =>
-                  i === index ? { ...p, acompanamiento_botella: sabores } : p,
-                ),
-              })
-            }
-          />
-        </CollapsibleSection>
-
-        {cart.some((p) => p.tipo_venta === "shot") && (
+        {/* Bebidas - Collapsible (solo si la presentación lleva acompañamiento) */}
+        {needsBottleMixer && (
           <CollapsibleSection
-            title="Soda o gaseosa para los cortos"
+            title="Bebidas"
+            collapsed={!sections.bebidas}
+            onToggle={() => toggleSection("bebidas")}
+            accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
+            textPrimary={textPrimary}
+            borderColor={borderColor}
+            cardBg={cardBg}
+          >
+            <ShotMixerSelector
+              bottle
+              compact
+              items={cart.map((p) => ({
+                ...p,
+                nombre: p.nombre || p.name || "",
+                cantidad: p.quantity,
+              }))}
+              onChangeBottle={(index, sabores) =>
+                dispatch({
+                  type: "SET_CART",
+                  payload: cart.map((p, i) =>
+                    i === index ? { ...p, acompanamiento_botella: sabores } : p,
+                  ),
+                })
+              }
+            />
+          </CollapsibleSection>
+        )}
+
+        {needsShortMixer && (
+          <CollapsibleSection
+            title="Bebida para los cortos"
             collapsed={!sections.soda}
             onToggle={() => toggleSection("soda")}
             accentColor={accentColor}
+            accentOnSurface={accentOnSurface}
             textPrimary={textPrimary}
             borderColor={borderColor}
             cardBg={cardBg}
@@ -507,70 +528,88 @@ export default function NuevaVentaScreen() {
           </CollapsibleSection>
         )}
 
-        <PaymentMethodSelect
-          selectedMethod={metodoPago}
-          onSelect={(val) => {
-            if (val !== "transferencia") setBaucherFoto(null);
-            dispatch({ type: "SET_METODO_PAGO", payload: val as any });
-          }}
-          showPrepago={
-            !!selectedCliente &&
-            Number(
-              selectedCliente.saldo ??
-              (selectedCliente as any).saldo_prepago ??
-              0,
-            ) > 0
-          }
-          disabledMethods={
-            selectedCliente &&
+        {/* 4. Método de Pago - Collapsible */}
+        <CollapsibleSection
+          title="4. Método de Pago"
+          collapsed={!sections.pago}
+          onToggle={() => toggleSection("pago")}
+          fontSize={isTablet ? 16 : 13}
+          fontFamily={FontFamily.black}
+          borderRadius={borderRadius}
+          padding={spacing}
+          accentColor={accentColor}
+          accentOnSurface={accentOnSurface}
+          textPrimary={textPrimary}
+          borderColor={borderColor}
+          cardBg={cardBg}
+          contentStyle={{ paddingBottom: spacing }}
+        >
+          <PaymentMethodSelect
+            showLabel={false}
+            selectedMethod={metodoPago}
+            onSelect={(val) => {
+              if (val !== "transferencia") setBaucherFoto(null);
+              dispatch({ type: "SET_METODO_PAGO", payload: val as any });
+            }}
+            showPrepago={
+              !!selectedCliente &&
               Number(
                 selectedCliente.saldo ??
                 (selectedCliente as any).saldo_prepago ??
                 0,
-              ) <= 0
-              ? ["prepago"]
-              : []
-          }
-        />
+              ) > 0
+            }
+            disabledMethods={
+              selectedCliente &&
+                Number(
+                  selectedCliente.saldo ??
+                  (selectedCliente as any).saldo_prepago ??
+                  0,
+                ) <= 0
+                ? ["prepago"]
+                : []
+            }
+          />
 
-        {metodoPago === "prepago" &&
-          clientes.some((cliente) => {
-            const id = String(cliente.id_cliente ?? cliente.id);
-            const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
-            return id !== primaryId &&
-              Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
-          }) && (
-            <View style={{ marginTop: spacing / 2 }}>
-              <Pressable
-                style={[
-                  styles.selectorBtn,
-                  dynamicStyles.selectorBtn,
-                  { borderColor: selectedSegundoCliente ? accentColor : borderColor },
-                ]}
-                onPress={() => {
-                  if (selectedSegundoCliente) {
-                    dispatch({ type: "SET_SELECTED_SEGUNDO_CLIENTE", payload: null });
-                  } else {
-                    setClientSelectionTarget("secondary");
-                    dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
-                  }
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={selectedSegundoCliente ? "Repartir prepago con otro cliente" : "Seleccionar segundo cliente para prepago"}
-              >
-                <Ionicons
-                  name={selectedSegundoCliente ? "people" : "person-add"}
-                  size={20}
-                  color={accentOnSurface}
-                />
-                <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
-                  {selectedSegundoCliente
-                    ? `${selectedSegundoCliente.nombre || selectedSegundoCliente.name || ""} ${selectedSegundoCliente.apellido || selectedSegundoCliente.lastName || ""}`.trim()
-                    : "Repartir prepago con otro cliente"}
-                </Text>
-              </Pressable>
-            </View>
-          )}
+          {metodoPago === "prepago" &&
+            clientes.some((cliente) => {
+              const id = String(cliente.id_cliente ?? cliente.id);
+              const primaryId = String(selectedCliente?.id_cliente ?? selectedCliente?.id ?? "");
+              return id !== primaryId &&
+                Number(cliente.saldo ?? (cliente as any).saldo_prepago ?? 0) > 0;
+            }) && (
+              <View style={{ marginTop: spacing / 2 }}>
+                <Pressable
+                  style={[
+                    styles.selectorBtn,
+                    dynamicStyles.selectorBtn,
+                    { borderColor: selectedSegundoCliente ? accentColor : borderColor },
+                  ]}
+                  onPress={() => {
+                    if (selectedSegundoCliente) {
+                      dispatch({ type: "SET_SELECTED_SEGUNDO_CLIENTE", payload: null });
+                    } else {
+                      setClientSelectionTarget("secondary");
+                      dispatch({ type: "SET_MODAL_VISIBLE", modal: "client", visible: true });
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={selectedSegundoCliente ? "Repartir prepago con otro cliente" : "Seleccionar segundo cliente para prepago"}
+                >
+                  <Ionicons
+                    name={selectedSegundoCliente ? "people" : "person-add"}
+                    size={20}
+                    color={accentOnSurface}
+                  />
+                  <Text style={[styles.selectorText, { color: textPrimary, marginLeft: 10 }]}>
+                    {selectedSegundoCliente
+                      ? `${selectedSegundoCliente.nombre || selectedSegundoCliente.name || ""} ${selectedSegundoCliente.apellido || selectedSegundoCliente.lastName || ""}`.trim()
+                      : "Repartir prepago con otro cliente"}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+        </CollapsibleSection>
 
         {metodoPago === "transferencia" && (
           <BaucherCard
@@ -588,7 +627,6 @@ export default function NuevaVentaScreen() {
           metodoPago={metodoPago}
           cajaAbierta={cajaAbierta}
           baucherFoto={baucherFoto}
-          isDark={isDark}
           splitVentaPct={splitVentaPct}
           splitPropinaPct={splitPropinaPct}
           cardBg={cardBg}
@@ -621,7 +659,6 @@ export default function NuevaVentaScreen() {
                   ? "receipt"
                   : null
           }
-          isDark={isDark}
           cardBg={cardBg}
           borderColor={borderColor}
           textPrimary={textPrimary}
@@ -649,6 +686,8 @@ export default function NuevaVentaScreen() {
         onCancel={cancelDiscard}
       />
 
+      {/* El modal de tiempo de NuevaVentaModals se pasa en false a propósito:
+          el tiempo se edita con el TimeSelector de la sección "Detalles". */}
       <NuevaVentaModals
         styles={styles}
         accentColor={accentColor}

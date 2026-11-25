@@ -15,7 +15,6 @@ interface PaymentSummaryCardProps {
   metodoPago: string | undefined;
   cajaAbierta: boolean | null;
   baucherFoto: string | null;
-  isDark: boolean;
   splitVentaPct: number;
   splitPropinaPct: number;
   cardBg: string;
@@ -41,7 +40,6 @@ export const PaymentSummaryCard: React.FC<PaymentSummaryCardProps> = ({
   metodoPago,
   cajaAbierta,
   baucherFoto,
-  isDark,
   splitVentaPct,
   splitPropinaPct,
   cardBg,
@@ -54,7 +52,7 @@ export const PaymentSummaryCard: React.FC<PaymentSummaryCardProps> = ({
   onToggleTip,
   onDispatchCart,
 }) => {
-  const { accentUi, accentBg, accentBorder, accentOnSurface, accentColor: dangerColor, accentText } = useAccentColor();
+  const { accentUi, accentBg, accentBorder, accentOnSurface, accentColor: dangerColor } = useAccentColor();
   // El acento como texto necesita 4.5:1 sobre la tarjeta; con Ámbar el color
   // original quedaba en 2.9:1.
   const accentTextSafe = ensureContrast(accentColor, cardBg, 4.5);
@@ -79,7 +77,7 @@ export const PaymentSummaryCard: React.FC<PaymentSummaryCardProps> = ({
           ${totals.subtotal.toLocaleString()}
         </Text>
       </View>
-      {totals.recargoAcompanamiento && totals.recargoAcompanamiento > 0 && (
+      {Number(totals.recargoAcompanamiento) > 0 && (
         <View style={styles.summaryRow}>
           <Text style={[styles.summaryLabel, { color: accentUi }]}>
             Acompañamiento extra

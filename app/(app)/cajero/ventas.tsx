@@ -33,7 +33,6 @@ import {
   VentaActionSheet,
   VentasSkeleton,
   VentaCardSkeleton,
-  VentasStats,
   VentasFiltersModal,
   type VentasStatusFilter,
   type VentasPaymentFilter,
@@ -276,7 +275,8 @@ export default function VentasScreen() {
       <View style={styles.searchRow}>
         <View style={{ flex: 1 }}>
           <SearchBar
-            placeholder="Buscar por código, cliente o anfitriona..."
+            compact
+            placeholder="Buscar código o cliente..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             onClear={() => setSearchQuery('')}
@@ -296,7 +296,7 @@ export default function VentasScreen() {
         >
           <Ionicons
             name="options-outline"
-            size={20}
+            size={18}
             color={activeFilterCount ? accentColor : textPrimary}
           />
           {activeFilterCount > 0 && (
@@ -314,11 +314,12 @@ export default function VentasScreen() {
         keyExtractor={(item: any, index: number) =>
           String(getVentaId(item) ?? item?.codigo ?? `venta-${index}`)
         }
-        renderItem={loadingSales ? VentaCardSkeleton : renderVentaCard}
-        numColumns={numColumns}
-        ListHeaderComponent={
-          !loadingSales ? <VentasStats ventas={ventasList as any} /> : null
+        renderItem={
+          loadingSales
+            ? () => <VentaCardSkeleton isTablet={isTablet} cardBg={cardBg} borderColor={borderColor} />
+            : renderVentaCard
         }
+        numColumns={numColumns}
         contentContainerStyle={[styles.listContainer, isTablet && { paddingHorizontal: 12 }]}
         refreshControl={
           <RefreshControl
@@ -388,9 +389,6 @@ export default function VentasScreen() {
             }}
             onSolicitarAnulacion={openAnulacionModal}
             accentColor={accentColor}
-            cardBg={cardBg}
-            textPrimary={textPrimary}
-            textSecondary={textSecondary}
             dangerColor={C.danger}
           />
 
@@ -439,12 +437,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   filterBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -453,12 +451,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: -4,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
   },
   filterBadgeText: { fontSize: 10, fontFamily: FontFamily.black },
   listContainer: { ...contentColumn, paddingVertical: 16, paddingHorizontal: 16, paddingBottom: tabBarBottomPadding },

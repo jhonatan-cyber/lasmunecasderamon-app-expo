@@ -2,9 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BorderRadius } from '@/constants/spacing';
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { statusColors, statusLabels, payMethodIcons } from "./constants";
+import { statusColors, statusLabels } from "./constants";
 import { FontFamily, TabularNumbers } from "@/constants/fonts";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import {
+  StatusBadge,
+  paymentIconFor,
+} from "@/components/ui/StatusBadge";
 import { haptic } from "@/utils/haptics";
 import { useAccentColor } from '@/hooks/useAccentColor';
 
@@ -20,7 +24,6 @@ interface VentaCardRightProps {
   accentColor: string;
   textPrimary: string;
   textSecondary: string;
-  isDark?: boolean;
   onFinalizar?: () => void;
 }
 
@@ -57,26 +60,24 @@ export const VentaCardRight: React.FC<VentaCardRightProps> = ({
         </Pressable>
       )}
 
-      <View style={styles.methodBadgeContainer}>
-        <Ionicons
-          name={(payMethodIcons[metodoPago || ""] || "wallet-outline") as keyof typeof Ionicons.glyphMap}
-          size={14}
-          color={textSecondary}
-        />
-        <Text style={[styles.methodText, { color: textSecondary }]}>
-          {metodoPago?.toUpperCase() || "N/A"}
-        </Text>
-      </View>
+      <StatusBadge
+        label={metodoPago?.toUpperCase() || "N/A"}
+        color={textSecondary}
+        icon={paymentIconFor(metodoPago)}
+        iconColor={textSecondary}
+        textColor={textSecondary}
+        uppercase
+        bare
+      />
 
-      <View style={[styles.methodBadgeContainer, { marginTop: 4 }]}>
-        <View style={[styles.statusBadgeSmall, { backgroundColor: `${statusColor}15` }]}>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          {/* El color del estado queda en el punto; el texto usa el color primario. */}
-          <Text style={[styles.statusTextSmall, { color: textPrimary }]}>
-            {statusLabels[estado] || "Desconocido"}
-          </Text>
-        </View>
-      </View>
+      <StatusBadge
+        label={statusLabels[estado] || "Desconocido"}
+        color={statusColor}
+        dot
+        textColor={textPrimary}
+        uppercase
+        style={{ marginTop: 4, paddingHorizontal: 10, paddingVertical: 4 }}
+      />
 
       <View style={{ alignItems: "flex-end" }}>
         <AnimatedNumber
@@ -113,12 +114,6 @@ const styles = StyleSheet.create({
     borderLeftColor: "rgba(0,0,0,0.03)",
     paddingLeft: 12,
   },
-  methodBadgeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  methodText: { fontSize: 11, fontFamily: FontFamily.bold, letterSpacing: 0.8 },
   cardTotalBig: { fontSize: 22, fontFamily: FontFamily.extrabold, ...TabularNumbers },
   subInfoRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   cardSubCount: { fontSize: 12, fontFamily: FontFamily.medium },
@@ -133,13 +128,4 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   finishBtnText: { fontSize: 11, fontFamily: FontFamily.bold },
-  statusBadgeSmall: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-  },
-  statusDot: { width: 6, height: 6, borderRadius: BorderRadius.full, marginRight: 6 },
-  statusTextSmall: { fontSize: 11, fontFamily: FontFamily.bold, textTransform: "uppercase" },
 });

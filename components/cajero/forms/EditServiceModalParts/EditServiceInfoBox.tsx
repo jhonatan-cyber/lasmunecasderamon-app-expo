@@ -20,7 +20,7 @@ export function EditServiceInfoBox({
   textPrimary,
   textSecondary,
 }: EditServiceInfoBoxProps) {
-  const { accentColor } = useAccentColor();
+  const { accentOnSurface } = useAccentColor();
   const valueStyle = { color: textPrimary, fontFamily: FontFamily.bold };
 
   return (
@@ -40,7 +40,7 @@ export function EditServiceInfoBox({
           ${(precioHabitacionSinComision || 0).toLocaleString("es-CL")}
         </Text>
         {precioHabitacionSinComision === 0 && (
-          <Text style={{ color: accentColor, fontSize: 11 }}>
+          <Text style={{ color: accentOnSurface, fontSize: 11 }}>
             {" "}
             (No encontrado)
           </Text>

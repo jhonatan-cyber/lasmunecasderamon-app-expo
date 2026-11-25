@@ -13,7 +13,7 @@ import { useAccentColor } from '@/hooks/useAccentColor';
  * efímero, que se perdía al scrollear).
  */
 export const CajaClosedBanner: React.FC = () => {
-  const { accentColor, accentText, accentBg, accentBorder, accentOnSurface } = useAccentColor();
+  const { accentColor, accentBg, accentBorder, accentOnSurface } = useAccentColor();
   const router = useRouter();
 
   return (
@@ -43,7 +43,7 @@ export const CajaClosedBanner: React.FC = () => {
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Text style={[styles.buttonText, { color: accentColor }]}>
+        <Text style={[styles.buttonText, { color: accentOnSurface }]}>
           Abrir Caja
         </Text>
       </Pressable>

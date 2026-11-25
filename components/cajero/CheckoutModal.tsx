@@ -8,12 +8,20 @@ import { useConfigValue } from "@/hooks/useConfigValue";
 import { calcularPropina } from '@lasmunecasderamon/sale-totals';
 import { getCardSplit } from '@/hooks/utils/cuentaUtils';
 import { accentTextColor } from '@/utils/color';
+import { parseDateSafe } from '@/utils/timeUtils';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { MetodoPago } from '../../types/api';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
+import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { haptic } from '@/utils/haptics';
+import {
+  StatusBadge,
+  PAYMENT_METHOD_LABELS,
+  paymentIconFor,
+  type PaymentMethodKey,
+} from '@/components/ui/StatusBadge';
 
 interface CheckoutModalProps {
   visible: boolean;
@@ -58,6 +66,34 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!selectedPedido) return null;
 
+  const firstDetail: any = pedidoDetails?.[0] ?? {};
+  const fechaRaw = selectedPedido.fecha_crea || firstDetail.fecha_crea;
+  const fechaText = fechaRaw
+    ? parseDateSafe(String(fechaRaw)).toLocaleString('es-CL', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : '—';
+  const anfitrionasText =
+    firstDetail.anfitrionas_asignadas_nombres ||
+    selectedPedido.nicks ||
+    firstDetail.anfitriona ||
+    '—';
+  const lugarText =
+    firstDetail.room_name ||
+    selectedPedido.habitacion_nombre ||
+    selectedPedido.room_name ||
+    'Mesa';
+  const estadoText = selectedPedido.estado === 1
+    ? 'Pendiente'
+    : selectedPedido.estado === 2
+      ? 'Aprobado'
+      : '—';
+  const comisionTotal = Number(
+    firstDetail.total_comision ??
+      (pedidoDetails.reduce((sum, d: any) => sum + Number(d.comision || 0), 0) || 0),
+  );
+
   const existingTip = Number(selectedPedido.propina || pedidoDetails?.[0]?.propina || 0);
   const subtotalBase = Number(
     selectedPedido.subtotal ?? Math.max(0, Number(selectedPedido.total || 0) - existingTip)
@@ -84,7 +120,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <Ionicons name="card-outline" size={24} color={accentOnSurface} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: textPrimary }]}>Cerrar Pedido</Text>
-              <Text style={[styles.subtitle, { color: textSecondary }]}>Codigo: {selectedPedido.codigo}</Text>
+              <Text style={[styles.subtitle, { color: textSecondary }]}>
+                Código: {selectedPedido.codigo} · {fechaText}
+              </Text>
             </View>
           </View>
 
@@ -107,6 +145,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </View>
             )}
 
+            <View style={[styles.detailCard, { borderColor }]}>
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Fecha</Text><Text style={[styles.detailValue, { color: textPrimary }]}>{fechaText}</Text></View>
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Anfitrionas</Text><Text style={[styles.detailValue, { color: textPrimary }]}>{anfitrionasText}</Text></View>
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Lugar</Text><Text style={[styles.detailValue, { color: textPrimary }]}>{lugarText}</Text></View>
+              <View style={styles.row}><Text style={{ color: textSecondary }}>Estado</Text><Text style={[styles.detailValue, { color: textPrimary }]}>{estadoText}</Text></View>
+              <View style={styles.row}>
+                <Text style={{ color: textSecondary }}>Método del pedido</Text>
+                <Text style={[styles.detailValue, { color: textPrimary }]}>
+                  {PAYMENT_METHOD_LABELS[firstDetail.metodo_pago as PaymentMethodKey] ||
+                    selectedPedido.metodo_pago || '—'}
+                </Text>
+              </View>
+              {comisionTotal > 0 && (
+                <View style={styles.row}><Text style={{ color: textSecondary }}>Comisión</Text><Text style={[styles.detailValue, { color: accentOnSurface }]}>${comisionTotal.toLocaleString()}</Text></View>
+              )}
+            </View>
+
             {!loadingDetails && pedidoDetails[0]?.baucher_foto && (
               <View style={{ marginBottom: 16 }}>
                 <BaucherFoto
@@ -121,24 +176,60 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <View style={[styles.receipt, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor }]}>
               {loadingDetails ? [1,2,3].map(i => <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}><Skeleton width={40} height={40} /><View style={{ flex: 1 }}><Skeleton width="100%" height={16} /><Skeleton width="40%" height={12} /></View><Skeleton width={60} height={20} /></View>) : pedidoDetails.map((item: any, idx: number) => (
                 <View key={idx} style={styles.productRow}>
+                  <OrderProductPhoto
+                    foto={item.producto_foto || item.foto}
+                    name={item.nombre_producto || item.producto || 'Producto'}
+                  />
                   <View style={styles.qtyCol}><Text style={[styles.qtyLabel, { color: textSecondary }]}>Cant.</Text><Text style={[styles.qty, { color: textPrimary }]}>{item.cantidad}</Text></View>
-                  <View style={styles.prodCol}><Text style={[styles.prodName, { color: textPrimary }]}>{item.nombre_producto || item.producto || "Producto"}</Text><Text style={[styles.prodPrice, { color: textSecondary }]}>${(item.precio || 0).toLocaleString()}</Text></View>
-                  <Text style={[styles.prodSubtotal, { color: textPrimary }]}>${((item.precio || 0) * (item.cantidad || 0)).toLocaleString()}</Text>
+                  <View style={styles.prodCol}>
+                    <Text style={[styles.prodName, { color: textPrimary }]}>
+                      {item.nombre_producto || item.producto || "Producto"}
+                      {item.presentacion_nombre ? ` · ${item.presentacion_nombre}` : ''}
+                    </Text>
+                    <Text style={[styles.prodPrice, { color: textSecondary }]}>
+                      ${(item.precio || 0).toLocaleString()} c/u
+                      {item.categoria ? ` · ${item.categoria}` : ''}
+                    </Text>
+                    {!!item.acompanamiento_nombre && (
+                      <Text style={[styles.prodPrice, { color: accentOnSurface }]}>
+                        Acomp.: {item.acompanamiento_nombre}
+                      </Text>
+                    )}
+                    {!!item.anfitrionas_asignadas_nombres && (
+                      <Text style={[styles.prodPrice, { color: textSecondary }]}>
+                        Anf.: {item.anfitrionas_asignadas_nombres}
+                      </Text>
+                    )}
+                    {Number(item.comision || 0) > 0 && (
+                      <Text style={[styles.prodPrice, { color: accentOnSurface }]}>
+                        Comisión: ${Number(item.comision).toLocaleString()}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={[styles.prodSubtotal, { color: textPrimary }]}>
+                    ${Number(item.subtotal_detalle ?? (item.precio || 0) * (item.cantidad || 0)).toLocaleString()}
+                  </Text>
                 </View>
               ))}
             </View>
 
             <Text style={[styles.sectionTitle, { color: textPrimary }]}>Método de Pago</Text>
-            <View style={[styles.paymentBadge, { backgroundColor: accentBg, borderColor }]}>
-              <Ionicons
-                name={metodoPago === "efectivo" ? "cash" : metodoPago === "tarjeta" ? "card" : metodoPago === "prepago" ? "wallet" : "swap-horizontal"}
-                size={20}
-                color={accentOnSurface}
-              />
-              <Text style={[styles.paymentBadgeText, { color: textPrimary }]}>
-                {metodoPago ? metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1) : "No seleccionado"}
-              </Text>
-            </View>
+            <StatusBadge
+              label={
+                metodoPago
+                  ? PAYMENT_METHOD_LABELS[metodoPago as PaymentMethodKey] ??
+                    metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1)
+                  : "No seleccionado"
+              }
+              color={accentOnSurface}
+              bg={accentBg}
+              borderColor={borderColor}
+              icon={paymentIconFor(metodoPago)}
+              iconColor={accentOnSurface}
+              textColor={textPrimary}
+              size="sm"
+              style={styles.paymentBadge}
+            />
 
             {mixedPaymentDetails.isMixed && (
               <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderStyle: "dashed", borderWidth: 1, borderColor }}>
@@ -220,9 +311,17 @@ const styles = StyleSheet.create({
   metaLabel: { fontSize: FontSize.xxs, fontFamily: FontFamily.semibold },
   metaValue: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, textAlign: "center" },
   divider: { width: 1 },
+  detailCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    gap: 2,
+  },
+  detailValue: { fontSize: FontSize.xs, fontFamily: FontFamily.extrabold, flexShrink: 1, textAlign: 'right' },
   receipt: { borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1 },
-  productRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
-  qtyCol: { width: 44 },
+  productRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
+  qtyCol: { width: 40 },
   qtyLabel: { fontSize: FontSize.xxs, fontFamily: FontFamily.semibold },
   qty: { fontSize: FontSize.sm, fontFamily: FontFamily.black },
   prodCol: { flex: 1 },

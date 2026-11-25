@@ -2,11 +2,10 @@ import { create } from 'zustand';
 import { cajaService } from '@/services';
 import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import logger from '@/utils/logger';
+import type { CajaInfo } from '@/types/caja';
 
-export interface CajaAbiertaInfo {
-    id_caja?: string;
-    [key: string]: unknown;
-}
+/** Alias conservado por los callers que importaban el tipo desde el store. */
+export type CajaAbiertaInfo = CajaInfo;
 
 type EstadoCajaRes = {
     success?: boolean;

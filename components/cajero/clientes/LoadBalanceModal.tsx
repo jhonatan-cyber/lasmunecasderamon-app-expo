@@ -16,6 +16,7 @@ import { CajaClosedBanner } from '@/components/cajero/CajaClosedBanner';
 import { PaymentMethod, PaymentMethodSelect } from '@/components/cajero/forms/PaymentMethodSelect';
 import { adjuntarBaucher } from '@/utils/baucherPicker';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { AmountInput } from '@/components/ui/AmountInput';
 
 interface LoadBalanceModalProps {
     visible: boolean;
@@ -103,25 +104,17 @@ export function LoadBalanceModal({
                             cerrada se avisa y se deshabilita la carga. */}
                         {cajaAbierta === false && <CajaClosedBanner />}
 
-                        <View>
-                            <Text style={[styles.formLabel, { color: textSecondary }]}>MONTO A CARGAR</Text>
-                            <TextInput
-                                style={[styles.input, {
-                                    color: textPrimary,
-                                    borderColor,
-                                    fontSize: 24,
-                                    fontFamily: FontFamily.extrabold,
-                                    height: 60,
-                                    textAlign: 'center'
-                                }]}
-                                value={loadingAmount}
-                                onChangeText={(text) => setLoadingAmount(formatCurrency(text))}
-                                placeholder="0"
-                                placeholderTextColor={textSecondary}
-                                keyboardType="numeric"
-                                autoFocus
-                            />
-                        </View>
+                        <AmountInput
+                            label="MONTO A CARGAR"
+                            value={loadingAmount}
+                            onChange={(text) => setLoadingAmount(formatCurrency(text))}
+                            placeholder="0"
+                            centered
+                            autoFocus
+                            borderColor={borderColor}
+                            textColor={textPrimary}
+                            placeholderTextColor={textSecondary}
+                        />
 
                         <PaymentMethodSelect
                             selectedMethod={loadMetodoPago}

@@ -17,6 +17,7 @@ vi.mock('react-native', () => ({
       {children}
     </button>
   ),
+  ScrollView: ({ children }: RenderProps) => <div>{children}</div>,
   FlatList: ({ data, renderItem, keyExtractor }: any) => (
     <div>
       {data.map((item: any) => (
@@ -38,6 +39,13 @@ vi.mock('@/hooks/useAccentColor', () => ({
     textPrimary: '#111',
     borderColor: '#ddd',
   }),
+}));
+vi.mock('@/components/ui/AnimatedView', () => ({
+  AnimatedView: ({ children }: RenderProps) => <div>{children}</div>,
+}));
+vi.mock('@/components/ui/AppModal', () => ({
+  AppModal: ({ children, visible }: { children?: React.ReactNode; visible?: boolean }) =>
+    visible ? <div>{children}</div> : null,
 }));
 vi.mock('@/components/ui/ModalBottomSheet', () => ({
   ModalBottomSheet: ({ children, visible }: { children?: React.ReactNode; visible?: boolean }) =>

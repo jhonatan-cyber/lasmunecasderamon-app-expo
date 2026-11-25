@@ -1,4 +1,5 @@
 import { apiClientSafe } from '@/api/client-safe';
+import type { CajaInfo } from '@/types/caja';
 
 export interface OpenCajaPayload {
   monto_apertura: number;
@@ -21,7 +22,7 @@ export interface SolicitudCierreCajaRes {
   token: string | null;
   monto_cierre_calculado: number;
   saldo_clientes_descontado: number;
-  caja: any;
+  caja: CajaInfo | null;
 }
 
 export interface ReenvioAvisoCierreRes {

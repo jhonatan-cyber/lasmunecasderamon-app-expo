@@ -85,7 +85,7 @@ const normalizeEstado = (estado: number | string) => {
 
 export default function AnticiposAdminScreen() {
   const router = useRouter();
-  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, accentText, surfaceMuted } =
+  const { accentColor, bg, cardBg, textSecondary, borderColor, accentOnSurface, accentBg, accentBorder, surfaceMuted } =
     useAccentColor();
   const [data, setData] = useState<AnticipoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,8 +243,8 @@ export default function AnticiposAdminScreen() {
               accessibilityLabel="Rechazar anticipo"
               accessibilityState={{ disabled: !!procesando }}
             >
-              <Ionicons name="close" size={16} color={accentColor} />
-              <Text style={[styles.actionText, { color: accentColor }]}>Rechazar</Text>
+              <Ionicons name="close" size={16} color={accentOnSurface} />
+              <Text style={[styles.actionText, { color: accentOnSurface }]}>Rechazar</Text>
             </Pressable>
           </View>
         ) : entregado ? (
@@ -278,7 +278,7 @@ export default function AnticiposAdminScreen() {
         />
       );
     },
-    [procesando, textSecondary],
+    [procesando, textSecondary, accentBg, accentBorder, accentColor, accentOnSurface, surfaceMuted],
   );
 
   if (loading) {

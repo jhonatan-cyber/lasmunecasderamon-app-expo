@@ -1,13 +1,12 @@
 import React from 'react';
-import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useConfigValue } from '@/hooks/useConfigValue';
 import { formatBotellaAbierta } from '@/hooks/utils/cartUtils';
 import { resolverVentaProducto } from '@/hooks/utils/saleChoice';
 import { SaleFormatSelector } from '@/components/cajero/nueva-venta/SaleFormatSelector';
+import { SearchBar } from '@/components/ui/SearchBar';
 
 interface NuevaVentaSearchProps {
   searchProducto: string;
@@ -61,31 +60,17 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
     <View style={[styles.container, { backgroundColor: cardBg, borderColor }]}>
       <Text style={[styles.title, { color: textPrimary }]}>Buscar Producto</Text>
 
-      <View style={styles.inputRow}>
-        <Ionicons name="search" size={18} color={textSecondary} />
-        <TextInput
-          style={[styles.input, { color: textPrimary, borderColor, paddingRight: hasText ? 36 : 12 }]}
-          placeholder="Buscar Producto"
-          placeholderTextColor={textSecondary}
-          value={searchProducto}
-          onChangeText={onSearchChange}
-          onSubmitEditing={onSearchNow}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          accessibilityLabel="Buscar Producto"
-        />
-        {hasText && (
-          <Pressable
-            onPress={onClearSearch}
-            style={styles.clearIconBtn}
-            accessibilityLabel="Limpiar búsqueda"
-            accessibilityRole="button"
-          >
-            <Ionicons name="close-circle" size={20} color={textSecondary} />
-          </Pressable>
-        )}
-      </View>
+      <SearchBar
+        debounceMs={0}
+        placeholder="Buscar Producto"
+        value={searchProducto}
+        onChangeText={onSearchChange}
+        onClear={onClearSearch}
+        onSubmitEditing={onSearchNow}
+        autoCapitalize="none"
+        accessibilityLabel="Buscar Producto"
+        style={styles.inputRow}
+      />
 
       {hasText && (
         <View style={styles.results}>
@@ -119,7 +104,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                     <Text style={[styles.resultMeta, { color: textSecondary }]} numberOfLines={1}>
                       {categoria}
                     </Text>
-                    {botellaAbierta && (
+                    {!!botellaAbierta && (
                       <Text style={[styles.resultOpenBottle, { color: accentUi }]} numberOfLines={1}>
                         {botellaAbierta}
                       </Text>
@@ -128,7 +113,6 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
                       product={producto}
                       options={venta.opciones}
                       shotMl={shotMl}
-                      accentColor={accentColor}
                       textPrimary={textPrimary}
                       textSecondary={textSecondary}
                       borderColor={borderColor}
@@ -168,24 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     position: 'relative',
-  },
-  input: {
-    flex: 1,
-    height: 44,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    fontSize: 14,
-    fontFamily: FontFamily.semibold,
-  },
-  clearIconBtn: {
-    position: 'absolute',
-    right: 8,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
   },
   results: {
     marginTop: 14,

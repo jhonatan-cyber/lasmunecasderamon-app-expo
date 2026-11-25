@@ -1,7 +1,6 @@
-import React from "react";
-import { BorderRadius } from '@/constants/spacing';
-import { StyleSheet, Text, View } from "react-native";
+import React from 'react';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { MetricBanner } from '@/components/ui/MetricCards';
 
 interface TipMetricCardsProps {
   totalPendiente: number;
@@ -21,73 +20,23 @@ export const TipMetricCards: React.FC<TipMetricCardsProps> = ({
   accentColor,
   borderColor,
   cardBg,
-  textSecondary,
 }) => {
-    const { accentOnSurface } = useAccentColor();
+  const { accentOnSurface, isDark } = useAccentColor();
+
   return (
-    <View
-      style={[
-        styles.summaryCard,
-        { backgroundColor: cardBg, borderColor, shadowColor: accentColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 },
+    <MetricBanner
+      label="Propinas pendientes"
+      amount={`$${totalPendiente.toLocaleString()}`}
+      details={[
+        `Recibido: $${totalGeneral.toLocaleString()}`,
+        `Items: ${pendientesCount}`,
       ]}
-    >
-      <Text style={[styles.summaryLabel, { color: textSecondary }]}>
-        PROPINAS PENDIENTES
-      </Text>
-      <Text style={[styles.summaryAmount, { color: accentOnSurface }]}>
-        ${totalPendiente.toLocaleString()}
-      </Text>
-      <View style={styles.summaryDetails}>
-        <Text style={[styles.summaryDetail, { color: textSecondary }]}>
-          Recibido: ${totalGeneral.toLocaleString()}
-        </Text>
-        <View style={[styles.divider, { backgroundColor: borderColor }]} />
-        <Text style={[styles.summaryDetail, { color: textSecondary }]}>
-          Items: {pendientesCount}
-        </Text>
-      </View>
-    </View>
+      color={accentOnSurface}
+      glowColor={accentColor}
+      borderColor={borderColor}
+      cardBg={cardBg}
+      isDark={isDark}
+      style={{ marginHorizontal: 16, marginTop: 16 }}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: BorderRadius.full,
-    padding: 24,
-    alignItems: "center",
-    borderWidth: 1,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  summaryAmount: {
-    fontSize: 38,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-  summaryDetails: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-  },
-  summaryDetail: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  divider: {
-    width: 1,
-    height: 12,
-    alignSelf: "center",
-  },
-});

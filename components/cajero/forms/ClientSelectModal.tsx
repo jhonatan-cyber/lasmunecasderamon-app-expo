@@ -6,11 +6,11 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    TextInput,
     View,
 } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { ModalBottomSheet } from '@/components/ui/ModalBottomSheet';
+import { SearchBar } from '@/components/ui/SearchBar';
 
 interface Client {
     id: number | string;
@@ -43,7 +43,7 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
     selectedIds,
     max,
 }) => {
-    const { accentColor: primaryColor, borderColor, textPrimary, textSecondary, cardBg, accentOnSurface } = useAccentColor();
+    const { accentColor: primaryColor, borderColor, textPrimary, textSecondary, accentOnSurface } = useAccentColor();
     const [searchText, setSearchText] = useState('');
 
     const filteredClients = useMemo(() => {
@@ -64,34 +64,15 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({
             actionLabel="Listo"
             onAction={onClose}
         >
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={textSecondary} style={styles.searchIcon} />
-                <TextInput
-                    style={[styles.searchInput, { color: textPrimary, backgroundColor: cardBg }]}
-                    placeholder="Buscar cliente..."
-                    placeholderTextColor={textSecondary}
-                    value={searchText}
-                    onChangeText={setSearchText}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    clearButtonMode="while-editing"
-                    accessibilityLabel="Buscar cliente"
-                />
-                {searchText.length > 0 && (
-                    <Pressable
-                        onPress={() => setSearchText('')}
-                        style={styles.clearButton}
-                        accessibilityLabel="Limpiar búsqueda"
-                        accessibilityRole="button"
-                    >
-                        {({ pressed }) => (
-                            <View style={{ opacity: pressed ? 0.6 : 1 }}>
-                                <Ionicons name="close-circle" size={18} color={textSecondary} />
-                            </View>
-                        )}
-                    </Pressable>
-                )}
-            </View>
+            <SearchBar
+                compact
+                debounceMs={0}
+                placeholder="Buscar cliente..."
+                value={searchText}
+                onChangeText={setSearchText}
+                autoCapitalize="words"
+                accessibilityLabel="Buscar cliente"
+            />
             {filteredClients.length === 0 && searchText.trim() !== '' ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="search-outline" size={48} color={textSecondary} />
@@ -173,27 +154,6 @@ const styles = StyleSheet.create({
     modalItemText: {
         fontSize: 16,
         fontFamily: FontFamily.bold,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: BorderRadius.card,
-        paddingHorizontal: 12,
-        marginBottom: 12,
-        gap: 8,
-    },
-    searchIcon: {
-        marginRight: 2,
-    },
-    searchInput: {
-        flex: 1,
-        paddingVertical: 10,
-        paddingHorizontal: 8,
-        fontSize: 15,
-        borderRadius: BorderRadius.card,
-    },
-    clearButton: {
-        padding: 4,
     },
     emptyState: {
         alignItems: 'center',

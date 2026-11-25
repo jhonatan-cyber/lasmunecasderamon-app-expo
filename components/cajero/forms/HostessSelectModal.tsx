@@ -1,18 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
-import React from "react";
+import React, { useMemo } from "react";
 import { Image } from "expo-image";
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { BASE_URL } from "@/api/client";
-import { ModalBottomSheet } from "@/components/ui/ModalBottomSheet";
+import {
+  SelectListModal,
+  type SelectListItem,
+} from "@/components/ui/SelectListModal";
 
 interface Hostess {
   id: number | string;
@@ -51,83 +48,44 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
   const {
     accentColor,
     textPrimary,
-    borderColor: subtleBorder,
     accentBg,
     accentOnSurface,
   } = useAccentColor();
 
-  return (
-    <ModalBottomSheet
-      visible={visible}
-      onClose={onClose}
-      title={title}
-      subtitle={max !== undefined ? `Máximo ${max} seleccionadas` : undefined}
-      actionLabel="Listo"
-      onAction={onConfirm || onClose}
-      scrollable={false}
-    >
-      <FlatList
-        data={hostesses}
-        keyExtractor={(item) => String(item.id)}
-        keyboardShouldPersistTaps="handled"
-        initialNumToRender={10}
-        windowSize={5}
-        renderItem={({ item }) => {
+  const items: SelectListItem[] = useMemo(
+    () =>
+      hostesses.map((item) => {
         const rawId = item.id;
         const isSelected = selectedIds.some(
           (sid) => String(sid) === String(rawId),
         );
-        const isMaxReached =
-          max !== undefined && selectedIds.length >= max;
-        // Si el backend no informa el estado, se deja seleccionar (el backend
-        // valida la asignación); solo un 1 explícito marca la anfitriona como ocupada.
-        // Las anfitrionas listadas en allowedOccupiedIds están ocupadas por el
-        // servicio que se está editando, así que siguen siendo seleccionables.
+        const isMaxReached = max !== undefined && selectedIds.length >= max;
+        // Un 1 explícito marca la anfitriona como ocupada; las que están en
+        // allowedOccupiedIds pertenecen al servicio que se está editando.
         const isAllowedOccupied = allowedOccupiedIds.some(
           (id) => String(id) === String(rawId),
         );
         const isOccupied =
           Number(item.estado_servicio) === 1 && !isAllowedOccupied;
-        const isDisabled =
-          (isMaxReached && !isSelected) || isOccupied;
-
+        const isDisabled = (isMaxReached && !isSelected) || isOccupied;
         const roomInfo =
           (item as any).habitacion_nombre ||
           (item as any).habitacion ||
           (item as any).room ||
           "";
+        const displayName =
+          item.nick || item.nombre || item.name || "Anfitriona";
 
-        return (
-          <Pressable
-            onPress={() =>
-              !isDisabled && onToggle(rawId as number | string)
-            }
-            disabled={isDisabled}
-            style={[
-              styles.modalItem,
-              {
-                borderColor: isSelected
-                  ? accentColor
-                  : isOccupied
-                    ? accentBg
-                    : subtleBorder,
-                backgroundColor: isSelected
-                  ? `${accentColor}15`
-                  : isOccupied
-                    ? accentBg
-                    : "transparent",
-                opacity: isMaxReached && !isSelected ? 0.5 : 1,
-              },
-            ]}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                flex: 1,
-                gap: 12,
-              }}
-            >
+        return {
+          id: rawId,
+          selected: isSelected,
+          disabled: isDisabled,
+          accessibilityLabel: `${displayName}${isOccupied ? ", ocupada en servicio" : ""}`,
+          onPress: () => {
+            if (!isDisabled) onToggle(rawId);
+          },
+          renderContent: (selected) => (
+            <View style={styles.row}>
               <View
                 style={[
                   styles.avatarMini,
@@ -144,25 +102,11 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                     style={styles.avatarImage}
                   />
                 ) : (
-                  <View
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
+                  <View style={styles.avatarFallback}>
                     <Text
-                      style={[
-                        styles.avatarText,
-                        { color: isOccupied ? accentColor : accentColor },
-                      ]}
+                      style={[styles.avatarText, { color: accentOnSurface }]}
                     >
-                      {(
-                        item.nick?.[0] ||
-                        item.nombre?.[0] ||
-                        "A"
-                      ).toUpperCase()}
+                      {(item.nick?.[0] || item.nombre?.[0] || "A").toUpperCase()}
                     </Text>
                   </View>
                 )}
@@ -171,15 +115,15 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                 <Text
                   style={[
                     styles.modalItemText,
-                    { color: isOccupied ? accentColor : textPrimary },
+                    { color: isOccupied ? accentOnSurface : textPrimary },
                   ]}
                 >
-                  {item.nick || item.nombre || item.name || "Anfitriona"}
+                  {displayName}
                 </Text>
                 {isOccupied ? (
                   <Text
                     style={{
-                      color: accentColor,
+                      color: accentOnSurface,
                       fontSize: 10,
                       fontFamily: FontFamily.extrabold,
                       marginTop: 2,
@@ -200,34 +144,48 @@ export const HostessSelectModal: React.FC<HostessSelectModalProps> = ({
                   </Text>
                 )}
               </View>
+              {selected && (
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
+              )}
+              {isOccupied && (
+                <Ionicons name="lock-closed" size={18} color={accentColor} />
+              )}
             </View>
-            {isSelected && (
-              <Ionicons
-                name="checkmark-circle"
-                size={24}
-                color={accentColor}
-              />
-            )}
-            {isOccupied && (
-              <Ionicons name="lock-closed" size={18} color={accentColor} />
-            )}
-          </Pressable>
-        );
-        }}
-      />
-    </ModalBottomSheet>
+          ),
+        };
+      }),
+    [
+      accentBg,
+      accentColor,
+      accentOnSurface,
+      allowedOccupiedIds,
+      hostesses,
+      max,
+      onToggle,
+      selectedIds,
+      textPrimary,
+    ],
+  );
+
+  return (
+    <SelectListModal
+      visible={visible}
+      onClose={onClose}
+      title={title}
+      subtitle={max !== undefined ? `Máximo ${max} seleccionadas` : undefined}
+      items={items}
+      onConfirm={onConfirm}
+      emptyText="No hay anfitrionas disponibles"
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  modalItem: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderRadius: BorderRadius.card,
-    borderWidth: 2,
-    marginBottom: 10,
+    flex: 1,
+    gap: 12,
   },
   modalItemText: {
     fontSize: 16,
@@ -245,6 +203,12 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  avatarFallback: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarText: {
     fontSize: 14,

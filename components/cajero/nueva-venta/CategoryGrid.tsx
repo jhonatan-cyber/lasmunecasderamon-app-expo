@@ -17,6 +17,7 @@ interface CategoryGridProps {
   accentColor: string;
   textPrimary: string;
   borderColor: string;
+  cardBg?: string;
 }
 
 const CATEGORY_ICONS: readonly [RegExp, string][] = [
@@ -50,6 +51,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
   accentColor,
   textPrimary,
   borderColor,
+  cardBg,
 }) => {
   return (
     <ScrollView
@@ -68,13 +70,16 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
               onSelect(cat);
             }}
             style={{
-              minWidth: 120,
-              padding: 12,
-              borderRadius: BorderRadius.full,
+              width: 140,
+              minHeight: 112,
+              padding: 14,
+              borderRadius: BorderRadius.card,
               borderWidth: 1,
               borderColor,
-              backgroundColor: 'rgba(155,155,155,0.03)',
+              backgroundColor: cardBg || 'rgba(155,155,155,0.03)',
               alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
             accessibilityRole="button"
           >
@@ -82,16 +87,16 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: BorderRadius.full,
+                borderRadius: BorderRadius.md,
                 backgroundColor: `${accentColor}15`,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginBottom: 8,
               }}
             >
               <Ionicons name={icon as any} size={20} color={accentColor} />
             </View>
             <Text
+              numberOfLines={2}
               style={{ color: textPrimary, fontSize: 12, fontFamily: FontFamily.extrabold, textAlign: 'center' }}
             >
               {name}

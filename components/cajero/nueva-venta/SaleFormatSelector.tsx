@@ -10,7 +10,6 @@ type Props = {
   product: any;
   options: OpcionVentaProducto[];
   shotMl: number;
-  accentColor: string;
   textPrimary: string;
   textSecondary: string;
   borderColor: string;
@@ -28,7 +27,6 @@ export function SaleFormatSelector({
   product,
   options,
   shotMl,
-  accentColor,
   textPrimary,
   textSecondary,
   borderColor,
@@ -143,7 +141,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.md,
     padding: 8,
   },
   info: { flex: 1, minWidth: 0 },

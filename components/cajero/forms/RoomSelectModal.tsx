@@ -1,12 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import VirtualizedList from "@/components/shared/VirtualizedList";
+import React, { useMemo } from "react";
+import { StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useRenderCount } from "@/hooks/useRenderCount";
-import { ModalBottomSheet } from "@/components/ui/ModalBottomSheet";
+import {
+  SelectListModal,
+  type SelectListItem,
+} from "@/components/ui/SelectListModal";
 
 export interface Room {
   id: string | number;
@@ -28,6 +30,15 @@ interface RoomSelectModalProps {
   requireCompleteConfig?: boolean;
 }
 
+const estadoHabitacion = (room: Room) =>
+  Number(room.estado ?? room.status ?? 0);
+const etiquetaEstado = (estado: number) => {
+  if (estado === 0) return "INACTIVA";
+  if (estado === 1) return "LIBRE";
+  if (estado === 2) return "OCUPADA";
+  return "NO DISPONIBLE";
+};
+
 export const RoomSelectModal = React.memo(function RoomSelectModal({
   visible,
   onClose,
@@ -39,142 +50,96 @@ export const RoomSelectModal = React.memo(function RoomSelectModal({
   useRenderCount("RoomSelectModal", { visible, roomCount: rooms.length });
   const {
     accentColor: primaryColor,
-    borderColor,
-    textPrimary,
-    textSecondary,
     accentOnSurface,
     accentColor,
   } = useAccentColor();
 
-  const estadoHabitacion = (room: Room) =>
-    Number(room.estado ?? room.status ?? 0);
-  const etiquetaEstado = (estado: number) => {
-    if (estado === 0) return "INACTIVA";
-    if (estado === 1) return "LIBRE";
-    if (estado === 2) return "OCUPADA";
-    return "NO DISPONIBLE";
-  };
+  const items: SelectListItem[] = useMemo(() => {
+    const available = requireCompleteConfig
+      ? rooms.filter(
+          (room) =>
+            Number(room.precio ?? 0) > 0 && Number(room.tiempo ?? 0) > 0,
+        )
+      : rooms;
 
-  const renderItem = ({ item }: { item: Room }) => {
-    const itemId = String(item.id_habitacion || item.id);
-    const isSelected = String(selectedRoomId) === itemId;
-    const estado = estadoHabitacion(item);
-    const estaLibre = estado === 1;
-    const roomName =
-      item.nombre || `Habitación ${item.id_habitacion || item.id}`;
+    return available.map((item) => {
+      const itemId = String(item.id_habitacion || item.id);
+      const isSelected = String(selectedRoomId) === itemId;
+      const estado = estadoHabitacion(item);
+      const estaLibre = estado === 1;
+      const roomName =
+        item.nombre || `Habitación ${item.id_habitacion || item.id}`;
 
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${roomName}, ${etiquetaEstado(estado)}`}
-        accessibilityState={{
-          disabled: !estaLibre,
-          selected: isSelected,
-        }}
-        disabled={!estaLibre}
-        onPress={() => {
+      return {
+        id: itemId,
+        selected: isSelected,
+        disabled: !estaLibre,
+        accessibilityLabel: `${roomName}, ${etiquetaEstado(estado)}`,
+        onPress: () => {
           if (estaLibre) onSelect(item);
-        }}
-        style={[
-          styles.modalItem,
-          {
-            borderColor: isSelected ? primaryColor : borderColor,
-            backgroundColor: isSelected
-              ? `${primaryColor}15`
-              : "transparent",
-            opacity: estaLibre ? 1 : 0.6,
-            borderWidth: isSelected ? 2 : 1.5,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.roomIcon,
-            {
-              backgroundColor: estaLibre ? `${accentOnSurface}20` : `${accentColor}20`,
-            },
-          ]}
-        >
-          <Ionicons
-            name="business"
-            size={24}
-            color={estaLibre ? accentOnSurface : accentColor}
-          />
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text
-            style={[styles.modalItemText, { color: textPrimary }]}
-          >
-            {roomName}
-          </Text>
-          <View
-            style={{ flexDirection: "row", alignItems: "center" }}
-          >
-            <Text style={{ fontSize: 13, color: textSecondary }}>
-              ${Number(item.precio || 0).toLocaleString()} •{" "}
-              {item.tiempo || 0} min
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: estaLibre ? accentOnSurface : accentColor,
-                marginLeft: 8,
-                fontFamily: FontFamily.bold,
-              }}
+        },
+        renderContent: (selected, _accent, textColor, mutedColor) => (
+          <View style={styles.row}>
+            <View
+              style={[
+                styles.roomIcon,
+                {
+                  backgroundColor: estaLibre
+                    ? `${accentOnSurface}20`
+                    : `${accentColor}20`,
+                },
+              ]}
             >
-              {`● ${etiquetaEstado(estado)}`}
-            </Text>
+              <Ionicons
+                name="business"
+                size={24}
+                color={estaLibre ? accentOnSurface : accentColor}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.modalItemText, { color: textColor }]}>
+                {roomName}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: mutedColor }}>
+                  ${Number(item.precio || 0).toLocaleString()} • {item.tiempo || 0} min
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: estaLibre ? accentOnSurface : accentColor,
+                    marginLeft: 8,
+                    fontFamily: FontFamily.bold,
+                  }}
+                >
+                  {`● ${etiquetaEstado(estado)}`}
+                </Text>
+              </View>
+            </View>
+            {selected && <Ionicons name="checkmark" size={18} color={primaryColor} />}
           </View>
-        </View>
-        {isSelected && (
-          <Ionicons name="checkmark" size={18} color={primaryColor} />
-        )}
-      </Pressable>
-    );
-  };
+        ),
+      };
+    });
+  }, [accentColor, accentOnSurface, onSelect, primaryColor, requireCompleteConfig, rooms, selectedRoomId]);
 
   return (
-    <ModalBottomSheet
+    <SelectListModal
       visible={visible}
       onClose={onClose}
       title="Seleccionar Habitación"
-      actionLabel="Listo"
-      onAction={onClose}
-      scrollable={false}
-    >
-      <View style={{ flex: 1 }}>
-        <VirtualizedList
-          data={
-            requireCompleteConfig
-              ? rooms.filter(
-                  (room) =>
-                    Number(room.precio ?? 0) > 0 &&
-                    Number(room.tiempo ?? 0) > 0,
-                )
-              : rooms
-          }
-          keyExtractor={(item: Room) =>
-            (item.id_habitacion || item.id).toString()
-          }
-          estimatedItemSize={80}
-          renderItem={renderItem}
-          showVerticalScrollIndicator={false}
-        />
-      </View>
-    </ModalBottomSheet>
+      items={items}
+      emptyText="No hay habitaciones disponibles"
+    />
   );
 });
 RoomSelectModal.displayName = "RoomSelectModal";
 
 const styles = StyleSheet.create({
-  modalItem: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderRadius: BorderRadius.card,
-    borderWidth: 2,
-    marginBottom: 10,
   },
   modalItemText: {
     fontSize: 16,

@@ -1,8 +1,6 @@
 import { matchesProductSearch } from "../../../hooks/utils/productSearch";
 import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
-import { BASE_URL } from "@/api/base-url";
-import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +22,7 @@ import {
 import { SaleFormatSelector } from "@/components/cajero/nueva-venta/SaleFormatSelector";
 import { useConfigValue } from "@/hooks/useConfigValue";
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { ProductLineRow } from '@/components/shared/ProductLineRow';
 
 interface CategoryProductModalProps {
   visible: boolean;
@@ -42,40 +41,6 @@ interface CategoryProductModalProps {
   onClose: () => void;
   onAdd: (item: any, choice: SaleChoice, quantity: number) => void;
   onRemove: (item: any, choice: SaleChoice) => void;
-}
-
-function ProductThumbnail({
-  photo,
-  name,
-  accentColor,
-}: {
-  photo?: string;
-  name: string;
-  accentColor: string;
-}) {
-  const uri = photo
-    ? photo.startsWith("http")
-      ? photo
-      : `${BASE_URL}/api/images/products/${encodeURIComponent(photo)}`
-    : null;
-  const [failedUri, setFailedUri] = useState<string | null>(null);
-  return (
-    <View
-      style={[thumbnailStyles.thumbnail, { backgroundColor: `${accentColor}12` }]}
-    >
-      {uri && uri !== failedUri ? (
-        <Image
-          source={{ uri }}
-          style={{ width: "100%", height: "100%" }}
-          contentFit="contain"
-          accessibilityLabel={`Foto de ${name}`}
-          onError={() => setFailedUri(uri)}
-        />
-      ) : (
-        <Ionicons name="cube-outline" size={28} color={accentColor} />
-      )}
-    </View>
-  );
 }
 
 type ProductRowProps = {
@@ -109,54 +74,35 @@ const ProductRow = memo(function ProductRow({
   const venta = resolverVentaProducto(item);
   const stockBar = Number(item.stock_bar ?? 0);
   return (
-    <View
-      style={[
-        thumbnailStyles.product,
-        {
-          borderColor,
-          backgroundColor: surfaceMuted,
-        },
-      ]}
+    <ProductLineRow
+      photo={item.foto || item.producto_foto}
+      photoSize={72}
+      name={item.name || item.nombre || "Producto"}
+      meta={
+        item.stock_bar != null
+          ? [`Stock en bar: ${stockBar} ${stockBar === 1 ? "unidad" : "unidades"}`]
+          : []
+      }
+      cardBg={surfaceMuted}
+      borderColor={borderColor}
+      textPrimary={textPrimary}
+      textSecondary={textSecondary}
+      accentColor={accentColor}
+      isDark={isDark}
     >
-      <View style={{ flex: 1 }}>
-        <View style={thumbnailStyles.productHeader}>
-          <ProductThumbnail
-            photo={item.foto || item.producto_foto}
-            name={item.name || item.nombre || "Producto"}
-            accentColor={accentColor}
-          />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              style={[
-                thumbnailStyles.productName,
-                { color: textPrimary, marginBottom: 0 },
-              ]}
-              numberOfLines={2}
-            >
-              {item.name || item.nombre}
-            </Text>
-            {item.stock_bar != null && (
-              <Text style={[thumbnailStyles.stock, { color: textSecondary }]}>
-                {`Stock en bar: ${stockBar} ${stockBar === 1 ? "unidad" : "unidades"}`}
-              </Text>
-            )}
-          </View>
-        </View>
-        <SaleFormatSelector
-          product={item}
-          options={venta.opciones}
-          shotMl={shotMl}
-          accentColor={accentColor}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          borderColor={borderColor}
-          cardBg={cardBg}
-          cart={cart}
-          onAdd={(choice, quantity) => onAdd(item, choice, quantity)}
-          onRemove={(choice) => onRemove(item, choice)}
-        />
-      </View>
-    </View>
+      <SaleFormatSelector
+        product={item}
+        options={venta.opciones}
+        shotMl={shotMl}
+        textPrimary={textPrimary}
+        textSecondary={textSecondary}
+        borderColor={borderColor}
+        cardBg={cardBg}
+        cart={cart}
+        onAdd={(choice, quantity) => onAdd(item, choice, quantity)}
+        onRemove={(choice) => onRemove(item, choice)}
+      />
+    </ProductLineRow>
   );
 });
 
@@ -424,7 +370,7 @@ const thumbnailStyles = StyleSheet.create({
   },
   searchInput: { flex: 1, minWidth: 0, paddingVertical: 14, fontSize: 14 },
   count: { fontSize: 12, marginVertical: 12 },
-  product: { borderRadius: BorderRadius.full, borderWidth: 1, padding: 16, marginBottom: 12 },
+  product: { borderRadius: BorderRadius.card, borderWidth: 1, padding: 16, marginBottom: 12 },
   productHeader: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
@@ -434,7 +380,7 @@ const thumbnailStyles = StyleSheet.create({
   thumbnail: {
     width: 72,
     height: 72,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.md,
     overflow: "hidden" as const,
     alignItems: "center" as const,
     justifyContent: "center" as const,

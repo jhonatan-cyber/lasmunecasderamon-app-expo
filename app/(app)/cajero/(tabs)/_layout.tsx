@@ -9,8 +9,6 @@ export default function CajeroTabsLayout() {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const esAdmin = useIsAdmin();
 
-  // El administrador sólo usa la pestaña Inicio: no gestiona asistencia,
-  // anticipos, propinas ni horas extras.
   const soloAdminOculto = { href: esAdmin ? null : undefined };
 
   return (

@@ -18,6 +18,10 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('react-native', () => ({
+  AccessibilityInfo: {
+    isReduceMotionEnabled: () => Promise.resolve(false),
+    addEventListener: () => ({ remove: () => {} }),
+  },
   ActivityIndicator: () => null,
   Dimensions: { get: () => ({ width: 390, height: 844 }) },
   FlatList: ({ data, renderItem, keyExtractor }: any) => (
@@ -41,6 +45,9 @@ vi.mock('react-native', () => ({
   View: ({ children }: RenderProps) => <div>{children}</div>,
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
+vi.mock('@/components/ui/AnimatedView', () => ({
+  AnimatedView: ({ children }: RenderProps) => <div>{children}</div>,
+}));
 vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('@/components/ui/AppModal', () => ({
   AppModal: ({
