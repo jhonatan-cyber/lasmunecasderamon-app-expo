@@ -7,6 +7,7 @@ import { getMirror, MIRROR_KEYS, MIRROR_MAX_AGE_MS } from '@/services/mirror';
 import { parseDateSafe } from '@/utils/timeUtils';
 import { useTimer } from '@/context/TimerContext';
 import { useDebouncedEventListener } from '@/hooks/useDebouncedEventListener';
+import { useCajaAbiertaStore } from '@/store/cajaAbiertaStore';
 import { REALTIME_EVENT_NAMES } from '@/utils/realtime';
 import type { Anfitriona } from '@lasmunecasderamon/types';
 import type { SSEPayload } from '@/types/realtime';
@@ -18,6 +19,9 @@ const CACHE_KEY = 'solicitudes_cache_v1';
 
 export const useSolicitudes = () => {
     const { serverOffset } = useTimer();
+    const refrescarCaja = useCajaAbiertaStore((state) => state.refresh);
+    const cajaAbiertaStore = useCajaAbiertaStore((state) => state.cajaAbierta);
+    const cajaAbiertaPrevia = useRef(cajaAbiertaStore);
     const [solicitudes, setSolicitudes] = useState<SolicitudItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -45,6 +49,15 @@ export const useSolicitudes = () => {
 
     const fetchSolicitudes = useCallback(async (isManual = false, signal?: AbortSignal) => {
         try {
+            // La caja puede haber cambiado de turno mientras la pantalla estaba
+            // en segundo plano: refrescamos antes de decidir qué solicitudes
+            // pertenecen a la apertura actual.
+            await refrescarCaja();
+            const cajaInfo = useCajaAbiertaStore.getState().cajaInfo;
+            const fechaAperturaMs = cajaInfo?.fecha_apertura
+                ? parseDateSafe(String(cajaInfo.fecha_apertura)).getTime()
+                : null;
+
             const [lectura, resAnfitrionas] = await Promise.all([
                 getMirror().readThroughDetailed(
                     MIRROR_KEYS.serviceRequests,
@@ -99,8 +112,20 @@ export const useSolicitudes = () => {
 
                         combined.sort((a, b) => b.fecha_orden - a.fecha_orden);
 
+                        // Solo solicitudes de la caja actual. Si no hay caja
+                        // abierta, no se muestra ninguna (no se arrastran las
+                        // pendientes del turno anterior).
+                        const cajaAbiertaActual = resStats?.data && typeof resStats.data.cajas_abiertas !== 'undefined'
+                            ? resStats.data.cajas_abiertas > 0
+                            : Boolean(cajaInfo);
+                        const itemsDeCaja = !cajaAbiertaActual
+                            ? []
+                            : fechaAperturaMs !== null && !isNaN(fechaAperturaMs)
+                                ? combined.filter((s) => s.fecha_orden >= fechaAperturaMs)
+                                : combined;
+
                         return {
-                            items: combined,
+                            items: itemsDeCaja,
                             cajaAbierta:
                                 resStats?.data && typeof resStats.data.cajas_abiertas !== 'undefined'
                                     ? resStats.data.cajas_abiertas > 0
@@ -158,7 +183,7 @@ export const useSolicitudes = () => {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [refrescarCaja]);
 
     useEffect(() => {
         const ac = new AbortController();
@@ -167,6 +192,21 @@ export const useSolicitudes = () => {
         })();
         return () => ac.abort();
     }, [fetchSolicitudes]);
+
+    // Al cerrar caja se descartan las solicitudes que quedaron sin atender:
+    // no deben reaparecer en la siguiente apertura. Al reabrir se recarga el
+    // listado con el `fecha_apertura` nuevo.
+    useEffect(() => {
+        const anterior = cajaAbiertaPrevia.current;
+        cajaAbiertaPrevia.current = cajaAbiertaStore;
+        if (anterior === true && cajaAbiertaStore === false) {
+            setSolicitudes([]);
+            dataRef.current = '';
+            AsyncStorage.removeItem(CACHE_KEY).catch(() => null);
+        } else if (anterior === false && cajaAbiertaStore === true) {
+            void fetchSolicitudes();
+        }
+    }, [cajaAbiertaStore, fetchSolicitudes]);
 
     useEffect(() => {
         const subscription = eventBus.addListener('refresh_requests', (payload: SSEPayload) => {

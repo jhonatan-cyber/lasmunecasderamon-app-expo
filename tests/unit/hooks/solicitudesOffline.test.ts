@@ -9,9 +9,14 @@ import { createMirrorRepository } from '@/services/mirror/repository';
 import { ensureMirrorSchema } from '@/services/mirror/schema';
 import { createNodeSqliteMirrorDriver } from '../../helpers/nodeSqliteMirrorDriver';
 
-const { apiClientSafe, showToast } = vi.hoisted(() => ({
+const { apiClientSafe, showToast, cajaState } = vi.hoisted(() => ({
   apiClientSafe: vi.fn(),
   showToast: vi.fn(),
+  cajaState: {
+    cajaAbierta: true as boolean | null,
+    cajaInfo: null,
+    refresh: vi.fn(async () => true),
+  },
 }));
 vi.mock('@/utils/toast-lazy', () => ({ showToast }));
 
@@ -23,6 +28,13 @@ vi.mock('@/api/client', () => ({
   setForbiddenHandler: vi.fn(),
   setSessionConfirmedHandler: vi.fn(),
   notifySessionConfirmed: vi.fn(),
+}));
+
+vi.mock('@/store/cajaAbiertaStore', () => ({
+  useCajaAbiertaStore: Object.assign(
+    (selector: (state: typeof cajaState) => unknown) => selector(cajaState),
+    { getState: () => cajaState },
+  ),
 }));
 
 const SOLICITUD = {
@@ -56,6 +68,8 @@ let driver: ReturnType<typeof createNodeSqliteMirrorDriver>;
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  cajaState.cajaAbierta = true;
+  cajaState.refresh.mockResolvedValue(true);
   // El caché local de la pantalla vive en AsyncStorage y persiste entre tests
   // del mismo archivo: sin limpiarlo, un test heredaría la lista del anterior.
   await AsyncStorage.clear();
