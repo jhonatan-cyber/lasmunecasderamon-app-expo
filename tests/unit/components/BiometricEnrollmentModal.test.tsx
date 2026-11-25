@@ -44,6 +44,8 @@ vi.mock('expo-camera', async () => {
 
 vi.mock('react-native', () => ({
     StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {}, absoluteFillObject: {} },
+    // `BorderRadius.card` lee el tamaño de ventana en tiempo de importación.
+    Dimensions: { get: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }) },
     View: ({ children }: any) => <div>{children}</div>,
     Text: ({ children }: any) => <span>{children}</span>,
     // El panel usa Pressable con render prop (`{({ pressed }) => ...}`): el

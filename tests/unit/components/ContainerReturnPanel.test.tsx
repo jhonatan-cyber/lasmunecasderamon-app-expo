@@ -133,8 +133,20 @@ const props = {
   onAbrirScanner: vi.fn(),
 };
 
+/**
+ * ICU inserta espacios duros (NBSP/narrow NBSP) y marcas direccionales según
+ * la versión; se normalizan para comparar solo el contenido visible.
+ */
+const normalizar = (texto: string) =>
+  texto.replace(/[\s\u00a0\u202f\u200e\u200f]+/g, ' ').trim();
+
 const lineasDe = (texto: string) =>
-  screen.getByText(texto, { selector: 'span' }).getAttribute('data-lines');
+  screen
+    .getByText(
+      (_, el) =>
+        el?.tagName === 'SPAN' && normalizar(el.textContent ?? '') === normalizar(texto),
+    )
+    .getAttribute('data-lines');
 
 describe('ContainerReturnPanel', () => {
   it('limita a una línea el producto, el usuario y la fecha largos de cada devolución', () => {
@@ -162,7 +174,9 @@ describe('ContainerReturnPanel', () => {
     expect(recibido.textContent).toContain(
       'Bartolomé Alejandro Fernández De La Fuente',
     );
-    expect(recibido.textContent).toContain(fechaCorta(item.fecha_confirmacion!));
+    expect(normalizar(recibido.textContent ?? '')).toContain(
+      normalizar(fechaCorta(item.fecha_confirmacion!)),
+    );
   });
 
   it('la fila de sesión recorta los contadores y deja visible el botón Limpiar', () => {
