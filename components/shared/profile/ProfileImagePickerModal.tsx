@@ -6,6 +6,7 @@ import { styles } from "../PremiumProfileView.styles";
 interface ProfileImagePickerModalProps {
   visible: boolean;
   accentColor: string;
+  accentOnSurface: string;
   cardBg: string;
   textPrimary: string;
   onTakePhoto: () => void;
@@ -16,6 +17,7 @@ interface ProfileImagePickerModalProps {
 export function ProfileImagePickerModal({
   visible,
   accentColor,
+  accentOnSurface,
   cardBg,
   textPrimary,
   onTakePhoto,
@@ -62,7 +64,7 @@ export function ProfileImagePickerModal({
             accessibilityRole="button"
             accessibilityLabel="Cancelar"
           >
-            <Text style={[styles.cancelModalBtnText, { color: accentColor }]}>
+            <Text style={[styles.cancelModalBtnText, { color: accentOnSurface }]}>
               Cancelar
             </Text>
           </Pressable>

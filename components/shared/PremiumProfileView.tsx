@@ -42,7 +42,7 @@ export function PremiumProfileView({
   onLogout,
   onClose,
 }: PremiumProfileViewProps) {
-  const { accentColor, accentText, accentUi, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, primaryColor, accentGlow, accentText, accentUi, accentOnSurface, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsiveMetrics();
@@ -165,10 +165,10 @@ export function PremiumProfileView({
         <StatusBar style={isDark ? "light" : "dark"} />
         <ProfileLoadingState
           bg={bg}
-          isDark={isDark}
           roleLabel={roleLabelEfectivo}
           isTablet={isTablet}
-          accentColor={accentColor}
+          accentColor={primaryColor}
+          accentGlow={accentGlow}
           textPrimary={textPrimary}
           topInset={insets.top}
           onBack={() => router.back()}
@@ -184,8 +184,8 @@ export function PremiumProfileView({
       <ProfileHeader
         roleLabel={roleLabelEfectivo}
         isTablet={isTablet}
-        isDark={isDark}
-        accentColor={accentColor}
+        accentColor={primaryColor}
+        accentGlow={accentGlow}
         textPrimary={textPrimary}
         topInset={insets.top}
         onBack={() => router.back()}
@@ -221,12 +221,10 @@ export function PremiumProfileView({
 
         <View style={styles.formContainer}>
           <ProfileThemePicker
-            accentColor={accentColor}
             textPrimary={textPrimary}
             textSecondary={textSecondary}
             borderColor={borderColor}
             isDark={isDark}
-            accentText={accentText}
           />
 
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -273,6 +271,7 @@ export function PremiumProfileView({
       <ProfileImagePickerModal
         visible={imagePickerVisible}
         accentColor={accentColor}
+        accentOnSurface={accentOnSurface}
         cardBg={cardBg}
         textPrimary={textPrimary}
         onTakePhoto={handleTakePhoto}
@@ -284,6 +283,7 @@ export function PremiumProfileView({
         visible={civilPickerVisible}
         selected={formData.estadoCivil}
         accentColor={accentColor}
+        accentOnSurface={accentOnSurface}
         cardBg={cardBg}
         textPrimary={textPrimary}
         onSelect={(value) => updateField("estadoCivil", value)}

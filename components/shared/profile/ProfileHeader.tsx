@@ -2,15 +2,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, Text, View } from "react-native";
 import { styles } from "../PremiumProfileView.styles";
 import { SkeletonBox } from "./SkeletonBox";
-import { neonGlow, resolveAccentSurface } from "@/utils/color";
+import { resolveAccentSurface } from "@/utils/color";
 import { useAppearanceStore } from "@/store/appearanceStore";
 
 interface ProfileHeaderProps {
   skeletonMode?: boolean;
   roleLabel?: string;
   isTablet: boolean;
-  isDark: boolean;
   accentColor: string;
+  accentGlow: string;
   textPrimary: string;
   topInset: number;
   onBack: () => void;
@@ -20,13 +20,12 @@ export function ProfileHeader({
   skeletonMode = false,
   roleLabel,
   isTablet,
-  isDark,
   accentColor,
+  accentGlow,
   topInset,
   onBack,
 }: ProfileHeaderProps) {
-  // El header se dibuja sobre el color plano del acento: el texto se mide
-  // contra ese color (blanco en los acentos profundos, casi negro en los neón).
+  // El header usa el primario de marca y adapta el texto para conservar contraste.
   const plan = resolveAccentSurface(accentColor);
   const finalHeaderText = plan.text;
   const { scheme, toggleScheme } = useAppearanceStore();
@@ -42,7 +41,7 @@ export function ProfileHeader({
         styles.header,
         {
           backgroundColor: accentColor,
-          boxShadow: neonGlow(accentColor, isDark ? "strong" : "soft"),
+          boxShadow: accentGlow,
           paddingTop: topInset + (isTablet ? 20 : 10),
           paddingBottom: 25,
           borderBottomLeftRadius: 32,

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { DEFAULT_PROFILE_ACCENT } from '@/constants/colorTokens';
 import logger from '@/utils/logger';
 
 export interface ThemeOption {
@@ -18,7 +19,7 @@ export interface ThemeOption {
  * (`accentGlow`) que se aplica a las superficies de marca.
  */
 export const THEME_OPTIONS: ThemeOption[] = [
-    { name: 'Rojo (Default)', color: '#FF1B3D' },
+    { name: 'Rojo (Default)', color: DEFAULT_PROFILE_ACCENT },
     { name: 'Violeta', color: '#C13BFF' },
     { name: 'Azul', color: '#0095FF' },
     { name: 'Índigo', color: '#6C4DFF' },
@@ -33,7 +34,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
     { name: 'Negro', color: '#171717' },
 ];
 
-export const DEFAULT_ACCENT_COLOR = THEME_OPTIONS[0].color;
+export const DEFAULT_ACCENT_COLOR = DEFAULT_PROFILE_ACCENT;
 
 /**
  * Colores de paletas anteriores (la saturada de 2025 y la original de

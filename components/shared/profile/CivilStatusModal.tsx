@@ -16,6 +16,7 @@ interface CivilStatusModalProps {
   visible: boolean;
   selected: string;
   accentColor: string;
+  accentOnSurface: string;
   cardBg: string;
   textPrimary: string;
   onSelect: (value: string) => void;
@@ -26,6 +27,7 @@ export function CivilStatusModal({
   visible,
   selected,
   accentColor,
+  accentOnSurface,
   cardBg,
   textPrimary,
   onSelect,
@@ -74,7 +76,7 @@ export function CivilStatusModal({
             ))}
           </ScrollView>
           <Pressable style={styles.cancelModalBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancelar selección de estado civil">
-            <Text style={[styles.cancelModalBtnText, { color: accentColor }]}>
+            <Text style={[styles.cancelModalBtnText, { color: accentOnSurface }]}>
               Cancelar
             </Text>
           </Pressable>

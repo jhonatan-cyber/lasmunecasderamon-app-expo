@@ -5,10 +5,10 @@ import { SkeletonBox } from "./SkeletonBox";
 
 interface ProfileLoadingStateProps {
   bg: string;
-  isDark: boolean;
   roleLabel?: string;
   isTablet: boolean;
   accentColor: string;
+  accentGlow: string;
   textPrimary: string;
   topInset: number;
   onBack: () => void;
@@ -16,10 +16,10 @@ interface ProfileLoadingStateProps {
 
 export function ProfileLoadingState({
   bg,
-  isDark,
   roleLabel,
   isTablet,
   accentColor,
+  accentGlow,
   textPrimary,
   topInset,
   onBack,
@@ -30,8 +30,8 @@ export function ProfileLoadingState({
         skeletonMode
         roleLabel={roleLabel}
         isTablet={isTablet}
-        isDark={isDark}
         accentColor={accentColor}
+        accentGlow={accentGlow}
         textPrimary={textPrimary}
         topInset={topInset}
         onBack={onBack}

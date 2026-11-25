@@ -1,19 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BorderRadius } from '@/constants/spacing';
+import { ThemeTokens } from '@/constants/colorTokens';
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DEFAULT_ACCENT_COLOR, THEME_OPTIONS, normalizeAccentColor, useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
 import { neonGlow, resolveAccentSurface } from "@/utils/color";
+import { resolveThemePalette } from "@/utils/themePalette";
 
-export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark, accentText }: {
-  /** Se mantiene en la firma porque la vista de perfil lo pasa, pero el
-   *  selector usa el acento guardado en el store. */
-  accentColor?: string;
+export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, isDark }: {
   textPrimary: string;
   textSecondary: string;
   borderColor: string;
   isDark: boolean;
-  accentText: string;
 }) {
   const setAccentColor = useThemeStore((state) => state.setAccentColor);
   const userId = useAuthStore((state) => state.user?.id);
@@ -28,13 +26,16 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
   );
   const selectedTheme = THEME_OPTIONS.find((theme) => theme.color.toLowerCase() === storedColor.toLowerCase()) ?? THEME_OPTIONS[0];
   const themeName = (name: string) => name === "Rojo (Default)" ? "Rojo" : name;
+  const themeTokens = isDark ? ThemeTokens.dark : ThemeTokens.light;
+  const selectedPalette = resolveThemePalette(storedColor, isDark);
 
-  // El acento es un color plano: el texto del preview se mide contra ese color
-  // (blanco en los acentos profundos, casi negro en los neón luminosos).
-  const previewTextColor = resolveAccentSurface(selectedTheme.color).text;
-  // El halo se calcula con el color elegido, no con el acento de la interfaz:
-  // con el tema Negro en oscuro el acento es blanco, pero el swatch es negro.
-  const glowOf = (color: string) => neonGlow(color, isDark ? "strong" : "soft");
+  const previewColor = selectedPalette.primaryColor;
+  const previewTextColor = selectedPalette.primaryText;
+  const previewAccentTextColor = selectedPalette.accentText;
+  const glowOf = (color: string) => {
+    const glowColor = resolveThemePalette(color, isDark).glowColor;
+    return neonGlow(glowColor, isDark ? "strong" : "soft");
+  };
 
   return (
     <View style={styles.container}>
@@ -45,11 +46,11 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
       <View
         style={[
           styles.preview,
-          { backgroundColor: selectedTheme.color, boxShadow: glowOf(selectedTheme.color) },
+          { backgroundColor: previewColor, boxShadow: glowOf(storedColor) },
         ]}
       >
-        <View style={[styles.previewIcon, { backgroundColor: previewTextColor === accentText ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)" }]}>
-          <Ionicons name="color-palette-outline" size={26} color={previewTextColor} />
+        <View style={[styles.previewIcon, { backgroundColor: selectedPalette.accentColor }]}>
+          <Ionicons name="color-palette-outline" size={26} color={previewAccentTextColor} />
         </View>
         <View style={styles.previewText}>
           <Text style={[styles.previewCaption, { color: previewTextColor }]}>TU COLOR ACTUAL</Text>
@@ -64,7 +65,7 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
           // Texto legible sobre el color plano del swatch.
           const swatchTextColor = resolveAccentSurface(theme.color).text;
           // Para colores claros, usar un fondo gris en lugar de `${theme.color}18` (invisible en blanco)
-          const optionBg = isSelected ? (isThemeLight(theme.color) ? "rgba(107,114,128,0.12)" : `${theme.color}18`) : "transparent";
+          const optionBg = isSelected ? (isThemeLight(theme.color) ? themeTokens.overlaySubtle : `${theme.color}18`) : "transparent";
           // Para colores claros, el borde usa un tono más oscuro
           // En modo oscuro el swatch negro se funde con el fondo: el borde
           // seleccionado pasa a blanco para seguir siendo visible.
@@ -72,7 +73,7 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
             ? isThemeLight(theme.color)
               ? textSecondary
               : isThemeBlack && isDark
-                ? accentText
+                ? themeTokens.textPrimary
                 : theme.color
             : borderColor;
           return (
@@ -86,7 +87,8 @@ export function ProfileThemePicker({ textPrimary, textSecondary, borderColor, is
               style={({ pressed }) => [
                 styles.option,
                 { borderColor: optionBorder, backgroundColor: optionBg },
-                pressed && { opacity: 0.7 },
+                pressed && { opacity: themeTokens.interaction.pressedOpacity },
+                userId == null && { opacity: themeTokens.interaction.disabledOpacity },
               ]}
             >
               <View
