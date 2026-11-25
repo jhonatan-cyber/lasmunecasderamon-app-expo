@@ -1,0 +1,45 @@
+appId: com.lasmunecasderamon.app
+name: Catálogo offline persiste en SQLite
+tags:
+  - android
+  - offline
+env:
+  CATEGORY_NAME: ${MAESTRO_CATEGORY || "Bebidas"}
+---
+- setAirplaneMode: disabled
+- launchApp:
+    clearState: true
+- tapOn: "Ingresa tu nick"
+- inputText: ${MAESTRO_USERNAME}
+- tapOn: "Ingresa tu contraseña"
+- inputText: ${MAESTRO_PASSWORD}
+- hideKeyboard
+- tapOn: "Ingresar"
+- extendedWaitUntil:
+    visible: "VENTAS"
+    timeout: 30000
+- tapOn: "VENTAS"
+- extendedWaitUntil:
+    visible: "Nueva venta"
+    timeout: 30000
+- tapOn: "Nueva venta"
+- extendedWaitUntil:
+    visible: ${CATEGORY_NAME}
+    timeout: 30000
+- setAirplaneMode: enabled
+- killApp
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "VENTAS"
+    timeout: 30000
+- tapOn: "VENTAS"
+- extendedWaitUntil:
+    visible: "Nueva venta"
+    timeout: 30000
+- tapOn: "Nueva venta"
+- extendedWaitUntil:
+    visible: "Modo Offline"
+    timeout: 30000
+- assertVisible: ${CATEGORY_NAME}
+- setAirplaneMode: disabled

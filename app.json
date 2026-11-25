@@ -111,6 +111,9 @@
       "expo-secure-store",
       "expo-status-bar"
     ],
+    "web": {
+      "bundler": "metro"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

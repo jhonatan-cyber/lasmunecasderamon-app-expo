@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const todayKey = new Date().toDateString();
 
@@ -11,6 +11,7 @@ const barmanUser = {
     foto: '',
     username: 'damo',
     nick: 'Damo',
+    hasCompletedOnboarding: true,
 };
 
 async function bootstrapBarmanSession(page: Page) {
@@ -35,6 +36,13 @@ async function bootstrapBarmanSession(page: Page) {
                     return {
                         success: true,
                         data: { weeklyIncome: [], badges: [], totalEarnings: 0, svcCount: 0 },
+                    };
+                case '/categories':
+                    return {
+                        success: true,
+                        data: [
+                            { id: '10', name: 'Bebidas', status: 1, total_products: 4, display_order: 1 },
+                        ],
                     };
                 case '/advances/max':
                     return { success: true, data: { monto_maximo: 500000, tiene_solicitud_pendiente: false } };
@@ -84,15 +92,15 @@ test('root redirects barman users to the barman dashboard', async ({ page }) => 
     await expect(page).toHaveURL(/\/barman\/bar/);
 });
 
-test('barman home renders its tab bar labels', async ({ page }) => {
+test('barman home renders its primary shortcuts', async ({ page }) => {
     await bootstrapBarmanSession(page);
 
     await page.goto('/barman');
 
-    await expect(page.locator('body')).toContainText('Asistencia');
-    await expect(page.locator('body')).toContainText('Anticipos');
-    await expect(page.locator('body')).toContainText('Propinas');
-    await expect(page.locator('body')).toContainText('Extras');
+    await expect(page.locator('body')).toContainText('BAR');
+    await expect(page.locator('body')).toContainText('PEDIDOS');
+    await expect(page.locator('body')).toContainText('SERVICIOS');
+    await expect(page.locator('body')).toContainText('COVERS');
 });
 
 test('barman attendance screen renders its shell', async ({ page }) => {
@@ -110,10 +118,11 @@ test('barman advances screen renders its shell', async ({ page }) => {
 
     await expect(page.locator('body')).toContainText('Mis solicitudes y anticipos recibidos');
     await expect(page.locator('body')).not.toContainText('Entregar Efectivo');
-    // Los filtros de estado reemplazan los botones Solicitudes/Historial
-    await expect(page.locator('body')).toContainText('Todos');
-    await expect(page.locator('body')).toContainText('Solicitados');
-    await expect(page.locator('body')).toContainText('Recibidos');
+    await expect(page.locator('body')).toContainText('Todas');
+    await expect(page.locator('body')).toContainText('Pendientes');
+    await expect(page.locator('body')).toContainText('Aprobadas');
+    await expect(page.locator('body')).toContainText('Rechazadas');
+    await expect(page.locator('body')).toContainText('Recibidas');
     await page.getByRole('button', { name: 'Solicitar anticipo', exact: true }).click();
     await expect(page.locator('body')).toContainText('Enviar Solicitud');
 });
@@ -161,7 +170,8 @@ test('legacy barman sales route redirects to orders without the cashier FAB', as
     await page.goto('/barman/ventas');
 
     await expect(page).toHaveURL(/\/barman\/pedidos/);
-    await expect(page.locator('body')).toContainText('Categorías');
+    await expect(page.locator('body')).toContainText('Pedidos');
+    await expect(page.locator('body')).toContainText('Bebidas');
     await expect(
         page.locator('body'),
         'el FAB de nueva venta es flujo del cajero',
@@ -174,7 +184,8 @@ test('barman services screen renders with the create entry point', async ({ page
     await page.goto('/barman/servicios');
 
     await expect(page.locator('body')).toContainText('Servicios');
-    await expect(page.locator('body')).toContainText('NUEVO SERVICIO');
+    await expect(page.locator('body')).toContainText('Registrar nuevo servicio en habitación');
+    await expect(page.getByRole('button', { name: 'SOLICITAR SERVICIO' })).toBeVisible();
 });
 
 test('barman profile renders its role label', async ({ page }) => {

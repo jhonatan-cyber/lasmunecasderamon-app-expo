@@ -1,0 +1,18 @@
+appId: com.lasmunecasderamon.app
+name: Inicio de sesión de cajero
+tags:
+  - android
+  - smoke
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Ingresa tu nick"
+- tapOn: "Ingresa tu nick"
+- inputText: ${MAESTRO_USERNAME}
+- tapOn: "Ingresa tu contraseña"
+- inputText: ${MAESTRO_PASSWORD}
+- hideKeyboard
+- tapOn: "Ingresar"
+- extendedWaitUntil:
+    visible: "VENTAS"
+    timeout: 30000

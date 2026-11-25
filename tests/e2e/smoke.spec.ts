@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 type Role = 'cajero' | 'garzon' | 'anfitriona' | 'barman';
 
@@ -43,7 +43,7 @@ const users: Record<Role, Record<string, unknown>> = {
 };
 
 async function bootstrapRoleSession(page: Page, role: Role) {
-    const user = users[role];
+    const user = { ...users[role], hasCompletedOnboarding: true };
 
     await page.route('**/api/**', async (route) => {
         const url = new URL(route.request().url());
@@ -115,8 +115,9 @@ async function bootstrapRoleSession(page: Page, role: Role) {
 test('login route renders the auth shell', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.locator('body')).toContainText(/iniciar/i);
-    await expect(page.locator('body')).toContainText(/usuario/i);
+    await expect(page.getByLabel('Nick')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Contraseña' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ingresar' })).toBeVisible();
 });
 
 test('root route resolves without a 404 shell', async ({ page }) => {
@@ -160,7 +161,7 @@ test('la tarjeta RESUMEN del garzon abre su propia vista', async ({ page }) => {
 
     await expect(page).toHaveURL(/garzon\/resumen/);
     await expect(page.locator('body')).toContainText('Total a cobrar');
-    await expect(page.locator('body')).toContainText('Reportes');
+    await expect(page.locator('body')).toContainText('calendario');
 
     const back = page.getByRole('button', { name: 'Volver atrás' });
     const title = page.getByText('Resumen', { exact: true });

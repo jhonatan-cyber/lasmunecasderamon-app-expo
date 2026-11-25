@@ -57,7 +57,7 @@ Objetivo: ningún cobro duplicado ni perdido por retries/colas.
 - [ ] **God files**: partir `PremiumProfileView`, `cuentas`, `useCuentasScreen`; unificar reducers de pago ×3. ⛔ Pendiente: exigen QA visual.
 - [x] **Logger**: `debug/info` sin breadcrumb; `maxBreadcrumbs: 50`; scrub de PII (`authorization|token|password|secret|codigo|qr_token|device_date` → `[redacted]`) en consola, breadcrumbs y `captureMessage`. Los 19 `eslint-disable` se dejan (quitarlos aflora errores preexistentes; van con la limpieza de lint).
 - [x] Migrados ~33 `captureException` de fetches de fondo a `logger.fetchError` (18 hooks + overlay + profile + store). Quedan 15 en mutaciones/acciones de usuario y ops SQLite locales (ahí sí corresponde reportar).
-- [ ] E2E nativo/SSE/SecureStore/SQLite (Playwright hoy solo cubre web estático).
+- [ ] E2E nativo/SSE/SecureStore/SQLite: flujos Android con Maestro preparados para login y persistencia del catálogo en SQLite; hay prueba unitaria del paso de mensajes SSE al manejador/bus, pero falta ejecutar Maestro y validar SSE real en emulador con backend QA.
 
 ## Orden sugerido
 

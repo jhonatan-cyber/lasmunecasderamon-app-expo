@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test'
+import { expect, test, type Page } from './fixtures'
 
 const todayKey = new Date().toDateString()
 
@@ -10,6 +10,7 @@ const cajeroUser = {
   role: 'cajero',
   foto: '',
   username: 'carla.caja',
+  hasCompletedOnboarding: true,
 }
 
 const room = {
@@ -157,12 +158,13 @@ test.describe('Login + user flows', () => {
     await mockAllApi(page)
     await page.goto('/login')
 
-    await expect(page.locator('body')).toContainText('Iniciar Sesión')
+    await expect(page.getByLabel('Nick')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Contraseña' })).toBeVisible()
 
-    await page.getByPlaceholder('pepe').fill('carla.caja')
+    await page.getByLabel('Nick').fill('carla.caja')
     await page.getByPlaceholder('Ingresa tu contraseña').fill('secret123')
 
-    const loginBtn = page.locator('text=Iniciar Sesión').last()
+    const loginBtn = page.getByRole('button', { name: 'Ingresar' })
     await loginBtn.click()
 
     await expect(page).toHaveURL(/cajero/, { timeout: 20000 })
@@ -186,7 +188,7 @@ test.describe('Login + user flows', () => {
     await expect(page.locator('body')).toContainText('Nueva Venta', { timeout: 15000 })
     await expect(page.locator('body')).toContainText('Bebidas')
 
-    const categoryBtn = page.getByRole('button', { name: /categoría bebidas/i })
+    const categoryBtn = page.getByText('Bebidas', { exact: true })
     await expect(categoryBtn).toBeVisible()
 
     await categoryBtn.click()

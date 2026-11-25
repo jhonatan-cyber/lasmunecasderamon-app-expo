@@ -41,9 +41,12 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'expo-sqlite' && (isExpoGo || platform === 'web')) {
     return { type: 'sourceFile', filePath: expoSqlitePolyfill };
   }
-  // RNW 0.21 eliminó dist/exports/AssetRegistry y RN 0.88 ya no trae
-  // @react-native/assets-registry; expo-image y react-native-svg todavía los
-  // importan en su build web (ver polyfills/react-native-web-asset-registry.js).
+  // RN 0.88 dejó de publicar @react-native/assets-registry, pero el build web
+  // de react-native-svg sigue importando `@react-native/assets-registry/registry`.
+  // El shim reexpone el registro de RNW con ese nombre. Desde RNW 0.21.4 la
+  // ruta `dist/exports/AssetRegistry` volvió a existir, pero se aliasa igual
+  // para no depender de rutas internas de RNW.
+  // Ver polyfills/react-native-web-asset-registry.js.
   if (
     platform === 'web' &&
     (moduleName === 'react-native-web/dist/exports/AssetRegistry' ||

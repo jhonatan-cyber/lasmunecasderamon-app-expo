@@ -6,6 +6,8 @@ import { NotificationProvider } from '@/context/NotificationContext';
 const h = vi.hoisted(() => ({
   appStateListeners: [] as ((state: string) => void)[],
   instances: [] as { close: ReturnType<typeof vi.fn>; handlers: Record<string, (e?: unknown) => void> }[],
+  handleNotificationEvent: vi.fn(),
+  emitSseEvent: vi.fn(),
 }));
 
 vi.mock('react-native', () => ({
@@ -55,11 +57,11 @@ vi.mock('@/services/pushNotifications', () => ({
   registerForPushNotificationsAsync: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock('@/utils/realtime', () => ({
-  emitSseEvent: vi.fn(),
-  isSseControlEvent: vi.fn(() => true),
+  emitSseEvent: h.emitSseEvent,
+  isSseControlEvent: vi.fn(() => false),
 }));
 vi.mock('@/context/notifications/handleServerEvent', () => ({
-  handleNotificationEvent: vi.fn(),
+  handleNotificationEvent: h.handleNotificationEvent,
 }));
 vi.mock('@/context/notifications/systemNotifications', () => ({
   notifyInBackground: vi.fn(),
@@ -71,6 +73,8 @@ vi.mock('@/components/ui/NotificationBanner', () => ({
 beforeEach(() => {
   h.appStateListeners = [];
   h.instances = [];
+  h.handleNotificationEvent.mockClear();
+  h.emitSseEvent.mockClear();
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -90,6 +94,21 @@ function emitAppState(state: string) {
 }
 
 describe('NotificationContext: ciclo de vida del SSE según el estado de la app', () => {
+  it('entrega al manejador el payload recibido por SSE', async () => {
+    await renderConnected();
+    const payload = { type: 'new_order', data: { id: 42, codigo: 'PED-42' } };
+
+    act(() => {
+      h.instances[0].handlers.message({ data: JSON.stringify(payload) });
+    });
+
+    expect(h.handleNotificationEvent).toHaveBeenCalledWith(
+      payload,
+      expect.objectContaining({ user: { id: 7, rol: 'cajero' } }),
+    );
+    expect(h.emitSseEvent).toHaveBeenCalledWith(payload);
+  });
+
   it('cierra la conexión al pasar a segundo plano', async () => {
     await renderConnected();
 

@@ -36,14 +36,23 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Contrast accessibility tests
+        run: pnpm exec vitest run tests/unit/theme/contraste.test.ts
+
       - name: Expo doctor
         run: pnpm run doctor
 
       - name: Unit Tests
-        run: pnpm test:unit || true
+        run: pnpm test:unit
 
       - name: Unit Tests Coverage
-        run: pnpm test:unit:coverage || true
+        run: pnpm test:unit:coverage
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Web E2E
+        run: pnpm exec playwright test
 
   security:
     runs-on: ubuntu-24.04

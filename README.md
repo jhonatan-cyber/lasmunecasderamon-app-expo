@@ -75,9 +75,13 @@ corepack pnpm typecheck
 
 - `lint`: revisa hooks, imports, codigo muerto y errores de integracion.
 - `typecheck`: valida tipos antes de publicar builds o updates OTA.
-- El smoke e2e de Playwright sobre la exportacion web quedo retirado con el paso
-  a app solo nativa. `tests/e2e` y `playwright.config.ts` quedan pendientes de
-  migrar a un runner nativo; `App Quality` ya no ejecuta `smoke:web`.
+- `corepack pnpm start:web` inicia la app Expo para navegador con Metro en
+  `http://127.0.0.1:4173`. `corepack pnpm exec playwright test` inicia ese
+  servidor automáticamente; define `PLAYWRIGHT_BASE_URL` para usar un host web
+  externo. En navegador, el fallback de SQLite es solo en memoria; la persistencia
+  y la cola offline se validan en la app nativa. Hay flujos Android iniciales con
+  Maestro; requisitos y límites en `maestro/README.md`.
+  La suite web también se ejecuta como gate en el workflow de calidad.
 - Antes de publicar una update, correr ambos comandos y probar el login mas una ruta principal por rol.
 
 ## Ramas y merges
