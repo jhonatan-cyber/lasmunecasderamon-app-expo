@@ -22,9 +22,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClientSafe } from "@/api/client-safe";
 import { configurationsSchema } from "@lasmunecasderamon/validations";
 import { setExpensiveDrinkThreshold, setCardSplit, setIvaRate } from "@/hooks/utils/cuentaUtils";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAppFonts } from "@/hooks/useAppFonts";
-import { ThemeTokens } from "@/constants/colorTokens";
+import { useAccentColor } from "@/hooks/useAccentColor";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "setBackgroundColorAsync is not supported",
@@ -68,9 +67,9 @@ const MIRROR_STORAGE_TIMEOUT_MS = 3000;
 export default function RootLayout() {
   const [storageReady, setStorageReady] = useState(false);
   const fontsReady = useAppFonts();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const loadingTheme = isDark ? ThemeTokens.dark : ThemeTokens.light;
+  // La pantalla de carga usa la misma paleta que el resto de la app, así que
+  // también se tiñe con el acento del usuario.
+  const loadingTheme = useAccentColor();
   useEffect(() => {
     let active = true;
     let settled = false;
@@ -151,7 +150,7 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: loadingTheme.background,
+          backgroundColor: loadingTheme.backgroundColor,
         }}
       >
         <ActivityIndicator size="large" color={loadingTheme.textPrimary} />

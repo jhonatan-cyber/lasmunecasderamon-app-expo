@@ -2,7 +2,8 @@ import React, { type ReactNode } from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RootLayout from '@/app/_layout';
-import { ThemeTokens } from '@/constants/colorTokens';
+import { DEFAULT_PROFILE_ACCENT } from '@/constants/colorTokens';
+import { resolveThemePalette } from '@/utils/themePalette';
 
 const h = vi.hoisted(() => ({
   platform: 'web',
@@ -94,9 +95,10 @@ describe('RootLayout: almacenamiento antes de montar pantallas', () => {
     let finish!: () => void;
     h.prepare.mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
     render(<RootLayout />);
+    const loadingTheme = resolveThemePalette(DEFAULT_PROFILE_ACCENT, true);
     expect(screen.getByText('Cargando')).toBeTruthy();
-    expect(screen.getByText('Cargando').getAttribute('data-color')).toBe(ThemeTokens.dark.textPrimary);
-    expect(screen.getByText('Cargando').parentElement?.getAttribute('data-background')).toBe(ThemeTokens.dark.background);
+    expect(screen.getByText('Cargando').getAttribute('data-color')).toBe(loadingTheme.textPrimary);
+    expect(screen.getByText('Cargando').parentElement?.getAttribute('data-background')).toBe(loadingTheme.backgroundColor);
     expect(h.init).not.toHaveBeenCalled();
     await act(async () => { finish(); });
     expect(screen.getByText('Pantalla lista')).toBeTruthy();

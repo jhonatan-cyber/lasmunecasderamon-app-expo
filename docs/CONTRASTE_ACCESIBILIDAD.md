@@ -1,6 +1,6 @@
 # Matriz de contraste de acentos
 
-Contraste WCAG 2.1 de las 13 paletas de perfil en modo claro y oscuro.
+Contraste WCAG 2.1 de las 11 paletas de perfil en modo claro y oscuro.
 Umbrales usados: **4.5:1** para texto normal y **3:1** para iconos, bordes y
 controles no textuales (AA).
 
@@ -12,9 +12,11 @@ resueltos en `tests/unit/theme/themeTokens.test.ts` y los estados semánticos en
 
 El selector guarda el color elegido en el perfil (`store/themeStore.ts`) y
 `resolveThemePalette` (`utils/themePalette.ts`) lo convierte en una paleta
-completa. El rojo tiene los valores acordados explícitamente; las otras
-opciones conservan su tono y derivan primario, secundario y acento ajustando la
-luminancia HSL. El tema Negro conserva roles de marca monocromos.
+completa. Cada acento tiene **su propia paleta**: los neutrales se tiñen con su
+matiz y los roles de marca se corrigen por contraste contra esas superficies.
+La generación vive en `constants/accentPalettes.ts`. Los once acentos tiñen sus
+superficies; Rojo (por defecto) y Negro conservan además sus roles de marca
+exactos: el rojo acordado y la escala monocroma del Negro.
 
 | Token | Uso | Regla |
 |---|---|---|
@@ -36,9 +38,12 @@ acento explícito está disponible como `accentRoleColor`, `accentRoleText` y
 
 ## Neutrales y superficies
 
-`constants/colorTokens.ts` es la fuente de verdad para fondo, superficies,
-texto, bordes y overlays. Estos neutrales no cambian al elegir otro color; la
-paleta Negra solo mantiene sus roles de marca en escala monocroma.
+`constants/colorTokens.ts` es la fuente de verdad de los neutrales base: fondo,
+superficies, texto, bordes y overlays de partida. Cada acento —incluidos Rojo y
+Negro— mezcla su matiz en esas superficies entre un 3 % y un 14 %
+(`constants/accentPalettes.ts`), sin cambiar los textos ni los semánticos. El
+Negro no tiene matiz: su tinte solo profundiza los grises y sus roles de marca
+siguen en escala monocroma.
 
 | Rol | Claro | Oscuro |
 |---|---|---|
@@ -69,11 +74,15 @@ controles deshabilitados y no debe usarse como información secundaria.
 | Acento | `#FF4D6D` | `#FF4D6D` |
 | Glow | `rgba(213,0,50,0.15)` | `rgba(255,23,68,0.35)` |
 
-Para los demás colores se conserva el tono y la saturación del color elegido;
-la luminancia HSL se ajusta a 42 % / 54.5 % para el primario, 32.5 % / 39 %
-para el secundario y 65 % para el acento (claro / oscuro). El Glow usa el
-primario con 15 % de alfa en claro y 35 % en oscuro. Las pruebas revisan la
-legibilidad de texto y controles para las trece opciones en ambos modos.
+Para los demás colores se conserva el tono del color elegido; la luminancia HSL
+se ajusta a 42 % / 54.5 % para el primario, 32.5 % / 39 % para el secundario y
+65 % para el acento (claro / oscuro). Después, primario y secundario pasan por
+`ensureContrast` contra el fondo y la superficie elevada **de esa misma paleta**:
+un acento luminoso como Ámbar o Cian no alcanza 4.5:1 sobre un fondo claro, así
+que se oscurece hasta cumplirlo (por eso sus primarios claros son oliva y
+turquesa profundo). El Glow usa el primario corregido con 15 % de alfa en claro
+y 35 % en oscuro. Las pruebas revisan la legibilidad de texto y controles para
+las once paletas en ambos modos.
 
 ## Colores guardados en el dispositivo
 
@@ -81,7 +90,9 @@ El color elegido se guarda en `AsyncStorage` (`theme-storage`). Al cambiar la
 paleta, `normalizeAccentColor` traduce los colores de paletas anteriores a su
 versión neón: la paleta saturada anterior (`#FF2D55`, `#B44AFF`, `#00F0FF`…) y
 la original de Tailwind (`#E11D48`, `#7C3AED`…). Un color desconocido cae en
-el acento neón más cercano.
+el acento neón más cercano. Los colores fusionados también se traducen: Dorado
+(`#FFE600`) pasa a Ámbar y Pizarra (`#6E8CB8`) a Plata, porque sus paletas eran
+indistinguibles (ΔE2000 < 9 entre primario, secundario y fondo).
 
 ## Dependencia del halo
 

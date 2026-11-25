@@ -2,37 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { THEME_OPTIONS } from '@/constants/accents';
 import { DEFAULT_PROFILE_ACCENT } from '@/constants/colorTokens';
 import logger from '@/utils/logger';
 
-export interface ThemeOption {
-    name: string;
-    /** Color plano del acento: la paleta es neón, sin degradado. */
-    color: string;
-}
-
-/**
- * Paleta de acentos en versión **neón brillante**: colores saturados y
- * luminosos, pensados para brillar sobre el fondo negro en modo oscuro.
- *
- * Cada color es plano. El brillo no viene de un degradado sino del halo
- * (`accentGlow`) que se aplica a las superficies de marca.
- */
-export const THEME_OPTIONS: ThemeOption[] = [
-    { name: 'Rojo (Default)', color: DEFAULT_PROFILE_ACCENT },
-    { name: 'Violeta', color: '#C13BFF' },
-    { name: 'Azul', color: '#0095FF' },
-    { name: 'Índigo', color: '#6C4DFF' },
-    { name: 'Esmeralda', color: '#00FFA6' },
-    { name: 'Naranja', color: '#FF8A00' },
-    { name: 'Rosa', color: '#FF2E9A' },
-    { name: 'Cian', color: '#00F5FF' },
-    { name: 'Ámbar', color: '#FFC400' },
-    { name: 'Dorado', color: '#FFE600' },
-    { name: 'Plata', color: '#DCE9F7' },
-    { name: 'Pizarra', color: '#6E8CB8' },
-    { name: 'Negro', color: '#171717' },
-];
+// La lista vive en `constants/accents.ts` para que la generación de paletas
+// pueda leerla sin ciclo de imports; se reexporta para los consumidores.
+export { THEME_OPTIONS } from '@/constants/accents';
+export type { ThemeOption } from '@/constants/accents';
 
 export const DEFAULT_ACCENT_COLOR = DEFAULT_PROFILE_ACCENT;
 
@@ -43,6 +20,10 @@ export const DEFAULT_ACCENT_COLOR = DEFAULT_PROFILE_ACCENT;
  * existe en el selector.
  */
 const LEGACY_ACCENT_MAP: Record<string, string> = {
+    // Acentos fusionados: su paleta era indistinguible de la del destino
+    // (ΔE2000 < 9 en primario, secundario y fondo).
+    '#FFE600': '#FFC400',
+    '#6E8CB8': '#DCE9F7',
     // Paleta anterior (saturada, con degradado)
     '#FF2D55': '#FF1B3D',
     '#B44AFF': '#C13BFF',

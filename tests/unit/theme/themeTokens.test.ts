@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Colors, ThemeTokens } from '@/constants/theme';
-import { THEME_OPTIONS } from '@/store/themeStore';
+import { Colors, DEFAULT_PROFILE_ACCENT, ThemeTokens } from '@/constants/theme';
+import { THEME_OPTIONS, normalizeAccentColor } from '@/store/themeStore';
 import { contrastRatio } from '@/utils/color';
 import { resolveThemePalette } from '@/utils/themePalette';
 
@@ -35,7 +35,7 @@ describe('tokens de tema compartidos', () => {
     expect(Colors.dark.textSecondary).toBe('#A1A1AA');
   });
 
-  it('resuelve la paleta roja propuesta en ambos modos', () => {
+  it('resuelve la paleta roja con sus roles de marca exactos', () => {
     const light = resolveThemePalette('#FF1B3D', false);
     const dark = resolveThemePalette('#FF1B3D', true);
 
@@ -44,22 +44,22 @@ describe('tokens de tema compartidos', () => {
       secondaryColor: '#A60028',
       accentColor: '#FF4D6D',
       glowColor: 'rgba(213,0,50,0.15)',
-      backgroundColor: '#F7F7FA',
-      surfaceColor: '#FFFFFF',
-      surfaceElevatedColor: '#F1F1F4',
-      borderColor: '#E4E4E7',
-      borderStrongColor: '#D4D4D8',
+      backgroundColor: '#F7ECF1',
+      surfaceColor: '#FFF8F9',
+      surfaceElevatedColor: '#F2E2E7',
+      borderColor: '#E7D0D6',
+      borderStrongColor: '#D9BEC5',
     });
     expect(dark).toMatchObject({
       primaryColor: '#FF1744',
       secondaryColor: '#B31237',
       accentColor: '#FF4D6D',
       glowColor: 'rgba(255,23,68,0.35)',
-      backgroundColor: '#0B0B0F',
-      surfaceColor: '#17171D',
-      surfaceElevatedColor: '#202027',
-      borderColor: '#2D2D35',
-      borderStrongColor: '#45454F',
+      backgroundColor: '#1C0C12',
+      surfaceColor: '#25171F',
+      surfaceElevatedColor: '#302029',
+      borderColor: '#462B36',
+      borderStrongColor: '#5F3F4C',
     });
   });
 
@@ -73,12 +73,11 @@ describe('tokens de tema compartidos', () => {
     });
   });
 
-  it('deriva roles de marca para cada acento sin cambiar los neutrales', () => {
+  it('deriva roles de marca para cada acento sobre sus propias superficies', () => {
     THEME_OPTIONS.forEach(({ color }) => {
       [false, true].forEach((isDark) => {
-        const base = isDark ? ThemeTokens.dark : ThemeTokens.light;
         const palette = resolveThemePalette(color, isDark);
-        const renderedSurface = base.surfaceElevated;
+        const renderedSurface = palette.surfaceElevatedColor;
 
         expect(palette.primaryColor).toMatch(/^#[\da-f]{6}$/i);
         expect(palette.secondaryColor).toMatch(/^#[\da-f]{6}$/i);
@@ -86,22 +85,97 @@ describe('tokens de tema compartidos', () => {
         expect(palette.glowColor).toMatch(/^rgba\(/);
         expect(contrastRatio(palette.primaryColor, palette.primaryText)).toBeGreaterThanOrEqual(4.5);
         expect(contrastRatio(palette.secondaryColor, palette.secondaryText)).toBeGreaterThanOrEqual(4.5);
-        expect(palette.backgroundColor).toBe(base.background);
-        expect(palette.surfaceColor).toBe(base.surface);
-        expect(palette.surfaceElevatedColor).toBe(base.surfaceElevated);
-        expect(palette.textPrimary).toBe(base.textPrimary);
-        expect(palette.textSecondary).toBe(base.textSecondary);
-        expect(palette.textDisabled).toBe(base.textDisabled);
-        expect(palette.borderColor).toBe(base.border);
-        expect(palette.borderStrongColor).toBe(base.borderStrong);
-        expect(palette.overlayScrim).toBe(base.overlayScrim);
-        expect(palette.semanticColors).toEqual(base.semantic);
+        expect(palette.semanticColors).toEqual((isDark ? ThemeTokens.dark : ThemeTokens.light).semantic);
         expect(contrastRatio(renderedSurface, palette.primaryOnSurface)).toBeGreaterThanOrEqual(4.5);
         expect(contrastRatio(renderedSurface, palette.secondaryUi)).toBeGreaterThanOrEqual(3);
         expect(contrastRatio(renderedSurface, palette.secondaryOnSurface)).toBeGreaterThanOrEqual(4.5);
         expect(contrastRatio(palette.accentColor, palette.accentText)).toBeGreaterThanOrEqual(4.5);
         expect(contrastRatio(renderedSurface, palette.accentOnSurface)).toBeGreaterThanOrEqual(4.5);
         expect(contrastRatio(renderedSurface, palette.accentUi)).toBeGreaterThanOrEqual(3);
+      });
+    });
+  });
+
+  it('da a cada acento su propio fondo', () => {
+    const tinted = [
+      '#FF1B3D', '#C13BFF', '#0095FF', '#6C4DFF', '#00FFA6', '#FF8A00',
+      '#FF2E9A', '#00F5FF', '#FFC400', '#DCE9F7', '#171717',
+    ];
+
+    [false, true].forEach((isDark) => {
+      const base = isDark ? ThemeTokens.dark : ThemeTokens.light;
+      tinted.forEach((color) => {
+        const palette = resolveThemePalette(color, isDark);
+        expect(palette.backgroundColor, color).not.toBe(base.background);
+      });
+    });
+  });
+
+  it('tiñe superficie y borde en todos los acentos con matiz', () => {
+    const tinted = [
+      '#FF1B3D', '#C13BFF', '#0095FF', '#6C4DFF', '#00FFA6', '#FF8A00',
+      '#FF2E9A', '#00F5FF', '#FFC400', '#DCE9F7',
+    ];
+
+    [false, true].forEach((isDark) => {
+      const base = isDark ? ThemeTokens.dark : ThemeTokens.light;
+      tinted.forEach((color) => {
+        const palette = resolveThemePalette(color, isDark);
+        expect(palette.surfaceColor, color).not.toBe(base.surface);
+        expect(palette.borderColor, color).not.toBe(base.border);
+      });
+    });
+  });
+
+  it('no repite paletas y migra los acentos fusionados', () => {
+    expect(THEME_OPTIONS).toHaveLength(11);
+    expect(normalizeAccentColor('#FFE600')).toBe('#FFC400');
+    expect(normalizeAccentColor('#6E8CB8')).toBe('#DCE9F7');
+  });
+
+  it('da al acento por defecto su propia paleta teñida', () => {
+    const light = resolveThemePalette(DEFAULT_PROFILE_ACCENT, false);
+    const dark = resolveThemePalette(DEFAULT_PROFILE_ACCENT, true);
+
+    expect(light.backgroundColor).toBe('#F7ECF1');
+    expect(dark.backgroundColor).toBe('#1C0C12');
+    expect(light.backgroundColor).not.toBe(ThemeTokens.light.background);
+    expect(dark.backgroundColor).not.toBe(ThemeTokens.dark.background);
+  });
+
+  it('conserva los roles monocromos del acento Negro', () => {
+    expect(resolveThemePalette('#171717', false)).toMatchObject({
+      primaryColor: '#18181B',
+      secondaryColor: '#52525B',
+      accentColor: '#18181B',
+      backgroundColor: '#ECECEF',
+      isBlackAccent: true,
+    });
+    expect(resolveThemePalette('#171717', true)).toMatchObject({
+      primaryColor: '#F5F5F7',
+      secondaryColor: '#A1A1AA',
+      accentColor: '#F5F5F7',
+      backgroundColor: '#0C0C10',
+      isBlackAccent: true,
+    });
+  });
+
+  it('mantiene el contraste de textos sobre las superficies de cada paleta', () => {
+    THEME_OPTIONS.forEach(({ color }) => {
+      [false, true].forEach((isDark) => {
+        const palette = resolveThemePalette(color, isDark);
+        [
+          palette.backgroundColor,
+          palette.surfaceColor,
+          palette.surfaceElevatedColor,
+        ].forEach((surface) => {
+          [palette.textPrimary, palette.textSecondary].forEach((text) => {
+            expect(
+              contrastRatio(surface, text),
+              `${color} ${isDark ? 'oscuro' : 'claro'}`,
+            ).toBeGreaterThanOrEqual(4.5);
+          });
+        });
       });
     });
   });
