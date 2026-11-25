@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     card: {
         width: '88%',
         maxWidth: 400,
-        borderRadius: BorderRadius.xxl,
+        borderRadius: BorderRadius.card,
         padding: 32,
         alignItems: 'center',
         elevation: 20,

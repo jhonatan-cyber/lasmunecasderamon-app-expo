@@ -181,7 +181,7 @@ export function VentaDetailModal({
 
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  detailModal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, borderWidth: 1, borderBottomWidth: 0, height: "85%" },
+  detailModal: { borderTopLeftRadius: BorderRadius.card, borderTopRightRadius: BorderRadius.card, padding: 24, borderWidth: 1, borderBottomWidth: 0, height: "85%" },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   modalTitleText: { fontSize: 24, fontFamily: FontFamily.black, letterSpacing: -0.5 },
   modalSubText: { fontSize: 12, fontFamily: FontFamily.semibold, flexShrink: 1, minWidth: 0 },

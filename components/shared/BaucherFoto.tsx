@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     maxHeight: '88%',
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 18,
   },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   imagenMarco: {
     flexShrink: 1,
     minHeight: 220,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',

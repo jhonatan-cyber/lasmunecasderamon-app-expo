@@ -317,7 +317,7 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
 const styles = StyleSheet.create({
     card: {
         flex: 1,
-        borderRadius: BorderRadius.xxl,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         marginBottom: 10,
         marginHorizontal: 6,

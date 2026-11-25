@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     height: '88%',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 20,
   },

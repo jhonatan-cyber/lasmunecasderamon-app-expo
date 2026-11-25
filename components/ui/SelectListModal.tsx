@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
   },
   header: {

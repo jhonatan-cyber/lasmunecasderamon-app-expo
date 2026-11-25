@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { FontSize } from '@/constants/spacing';
+import { BorderRadius, FontSize } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   container: { flex: 1 },
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 20,
     alignItems: "center",
     borderWidth: 1,
@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
   filterText: { fontSize: 11, fontWeight: "700" },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   emptyCard: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 40,
     alignItems: "center",
     marginTop: 20,
@@ -91,8 +91,8 @@ export const styles = StyleSheet.create({
   },
   modalOverlay: { flex: 1, justifyContent: "flex-end" },
   modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
     paddingBottom: 40,
     shadowColor: '#000',
@@ -117,7 +117,7 @@ export const styles = StyleSheet.create({
   },
   disponibleCard: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     padding: 20,
     marginBottom: 20,
     shadowColor: '#000',
@@ -178,7 +178,7 @@ export const styles = StyleSheet.create({
   },
   cajaCard: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 16,
     marginBottom: 16,
   },

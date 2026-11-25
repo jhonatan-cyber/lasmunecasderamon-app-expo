@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end' 
     },
     modalContainer: {
-        borderTopLeftRadius: 24, 
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: BorderRadius.card,
+        borderTopRightRadius: BorderRadius.card,
         maxHeight: '85%', 
         minHeight: '40%', 
         overflow: 'hidden',
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
         fontFamily: FontFamily.extrabold
     },
     modalDetailCard: { 
-        borderRadius: BorderRadius.full, 
+        borderRadius: BorderRadius.card,
         padding: 16, 
         borderWidth: 1, 
         marginBottom: 14 
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     modalTotalCard: {
         flexDirection: 'row', 
         alignItems: 'center',
-        borderRadius: BorderRadius.full, 
+        borderRadius: BorderRadius.card,
         padding: 18, 
         borderWidth: 1, 
         marginBottom: 14,

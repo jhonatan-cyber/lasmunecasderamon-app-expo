@@ -189,7 +189,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 const styles = StyleSheet.create({
     container: {
         padding: 40,
-        borderRadius: 24,
+        borderRadius: BorderRadius.card,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 40,

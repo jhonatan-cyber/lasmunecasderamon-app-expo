@@ -210,8 +210,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
     paddingBottom: 40,
     shadowColor: '#000',
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   disponibleCard: {
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 20,
     marginBottom: 20,
     shadowColor: '#000',

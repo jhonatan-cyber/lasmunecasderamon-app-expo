@@ -299,7 +299,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modal: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  modal: { flex: 1, borderTopLeftRadius: BorderRadius.card, borderTopRightRadius: BorderRadius.card },
   header: { flexDirection: "row", alignItems: "center", gap: 12, padding: 20 },
   title: { fontSize: FontSize.xl, fontFamily: FontFamily.extrabold },
   subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semibold, marginTop: 2 },

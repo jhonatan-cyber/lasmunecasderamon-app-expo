@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     height: "80%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     overflow: "hidden",
   },
   handleWrap: {

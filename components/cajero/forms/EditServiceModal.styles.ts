@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   overlay: {
@@ -11,7 +12,7 @@ export const styles = StyleSheet.create({
   modalContainer: {
     width: "100%",
     maxHeight: "90%",
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     overflow: "hidden",
   },
   header: {

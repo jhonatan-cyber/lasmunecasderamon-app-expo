@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 24,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
     },
     emptyTitle: { fontSize: 16, fontWeight: '800' },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
     },
     noteText: { flex: 1, fontSize: 12, lineHeight: 17 },
     devButton: {

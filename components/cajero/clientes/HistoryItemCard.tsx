@@ -1,6 +1,7 @@
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { Text, View } from 'react-native';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -29,7 +30,7 @@ export const HistoryItemCard = React.memo(function HistoryItemCard({ item, index
 
     return (
         <View key={`${item.id}-${index}`} style={{
-            borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 12, overflow: 'hidden',
+            borderRadius: BorderRadius.card, borderWidth: 1, padding: 16, marginBottom: 12, overflow: 'hidden',
             backgroundColor: cardBg, borderColor: cardBorder,
         }}>
             {}

@@ -257,13 +257,13 @@ const styles = StyleSheet.create({
     },
     modalCard: {
         width: '100%',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
+        borderTopLeftRadius: BorderRadius.card,
+        borderTopRightRadius: BorderRadius.card,
         overflow: 'hidden'
     },
     modalCardCentrado: {
         maxWidth: MODAL_MAX_WIDTH,
-        borderRadius: 24,
+        borderRadius: BorderRadius.card,
     },
     modalScroll: {
         width: '100%',
@@ -366,6 +366,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        borderRadius: BorderRadius.full
+        borderRadius: BorderRadius.card
     },
 });

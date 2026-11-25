@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { OrderProductPhoto } from '@/components/shared/OrderProductPhoto';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -72,7 +73,7 @@ export const MixerSelectorModal: React.FC<MixerSelectorModalProps> = ({
         <View
           style={{
             backgroundColor: cardBg,
-            borderRadius: 20,
+            borderRadius: BorderRadius.card,
             padding: 20,
             maxHeight: '80%',
             gap: 12,

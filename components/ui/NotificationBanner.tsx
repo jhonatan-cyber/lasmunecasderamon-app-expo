@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '92%',
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 12,

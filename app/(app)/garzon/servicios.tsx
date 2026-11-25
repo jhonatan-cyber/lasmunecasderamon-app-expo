@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
-import { FontSize, HitSlop } from "@/constants/spacing";
+import { BorderRadius, FontSize, HitSlop } from "@/constants/spacing";
 import { tabBarBottomPadding } from "@/constants/layout";
 import { FontFamily } from "@/constants/fonts";
 import { Colors } from "@/constants/theme";
@@ -439,7 +439,7 @@ export default function ServiciosScreen() {
                 style={{
                   backgroundColor: Colors.light.success + "15",
                   padding: 15,
-                  borderRadius: 20,
+                  borderRadius: BorderRadius.card,
                   borderStyle: "dashed",
                   borderWidth: 1.5,
                   borderColor: Colors.light.success,

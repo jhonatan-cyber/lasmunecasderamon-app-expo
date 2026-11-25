@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -135,7 +136,7 @@ export const NuevaVentaSearch: React.FC<NuevaVentaSearchProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     marginBottom: 20,
   },

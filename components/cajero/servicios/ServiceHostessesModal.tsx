@@ -192,7 +192,7 @@ export function ServiceHostessesModal({ visible, item, onClose }: ServiceHostess
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor, borderTopLeftRadius: BorderRadius.xxl, borderTopRightRadius: BorderRadius.xxl }]}>
+        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor, borderTopLeftRadius: BorderRadius.card, borderTopRightRadius: BorderRadius.card }]}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: textPrimary }]}>Anfitrionas</Text>

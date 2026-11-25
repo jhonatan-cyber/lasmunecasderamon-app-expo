@@ -304,11 +304,11 @@ export function CoversScreen() {
           onBack={() => router.back()}
         />
         <View style={[styles.loadingBox, { paddingHorizontal: 20 }]}>
-          <Skeleton height={120} borderRadius={BorderRadius.xxl} />
+          <Skeleton height={120} borderRadius={BorderRadius.card} />
           <View style={{ height: 16 }} />
-          <Skeleton height={96} borderRadius={BorderRadius.xxl} />
+          <Skeleton height={96} borderRadius={BorderRadius.card} />
           <View style={{ height: 16 }} />
-          <Skeleton height={96} borderRadius={BorderRadius.xxl} />
+          <Skeleton height={96} borderRadius={BorderRadius.card} />
         </View>
       </View>
     );
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   backTextHeader: { fontWeight: '700', fontSize: 13 },
-  card: { borderRadius: BorderRadius.xxl, padding: 20, borderWidth: 1, marginBottom: 20 },
+  card: { borderRadius: BorderRadius.card, padding: 20, borderWidth: 1, marginBottom: 20 },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '800',
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
   },
   totalValue: { fontSize: 22, fontWeight: '900' },
   coverCard: {
-    borderRadius: BorderRadius.xxl,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     marginBottom: 12,

@@ -311,8 +311,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     maxHeight: "80%",
   },
   modalHeader: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     marginBottom: 8,
     borderWidth: 2,
   },

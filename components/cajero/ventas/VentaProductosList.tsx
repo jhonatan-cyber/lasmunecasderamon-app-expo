@@ -72,7 +72,7 @@ export const VentaProductosList: React.FC<VentaProductosListProps> = ({
 
 const styles = StyleSheet.create({
     sectionLabel: { fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 1 },
-    card: { borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 12 },
+    card: { borderRadius: BorderRadius.card, padding: 16, borderWidth: 1, marginBottom: 12 },
     cardHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
     cantBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.full },
     cantText: { fontSize: 11, fontWeight: "900" },

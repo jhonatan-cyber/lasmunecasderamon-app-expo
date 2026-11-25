@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   summaryItem: {
     flex: 1,
     minWidth: '45%',
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,

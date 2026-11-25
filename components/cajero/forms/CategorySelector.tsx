@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     browserContainer: { marginBottom: 20 },
     browserTitle: { fontSize: 13, fontFamily: FontFamily.black, marginBottom: 15, letterSpacing: 1, textTransform: 'uppercase' },
     categoryScroll: { gap: 12 },
-    categorySmallCard: { minWidth: 120, padding: 12, borderRadius: BorderRadius.full, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    categorySmallCard: { minWidth: 120, padding: 12, borderRadius: BorderRadius.card, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     catIconBox: { width: 44, height: 44, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
     catSmallName: { fontSize: 12, fontFamily: FontFamily.extrabold, textAlign: 'center' },
 });

@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { useCallback } from "react";
 import {
   Pressable,
@@ -212,7 +213,7 @@ const modalStyles = StyleSheet.create({
     padding: 20,
   },
   content: {
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     maxHeight: "80%",
   },
   header: {

@@ -200,8 +200,8 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalContent: {
         height: '85%',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
+        borderTopLeftRadius: BorderRadius.card,
+        borderTopRightRadius: BorderRadius.card,
         padding: 24,
         paddingBottom: 40
     },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     divisionCard: {
         flexDirection: 'row',
         padding: 16,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     divisionValue: { fontSize: 16, fontFamily: FontFamily.extrabold },
     divisionDivider: { width: 1, height: '60%', backgroundColor: 'rgba(155,155,155,0.2)' },
     sectionTitle: { fontSize: 11, fontFamily: FontFamily.black, marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' },
-    productsList: { borderRadius: BorderRadius.full, borderWidth: 1, overflow: 'hidden' },
+    productsList: { borderRadius: BorderRadius.card, borderWidth: 1, overflow: 'hidden' },
     productRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
     productNameDetail: { fontSize: 14, fontFamily: FontFamily.bold },
     productSubtotal: { fontSize: 14, fontFamily: FontFamily.extrabold },

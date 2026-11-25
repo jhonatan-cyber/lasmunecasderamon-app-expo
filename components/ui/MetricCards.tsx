@@ -323,7 +323,7 @@ export function MetricCards({
 const styles = StyleSheet.create({
   banner: {
     padding: 24,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     alignItems: 'center',
     elevation: 4,

@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     padding: 10,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -201,8 +202,8 @@ export default function PagosTrabajadoresScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <PremiumHeader title="Pagos a trabajadores" subtitle="Planilla pendiente" />
         <View style={{ padding: 16, gap: 12 }}>
-          <SkeletonLoader width="100%" height={180} borderRadius={20} />
-          <SkeletonLoader width="100%" height={180} borderRadius={20} />
+          <SkeletonLoader width="100%" height={180} borderRadius={BorderRadius.card} />
+          <SkeletonLoader width="100%" height={180} borderRadius={BorderRadius.card} />
         </View>
       </View>
     );
@@ -269,7 +270,7 @@ export default function PagosTrabajadoresScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 12 },
-  card: { borderRadius: 20, borderWidth: 1, padding: 16 },
+  card: { borderRadius: BorderRadius.card, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 17, fontFamily: FontFamily.black },
@@ -301,6 +302,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
-  emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
+  emptyCard: { borderRadius: BorderRadius.card, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

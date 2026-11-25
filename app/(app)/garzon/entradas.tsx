@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
+import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -460,7 +461,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   card: {
-    borderRadius: 28,
+    borderRadius: BorderRadius.card,
     padding: 20,
     borderWidth: 1,
   },

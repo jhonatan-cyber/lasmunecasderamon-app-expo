@@ -18,6 +18,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { FilterTabs } from '@/components/ui/FilterTabs';
 import { LIST_PERF_PROPS } from '@/constants/listPerf';
+import { BorderRadius } from '@/constants/spacing';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { tabBarBottomPadding } from '@/constants/layout';
 import { anticiposService } from '@/services/anticipos';
@@ -295,7 +296,7 @@ export default function AnticiposAdminScreen() {
               key={i}
               style={{
                 padding: 16,
-                borderRadius: 18,
+                borderRadius: BorderRadius.card,
                 borderWidth: 1,
                 borderColor,
                 backgroundColor: cardBg,

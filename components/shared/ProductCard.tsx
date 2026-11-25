@@ -297,7 +297,7 @@ export const ProductCard = React.memo(
             <View
               style={{
                 backgroundColor: cardBg,
-                borderRadius: BorderRadius.xxl,
+                borderRadius: BorderRadius.card,
                 padding: 20,
                 maxHeight: "90%",
                 gap: 14,

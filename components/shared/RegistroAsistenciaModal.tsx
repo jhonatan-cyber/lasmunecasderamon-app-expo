@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     modalContent: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: BorderRadius.card,
+        borderTopRightRadius: BorderRadius.card,
         padding: 16,
         paddingBottom: 24,
     },

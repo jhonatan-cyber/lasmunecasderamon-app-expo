@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   },
   selectorBlock: {
     flex: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 10,
     borderWidth: 1,
     gap: 6,

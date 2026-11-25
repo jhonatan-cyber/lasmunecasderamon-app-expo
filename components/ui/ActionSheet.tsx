@@ -114,8 +114,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     width: '100%',
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
     // `paddingBottom` se aplica en runtime (40 + safe area inferior) para que
     // el botón de cancelar no quede bajo el indicador de inicio del iPhone.

@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     container: {
         margin: 16,
         padding: 20,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         elevation: 12,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 8 },

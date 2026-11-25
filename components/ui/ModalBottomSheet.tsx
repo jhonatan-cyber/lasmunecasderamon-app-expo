@@ -215,8 +215,8 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     paddingHorizontal: 24,
     paddingTop: 12,
     // `paddingBottom` se aplica en runtime (24 + safe area inferior).

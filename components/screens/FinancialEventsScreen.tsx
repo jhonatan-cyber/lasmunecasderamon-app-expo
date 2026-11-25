@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
@@ -421,8 +421,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     height: '85%',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     overflow: 'hidden',
   },
   modalHeader: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: '900' },
   modalSubtitle: { fontSize: 13, fontWeight: '500', marginTop: 2 },
-  infoCard: { padding: 16, borderRadius: 20, borderWidth: 1 },
+  infoCard: { padding: 16, borderRadius: BorderRadius.card, borderWidth: 1 },
   cardTitle: {
     fontSize: 11,
     fontWeight: '900',
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   divisionCard: {
     flexDirection: 'row',
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   productsList: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 8,

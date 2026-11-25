@@ -57,7 +57,7 @@ export function SelectionFloat({
 const styles = StyleSheet.create({
   selectionFloat: {
     padding: 16,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

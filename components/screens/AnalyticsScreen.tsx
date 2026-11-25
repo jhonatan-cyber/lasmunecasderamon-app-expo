@@ -74,9 +74,9 @@ export function AnalyticsScreen({ onBack }: AnalyticsScreenProps) {
 
             {loading ? (
                 <View style={styles.loadingBox}>
-                    <SkeletonLoader width="100%" height={120} borderRadius={20} />
-                    <SkeletonLoader width="100%" height={230} borderRadius={20} />
-                    <SkeletonLoader width="100%" height={200} borderRadius={20} />
+                    <SkeletonLoader width="100%" height={120} borderRadius={BorderRadius.card} />
+                    <SkeletonLoader width="100%" height={230} borderRadius={BorderRadius.card} />
+                    <SkeletonLoader width="100%" height={200} borderRadius={BorderRadius.card} />
                 </View>
             ) : (
                 <ScrollView
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     },
     errorText: { fontSize: 12, fontFamily: FontFamily.semibold, flex: 1 },
     statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-    statCard: { flex: 1, borderRadius: 20, padding: 14, borderWidth: 1 },
+    statCard: { flex: 1, borderRadius: BorderRadius.card, padding: 14, borderWidth: 1 },
     statIcon: {
         width: 34,
         height: 34,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     statValue: { fontSize: 20, fontWeight: '900' },
     statTitle: { fontSize: 12, fontWeight: '700', marginTop: 2 },
     statSubtitle: { fontSize: FontSize.xxs, marginTop: 1 },
-    card: { borderRadius: 20, padding: 16, borderWidth: 1, marginTop: 4 },
+    card: { borderRadius: BorderRadius.card, padding: 16, borderWidth: 1, marginTop: 4 },
     cardHeader: { marginBottom: 14 },
     sectionTitle: { fontSize: 15, fontWeight: '900' },
     totalsRow: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },

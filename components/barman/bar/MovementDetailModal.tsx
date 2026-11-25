@@ -127,7 +127,7 @@ function Info({ label, value, accentColor, textPrimary, textSecondary }: { label
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 18, backgroundColor: 'rgba(0,0,0,0.65)' },
-  modalCard: { width: '100%', maxWidth: 540, maxHeight: '90%', borderRadius: BorderRadius.full, borderWidth: 1, padding: 16, overflow: 'hidden' },
+  modalCard: { width: '100%', maxWidth: 540, maxHeight: '90%', borderRadius: BorderRadius.card, borderWidth: 1, padding: 16, overflow: 'hidden' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingBottom: 13, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(148,163,184,0.25)' },
   iconWrap: { width: 44, height: 44, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   section: { gap: 8 },
   sectionTitle: { fontSize: 10, fontFamily: FontFamily.black, letterSpacing: 0.8 },
   volumeGrid: { marginTop: 8 },
-  infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: BorderRadius.full, justifyContent: 'space-between', gap: 4 },
+  infoTile: { width: '48%', minHeight: 58, padding: 8, borderWidth: 1, borderRadius: BorderRadius.card, justifyContent: 'space-between', gap: 4 },
   infoLabel: { fontSize: 9, fontFamily: FontFamily.bold },
   infoValue: { fontSize: 12, fontFamily: FontFamily.black },
   closeButton: { borderRadius: BorderRadius.full, alignItems: 'center', paddingVertical: 12, marginTop: 4 },

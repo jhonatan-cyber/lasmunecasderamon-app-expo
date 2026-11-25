@@ -93,7 +93,7 @@ export function AsistenciaDetailModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor, borderRadius: 32 }]}>
+        <View style={[styles.sheet, { backgroundColor: cardBg, borderColor, borderRadius: BorderRadius.card }]}>
           {/* Header handle */}
           <View style={styles.header}>
             <View style={styles.handle} />
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   summaryCard: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     marginBottom: 16,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bold,
   },
   recordCard: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 14,
     borderWidth: 1,
     marginBottom: 10,

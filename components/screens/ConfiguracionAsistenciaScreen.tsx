@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40, gap: 16 },
   card: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 16,
     gap: 12,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,

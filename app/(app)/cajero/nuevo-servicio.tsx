@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  section: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
+  section: { padding: 20, borderRadius: BorderRadius.card, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
     fontFamily: FontFamily.black,

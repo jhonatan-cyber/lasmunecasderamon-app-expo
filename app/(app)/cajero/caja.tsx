@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack } from 'expo-router';
 import { contentColumn } from '@/constants/layout';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { StatusBar } from 'expo-status-bar';
 import React, { useMemo } from 'react';
 import {
@@ -416,7 +417,7 @@ export default function CajaScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scroll: { gap: 12 },
-    card: { borderRadius: 20, borderWidth: 1, padding: 16 },
+    card: { borderRadius: BorderRadius.card, borderWidth: 1, padding: 16 },
     statusRow: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: 8,

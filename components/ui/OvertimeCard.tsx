@@ -145,7 +145,7 @@ export function OvertimeCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 18,
+        borderRadius: BorderRadius.card,
         padding: 16,
         marginTop: 12,
         borderWidth: 1,

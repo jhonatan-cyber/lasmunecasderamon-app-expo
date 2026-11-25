@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   permissionContent: {
     backgroundColor: '#1E1B4B',
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 28,
     alignItems: 'center',
     borderWidth: 1,

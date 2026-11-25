@@ -1,6 +1,7 @@
 import { useCartDraft } from "@/hooks/useCartDraft";
 import { useCartExitGuard } from "@/hooks/useCartExitGuard";
 import { formColumn, tabBarBottomPadding } from "@/constants/layout";
+import { BorderRadius } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -846,7 +847,7 @@ export default function NuevaVentaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { ...formColumn, padding: 16, paddingBottom: tabBarBottomPadding },
-  section: { padding: 16, borderRadius: 24, borderWidth: 1, marginBottom: 16 },
+  section: { padding: 16, borderRadius: BorderRadius.card, borderWidth: 1, marginBottom: 16 },
   sectionTitle: {
     fontSize: 13,
     fontFamily: FontFamily.black,

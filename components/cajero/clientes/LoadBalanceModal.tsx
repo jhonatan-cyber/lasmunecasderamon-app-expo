@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end' 
     },
     modalContent: { 
-        borderTopLeftRadius: 32, 
-        borderTopRightRadius: 32, 
+        borderTopLeftRadius: BorderRadius.card,
+        borderTopRightRadius: BorderRadius.card,
         padding: 24, 
         maxHeight: '90%' 
     },

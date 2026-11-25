@@ -295,7 +295,7 @@ export function ServiceSummaryCard({
     <View
       style={{
         padding: 14,
-        borderRadius: 20,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         backgroundColor: cardBg,
         borderColor: borderColor,

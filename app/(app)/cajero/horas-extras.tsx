@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn, tabBarBottomPadding } from '@/constants/layout';
+import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/format';
 import {
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
     emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
     modalCard: {
-        borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1,
+        borderTopLeftRadius: BorderRadius.card, borderTopRightRadius: BorderRadius.card, borderWidth: 1,
         padding: 20, paddingBottom: 28, maxHeight: '90%',
     },
     modalHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },

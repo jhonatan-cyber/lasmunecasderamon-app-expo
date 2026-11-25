@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
+import { BorderRadius } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
@@ -255,7 +256,7 @@ export default function ComprasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { ...contentColumn, padding: 16, paddingBottom: 40, gap: 10 },
-  card: { borderRadius: 20, borderWidth: 1, padding: 16 },
+  card: { borderRadius: BorderRadius.card, borderWidth: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   folio: { fontSize: 15, fontFamily: FontFamily.black },
   meta: { fontSize: 12, marginTop: 3 },
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
-  emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
+  emptyCard: { borderRadius: BorderRadius.card, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
   modalOverlay: {
     flex: 1,
@@ -290,8 +291,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalCard: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 20,
     paddingBottom: 32,

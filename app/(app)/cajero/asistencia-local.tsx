@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { contentColumn } from '@/constants/layout';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -107,9 +108,9 @@ export default function AsistenciaLocalScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <PremiumHeader title="Asistencia en el local" subtitle="Marcas de hoy" />
         <View style={{ padding: 16, gap: 12 }}>
-          <SkeletonLoader width="100%" height={76} borderRadius={18} />
-          <SkeletonLoader width="100%" height={76} borderRadius={18} />
-          <SkeletonLoader width="100%" height={76} borderRadius={18} />
+          <SkeletonLoader width="100%" height={76} borderRadius={BorderRadius.card} />
+          <SkeletonLoader width="100%" height={76} borderRadius={BorderRadius.card} />
+          <SkeletonLoader width="100%" height={76} borderRadius={BorderRadius.card} />
         </View>
       </View>
     );
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 18,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 14,
   },
@@ -190,6 +191,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   backText: { fontFamily: FontFamily.extrabold, fontSize: 13, letterSpacing: 0.5 },
-  emptyCard: { borderRadius: 20, padding: 40, alignItems: 'center', margin: 16 },
+  emptyCard: { borderRadius: BorderRadius.card, padding: 40, alignItems: 'center', margin: 16 },
   emptyText: { fontSize: 14, marginTop: 12, textAlign: 'center' },
 });

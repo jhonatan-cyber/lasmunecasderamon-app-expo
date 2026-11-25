@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxWidth: 400,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         padding: 24,
         alignItems: 'center',
         elevation: 10,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     qrWrapper: {
         backgroundColor: 'white',
         padding: 20,
-        borderRadius: 24,
+        borderRadius: BorderRadius.card,
         marginBottom: 24,
         elevation: 4,
         shadowColor: '#000',

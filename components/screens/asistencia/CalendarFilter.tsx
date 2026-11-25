@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginTop: 12,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
   },

@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import VirtualizedList from "@/components/shared/VirtualizedList";
 import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
+import { BorderRadius } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
@@ -388,13 +389,13 @@ const styles = StyleSheet.create({
   columnWrapper: { marginHorizontal: -8 },
   cardSkeleton: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     marginBottom: 16,
   },
   emptyCard: {
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     padding: 40,
     alignItems: "center",
     justifyContent: "center",
@@ -411,7 +412,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 12,
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     borderLeftWidth: 4,
     gap: 14,

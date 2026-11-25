@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 
 import { formColumn } from '@/constants/layout';
 
@@ -100,7 +101,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: BorderRadius.card,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 4,
@@ -144,7 +145,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     padding: 40,
   },
-  modalContent: { width: "100%", borderRadius: 30, padding: 24 },
+  modalContent: { width: "100%", borderRadius: BorderRadius.card, padding: 24 },
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",

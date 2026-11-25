@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     rejectionBox: {
         marginTop: 10,
         padding: 10,
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         borderLeftWidth: 3,
         borderLeftColor: '#EF4444',
         flexDirection: 'row',

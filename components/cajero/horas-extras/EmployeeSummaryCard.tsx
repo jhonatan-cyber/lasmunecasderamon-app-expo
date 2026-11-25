@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4 
     },
     empSummaryCard: {
-        borderRadius: BorderRadius.full, 
+        borderRadius: BorderRadius.card,
         borderWidth: 1, 
         padding: 12, 
         minWidth: 140,

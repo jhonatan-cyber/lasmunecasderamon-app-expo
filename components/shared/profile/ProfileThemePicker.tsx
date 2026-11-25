@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "800", marginBottom: 6 },
   description: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
   // Sin `overflow: hidden`: el halo neón de la tarjeta se dibuja fuera del borde.
-  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: BorderRadius.full, marginBottom: 16 },
+  preview: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: BorderRadius.card, marginBottom: 16 },
   previewIcon: { width: 48, height: 48, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center" },
   previewText: { flex: 1 },
   previewCaption: { fontSize: 11, fontWeight: "700", letterSpacing: 1 },

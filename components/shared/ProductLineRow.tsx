@@ -127,7 +127,7 @@ export const ProductLineRow: React.FC<ProductLineRowProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
     marginBottom: 12,

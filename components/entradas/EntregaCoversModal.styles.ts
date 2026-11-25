@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { FontSize } from '@/constants/spacing';
+import { BorderRadius, FontSize } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   backdrop: {
@@ -8,8 +8,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 20,
     paddingBottom: 28,

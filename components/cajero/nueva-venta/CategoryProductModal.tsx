@@ -340,8 +340,8 @@ const thumbnailStyles = StyleSheet.create({
     height: "88%",
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
   },
   handle: {
     width: 42,

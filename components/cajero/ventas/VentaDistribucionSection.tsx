@@ -104,7 +104,7 @@ export const VentaDistribucionSection: React.FC<VentaDistribucionSectionProps> =
 };
 
 const styles = StyleSheet.create({
-    card: { padding: 18, borderRadius: 24, borderWidth: 1 },
+    card: { padding: 18, borderRadius: BorderRadius.card, borderWidth: 1 },
     header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
     label: { fontSize: 11, fontFamily: FontFamily.black, textTransform: "uppercase", letterSpacing: 1 },
     totalComision: { fontSize: 14, fontFamily: FontFamily.black },

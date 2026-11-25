@@ -1,5 +1,6 @@
 import React from "react";
 import { ScrollView, View } from "react-native";
+import { BorderRadius } from '@/constants/spacing';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
@@ -27,7 +28,7 @@ export function AdministrativoSkeleton({ bg, isDark }: AdministrativoSkeletonPro
         <View style={{ padding: 20, gap: 20 }}>
           <View
             style={{
-              borderRadius: 20,
+              borderRadius: BorderRadius.card,
               borderWidth: 1,
               padding: 16,
               backgroundColor: surfaceMuted,

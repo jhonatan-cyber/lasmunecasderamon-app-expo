@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 10,

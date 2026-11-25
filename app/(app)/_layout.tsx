@@ -14,6 +14,7 @@ import { RegistroAsistenciaModal } from '@/components/shared/RegistroAsistenciaM
 import { StaffCallOverlay } from '@/components/shared/StaffCallOverlay';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontFamily } from '@/constants/fonts';
+import { BorderRadius } from '@/constants/spacing';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { useNotificationHandler } from '@/hooks/useNotificationHandler';
 import { useAuthStore } from '@/store/authStore';
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     dialog: {
-        borderRadius: 24,
+        borderRadius: BorderRadius.card,
         padding: 28,
         width: '100%',
         maxWidth: 360,

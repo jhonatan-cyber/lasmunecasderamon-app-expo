@@ -135,7 +135,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 const styles = StyleSheet.create({
     container: {
         padding: 40,
-        borderRadius: BorderRadius.xxl,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',

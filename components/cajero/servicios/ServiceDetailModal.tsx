@@ -351,7 +351,7 @@ function UserInfoRow({ label, name, foto, icon, theme }: {
 
 const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-    detailModal: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', borderRadius: BorderRadius.xxl, padding: 24, maxHeight: '90%', borderWidth: 1, overflow: 'hidden' },
+    detailModal: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', borderRadius: BorderRadius.card, padding: 24, maxHeight: '90%', borderWidth: 1, overflow: 'hidden' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12 },
     headerInfo: { flex: 1 },
     headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' },

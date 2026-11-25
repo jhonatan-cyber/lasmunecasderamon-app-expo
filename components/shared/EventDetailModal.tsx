@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     detailCard: {
         width: '100%',
         maxHeight: '85%',
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         padding: 24,
         elevation: 20,
         shadowColor: '#000',

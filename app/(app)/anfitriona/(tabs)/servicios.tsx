@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { Servicio,useServicios } from "@/hooks/useServicios";
 import { tabBarBottomPadding } from "@/constants/layout";
-import { FontSize } from "@/constants/spacing";
+import { BorderRadius, FontSize } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
 import { useCallback,useState } from "react";
 import {
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     margin: 16,
     padding: 24,
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     alignItems: "center",
   },

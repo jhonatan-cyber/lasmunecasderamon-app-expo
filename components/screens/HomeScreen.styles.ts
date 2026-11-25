@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   header: {
@@ -22,7 +23,7 @@ export const styles = StyleSheet.create({
   activeServiceCard: {
     margin: 16,
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     elevation: 4,
   },
   analyticsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
@@ -33,7 +34,7 @@ export const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12,
     padding: 14,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
   },
   analyticsLinkIcon: {
@@ -46,7 +47,7 @@ export const styles = StyleSheet.create({
   glassCard: {
     flex: 1,
     padding: 16,
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     alignItems: 'center',
     gap: 8,
@@ -58,7 +59,7 @@ export const styles = StyleSheet.create({
     left: 20,
     right: 20,
     padding: 16,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -72,8 +73,8 @@ export const styles = StyleSheet.create({
   },
   modalContent: {
     height: '80%',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     overflow: 'hidden',
   },
   modalHeader: {

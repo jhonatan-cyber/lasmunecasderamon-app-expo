@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   anulacionModalCard: {
     width: "92%",
     maxWidth: MODAL_MAX_WIDTH,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
     padding: 22,
     gap: 16,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   anulacionInfoCard: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 14,
     gap: 6,
   },

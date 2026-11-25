@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     totalBanner: {
         flexDirection: 'row', alignItems: 'center',
         marginHorizontal: 16, marginBottom: 4,
-        padding: 16, borderRadius: BorderRadius.full,
+        padding: 16, borderRadius: BorderRadius.card,
         borderWidth: 1, borderLeftWidth: 4, gap: 14, elevation: 2,
     },
     totalBannerIcon: { width: 48, height: 48, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },

@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
     paddingBottom: 32,
     maxHeight: '80%',
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(128,128,128,0.1)',
   },
   infoCard: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 16,
     borderWidth: 1,
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   noteCard: {
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 14,
     borderWidth: 1,
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.card,
     padding: 14,
     borderWidth: 1,
   },

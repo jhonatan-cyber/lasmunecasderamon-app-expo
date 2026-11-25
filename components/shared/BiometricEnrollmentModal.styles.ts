@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
     root: {
@@ -74,7 +75,7 @@ export const styles = StyleSheet.create({
     },
     panel: {
         backgroundColor: 'rgba(13,17,28,0.94)',
-        borderRadius: 28,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         paddingHorizontal: 22,
         paddingVertical: 22,
@@ -129,7 +130,7 @@ export const styles = StyleSheet.create({
     },
     permissionCard: {
         backgroundColor: 'rgba(13,17,28,0.94)',
-        borderRadius: 28,
+        borderRadius: BorderRadius.card,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
         padding: 26,

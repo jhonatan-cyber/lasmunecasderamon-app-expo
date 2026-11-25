@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { BorderRadius } from '@/constants/spacing';
 
 export const styles = StyleSheet.create({
   modalOverlay: {
@@ -7,8 +8,8 @@ export const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   checkoutModal: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     padding: 24,
     borderWidth: 1,
     borderBottomWidth: 0,

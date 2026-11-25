@@ -146,7 +146,7 @@ export function TransferActions({
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: BorderRadius.full, padding: 14, marginTop: 10, borderWidth: 1 },
+  card: { borderRadius: BorderRadius.card, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconWrapper: { width: 36, height: 36, borderRadius: BorderRadius.full, justifyContent: 'center', alignItems: 'center' },
   productName: { fontSize: 15, fontFamily: FontFamily.extrabold },

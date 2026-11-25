@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     height: "80%",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     overflow: "hidden",
   },
   dragHandle: {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderRadius } from '@/constants/spacing';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { AppModal as Modal } from '@/components/ui/AppModal';
 import { useAccentColor } from '@/hooks/useAccentColor';
@@ -116,7 +117,7 @@ const styles = {
     padding: 20,
   },
   detailModal: {
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     padding: 24,
     width: '100%' as const,
     maxWidth: 400,

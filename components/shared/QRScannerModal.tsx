@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     permissionContent: {
-        borderRadius: BorderRadius.full,
+        borderRadius: BorderRadius.card,
         padding: 28,
         alignItems: 'center',
         borderWidth: 1,

@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
   sheet: {
     alignSelf: 'center',
     width: '100%',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
     borderWidth: 1,
     borderBottomWidth: 0,
     overflow: 'hidden',

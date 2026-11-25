@@ -89,7 +89,7 @@ function SectionPlaceholder({
 const styles = StyleSheet.create({
     content: { gap: 12, padding: 16 },
     card: { borderRadius: BorderRadius.card, borderWidth: 1, padding: 16 },
-    statusCard: { borderRadius: 20 },
+    statusCard: { borderRadius: BorderRadius.card },
     hero: { alignItems: 'center', gap: 10 },
     rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     divider: { height: 1, marginVertical: 14 },

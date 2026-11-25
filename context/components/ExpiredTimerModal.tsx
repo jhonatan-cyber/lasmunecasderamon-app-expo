@@ -15,7 +15,7 @@ export function ExpiredTimerModal({ timer, onDismiss }: ExpiredTimerModalProps) 
   return (
     <Modal visible={!!timer} animationType="fade" transparent onRequestClose={() => {}}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        <View style={{ backgroundColor: Colors.dark.cardSecondary, borderRadius: 24, width: '100%', maxWidth: 380, overflow: 'hidden' }}>
+        <View style={{ backgroundColor: Colors.dark.cardSecondary, borderRadius: BorderRadius.card, width: '100%', maxWidth: 380, overflow: 'hidden' }}>
           <View style={{ backgroundColor: Colors.dark.error, padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 28, marginBottom: 4 }}>⏰</Text>
             <Text style={{ color: Colors.dark.text, fontSize: 20, fontWeight: '800', textAlign: 'center' }}>¡Tiempo Terminado!</Text>

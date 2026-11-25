@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { apiClientSafe } from '@/api/client-safe';
 import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { useAccentColor } from '@/hooks/useAccentColor';
-import { FontSize } from '@/constants/spacing';
+import { BorderRadius, FontSize } from '@/constants/spacing';
 import { FontFamily } from '@/constants/fonts';
 import { contentColumn } from '@/constants/layout';
 import { useAuthStore } from '@/store/authStore';
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   back: { height: 38, borderRadius: 9999, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)' },
   backText: { color: '#FFF', fontFamily: FontFamily.extrabold, fontSize: 12 },
   sectionTitle: { fontSize: 12, fontFamily: FontFamily.black, letterSpacing: 0.7, marginTop: 6 },
-  panel: { borderWidth: 1, borderRadius: 18, padding: 14, gap: 9 },
+  panel: { borderWidth: 1, borderRadius: BorderRadius.card, padding: 14, gap: 9 },
   comparisonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   rowText: { flex: 1, gap: 3 },
   code: { fontSize: 12, fontFamily: FontFamily.black },

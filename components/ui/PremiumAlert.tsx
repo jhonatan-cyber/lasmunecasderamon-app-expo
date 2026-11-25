@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     alertCard: {
         width: '90%',
         maxWidth: MODAL_MAX_WIDTH,
-        borderRadius: BorderRadius.xxl,
+        borderRadius: BorderRadius.card,
         padding: 24,
         alignItems: 'center',
         elevation: 20,
