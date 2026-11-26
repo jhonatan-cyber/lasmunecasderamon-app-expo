@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -25,6 +24,7 @@ import { PremiumHeader } from '@/components/ui/PremiumHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AnimatedView } from '@/components/ui/AnimatedView';
+import { IconButton } from '@/components/ui/IconButton';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { FontFamily } from '@/constants/fonts';
 import { useConfigValue } from '@/hooks/useConfigValue';
@@ -421,16 +421,7 @@ export function CoversScreen() {
                     const yaEnviada = requiereSolicitud && solicitudesEnviadas.has(grupo.id);
                     return (
                       <View key={grupo.id} style={[styles.coverCard, { backgroundColor: cardBg, borderColor }]}>
-                        <Pressable
-                          onPress={() => {
-                            if (multiple) {
-                              setGrupoAbierto(actual => (actual === grupo.id ? null : grupo.id));
-                              return;
-                            }
-                            if (!yaEnviada) abrirEntrega(grupo);
-                          }}
-                          style={styles.coverHeader}
-                        >
+                        <View style={styles.coverHeader}>
                           <View style={{ flex: 1 }}>
                             <Text
                               numberOfLines={1}
@@ -463,15 +454,23 @@ export function CoversScreen() {
                               </Text>
                             </View>
                             {multiple && (
-                              <Ionicons
-                                name={abierto ? 'chevron-up' : 'chevron-down'}
-                                size={16}
-                                color={textSecondary}
-                                style={{ marginTop: 4 }}
-                              />
+                              <Pressable
+                                onPress={() => setGrupoAbierto(actual => (actual === grupo.id ? null : grupo.id))}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${abierto ? 'Ocultar' : 'Ver'} entradas del grupo`}
+                                accessibilityState={{ expanded: abierto }}
+                                hitSlop={8}
+                              >
+                                <Ionicons
+                                  name={abierto ? 'chevron-up' : 'chevron-down'}
+                                  size={16}
+                                  color={textSecondary}
+                                  style={{ marginTop: 4 }}
+                                />
+                              </Pressable>
                             )}
                           </View>
-                        </Pressable>
+                        </View>
 
                         {abierto && multiple && (
                           <View style={{ paddingTop: 8, borderTopWidth: 1, borderColor, marginBottom: 12 }}>
@@ -500,31 +499,37 @@ export function CoversScreen() {
                               </Text>
                             </View>
                           ) : (
-                            <Pressable
+                            <IconButton
+                              icon={requiereSolicitud ? 'send-outline' : 'ticket-outline'}
+                              accessibilityLabel={
+                                requiereSolicitud ? 'Solicitar entrega de covers' : 'Entregar cover'
+                              }
+                              accessibilityHint="Abre el modal para elegir entrega grupal o individual."
+                              tooltip={requiereSolicitud ? 'Solicitar entrega de covers' : 'Entregar cover'}
                               onPress={() => abrirEntrega(grupo)}
-                              style={[styles.coverActionBtn, { backgroundColor: accentColor }]}
-                            >
-                              <Ionicons name="enter-outline" size={16} color={accentText} />
-                              <Text style={[styles.coverActionBtnText, { color: accentText }]}>
-                                {requiereSolicitud ? 'SOLICITAR' : 'ENTREGAR'}
-                              </Text>
-                            </Pressable>
+                              color={accentText}
+                              backgroundColor={accentColor}
+                            />
                           )}
 
-                          <Pressable
+                          <IconButton
+                            icon={anulandoId === grupo.id ? 'hourglass-outline' : 'close-circle-outline'}
+                            accessibilityLabel={
+                              anulandoId === grupo.id
+                                ? 'Anulando covers'
+                                : `Solicitar anulación de ${grupo.filas.length === 1 ? 'la entrada' : `las ${grupo.filas.length} entradas`}`
+                            }
+                            accessibilityHint="Abre la confirmación para anular las entradas pendientes."
+                            tooltip={
+                              anulandoId === grupo.id
+                                ? 'Anulando covers'
+                                : `Solicitar anulación de ${grupo.filas.length === 1 ? 'la entrada' : `las ${grupo.filas.length} entradas`}`
+                            }
                             onPress={() => setGrupoAnular(grupo)}
                             disabled={anulandoId === grupo.id}
-                            style={[styles.coverActionBtn, { backgroundColor: accentColor }, { opacity: anulandoId === grupo.id ? 0.5 : 1 }]}
-                          >
-                            {anulandoId === grupo.id ? (
-                              <ActivityIndicator size="small" color={accentText} />
-                            ) : (
-                              <>
-                                <Ionicons name="close-circle-outline" size={16} color={accentText} />
-                                <Text style={[styles.coverActionBtnText, { color: accentText }]}>ANULAR</Text>
-                              </>
-                            )}
-                          </Pressable>
+                            color="#FFFFFF"
+                            backgroundColor="#DC2626"
+                          />
                         </View>
                       </View>
                     );
@@ -630,20 +635,8 @@ const styles = StyleSheet.create({
   },
   coverActions: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 8,
-  },
-  coverActionBtn: {
-    flex: 1,
-    borderRadius: BorderRadius.full,
-    paddingVertical: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  coverActionBtnText: {
-    fontFamily: FontFamily.extrabold,
-    fontSize: 12,
   },
   badge: {
     paddingHorizontal: 8,

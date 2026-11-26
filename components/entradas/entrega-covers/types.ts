@@ -12,6 +12,8 @@ export interface GrupoEntrega {
   baucher_foto?: string | null;
 }
 
+export type TipoEntregaCover = 'grupal' | 'individual';
+
 /** Fila cruda de `opciones_venta` tal como la devuelve el bar. */
 export interface OpcionVenta {
   tipo?: string;

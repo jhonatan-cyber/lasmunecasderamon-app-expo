@@ -69,6 +69,10 @@ export function EntregaCoversModal({
   const {
     busqueda,
     setBusqueda,
+    tipoEntrega,
+    setTipoEntrega,
+    entradaIndividualId,
+    setEntradaIndividualId,
     cargando,
     error,
     errorMonto,
@@ -208,6 +212,114 @@ export function EntregaCoversModal({
                 </Pressable>
               </View>
 
+              {grupo && grupo.filas.length > 1 && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
+                    MODALIDAD DE ENTREGA
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {([
+                      { tipo: 'grupal' as const, label: 'Grupal', icono: 'people-outline' as const },
+                      {
+                        tipo: 'individual' as const,
+                        label: 'Individual',
+                        icono: 'person-outline' as const,
+                      },
+                    ]).map(({ tipo, label, icono }) => {
+                      const seleccionada = tipoEntrega === tipo;
+                      return (
+                        <Pressable
+                          key={tipo}
+                          onPress={() => setTipoEntrega(tipo)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Entrega ${label.toLowerCase()}`}
+                          accessibilityState={{ selected: seleccionada, disabled: entregando }}
+                          disabled={entregando}
+                          style={{
+                            flex: 1,
+                            minHeight: 48,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            borderWidth: 1,
+                            borderRadius: 999,
+                            borderColor: seleccionada ? accentColor : borderColor,
+                            backgroundColor: seleccionada ? accentColor : surfaceMuted,
+                            opacity: entregando ? 0.6 : 1,
+                          }}
+                        >
+                          <Ionicons
+                            name={icono}
+                            size={16}
+                            color={seleccionada ? '#FFFFFF' : textSecondary}
+                          />
+                          <Text
+                            style={{
+                              color: seleccionada ? '#FFFFFF' : textPrimary,
+                              fontSize: 12,
+                              fontWeight: '800',
+                            }}
+                          >
+                            {label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {tipoEntrega === 'individual' && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
+                        SELECCIONA LA ENTRADA
+                      </Text>
+                      <View style={{ gap: 6 }}>
+                        {grupo.filas.map((fila, indice) => {
+                          const seleccionada = entradaIndividualId === fila.id;
+                          const etiqueta = [
+                            `Entrada ${indice + 1}`,
+                            formatCurrency(Number(fila.monto_entrada)),
+                            fila.hora,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ');
+                          return (
+                            <Pressable
+                              key={fila.id}
+                              onPress={() => setEntradaIndividualId(fila.id)}
+                              accessibilityRole="button"
+                              accessibilityLabel={etiqueta}
+                              accessibilityState={{ selected: seleccionada, disabled: entregando }}
+                              disabled={entregando}
+                              style={{
+                                minHeight: 44,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 8,
+                                paddingHorizontal: 12,
+                                borderWidth: 1,
+                                borderRadius: 999,
+                                borderColor: seleccionada ? accentColor : borderColor,
+                                backgroundColor: seleccionada ? `${accentColor}14` : surfaceMuted,
+                                opacity: entregando ? 0.6 : 1,
+                              }}
+                            >
+                              <Ionicons
+                                name={seleccionada ? 'radio-button-on' : 'radio-button-off'}
+                                size={17}
+                                color={seleccionada ? accentOnSurface : textSecondary}
+                              />
+                              <Text style={{ color: textPrimary, fontSize: 12, fontWeight: '700' }}>
+                                {etiqueta}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+
               <TextInput
                 value={busqueda}
                 onChangeText={setBusqueda}
@@ -225,13 +337,19 @@ export function EntregaCoversModal({
 
               <View style={{ marginTop: 12 }}>
                 <Text style={[styles.sectionLabel, { color: textSecondary, marginTop: 0 }]}>
-                  MONTO ADICIONAL DEL GRUPO
+                  {tipoEntrega === 'individual'
+                    ? 'MONTO ADICIONAL DE ESTA ENTRADA'
+                    : 'MONTO ADICIONAL DEL GRUPO'}
                 </Text>
                 <TextInput
                   value={montoAdicional}
                   onChangeText={cambiarMontoAdicional}
                   editable={!entregando}
-                  accessibilityLabel="Monto adicional del grupo"
+                  accessibilityLabel={
+                    tipoEntrega === 'individual'
+                      ? 'Monto adicional de esta entrada'
+                      : 'Monto adicional del grupo'
+                  }
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={textSecondary}
@@ -248,8 +366,8 @@ export function EntregaCoversModal({
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 6 }}>
                   Entradas {formatCurrency(totalEntradas)}
                   {adicional > 0 ? ` + adicional ${formatCurrency(adicional)}` : ''} = presupuesto{' '}
-                  {formatCurrency(presupuesto)}. El adicional se cobra completo con el método de
-                  pago del grupo.
+                  {formatCurrency(presupuesto)}. El adicional se cobra completo con el método de{' '}
+                  {tipoEntrega === 'individual' ? 'esta entrada.' : 'pago del grupo.'}
                 </Text>
                 {errorMonto ? (
                   <Text
@@ -429,8 +547,9 @@ export function EntregaCoversModal({
                   </Text>
                 ) : null}
                 <Text style={{ color: textSecondary, fontSize: 11, marginTop: 4 }}>
-                  Presupuesto compartido. Puedes repetir productos o elegir varios hasta agotar el
-                  presupuesto y stock.
+                  {tipoEntrega === 'individual'
+                    ? 'Presupuesto de esta entrada. Puedes repetir productos o elegir varios hasta agotar el presupuesto y stock.'
+                    : 'Presupuesto compartido. Puedes repetir productos o elegir varios hasta agotar el presupuesto y stock.'}
                 </Text>
               </View>
 

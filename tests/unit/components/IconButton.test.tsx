@@ -47,6 +47,30 @@ describe('IconButton', () => {
     );
   });
 
+  it('muestra y oculta la ayuda visual al pasar el puntero por el botón', () => {
+    render(<IconButton {...baseProps} tooltip="Entregar cover" />);
+
+    const button = screen.getByRole('button', { name: 'Nuevo' });
+    fireEvent.mouseEnter(button);
+    expect(screen.getByText('Entregar cover')).toBeDefined();
+
+    fireEvent.mouseLeave(button);
+    expect(screen.queryByText('Entregar cover')).toBeNull();
+  });
+
+  it('muestra la ayuda al mantener pulsado sin ejecutar la acción', () => {
+    const onPress = vi.fn();
+    render(<IconButton {...baseProps} onPress={onPress} tooltip="Entregar cover" />);
+
+    const button = screen.getByRole('button', { name: 'Nuevo' });
+    fireEvent.mouseDown(button);
+    fireEvent.contextMenu(button);
+    expect(screen.getByText('Entregar cover')).toBeDefined();
+
+    fireEvent.click(button);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   it('garantiza 44pt efectivos cuando el círculo visual es menor', () => {
     expect(MIN_TOUCH_TARGET).toBe(44);
     expect(getIconButtonHitSlop(44)).toBe(0);

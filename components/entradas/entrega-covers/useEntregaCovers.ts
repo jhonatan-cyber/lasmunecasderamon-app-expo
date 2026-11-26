@@ -32,7 +32,14 @@ import {
   seleccionInicial,
   seleccionReducer,
 } from './reducer';
-import type { Acompanamiento, Bebida, Formato, GrupoEntrega, LineaEntrega } from './types';
+import type {
+  Acompanamiento,
+  Bebida,
+  Formato,
+  GrupoEntrega,
+  LineaEntrega,
+  TipoEntregaCover,
+} from './types';
 
 interface UseEntregaCoversParams {
   visible: boolean;
@@ -60,6 +67,14 @@ export function useEntregaCovers({
   const [formulario, dispatchFormulario] = useReducer(formularioReducer, formularioInicial);
   const { busqueda, montoAdicional, errorMonto } = formulario;
   const [seleccion, dispatch] = useReducer(seleccionReducer, seleccionInicial);
+  const [tipoEntrega, dispatchTipoEntrega] = useReducer(
+    (_: TipoEntregaCover, tipo: TipoEntregaCover) => tipo,
+    'grupal',
+  );
+  const [entradaIndividualId, dispatchEntradaIndividual] = useReducer(
+    (_: string, id: string) => id,
+    '',
+  );
   const catalogo = useQuery({
     queryKey: ['covers', 'productos'],
     enabled: visible && grupo !== null,
@@ -86,7 +101,15 @@ export function useEntregaCovers({
   const acompanamientos = useMemo(() => catalogoCover.data ?? [], [catalogoCover.data]);
   const cargando = catalogo.isFetching || catalogoCover.isFetching;
   const error = catalogo.error?.message ?? catalogoCover.error?.message ?? null;
-  const filas = useMemo(() => grupo?.filas ?? [], [grupo]);
+  const filasGrupo = useMemo(() => grupo?.filas ?? [], [grupo]);
+  const primeraEntradaId = grupo?.filas[0]?.id ?? '';
+  const filas = useMemo(
+    () =>
+      tipoEntrega === 'individual'
+        ? filasGrupo.filter((fila) => fila.id === entradaIndividualId)
+        : filasGrupo,
+    [entradaIndividualId, filasGrupo, tipoEntrega],
+  );
   const totalEntradas = filas.reduce((total, fila) => total + (Number(fila.monto_entrada) || 0), 0);
   const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
   // El presupuesto para filtrar productos es igual al del dashboard:
@@ -102,7 +125,9 @@ export function useEntregaCovers({
     if (!visible) return;
     dispatch({ type: 'reiniciar' });
     dispatchFormulario({ type: 'reiniciar' });
-  }, [visible, grupo?.id]);
+    dispatchTipoEntrega('grupal');
+    dispatchEntradaIndividual(primeraEntradaId);
+  }, [visible, grupo?.id, primeraEntradaId]);
 
   const setBusqueda = useCallback((valor: string) => {
     dispatchFormulario({ type: 'busqueda', valor });
@@ -208,6 +233,30 @@ export function useEntregaCovers({
     retry: false,
   });
   const entregando = mutacion.isPending;
+  const setTipoEntrega = useCallback(
+    (tipo: TipoEntregaCover) => {
+      if (entregando || tipo === tipoEntrega) return;
+      dispatchTipoEntrega(tipo);
+      dispatchEntradaIndividual(primeraEntradaId);
+      dispatch({ type: 'reiniciar' });
+      dispatchFormulario({ type: 'reiniciar' });
+    },
+    [entregando, primeraEntradaId, tipoEntrega],
+  );
+  const setEntradaIndividualId = useCallback(
+    (id: string) => {
+      if (
+        entregando ||
+        id === entradaIndividualId ||
+        !filasGrupo.some((fila) => fila.id === id)
+      )
+        return;
+      dispatchEntradaIndividual(id);
+      dispatch({ type: 'reiniciar' });
+      dispatchFormulario({ type: 'reiniciar' });
+    },
+    [entregando, entradaIndividualId, filasGrupo],
+  );
   const puedeAgregar = useCallback(
     (bebida: Bebida, formato: Formato) =>
       !entregando &&
@@ -310,7 +359,11 @@ export function useEntregaCovers({
       showToast({
         type: 'error',
         text1:
-          modo === 'solicitud' ? 'No se pudo enviar la solicitud' : 'No se pudo entregar el grupo',
+          modo === 'solicitud'
+            ? 'No se pudo enviar la solicitud'
+            : tipoEntrega === 'individual'
+              ? 'No se pudo entregar la entrada'
+              : 'No se pudo entregar el grupo',
         text2: err instanceof Error ? err.message : 'Intenta de nuevo.',
       });
       return;
@@ -341,6 +394,10 @@ export function useEntregaCovers({
     acompanamientos,
     busqueda,
     setBusqueda,
+    tipoEntrega,
+    setTipoEntrega,
+    entradaIndividualId,
+    setEntradaIndividualId,
     cargando,
     error,
     errorMonto,

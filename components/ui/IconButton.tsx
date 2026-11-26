@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Pressable,
     StyleSheet,
+    Text,
+    View,
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
@@ -34,6 +36,8 @@ export interface IconButtonProps {
     borderWidth?: number;
     disabled?: boolean;
     accessibilityHint?: string;
+    /** Ayuda breve visible con hover, foco o pulsación prolongada. */
+    tooltip?: string;
     /** Contenido superpuesto, por ejemplo un contador de notificaciones. */
     badge?: React.ReactNode;
     style?: StyleProp<ViewStyle>;
@@ -56,11 +60,38 @@ export function IconButton({
     borderWidth = 0,
     disabled = false,
     accessibilityHint,
+    tooltip,
     badge,
     style,
 }: IconButtonProps) {
     const hitSlop = getIconButtonHitSlop(size);
     const { isDark, accentColor } = useAccentColor();
+    const [tooltipVisible, setTooltipVisible] = useState(false);
+    const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const longPressTooltipShown = useRef(false);
+
+    const ocultarTooltip = () => {
+        if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+        tooltipTimeout.current = null;
+        setTooltipVisible(false);
+    };
+
+    const mostrarTooltip = () => {
+        if (!tooltip) return;
+        if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+        tooltipTimeout.current = null;
+        setTooltipVisible(true);
+    };
+
+    const mostrarTooltipAlPresionar = () => {
+        longPressTooltipShown.current = true;
+        mostrarTooltip();
+        tooltipTimeout.current = setTimeout(ocultarTooltip, 1800);
+    };
+
+    useEffect(() => () => {
+        if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+    }, []);
 
     // Glow neón en modo oscuro
     const neonGlow = isDark && !disabled ? {
@@ -73,7 +104,22 @@ export function IconButton({
 
     return (
         <Pressable
-            onPress={onPress}
+            onPress={() => {
+                if (longPressTooltipShown.current) {
+                    longPressTooltipShown.current = false;
+                    return;
+                }
+                ocultarTooltip();
+                onPress();
+            }}
+            onPressIn={() => {
+                longPressTooltipShown.current = false;
+            }}
+            onLongPress={tooltip ? mostrarTooltipAlPresionar : undefined}
+            onHoverIn={tooltip ? mostrarTooltip : undefined}
+            onHoverOut={tooltip ? ocultarTooltip : undefined}
+            onFocus={tooltip ? mostrarTooltip : undefined}
+            onBlur={tooltip ? ocultarTooltip : undefined}
             disabled={disabled}
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel}
@@ -106,6 +152,17 @@ export function IconButton({
                 color={color}
             />
             {badge}
+            {tooltipVisible && tooltip ? (
+                <View
+                    pointerEvents="none"
+                    accessible={false}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={[styles.tooltip, { bottom: size + 8 }]}
+                >
+                    <Text style={styles.tooltipText}>{tooltip}</Text>
+                </View>
+            ) : null}
         </Pressable>
     );
 }
@@ -114,5 +171,24 @@ const styles = StyleSheet.create({
     base: {
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    tooltip: {
+        position: 'absolute',
+        right: 0,
+        zIndex: 20,
+        elevation: 12,
+        maxWidth: 240,
+        minWidth: 100,
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        backgroundColor: '#1F2937',
+    },
+    tooltipText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+        textAlign: 'center',
     },
 });

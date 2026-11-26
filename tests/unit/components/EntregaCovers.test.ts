@@ -185,6 +185,41 @@ describe('useEntregaCovers: contrato compartido', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('permite elegir una entrada individual y limita el presupuesto a esa entrada', async () => {
+    const { result } = montar();
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    expect(result.current.tipoEntrega).toBe('grupal');
+    act(() => result.current.setTipoEntrega('individual'));
+    expect(result.current.filas.map((fila) => fila.id)).toEqual(['t0']);
+    expect(result.current.presupuesto).toBe(5000);
+
+    act(() => result.current.setEntradaIndividualId('t1'));
+    expect(result.current.filas.map((fila) => fila.id)).toEqual(['t1']);
+    expect(result.current.totalEntradas).toBe(5000);
+  });
+
+  it('envía solo la entrada elegida al entregar individualmente', async () => {
+    const { result } = montar();
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    act(() => {
+      result.current.setTipoEntrega('individual');
+      result.current.setEntradaIndividualId('t1');
+      result.current.cambiarMontoAdicional('4000');
+      result.current.agregar(result.current.visibles[0]!.bebida, 'corte');
+    });
+
+    await act(async () => {
+      await result.current.entregar();
+    });
+
+    const payload = vi.mocked(entradasService.entregarGrupo).mock.calls[0]![0];
+    expect(payload.entrada_ids).toEqual(['t1']);
+    expect(payload.monto_adicional).toBe(4000);
+    expect(payload.unidades).toHaveLength(1);
+  });
+
   it('solicita el mismo grupo sin entrada_id por unidad y monto_total igual al aporte', async () => {
     const { result } = montar('solicitud');
     await waitFor(() => expect(result.current.cargando).toBe(false));

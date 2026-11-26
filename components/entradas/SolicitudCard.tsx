@@ -1,7 +1,6 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { BorderRadius } from '@/constants/spacing';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Text, View } from 'react-native';
+import { IconButton } from '@/components/ui/IconButton';
 
 interface UnidadBebida {
   presentacion_id?: string;
@@ -79,48 +78,24 @@ export const SolicitudCard: React.FC<SolicitudCardProps> = ({
         </Text>
       ))}
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-        <Pressable
+        <IconButton
+          icon="checkmark-circle-outline"
+          accessibilityLabel={`Aprobar solicitud de covers de ${solicitud.cliente_nombre || 'cliente sin nombre'}`}
+          accessibilityHint="Autoriza la entrega de las bebidas solicitadas."
+          tooltip="Aprobar solicitud"
           onPress={() => onAprobar(solicitud.id)}
-          style={[
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: BorderRadius.full,
-              backgroundColor: successColor,
-            },
-          ]}
-        >
-          <Ionicons name="checkmark-circle" size={16} color="#FFF" />
-          <Text
-            style={{ color: '#FFF', fontSize: 12, fontWeight: '800' }}
-          >
-            APROBAR
-          </Text>
-        </Pressable>
-        <Pressable
+          color="#FFFFFF"
+          backgroundColor={successColor}
+        />
+        <IconButton
+          icon="close-circle-outline"
+          accessibilityLabel={`Rechazar solicitud de covers de ${solicitud.cliente_nombre || 'cliente sin nombre'}`}
+          accessibilityHint="Rechaza la entrega de las bebidas solicitadas."
+          tooltip="Rechazar solicitud"
           onPress={() => onRechazar(solicitud.id)}
-          style={[
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: BorderRadius.full,
-              backgroundColor: dangerColor,
-            },
-          ]}
-        >
-          <Ionicons name="close-circle" size={16} color="#FFF" />
-          <Text
-            style={{ color: '#FFF', fontSize: 12, fontWeight: '800' }}
-          >
-            RECHAZAR
-          </Text>
-        </Pressable>
+          color="#FFFFFF"
+          backgroundColor={dangerColor}
+        />
       </View>
     </View>
   );

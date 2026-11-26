@@ -180,10 +180,31 @@ vi.mock('react-native', () => ({
     StyleSheet: { create: (s: any) => s },
     Text: ({ children }: { children: any }) => React.createElement('span', null, children),
     View: ({ children }: { children: any }) => children,
-    Pressable: ({ children, onPress, accessibilityLabel, disabled }: any) =>
+    Pressable: ({
+        children,
+        onPress,
+        onPressIn,
+        onLongPress,
+        onHoverIn,
+        onHoverOut,
+        onFocus,
+        onBlur,
+        accessibilityLabel,
+        disabled,
+    }: any) =>
         React.createElement(
             'button',
-            { onClick: onPress, 'aria-label': accessibilityLabel, disabled },
+            {
+                onClick: onPress,
+                onMouseDown: onPressIn,
+                onContextMenu: onLongPress,
+                onMouseEnter: onHoverIn,
+                onMouseLeave: onHoverOut,
+                onFocus,
+                onBlur,
+                'aria-label': accessibilityLabel,
+                disabled,
+            },
             children
         ),
     ActivityIndicator: () => null,
