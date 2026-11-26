@@ -205,6 +205,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     methodChipText: {
+        flexShrink: 1,
+        minWidth: 0,
         fontSize: 12,
         fontFamily: FontFamily.bold,
         textAlign: 'center',
