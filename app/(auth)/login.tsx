@@ -12,10 +12,8 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAccentColor } from "@/hooks/useAccentColor";
 import { useAppearanceStore } from "@/store/appearanceStore";
-import { DEFAULT_ACCENT_COLOR, normalizeAccentColor, useThemeStore } from "@/store/themeStore";
 import { AnimatedScreen } from "@/components/ui/AnimatedScreen";
 import { QRScannerModal } from "@/components/shared/QRScannerModal";
 import { PremiumAlert } from "@/components/ui/PremiumAlert";
@@ -58,17 +56,11 @@ export default function LoginScreen() {
     closeResetPasswordModal,
   } = useLogin();
 
-  const colorScheme = useColorScheme() ?? "dark";
-  const isDark = colorScheme === "dark";
+  const { accentColor, bg, textSecondary, isDark } = useAccentColor();
   const { isLandscape } = useResponsiveMetrics();
   const insets = useSafeAreaInsets();
 
-  const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
-  const C = theme;
   const { toggleScheme } = useAppearanceStore();
-  const userColors = useThemeStore(state => state.userColors);
-
-  const lastAccentColor = normalizeAccentColor(Object.values(userColors).pop() || DEFAULT_ACCENT_COLOR);
 
   const loginContent = (
     <View style={{ flex: 1 }}>
@@ -81,7 +73,7 @@ export default function LoginScreen() {
           error={error}
           loading={loading}
           isDark={isDark}
-          accentColor={lastAccentColor}
+          accentColor={accentColor}
           isBiometricEnabled={isBiometricEnabled}
           isBiometricSupported={isBiometricSupported}
           rememberMe={rememberMe}
@@ -126,7 +118,7 @@ export default function LoginScreen() {
           style={styles.landscapeKeyboardAvoiding}
         >
           <LoginLandscapeLayout
-            backgroundColor={C.background}
+            backgroundColor={bg}
             backgroundImageSource={require("../../assets/images/login_bg.png")}
             logoImageSource={require("../../assets/images/logo2.png")}
             insets={insets}
@@ -206,7 +198,7 @@ export default function LoginScreen() {
         <Ionicons
           name={isDark ? "sunny-outline" : "moon-outline"}
           size={22}
-          color={C.textSecondary}
+          color={textSecondary}
         />
       </Pressable>
 
@@ -228,7 +220,7 @@ export default function LoginScreen() {
         resetRun={resetRun}
         onChangeResetRun={setResetRun}
         isDark={isDark}
-        accentColor={lastAccentColor}
+        accentColor={accentColor}
         onClose={closeResetPasswordModal}
         onReset={handleResetPassword}
       />

@@ -21,7 +21,6 @@ import { useGarzonServiciosScreen } from "@/hooks/useGarzonServiciosScreen";
 import { BorderRadius, FontSize, HitSlop } from "@/constants/spacing";
 import { tabBarBottomPadding } from "@/constants/layout";
 import { FontFamily } from "@/constants/fonts";
-import { Colors } from "@/constants/theme";
 import { haptic } from "@/utils/haptics";
 import { habitacionesParaServicio } from "@/utils/habitaciones";
 import {
@@ -69,6 +68,7 @@ export default function ServiciosScreen() {
     textPrimary,
     textSecondary,
     borderColor,
+    semanticColors,
   } = useAccentColor();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -405,10 +405,10 @@ export default function ServiciosScreen() {
                 style={({ pressed }) => [
                   styles.baucherRow,
                   {
-                    borderColor: baucherFoto ? primaryColor : Colors.light.error,
+                    borderColor: baucherFoto ? primaryColor : semanticColors.error,
                     backgroundColor: baucherFoto
                       ? primaryColor + "1A"
-                      : Colors.light.error + "1A",
+                      : semanticColors.errorSurface,
                     opacity: pressed ? 0.85 : 1,
                   },
                 ]}
@@ -419,12 +419,12 @@ export default function ServiciosScreen() {
                     style={styles.baucherThumb}
                   />
                 ) : (
-                  <Ionicons name="camera-outline" size={20} color={Colors.light.error} />
+                  <Ionicons name="camera-outline" size={20} color={semanticColors.error} />
                 )}
                 <Text
                   style={[
                     styles.baucherText,
-                    { color: baucherFoto ? primaryColor : Colors.light.error },
+                    { color: baucherFoto ? primaryColor : semanticColors.error },
                   ]}
                 >
                   {baucherFoto
@@ -437,12 +437,12 @@ export default function ServiciosScreen() {
             {hasPrepago && (
               <View
                 style={{
-                  backgroundColor: Colors.light.success + "15",
+                  backgroundColor: semanticColors.successSurface,
                   padding: 15,
                   borderRadius: BorderRadius.card,
                   borderStyle: "dashed",
                   borderWidth: 1.5,
-                  borderColor: Colors.light.success,
+                  borderColor: semanticColors.success,
                 }}
               >
                 <View
@@ -452,7 +452,7 @@ export default function ServiciosScreen() {
                     gap: 10,
                   }}
                 >
-                  <Ionicons name="wallet" size={20} color={Colors.light.success} />
+                  <Ionicons name="wallet" size={20} color={semanticColors.success} />
                   <View style={{ flex: 1 }}>
                     <Text
                       maxFontSizeMultiplier={1.5}
@@ -467,7 +467,7 @@ export default function ServiciosScreen() {
                     <Text
                       maxFontSizeMultiplier={1.5}
                       style={{
-                        color: Colors.light.success,
+                        color: semanticColors.success,
                         fontFamily: FontFamily.extrabold,
                         fontSize: FontSize.xs,
                       }}

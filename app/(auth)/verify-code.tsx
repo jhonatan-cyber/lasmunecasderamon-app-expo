@@ -14,8 +14,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
+import { useAccentColor } from "@/hooks/useAccentColor";
 import { FontFamily } from "@/constants/fonts";
 import { useAuthStore } from "@/store/authStore";
 import { getHomeRouteByRole } from "@/utils/userRole";
@@ -30,8 +29,18 @@ export default function VerifyCodeScreen() {
   const login = useAuthStore((state) => state.login);
   const tempAuthData = useAuthStore((state) => state.tempAuthData);
 
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme];
+  const {
+    isDark,
+    bg,
+    cardBg,
+    borderColor,
+    textPrimary,
+    textSecondary,
+    accentColor,
+    accentText,
+    accentBg,
+    semanticColors,
+  } = useAccentColor();
 
   const inputRefs = useRef<(React.ComponentRef<typeof TextInput> | null)[]>([null, null, null, null]);
 
@@ -86,7 +95,7 @@ export default function VerifyCodeScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[styles.container, { backgroundColor: bg }]}
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -102,7 +111,7 @@ export default function VerifyCodeScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <StatusBar style={isDark ? "light" : "dark"} />
 
         <Pressable
           style={({ pressed }) => [
@@ -113,22 +122,26 @@ export default function VerifyCodeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Volver atrás"
         >
-          <Text style={[styles.backButtonText, { color: theme.icon }]}>
+          <Text style={[styles.backButtonText, { color: textSecondary }]}>
             ← Volver
           </Text>
         </Pressable>
 
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>
+          <Text style={[styles.title, { color: textPrimary }]}>
             Verificación
           </Text>
-          <Text style={[styles.subtitle, { color: theme.tabIconDefault }]}>
+          <Text style={[styles.subtitle, { color: textSecondary }]}>
             Ingresa el código seguro de acceso rápido.
           </Text>
         </View>
 
         <View style={styles.formContainer}>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? (
+            <Text style={[styles.errorText, { color: semanticColors.error }]}>
+              {error}
+            </Text>
+          ) : null}
 
           <View style={styles.codeContainer}>
             {code.map((digit, index) => (
@@ -140,16 +153,15 @@ export default function VerifyCodeScreen() {
                 style={[
                   styles.codeInput,
                   {
-                    backgroundColor: theme.card,
-                    borderColor: theme.border,
-                    color: theme.text,
+                    backgroundColor: cardBg,
+                    borderColor,
+                    color: textPrimary,
                   },
                   digit !== "" && {
-                    borderColor: theme.tint,
-                    backgroundColor:
-                      colorScheme === "dark" ? "#111827" : "#EEF2FF",
+                    borderColor: accentColor,
+                    backgroundColor: accentBg,
                   },
-                  error !== "" && { borderColor: theme.error },
+                  error !== "" && { borderColor: semanticColors.error },
                 ]}
                 keyboardType="number-pad"
                 maxLength={1}
@@ -168,7 +180,7 @@ export default function VerifyCodeScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.verifyButton,
-              { backgroundColor: theme.tint },
+              { backgroundColor: accentColor },
               (loading || !code.every((d) => d !== "")) && { opacity: 0.5 },
               pressed &&
               !(loading || !code.every((d) => d !== "")) && { opacity: 0.8 },
@@ -180,10 +192,10 @@ export default function VerifyCodeScreen() {
             accessibilityState={{ disabled: loading || !code.every((d) => d !== "") }}
           >
             {loading ? (
-              <ActivityIndicator color={theme.background} />
+              <ActivityIndicator color={accentText} />
             ) : (
               <Text
-                style={[styles.verifyButtonText, { color: theme.background }]}
+                style={[styles.verifyButtonText, { color: accentText }]}
               >
                 Verificar e Ingresar
               </Text>

@@ -23,7 +23,6 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useTimer } from '@/context/TimerContext';
 import { useVentasScreen } from '@/hooks/useVentasScreen';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Colors } from '@/constants/theme';
 import { useAccentColor } from '@/hooks/useAccentColor';
 import { useResponsiveMetrics } from '@/hooks/useResponsiveMetrics';
 import {
@@ -44,7 +43,7 @@ import { parseDateSafe } from '@/utils/timeUtils';
 const VENTA_SKELETON_ITEMS = [1, 2, 3, 4];
 
 export default function VentasScreen() {
-  const { accentColor, accentText, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor } = useAccentColor();
+  const { accentColor, accentText, gradientColors, isDark, bg, cardBg, textPrimary, textSecondary, borderColor, semanticColors } = useAccentColor();
   const esAdmin = useIsAdmin();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -90,9 +89,6 @@ export default function VentasScreen() {
     getVentaId,
     fromCache,
   } = useVentasScreen();
-
-  const C = Colors[isDark ? 'dark' : 'light'];
-
 
   const activeVentaTimers = React.useMemo(
     () => timers.filter((timer) => timer.tipoTransaccion === "venta"),
@@ -376,7 +372,7 @@ export default function VentasScreen() {
             textPrimary={textPrimary}
             textSecondary={textSecondary}
             isDark={isDark}
-            dangerColor={C.danger}
+            dangerColor={semanticColors.error}
           />
 
           <VentaActionSheet
@@ -389,7 +385,7 @@ export default function VentasScreen() {
             }}
             onSolicitarAnulacion={openAnulacionModal}
             accentColor={accentColor}
-            dangerColor={C.danger}
+            dangerColor={semanticColors.error}
           />
 
           <PremiumFAB

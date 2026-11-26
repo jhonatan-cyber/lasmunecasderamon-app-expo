@@ -14,8 +14,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Colors } from "@/constants/theme";
+import { useAccentColor } from "@/hooks/useAccentColor";
 import { FontFamily } from "@/constants/fonts";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services";
@@ -32,13 +31,21 @@ export default function ChangePasswordScreen() {
   const [error, setError] = useState("");
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const {
+    isDark,
+    bg,
+    cardBg,
+    borderColor,
+    textPrimary,
+    textSecondary,
+    accentColor,
+    accentText,
+    semanticColors,
+  } = useAccentColor();
 
   const clearForcePasswordChange = useAuthStore(
     (state) => state.clearForcePasswordChange
   );
-
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme];
 
   const handleChangePassword = async () => {
     setError("");
@@ -76,7 +83,7 @@ export default function ChangePasswordScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[styles.container, { backgroundColor: bg }]}
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -92,20 +99,20 @@ export default function ChangePasswordScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <StatusBar style={isDark ? "light" : "dark"} />
 
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>
+          <Text style={[styles.title, { color: textPrimary }]}>
             Cambiar Contraseña
           </Text>
-          <Text style={[styles.subtitle, { color: theme.tabIconDefault }]}>
+          <Text style={[styles.subtitle, { color: textSecondary }]}>
             Debés cambiar tu contraseña antes de continuar.
           </Text>
         </View>
 
         <View style={styles.formContainer}>
           {error ? (
-            <Text style={[styles.errorText, { color: theme.error }]}>
+            <Text style={[styles.errorText, { color: semanticColors.error }]}>
               {error}
             </Text>
           ) : null}
@@ -115,13 +122,13 @@ export default function ChangePasswordScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.card,
-                  borderColor: theme.border,
-                  color: theme.text,
+                  backgroundColor: cardBg,
+                  borderColor,
+                  color: textPrimary,
                 },
               ]}
               placeholder="Nueva contraseña (mínimo 8 caracteres)"
-              placeholderTextColor={theme.tabIconDefault}
+              placeholderTextColor={textSecondary}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
@@ -140,7 +147,7 @@ export default function ChangePasswordScreen() {
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={24}
-                color={theme.tabIconDefault}
+                color={textSecondary}
               />
             </Pressable>
           </View>
@@ -150,13 +157,13 @@ export default function ChangePasswordScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.card,
-                  borderColor: theme.border,
-                  color: theme.text,
+                  backgroundColor: cardBg,
+                  borderColor,
+                  color: textPrimary,
                 },
               ]}
               placeholder="Confirmar contraseña"
-              placeholderTextColor={theme.tabIconDefault}
+              placeholderTextColor={textSecondary}
               secureTextEntry={!showConfirmPassword}
               autoCapitalize="none"
               autoCorrect={false}
@@ -175,7 +182,7 @@ export default function ChangePasswordScreen() {
               <Ionicons
                 name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
                 size={24}
-                color={theme.tabIconDefault}
+                color={textSecondary}
               />
             </Pressable>
           </View>
@@ -183,7 +190,7 @@ export default function ChangePasswordScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.submitButton,
-              { backgroundColor: theme.tint },
+              { backgroundColor: accentColor },
               (loading || !password || !confirmPassword) && { opacity: 0.5 },
               pressed &&
               !(loading || !password || !confirmPassword) && { opacity: 0.8 },
@@ -195,10 +202,10 @@ export default function ChangePasswordScreen() {
             accessibilityState={{ disabled: loading || !password || !confirmPassword }}
           >
             {loading ? (
-              <ActivityIndicator color={theme.background} />
+              <ActivityIndicator color={accentText} />
             ) : (
               <Text
-                style={[styles.submitButtonText, { color: theme.background }]}
+                style={[styles.submitButtonText, { color: accentText }]}
               >
                 Guardar y Continuar
               </Text>

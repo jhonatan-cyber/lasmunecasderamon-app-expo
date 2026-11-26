@@ -78,6 +78,7 @@ vi.mock('@/hooks/useAccentColor', () => ({
     textPrimary: '#111',
     textSecondary: '#555',
     borderColor: '#ddd',
+    semanticColors: { error: '#f00', success: '#0a0' },
   }),
 }));
 vi.mock('@/hooks/useResponsiveMetrics', () => ({
