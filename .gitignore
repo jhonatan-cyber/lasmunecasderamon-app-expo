@@ -57,3 +57,6 @@ _tmp/
 blockfiles.txt
 implicitfiles.txt
 propfiles.txt
+
+# Artefactos locales de EAS Build
+eas-build*.log

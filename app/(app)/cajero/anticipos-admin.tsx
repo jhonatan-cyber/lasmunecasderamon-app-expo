@@ -279,7 +279,7 @@ export default function AnticiposAdminScreen() {
         />
       );
     },
-    [procesando, textSecondary, accentBg, accentBorder, accentColor, accentOnSurface, surfaceMuted],
+    [procesando, textSecondary, accentBg, accentBorder, accentOnSurface, surfaceMuted],
   );
 
   if (loading) {

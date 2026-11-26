@@ -14,7 +14,7 @@ export const BarmanActionGrid = ({
   bloqueado = false,
 }: BarmanActionGridProps) => {
   const { pendingCount, failedCount, isOffline } = useOutbox();
-  const { accentColor, accentOnSurface, accentUi } = useAccentColor();
+  const { accentOnSurface, accentUi } = useAccentColor();
   const operacionesSinEnviar = pendingCount + failedCount;
 
   const actions: ActionGridItem[] = [

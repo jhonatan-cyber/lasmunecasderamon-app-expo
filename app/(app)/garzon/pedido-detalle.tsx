@@ -16,7 +16,7 @@ import {
 import { PremiumHeader } from "@/components/ui/PremiumHeader";
 
 export default function PedidoDetalleScreen() {
-  const { accentColor, bg, borderColor, textPrimary, accentOnSurface } =
+  const { bg, borderColor, textPrimary, accentOnSurface } =
     useAccentColor();
   const router = useRouter();
   const cart = useCartStore((state) => state.cart);
