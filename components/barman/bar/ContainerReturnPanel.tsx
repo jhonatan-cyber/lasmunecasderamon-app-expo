@@ -6,6 +6,7 @@ import VirtualizedList from '@/components/shared/VirtualizedList';
 import { SkeletonLoader as Skeleton } from '@/components/ui/SkeletonLoader';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAccentColor } from '@/hooks/useAccentColor';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   MOTIVO_ENVASE,
   type EnvaseDevolucion,
@@ -74,6 +75,7 @@ export function ContainerReturnPanel({
   onAbrirScanner,
 }: ContainerReturnPanelProps) {
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, accentText, accentBg, accentBorder, surfaceMuted } = useAccentColor();
+  const insets = useSafeAreaInsets();
 
   const enviar = () => {
     if (!verificando && codigo.trim()) onEnviar();
@@ -187,7 +189,10 @@ export function ContainerReturnPanel({
         <VirtualizedList
           data={devoluciones}
           keyExtractor={(item: EnvaseDevolucion) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: 24 + insets.bottom },
+          ]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
@@ -338,7 +343,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 2,
   },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  list: { paddingHorizontal: 16 },
   card: { borderRadius: 16, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   productName: { fontSize: 15, fontFamily: FontFamily.extrabold },

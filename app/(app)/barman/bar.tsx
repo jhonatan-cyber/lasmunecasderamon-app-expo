@@ -29,11 +29,13 @@ import { useAccentColor } from '@/hooks/useAccentColor';
 import { useCajaAbierta } from '@/hooks/useCajaAbierta';
 import { BloqueoPorCaja } from '@/components/shared/BloqueoPorCaja';
 import { FontFamily } from '@/constants/fonts';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabId = 'stock' | 'pendientes' | 'historial' | 'envases';
 
 export default function BarScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tab?: string }>();
   const { accentColor, bg, cardBg, textPrimary, textSecondary, borderColor } =
     useAccentColor();
@@ -194,7 +196,10 @@ export default function BarScreen() {
               <VirtualizedList
                 data={transfers}
                 keyExtractor={(item: { id: string }) => item.id}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={[
+                  styles.list,
+                  { paddingBottom: 24 + insets.bottom },
+                ]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                   <RefreshControl
@@ -310,7 +315,7 @@ export default function BarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  list: { paddingHorizontal: 16 },
   backBtnRight: {
     flexDirection: 'row',
     alignItems: 'center',

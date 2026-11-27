@@ -8,6 +8,7 @@ import type {
 } from '@/hooks/useEnvasesScreen';
 
 type TextProps = { children?: ReactNode; numberOfLines?: number };
+const list = vi.hoisted(() => ({ contentContainerStyle: undefined as unknown }));
 
 vi.mock('react-native', () => ({
   Dimensions: { get: () => ({ width: 360, height: 780, scale: 2, fontScale: 1 }) },
@@ -33,6 +34,9 @@ vi.mock('react-native', () => ({
   ),
   RefreshControl: () => null,
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
+}));
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ bottom: 16 }),
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 vi.mock('@/hooks/useAccentColor', () => ({
@@ -65,20 +69,25 @@ vi.mock('@/components/shared/VirtualizedList', () => ({
     renderItem,
     keyExtractor,
     ListEmptyComponent,
+    contentContainerStyle,
   }: {
     data: T[];
     renderItem: (props: { item: T }) => ReactNode;
     keyExtractor: (item: T) => string;
     ListEmptyComponent?: ReactNode;
-  }) => (
-    <div>
-      {data.length
-        ? data.map((item) => (
-            <div key={keyExtractor(item)}>{renderItem({ item })}</div>
-          ))
-        : ListEmptyComponent}
-    </div>
-  ),
+    contentContainerStyle?: unknown;
+  }) => {
+    list.contentContainerStyle = contentContainerStyle;
+    return (
+      <div>
+        {data.length
+          ? data.map((item) => (
+              <div key={keyExtractor(item)}>{renderItem({ item })}</div>
+            ))
+          : ListEmptyComponent}
+      </div>
+    );
+  },
 }));
 afterEach(cleanup);
 
@@ -149,6 +158,15 @@ const lineasDe = (texto: string) =>
     .getAttribute('data-lines');
 
 describe('ContainerReturnPanel', () => {
+  it('reserva el inset inferior debajo del último card', () => {
+    render(<ContainerReturnPanel {...props} devoluciones={[devolucion()]} />);
+
+    expect(list.contentContainerStyle).toEqual([
+      { paddingHorizontal: 16 },
+      { paddingBottom: 40 },
+    ]);
+  });
+
   it('limita a una línea el producto, el usuario y la fecha largos de cada devolución', () => {
     const item = devolucion();
     render(<ContainerReturnPanel {...props} devoluciones={[item]} />);

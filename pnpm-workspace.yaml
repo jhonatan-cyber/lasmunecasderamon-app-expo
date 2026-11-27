@@ -38,3 +38,7 @@ overrides:
   undici: '>=8.10.2 <9'
   uuid@^11: '>=11.1.1 <12'
   ws: '>=8.21.0 <9'
+
+permissions:
+  expo-sqlite:
+    skills: true

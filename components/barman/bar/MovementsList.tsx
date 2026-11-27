@@ -16,6 +16,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { formatCurrency } from '@/utils/format';
 import { preciosOpcionesVenta } from '@/hooks/utils/saleChoice';
 import type { BarMovement } from '@/hooks/useBarScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface MovementsListProps {
   items: BarMovement[];
@@ -191,6 +192,7 @@ const estadoKey = (m: BarMovement): 'success' | 'warning' | 'error' | 'neutral' 
 
 export function MovementsList({ items, loading, refreshing, onRefresh, onPressItem }: MovementsListProps) {
   const { accentColor, cardBg, textPrimary, textSecondary, borderColor, accentOnSurface, isDark } = useAccentColor();
+  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
   if (loading) {
@@ -207,7 +209,10 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
     <VirtualizedList
       data={items}
       keyExtractor={(item: BarMovement) => item.id}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={[
+        styles.list,
+        { paddingBottom: 24 + insets.bottom },
+      ]}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accentColor} />
@@ -240,7 +245,7 @@ export function MovementsList({ items, loading, refreshing, onRefresh, onPressIt
 }
 
 const styles = StyleSheet.create({
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  list: { paddingHorizontal: 16 },
   card: { borderRadius: 16, padding: 14, marginTop: 10, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   productName: { fontSize: 15, fontFamily: FontFamily.extrabold },

@@ -7,6 +7,7 @@ import type { BarStockItem } from '@/hooks/useBarScreen';
 const list = vi.hoisted(() => ({
   rows: [] as unknown[],
   numColumns: undefined as number | undefined,
+  contentContainerStyle: undefined as unknown,
 }));
 // Opciones de venta que devuelve resolverVentaProducto; null = la opción por defecto.
 const saleOpts = vi.hoisted(() => ({
@@ -56,6 +57,9 @@ vi.mock('react-native', () => ({
   ),
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
 }));
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ bottom: 16 }),
+}));
 vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 vi.mock('@/components/ui/SkeletonLoader', () => ({
@@ -92,6 +96,7 @@ vi.mock('@/components/shared/VirtualizedList', () => ({
     ListEmptyComponent,
     refreshControl,
     numColumns,
+    contentContainerStyle,
   }: {
     data: T[];
     renderItem: (props: { item: T }) => ReactNode;
@@ -99,9 +104,11 @@ vi.mock('@/components/shared/VirtualizedList', () => ({
     ListEmptyComponent?: ReactNode;
     refreshControl?: ReactNode;
     numColumns?: number;
+    contentContainerStyle?: unknown;
   }) => {
     list.rows = data;
     list.numColumns = numColumns;
+    list.contentContainerStyle = contentContainerStyle;
     return (
       <div>
         {refreshControl}
@@ -148,6 +155,17 @@ describe('BarStockList', () => {
     expect(screen.getByRole('button', { name: 'Vodka, 1 productos' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sin categoría, 1 productos' })).toBeTruthy();
     expect(items.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5']);
+  });
+
+  it('reserva el inset inferior después del último card de stock', () => {
+    render(
+      <BarStockList {...props} items={items} selectedCategory="Ron" />,
+    );
+
+    expect(list.contentContainerStyle).toEqual([
+      { paddingHorizontal: 12 },
+      { paddingBottom: 136 },
+    ]);
   });
 
   it('no muestra opciones de venta con precio 0 en la tarjeta de stock', () => {

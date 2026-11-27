@@ -5,6 +5,7 @@ import { MovementsList } from '@/components/barman/bar/MovementsList';
 import type { BarMovement } from '@/hooks/useBarScreen';
 
 type Children = { children?: ReactNode };
+const list = vi.hoisted(() => ({ contentContainerStyle: undefined as unknown }));
 
 vi.mock('react-native', () => ({
   AccessibilityInfo: { isReduceMotionEnabled: () => Promise.resolve(false), addEventListener: () => ({ remove: () => { } }) },
@@ -16,19 +17,27 @@ vi.mock('react-native', () => ({
   FlatList: ({
     data,
     renderItem,
-    ListEmptyComponent
+    ListEmptyComponent,
+    contentContainerStyle,
   }: {
     data: unknown[];
     renderItem: (info: { item: unknown }) => ReactNode;
     ListEmptyComponent?: ReactNode;
-  }) => (
-    <div>
-      {data.length > 0
-        ? data.map((item, index) => <div key={index}>{renderItem({ item })}</div>)
-        : ListEmptyComponent}
-    </div>
-  ),
+    contentContainerStyle?: unknown;
+  }) => {
+    list.contentContainerStyle = contentContainerStyle;
+    return (
+      <div>
+        {data.length > 0
+          ? data.map((item, index) => <div key={index}>{renderItem({ item })}</div>)
+          : ListEmptyComponent}
+      </div>
+    );
+  },
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 }
+}));
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ bottom: 16 }),
 }));
 vi.mock('@expo/vector-icons/Ionicons', () => ({ default: () => null }));
 vi.mock('@/components/ui/SkeletonLoader', () => ({ SkeletonLoader: () => null }));
@@ -71,6 +80,15 @@ const renderLista = (items: BarMovement[]) =>
   );
 
 describe('MovementsList precios del historial', () => {
+  it('reserva el inset inferior debajo del último card', () => {
+    renderLista([movimiento({})]);
+
+    expect(list.contentContainerStyle).toEqual([
+      { paddingHorizontal: 16 },
+      { paddingBottom: 40 },
+    ]);
+  });
+
   it('muestra cada forma de venta configurada con su comisión', () => {
     renderLista([
       movimiento({

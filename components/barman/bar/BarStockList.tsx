@@ -12,6 +12,7 @@ import { BASE_URL } from "@/api/client";
 import { resolverVentaProducto } from "@/hooks/utils/saleChoice";
 import { BorderRadius } from "@/constants/spacing";
 import { FontFamily } from "@/constants/fonts";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface BarStockListProps {
   items: BarStockItem[];
@@ -43,6 +44,7 @@ export function BarStockList({
   selectedCategory,
   onSelectedCategoryChange,
 }: BarStockListProps) {
+  const insets = useSafeAreaInsets();
   const [internalCategory, setInternalCategory] = useState<string | null>(null);
   const selected = selectedCategory !== undefined ? selectedCategory : internalCategory;
   const setSelectedCategoryWrapper = useCallback((cat: string | null) => {
@@ -176,7 +178,10 @@ export function BarStockList({
           renderItem={renderCategory}
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={[styles.list, { paddingTop: 8 }]}
+          contentContainerStyle={[
+            styles.list,
+            { paddingTop: 8, paddingBottom: 120 + insets.bottom },
+          ]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -209,7 +214,10 @@ export function BarStockList({
         keyExtractor={stockRowKey}
         getItemType={stockRowType}
         renderItem={renderRow}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: 120 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -468,7 +476,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   cardSpacer: { flex: 1 },
-  list: { paddingHorizontal: 12, paddingBottom: 120 },
+  list: { paddingHorizontal: 12 },
   row: { flexDirection: "row", justifyContent: "space-around", gap: 10 },
   skeletonRow: {
     flexDirection: "row",
