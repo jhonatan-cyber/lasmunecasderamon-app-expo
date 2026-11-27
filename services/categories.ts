@@ -5,6 +5,6 @@ export const categoriesService = {
     apiClientSafe('/categories'),
 
   /** Catálogo de venta: solo categorías activas con stock disponible en el bar. */
-  listForSale: () =>
-    apiClientSafe('/categories?for_sale=1'),
+  listForSale: (signal?: AbortSignal) =>
+    apiClientSafe('/categories?for_sale=1', { signal }),
 };

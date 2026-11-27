@@ -177,7 +177,7 @@ afterEach(cleanup);
 describe('ColacionesScreen: filtro del historial por rol receptor', () => {
   it('rotula el encabezado como barman, único rol que registra colaciones', () => {
     render(<ColacionesScreen />);
-    expect(screen.getByText('barman', { exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Barman, 1 colación' })).toBeTruthy();
   });
 
   it('cuenta registros, normaliza roles y conserva roles desconocidos o ausentes', () => {

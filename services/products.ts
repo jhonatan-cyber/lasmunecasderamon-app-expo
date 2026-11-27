@@ -8,6 +8,13 @@ export const productsService = {
   forSale: (signal?: AbortSignal) =>
     apiClientSafe('/products?for_sale=1', { signal }),
 
+  /** Presentaciones de venta agrupadas por la categoría seleccionada. */
+  forSaleByCategory: (categoryId: string | number, signal?: AbortSignal) =>
+    apiClientSafe(
+      `/products?for_sale=1&category_id=${encodeURIComponent(String(categoryId))}`,
+      { signal },
+    ),
+
   /**
    * Bebidas analcohólicas habilitadas para cover de cliente: las únicas que el
    * bar puede servir como acompañamiento de una cortesía.

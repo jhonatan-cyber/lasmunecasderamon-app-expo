@@ -66,8 +66,20 @@ async function bootstrapRoleSession(page: Page, role: Role) {
                         success: true,
                         data: {
                             weeklyIncome: [
-                                { day: '2026-03-16', total: 30000 },
-                                { day: '2026-03-15', total: 20000 },
+                                { day: '2026-03-09', total: 3000 },
+                                { day: '2026-03-10', total: 3000 },
+                                { day: '2026-03-11', total: 3000 },
+                                { day: '2026-03-12', total: 3000 },
+                                { day: '2026-03-13', total: 3000 },
+                                { day: '2026-03-14', total: 3000 },
+                                { day: '2026-03-15', total: 3000 },
+                                { day: '2026-03-16', total: 4000 },
+                                { day: '2026-03-17', total: 4000 },
+                                { day: '2026-03-18', total: 4000 },
+                                { day: '2026-03-19', total: 4000 },
+                                { day: '2026-03-20', total: 4000 },
+                                { day: '2026-03-21', total: 5000 },
+                                { day: '2026-03-22', total: 5000 },
                             ],
                             badges: [],
                             totalEarnings: 30000,
@@ -209,10 +221,39 @@ test('root redirects anfitriona users to the hostess dashboard', async ({ page }
     await page.goto('/');
 
     await expect(page).toHaveURL(/anfitriona/);
-    await expect(page.locator('body')).toContainText('Meta Semanal');
+    await expect(page.locator('body')).toContainText('Ingresos semanales');
+    await expect(page.locator('body')).toContainText('$30.000');
+    await expect(page.locator('body')).toContainText(/\+42[,.]9%/);
     await expect(page.locator('body')).toContainText('SOLICITAR SERVICIO');
-    await expect(page.locator('body')).toContainText('Analíticas');
+    await expect(page.getByText('SOLICITAR SERVICIO', { exact: true }).locator('..'))
+        .toHaveCSS('border-top-width', '2px');
+    await expect(page.getByText('Analíticas', { exact: true })).toHaveCount(0);
     await expect(page.locator('body')).toContainText('RESUMEN');
+});
+
+test('anfitriona summary shows real sales commissions instead of tips', async ({ page }) => {
+    await bootstrapRoleSession(page, 'anfitriona');
+    await page.route('**/api/commissions/user**', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                success: true,
+                data: [
+                    { id: 1, tipo: 'venta', estado: 1, comision: 1200 },
+                    { id: 2, tipo: 'venta', estado: 2, monto: 800 },
+                    { id: 3, tipo: 'venta', estado: 0, comision: 500 },
+                    { id: 4, tipo: 'servicio', estado: 2, comision: 3000 },
+                ],
+            }),
+        });
+    });
+
+    await page.goto('/anfitriona/resumen');
+
+    await expect(page.getByText('Comisiones de ventas', { exact: true })).toBeVisible();
+    await expect(page.getByText('$2.000', { exact: true })).toBeVisible();
+    await expect(page.getByText('Propinas', { exact: true })).toHaveCount(0);
 });
 
 test('cajero sales screen renders its critical module shell', async ({ page }) => {

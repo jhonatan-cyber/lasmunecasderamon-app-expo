@@ -3,6 +3,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEntregaCovers } from '@/components/entradas/entrega-covers/useEntregaCovers';
+import { categoriesService } from '@/services/categories';
 import { entradasService } from '@/services/entradas';
 import { productsService } from '@/services/products';
 import {
@@ -40,8 +41,11 @@ vi.mock('@/services/entradas', () => ({
     entregar: vi.fn(),
   },
 }));
+vi.mock('@/services/categories', () => ({
+  categoriesService: { listForSale: vi.fn() },
+}));
 vi.mock('@/services/products', () => ({
-  productsService: { forSale: vi.fn(), forCover: vi.fn() },
+  productsService: { forSale: vi.fn(), forSaleByCategory: vi.fn(), forCover: vi.fn() },
 }));
 vi.mock('@/utils/logger', () => ({ default: { fetchError: vi.fn() } }));
 vi.mock('@/utils/toast-lazy', () => ({ showToast: vi.fn() }));
@@ -72,20 +76,55 @@ const cover = (extra: Partial<Acompanamiento> = {}): Acompanamiento => ({
 const aplicar = (estado: Seleccion, acciones: SeleccionAction[]) =>
   acciones.reduce(seleccionReducer, estado);
 
-function montar(modo: 'entrega' | 'solicitud' = 'entrega', cantidad = 2) {
-  vi.mocked(productsService.forSale).mockResolvedValue({
+function montar(
+  modo: 'entrega' | 'solicitud' = 'entrega',
+  cantidad = 2,
+  tope = 99999,
+  opciones: { montoEntrada?: number; precioDestilados?: number; precioCampana?: number } = {},
+) {
+  const montoEntrada = opciones.montoEntrada ?? 5000;
+  vi.mocked(categoriesService.listForSale).mockResolvedValue({
     success: true,
     data: [
-      {
-        ...principal,
-        opciones_venta: [
-          { tipo: 'shot', precio: 2000 },
-          { tipo: 'botella', precio_sin_anfitriona: 4000 },
-        ],
-      },
-      { ...secundaria, categoria_nombre: null },
+      { id: 'cat-dest', name: 'Destilados', status: 1, total_products: 1 },
+      { id: 'cat-cerveza', name: 'Cervezas', status: 1, total_products: 1 },
+      ...(opciones.precioCampana === undefined
+        ? []
+        : [{ id: 'cat-campana', name: 'Campaña', status: 1, total_products: 1 }]),
+      { id: 'cat-vacia', name: 'Sin productos', status: 1, total_products: 0 },
+      { id: 'cat-inactiva', name: 'Inactiva', status: 0, total_products: 1 },
     ],
   });
+  vi.mocked(productsService.forSaleByCategory).mockImplementation(async (categoryId) => ({
+    success: true,
+    data: String(categoryId) === 'cat-campana'
+      ? [{
+          ...bebida({
+            presentacion_id: 'p-campana',
+            producto_nombre: 'Botella Campaña',
+            categoria_nombre: null,
+            precio_venta: opciones.precioCampana ?? 0,
+            precio_sin_anfitriona: opciones.precioCampana ?? 0,
+          }),
+        }]
+      : String(categoryId) === 'cat-dest'
+        ? [{
+            ...principal,
+            categoria_nombre: null,
+            ...(opciones.precioDestilados === undefined
+              ? {}
+              : {
+                  precio_venta: opciones.precioDestilados,
+                  precio_sin_anfitriona: opciones.precioDestilados,
+                  opciones_venta: principal.opciones_venta.map((opcion) =>
+                    opcion.tipo === 'shot'
+                      ? { ...opcion, precio: opciones.precioDestilados }
+                      : opcion,
+                  ),
+                }),
+          }]
+        : [{ ...secundaria, categoria_nombre: null }],
+  } as never));
   vi.mocked(productsService.forCover).mockResolvedValue({
     success: true,
     data: [],
@@ -95,9 +134,9 @@ function montar(modo: 'entrega' | 'solicitud' = 'entrega', cantidad = 2) {
     data: {
       entradas: cantidad,
       productos: 3,
-      montoEntrada: cantidad * 5000,
+      montoEntrada: cantidad * montoEntrada,
       montoCobrarBarra: 4000,
-      presupuesto: cantidad * 5000 + 4000,
+      presupuesto: cantidad * montoEntrada + 4000,
     },
   });
   vi.mocked(entradasService.solicitarEntregaCovers).mockResolvedValue({
@@ -116,7 +155,7 @@ function montar(modo: 'entrega' | 'solicitud' = 'entrega', cantidad = 2) {
       useEntregaCovers({
         visible: true,
         modo,
-        tope: 99999,
+        tope,
         onClose,
         onEntregado,
         grupo: {
@@ -126,7 +165,7 @@ function montar(modo: 'entrega' | 'solicitud' = 'entrega', cantidad = 2) {
             id: `t${indice}`,
             grupo_registro_id: 'g1',
             cliente_nombre: 'Mesa 1',
-            monto_entrada: 5000,
+            monto_entrada: montoEntrada,
             metodo_pago: 'efectivo',
             fecha: '2026-11-01',
             hora: '22:00',
@@ -141,14 +180,35 @@ function montar(modo: 'entrega' | 'solicitud' = 'entrega', cantidad = 2) {
 }
 
 describe('useEntregaCovers: contrato compartido', () => {
-  it('respeta cover deshabilitado y cortes sin acompañamiento configurado', () => {
+  it('usa las categorías de venta del backend cuando los productos no incluyen categoria_nombre', async () => {
+    const { result } = montar();
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    expect(categoriesService.listForSale).toHaveBeenCalledOnce();
+    expect(vi.mocked(productsService.forSaleByCategory).mock.calls.map(([id]) => id)).toEqual([
+      'cat-dest',
+      'cat-cerveza',
+    ]);
+    expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual([
+      'Cervezas',
+      'Destilados',
+    ]);
+  });
+
+  it('no filtra la bebida principal por cover_habilitado y respeta los cortes sin acompañamiento configurado', () => {
     const sinCover = bebida({ opciones_venta: [{ tipo: 'botella', cover_habilitado: false }, { tipo: 'shot', precio: 2000 }] });
-    expect(formatosCover(sinCover, 30000)).toEqual([]);
+    expect(formatosCover(sinCover, 30000)).toContain('corte');
     const corte = bebida({ opciones_venta: [{ tipo: 'shot', precio: 2000, acompanamiento_cliente: false }] });
     const reparto = calcularReparto(corte, 'corte', [], 1, [cover()]);
     expect(reparto.requerido).toBe(false);
     expect(reparto.unidadesRequeridas).toBe(0);
     expect(reparto.falta).toBe(false);
+  });
+
+  it('no ofrece cortes sin precio de shot configurado', () => {
+    const sinShot = bebida({ precio_venta: 5000, precio_sin_anfitriona: 0, opciones_venta: [] });
+
+    expect(formatosCover(sinShot, 5000)).not.toContain('corte');
   });
 
   it('entrega más productos que entradas con una sola mutación y todo el aporte', async () => {
@@ -165,8 +225,8 @@ describe('useEntregaCovers: contrato compartido', () => {
     });
     expect(result.current.totalSeleccionado).toBe(3);
     expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual([
+      'Cervezas',
       'Destilados',
-      'Sin categoría',
     ]);
     await act(async () => {
       await result.current.entregar();
@@ -197,6 +257,45 @@ describe('useEntregaCovers: contrato compartido', () => {
     act(() => result.current.setEntradaIndividualId('t1'));
     expect(result.current.filas.map((fila) => fila.id)).toEqual(['t1']);
     expect(result.current.totalEntradas).toBe(5000);
+  });
+
+  it('filtra categorías según el tope individual y el presupuesto grupal', async () => {
+    const { result } = montar('entrega', 2, 1000);
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual([
+      'Cervezas',
+      'Destilados',
+    ]);
+
+    act(() => result.current.setTipoEntrega('individual'));
+    expect(result.current.gruposVisibles).toEqual([]);
+
+    act(() => result.current.cambiarMontoAdicional('1000'));
+    expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual([
+      'Cervezas',
+      'Destilados',
+    ]);
+  });
+
+  it('oculta Campaña sobre 40.000 y limita categorías individuales a 10.000', async () => {
+    const { result } = montar('entrega', 4, 10000, {
+      montoEntrada: 10000,
+      precioDestilados: 40000,
+      precioCampana: 45000,
+    });
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    expect(result.current.totalEntradas).toBe(40000);
+    expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual([
+      'Cervezas',
+      'Destilados',
+    ]);
+
+    act(() => result.current.setTipoEntrega('individual'));
+
+    expect(result.current.totalEntradas).toBe(10000);
+    expect(result.current.gruposVisibles.map((item) => item.categoria)).toEqual(['Cervezas']);
   });
 
   it('envía solo la entrada elegida al entregar individualmente', async () => {
@@ -263,6 +362,20 @@ describe('useEntregaCovers: contrato compartido', () => {
     expect(result.current.totalSeleccionado).toBe(3);
     expect(result.current.excedePresupuesto).toBe(false);
     expect(result.current.errorMonto).toMatch(/Quita productos/);
+  });
+
+  it('impide bajar el adicional si deja una selección individual sobre el tope', async () => {
+    const { result } = montar('entrega', 1, 1000);
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+
+    act(() => result.current.cambiarMontoAdicional('1000'));
+    const bebida = result.current.visibles.find((item) => item.formato === 'corte')!.bebida;
+    act(() => result.current.agregar(bebida, 'corte'));
+    act(() => result.current.cambiarMontoAdicional('500'));
+
+    expect(result.current.adicional).toBe(1000);
+    expect(result.current.totalSeleccionado).toBe(1);
+    expect(result.current.errorMonto).toMatch(/El adicional no alcanza/);
   });
 
   it('con un fallo atómico conserva la selección y no refresca ni cierra', async () => {

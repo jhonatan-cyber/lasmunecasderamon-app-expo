@@ -14,9 +14,11 @@ import { PremiumHeader } from "@/components/ui/PremiumHeader";
 import { contentColumn, tabBarBottomPadding } from "@/constants/layout";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useFinancialEvents } from "@/hooks/useFinancialEvents";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuthStore } from "@/store/authStore";
 import logger from "@/utils/logger";
+import { sumSalesCommissions } from "@/utils/salesCommissions";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
@@ -48,6 +50,14 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const showCalendar = !esAdmin;
+  const {
+    data: salesCommissions,
+    loading: salesCommissionsLoading,
+    error: salesCommissionsError,
+  } = useFinancialEvents("comisiones", role === "anfitriona");
+  const salesCommissionTotal = salesCommissionsLoading || salesCommissionsError
+    ? null
+    : sumSalesCommissions(salesCommissions);
 
   const selectedEvents = useMemo(
     () => filterEventsByDates(events, selectedDates),
@@ -132,7 +142,11 @@ export function ResumenScreen({ role }: ResumenScreenProps) {
         </View>
 
         {/* Desglose de ingresos - siempre visible */}
-        <BreakdownCard breakdown={payoutBreakdown} role={role} />
+        <BreakdownCard
+          breakdown={payoutBreakdown}
+          role={role}
+          salesCommissionTotal={role === "anfitriona" ? salesCommissionTotal : undefined}
+        />
 
         {/* Calendario con márgenes propios para que use todo el ancho útil */}
         {showCalendar && (

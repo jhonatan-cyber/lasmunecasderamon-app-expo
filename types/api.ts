@@ -18,8 +18,13 @@ export interface DashboardEvent {
   codigo?: string;
 }
 
+export interface WeeklyIncomePoint {
+  day: string;
+  total: number;
+}
+
 export interface DashboardStats {
-  weeklyIncome: number[];
+  weeklyIncome: WeeklyIncomePoint[];
   badges: string[];
   totalEarnings: number;
   svcCount: number;

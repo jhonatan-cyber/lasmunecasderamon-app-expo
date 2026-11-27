@@ -219,25 +219,13 @@ export default function GarzonEntradasScreen() {
     totalPuerta,
   ]);
 
-  const headerBack = (
-    <Pressable
-      onPress={() => router.back()}
-      accessibilityRole="button"
-      accessibilityLabel="Volver atrás"
-      hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-      style={styles.backBtn}
-    >
-      <Ionicons name="arrow-back" size={20} color={accentText} />
-    </Pressable>
-  );
-
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: bg }}>
         <PremiumHeader
           title="Entradas"
           subtitle="Cobro de acceso en la puerta"
-          rightComponent={headerBack}
+          onBack={() => router.back()}
         />
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={accentOnSurface} />
@@ -254,7 +242,7 @@ export default function GarzonEntradasScreen() {
       <PremiumHeader
         title="Entradas"
         subtitle="Cobro de acceso en la puerta"
-        rightComponent={headerBack}
+        onBack={() => router.back()}
       />
 
       <ScrollView
@@ -446,15 +434,6 @@ export default function GarzonEntradasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginLeft: 12,
-  },
   cardToggle: {
     flexDirection: 'row',
     alignItems: 'center',

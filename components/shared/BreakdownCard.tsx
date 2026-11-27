@@ -22,9 +22,10 @@ interface BreakdownData {
 interface BreakdownCardProps {
   breakdown?: BreakdownData;
   role: UserRole;
+  salesCommissionTotal?: number | null;
 }
 
-export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
+export const BreakdownCard = ({ breakdown, role, salesCommissionTotal }: BreakdownCardProps) => {
   const { textSecondary, textPrimary, accentColor, surfaceMuted, isDark, accentUi, cardBg, borderColor } = useAccentColor();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -38,7 +39,7 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
     const items: {
       label: string;
       sublabel: string;
-      amount: number;
+      amount: number | null;
       icon: "calendar" | "star" | "happy" | "time" | "wallet" | "gift";
       colorIndex: number;
     }[] = [];
@@ -52,14 +53,23 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
       colorIndex: 0,
     });
 
-    // Propinas - todos los roles
-    items.push({
-      label: "Propinas",
-      sublabel: "Total acumulado",
-      amount: breakdown.montoPropinas,
-      icon: "happy",
-      colorIndex: 1,
-    });
+    if (role === "anfitriona") {
+      items.push({
+        label: "Comisiones de ventas",
+        sublabel: "Total acumulado",
+        amount: salesCommissionTotal ?? null,
+        icon: "wallet",
+        colorIndex: 1,
+      });
+    } else {
+      items.push({
+        label: "Propinas",
+        sublabel: "Total acumulado",
+        amount: breakdown.montoPropinas,
+        icon: "happy",
+        colorIndex: 1,
+      });
+    }
 
     // Horas extras - todos los roles
     items.push({
@@ -100,7 +110,7 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
     }
 
     return items;
-  }, [breakdown, role]);
+  }, [breakdown, role, salesCommissionTotal]);
 
   if (breakdownItems.length === 0) {
     return null;
@@ -164,7 +174,7 @@ export const BreakdownCard = ({ breakdown, role }: BreakdownCardProps) => {
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
-                {formatCurrency(item.amount)}
+                {item.amount === null ? "—" : formatCurrency(item.amount)}
               </Text>
               <Text
                 style={[styles.itemSublabel, { color: textSecondary }]}

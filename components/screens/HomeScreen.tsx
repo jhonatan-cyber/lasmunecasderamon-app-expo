@@ -44,6 +44,7 @@ export function HomeScreen({ role }: HomeScreenProps) {
   const {
     accentColor,
     accentText,
+    accentRoleColor,
     accentGlow,
     gradientText,
     gradientTextMuted,
@@ -177,7 +178,11 @@ export function HomeScreen({ role }: HomeScreenProps) {
             style={{ marginTop: 15, alignItems: 'center' }}
           >
             <AnimatedButton
-              style={[styles.callStaffBtn, { backgroundColor: accentColor }]}
+              style={[styles.callStaffBtn, {
+                backgroundColor: accentColor,
+                borderColor: accentRoleColor,
+                borderWidth: 2,
+              }]}
               onPress={() =>
                 showAlert(
                   'Atención',
@@ -230,13 +235,13 @@ export function HomeScreen({ role }: HomeScreenProps) {
             {role === 'anfitriona' && (
               <AnfitrionaAnalyticsSection
                 totalEarnings={stats.totalEarnings}
+                weeklyIncome={stats.weeklyIncome}
                 accentColor={accentColor}
                 isDark={isDark}
                 cardBg={cardBg}
                 borderColor={borderColor}
                 textPrimary={textPrimary}
                 textSecondary={textSecondary}
-                onOpenAnalytics={() => router.push('/anfitriona/analytics')}
                 onOpenResumen={() => router.push('/anfitriona/resumen')}
               />
             )}

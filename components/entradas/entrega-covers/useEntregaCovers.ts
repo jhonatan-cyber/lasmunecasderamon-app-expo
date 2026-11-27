@@ -5,6 +5,7 @@ import {
   type EntregaGrupoPayload,
   type SolicitudEntregaCoversPayload,
 } from '@/services/entradas';
+import { categoriesService } from '@/services/categories';
 import { formatCurrency } from '@/utils/format';
 import { productsService } from '@/services/products';
 import logger from '@/utils/logger';
@@ -76,13 +77,47 @@ export function useEntregaCovers({
     '',
   );
   const catalogo = useQuery({
-    queryKey: ['covers', 'productos'],
+    queryKey: ['covers', 'productos-por-categoria'],
     enabled: visible && grupo !== null,
     queryFn: async ({ signal }) => {
-      const res = await productsService.forSale(signal);
-      if (!res.success || !Array.isArray(res.data))
-        throw new Error(res.message || 'No se pudieron cargar las bebidas del bar');
-      return (res.data as unknown[]).map(bebidaDe).filter((item): item is Bebida => item !== null);
+      const categoriasRes = await categoriesService.listForSale(signal);
+      if (!categoriasRes.success || !Array.isArray(categoriasRes.data))
+        throw new Error(categoriasRes.message || 'No se pudieron cargar las categorías de venta');
+
+      const categorias = categoriasRes.data.filter((categoria: unknown) => {
+        if (!categoria || typeof categoria !== 'object') return false;
+        const fila = categoria as Record<string, unknown>;
+        const estado = Number(fila.status ?? fila.estado ?? 0);
+        const cantidad = Number(fila.total_products ?? fila.productCount ?? 0);
+        const nombre = String(fila.name ?? fila.nombre ?? '');
+        const id = String(fila.id ?? fila.category_id ?? '').trim();
+        return id !== '' && estado === 1 && cantidad > 0 && !categoriaFueraDeCover(nombre);
+      }) as Record<string, unknown>[];
+
+      const productosPorCategoria = await Promise.all(
+        categorias.map(async (categoria) => {
+          const categoriaId = String(categoria.id ?? categoria.category_id ?? '');
+          const categoriaNombre =
+            String(categoria.name ?? categoria.nombre ?? '').trim() || 'Sin categoría';
+          const res = await productsService.forSaleByCategory(categoriaId, signal);
+          if (!res.success || !Array.isArray(res.data))
+            throw new Error(res.message || 'No se pudieron cargar las bebidas del bar');
+
+          return (res.data as unknown[])
+            .map((valor) => {
+              if (!valor || typeof valor !== 'object') return null;
+              const fila = valor as Record<string, unknown>;
+              const nombre =
+                typeof fila.categoria_nombre === 'string' && fila.categoria_nombre.trim()
+                  ? fila.categoria_nombre
+                  : categoriaNombre;
+              return bebidaDe({ ...fila, categoria_nombre: nombre });
+            })
+            .filter((item): item is Bebida => item !== null);
+        }),
+      );
+
+      return productosPorCategoria.flat();
     },
   });
   const catalogoCover = useQuery({
@@ -112,10 +147,14 @@ export function useEntregaCovers({
   );
   const totalEntradas = filas.reduce((total, fila) => total + (Number(fila.monto_entrada) || 0), 0);
   const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
-  // El presupuesto para filtrar productos es igual al del dashboard:
-  // suma de entradas + monto adicional. El `tope` solo se usa como referencia
-  // visual, no como filtro de precio.
+  // El grupo comparte el presupuesto de sus entradas; individualmente aplica
+  // el tope configurado más el adicional.
   const presupuesto = totalEntradas + adicional;
+  const topeCover = Number.isFinite(tope) ? Math.max(0, tope) : 0;
+  const precioMaximo = Math.min(
+    presupuesto,
+    filas.length === 1 ? topeCover + adicional : presupuesto,
+  );
   const limites = useMemo(
     () => ({ bebidas, acompanamientos, presupuesto }),
     [bebidas, acompanamientos, presupuesto],
@@ -138,7 +177,7 @@ export function useEntregaCovers({
     return bebidas
       .flatMap((bebida) => {
         if (categoriaFueraDeCover(bebida.categoria_nombre)) return [];
-        const formatos = formatosCover(bebida, presupuesto);
+        const formatos = formatosCover(bebida, precioMaximo);
         // Lo ya elegido se mantiene visible aunque el presupuesto baje, para
         // poder ajustarlo antes de entregar.
         for (const formato of ['corte', 'botella'] as Formato[]) {
@@ -153,7 +192,7 @@ export function useEntregaCovers({
           Boolean(seleccion[claveDe(bebida, formato)]) ||
           normalizar(`${bebida.producto_nombre} ${bebida.presentacion_nombre}`).includes(termino),
       );
-  }, [bebidas, busqueda, presupuesto, seleccion]);
+  }, [bebidas, busqueda, precioMaximo, seleccion]);
 
   const gruposVisibles = useMemo(() => {
     const categorias = new Map<string, typeof visibles>();
@@ -322,10 +361,20 @@ export function useEntregaCovers({
         });
         return;
       }
+      if (
+        filas.length === 1 &&
+        lineas.some((linea) => precioVisible(linea.bebida, linea.formato) > topeCover + nuevo)
+      ) {
+        dispatchFormulario({
+          type: 'errorMonto',
+          mensaje: 'El adicional no alcanza para ampliar el tope de la bebida seleccionada.',
+        });
+        return;
+      }
       dispatchFormulario({ type: 'errorMonto', mensaje: null });
       dispatchFormulario({ type: 'montoAdicional', valor: limpio });
     },
-    [entregando, precioSeleccionado, totalEntradas],
+    [entregando, filas.length, lineas, precioSeleccionado, topeCover, totalEntradas],
   );
 
   const cerrar = useCallback(() => {
