@@ -222,13 +222,13 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                 <Text maxFontSizeMultiplier={1.3} style={[styles.alertBtnText, { color: textPrimary, fontSize: isTablet ? 16 : 14 }]}>{cancelText}</Text>
                             </Pressable>
                         )}
-                        <View style={isDark ? {
+                        <View style={[isDark ? {
                             shadowColor: alertColor,
                             shadowOffset: { width: 0, height: 0 },
                             shadowOpacity: 0.3,
                             shadowRadius: 8,
                             elevation: 4,
-                        } : {}}>
+                        } : {}, { flex: showCancel ? 1 : 0 }]}>
                             <Pressable
                                 onPress={handleConfirm}
                                 style={[

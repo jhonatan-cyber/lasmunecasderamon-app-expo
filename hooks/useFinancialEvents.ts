@@ -24,7 +24,7 @@ export interface FinancialEvent {
   productos?: any;
 }
 
-export function useFinancialEvents(type: 'comisiones' | 'propinas') {
+export function useFinancialEvents(type: 'comisiones' | 'propinas', enabled = true) {
   const [data, setData] = useState<FinancialEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,10 +88,11 @@ export function useFinancialEvents(type: 'comisiones' | 'propinas') {
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) return;
       const ac = new AbortController();
       fetchData(false, ac.signal);
       return () => ac.abort();
-    }, [fetchData]),
+    }, [enabled, fetchData]),
   );
 
   const onRefresh = useCallback(() => {

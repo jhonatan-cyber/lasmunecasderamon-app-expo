@@ -27,23 +27,6 @@ export const styles = StyleSheet.create({
     elevation: 4,
   },
   analyticsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
-  // Acceso a Analíticas (paridad con Flutter: /anfitriona/analytics)
-  analyticsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
-    padding: 14,
-    borderRadius: BorderRadius.card,
-    borderWidth: 1,
-  },
-  analyticsLinkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   glassCard: {
     flex: 1,
     padding: 16,
